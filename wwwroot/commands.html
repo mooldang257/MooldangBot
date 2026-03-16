@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>물댕봇 - 명령어 관리소</title>
+    <style>
+        body {
+            background: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #00ffa3;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 2fr auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        label {
+            font-size: 12px;
+            color: #888;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        button {
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            border: none;
+            padding: 10px 15px;
+        }
+
+        .btn-add {
+            background: #00ffa3;
+            color: #000;
+        }
+
+        .btn-delete {
+            background: #ff5252;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-back {
+            background: #333;
+            color: #aaa;
+            margin-bottom: 20px;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            color: #888;
+            font-size: 13px;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #222;
+        }
+
+        .keyword {
+            color: #00ffa3;
+            font-weight: bold;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 4px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="javascript:history.back()" class="btn-back">← 대시보드로 돌아가기</a>
+        <h1>🛠️ 명령어 관리소</h1>
+
+        <div class="panel">
+            <div class="form-row">
+                <div><label>키워드</label><input type="text" id="newKeyword" placeholder="!명령어"></div>
+                <div>
+                    <label>동작</label>
+                    <select id="newAction"><option value="Notice">상단 공지</option><option value="Reply">채팅 답변</option></select>
+                </div>
+                <div>
+                    <label>권한</label>
+                    <select id="newRole"><option value="manager">스트리머/매니저</option><option value="all">모든 시청자</option></select>
+                </div>
+                <div><label>내용</label><input type="text" id="newContent" placeholder="실행할 내용"></div>
+                <button class="btn-add" onclick="saveCommand()">추가/수정</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <table>
+                <thead>
+                    <tr><th>키워드</th><th>동작</th><th>권한</th><th>내용</th><th>관리</th></tr>
+                </thead>
+                <tbody id="commandTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const chzzkUid = window.location.pathname.split('/').pop();
+
+        async function loadCommands() {
+            const res = await fetch(`/api/commands/list/${chzzkUid}`);
+            const list = await res.json();
+            const body = document.getElementById('commandTableBody');
+            body.innerHTML = '';
+
+            list.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="keyword">${c.commandKeyword}</td>
+                    <td><span class="badge">${c.actionType === 'Notice' ? '📢 공지' : '💬 답변'}</span></td>
+                    <td>${c.requiredRole === 'manager' ? '🛡️ 관리자' : '👥 전체'}</td>
+                    <td>${c.content}</td>
+                    <td><button class="btn-delete" onclick="deleteCommand(${c.id})">삭제</button></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function saveCommand() {
+            const cmd = {
+                chzzkUid: chzzkUid,
+                commandKeyword: document.getElementById('newKeyword').value,
+                actionType: document.getElementById('newAction').value,
+                requiredRole: document.getElementById('newRole').value,
+                content: document.getElementById('newContent').value
+            };
+            if(!cmd.commandKeyword || !cmd.content) return alert("빈칸을 채워주세요!");
+
+            await fetch('/api/commands/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cmd)
+            });
+            loadCommands();
+            document.getElementById('newKeyword').value = '';
+            document.getElementById('newContent').value = '';
+        }
+
+        async function deleteCommand(id) {
+            if(!confirm("정말 삭제할까요?")) return;
+            await fetch(`/api/commands/delete/${id}`, { method: 'DELETE' });
+            loadCommands();
+        }
+
+        window.onload = loadCommands;
+    </script>
+</body>
+</html>

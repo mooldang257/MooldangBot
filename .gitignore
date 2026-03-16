@@ -1,0 +1,17 @@
+# Visual Studio 캐시 및 설정
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 빌드 결과물 (컴파일된 파일들)
+bin/
+obj/
+
+# 환경 설정 (비밀번호 포함 시 제외 권장)
+appsettings.json
+appsettings.Development.json
+
+# 기타 시스템 파일
+.DS_Store

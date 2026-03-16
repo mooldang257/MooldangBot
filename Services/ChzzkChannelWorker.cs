@@ -1,0 +1,443 @@
+﻿using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using MooldangAPI.Data; // DB 컨텍스트 네임스페이스
+using MooldangAPI.Models; // 모델 네임스페이스
+using Microsoft.AspNetCore.SignalR;
+using MooldangAPI.Hubs; // OverlayHub가 있는 네임스페이스로 맞춰주세요.
+
+namespace MooldangAPI.Services;
+
+public class ChzzkChannelWorker
+{
+    private readonly string _uid;
+    private readonly string _clientId;     // 매니저에게 받은 ID
+    private readonly string _clientSecret; // 매니저에게 받은 Secret
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ChzzkChannelWorker> _logger;
+
+    public ChzzkChannelWorker(string uid, IServiceProvider serviceProvider)
+    {
+        _uid = uid;
+        _serviceProvider = serviceProvider;
+        // DI 컨테이너에서 로거를 직접 뽑아옵니다.
+        _logger = serviceProvider.GetRequiredService<ILogger<ChzzkChannelWorker>>();
+    }
+
+    // ⭐ 생성자에서 API 키를 받도록 수정
+    public ChzzkChannelWorker(string uid, string clientId, string clientSecret, IServiceProvider serviceProvider)
+    {
+        _uid = uid;
+        _clientId = clientId;
+        _clientSecret = clientSecret;
+        _serviceProvider = serviceProvider;
+        _logger = serviceProvider.GetRequiredService<ILogger<ChzzkChannelWorker>>();
+    }
+
+    public async Task ConnectAndListenAsync(CancellationToken stoppingToken)
+    {
+        // 1. DB에서 스트리머 정보와 API 키를 안전하게 가져옵니다.
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
+        if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+        {
+            _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 취소합니다.");
+            return;
+        }
+
+        // ==========================================================
+        // ⭐ [추가된 부분] 방에 들어가기 전에 무조건 토큰 유통기한부터 검사합니다!
+        await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
+        // ==========================================================
+
+        // 2. 치지직 오픈 API에 세션 연결 요청 (HTTP)
+        using var authClient = new HttpClient();
+
+        // ⭐ 매니저가 넘겨준 키를 바로 사용!
+        authClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+        authClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
+        authClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+        var authRes = await authClient.GetAsync("https://openapi.chzzk.naver.com/open/v1/sessions/auth", stoppingToken);
+        var authJson = await authRes.Content.ReadAsStringAsync(stoppingToken);
+
+        if (!authRes.IsSuccessStatusCode)
+        {
+            _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패: {authJson}");
+            return;
+        }
+        using var authDoc = JsonDocument.Parse(authJson);
+        string socketUrl = authDoc.RootElement.GetProperty("content").GetProperty("url").GetString() ?? "";
+
+        // ⭐ [진범 검거] 완벽한 웹소켓 주소(문 + 열쇠)를 조립합니다.
+        UriBuilder uriBuilder = new UriBuilder(socketUrl);
+        uriBuilder.Scheme = "wss"; // https를 wss로 강제 변환
+
+        // ⭐ [핵심] 치지직 Socket.IO 서버의 진짜 대문을 달아줍니다.
+        if (uriBuilder.Path == "/")
+        {
+            uriBuilder.Path = "/socket.io/";
+        }
+
+        // ⭐ 기존 인증키(auth) 뒤에 웹소켓 필수 옵션(EIO=3)을 쇠사슬처럼 묶습니다.
+        string extraQuery = "transport=websocket&EIO=3";
+        if (uriBuilder.Query.Length > 1) // 기존에 ?auth= 가 있다면
+        {
+            uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + extraQuery;
+        }
+        else
+        {
+            uriBuilder.Query = extraQuery;
+        }
+
+        string finalSocketUrl = uriBuilder.ToString();
+        _logger.LogWarning($"📡 [물댕봇] 조립된 최종 URL: {finalSocketUrl}");
+
+        // 3. 순정 웹소켓(ClientWebSocket) 연결
+        using var ws = new ClientWebSocket();
+        ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0");
+        ws.Options.SetRequestHeader("Origin", "https://chzzk.naver.com");
+
+        await ws.ConnectAsync(new Uri(finalSocketUrl), stoppingToken);
+        _logger.LogInformation($"✅ [물댕봇] {_uid} 물리적 연결 성공! 핸드셰이크를 시작합니다.");
+
+
+        // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
+        var buffer = new byte[1024 * 16]; // 16KB 넉넉한 버퍼
+
+        while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
+        {
+            var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), stoppingToken);
+            if (result.MessageType == WebSocketMessageType.Close) break;
+
+            string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+            // ⭐ [핵심 추가] 치지직 서버가 보내는 모든 날것(Raw)의 데이터를 터미널에 전부 출력합니다!
+            _logger.LogWarning($"📥 [Raw 패킷] {message}");
+
+            // 🧠 [Socket.IO 프로토콜 수동 해석기]
+            if (message.StartsWith("0")) // 0: Open (서버가 인사함)
+            {
+                _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
+                await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+            }
+            else if (message.StartsWith("2")) // 2: Ping (서버가 너 살아있냐고 물어봄)
+            {
+                await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+            }
+            else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
+            {
+                // 앞의 "42"를 떼어내고 순수 JSON 배열만 넘깁니다.
+                await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
+            }
+        }
+    }
+
+    // ⭐ [비밀 무기] 토큰 유통기한 확인 및 자동 갱신 메서드
+    private async Task RefreshTokenIfNeededAsync(StreamerProfile profile, string clientId, string clientSecret, AppDbContext db)
+    {
+        // 1. 만료 시간(TokenExpiresAt)이 1시간 이상 넉넉하게 남았다면 그냥 통과!
+        if (profile.TokenExpiresAt.HasValue && profile.TokenExpiresAt.Value > DateTime.Now.AddHours(1))
+        {
+            return;
+        }
+
+        _logger.LogWarning($"🔄 [물댕봇] {profile.ChzzkUid}의 액세스 토큰 만료가 임박했습니다. 자동 갱신을 시도합니다...");
+
+        using var httpClient = new HttpClient();
+
+        // 치지직 토큰 갱신 규격에 맞춰 요청서 작성
+        var tokenRequest = new
+        {
+            grantType = "refresh_token", // "나 리프레시 토큰 쓸래!"
+            clientId = clientId,
+            clientSecret = clientSecret,
+            refreshToken = profile.ChzzkRefreshToken // DB에 있던 리프레시 토큰 제출
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(tokenRequest), Encoding.UTF8, "application/json");
+        var response = await httpClient.PostAsync("https://openapi.chzzk.naver.com/auth/v1/token", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonResult = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(jsonResult);
+            var tokenContent = doc.RootElement.GetProperty("content");
+
+            // ⭐ 2. 새로 발급받은 따끈따끈한 토큰으로 DB 정보 업데이트
+            profile.ChzzkAccessToken = tokenContent.GetProperty("accessToken").GetString() ?? "";
+            profile.ChzzkRefreshToken = tokenContent.GetProperty("refreshToken").GetString() ?? profile.ChzzkRefreshToken; // 리프레시 토큰도 새로 나올 수 있음
+            profile.TokenExpiresAt = DateTime.Now.AddSeconds(tokenContent.GetProperty("expiresIn").GetInt32());
+
+            await db.SaveChangesAsync(); // DB에 영구 저장
+            _logger.LogInformation($"✅ [물댕봇] {profile.ChzzkUid} 토큰 자동 재발급 및 DB 업데이트 완료! (수명 연장)");
+        }
+        else
+        {
+            string error = await response.Content.ReadAsStringAsync();
+            _logger.LogError($"❌ [물댕봇] {profile.ChzzkUid} 토큰 갱신 실패! 스트리머의 재로그인이 필요할 수 있습니다. 사유: {error}");
+        }
+    }
+
+    // 데이터 처리기
+    private async Task HandleEventAsync(string jsonArray, StreamerProfile profile, string clientId, string clientSecret, CancellationToken token)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonArray);
+            string eventName = doc.RootElement[0].GetString() ?? "";
+
+            // ⭐ [핵심 진범 검거] 두 번째 데이터는 JSON 문자열이므로, 한 번 더 Parse 해야 합니다!
+            string payloadString = doc.RootElement[1].GetString() ?? "{}";
+            using var payloadDoc = JsonDocument.Parse(payloadString);
+            var payload = payloadDoc.RootElement;
+
+            if (eventName == "SYSTEM")
+            {
+                if (payload.GetProperty("type").GetString() == "connected")
+                {
+                    string sessionKey = payload.GetProperty("data").GetProperty("sessionKey").GetString() ?? "";
+                    _logger.LogInformation($"💎 [Session Key 획득 성공!] {sessionKey}");
+
+                    // 채팅 구독권 신청
+                    using var subClient = new HttpClient();
+                    subClient.DefaultRequestHeaders.Add("Client-Id", clientId);
+                    subClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                    subClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                    var subReq = new { channelId = profile.ChzzkUid };
+                    var res = await subClient.PostAsync($"https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat?sessionKey={sessionKey}",
+                        new StringContent(JsonSerializer.Serialize(subReq), Encoding.UTF8, "application/json"), token);
+
+                    if (res.IsSuccessStatusCode)
+                        _logger.LogInformation($"🎉 [물댕봇] {_uid} 채널 구독 완료! 이제 채팅이 수신됩니다.");
+                    else
+                        _logger.LogError($"❌ [구독 실패] {await res.Content.ReadAsStringAsync()}");
+                }
+            }
+            else if (eventName == "CHAT")
+            {
+                // CHAT 이벤트도 동일하게 이중 포장되어 들어옵니다.
+                string msg = payload.GetProperty("content").GetString() ?? "";
+
+                // profile 정보는 그 안에 또 문자열로 들어있을 수 있으므로 안전하게 처리
+                string profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
+                                        ? payload.GetProperty("profile").GetString() ?? "{}"
+                                        : payload.GetProperty("profile").GetRawText();
+
+                using var profileDoc = JsonDocument.Parse(profileJson);
+                string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
+
+                // ⭐ [보안 추가] 채팅 친 사람의 권한 확인 ("streamer", "manager", "common_user" 등)
+                string userRole = profileDoc.RootElement.TryGetProperty("userRoleCode", out var roleProp) ? roleProp.GetString() ?? "common_user" : "common_user";
+
+                // ⭐ [마스터 키 추가] 채팅을 보낸 사람의 고유 ID 추출
+                string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
+
+                // ⭐ [슈퍼 유저 여부 확인] mooldang님의 고유 ID를 마스터로 지정합니다.
+                bool isMaster = senderId == "ca98875d5e0edf02776047fbc70f5449";
+
+                _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg} (Master: {isMaster})");
+
+                _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg}");
+
+                // 명령어 처리 (DB에서 설정한 값 사용)
+                string songCmd = profile.SongCommand ?? "!신청";
+                string omaCmd = profile.OmakaseCommand ?? "!물마카세";
+
+                // ==========================================
+                // 🚀 1. 곡 신청 로직 (DB 저장 + SignalR 대시보드 새로고침)
+                // ==========================================
+                if (msg.StartsWith(songCmd) && msg.Length > songCmd.Length)
+                {
+                    string songInput = msg.Substring(songCmd.Length).Trim();
+                    _logger.LogInformation($"🎵 [곡 신청 포착] {nickname}님 -> {songInput}");
+
+                    try
+                    {
+                        using var scope = _serviceProvider.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        // 현재 대기열의 가장 마지막 순서 번호를 찾습니다.
+                        int maxOrder = await db.SongQueues
+                            .Where(s => s.ChzzkUid == profile.ChzzkUid)
+                            .MaxAsync(s => (int?)s.SortOrder, token) ?? 0;
+
+                        var newSong = new SongQueue
+                        {
+                            ChzzkUid = profile.ChzzkUid,
+                            Title = songInput,
+                            Artist = nickname, // 신청자 닉네임을 저장
+                            Status = "Pending",
+                            SortOrder = maxOrder + 1,
+                            CreatedAt = DateTime.Now
+                        };
+
+                        db.SongQueues.Add(newSong);
+                        await db.SaveChangesAsync(token);
+
+                        _logger.LogInformation($"✅ [DB 저장 완료] {songInput} (신청자: {nickname}, 순번: {newSong.SortOrder})");
+
+                        // 화면 실시간 업데이트 신호 발송 (SignalR)
+                        var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<OverlayHub>>();
+                        await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshDashboard", cancellationToken: token);
+
+                        _logger.LogInformation($"📡 [SignalR 발송] 대시보드 새로고침 신호 발송 완료!");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"❌ [DB 저장 실패] {ex.Message}");
+                    }
+                }
+
+                // ==========================================
+                // 🚀 2. 동적 명령어 등록 로직 (!명령어등록) - 마스터/스트리머/매니저 전용
+                // 사용법: !명령어등록 공지 !노래책 https://mooldang.com/songs
+                // ==========================================
+                else if (msg.StartsWith("!명령어등록 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
+                {
+                    var parts = msg.Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (parts.Length >= 4)
+                    {
+                        string actionType = parts[1] == "공지" ? "Notice" : "Reply";
+                        string triggerWord = parts[2];
+                        string contentText = parts[3];
+
+                        try
+                        {
+                            using var scope = _serviceProvider.CreateScope();
+                            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                            var existingCmd = await db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == profile.ChzzkUid && c.CommandKeyword == triggerWord, token);
+
+                            if (existingCmd == null)
+                            {
+                                db.StreamerCommands.Add(new StreamerCommand
+                                {
+                                    ChzzkUid = profile.ChzzkUid,
+                                    CommandKeyword = triggerWord,
+                                    ActionType = actionType,
+                                    Content = contentText,
+                                    RequiredRole = "manager"
+                                });
+                            }
+                            else
+                            {
+                                existingCmd.ActionType = actionType;
+                                existingCmd.Content = contentText;
+                            }
+                            await db.SaveChangesAsync(token);
+                            _logger.LogInformation($"⚙️ [명령어 등록 완료] {triggerWord} -> {actionType} ({contentText})");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"❌ [명령어 등록 실패] {ex.Message}");
+                        }
+                    }
+                }
+
+                // ==========================================
+                // 🚀 3. 물마카세 (기존 기능 유지)
+                // ==========================================
+                else if (msg.StartsWith(omaCmd))
+                {
+                    _logger.LogInformation($"🍣 [물마카세] {nickname}님 호출!");
+                }
+
+                // ==========================================
+                // 🚀 4. 동적 명령어 실행 엔진 (접두사 완전 자유화 버전)
+                // ==========================================
+                else
+                {
+                    // 1. 단어 추출 (첫 단어 및 전체 문장)
+                    string firstWord = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+                    string fullMessage = msg.Trim();
+
+                    if (!string.IsNullOrEmpty(fullMessage))
+                    {
+                        using var scope = _serviceProvider.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        // 🔍 DB에서 키워드 매칭 (전체 문장 우선, 그 다음 첫 단어)
+                        var customCmd = await db.StreamerCommands
+                            .FirstOrDefaultAsync(c => c.ChzzkUid == profile.ChzzkUid &&
+                                                     (c.CommandKeyword == fullMessage || c.CommandKeyword == firstWord), token);
+
+                        if (customCmd != null)
+                        {
+                            // ⭐ 마스터라면 모든 권한 검사를 프리패스합니다.
+                            bool isAuthorized = isMaster;
+
+                            if (!isAuthorized) // 마스터가 아닐 때만 일반 권한 체크
+                            {
+                                isAuthorized = true;
+                                if (customCmd.RequiredRole == "streamer" && userRole != "streamer") isAuthorized = false;
+                                if (customCmd.RequiredRole == "manager" && !(userRole == "streamer" || userRole == "manager")) isAuthorized = false;
+                            }
+
+                            if (isAuthorized)
+                            {
+                                // 📢 A. 상단 공지(Notice) 모드: 이제 접두사 없이도 발동!
+                                if (customCmd.ActionType == "Notice")
+                                {
+                                    string noticeText = customCmd.Content.Length > 100 ? customCmd.Content.Substring(0, 97) + "..." : customCmd.Content;
+
+                                    using var noticeClient = new HttpClient();
+                                    noticeClient.DefaultRequestHeaders.Add("Client-Id", clientId);
+                                    noticeClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                                    noticeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                                    var noticeReq = new { message = noticeText };
+                                    var noticeRes = await noticeClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
+                                        new StringContent(JsonSerializer.Serialize(noticeReq), Encoding.UTF8, "application/json"), token);
+
+                                    if (noticeRes.IsSuccessStatusCode)
+                                        _logger.LogInformation($"📢 [공지 발동] {fullMessage} -> {noticeText}");
+                                }
+                                // 💬 B. 채팅 답변(Reply) 모드
+                                else if (customCmd.ActionType == "Reply")
+                                {
+                                    using var replyClient = new HttpClient();
+                                    replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
+                                    replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                                    replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                                    string replyText = customCmd.Content;
+                                    if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
+
+                                    var replyReq = new { message = replyText };
+                                    var replyRes = await replyClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
+                                        new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
+
+                                    if (replyRes.IsSuccessStatusCode)
+                                        _logger.LogInformation($"💬 [답변 발송] {fullMessage} -> {replyText}");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"⚠️ [권한 부족] {nickname}님이 {firstWord} 명령어를 시도했으나 차단되었습니다.");
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug($"[패킷 무시] 파싱 에러: {ex.Message} \n원본: {jsonArray}");
+        }
+    }
+
+
+
+    // 서버로 메시지(패킷)를 전송하는 도우미
+    private async Task SendMessageAsync(ClientWebSocket ws, string msg, CancellationToken token)
+    {
+        var bytes = Encoding.UTF8.GetBytes(msg);
+        await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, token);
+    }
+}

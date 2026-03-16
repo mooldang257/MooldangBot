@@ -1,0 +1,693 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>물댕봇 대시보드</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* 헤더 */
+        h2 {
+            color: #00ffa3;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .streamer-info {
+            font-size: 12px;
+            color: #888;
+            font-weight: normal;
+            margin-left: 10px;
+        }
+
+        .sub-title {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: bold;
+        }
+
+        /* 입력 폼 */
+        textarea {
+            width: 100%;
+            height: 80px;
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
+            resize: vertical;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        button.primary {
+            background: #00ffa3;
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            button.primary:hover {
+                background: #00cc82;
+            }
+
+        /* 주소 복사 및 새로고침 */
+        .top-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .copy-panel {
+            flex-grow: 1;
+            background: #252525;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #333;
+        }
+
+        .btn-refresh {
+            background: #0047ab;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid #0056cc;
+            white-space: nowrap;
+        }
+
+        /* 오마카세 컨트롤러 */
+        .omakase-box {
+            background: rgba(0, 170, 255, 0.1);
+            border: 1px solid #00aaff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .omakase-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .omakase-btn {
+            background: #333;
+            color: #00aaff;
+            border: 1px solid #00aaff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 재생 중인 노래 */
+        .now-playing-box {
+            background: rgba(0, 255, 163, 0.05);
+            border: 1px solid #00ffa3;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #currentTitle {
+            margin: 10px 0;
+            font-size: 32px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #currentArtist {
+            color: #aaa;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .finish-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00ffa3;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 리스트 및 버튼 */
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .song-item {
+            background: #2a2a2a;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid #444;
+            cursor: grab;
+        }
+
+        .song-info {
+            flex-grow: 1;
+            margin-left: 10px;
+            overflow: hidden;
+        }
+
+            .song-info strong {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 15px;
+            }
+
+            .song-info span {
+                font-size: 12px;
+                color: #aaa;
+            }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            font-size: 11px;
+            padding: 5px 8px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .scroll-list {
+            height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        /* ⭐ 반응형 매직: 가로 800px 이하일 때 1열로 변환 */
+        @media (max-width: 800px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .top-controls {
+                flex-direction: column;
+            }
+
+            .btn-refresh {
+                padding: 12px;
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            h2 {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+                h2 button {
+                    width: 100%;
+                }
+
+            .finish-btn {
+                position: static;
+                transform: none;
+                display: block;
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            .copy-panel {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+                .copy-panel button {
+                    width: 100%;
+                }
+
+            .sim-controls {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+
+                .sim-controls input, .sim-controls button {
+                    width: 100%;
+                }
+
+            .btn-group {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+
+        <div class="panel" style="border-color: #ff00ff; background: rgba(255, 0, 255, 0.05);">
+            <h2 style="color: #ff00ff; border-bottom-color: #ff00ff;">🧪 실전 채팅 & 치즈 연동 시뮬레이터</h2>
+            <div class="sim-controls" style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="simMessage" placeholder="채팅 메시지 (예: !신청 밤양갱-비비)" style="flex: 2; border-color:#ff00ff; margin-bottom: 0;">
+                <input type="number" id="simDonation" placeholder="치즈(원)" value="0" style="flex: 1; border-color:#ffaa00; margin-bottom: 0;">
+                <button class="primary" style="background:#ff00ff; color:white; margin-bottom: 0; white-space: nowrap; width: auto; font-size: 14px;" onclick="runSimulator()">🚀 전송</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #aaa; line-height: 1.5;">
+                * <b>무료 신청 테스트:</b> 치즈 0 + <code>!신청 노래-가수</code> 전송<br>
+                * <b>유료 신청 테스트:</b> 설정한 치즈 금액 입력 + <code>!신청 노래-가수</code> 전송<br>
+                * <b>스마트 잔돈 분배:</b> <code>!신청 첫눈-엑소</code>와 함께 5000 치즈를 쏘면 1곡 지정 + 남은 돈은 자동으로 오마카세로 전환!
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>
+                <div>물댕봇 대시보드 <span id="streamerDisplay" class="streamer-info"></span></div>
+                <button onclick="goToSettings()" style="background: #333; color: #00ffa3; border: 1px solid #00ffa3; padding: 6px 15px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">🎨 화면 스타일 설정</button>
+                <button onclick="window.location.href='/commands-manager/' + chzzkUid"
+                        style="background: #00ffa3; color: #000; border: none; padding: 6px 15px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; margin-left: 10px;">
+                    🤖 명령어 설정
+                </button>
+            </h2>
+
+            <div class="top-controls">
+                <div class="copy-panel">
+                    <div style="overflow: hidden; padding-right: 10px;">
+                        <span style="font-size: 11px; color: #888; display: block; margin-bottom: 4px; font-weight: bold;">📺 내 OBS 오버레이 주소 (브라우저 소스용)</span>
+                        <span id="overlayUrlDisplay" style="font-size: 13px; color: #00ffa3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">주소 생성 중...</span>
+                    </div>
+                    <button onclick="copyOverlayUrl()" style="background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;">📋 복사하기</button>
+                </div>
+                <button class="btn-refresh" onclick="forceRefreshOverlay()">🔄 오버레이 새로고침</button>
+            </div>
+
+            <span class="sub-title">📢 공지 메모 (오버레이 상단 표시)</span>
+            <textarea id="memoInput" placeholder="공지를 입력하세요... (여러 줄 가능)&#10;엔터를 치면 줄바꿈이 적용됩니다." onchange="saveMemo()"></textarea>
+
+            <div class="config-grid">
+                <div>
+                    <span class="sub-title">🏷️ 라벨 텍스트 설정</span>
+                    <input type="text" id="nowPlayingLabel" value="▶ NOW PLAYING" onchange="broadcastState()">
+                    <input type="text" id="upNextLabel" value="⏳ UP NEXT" onchange="broadcastState()">
+                    <input type="text" id="completedLabel" value="✔ COMPLETED" onchange="broadcastState()">
+                </div>
+                <div>
+                    <div class="omakase-box">
+                        <span id="omakaseTitleDisplay" style="color: #00aaff; font-weight: bold; font-size: 16px;">🍣 오마카세 잔여 곡 수</span>
+                        <div class="omakase-controls">
+                            <button class="omakase-btn" onclick="updateOmakase(-1)">-</button>
+                            <span id="omakaseDisplay" style="font-size: 24px; font-weight: bold; color: white;">0</span>
+                            <button class="omakase-btn" onclick="updateOmakase(1)">+</button>
+                        </div>
+                    </div>
+
+                    <span class="sub-title">🎵 스트리머 수동 노래 추가</span>
+                    <input type="text" id="newTitle" placeholder="노래 제목 (필수)" onkeydown="if(event.key==='Enter') addSong()">
+                    <input type="text" id="newArtist" placeholder="가수 (선택)" onkeydown="if(event.key==='Enter') addSong()">
+                    <button class="primary" onclick="addSong()">➕ 대기열에 추가하기</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="now-playing-box">
+                <div style="font-size: 14px; color: #00ffa3; margin-bottom: 5px; font-weight: bold;">🎧 현재 재생 중인 노래</div>
+                <h3 id="currentTitle">-</h3>
+                <p id="currentArtist">대기 중</p>
+                <button id="finishCurrentBtn" class="finish-btn" style="display:none;" onclick="completeCurrentPlaying()">✔ 완료 목록으로</button>
+            </div>
+
+            <div class="config-grid">
+                <div>
+                    <h2 style="font-size: 16px;">⏳ 대기열</h2>
+                    <div class="list-header">
+                        <label><input type="checkbox" id="selectAllPending" onchange="toggleSelectAll('pending')"> 전체 선택</label>
+                        <button style="background:#ff5252; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer;" onclick="deleteSelected('pending')">🗑️ 선택 삭제</button>
+                    </div>
+                    <ul id="pendingList" class="scroll-list"></ul>
+                </div>
+                <div>
+                    <h2 style="font-size: 16px; color: #888;">✔ 완료 목록</h2>
+                    <div class="list-header">
+                        <label><input type="checkbox" id="selectAllCompleted" onchange="toggleSelectAll('completed')"> 전체 선택</label>
+                        <button style="background:#ff5252; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer;" onclick="deleteSelected('completed')">🗑️ 선택 삭제</button>
+                    </div>
+                    <ul id="completedList" class="scroll-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const chzzkUid = pathParts[pathParts.length - 1];
+
+        let songs = [];
+        let omakaseCount = 0;
+        let currentPlayingId = null;
+
+        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+
+        connection.start().then(() => {
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
+        // 💡 시청자 채팅 접수 시 화면 즉시 새로고침 및 오버레이 전송
+        connection.on("RefreshDashboard", async () => {
+            await loadDashboardData(); // 1. DB에서 방금 추가된 곡을 포함해 최신 데이터를 불러와 대시보드 화면을 갱신합니다.
+            broadcastState();          // 2. 갱신된 데이터를 오버레이 화면으로 즉시 쏴줍니다! (이게 핵심)
+        });
+
+        // ==========================================
+        // 🚀 API 통신 및 데이터 로드
+        // ==========================================
+        async function loadDashboardData() {
+            const res = await fetch(`/api/dashboard/data/${chzzkUid}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('memoInput').value = data.memo;
+                omakaseCount = data.omakaseCount;
+                document.getElementById('omakaseDisplay').innerText = omakaseCount;
+                songs = data.songs;
+                renderAll();
+            }
+
+            // 💡 오마카세 커스텀 이름 불러오기
+            const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
+            if (setRes.ok) {
+                const s = await setRes.json();
+                if (s.designSettingsJson && s.designSettingsJson !== "{}") {
+                    const ds = JSON.parse(s.designSettingsJson);
+                    const omakaseName = (ds.Omakase && ds.Omakase.name) ? ds.Omakase.name : "오마카세";
+                    const titleElement = document.getElementById("omakaseTitleDisplay");
+                    if (titleElement) {
+                        titleElement.innerText = `🍣 ${omakaseName} 잔여 곡 수`;
+                    }
+                }
+            }
+        }
+
+        async function runSimulator() {
+            const msg = document.getElementById('simMessage').value;
+            const cheese = parseInt(document.getElementById('simDonation').value) || 0;
+
+            if (!msg.trim() && cheese === 0) {
+                alert("메시지나 치즈 금액 중 하나는 입력해야 합니다.");
+                return;
+            }
+
+            await fetch(`/api/test/chat?chzzkUid=${chzzkUid}&message=${encodeURIComponent(msg)}&donation=${cheese}`, { method: 'POST' });
+
+            document.getElementById('simMessage').value = "";
+            document.getElementById('simDonation').value = "0";
+        }
+
+        async function saveMemo() {
+            const memo = document.getElementById('memoInput').value;
+            await fetch(`/api/memo/update?chzzkUid=${chzzkUid}&memo=${encodeURIComponent(memo)}`, { method: 'POST' });
+            broadcastState();
+        }
+
+        async function updateOmakase(delta) {
+            let newCount = omakaseCount + delta;
+            if (newCount < 0) newCount = 0;
+            omakaseCount = newCount;
+            document.getElementById('omakaseDisplay').innerText = omakaseCount;
+
+            await fetch(`/api/omakase/update?chzzkUid=${chzzkUid}&count=${omakaseCount}`, { method: 'POST' });
+            broadcastState();
+        }
+
+        async function addSong() {
+            const t = document.getElementById("newTitle");
+            const a = document.getElementById("newArtist");
+            if (!t.value.trim()) return;
+
+            const newSong = { chzzkUid: chzzkUid, title: t.value, artist: a.value, status: 'Pending', sortOrder: songs.length };
+
+            const res = await fetch('/api/song/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSong)
+            });
+
+            if (res.ok) {
+                const savedSong = await res.json();
+                songs.push(savedSong);
+                t.value = ""; a.value = ""; t.focus();
+                renderAll(); broadcastState();
+            }
+        }
+
+        async function changeSongStatus(id, newStatus) {
+            await fetch(`/api/song/${id}/status?status=${newStatus}`, { method: 'PUT' });
+
+            if (newStatus === 'Playing') {
+                songs.forEach(s => { if (s.status === 'Playing') s.status = 'Completed'; });
+            }
+            const song = songs.find(s => s.id === id);
+            if (song) song.status = newStatus;
+
+            renderAll(); broadcastState();
+        }
+
+        async function completeCurrentPlaying() {
+            if (currentPlayingId) {
+                await changeSongStatus(currentPlayingId, 'Completed');
+            }
+        }
+
+        async function editSong(id) {
+            const song = songs.find(s => s.id === id);
+            if (!song) return;
+
+            const newTitle = prompt("수정할 곡 제목을 입력하세요:", song.title);
+            if (newTitle === null || newTitle.trim() === "") return;
+
+            const newArtist = prompt("수정할 가수를 입력하세요:", song.artist || "");
+
+            await fetch(`/api/song/${id}/edit?title=${encodeURIComponent(newTitle)}&artist=${encodeURIComponent(newArtist)}`, { method: 'PUT' });
+
+            song.title = newTitle;
+            song.artist = newArtist;
+            renderAll(); broadcastState();
+        }
+
+        async function deleteSelected(statusFilter) {
+            const cbClass = statusFilter === 'pending' ? '.cb-pending' : '.cb-completed';
+            const ids = Array.from(document.querySelectorAll(`${cbClass}:checked`)).map(cb => parseInt(cb.dataset.id));
+
+            if (ids.length === 0) return alert("삭제할 곡을 선택해주세요.");
+            if (!confirm(`선택한 ${ids.length}곡을 완전히 삭제하시겠습니까?`)) return;
+
+            await fetch('/api/song/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ids)
+            });
+
+            songs = songs.filter(s => !ids.includes(s.id));
+            renderAll(); broadcastState();
+        }
+
+        async function deleteSingle(id) {
+            if (!confirm("이 곡을 완전히 삭제하시겠습니까?")) return;
+            await fetch('/api/song/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([id])
+            });
+            songs = songs.filter(s => s.id !== id);
+            renderAll(); broadcastState();
+        }
+
+        function toggleSelectAll(statusFilter) {
+            const isChecked = document.getElementById(statusFilter === 'pending' ? 'selectAllPending' : 'selectAllCompleted').checked;
+            const cbClass = statusFilter === 'pending' ? '.cb-pending' : '.cb-completed';
+            document.querySelectorAll(cbClass).forEach(cb => cb.checked = isChecked);
+        }
+
+        function renderAll() {
+            const pList = document.getElementById("pendingList");
+            const cList = document.getElementById("completedList");
+            pList.innerHTML = ""; cList.innerHTML = "";
+
+            const playingSong = songs.find(s => s.status === 'Playing');
+            if (playingSong) {
+                currentPlayingId = playingSong.id;
+                document.getElementById("currentTitle").innerText = playingSong.title;
+                document.getElementById("currentArtist").innerText = playingSong.artist;
+                document.getElementById("finishCurrentBtn").style.display = "block";
+            } else {
+                currentPlayingId = null;
+                document.getElementById("currentTitle").innerText = "-";
+                document.getElementById("currentArtist").innerText = "대기 중";
+                document.getElementById("finishCurrentBtn").style.display = "none";
+            }
+
+            songs.filter(s => s.status === 'Pending').forEach(s => pList.appendChild(createItem(s, 'pending')));
+            songs.filter(s => s.status === 'Completed').reverse().forEach(s => cList.appendChild(createItem(s, 'completed')));
+        }
+
+        function createItem(s, listType) {
+            const li = document.createElement("li");
+            li.className = "song-item";
+            li.dataset.id = s.id;
+
+            const cbClass = listType === 'pending' ? 'cb-pending' : 'cb-completed';
+            let buttonsHtml = '';
+
+            if (listType === 'pending') {
+                buttonsHtml = `
+                    <button class="action-btn" style="background:#555;" onclick="editSong(${s.id})">✏️수정</button>
+                    <button class="action-btn" style="background:#00ffa3;color:#000;" onclick="changeSongStatus(${s.id}, 'Playing')">▶️재생</button>
+                    <button class="action-btn" style="background:#0088cc;" onclick="changeSongStatus(${s.id}, 'Completed')">✔️완료</button>
+                    <button class="action-btn" style="background:#b71c1c;" onclick="deleteSingle(${s.id})">🗑️삭제</button>`;
+            } else {
+                buttonsHtml = `
+                    <button class="action-btn" style="background:#00ffa3;color:#000;" onclick="changeSongStatus(${s.id}, 'Playing')">▶️재생</button>
+                    <button class="action-btn" style="background:#888;" onclick="changeSongStatus(${s.id}, 'Pending')">↩️복귀</button>
+                    <button class="action-btn" style="background:#b71c1c;" onclick="deleteSingle(${s.id})">🗑️삭제</button>`;
+            }
+
+            li.innerHTML = `
+                <input type="checkbox" class="${cbClass}" data-id="${s.id}" style="margin-right: 10px;">
+                <div class="song-info"><strong>${s.title}</strong><span>${s.artist || ''}</span></div>
+                <div class="btn-group">${buttonsHtml}</div>`;
+            return li;
+        }
+
+        Sortable.create(document.getElementById('pendingList'), { animation: 150 });
+        Sortable.create(document.getElementById('completedList'), { animation: 150 });
+
+        function broadcastState() {
+            const state = {
+                memo: document.getElementById("memoInput").value,
+                omakaseCount: omakaseCount,
+                currentTitle: document.getElementById("currentTitle").innerText,
+                currentArtist: document.getElementById("currentArtist").innerText,
+                pendingSongs: songs.filter(s => s.status === "Pending"),
+                completedSongs: songs.filter(s => s.status === "Completed"),
+                labels: {
+                    nowPlaying: document.getElementById("nowPlayingLabel").value,
+                    upNext: document.getElementById("upNextLabel").value,
+                    completed: document.getElementById("completedLabel").value
+                }
+            };
+            if (connection.state === "Connected") {
+                connection.invoke("UpdateOverlayState", chzzkUid, JSON.stringify(state));
+            }
+        }
+
+        function forceRefreshOverlay() {
+            broadcastState();
+            alert("🔄 오버레이 화면에 현재 데이터가 새로고침(재전송) 되었습니다!");
+        }
+
+        function copyOverlayUrl() {
+            const url = window.location.origin + '/overlay/' + chzzkUid;
+            navigator.clipboard.writeText(url).then(() => alert("📋 브라우저 소스용 주소가 복사되었습니다!"));
+        }
+
+        function goToSettings() {
+            window.location.href = `/settings/${chzzkUid}`;
+        }
+
+        window.onload = () => {
+            document.getElementById("overlayUrlDisplay").innerText = window.location.origin + '/overlay/' + chzzkUid;
+            document.getElementById("streamerDisplay").innerText = `(UID: ${chzzkUid.substring(0, 8)}...)`;
+            loadDashboardData();
+        };
+    </script>
+</body>
+</html>

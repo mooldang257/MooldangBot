@@ -1,0 +1,458 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>물댕봇 설정 및 디자인 통제실</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1, h2 {
+            color: #00ffa3;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #00aaff;
+            margin-top: 15px;
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .val-display {
+            color: #00ffa3;
+            float: right;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            padding: 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #00ffa3;
+            cursor: pointer;
+        }
+
+        .component-box {
+            background: #252525;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #555;
+            padding-bottom: 10px;
+        }
+
+            .component-header strong {
+                font-size: 15px;
+                color: #fff;
+            }
+
+        .save-btn {
+            background: #00ffa3;
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+
+            .save-btn:hover {
+                background: #00cc82;
+            }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            text-align: center;
+            width: 100%;
+        }
+
+            .back-link:hover {
+                color: #fff;
+            }
+
+        /* ⭐ 순서 변경 리스트 스타일 강화 */
+        #orderList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .order-item {
+            background: #2a2a2a;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            border-left: 5px solid #00ffa3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: grab;
+            font-weight: bold;
+            color: #eee;
+            transition: 0.2s;
+        }
+
+            .order-item:hover {
+                background: #333;
+            }
+
+            .order-item:active {
+                cursor: grabbing;
+            }
+
+        .order-icon {
+            margin-right: 15px;
+            color: #888;
+        }
+
+        /* 토글 스위치 느낌의 체크박스 라벨 */
+        .toggle-label {
+            margin: 0;
+            cursor: pointer;
+            color: #fff;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+            .toggle-label:hover {
+                border-color: #00ffa3;
+            }
+
+            .toggle-label input {
+                margin: 0;
+                cursor: pointer;
+                accent-color: #00ffa3;
+                width: 16px;
+                height: 16px;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🤖 채팅/후원 명령어 설정</h1>
+            <div class="grid-2">
+                <div class="group"><label>일반 신청 명령어</label><input type="text" id="cmdSong" value="!신청"></div>
+                <div class="group"><label>일반 신청 1곡당 치즈 (0은 무료)</label><input type="number" id="songPrice" value="0"></div>
+                <div class="group"><label>오마카세 명령어</label><input type="text" id="cmdOmakase" value="!오마카세"></div>
+                <div class="group"><label>오마카세 1곡당 치즈</label><input type="number" id="cheesePrice" value="1000"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h1>↕️ 오버레이 표시 순서 및 켜기/끄기</h1>
+            <p style="font-size: 13px; color: #aaa; margin-top: 0; margin-bottom: 15px;">항목을 위아래로 드래그하여 순서를 바꾸고, 우측의 체크박스로 화면 표시 여부를 즉시 결정하세요.</p>
+            <ul id="orderList">
+                <li class="order-item" data-id="Stats">
+                    <div><span class="order-icon">☰</span> 📊 곡 통계 표시부</div>
+                    <label class="toggle-label"><input type="checkbox" id="showStats" checked> 화면에 표시</label>
+                </li>
+                <li class="order-item" data-id="Notice">
+                    <div><span class="order-icon">☰</span> 📢 공지 메모 표시부</div>
+                    <label class="toggle-label"><input type="checkbox" id="showNotice" checked> 화면에 표시</label>
+                </li>
+                <li class="order-item" data-id="Omakase">
+                    <div><span class="order-icon">☰</span> 🍣 오마카세 표시부</div>
+                    <label class="toggle-label"><input type="checkbox" id="showOmakase" checked> 화면에 표시</label>
+                </li>
+                <li class="order-item" data-id="Playing">
+                    <div><span class="order-icon">☰</span> 🎧 재생 중인 노래 표시부</div>
+                    <label class="toggle-label"><input type="checkbox" id="showPlaying" checked> 화면에 표시</label>
+                </li>
+                <li class="order-item" data-id="Pending">
+                    <div><span class="order-icon">☰</span> ⏳ 대기열 목록</div>
+                    <label class="toggle-label"><input type="checkbox" id="showPending" checked> 화면에 표시</label>
+                </li>
+                <li class="order-item" data-id="Completed">
+                    <div><span class="order-icon">☰</span> ✔ 완료(부른 노래) 목록</div>
+                    <label class="toggle-label"><input type="checkbox" id="showCompleted" checked> 화면에 표시</label>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h1>🎨 오버레이 컴포넌트 색상/크기 디자인</h1>
+
+            <div class="component-box" id="compStats">
+                <div class="component-header"><strong>📊 곡 통계 세부 설정</strong></div>
+                <div class="grid-2">
+                    <div class="group"><label>글자색</label><input type="color" id="textStats" value="#00ffa3"></div>
+                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeStats">14px</span></label><input type="range" id="sizeStats" min="10" max="30" value="14" oninput="updateVal(this, 'valSizeStats')"></div>
+                </div>
+            </div>
+
+            <div class="component-box" id="compNotice">
+                <div class="component-header"><strong>📢 공지 메모 세부 설정</strong></div>
+                <div class="grid-2">
+                    <div class="group"><label>배경색</label><input type="color" id="bgNotice" value="#1a1a1a"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaNotice">80%</span></label><input type="range" id="alphaNotice" min="0" max="100" value="80" oninput="updateVal(this, 'valAlphaNotice')"></div>
+                    <div class="group"><label>글자색</label><input type="color" id="textNotice" value="#ffffff"></div>
+                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeNotice">16px</span></label><input type="range" id="sizeNotice" min="10" max="40" value="16" oninput="updateVal(this, 'valSizeNotice')"></div>
+                </div>
+            </div>
+
+            <div class="component-box" id="compOmakase">
+                <div class="component-header"><strong>🍣 오마카세 세부 설정</strong></div>
+                <div class="group" style="border-bottom: 1px solid #444; padding-bottom: 15px;">
+                    <label>오버레이 표시 이름 커스텀</label><input type="text" id="nameOmakase" value="물마카세">
+                </div>
+                <div class="grid-2">
+                    <div class="group"><label>배경색</label><input type="color" id="bgOmakase" value="#00aaff"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaOmakase">85%</span></label><input type="range" id="alphaOmakase" min="0" max="100" value="85" oninput="updateVal(this, 'valAlphaOmakase')"></div>
+                    <div class="group"><label>글자색</label><input type="color" id="textOmakase" value="#ffffff"></div>
+                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeOmakase">20px</span></label><input type="range" id="sizeOmakase" min="10" max="40" value="20" oninput="updateVal(this, 'valSizeOmakase')"></div>
+                </div>
+            </div>
+
+            <div class="component-box" id="compPlaying">
+                <div class="component-header"><strong>🎧 재생 중인 노래 세부 설정</strong></div>
+                <div class="grid-2">
+                    <div class="group"><label>배경색</label><input type="color" id="bgPlaying" value="#004422"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPlaying">90%</span></label><input type="range" id="alphaPlaying" min="0" max="100" value="90" oninput="updateVal(this, 'valAlphaPlaying')"></div>
+                    <div class="group"><label>글자색</label><input type="color" id="textPlaying" value="#00ffa3"></div>
+                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePlaying">24px</span></label><input type="range" id="sizePlaying" min="12" max="60" value="24" oninput="updateVal(this, 'valSizePlaying')"></div>
+                </div>
+            </div>
+
+            <div class="component-box" id="compPending">
+                <div class="component-header"><strong>⏳ 대기열 목록 세부 설정</strong></div>
+                <div class="grid-2">
+                    <div class="group"><label>표시 개수 제한</label><input type="number" id="limitPending" value="5" min="1" max="20"></div>
+                    <div class="group"><label>글자색</label><input type="color" id="textPending" value="#dddddd"></div>
+                    <div class="group"><label>배경색</label><input type="color" id="bgPending" value="#000000"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPending">70%</span></label><input type="range" id="alphaPending" min="0" max="100" value="70" oninput="updateVal(this, 'valAlphaPending')"></div>
+                </div>
+            </div>
+
+            <div class="component-box" id="compCompleted">
+                <div class="component-header"><strong>✔ 완료 목록 세부 설정</strong></div>
+                <div class="grid-2">
+                    <div class="group"><label>표시 개수 제한</label><input type="number" id="limitCompleted" value="3" min="0" max="10"></div>
+                    <div class="group"><label>글자색</label><input type="color" id="textCompleted" value="#888888"></div>
+                    <div class="group"><label>배경색</label><input type="color" id="bgCompleted" value="#000000"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaCompleted">50%</span></label><input type="range" id="alphaCompleted" min="0" max="100" value="50" oninput="updateVal(this, 'valAlphaCompleted')"></div>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>전체 커스텀 CSS (고급 사용자용)</label>
+                <textarea id="customCss" rows="4" placeholder="예: .song-card { border-radius: 10px; }"></textarea>
+            </div>
+
+            <button class="save-btn" onclick="saveAllSettings()">💾 설정 저장 및 오버레이에 즉시 적용</button>
+            <a id="backToDash" href="#" class="back-link">← 대시보드로 돌아가기</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const chzzkUid = pathParts[pathParts.length - 1];
+        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+
+        Sortable.create(document.getElementById('orderList'), {
+            animation: 150,
+            handle: '.order-item' // 전체 영역을 잡고 끌 수 있도록 설정
+        });
+
+        async function loadSettings() {
+            const res = await fetch(`/api/settings/data/${chzzkUid}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('cmdSong').value = data.songCommand;
+                document.getElementById('songPrice').value = data.songCheesePrice || 0;
+                document.getElementById('cmdOmakase').value = data.omakaseCommand;
+                document.getElementById('cheesePrice').value = data.omakaseCheesePrice;
+
+                if (data.designSettingsJson && data.designSettingsJson !== "{}") {
+                    const ds = JSON.parse(data.designSettingsJson);
+
+                    if (ds.componentOrder) {
+                        const list = document.getElementById('orderList');
+                        ds.componentOrder.forEach(id => {
+                            const item = list.querySelector(`[data-id="${id}"]`);
+                            if (item) list.appendChild(item);
+                        });
+                    }
+
+                    const comps = ['Stats', 'Notice', 'Omakase', 'Playing', 'Pending', 'Completed'];
+                    comps.forEach(c => {
+                        if (ds[c]) {
+                            if (document.getElementById(`show${c}`)) document.getElementById(`show${c}`).checked = ds[c].show;
+                            if (document.getElementById(`text${c}`) && ds[c].text) document.getElementById(`text${c}`).value = ds[c].text;
+                            if (document.getElementById(`name${c}`) && ds[c].name) document.getElementById(`name${c}`).value = ds[c].name;
+
+                            if (document.getElementById(`bg${c}`) && ds[c].bg) document.getElementById(`bg${c}`).value = ds[c].bg;
+                            if (document.getElementById(`alpha${c}`) && ds[c].alpha !== undefined) {
+                                document.getElementById(`alpha${c}`).value = ds[c].alpha;
+                                document.getElementById(`valAlpha${c}`).innerText = ds[c].alpha + "%";
+                            }
+                            if (document.getElementById(`size${c}`) && ds[c].size) {
+                                document.getElementById(`size${c}`).value = ds[c].size;
+                                document.getElementById(`valSize${c}`).innerText = ds[c].size + "px";
+                            }
+                            if (document.getElementById(`limit${c}`) && ds[c].limit) {
+                                document.getElementById(`limit${c}`).value = ds[c].limit;
+                            }
+                        }
+                    });
+                    document.getElementById('customCss').value = ds.customCss || "";
+                }
+            }
+        }
+
+        function updateVal(el, targetId) {
+            let unit = targetId.includes('Alpha') ? '%' : 'px';
+            document.getElementById(targetId).innerText = el.value + unit;
+        }
+
+        async function saveAllSettings() {
+            const currentOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
+
+            const reqData = {
+                songCommand: document.getElementById('cmdSong').value.trim() || "!신청",
+                songCheesePrice: parseInt(document.getElementById('songPrice').value) || 0,
+                omakaseCommand: document.getElementById('cmdOmakase').value.trim() || "!오마카세",
+                omakaseCheesePrice: parseInt(document.getElementById('cheesePrice').value) || 1000,
+                designSettingsJson: ""
+            };
+
+            const ds = {
+                componentOrder: currentOrder,
+                Stats: getCompData('Stats'),
+                Notice: getCompData('Notice'),
+                Omakase: getCompData('Omakase'),
+                Playing: getCompData('Playing'),
+                Pending: getCompData('Pending'),
+                Completed: getCompData('Completed'),
+                customCss: document.getElementById('customCss').value
+            };
+            reqData.designSettingsJson = JSON.stringify(ds);
+
+            const res = await fetch(`/api/settings/update?chzzkUid=${chzzkUid}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqData)
+            });
+
+            if (res.ok) {
+                if (connection.state === "Connected") connection.invoke("UpdateOverlayStyle", chzzkUid, reqData.designSettingsJson);
+                alert("✅ 순서 및 켜기/끄기 설정이 오버레이에 즉시 적용되었습니다!");
+            } else { alert("❌ 저장에 실패했습니다."); }
+        }
+
+        function getCompData(c) {
+            // 체크박스의 ID가 그대로 유지되었으므로 기존 로직 완벽 호환!
+            const data = { show: document.getElementById(`show${c}`).checked };
+
+            if (document.getElementById(`text${c}`)) data.text = document.getElementById(`text${c}`).value;
+            if (document.getElementById(`name${c}`)) data.name = document.getElementById(`name${c}`).value;
+            if (document.getElementById(`size${c}`)) data.size = document.getElementById(`size${c}`).value;
+            if (document.getElementById(`limit${c}`)) data.limit = document.getElementById(`limit${c}`).value;
+
+            const bgEl = document.getElementById(`bg${c}`);
+            const alphaEl = document.getElementById(`alpha${c}`);
+            if (bgEl && alphaEl) {
+                data.bg = bgEl.value;
+                data.alpha = alphaEl.value;
+                const r = parseInt(data.bg.slice(1, 3), 16), g = parseInt(data.bg.slice(3, 5), 16), b = parseInt(data.bg.slice(5, 7), 16);
+                data.rgba = `rgba(${r}, ${g}, ${b}, ${data.alpha / 100})`;
+            }
+            return data;
+        }
+
+        window.onload = () => {
+            document.getElementById('backToDash').href = `/dashboard/${chzzkUid}`;
+            connection.start().then(() => {
+                connection.invoke("JoinStreamerGroup", chzzkUid);
+                loadSettings();
+            });
+        };
+    </script>
+</body>
+</html>

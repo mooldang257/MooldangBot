@@ -1,0 +1,251 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>물댕 오버레이</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            background-color: transparent;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .overlay-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .box {
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-left: 4px solid rgba(255,255,255,0.3);
+        }
+
+        #stats-container {
+            font-weight: bold;
+            text-align: right;
+            text-shadow: 2px 2px 4px #000;
+            transition: color 0.3s;
+        }
+
+        #notice-container {
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+
+        #omakase-container {
+            font-weight: bold;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .now-label {
+            font-size: 13px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            font-weight: bold;
+        }
+
+        .now-title {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .now-artist {
+            text-align: right;
+            font-size: 0.7em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .list-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+            .list-item:last-child {
+                margin-bottom: 0;
+            }
+
+        .item-title {
+            font-weight: bold;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-artist {
+            font-size: 0.85em;
+            margin-left: 10px;
+            flex-shrink: 0;
+            opacity: 0.8;
+        }
+    </style>
+    <style id="dynamic-styles"></style>
+</head>
+<body>
+    <div class="overlay-wrapper">
+        <div id="stats-container" style="display:none;"></div>
+        <div id="notice-container" class="box" style="display:none;"></div>
+        <div id="omakase-container" style="display:none;"></div>
+        <div id="playing-container" class="box" style="display:none;"></div>
+        <div id="pending-container" class="box" style="display:none;"></div>
+        <div id="completed-container" class="box" style="display:none;"></div>
+    </div>
+
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const chzzkUid = pathParts[pathParts.length - 1];
+
+        let dashState = { memo: "", omakaseCount: 0, currentTitle: "-", currentArtist: "", pendingSongs: [], completedSongs: [], labels: {} };
+        let designState = {};
+
+        async function fetchInitialData() {
+            try {
+                const dashRes = await fetch(`/api/dashboard/data/${chzzkUid}`);
+                if (dashRes.ok) {
+                    const d = await dashRes.json();
+                    dashState = {
+                        memo: d.memo, omakaseCount: d.omakaseCount,
+                        pendingSongs: d.songs.filter(s => s.status === 'Pending'),
+                        completedSongs: d.songs.filter(s => s.status === 'Completed'),
+                        labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
+                    };
+                    const playing = d.songs.find(s => s.status === 'Playing');
+                    if (playing) { dashState.currentTitle = playing.title; dashState.currentArtist = playing.artist; }
+                }
+
+                const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
+                if (setRes.ok) {
+                    const s = await setRes.json();
+                    if (s.designSettingsJson && s.designSettingsJson !== "{}") {
+                        designState = JSON.parse(s.designSettingsJson);
+                        applyDesignStyles();
+                    }
+                }
+                renderOverlay();
+            } catch (e) { console.error("초기 데이터 로드 실패", e); }
+        }
+
+        function applyDesignStyles() {
+            let css = `${designState.customCss || ""}`;
+
+            if (designState.Stats) {
+                css += `#stats-container { color: ${designState.Stats.text}; font-size: ${designState.Stats.size}px; }`;
+            }
+            if (designState.Notice) {
+                css += `#notice-container { background: ${designState.Notice.rgba}; color: ${designState.Notice.text}; font-size: ${designState.Notice.size}px; }
+                            #playing-container { background: ${designState.Playing.rgba}; color: ${designState.Playing.text}; }
+                            .now-title { font-size: ${designState.Playing.size}px; }
+                            #pending-container { background: ${designState.Pending.rgba}; color: ${designState.Pending.text}; }
+                            #completed-container { background: ${designState.Completed.rgba}; color: ${designState.Completed.text}; }`;
+            }
+            if (designState.Omakase) {
+                css += `#omakase-container { background: ${designState.Omakase.rgba}; color: ${designState.Omakase.text}; font-size: ${designState.Omakase.size}px; border-color: ${designState.Omakase.rgba.replace(/,[^,]*\)/, ', 1)')}; }`;
+            }
+
+            document.getElementById("dynamic-styles").innerHTML = css;
+        }
+
+        function renderOverlay() {
+            const st = dashState;
+            const ds = designState;
+
+            // ⭐ 1. 내부 데이터 갱신
+            const stats = document.getElementById("stats-container");
+            const showStats = ds.Stats ? ds.Stats.show : true;
+            if (showStats) {
+                stats.style.display = "block";
+                const pendingTotal = st.pendingSongs.length + st.omakaseCount;
+                stats.innerHTML = `완료 ${st.completedSongs.length} / 대기 ${pendingTotal}`;
+            } else { stats.style.display = "none"; }
+
+            const notice = document.getElementById("notice-container");
+            if (ds.Notice && ds.Notice.show && st.memo.trim() !== "") {
+                notice.style.display = "block"; notice.innerText = st.memo;
+            } else { notice.style.display = "none"; }
+
+            const omakase = document.getElementById("omakase-container");
+            const showOmakase = ds.Omakase ? ds.Omakase.show : true;
+            const omakaseName = (ds.Omakase && ds.Omakase.name) ? ds.Omakase.name : "오마카세";
+            if (showOmakase && st.omakaseCount > 0) {
+                omakase.style.display = "block"; omakase.innerText = `🍣 ${omakaseName} x ${st.omakaseCount}`;
+            } else { omakase.style.display = "none"; }
+
+            const playing = document.getElementById("playing-container");
+            if (ds.Playing && ds.Playing.show && st.currentTitle !== "-") {
+                playing.style.display = "block";
+                playing.innerHTML = `<div class="now-label">${st.labels.nowPlaying || "▶ NOW PLAYING"}</div>
+                                         <div class="now-title">🎵 ${st.currentTitle}</div>
+                                         <div class="now-artist">${st.currentArtist ? "- " + st.currentArtist : ""}</div>`;
+            } else { playing.style.display = "none"; }
+
+            const pending = document.getElementById("pending-container");
+            if (ds.Pending && ds.Pending.show && st.pendingSongs.length > 0) {
+                pending.style.display = "block";
+                const limit = parseInt(ds.Pending.limit) || 5;
+                let html = `<div class="list-title">${st.labels.upNext || "⏳ UP NEXT"}</div>`;
+                st.pendingSongs.slice(0, limit).forEach((song, index) => {
+                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.title}</span><span class="item-artist">${song.artist}</span></div>`;
+                });
+                if (st.pendingSongs.length > limit) html += `<div style="text-align:center; font-size:11px; opacity:0.6; margin-top:5px;">...외 ${st.pendingSongs.length - limit}곡 대기 중</div>`;
+                pending.innerHTML = html;
+            } else { pending.style.display = "none"; }
+
+            const completed = document.getElementById("completed-container");
+            if (ds.Completed && ds.Completed.show && st.completedSongs.length > 0) {
+                completed.style.display = "block";
+                const limit = parseInt(ds.Completed.limit) || 3;
+                let html = `<div class="list-title">${st.labels.completed || "✔ COMPLETED"}</div>`;
+                [...st.completedSongs].reverse().slice(0, limit).forEach(song => {
+                    html += `<div class="list-item" style="opacity:0.7;"><span class="item-title" style="text-decoration: line-through;">${song.title}</span><span class="item-artist">${song.artist}</span></div>`;
+                });
+                completed.innerHTML = html;
+            } else { completed.style.display = "none"; }
+
+            // ⭐ 2. 커스텀 표시 순서에 따른 물리적 DOM 재배치
+            const order = ds.componentOrder || ['Stats', 'Notice', 'Omakase', 'Playing', 'Pending', 'Completed'];
+            const wrapper = document.querySelector('.overlay-wrapper');
+            order.forEach(id => {
+                const el = document.getElementById(`${id.toLowerCase()}-container`);
+                if (el) wrapper.appendChild(el); // 지정된 순서대로 끝으로 밀어넣으며 자동 정렬
+            });
+        }
+
+        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+
+        connection.on("ReceiveOverlayState", (jsonState) => { dashState = JSON.parse(jsonState); renderOverlay(); });
+        connection.on("ReceiveOverlayStyle", (jsonStyle) => { designState = JSON.parse(jsonStyle); applyDesignStyles(); renderOverlay(); });
+
+        connection.start().then(() => { connection.invoke("JoinStreamerGroup", chzzkUid); fetchInitialData(); }).catch(err => { setTimeout(fetchInitialData, 5000); });
+    </script>
+</body>
+</html>

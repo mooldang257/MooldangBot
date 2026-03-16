@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # 1. MariaDB (데이터 창고)
+  db:
+    image: mariadb:latest
+    container_name: mooldang_db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=@enjoy1004
+      - MYSQL_DATABASE=MooldangBot
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+  # 2. 물댕봇 API (프로그램 본체)
+  app:
+    build: .
+    container_name: mooldang_api
+    restart: always
+    ports:
+      - "8443:3000"  # 외부 8443(HTTPS) -> 내부 3000
+    environment:
+      - ASPNETCORE_URLS=http://+:3000
+      - ASPNETCORE_ENVIRONMENT=Production
