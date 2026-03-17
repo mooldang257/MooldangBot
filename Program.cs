@@ -34,8 +34,9 @@ builder.Services.AddAuthentication(options => {
 })
 .AddCookie(options => { options.LoginPath = "/login"; })
 .AddNaver(options => {
-    options.ClientId = "FF4iI4Q0eCmzwkZDuo0W";
-    options.ClientSecret = "D19L0cNJ1M";
+    // appsettings.json 또는 환경 변수에서 값을 가져옵니다.
+    options.ClientId = builder.Configuration["NaverOAuth:ClientId"] ?? throw new InvalidOperationException("Naver ClientId is missing.");
+    options.ClientSecret = builder.Configuration["NaverOAuth:ClientSecret"] ?? throw new InvalidOperationException("Naver ClientSecret is missing.");
 
     options.Events.OnCreatingTicket = context => {
         if (context.User.TryGetProperty("response", out var responseElement) &&
@@ -58,8 +59,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // 💡 서버 이동 시 여기 주소만 바꾸면 됩니다! (Cloudflare 8443 대응)
-//string baseDomain = "http://localhost:3000"; 
-string baseDomain = "https://your-domain.com:8443";
+string baseDomain = "http://localhost:3000"; 
+//string baseDomain = "https://your-domain.com:8443";
 
 // ==========================================
 // 3. 🌐 화면 라우팅 (View)

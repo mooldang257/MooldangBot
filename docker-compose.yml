@@ -20,7 +20,12 @@ services:
     container_name: mooldang_api
     restart: always
     ports:
-      - "8443:3000"  # 외부 8443(HTTPS) -> 내부 3000
+      - "8443:3000"
     environment:
       - ASPNETCORE_URLS=http://+:3000
       - ASPNETCORE_ENVIRONMENT=Production
+      # 계층형 구조는 이중 언더스코어(__)로 표현합니다.
+      - NaverOAuth__ClientId=FF4iI4Q0eCmzwkZDuo0W
+      - NaverOAuth__ClientSecret=D19L0cNJ1M
+      - ChzzkApi__ClientId=172f9790-da2a-4322-a1ff-58e534454b8a
+      - ChzzkApi__ClientSecret=OihzgJAhRQmsUXek-dV0h1VL_4GUqxFM3AplypS9z1k

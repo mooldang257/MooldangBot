@@ -9,17 +9,15 @@ namespace MooldangAPI.ApiClients
     {
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://openapi.chzzk.naver.com"; // 치지직 공식 Open API 주소
-
-        public ChzzkApiClient(HttpClient httpClient)
+        // IConfiguration을 주입받습니다.
+        public ChzzkApiClient(HttpClient httpClient, IConfiguration config)
         {
             _httpClient = httpClient;
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
-            // 통신 객체가 생성될 때, 수호자로부터 해독된 키를 받아 헤더에 주입합니다.
-            // 치지직 Open API 인증 표준 헤더 규격 (Client-Id, Client-Secret)
-            string clientId = SecretGuardian.GetClientId();
-            string clientSecret = SecretGuardian.GetClientSecret();
+            string clientId = config["ChzzkApi:ClientId"] ?? "";
+            string clientSecret = config["ChzzkApi:ClientSecret"] ?? "";
 
             _httpClient.DefaultRequestHeaders.Add("Client-Id", clientId);
             _httpClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);

@@ -36,21 +36,26 @@ public class BotManager : BackgroundService
     {
         _logger.LogInformation("[물댕봇 매니저] 가동을 시작합니다...");
 
-        // ⭐ 1. 루프 진입 전에 API 키를 딱 한 번만 캐내서 변수에 저장(캐싱)해 둡니다.
         using (var scope = _serviceProvider.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            //_clientId = await db.SystemSettings.Where(s => s.KeyName == "CHZZK_CLIENT_ID").Select(s => s.KeyValue).FirstOrDefaultAsync();
-            //_clientSecret = await db.SystemSettings.Where(s => s.KeyName == "CHZZK_CLIENT_SECRET").Select(s => s.KeyValue).FirstOrDefaultAsync();
-            _clientId = "172f9790-da2a-4322-a1ff-58e534454b8a";
-            _clientSecret = "OihzgJAhRQmsUXek-dV0h1VL_4GUqxFM3AplypS9z1k";
+            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+            // IConfiguration을 통해 appsettings.json 또는 환경 변수에서 치지직 API 키를 캐싱합니다.
+            _clientId = config["ChzzkApi:ClientId"] ?? "";
+            _clientSecret = config["ChzzkApi:ClientSecret"] ?? "";
+
+            if (string.IsNullOrEmpty(_clientId) || string.IsNullOrEmpty(_clientSecret))
+            {
+                _logger.LogError("[물댕봇] 설정 파일에서 치지직 API 키를 찾을 수 없습니다!");
+                return;
+            }
         }
 
         // 2. 무한 순찰 루프
         while (!stoppingToken.IsCancellationRequested)
         {
             await StartAllBotsAsync();
-            await Task.Delay(60000, stoppingToken); // 30초 말고 60초(1분)마다 순찰도는 걸 추천합니다.
+            await Task.Delay(60000, stoppingToken);
         }
     }
 
