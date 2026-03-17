@@ -59,7 +59,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // 💡 서버 이동 시 여기 주소만 바꾸면 됩니다! (Cloudflare 8443 대응)
-string baseDomain = "http://localhost:3000"; 
+string baseDomain = "http://localhost:3000";
 //string baseDomain = "https://your-domain.com:8443";
 
 // ==========================================
@@ -72,8 +72,11 @@ app.MapGet("/", async (HttpContext context, AppDbContext db) => {
     var naverId = context.User.FindFirstValue("StreamerId");
     var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
 
-    if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkUid)) return Results.Redirect("/setup");
-    if (string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return Results.Redirect("/api/auth/chzzk-login");
+    // ⭐ [리팩토링] UID나 치지직 토큰이 하나라도 없으면 수동 입력(/setup)을 생략하고 곧바로 치지직 인증으로 직행합니다!
+    if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkUid) || string.IsNullOrEmpty(streamer.ChzzkAccessToken))
+    {
+        return Results.Redirect("/api/auth/chzzk-login");
+    }
 
     return Results.Redirect($"/dashboard/{streamer.ChzzkUid}");
 });
@@ -81,12 +84,6 @@ app.MapGet("/", async (HttpContext context, AppDbContext db) => {
 app.MapGet("/login", async context => {
     await context.ChallengeAsync(NaverAuthenticationDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/" });
 });
-
-// 설정/관리 화면들
-app.MapGet("/setup", async (HttpContext context) => {
-    // 💡 Results.File을 사용하여 명시적으로 IResult를 반환합니다.
-    return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/setup.html"), "text/html; charset=utf-8");
-}).RequireAuthorization();
 
 app.MapGet("/dashboard/{chzzkUid}", async (string chzzkUid, HttpContext context, AppDbContext db) => {
     var naverId = context.User.FindFirstValue("StreamerId");
@@ -136,6 +133,7 @@ app.MapGet("/Auth/callback", async (HttpContext context, AppDbContext db) => {
 
     try
     {
+        // 1. 기존 토큰 교환 로직 유지...
         var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
         var clientSecretConf = await db.SystemSettings.FindAsync("ChzzkClientSecret");
 
@@ -159,23 +157,36 @@ app.MapGet("/Auth/callback", async (HttpContext context, AppDbContext db) => {
         string refreshToken = tokenContent.GetProperty("refreshToken").GetString()!;
         int expiresIn = tokenContent.GetProperty("expiresIn").GetInt32();
 
-        // 치지직 UID 조회
+        // ⭐ 2. 치지직 API를 호출하여 UID와 프로필(닉네임) 동시 획득
         httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
         var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
-        string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
 
-        // DB 저장 (기존 정보 있으면 업데이트, 없으면 신규)
-        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var profileContent = profileRes.GetProperty("content");
+        string chzzkUid = profileContent.GetProperty("channelId").GetString()!;
+        string channelName = profileContent.GetProperty("channelName").GetString()!; // 닉네임 가져오기
+
+        // ⭐ 3. 현재 네이버 로그인 세션 확인
+        var naverId = context.User.FindFirstValue("StreamerId");
+        if (string.IsNullOrEmpty(naverId)) return Results.Redirect("/login");
+
+        // ⭐ 4. 네이버 아이디를 기준으로 DB 병합 (없으면 신규 생성)
+        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
         if (streamer == null)
         {
-            streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = context.User.FindFirstValue("StreamerId")! };
+            streamer = new StreamerProfile { NaverId = naverId };
             db.StreamerProfiles.Add(streamer);
         }
+
+        // 가져온 치지직 정보 업데이트
+        streamer.ChzzkUid = chzzkUid;
+        streamer.ChannelName = channelName;
         streamer.ChzzkAccessToken = accessToken;
         streamer.ChzzkRefreshToken = refreshToken;
         streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
 
         await db.SaveChangesAsync();
+
+        // 5. 완료 후 대시보드로 우아하게 랜딩
         return Results.Redirect($"/dashboard/{chzzkUid}");
     }
     catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
@@ -245,16 +256,6 @@ app.MapPost("/api/settings/update", async (string chzzkUid, SettingsUpdateReques
     }
     return Results.Ok();
 });
-
-// 초기 셋업 API
-app.MapPost("/api/setup", async (SetupRequest request, HttpContext context, AppDbContext db) => {
-    var naverId = context.User.FindFirstValue("StreamerId");
-    if (string.IsNullOrEmpty(naverId)) return Results.Unauthorized();
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId) ?? new StreamerProfile { NaverId = naverId };
-    profile.ChzzkUid = request.ChzzkUid;
-    if (profile.Id == 0) db.StreamerProfiles.Add(profile);
-    await db.SaveChangesAsync(); return Results.Ok();
-}).RequireAuthorization();
 
 app.MapHub<OverlayHub>("/overlayHub");
 

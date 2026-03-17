@@ -114,6 +114,19 @@ namespace MooldangAPI.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<string>("BotAccessToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BotRefreshToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("BotTokenExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ChannelName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<string>("ChzzkAccessToken")
                         .HasColumnType("longtext");
 
@@ -167,6 +180,12 @@ namespace MooldangAPI.Migrations
                     b.Property<string>("KeyName")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<string>("BotAccessToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BotRefreshToken")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("KeyValue")
                         .IsRequired()

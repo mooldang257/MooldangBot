@@ -14,6 +14,10 @@ namespace MooldangAPI.Models
         [MaxLength(50)]
         public string? ChzzkUid { get; set; }
 
+        // ⭐ 치지직 프로필 닉네임 저장 필드 추가
+        [MaxLength(100)]
+        public string? ChannelName { get; set; }
+
         // ⭐ 치지직 공식 OAuth 인증 토큰 저장소 추가
         public string? ChzzkAccessToken { get; set; }
         public string? ChzzkRefreshToken { get; set; }
@@ -44,6 +48,11 @@ namespace MooldangAPI.Models
 
         // [추가] 4. 화면 세부 디자인 설정 (복잡한 컴포넌트 설정은 JSON으로 통째로 저장)
         public string? DesignSettingsJson { get; set; }
+
+        // [추가] 스트리머 전용 커스텀 봇 계정 토큰 정보
+        public string? BotAccessToken { get; set; }
+        public string? BotRefreshToken { get; set; }
+        public DateTime? BotTokenExpiresAt { get; set; }
 
     }
 }

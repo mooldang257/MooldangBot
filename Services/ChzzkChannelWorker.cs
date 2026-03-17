@@ -136,6 +136,120 @@ public class ChzzkChannelWorker
         }
     }
 
+    // ⭐ [업그레이드] 스마트 봇 토큰 발급/갱신 파이프라인 (커스텀 봇 우선 지원)
+    private async Task<string?> GetAndRefreshBotTokenAsync(StreamerProfile profile, string clientId, string clientSecret, AppDbContext db)
+    {
+        // ==========================================
+        // 🥇 1순위: 스트리머 커스텀 봇 계정 확인 및 갱신
+        // ==========================================
+        if (!string.IsNullOrEmpty(profile.BotRefreshToken))
+        {
+            // 1-1. 커스텀 봇 토큰이 아직 넉넉하게 살아있다면 바로 반환
+            if (!string.IsNullOrEmpty(profile.BotAccessToken) &&
+                profile.BotTokenExpiresAt.HasValue &&
+                profile.BotTokenExpiresAt.Value > DateTime.Now.AddHours(1))
+            {
+                return profile.BotAccessToken;
+            }
+
+            _logger.LogWarning($"🔄 [물댕봇] {profile.ChzzkUid}님의 커스텀 봇 토큰 만료 임박! 자동 갱신 시도...");
+
+            using var httpClient = new HttpClient();
+            var customTokenReq = new { grantType = "refresh_token", clientId, clientSecret, refreshToken = profile.BotRefreshToken };
+            var customRes = await httpClient.PostAsync("https://openapi.chzzk.naver.com/auth/v1/token",
+                new StringContent(JsonSerializer.Serialize(customTokenReq), Encoding.UTF8, "application/json"));
+
+            if (customRes.IsSuccessStatusCode)
+            {
+                var json = await customRes.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var content = doc.RootElement.GetProperty("content");
+
+                // 스트리머 프로필에 커스텀 봇 새 토큰 저장
+                profile.BotAccessToken = content.GetProperty("accessToken").GetString();
+                profile.BotRefreshToken = content.GetProperty("refreshToken").GetString() ?? profile.BotRefreshToken;
+                profile.BotTokenExpiresAt = DateTime.Now.AddSeconds(content.GetProperty("expiresIn").GetInt32());
+
+                await db.SaveChangesAsync();
+                _logger.LogInformation($"✅ [물댕봇] {profile.ChzzkUid}님의 커스텀 봇 토큰 갱신 성공!");
+                return profile.BotAccessToken;
+            }
+            else
+            {
+                _logger.LogError($"❌ [물댕봇] {profile.ChzzkUid}님의 커스텀 봇 토큰 갱신 실패! 기본 봇으로 폴백(Fallback)합니다.");
+                // 실패하더라도 2순위(공통 봇)로 넘어가도록 return 하지 않고 계속 진행합니다.
+            }
+        }
+
+        // ==========================================
+        // 🥈 2순위: 시스템 공통 봇 계정 확인 및 갱신 (SystemSettings)
+        // ==========================================
+        var globalTokenSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotAccessToken");
+        var globalRefreshSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotRefreshToken");
+        var globalExpiresSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotTokenExpiresAt");
+
+        string? globalToken = globalTokenSetting?.KeyValue;
+        string? globalRefresh = globalRefreshSetting?.KeyValue;
+        DateTime globalExpireDate = DateTime.MinValue;
+
+        if (globalExpiresSetting != null && DateTime.TryParse(globalExpiresSetting.KeyValue, out var parsedDate))
+        {
+            globalExpireDate = parsedDate;
+        }
+
+        if (!string.IsNullOrEmpty(globalToken) && globalExpireDate > DateTime.Now.AddHours(1))
+        {
+            return globalToken;
+        }
+
+        if (!string.IsNullOrEmpty(globalRefresh))
+        {
+            _logger.LogWarning("🔄 [물댕봇] 시스템 공통 봇 토큰 만료 임박! 자동 갱신 시도...");
+
+            using var httpClient = new HttpClient();
+            var globalTokenReq = new { grantType = "refresh_token", clientId, clientSecret, refreshToken = globalRefresh };
+            var globalRes = await httpClient.PostAsync("https://openapi.chzzk.naver.com/auth/v1/token",
+                new StringContent(JsonSerializer.Serialize(globalTokenReq), Encoding.UTF8, "application/json"));
+
+            if (globalRes.IsSuccessStatusCode)
+            {
+                var json = await globalRes.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var content = doc.RootElement.GetProperty("content");
+
+                string newAccess = content.GetProperty("accessToken").GetString() ?? "";
+                string newRefresh = content.GetProperty("refreshToken").GetString() ?? globalRefresh;
+                DateTime newExpire = DateTime.Now.AddSeconds(content.GetProperty("expiresIn").GetInt32());
+
+                UpdateOrAddSystemSetting(db, "BotAccessToken", newAccess);
+                UpdateOrAddSystemSetting(db, "BotRefreshToken", newRefresh);
+                UpdateOrAddSystemSetting(db, "BotTokenExpiresAt", newExpire.ToString("O"));
+
+                await db.SaveChangesAsync();
+                _logger.LogInformation("✅ [물댕봇] 시스템 공통 봇 토큰 갱신 성공!");
+                return newAccess;
+            }
+            else
+            {
+                _logger.LogError("❌ [물댕봇] 시스템 공통 봇 갱신마저 실패했습니다!");
+            }
+        }
+
+        // ==========================================
+        // 🥉 3순위: 최후의 수단 (스트리머 본인 토큰 반환)
+        // ==========================================
+        _logger.LogWarning($"⚠️ [물댕봇] 사용 가능한 봇 토큰이 없어 {profile.ChzzkUid}님의 방송용 계정으로 채팅을 보냅니다.");
+        return profile.ChzzkAccessToken;
+    }
+
+    // 헬퍼 메서드 (동일)
+    private void UpdateOrAddSystemSetting(AppDbContext db, string key, string value)
+    {
+        var setting = db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
+        if (setting == null) db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
+        else setting.KeyValue = value;
+    }
+
     // ⭐ [비밀 무기] 토큰 유통기한 확인 및 자동 갱신 메서드
     private async Task RefreshTokenIfNeededAsync(StreamerProfile profile, string clientId, string clientSecret, AppDbContext db)
     {
@@ -404,7 +518,12 @@ public class ChzzkChannelWorker
                                     using var replyClient = new HttpClient();
                                     replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
                                     replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-                                    replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                                    // ⭐ [스마트 호출] 알아서 최적의 토큰(커스텀 > 공통 > 본인)을 가져옵니다.
+                                    string validBotToken = await GetAndRefreshBotTokenAsync(profile, clientId, clientSecret, db) ?? profile.ChzzkAccessToken;
+
+                                    // 봇 토큰이 적용된 인증 헤더 세팅
+                                    replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", validBotToken);
 
                                     string replyText = customCmd.Content;
                                     if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
@@ -414,7 +533,9 @@ public class ChzzkChannelWorker
                                         new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
 
                                     if (replyRes.IsSuccessStatusCode)
-                                        _logger.LogInformation($"💬 [답변 발송] {fullMessage} -> {replyText}");
+                                        _logger.LogInformation($"💬 [봇 답변 발송] {fullMessage} -> {replyText}");
+                                    else
+                                        _logger.LogError($"❌ [봇 답변 실패] HTTP {replyRes.StatusCode} - {await replyRes.Content.ReadAsStringAsync(token)}");
                                 }
                             }
                         }
@@ -431,7 +552,6 @@ public class ChzzkChannelWorker
             _logger.LogDebug($"[패킷 무시] 파싱 에러: {ex.Message} \n원본: {jsonArray}");
         }
     }
-
 
 
     // 서버로 메시지(패킷)를 전송하는 도우미

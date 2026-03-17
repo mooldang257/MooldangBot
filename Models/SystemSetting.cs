@@ -10,5 +10,10 @@ namespace MooldangAPI.Models
         public string KeyName { get; set; } = string.Empty; // 예: "ChzzkClientId"
 
         public string KeyValue { get; set; } = string.Empty; // 실제 키 값
+
+
+        // ⭐ 봇 회신용 토큰 저장소 추가
+        public string? BotAccessToken { get; set; }
+        public string? BotRefreshToken { get; set; }
     }
 }
