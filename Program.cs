@@ -116,82 +116,6 @@ app.MapGet("/overlay/{chzzkUid}", async context => {
 // 4. 🔐 치지직 공식 인증 (OAuth)
 // ==========================================
 
-app.MapGet("/api/auth/chzzk-login", async (AppDbContext db, HttpContext context) => {
-    var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
-    string clientId = clientIdConf?.KeyValue ?? "";
-    string redirectUri = $"{baseDomain}/Auth/callback";
-    string state = Guid.NewGuid().ToString();
-
-    string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
-    context.Response.Redirect(authUrl);
-});
-
-app.MapGet("/Auth/callback", async (HttpContext context, AppDbContext db) => {
-    string? code = context.Request.Query["code"];
-    string? state = context.Request.Query["state"];
-    if (string.IsNullOrEmpty(code)) return Results.Text("인증 코드가 없습니다.");
-
-    try
-    {
-        // 1. 기존 토큰 교환 로직 유지...
-        var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
-        var clientSecretConf = await db.SystemSettings.FindAsync("ChzzkClientSecret");
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-
-        var tokenRequest = new
-        {
-            grantType = "authorization_code",
-            clientId = clientIdConf?.KeyValue,
-            clientSecret = clientSecretConf?.KeyValue,
-            code = code,
-            state = state
-        };
-
-        var response = await httpClient.PostAsJsonAsync("https://openapi.chzzk.naver.com/auth/v1/token", tokenRequest);
-        if (!response.IsSuccessStatusCode) return Results.Text($"토큰 발급 실패: {await response.Content.ReadAsStringAsync()}");
-
-        var tokenContent = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("content");
-        string accessToken = tokenContent.GetProperty("accessToken").GetString()!;
-        string refreshToken = tokenContent.GetProperty("refreshToken").GetString()!;
-        int expiresIn = tokenContent.GetProperty("expiresIn").GetInt32();
-
-        // ⭐ 2. 치지직 API를 호출하여 UID와 프로필(닉네임) 동시 획득
-        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
-
-        var profileContent = profileRes.GetProperty("content");
-        string chzzkUid = profileContent.GetProperty("channelId").GetString()!;
-        string channelName = profileContent.GetProperty("channelName").GetString()!; // 닉네임 가져오기
-
-        // ⭐ 3. 현재 네이버 로그인 세션 확인
-        var naverId = context.User.FindFirstValue("StreamerId");
-        if (string.IsNullOrEmpty(naverId)) return Results.Redirect("/login");
-
-        // ⭐ 4. 네이버 아이디를 기준으로 DB 병합 (없으면 신규 생성)
-        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-        if (streamer == null)
-        {
-            streamer = new StreamerProfile { NaverId = naverId };
-            db.StreamerProfiles.Add(streamer);
-        }
-
-        // 가져온 치지직 정보 업데이트
-        streamer.ChzzkUid = chzzkUid;
-        streamer.ChannelName = channelName;
-        streamer.ChzzkAccessToken = accessToken;
-        streamer.ChzzkRefreshToken = refreshToken;
-        streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
-
-        await db.SaveChangesAsync();
-
-        // 5. 완료 후 대시보드로 우아하게 랜딩
-        return Results.Redirect($"/dashboard/{chzzkUid}");
-    }
-    catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
-}).AllowAnonymous();
-
 // ==========================================
 // 5. 🚀 데이터 관리 API (Song, Command, Settings)
 // ==========================================
@@ -256,6 +180,128 @@ app.MapPost("/api/settings/update", async (string chzzkUid, SettingsUpdateReques
     }
     return Results.Ok();
 });
+
+// ==========================================
+// 4. 🔐 치지직 공식 인증 (OAuth) - 통합 콜백 처리
+// ==========================================
+
+// 👤 A. 일반 스트리머 로그인 (기존과 동일)
+app.MapGet("/api/auth/chzzk-login", async (AppDbContext db, HttpContext context) => {
+    var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
+    string clientId = clientIdConf?.KeyValue ?? "";
+    string redirectUri = $"{baseDomain}/Auth/callback";
+
+    // 일반 로그인은 state에 단순히 GUID만 넣습니다.
+    string state = Guid.NewGuid().ToString();
+
+    string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
+    context.Response.Redirect(authUrl);
+});
+
+// 🤖 B. 시스템 봇 계정 연동 전용 로그인
+app.MapGet("/api/admin/bot/login", async (AppDbContext db, HttpContext context) => {
+    var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
+    string clientId = clientIdConf?.KeyValue ?? "";
+
+    // ⭐ 스트리머 로그인과 완전히 동일한 등록된 콜백 주소를 사용합니다!
+    string redirectUri = $"{baseDomain}/Auth/callback";
+
+    // ⭐ 단, state 값에 "bot_setup_" 이라는 꼬리표를 달아서 보냅니다.
+    string state = "bot_setup_" + Guid.NewGuid().ToString();
+
+    string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
+    context.Response.Redirect(authUrl);
+});
+
+// 🔄 C. [핵심] 통합 콜백 핸들러 (스트리머 & 봇 공용)
+app.MapGet("/Auth/callback", async (HttpContext context, AppDbContext db) => {
+    string? code = context.Request.Query["code"];
+    string? state = context.Request.Query["state"]; // 꼬리표 확인
+    if (string.IsNullOrEmpty(code)) return Results.Text("인증 코드가 없습니다.");
+
+    try
+    {
+        var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
+        var clientSecretConf = await db.SystemSettings.FindAsync("ChzzkClientSecret");
+
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+
+        var tokenRequest = new
+        {
+            grantType = "authorization_code",
+            clientId = clientIdConf?.KeyValue,
+            clientSecret = clientSecretConf?.KeyValue,
+            code = code,
+            state = state
+        };
+
+        var response = await httpClient.PostAsJsonAsync("https://openapi.chzzk.naver.com/auth/v1/token", tokenRequest);
+        if (!response.IsSuccessStatusCode) return Results.Text($"토큰 발급 실패: {await response.Content.ReadAsStringAsync()}");
+
+        var tokenContent = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("content");
+        string accessToken = tokenContent.GetProperty("accessToken").GetString()!;
+        string refreshToken = tokenContent.GetProperty("refreshToken").GetString()!;
+        int expiresIn = tokenContent.GetProperty("expiresIn").GetInt32();
+
+        // ==========================================
+        // 🤖 분기 1: 봇 계정 연동 모드 ("bot_setup_" 꼬리표가 있는 경우)
+        // ==========================================
+        if (state != null && state.StartsWith("bot_setup_"))
+        {
+            DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
+
+            void UpdateOrAddSetting(string key, string value)
+            {
+                var setting = db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
+                if (setting == null) db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
+                else setting.KeyValue = value;
+            }
+
+            UpdateOrAddSetting("BotAccessToken", accessToken);
+            UpdateOrAddSetting("BotRefreshToken", refreshToken);
+            UpdateOrAddSetting("BotTokenExpiresAt", expireDate.ToString("O"));
+
+            await db.SaveChangesAsync();
+
+            string htmlResponse = @"
+                <!DOCTYPE html>
+                <html lang='ko'>
+                <head><meta charset='UTF-8'><title>봇 연동 성공</title></head>
+                <body style='background-color:#121212; color:#00e676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center;'>
+                    <div>
+                        <h1>🎉 시스템 봇 연동 완료!</h1>
+                        <p style='color:#fff;'>물댕봇 전용 토큰이 DB(SystemSettings)에 안전하게 저장되었습니다.<br>이제 창을 닫아주세요.</p>
+                    </div>
+                </body>
+                </html>";
+
+            return Results.Content(htmlResponse, "text/html; charset=utf-8");
+        }
+
+        // ==========================================
+        // 👤 분기 2: 일반 스트리머 로그인 모드 (꼬리표가 없는 경우)
+        // ==========================================
+        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
+        string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
+
+        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        if (streamer == null)
+        {
+            streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = context.User.FindFirstValue("StreamerId")! };
+            db.StreamerProfiles.Add(streamer);
+        }
+        streamer.ChzzkAccessToken = accessToken;
+        streamer.ChzzkRefreshToken = refreshToken;
+        streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
+
+        await db.SaveChangesAsync();
+        return Results.Redirect($"/dashboard/{chzzkUid}");
+    }
+    catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
+}).AllowAnonymous();
+
 
 app.MapHub<OverlayHub>("/overlayHub");
 

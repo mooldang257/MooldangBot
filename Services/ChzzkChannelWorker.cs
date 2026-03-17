@@ -37,102 +37,118 @@ public class ChzzkChannelWorker
 
     public async Task ConnectAndListenAsync(CancellationToken stoppingToken)
     {
-        // 1. DB에서 스트리머 정보와 API 키를 안전하게 가져옵니다.
-        using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
-        if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+        // 바깥쪽에 무한 루프를 씌워 소켓이 끊어지면 3초 뒤 다시 연결을 시도하도록 합니다.
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 취소합니다.");
-            return;
-        }
-
-        // ==========================================================
-        // ⭐ [추가된 부분] 방에 들어가기 전에 무조건 토큰 유통기한부터 검사합니다!
-        await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
-        // ==========================================================
-
-        // 2. 치지직 오픈 API에 세션 연결 요청 (HTTP)
-        using var authClient = new HttpClient();
-
-        // ⭐ 매니저가 넘겨준 키를 바로 사용!
-        authClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-        authClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-        authClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
-        var authRes = await authClient.GetAsync("https://openapi.chzzk.naver.com/open/v1/sessions/auth", stoppingToken);
-        var authJson = await authRes.Content.ReadAsStringAsync(stoppingToken);
-
-        if (!authRes.IsSuccessStatusCode)
-        {
-            _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패: {authJson}");
-            return;
-        }
-        using var authDoc = JsonDocument.Parse(authJson);
-        string socketUrl = authDoc.RootElement.GetProperty("content").GetProperty("url").GetString() ?? "";
-
-        // ⭐ [진범 검거] 완벽한 웹소켓 주소(문 + 열쇠)를 조립합니다.
-        UriBuilder uriBuilder = new UriBuilder(socketUrl);
-        uriBuilder.Scheme = "wss"; // https를 wss로 강제 변환
-
-        // ⭐ [핵심] 치지직 Socket.IO 서버의 진짜 대문을 달아줍니다.
-        if (uriBuilder.Path == "/")
-        {
-            uriBuilder.Path = "/socket.io/";
-        }
-
-        // ⭐ 기존 인증키(auth) 뒤에 웹소켓 필수 옵션(EIO=3)을 쇠사슬처럼 묶습니다.
-        string extraQuery = "transport=websocket&EIO=3";
-        if (uriBuilder.Query.Length > 1) // 기존에 ?auth= 가 있다면
-        {
-            uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + extraQuery;
-        }
-        else
-        {
-            uriBuilder.Query = extraQuery;
-        }
-
-        string finalSocketUrl = uriBuilder.ToString();
-        _logger.LogWarning($"📡 [물댕봇] 조립된 최종 URL: {finalSocketUrl}");
-
-        // 3. 순정 웹소켓(ClientWebSocket) 연결
-        using var ws = new ClientWebSocket();
-        ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0");
-        ws.Options.SetRequestHeader("Origin", "https://chzzk.naver.com");
-
-        await ws.ConnectAsync(new Uri(finalSocketUrl), stoppingToken);
-        _logger.LogInformation($"✅ [물댕봇] {_uid} 물리적 연결 성공! 핸드셰이크를 시작합니다.");
-
-
-        // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
-        var buffer = new byte[1024 * 16]; // 16KB 넉넉한 버퍼
-
-        while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
-        {
-            var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), stoppingToken);
-            if (result.MessageType == WebSocketMessageType.Close) break;
-
-            string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-
-            // ⭐ [핵심 추가] 치지직 서버가 보내는 모든 날것(Raw)의 데이터를 터미널에 전부 출력합니다!
-            _logger.LogWarning($"📥 [Raw 패킷] {message}");
-
-            // 🧠 [Socket.IO 프로토콜 수동 해석기]
-            if (message.StartsWith("0")) // 0: Open (서버가 인사함)
+            try
             {
-                _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
-                await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+                // 1. DB에서 스트리머 정보와 API 키를 안전하게 가져옵니다.
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
+                if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+                {
+                    _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 취소합니다.");
+                    return;
+                }
+
+                // ==========================================================
+                // ⭐ [추가된 부분] 방에 들어가기 전에 무조건 토큰 유통기한부터 검사합니다!
+                await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
+                // ==========================================================
+
+                // 2. 치지직 오픈 API에 세션 연결 요청 (HTTP)
+                using var authClient = new HttpClient();
+
+                // ⭐ 매니저가 넘겨준 키를 바로 사용!
+                authClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+                authClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
+                authClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                var authRes = await authClient.GetAsync("https://openapi.chzzk.naver.com/open/v1/sessions/auth", stoppingToken);
+                var authJson = await authRes.Content.ReadAsStringAsync(stoppingToken);
+
+                if (!authRes.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패: {authJson}");
+                    return;
+                }
+                using var authDoc = JsonDocument.Parse(authJson);
+                string socketUrl = authDoc.RootElement.GetProperty("content").GetProperty("url").GetString() ?? "";
+
+                // ⭐ [진범 검거] 완벽한 웹소켓 주소(문 + 열쇠)를 조립합니다.
+                UriBuilder uriBuilder = new UriBuilder(socketUrl);
+                uriBuilder.Scheme = "wss"; // https를 wss로 강제 변환
+
+                // ⭐ [핵심] 치지직 Socket.IO 서버의 진짜 대문을 달아줍니다.
+                if (uriBuilder.Path == "/")
+                {
+                    uriBuilder.Path = "/socket.io/";
+                }
+
+                // ⭐ 기존 인증키(auth) 뒤에 웹소켓 필수 옵션(EIO=3)을 쇠사슬처럼 묶습니다.
+                string extraQuery = "transport=websocket&EIO=3";
+                if (uriBuilder.Query.Length > 1) // 기존에 ?auth= 가 있다면
+                {
+                    uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + extraQuery;
+                }
+                else
+                {
+                    uriBuilder.Query = extraQuery;
+                }
+
+                string finalSocketUrl = uriBuilder.ToString();
+                _logger.LogWarning($"📡 [물댕봇] 조립된 최종 URL: {finalSocketUrl}");
+
+                // 3. 순정 웹소켓(ClientWebSocket) 연결
+                using var ws = new ClientWebSocket();
+                ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0");
+                ws.Options.SetRequestHeader("Origin", "https://chzzk.naver.com");
+
+                await ws.ConnectAsync(new Uri(finalSocketUrl), stoppingToken);
+                _logger.LogInformation($"✅ [물댕봇] {_uid} 물리적 연결 성공! 핸드셰이크를 시작합니다.");
+
+
+                // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
+                var buffer = new byte[1024 * 16]; // 16KB 넉넉한 버퍼
+
+                while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
+                {
+                    var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), stoppingToken);
+                    if (result.MessageType == WebSocketMessageType.Close) break;
+
+                    string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+                    // ⭐ [핵심 추가] 치지직 서버가 보내는 모든 날것(Raw)의 데이터를 터미널에 전부 출력합니다!
+                    _logger.LogWarning($"📥 [Raw 패킷] {message}");
+
+                    // 🧠 [Socket.IO 프로토콜 수동 해석기]
+                    if (message.StartsWith("0")) // 0: Open (서버가 인사함)
+                    {
+                        _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
+                        await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+                    }
+                    else if (message.StartsWith("2")) // 2: Ping (서버가 너 살아있냐고 물어봄)
+                    {
+                        await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+                    }
+                    else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
+                    {
+                        // 앞의 "42"를 떼어내고 순수 JSON 배열만 넘깁니다.
+                        await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
+                    }
+                }
+                _logger.LogWarning("⚠️ [물댕봇] 웹소켓 연결이 종료되었습니다. 3초 후 재연결을 시도합니다.");
             }
-            else if (message.StartsWith("2")) // 2: Ping (서버가 너 살아있냐고 물어봄)
+            catch (Exception ex)
             {
-                await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+                _logger.LogError($"❌ [물댕봇] 소켓 통신 에러: {ex.Message}");
             }
-            else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
-            {
-                // 앞의 "42"를 떼어내고 순수 JSON 배열만 넘깁니다.
-                await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
-            }
+
+            // 루프를 빠져나왔다 = 소켓이 끊어졌다. 
+            // 서버에 무리를 주지 않기 위해 3초 대기 후 다시 바깥쪽 while 루프의 처음(재연결)으로 돌아갑니다.
+            await Task.Delay(3000, stoppingToken);
         }
     }
 
@@ -353,6 +369,8 @@ public class ChzzkChannelWorker
 
                 // ⭐ [슈퍼 유저 여부 확인] mooldang님의 고유 ID를 마스터로 지정합니다.
                 bool isMaster = senderId == "ca98875d5e0edf02776047fbc70f5449";
+                //⭐ [봇계정 여부 확인] 봇 계정의 고유 ID를 봇으로 지정합니다.
+                bool isBot = senderId == "445df9c493713244a65d97e4fd1ed0b1";
 
                 _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg} (Master: {isMaster})");
 
@@ -515,27 +533,28 @@ public class ChzzkChannelWorker
                                 // 💬 B. 채팅 답변(Reply) 모드
                                 else if (customCmd.ActionType == "Reply")
                                 {
-                                    using var replyClient = new HttpClient();
-                                    replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
-                                    replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                                    if (!isBot)
+                                    {
+                                        using var replyClient = new HttpClient();
+                                        replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
+                                        replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                                        replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
 
-                                    // ⭐ [스마트 호출] 알아서 최적의 토큰(커스텀 > 공통 > 본인)을 가져옵니다.
-                                    string validBotToken = await GetAndRefreshBotTokenAsync(profile, clientId, clientSecret, db) ?? profile.ChzzkAccessToken;
+                                        // ⭐ [마법의 코드 추가] 봇이 보내는 메시지 맨 앞에 '투명 문자(\u200B)'를 삽입합니다.
+                                        string replyText = "\u200B" + customCmd.Content;
 
-                                    // 봇 토큰이 적용된 인증 헤더 세팅
-                                    replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", validBotToken);
+                                        // 길이 제한 처리 (치지직 채팅은 최대 500자)
+                                        if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
 
-                                    string replyText = customCmd.Content;
-                                    if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
+                                        var replyReq = new { message = replyText };
+                                        var replyRes = await replyClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
+                                            new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
 
-                                    var replyReq = new { message = replyText };
-                                    var replyRes = await replyClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
-                                        new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
-
-                                    if (replyRes.IsSuccessStatusCode)
-                                        _logger.LogInformation($"💬 [봇 답변 발송] {fullMessage} -> {replyText}");
-                                    else
-                                        _logger.LogError($"❌ [봇 답변 실패] HTTP {replyRes.StatusCode} - {await replyRes.Content.ReadAsStringAsync(token)}");
+                                        if (replyRes.IsSuccessStatusCode)
+                                            _logger.LogInformation($"💬 [답변 발송 성공] {fullMessage} -> 무한루프 방지 적용됨");
+                                        else
+                                            _logger.LogError($"❌ [답변 발송 실패] HTTP {replyRes.StatusCode} - {await replyRes.Content.ReadAsStringAsync(token)}");
+                                    }
                                 }
                             }
                         }
