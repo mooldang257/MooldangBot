@@ -81,6 +81,18 @@ app.MapGet("/", async (HttpContext context, AppDbContext db) => {
     return Results.Redirect($"/dashboard/{streamer.ChzzkUid}");
 });
 
+// 🎨 2. 스타일 및 상세 설정 화면 (settings.html 연결)
+app.MapGet("/settings/{chzzkUid}", async (string chzzkUid, HttpContext context, AppDbContext db) => {
+    var naverId = context.User.FindFirstValue("StreamerId");
+    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+
+    // 본인의 설정창이 아니면 메인으로 튕겨냅니다 (보안)
+    if (profile == null || profile.ChzzkUid != chzzkUid)
+        return Results.Redirect("/");
+
+    return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/settings.html"), "text/html; charset=utf-8");
+}).RequireAuthorization();
+
 app.MapGet("/login", async context => {
     await context.ChallengeAsync(NaverAuthenticationDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/" });
 });
