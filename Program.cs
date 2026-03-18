@@ -1,4 +1,4 @@
-﻿using AspNet.Security.OAuth.Naver;
+using AspNet.Security.OAuth.Naver;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -58,261 +58,20 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 💡 서버 이동 시 여기 주소만 바꾸면 됩니다! (Cloudflare 8443 대응)
-string baseDomain = "http://localhost:3000";
-//string baseDomain = "https://your-domain.com:8443";
 
 // ==========================================
 // 3. 🌐 화면 라우팅 (View)
 // ==========================================
 
-app.MapGet("/", async (HttpContext context, AppDbContext db) => {
-    if (context.User.Identity?.IsAuthenticated != true) return Results.Redirect("/login");
 
-    var naverId = context.User.FindFirstValue("StreamerId");
-    var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-
-    // ⭐ [리팩토링] UID나 치지직 토큰이 하나라도 없으면 수동 입력(/setup)을 생략하고 곧바로 치지직 인증으로 직행합니다!
-    if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkUid) || string.IsNullOrEmpty(streamer.ChzzkAccessToken))
-    {
-        return Results.Redirect("/api/auth/chzzk-login");
-    }
-
-    return Results.Redirect($"/dashboard/{streamer.ChzzkUid}");
-});
-
-// 🎨 2. 스타일 및 상세 설정 화면 (settings.html 연결)
-app.MapGet("/settings/{chzzkUid}", async (string chzzkUid, HttpContext context, AppDbContext db) => {
-    var naverId = context.User.FindFirstValue("StreamerId");
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-
-    // 본인의 설정창이 아니면 메인으로 튕겨냅니다 (보안)
-    if (profile == null || profile.ChzzkUid != chzzkUid)
-        return Results.Redirect("/");
-
-    return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/settings.html"), "text/html; charset=utf-8");
-}).RequireAuthorization();
-
-app.MapGet("/login", async context => {
-    await context.ChallengeAsync(NaverAuthenticationDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/" });
-});
-
-app.MapGet("/dashboard/{chzzkUid}", async (string chzzkUid, HttpContext context, AppDbContext db) => {
-    var naverId = context.User.FindFirstValue("StreamerId");
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-
-    if (profile == null || profile.ChzzkUid != chzzkUid)
-        return Results.Redirect("/");
-
-    // 💡 마지막에 반드시 return이 있어야 합니다.
-    return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/dashboard.html"), "text/html; charset=utf-8");
-}).RequireAuthorization();
-
-app.MapGet("/commands-manager/{chzzkUid}", async (string chzzkUid, HttpContext context, AppDbContext db) => {
-    var naverId = context.User.FindFirstValue("StreamerId");
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-
-    if (profile == null || profile.ChzzkUid != chzzkUid)
-        return Results.Redirect("/");
-
-    // 💡 여기도 마찬가지로 return을 추가합니다.
-    return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/commands.html"), "text/html; charset=utf-8");
-}).RequireAuthorization();
-
-app.MapGet("/overlay/{chzzkUid}", async context => {
-    context.Response.ContentType = "text/html; charset=utf-8";
-    await context.Response.SendFileAsync("wwwroot/overlay.html");
-});
 
 // ==========================================
 // 4. 🔐 치지직 공식 인증 (OAuth)
 // ==========================================
 
-// ==========================================
-// 5. 🚀 데이터 관리 API (Song, Command, Settings)
-// ==========================================
+app.MapControllers();
 
-// 대시보드 데이터 조회
-app.MapGet("/api/dashboard/data/{chzzkUid}", async (string chzzkUid, AppDbContext db) => {
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-    var songs = await db.SongQueues.Where(s => s.ChzzkUid == chzzkUid).OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedAt).ToListAsync();
-    return Results.Ok(new { memo = profile?.NoticeMemo ?? "", omakaseCount = profile?.OmakaseCount ?? 0, songs });
-});
 
-// 신청곡 관리 (Add, Edit, Status, Delete)
-app.MapPost("/api/song/add", async (SongQueue newSong, AppDbContext db) => {
-    newSong.CreatedAt = DateTime.Now; db.SongQueues.Add(newSong); await db.SaveChangesAsync(); return Results.Ok(newSong);
-});
-
-app.MapPut("/api/song/{id}/status", async (int id, string status, AppDbContext db) => {
-    var song = await db.SongQueues.FindAsync(id);
-    if (song != null)
-    {
-        if (status == "Playing")
-        {
-            var current = await db.SongQueues.FirstOrDefaultAsync(s => s.ChzzkUid == song.ChzzkUid && s.Status == "Playing");
-            if (current != null) current.Status = "Completed";
-        }
-        song.Status = status; await db.SaveChangesAsync();
-    }
-    return Results.Ok();
-});
-
-app.MapPost("/api/song/delete", async (List<int> ids, AppDbContext db) => {
-    var songs = await db.SongQueues.Where(s => ids.Contains(s.Id)).ToListAsync();
-    db.SongQueues.RemoveRange(songs); await db.SaveChangesAsync(); return Results.Ok();
-});
-
-// 동적 명령어 관리 (List, Save, Delete)
-app.MapGet("/api/commands/list/{chzzkUid}", async (string chzzkUid, AppDbContext db) =>
-    Results.Ok(await db.StreamerCommands.Where(c => c.ChzzkUid == chzzkUid).ToListAsync()));
-
-app.MapPost("/api/commands/save", async (StreamerCommand cmd, AppDbContext db) => {
-    var existing = await db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == cmd.ChzzkUid && c.CommandKeyword == cmd.CommandKeyword);
-    if (existing == null) db.StreamerCommands.Add(cmd);
-    else { existing.ActionType = cmd.ActionType; existing.Content = cmd.Content; existing.RequiredRole = cmd.RequiredRole; }
-    await db.SaveChangesAsync(); return Results.Ok();
-});
-
-app.MapDelete("/api/commands/delete/{id}", async (int id, AppDbContext db) => {
-    var cmd = await db.StreamerCommands.FindAsync(id);
-    if (cmd != null) { db.StreamerCommands.Remove(cmd); await db.SaveChangesAsync(); }
-    return Results.Ok();
-});
-
-// 스트리머 설정 업데이트
-app.MapPost("/api/settings/update", async (string chzzkUid, SettingsUpdateRequest req, AppDbContext db) => {
-    var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-    if (profile != null)
-    {
-        profile.SongCommand = req.SongCommand; profile.SongCheesePrice = req.SongCheesePrice;
-        profile.OmakaseCommand = req.OmakaseCommand; profile.OmakaseCheesePrice = req.OmakaseCheesePrice;
-        profile.DesignSettingsJson = req.DesignSettingsJson;
-        await db.SaveChangesAsync();
-    }
-    return Results.Ok();
-});
-
-// ==========================================
-// 4. 🔐 치지직 공식 인증 (OAuth) - 통합 콜백 처리
-// ==========================================
-
-// 👤 A. 일반 스트리머 로그인 (기존과 동일)
-app.MapGet("/api/auth/chzzk-login", async (AppDbContext db, HttpContext context) => {
-    var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
-    string clientId = clientIdConf?.KeyValue ?? "";
-    string redirectUri = $"{baseDomain}/Auth/callback";
-
-    // 일반 로그인은 state에 단순히 GUID만 넣습니다.
-    string state = Guid.NewGuid().ToString();
-
-    string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
-    context.Response.Redirect(authUrl);
-});
-
-// 🤖 B. 시스템 봇 계정 연동 전용 로그인
-app.MapGet("/api/admin/bot/login", async (AppDbContext db, HttpContext context) => {
-    var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
-    string clientId = clientIdConf?.KeyValue ?? "";
-
-    // ⭐ 스트리머 로그인과 완전히 동일한 등록된 콜백 주소를 사용합니다!
-    string redirectUri = $"{baseDomain}/Auth/callback";
-
-    // ⭐ 단, state 값에 "bot_setup_" 이라는 꼬리표를 달아서 보냅니다.
-    string state = "bot_setup_" + Guid.NewGuid().ToString();
-
-    string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
-    context.Response.Redirect(authUrl);
-});
-
-// 🔄 C. [핵심] 통합 콜백 핸들러 (스트리머 & 봇 공용)
-app.MapGet("/Auth/callback", async (HttpContext context, AppDbContext db) => {
-    string? code = context.Request.Query["code"];
-    string? state = context.Request.Query["state"]; // 꼬리표 확인
-    if (string.IsNullOrEmpty(code)) return Results.Text("인증 코드가 없습니다.");
-
-    try
-    {
-        var clientIdConf = await db.SystemSettings.FindAsync("ChzzkClientId");
-        var clientSecretConf = await db.SystemSettings.FindAsync("ChzzkClientSecret");
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-
-        var tokenRequest = new
-        {
-            grantType = "authorization_code",
-            clientId = clientIdConf?.KeyValue,
-            clientSecret = clientSecretConf?.KeyValue,
-            code = code,
-            state = state
-        };
-
-        var response = await httpClient.PostAsJsonAsync("https://openapi.chzzk.naver.com/auth/v1/token", tokenRequest);
-        if (!response.IsSuccessStatusCode) return Results.Text($"토큰 발급 실패: {await response.Content.ReadAsStringAsync()}");
-
-        var tokenContent = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("content");
-        string accessToken = tokenContent.GetProperty("accessToken").GetString()!;
-        string refreshToken = tokenContent.GetProperty("refreshToken").GetString()!;
-        int expiresIn = tokenContent.GetProperty("expiresIn").GetInt32();
-
-        // ==========================================
-        // 🤖 분기 1: 봇 계정 연동 모드 ("bot_setup_" 꼬리표가 있는 경우)
-        // ==========================================
-        if (state != null && state.StartsWith("bot_setup_"))
-        {
-            DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
-
-            void UpdateOrAddSetting(string key, string value)
-            {
-                var setting = db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
-                if (setting == null) db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
-                else setting.KeyValue = value;
-            }
-
-            UpdateOrAddSetting("BotAccessToken", accessToken);
-            UpdateOrAddSetting("BotRefreshToken", refreshToken);
-            UpdateOrAddSetting("BotTokenExpiresAt", expireDate.ToString("O"));
-
-            await db.SaveChangesAsync();
-
-            string htmlResponse = @"
-                <!DOCTYPE html>
-                <html lang='ko'>
-                <head><meta charset='UTF-8'><title>봇 연동 성공</title></head>
-                <body style='background-color:#121212; color:#00e676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center;'>
-                    <div>
-                        <h1>🎉 시스템 봇 연동 완료!</h1>
-                        <p style='color:#fff;'>물댕봇 전용 토큰이 DB(SystemSettings)에 안전하게 저장되었습니다.<br>이제 창을 닫아주세요.</p>
-                    </div>
-                </body>
-                </html>";
-
-            return Results.Content(htmlResponse, "text/html; charset=utf-8");
-        }
-
-        // ==========================================
-        // 👤 분기 2: 일반 스트리머 로그인 모드 (꼬리표가 없는 경우)
-        // ==========================================
-        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
-        string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
-
-        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-        if (streamer == null)
-        {
-            streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = context.User.FindFirstValue("StreamerId")! };
-            db.StreamerProfiles.Add(streamer);
-        }
-        streamer.ChzzkAccessToken = accessToken;
-        streamer.ChzzkRefreshToken = refreshToken;
-        streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
-
-        await db.SaveChangesAsync();
-        return Results.Redirect($"/dashboard/{chzzkUid}");
-    }
-    catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
-}).AllowAnonymous();
 
 
 app.MapHub<OverlayHub>("/overlayHub");
@@ -320,15 +79,3 @@ app.MapHub<OverlayHub>("/overlayHub");
 // 8443 포트 사용을 위해 ASPNETCORE_URLS 환경변수를 쓰거나 아래를 수정하세요.
 app.Run();
 
-// ==========================================
-// 6. 데이터 클래스
-// ==========================================
-public class SetupRequest { public string ChzzkUid { get; set; } = ""; }
-public class SettingsUpdateRequest
-{
-    public string SongCommand { get; set; } = "!신청";
-    public int SongCheesePrice { get; set; } = 0;
-    public string OmakaseCommand { get; set; } = "!오마카세";
-    public int OmakaseCheesePrice { get; set; } = 1000;
-    public string DesignSettingsJson { get; set; } = "{}";
-}
