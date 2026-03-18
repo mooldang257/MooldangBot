@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Models;
 
 namespace MooldangAPI.Data
@@ -12,9 +12,9 @@ namespace MooldangAPI.Data
         public DbSet<StreamerProfile> StreamerProfiles { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
 
-        // ⭐ 새로 추가된 노래 대기열 테이블
         public DbSet<SongQueue> SongQueues { get; set; }
         public DbSet<StreamerCommand> StreamerCommands { get; set; }
+        public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,7 +24,9 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
             modelBuilder.Entity<SongQueue>().ToTable("songqueues");
             modelBuilder.Entity<SystemSetting>().ToTable("systemsettings");
-    }
+            modelBuilder.Entity<StreamerCommand>().ToTable("streamercommands");
+            modelBuilder.Entity<StreamerOmakaseItem>().ToTable("streameromakases");
+        }
 
     }
 }

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -125,7 +125,7 @@
         const pathParts = window.location.pathname.split('/');
         const chzzkUid = pathParts[pathParts.length - 1];
 
-        let dashState = { memo: "", omakaseCount: 0, currentTitle: "-", currentArtist: "", pendingSongs: [], completedSongs: [], labels: {} };
+        let dashState = { memo: "", omakases: [], currentTitle: "-", currentArtist: "", pendingSongs: [], completedSongs: [], labels: {} };
         let designState = {};
 
         async function fetchInitialData() {
@@ -134,7 +134,7 @@
                 if (dashRes.ok) {
                     const d = await dashRes.json();
                     dashState = {
-                        memo: d.memo, omakaseCount: d.omakaseCount,
+                        memo: d.memo, omakases: d.omakases || [],
                         pendingSongs: d.songs.filter(s => s.status === 'Pending'),
                         completedSongs: d.songs.filter(s => s.status === 'Completed'),
                         labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
@@ -184,7 +184,8 @@
             const showStats = ds.Stats ? ds.Stats.show : true;
             if (showStats) {
                 stats.style.display = "block";
-                const pendingTotal = st.pendingSongs.length + st.omakaseCount;
+                const omaTotal = st.omakases ? st.omakases.reduce((acc, o) => acc + o.count, 0) : 0;
+                const pendingTotal = st.pendingSongs.length + omaTotal;
                 stats.innerHTML = `완료 ${st.completedSongs.length} / 대기 ${pendingTotal}`;
             } else { stats.style.display = "none"; }
 
@@ -195,9 +196,15 @@
 
             const omakase = document.getElementById("omakase-container");
             const showOmakase = ds.Omakase ? ds.Omakase.show : true;
-            const omakaseName = (ds.Omakase && ds.Omakase.name) ? ds.Omakase.name : "오마카세";
-            if (showOmakase && st.omakaseCount > 0) {
-                omakase.style.display = "block"; omakase.innerText = `🍣 ${omakaseName} x ${st.omakaseCount}`;
+
+            if (showOmakase && st.omakases && st.omakases.some(o => o.count > 0)) {
+                omakase.style.display = "block";
+                const htmlArray = st.omakases.filter(o => o.count > 0).map(o => {
+                    const iconVal = o.icon !== undefined ? o.icon : '🍣';
+                    const iconStr = iconVal ? `${iconVal} ` : '';
+                    return `<span>${iconStr}${o.name}</span> x ${o.count}`;
+                });
+                omakase.innerHTML = htmlArray.join('<br><div style="margin:5px 0;"></div>');
             } else { omakase.style.display = "none"; }
 
             const playing = document.getElementById("playing-container");
@@ -243,7 +250,18 @@
         const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
 
         connection.on("ReceiveOverlayState", (jsonState) => { dashState = JSON.parse(jsonState); renderOverlay(); });
-        connection.on("ReceiveOverlayStyle", (jsonStyle) => { designState = JSON.parse(jsonStyle); applyDesignStyles(); renderOverlay(); });
+        connection.on("ReceiveOverlayStyle", async (jsonStyle) => { 
+            designState = JSON.parse(jsonStyle); 
+            applyDesignStyles(); 
+            try {
+                const dashRes = await fetch(`/api/dashboard/data/${chzzkUid}`);
+                if (dashRes.ok) {
+                    const d = await dashRes.json();
+                    dashState.omakases = d.omakases || [];
+                }
+            } catch (e) {}
+            renderOverlay(); 
+        });
 
         connection.start().then(() => { connection.invoke("JoinStreamerGroup", chzzkUid); fetchInitialData(); }).catch(err => { setTimeout(fetchInitialData, 5000); });
     </script>

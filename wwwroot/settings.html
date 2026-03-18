@@ -1,332 +1,217 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>물댕봇 설정 및 디자인 통제실</title>
+    <link rel="stylesheet" href="/css/glass-theme.css">
     <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 800px;
+        .settings-layout {
+            max-width: 1200px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        h1, h2 {
-            color: #00ffa3;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        h2 {
-            font-size: 18px;
-            color: #00aaff;
-            margin-top: 15px;
-            border: none;
-            padding-bottom: 0;
-        }
-
-        .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 450px;
+            gap: 25px;
+            align-items: start;
         }
-
-        .group {
-            margin-bottom: 15px;
+        @media (max-width: 900px) {
+            .settings-layout { grid-template-columns: 1fr; }
+            .settings-right { position: relative !important; top: 0 !important; margin-bottom: 20px; order: -1; }
         }
-
-        label {
-            display: block;
-            font-size: 13px;
-            color: #aaa;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
-
-        .val-display {
-            color: #00ffa3;
-            float: right;
-        }
-
-        input[type="text"], input[type="number"], textarea {
-            width: 100%;
-            padding: 10px;
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-
-        input[type="color"] {
-            width: 100%;
-            height: 40px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            background: transparent;
-            padding: 0;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: #00ffa3;
-            cursor: pointer;
-        }
-
-        .component-box {
-            background: #252525;
-            border: 1px solid #444;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .component-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px dashed #555;
-            padding-bottom: 10px;
-        }
-
-            .component-header strong {
-                font-size: 15px;
-                color: #fff;
-            }
-
-        .save-btn {
-            background: #00ffa3;
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-            margin-top: 10px;
-        }
-
-            .save-btn:hover {
-                background: #00cc82;
-            }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 15px;
-            color: #aaa;
-            text-decoration: none;
-            font-size: 14px;
-            text-align: center;
-            width: 100%;
-        }
-
-            .back-link:hover {
-                color: #fff;
-            }
-
-        /* ⭐ 순서 변경 리스트 스타일 강화 */
-        #orderList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .order-item {
-            background: #2a2a2a;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            border-left: 5px solid #00ffa3;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: grab;
-            font-weight: bold;
-            color: #eee;
-            transition: 0.2s;
-        }
-
-            .order-item:hover {
-                background: #333;
-            }
-
-            .order-item:active {
-                cursor: grabbing;
-            }
-
-        .order-icon {
-            margin-right: 15px;
-            color: #888;
-        }
-
-        /* 토글 스위치 느낌의 체크박스 라벨 */
-        .toggle-label {
-            margin: 0;
-            cursor: pointer;
-            color: #fff;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 10px;
-            border-radius: 4px;
-            border: 1px solid #555;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-
-            .toggle-label:hover {
-                border-color: #00ffa3;
-            }
-
-            .toggle-label input {
-                margin: 0;
-                cursor: pointer;
-                accent-color: #00ffa3;
-                width: 16px;
-                height: 16px;
-            }
     </style>
+    <style id="liveCustomCss"></style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>🤖 채팅/후원 명령어 설정</h1>
-            <div class="grid-2">
-                <div class="group"><label>일반 신청 명령어</label><input type="text" id="cmdSong" value="!신청"></div>
-                <div class="group"><label>일반 신청 1곡당 치즈 (0은 무료)</label><input type="number" id="songPrice" value="0"></div>
-                <div class="group"><label>오마카세 명령어</label><input type="text" id="cmdOmakase" value="!오마카세"></div>
-                <div class="group"><label>오마카세 1곡당 치즈</label><input type="number" id="cheesePrice" value="1000"></div>
+    <div class="settings-layout">
+        <!-- LEFT: Settings Controls -->
+        <div class="settings-left" style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="display: flex; gap: 10px;">
+                <a id="topBackToDash" href="#" class="btn btn-outline" style="flex: 1; padding: 10px; text-align: center; box-sizing: border-box; font-weight: bold;">← 대시보드로 돌아가기</a>
+            </div>
+            <div class="card" style="border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,147,233,0.2);">
+                <h1 style="border-bottom:none; margin-bottom:15px; font-size:18px;">✨ 추천 테마 (원클릭 자동 완성)</h1>
+                <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:15px;">테마를 클릭하면 추천 디자인 값과 고급 CSS가 자동으로 적용됩니다.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="applyPreset('default')">🧊 둥근 유리 (기본)</button>
+                    <button class="btn btn-outline" style="border-color:#333; color:#333;" onclick="applyPreset('flat')">⬛ 스퀘어 (단정)</button>
+                    <button class="btn btn-outline" style="border-color:#f0f; color:#f0f; background: #000;" onclick="applyPreset('neon')">⚡ 네온 사이버펑크</button>
+                    <button class="btn btn-secondary" onclick="applyPreset('bubble')">🎈 둥둥 마시멜로</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h1>↕️ 오버레이 표시 순서 및 켜기/끄기</h1>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 15px;">항목을 위아래로 드래그하여 순서를 바꾸고, 우측의 체크박스로 화면 표시 여부를 즉시 결정하세요.</p>
+                <ul id="orderList">
+                    <li class="order-item" data-id="Stats">
+                        <div><span class="order-icon">☰</span> 📊 곡 통계 표시부</div>
+                        <label class="toggle-label"><input type="checkbox" id="showStats" checked> 표시</label>
+                    </li>
+                    <li class="order-item" data-id="Notice">
+                        <div><span class="order-icon">☰</span> 📢 공지 메모 표시부</div>
+                        <label class="toggle-label"><input type="checkbox" id="showNotice" checked> 표시</label>
+                    </li>
+                    <li class="order-item" data-id="Omakase">
+                        <div><span class="order-icon">☰</span> 🍣 오마카세 표시부</div>
+                        <label class="toggle-label"><input type="checkbox" id="showOmakase" checked> 표시</label>
+                    </li>
+                    <li class="order-item" data-id="Playing">
+                        <div><span class="order-icon">☰</span> 🎧 재생 중인 노래 표시부</div>
+                        <label class="toggle-label"><input type="checkbox" id="showPlaying" checked> 표시</label>
+                    </li>
+                    <li class="order-item" data-id="Pending">
+                        <div><span class="order-icon">☰</span> ⏳ 대기열 목록</div>
+                        <label class="toggle-label"><input type="checkbox" id="showPending" checked> 표시</label>
+                    </li>
+                    <li class="order-item" data-id="Completed">
+                        <div><span class="order-icon">☰</span> ✔ 완료(부른 노래) 목록</div>
+                        <label class="toggle-label"><input type="checkbox" id="showCompleted" checked> 표시</label>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h1>🤖 채팅/후원 명령어 설정</h1>
+                <div class="grid-2">
+                    <div class="group"><label>일반 신청 명령어</label><input type="text" id="cmdSong" value="!신청"></div>
+                    <div class="group"><label>일반 신청 1곡당 치즈 (0은 무료)</label><input type="number" id="songPrice" value="0"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h1 style="margin:0; border:none; padding:0;">🍣 다중 오마카세 메뉴판 설정</h1>
+                    <button type="button" class="btn btn-secondary" onclick="addOmakaseItem()" style="padding: 6px 15px; font-size: 14px;">+ 새 메뉴 추가</button>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">시청자가 특정 명령어를 치거나 금액을 후원할 때 반응할 메뉴들을 무제한으로 등록하세요.</p>
+                <div id="omakaseListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- JS rendered -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h1>🎨 오버레이 컴포넌트 색상/크기 디자인</h1>
+
+                <div class="component-box" id="compStats">
+                    <div class="component-header"><strong>📊 곡 통계 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>글자색</label><input type="color" id="textStats" value="#00ffa3"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeStats">14px</span></label><input type="range" id="sizeStats" min="10" max="30" value="14" oninput="updateVal(this, 'valSizeStats')"></div>
+                    </div>
+                </div>
+
+                <div class="component-box" id="compNotice">
+                    <div class="component-header"><strong>📢 공지 메모 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>배경색</label><input type="color" id="bgNotice" value="#1a1a1a"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaNotice">80%</span></label><input type="range" id="alphaNotice" min="0" max="100" value="80" oninput="updateVal(this, 'valAlphaNotice')"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textNotice" value="#ffffff"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeNotice">16px</span></label><input type="range" id="sizeNotice" min="10" max="40" value="16" oninput="updateVal(this, 'valSizeNotice')"></div>
+                    </div>
+                </div>
+
+                <div class="component-box" id="compOmakase">
+                    <div class="component-header"><strong>🍣 오마카세 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>배경색</label><input type="color" id="bgOmakase" value="#00aaff"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaOmakase">85%</span></label><input type="range" id="alphaOmakase" min="0" max="100" value="85" oninput="updateVal(this, 'valAlphaOmakase')"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textOmakase" value="#ffffff"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeOmakase">20px</span></label><input type="range" id="sizeOmakase" min="10" max="40" value="20" oninput="updateVal(this, 'valSizeOmakase')"></div>
+                    </div>
+                </div>
+
+                <div class="component-box" id="compPlaying">
+                    <div class="component-header"><strong>🎧 재생 중인 노래 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>배경색</label><input type="color" id="bgPlaying" value="#004422"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPlaying">90%</span></label><input type="range" id="alphaPlaying" min="0" max="100" value="90" oninput="updateVal(this, 'valAlphaPlaying')"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textPlaying" value="#00ffa3"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePlaying">24px</span></label><input type="range" id="sizePlaying" min="12" max="60" value="24" oninput="updateVal(this, 'valSizePlaying')"></div>
+                    </div>
+                </div>
+
+                <div class="component-box" id="compPending">
+                    <div class="component-header"><strong>⏳ 대기열 목록 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitPending" value="5" min="1" max="20"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textPending" value="#dddddd"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgPending" value="#000000"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPending">70%</span></label><input type="range" id="alphaPending" min="0" max="100" value="70" oninput="updateVal(this, 'valAlphaPending')"></div>
+                    </div>
+                </div>
+
+                <div class="component-box" id="compCompleted">
+                    <div class="component-header"><strong>✔ 완료 목록 세부 설정</strong></div>
+                    <div class="grid-2">
+                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitCompleted" value="3" min="0" max="10"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textCompleted" value="#888888"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgCompleted" value="#000000"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaCompleted">50%</span></label><input type="range" id="alphaCompleted" min="0" max="100" value="50" oninput="updateVal(this, 'valAlphaCompleted')"></div>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label>전체 커스텀 CSS (고급 사용자용)</label>
+                    <textarea id="customCss" rows="4" placeholder="예: .song-card { border-radius: 10px; }"></textarea>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-top:20px;" onclick="saveAllSettings(true)">💾 저장 및 대시보드로 이동</button>
+                <a id="backToDash" href="#" class="btn btn-outline" style="width: 100%; margin-top: 10px; padding: 12px; display: block; text-align: center; box-sizing: border-box; font-weight: bold;">← 대시보드로 돌아가기</a>
             </div>
         </div>
-
-        <div class="card">
-            <h1>↕️ 오버레이 표시 순서 및 켜기/끄기</h1>
-            <p style="font-size: 13px; color: #aaa; margin-top: 0; margin-bottom: 15px;">항목을 위아래로 드래그하여 순서를 바꾸고, 우측의 체크박스로 화면 표시 여부를 즉시 결정하세요.</p>
-            <ul id="orderList">
-                <li class="order-item" data-id="Stats">
-                    <div><span class="order-icon">☰</span> 📊 곡 통계 표시부</div>
-                    <label class="toggle-label"><input type="checkbox" id="showStats" checked> 화면에 표시</label>
-                </li>
-                <li class="order-item" data-id="Notice">
-                    <div><span class="order-icon">☰</span> 📢 공지 메모 표시부</div>
-                    <label class="toggle-label"><input type="checkbox" id="showNotice" checked> 화면에 표시</label>
-                </li>
-                <li class="order-item" data-id="Omakase">
-                    <div><span class="order-icon">☰</span> 🍣 오마카세 표시부</div>
-                    <label class="toggle-label"><input type="checkbox" id="showOmakase" checked> 화면에 표시</label>
-                </li>
-                <li class="order-item" data-id="Playing">
-                    <div><span class="order-icon">☰</span> 🎧 재생 중인 노래 표시부</div>
-                    <label class="toggle-label"><input type="checkbox" id="showPlaying" checked> 화면에 표시</label>
-                </li>
-                <li class="order-item" data-id="Pending">
-                    <div><span class="order-icon">☰</span> ⏳ 대기열 목록</div>
-                    <label class="toggle-label"><input type="checkbox" id="showPending" checked> 화면에 표시</label>
-                </li>
-                <li class="order-item" data-id="Completed">
-                    <div><span class="order-icon">☰</span> ✔ 완료(부른 노래) 목록</div>
-                    <label class="toggle-label"><input type="checkbox" id="showCompleted" checked> 화면에 표시</label>
-                </li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h1>🎨 오버레이 컴포넌트 색상/크기 디자인</h1>
-
-            <div class="component-box" id="compStats">
-                <div class="component-header"><strong>📊 곡 통계 세부 설정</strong></div>
-                <div class="grid-2">
-                    <div class="group"><label>글자색</label><input type="color" id="textStats" value="#00ffa3"></div>
-                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeStats">14px</span></label><input type="range" id="sizeStats" min="10" max="30" value="14" oninput="updateVal(this, 'valSizeStats')"></div>
+        
+        <!-- RIGHT: Live Preview Panel -->
+        <div class="settings-right" style="position: sticky; top: 20px;">
+            <div class="card preview-pane" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 16px; margin: 0;">📺 실시간 미리보기 (Live Preview)</h2>
+                    <button class="btn btn-primary" style="padding: 8px 16px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 10px rgba(0, 255, 163, 0.3);" onclick="saveAllSettings(false)">✅ 적용</button>
                 </div>
-            </div>
+                
+                <div class="preview-screen" id="previewScreen" style="aspect-ratio: 16/13.5; background: #2c3e50 url('https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png') center/cover; border-radius: 12px; position: relative; overflow: hidden; border: 4px solid var(--text-dark); display: flex; flex-direction: column; overflow-y: auto;">
+                    
+                    <div id="prevNotice" style="width: 100%; text-align: center; padding: 5px; font-weight: bold; box-sizing: border-box; z-index: 10; transition: all 0.2s;">
+                        📢 공지: 물댕봇 테스트 중입니다!
+                    </div>
+                    
+                    <div style="flex: 1; display: flex; padding: 15px; gap: 15px; z-index: 10; position: relative; pointer-events: none;">
+                        
+                        <div id="prevLeftCol" style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <div id="prevStats" style="font-weight: bold; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">▶ 완료 3 / 대기 5</div>
+                            
+                            <div id="prevPlaying" class="box" style="padding: 12px; border-radius: 10px; font-weight: bold; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                                <div class="now-label" style="font-size:13px; opacity:0.8;">▶ NOW PLAYING</div>
+                                <div class="now-title" style="font-size:1.2em; display:flex; align-items:center; gap:8px;">🎵 테스트 곡 제목</div>
+                                <div class="now-artist" style="font-size:0.8em; text-align:right;">- 테스트 가수</div>
+                            </div>
 
-            <div class="component-box" id="compNotice">
-                <div class="component-header"><strong>📢 공지 메모 세부 설정</strong></div>
-                <div class="grid-2">
-                    <div class="group"><label>배경색</label><input type="color" id="bgNotice" value="#1a1a1a"></div>
-                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaNotice">80%</span></label><input type="range" id="alphaNotice" min="0" max="100" value="80" oninput="updateVal(this, 'valAlphaNotice')"></div>
-                    <div class="group"><label>글자색</label><input type="color" id="textNotice" value="#ffffff"></div>
-                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeNotice">16px</span></label><input type="range" id="sizeNotice" min="10" max="40" value="16" oninput="updateVal(this, 'valSizeNotice')"></div>
+                            <div id="prevPending" class="box" style="padding: 10px; border-radius: 8px; transition: all 0.2s; font-size: 12px; font-weight: bold;">
+                                <div class="list-title" style="border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-bottom:5px;">⏳ UP NEXT</div>
+                                <div class="list-item" style="display:flex; justify-content:space-between; margin-bottom:5px;"><span class="item-title">1. 다음 곡 - 신청자</span><span class="item-artist"></span></div>
+                                <div class="list-item" style="display:flex; justify-content:space-between;"><span class="item-title">2. 다다음 곡 - 신청자</span><span class="item-artist"></span></div>
+                            </div>
+                            
+                            <div id="prevCompleted" class="box" style="padding: 10px; border-radius: 8px; transition: all 0.2s; font-size: 12px; font-weight: bold;">
+                                <div class="list-title" style="border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-bottom:5px;">✔ COMPLETED</div>
+                                <div class="list-item" style="display:flex; justify-content:space-between; opacity:0.7;"><span class="item-title" style="text-decoration:line-through;">1. 어제 부른 곡</span><span class="item-artist"></span></div>
+                            </div>
+                        </div>
+
+                        <div id="prevRightCol" style="width: 120px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+                            <div id="prevOmakase" style="padding: 12px; border-radius: 10px; font-weight: bold; text-align: center; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                                🍣 <span id="prevOmakaseName">물마카세</span><br><span style="font-size: 1.8em;">3</span>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px; text-align: center; line-height: 1.5;">
+                    좌측의 입력란을 조작하면 이곳에 실시간으로 표시되며, 위치를 위아래로 드래그하면 컴포넌트 순서가 연동됩니다. (디자인 시안용으로, 실제 오버레이 출력 크기와 약간의 차이가 있을 수 있습니다.)
+                </p>
             </div>
-
-            <div class="component-box" id="compOmakase">
-                <div class="component-header"><strong>🍣 오마카세 세부 설정</strong></div>
-                <div class="group" style="border-bottom: 1px solid #444; padding-bottom: 15px;">
-                    <label>오버레이 표시 이름 커스텀</label><input type="text" id="nameOmakase" value="물마카세">
-                </div>
-                <div class="grid-2">
-                    <div class="group"><label>배경색</label><input type="color" id="bgOmakase" value="#00aaff"></div>
-                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaOmakase">85%</span></label><input type="range" id="alphaOmakase" min="0" max="100" value="85" oninput="updateVal(this, 'valAlphaOmakase')"></div>
-                    <div class="group"><label>글자색</label><input type="color" id="textOmakase" value="#ffffff"></div>
-                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeOmakase">20px</span></label><input type="range" id="sizeOmakase" min="10" max="40" value="20" oninput="updateVal(this, 'valSizeOmakase')"></div>
-                </div>
-            </div>
-
-            <div class="component-box" id="compPlaying">
-                <div class="component-header"><strong>🎧 재생 중인 노래 세부 설정</strong></div>
-                <div class="grid-2">
-                    <div class="group"><label>배경색</label><input type="color" id="bgPlaying" value="#004422"></div>
-                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPlaying">90%</span></label><input type="range" id="alphaPlaying" min="0" max="100" value="90" oninput="updateVal(this, 'valAlphaPlaying')"></div>
-                    <div class="group"><label>글자색</label><input type="color" id="textPlaying" value="#00ffa3"></div>
-                    <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePlaying">24px</span></label><input type="range" id="sizePlaying" min="12" max="60" value="24" oninput="updateVal(this, 'valSizePlaying')"></div>
-                </div>
-            </div>
-
-            <div class="component-box" id="compPending">
-                <div class="component-header"><strong>⏳ 대기열 목록 세부 설정</strong></div>
-                <div class="grid-2">
-                    <div class="group"><label>표시 개수 제한</label><input type="number" id="limitPending" value="5" min="1" max="20"></div>
-                    <div class="group"><label>글자색</label><input type="color" id="textPending" value="#dddddd"></div>
-                    <div class="group"><label>배경색</label><input type="color" id="bgPending" value="#000000"></div>
-                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPending">70%</span></label><input type="range" id="alphaPending" min="0" max="100" value="70" oninput="updateVal(this, 'valAlphaPending')"></div>
-                </div>
-            </div>
-
-            <div class="component-box" id="compCompleted">
-                <div class="component-header"><strong>✔ 완료 목록 세부 설정</strong></div>
-                <div class="grid-2">
-                    <div class="group"><label>표시 개수 제한</label><input type="number" id="limitCompleted" value="3" min="0" max="10"></div>
-                    <div class="group"><label>글자색</label><input type="color" id="textCompleted" value="#888888"></div>
-                    <div class="group"><label>배경색</label><input type="color" id="bgCompleted" value="#000000"></div>
-                    <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaCompleted">50%</span></label><input type="range" id="alphaCompleted" min="0" max="100" value="50" oninput="updateVal(this, 'valAlphaCompleted')"></div>
-                </div>
-            </div>
-
-            <div class="group">
-                <label>전체 커스텀 CSS (고급 사용자용)</label>
-                <textarea id="customCss" rows="4" placeholder="예: .song-card { border-radius: 10px; }"></textarea>
-            </div>
-
-            <button class="save-btn" onclick="saveAllSettings()">💾 설정 저장 및 오버레이에 즉시 적용</button>
-            <a id="backToDash" href="#" class="back-link">← 대시보드로 돌아가기</a>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
@@ -337,8 +222,65 @@
 
         Sortable.create(document.getElementById('orderList'), {
             animation: 150,
-            handle: '.order-item' // 전체 영역을 잡고 끌 수 있도록 설정
+            handle: '.order-item',
+            onEnd: updatePreview // Update right away on drag end
         });
+
+        let omakaseItems = [];
+
+        function renderOmakaseList() {
+            const container = document.getElementById('omakaseListContainer');
+            container.innerHTML = '';
+            if (omakaseItems.length === 0) {
+                container.innerHTML = '<div style="padding:20px; text-align:center; color:#888; background:rgba(0,0,0,0.2); border-radius:8px;">등록된 오마카세 메뉴가 없습니다.</div>';
+                updatePreview();
+                return;
+            }
+            omakaseItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = "display:grid; grid-template-columns: auto 1fr 1fr 1fr auto; gap:10px; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; align-items:end;";
+                div.innerHTML = `
+                    <div class="group" style="margin:0;">
+                        <label>아이콘</label>
+                        <select onchange="updateOmakaseValue(${index}, 'icon', this.value)" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.5); color: white;">
+                            <option value="🍣" ${item.icon === '🍣' ? 'selected' : ''}>🍣</option>
+                            <option value="🎤" ${item.icon === '🎤' ? 'selected' : ''}>🎤</option>
+                            <option value="🎵" ${item.icon === '🎵' ? 'selected' : ''}>🎵</option>
+                            <option value="🎁" ${item.icon === '🎁' ? 'selected' : ''}>🎁</option>
+                            <option value="🔥" ${item.icon === '🔥' ? 'selected' : ''}>🔥</option>
+                            <option value="⭐" ${item.icon === '⭐' ? 'selected' : ''}>⭐</option>
+                            <option value="💖" ${item.icon === '💖' ? 'selected' : ''}>💖</option>
+                            <option value="🍡" ${item.icon === '🍡' ? 'selected' : ''}>🍡</option>
+                            <option value="🍺" ${item.icon === '🍺' ? 'selected' : ''}>🍺</option>
+                            <option value="" ${item.icon === '' ? 'selected' : ''}>❌</option>
+                        </select>
+                    </div>
+                    <div class="group" style="margin:0;"><label>화면 표시 이름</label><input type="text" value="${item.name}" onchange="updateOmakaseValue(${index}, 'name', this.value)"></div>
+                    <div class="group" style="margin:0;"><label>명령어</label><input type="text" value="${item.command}" onchange="updateOmakaseValue(${index}, 'command', this.value)"></div>
+                    <div class="group" style="margin:0;"><label>치즈</label><input type="number" value="${item.price}" onchange="updateOmakaseValue(${index}, 'price', this.value)"></div>
+                    <button type="button" class="btn" style="background:#ff4757; color:white; padding:10px 15px;" onclick="removeOmakaseItem(${index})">삭제</button>
+                `;
+                container.appendChild(div);
+            });
+            updatePreview();
+        }
+
+        function updateOmakaseValue(index, field, value) {
+            omakaseItems[index][field] = field === 'price' ? parseInt(value) || 0 : value;
+            updatePreview();
+        }
+
+        function addOmakaseItem() {
+            omakaseItems.push({ id: 0, name: '새 오마카세', command: '!물마카세', price: 10000, icon: '🍣' });
+            renderOmakaseList();
+        }
+
+        function removeOmakaseItem(index) {
+            if(confirm('해당 메뉴를 삭제하시겠습니까?')) {
+                omakaseItems.splice(index, 1);
+                renderOmakaseList();
+            }
+        }
 
         async function loadSettings() {
             const res = await fetch(`/api/settings/data/${chzzkUid}`);
@@ -346,8 +288,9 @@
                 const data = await res.json();
                 document.getElementById('cmdSong').value = data.songCommand;
                 document.getElementById('songPrice').value = data.songCheesePrice || 0;
-                document.getElementById('cmdOmakase').value = data.omakaseCommand;
-                document.getElementById('cheesePrice').value = data.omakaseCheesePrice;
+                
+                omakaseItems = data.omakases || [];
+                renderOmakaseList();
 
                 if (data.designSettingsJson && data.designSettingsJson !== "{}") {
                     const ds = JSON.parse(data.designSettingsJson);
@@ -365,7 +308,6 @@
                         if (ds[c]) {
                             if (document.getElementById(`show${c}`)) document.getElementById(`show${c}`).checked = ds[c].show;
                             if (document.getElementById(`text${c}`) && ds[c].text) document.getElementById(`text${c}`).value = ds[c].text;
-                            if (document.getElementById(`name${c}`) && ds[c].name) document.getElementById(`name${c}`).value = ds[c].name;
 
                             if (document.getElementById(`bg${c}`) && ds[c].bg) document.getElementById(`bg${c}`).value = ds[c].bg;
                             if (document.getElementById(`alpha${c}`) && ds[c].alpha !== undefined) {
@@ -384,6 +326,8 @@
                     document.getElementById('customCss').value = ds.customCss || "";
                 }
             }
+            // Trigger preview initial view
+            updatePreview();
         }
 
         function updateVal(el, targetId) {
@@ -391,14 +335,13 @@
             document.getElementById(targetId).innerText = el.value + unit;
         }
 
-        async function saveAllSettings() {
+        async function saveAllSettings(returnToDash = false) {
             const currentOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
 
             const reqData = {
                 songCommand: document.getElementById('cmdSong').value.trim() || "!신청",
                 songCheesePrice: parseInt(document.getElementById('songPrice').value) || 0,
-                omakaseCommand: document.getElementById('cmdOmakase').value.trim() || "!오마카세",
-                omakaseCheesePrice: parseInt(document.getElementById('cheesePrice').value) || 1000,
+                omakases: omakaseItems,
                 designSettingsJson: ""
             };
 
@@ -422,16 +365,18 @@
 
             if (res.ok) {
                 if (connection.state === "Connected") connection.invoke("UpdateOverlayStyle", chzzkUid, reqData.designSettingsJson);
-                alert("✅ 순서 및 켜기/끄기 설정이 오버레이에 즉시 적용되었습니다!");
+                if (returnToDash) {
+                    alert("✅ 저장되었습니다! 대시보드로 돌아갑니다.");
+                    window.location.href = `/dashboard/${chzzkUid}`;
+                } else {
+                    alert("✅ 실시간 오버레이에 즉시 적용되었습니다!");
+                }
             } else { alert("❌ 저장에 실패했습니다."); }
         }
 
         function getCompData(c) {
-            // 체크박스의 ID가 그대로 유지되었으므로 기존 로직 완벽 호환!
             const data = { show: document.getElementById(`show${c}`).checked };
-
             if (document.getElementById(`text${c}`)) data.text = document.getElementById(`text${c}`).value;
-            if (document.getElementById(`name${c}`)) data.name = document.getElementById(`name${c}`).value;
             if (document.getElementById(`size${c}`)) data.size = document.getElementById(`size${c}`).value;
             if (document.getElementById(`limit${c}`)) data.limit = document.getElementById(`limit${c}`).value;
 
@@ -446,8 +391,194 @@
             return data;
         }
 
+        const presets = {
+            'default': {
+                css: `.box {\n  border-radius: 12px;\n  backdrop-filter: blur(10px);\n  -webkit-backdrop-filter: blur(10px);\n  border: 1px solid rgba(255,255,255,0.3);\n  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);\n}\n#omakase-container {\n  border-radius: 8px;\n  backdrop-filter: blur(10px);\n}`,
+                stats: { c: '#00ffa3', s: 14 },
+                notice: { bg: '#1a1a1a', a: 80, c: '#ffffff', s: 16 },
+                omakase: { bg: '#00aaff', a: 85, c: '#ffffff', s: 20 },
+                playing: { bg: '#004422', a: 90, c: '#00ffa3', s: 24 },
+                pending: { bg: '#000000', a: 70, c: '#dddddd' },
+                completed: { bg: '#000000', a: 50, c: '#888888' }
+            },
+            'flat': {
+                css: `.box {\n  border-radius: 0px !important;\n  border: none;\n  border-left: 6px solid #fff;\n  box-shadow: none;\n  backdrop-filter: none;\n}\n#omakase-container {\n  border-radius: 0px !important;\n}`,
+                stats: { c: '#000000', s: 14 },
+                notice: { bg: '#eeeeee', a: 100, c: '#000000', s: 16 },
+                omakase: { bg: '#ff5555', a: 100, c: '#ffffff', s: 22 },
+                playing: { bg: '#ffffff', a: 100, c: '#000000', s: 24 },
+                pending: { bg: '#ffffff', a: 100, c: '#333333' },
+                completed: { bg: '#dddddd', a: 100, c: '#aaaaaa' }
+            },
+            'neon': {
+                css: `.box {\n  border: 1px solid #0ff;\n  border-radius: 0;\n  box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;\n}\n.list-title, .now-label {\n  color: #f0f;\n  text-shadow: 0 0 5px #f0f;\n}\n.now-title {\n  color: #fff;\n  text-shadow: 0 0 8px #0ff;\n}\n.item-title {\n  text-shadow: 0 0 5px #0ff;\n}`,
+                stats: { c: '#ff00ff', s: 14 },
+                notice: { bg: '#000000', a: 80, c: '#00ffff', s: 16 },
+                omakase: { bg: '#000000', a: 80, c: '#ff00ff', s: 22 },
+                playing: { bg: '#000000', a: 80, c: '#ffffff', s: 24 },
+                pending: { bg: '#000000', a: 80, c: '#00ffff' },
+                completed: { bg: '#000000', a: 60, c: '#ff00ff' }
+            },
+            'bubble': {
+                css: `.box {\n  border-radius: 50px !important;\n  padding: 15px 25px;\n  border: 4px solid rgba(255,255,255,0.8);\n  box-shadow: 0 4px 15px rgba(0,0,0,0.1);\n}\n#omakase-container {\n  border-radius: 50px !important;\n}`,
+                stats: { c: '#ffb3ba', s: 16 },
+                notice: { bg: '#ffdfba', a: 95, c: '#555555', s: 18 },
+                omakase: { bg: '#ffffba', a: 95, c: '#555555', s: 24 },
+                playing: { bg: '#baffc9', a: 95, c: '#333333', s: 26 },
+                pending: { bg: '#bae1ff', a: 90, c: '#444444' },
+                completed: { bg: '#e0c9ff', a: 80, c: '#666666' }
+            }
+        };
+
+        function applyPreset(name) {
+            if (!confirm("이 테마를 선택하면 현재 설정된 색상과 커스텀 CSS가 덮어씌워집니다.\n진행하시겠습니까? (저장 전까지는 실제 방송에 반영되지 않음)")) return;
+            const p = presets[name];
+            if (!p) return;
+            
+            if (p.css !== undefined) document.getElementById('customCss').value = p.css;
+            
+            const mapping = {
+                'Stats': [null, null, p.stats.c, p.stats.s],
+                'Notice': [p.notice.bg, p.notice.a, p.notice.c, p.notice.s],
+                'Omakase': [p.omakase.bg, p.omakase.a, p.omakase.c, p.omakase.s],
+                'Playing': [p.playing.bg, p.playing.a, p.playing.c, p.playing.s],
+                'Pending': [p.pending.bg, p.pending.a, p.pending.c, null],
+                'Completed': [p.completed.bg, p.completed.a, p.completed.c, null]
+            };
+            
+            for (const [comp, vals] of Object.entries(mapping)) {
+                if (vals[0] && document.getElementById(`bg${comp}`)) document.getElementById(`bg${comp}`).value = vals[0];
+                if (vals[1] !== null && document.getElementById(`alpha${comp}`)) {
+                    const el = document.getElementById(`alpha${comp}`);
+                    el.value = vals[1];
+                    updateVal(el, `valAlpha${comp}`);
+                }
+                if (vals[2] && document.getElementById(`text${comp}`)) document.getElementById(`text${comp}`).value = vals[2];
+                if (vals[3] && document.getElementById(`size${comp}`)) {
+                    const el = document.getElementById(`size${comp}`);
+                    el.value = vals[3];
+                    updateVal(el, `valSize${comp}`);
+                }
+            }
+            updatePreview();
+        }
+
+        // Live Preview Logic
+        function updatePreview() {
+            try {
+                const hexToRgba = (hex, alphaPercent) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alphaPercent / 100})`;
+                };
+
+                // Notice
+                const notice = document.getElementById('prevNotice');
+                notice.style.display = document.getElementById('showNotice').checked ? 'block' : 'none';
+                if (notice.style.display !== 'none') {
+                    notice.style.backgroundColor = hexToRgba(document.getElementById('bgNotice').value, document.getElementById('alphaNotice').value);
+                    notice.style.color = document.getElementById('textNotice').value;
+                    notice.style.fontSize = (document.getElementById('sizeNotice').value * 0.7) + 'px'; // 70% scale
+                }
+
+                // Stats
+                const stats = document.getElementById('prevStats');
+                stats.style.display = document.getElementById('showStats').checked ? 'block' : 'none';
+                if (stats.style.display !== 'none') {
+                    stats.style.color = document.getElementById('textStats').value;
+                    stats.style.fontSize = (document.getElementById('sizeStats').value * 0.7) + 'px';
+                }
+
+                // Playing
+                const playing = document.getElementById('prevPlaying');
+                playing.style.display = document.getElementById('showPlaying').checked ? 'block' : 'none';
+                if (playing.style.display !== 'none') {
+                    playing.style.backgroundColor = hexToRgba(document.getElementById('bgPlaying').value, document.getElementById('alphaPlaying').value);
+                    playing.style.color = document.getElementById('textPlaying').value;
+                    playing.style.fontSize = (document.getElementById('sizePlaying').value * 0.6) + 'px'; // 60% scale
+                }
+
+                // Pending
+                const pending = document.getElementById('prevPending');
+                pending.style.display = document.getElementById('showPending').checked ? 'block' : 'none';
+                if (pending.style.display !== 'none') {
+                    pending.style.backgroundColor = hexToRgba(document.getElementById('bgPending').value, document.getElementById('alphaPending').value);
+                    pending.style.color = document.getElementById('textPending').value;
+                }
+
+                // Completed
+                const completed = document.getElementById('prevCompleted');
+                completed.style.display = document.getElementById('showCompleted').checked ? 'block' : 'none';
+                if (completed.style.display !== 'none') {
+                    completed.style.backgroundColor = hexToRgba(document.getElementById('bgCompleted').value, document.getElementById('alphaCompleted').value);
+                    completed.style.color = document.getElementById('textCompleted').value;
+                }
+
+                const omakase = document.getElementById('prevOmakase');
+                omakase.style.display = document.getElementById('showOmakase').checked ? 'block' : 'none';
+                if (omakase.style.display !== 'none') {
+                    omakase.style.backgroundColor = hexToRgba(document.getElementById('bgOmakase').value, document.getElementById('alphaOmakase').value);
+                    omakase.style.color = document.getElementById('textOmakase').value;
+                    omakase.style.fontSize = (document.getElementById('sizeOmakase').value * 0.6) + 'px';
+                    
+                    let html = '';
+                    if (omakaseItems.length === 0) {
+                        html = `<span>🍣 오마카세</span><br><span style="font-size: 1.8em;">0</span>`;
+                    } else {
+                        html = omakaseItems.map(o => {
+                            const iconVal = o.icon !== undefined ? o.icon : '🍣';
+                            const iconStr = iconVal ? `${iconVal} ` : '';
+                            return `<span>${iconStr}${o.name}</span><br><span style="font-size: 1.8em;">0</span>`;
+                        }).join('<hr style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;">');
+                    }
+                    omakase.innerHTML = html;
+                }
+
+                // Component Ordering
+                const leftOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
+                const leftCol = document.getElementById('prevLeftCol');
+                leftOrder.forEach(id => {
+                    const el = document.getElementById('prev' + id);
+                    if (el && id !== 'Notice' && id !== 'Omakase') {
+                        leftCol.appendChild(el);
+                    }
+                });
+
+                // Custom CSS Injection (Scoped for Preview)
+                let userCss = document.getElementById('customCss').value || '';
+                let scopedCss = userCss.replace(/(^|\})([^{]+)(\{)/g, function(match, brace, selectorsStr, openBrace) {
+                    let selectors = selectorsStr.split(',').map(s => {
+                        let trimmed = s.trim();
+                        if (trimmed.startsWith('@') || trimmed === '') return trimmed;
+                        let mapped = trimmed.replace(/#notice-container/g, '#prevNotice')
+                                            .replace(/#stats-container/g, '#prevStats')
+                                            .replace(/#playing-container/g, '#prevPlaying')
+                                            .replace(/#pending-container/g, '#prevPending')
+                                            .replace(/#completed-container/g, '#prevCompleted')
+                                            .replace(/#omakase-container/g, '#prevOmakase');
+                        return '#previewScreen ' + mapped;
+                    });
+                    return brace + selectors.join(', ') + openBrace;
+                });
+                document.getElementById('liveCustomCss').innerHTML = scopedCss;
+
+            } catch (e) { console.error(e); }
+        }
+
+        // Attach dynamic listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('input, select').forEach(el => {
+                    el.addEventListener('input', updatePreview);
+                    el.addEventListener('change', updatePreview);
+                });
+            }, 500);
+        });
+
         window.onload = () => {
             document.getElementById('backToDash').href = `/dashboard/${chzzkUid}`;
+            document.getElementById('topBackToDash').href = `/dashboard/${chzzkUid}`;
             connection.start().then(() => {
                 connection.invoke("JoinStreamerGroup", chzzkUid);
                 loadSettings();

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace MooldangAPI.Models
 {
@@ -17,6 +17,10 @@ namespace MooldangAPI.Models
         // ⭐ 치지직 프로필 닉네임 저장 필드 추가
         [MaxLength(100)]
         public string? ChannelName { get; set; }
+
+        // ⭐ 치지직 프로필 이미지 폴더 등 보관 필드 추가
+        [MaxLength(500)]
+        public string? ProfileImageUrl { get; set; }
 
         // ⭐ 치지직 공식 OAuth 인증 토큰 저장소 추가
         public string? ChzzkAccessToken { get; set; }

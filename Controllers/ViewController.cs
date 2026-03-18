@@ -19,19 +19,11 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("/")]
-        public async Task<IResult> Index()
+        [HttpGet("/bot")]
+        [AllowAnonymous]
+        public IResult Index()
         {
-            if (User.Identity?.IsAuthenticated != true) return Results.Redirect("/login");
-
-            var naverId = User.FindFirstValue("StreamerId");
-            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
-
-            if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkUid) || string.IsNullOrEmpty(streamer.ChzzkAccessToken))
-            {
-                return Results.Redirect("/api/auth/chzzk-login");
-            }
-
-            return Results.Redirect($"/dashboard/{streamer.ChzzkUid}");
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/main.html"), "text/html; charset=utf-8");
         }
 
         [HttpGet("/settings/{chzzkUid}")]

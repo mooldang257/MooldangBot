@@ -29,11 +29,38 @@ namespace MooldangAPI.Controllers
             string clientId = clientIdConf?.KeyValue ?? "";
             string redirectUri = $"{BaseDomain}/Auth/callback";
 
-            // 일반 로그인은 state에 단순히 GUID만 넣습니다.
-            string state = Guid.NewGuid().ToString();
+            var naverId = User.FindFirstValue("StreamerId") ?? "";
+            string state = $"{Guid.NewGuid()}_naver_{naverId}";
 
             string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
             return Results.Redirect(authUrl);
+        }
+
+        [HttpGet("/api/auth/me")]
+        public async Task<IResult> GetMyProfile()
+        {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return Results.Json(new { isAuthenticated = false });
+            }
+
+            var naverId = User.FindFirstValue("StreamerId");
+            // 중복 레코드가 혹시 있다면 ChzzkUid가 존재하는 것을 우선 찾습니다.
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId && p.ChzzkUid != null) 
+                          ?? await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+
+            if (profile != null && !string.IsNullOrEmpty(profile.ChzzkUid) && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
+            {
+                return Results.Json(new {
+                    isAuthenticated = true,
+                    isChzzkLinked = true,
+                    channelName = profile.ChannelName ?? "스트리머",
+                    profileImageUrl = profile.ProfileImageUrl ?? "",
+                    chzzkUid = profile.ChzzkUid
+                });
+            }
+
+            return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
         }
 
         [HttpGet("/api/admin/bot/login")]
@@ -42,10 +69,7 @@ namespace MooldangAPI.Controllers
             var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
             string clientId = clientIdConf?.KeyValue ?? "";
 
-            // ⭐ 스트리머 로그인과 완전히 동일한 등록된 콜백 주소를 사용합니다!
             string redirectUri = $"{BaseDomain}/Auth/callback";
-
-            // ⭐ 단, state 값에 "bot_setup_" 이라는 꼬리표를 달아서 보냅니다.
             string state = "bot_setup_" + Guid.NewGuid().ToString();
 
             string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
@@ -83,9 +107,6 @@ namespace MooldangAPI.Controllers
                 string refreshToken = tokenContent.GetProperty("refreshToken").GetString()!;
                 int expiresIn = tokenContent.GetProperty("expiresIn").GetInt32();
 
-                // ==========================================
-                // 🤖 분기 1: 봇 계정 연동 모드 ("bot_setup_" 꼬리표가 있는 경우)
-                // ==========================================
                 if (state != null && state.StartsWith("bot_setup_"))
                 {
                     DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
@@ -118,26 +139,47 @@ namespace MooldangAPI.Controllers
                     return Results.Content(htmlResponse, "text/html; charset=utf-8");
                 }
 
-                // ==========================================
-                // 👤 분기 2: 일반 스트리머 로그인 모드 (꼬리표가 없는 경우)
-                // ==========================================
+                // 일반 스트리머 로그인 (State에서 naverId 복구)
+                string? callbackNaverId = null;
+                if (state != null && state.Contains("_naver_"))
+                {
+                    callbackNaverId = state.Split("_naver_").LastOrDefault();
+                }
+                if (string.IsNullOrEmpty(callbackNaverId)) callbackNaverId = User.FindFirstValue("StreamerId"); // fallback
+
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
                 var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
                 string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
+                
+                string? channelName = null;
+                string? profileImageUrl = null;
+                if (profileRes.GetProperty("content").TryGetProperty("channelName", out var nameEl)) channelName = nameEl.GetString();
+                if (profileRes.GetProperty("content").TryGetProperty("channelImageUrl", out var imgEl)) profileImageUrl = imgEl.GetString();
 
-                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid) 
+                            ?? await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == callbackNaverId && !string.IsNullOrEmpty(p.NaverId));
+
                 if (streamer == null)
                 {
-                    var naverId = User.FindFirstValue("StreamerId");
-                    streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = naverId ?? "" };
+                    streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = callbackNaverId ?? "" };
                     _db.StreamerProfiles.Add(streamer);
                 }
+                else if (!string.IsNullOrEmpty(callbackNaverId))
+                {
+                    // Update NaverId just in case it was blank
+                    streamer.NaverId = callbackNaverId;
+                    streamer.ChzzkUid = chzzkUid;
+                }
+                
+                if (!string.IsNullOrEmpty(channelName)) streamer.ChannelName = channelName;
+                if (!string.IsNullOrEmpty(profileImageUrl)) streamer.ProfileImageUrl = profileImageUrl;
+
                 streamer.ChzzkAccessToken = accessToken;
                 streamer.ChzzkRefreshToken = refreshToken;
                 streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
 
                 await _db.SaveChangesAsync();
-                return Results.Redirect($"/dashboard/{chzzkUid}");
+                return Results.Redirect("/");
             }
             catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
         }
