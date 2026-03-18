@@ -12,7 +12,7 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// 1. 핵심 인프라 및 DB 설정
+// 1. 핵심 인프라 및 DB 설정 수정테스트
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
