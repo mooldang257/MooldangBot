@@ -297,7 +297,8 @@
             <a href="/login" id="login-btn" class="btn-login" style="display: none;">
                 스트리머 로그인
             </a>
-            <div id="profile-box" class="profile-box" style="padding: 0.4rem 1.2rem;">
+            <div id="profile-box" class="profile-box">
+                <img id="profile-img" src="" alt="Profile" class="profile-img" style="display: none;" referrerpolicy="no-referrer">
                 <span id="profile-name" class="profile-name"></span>
             </div>
         </div>
@@ -362,16 +363,19 @@
                         // 치지직까지 모두 연동된 로그인 성공 상태
                         profileBox.style.display = 'flex';
                         profileName.textContent = data.channelName;
-                        profileImg.onerror = () => {
-                            profileImg.onerror = null; // 루프 방지
-                            profileImg.src = 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
-                        };
                         
-                        if (data.profileImageUrl) {
-                            // 💡 브라우저 보안 차단을 피하기 위해 서버 프록시를 통해 이미지를 불러옵니다.
-                            profileImg.src = `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}`;
-                        } else {
-                            profileImg.src = 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
+                        // 💡 이미지 태그가 있을 때만 처리하여 JS 오류 방지
+                        if (profileImg) {
+                            profileImg.onerror = () => {
+                                profileImg.onerror = null; 
+                                profileImg.style.display = 'none'; // 실패 시 숨김
+                            };
+                            
+                            // 프로필 이미지가 있더라도 현재는 숨김 모드이므로 src만 설정하고 보이지 않게 유지
+                            if (data.profileImageUrl) {
+                                profileImg.src = `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}`;
+                            }
+                            profileImg.style.display = 'none';
                         }
 
                         // 각 메뉴 카드 링크 활성화
