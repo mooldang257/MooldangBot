@@ -1,31 +1,31 @@
 version: '3.8'
 
 services:
-  # 1. MariaDB (데이터 창고)
   db:
-    image: mariadb:latest
-    container_name: mooldang_db
+    image: mysql:8.0
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=@enjoy1004
-      - MYSQL_DATABASE=MooldangBot
+      MYSQL_DATABASE: ChzzkSongBook
+      MYSQL_ROOT_PASSWORD: password123!
     ports:
       - "3306:3306"
     volumes:
-      - ./mysql_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
 
-  # 2. 물댕봇 API (프로그램 본체)
   app:
     build: .
-    container_name: mooldang_api
     restart: always
     ports:
-      - "8443:3000"
+      - "8080:8080"
     environment:
-      - ASPNETCORE_URLS=http://+:3000
+      - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
-      # 계층형 구조는 이중 언더스코어(__)로 표현합니다.
-      - NaverOAuth__ClientId=FF4iI4Q0eCmzwkZDuo0W
-      - NaverOAuth__ClientSecret=D19L0cNJ1M
-      - ChzzkApi__ClientId=172f9790-da2a-4322-a1ff-58e534454b8a
-      - ChzzkApi__ClientSecret=OihzgJAhRQmsUXek-dV0h1VL_4GUqxFM3AplypS9z1k
+      - ConnectionStrings__DefaultConnection=Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;
+    depends_on:
+      - db
+    volumes:
+      - avatar_data:/app/wwwroot/images/avatars
+
+volumes:
+  db_data:
+  avatar_data:

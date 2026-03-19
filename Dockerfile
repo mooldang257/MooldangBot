@@ -1,20 +1,19 @@
-# 1. 빌드 스테이지
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# 버전을 .NET 10.0에 맞게 설정합니다.
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# 프로젝트 파일 복사 및 복구
-COPY *.csproj ./
-RUN dotnet restore
-
-# 나머지 소스 복사 및 빌드
+# 소스 복사 및 빌드
 COPY . ./
+RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
-# 2. 실행 스테이지
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+# 런타임 이미지 설정
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/out .
 
-# 포트 설정 (물댕님이 사용하시던 3000번)
-EXPOSE 3000
+# 업로드된 이미지 보존을 위한 볼륨 폴더 생성
+RUN mkdir -p /app/wwwroot/images/avatars
+
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "MooldangAPI.dll"]
