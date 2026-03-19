@@ -363,6 +363,10 @@
                         // 치지직까지 모두 연동된 로그인 성공 상태
                         profileBox.style.display = 'flex';
                         profileName.textContent = data.channelName;
+                        profileImg.onerror = () => {
+                            profileImg.onerror = null; // 루프 방지
+                            profileImg.src = 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
+                        };
                         profileImg.src = data.profileImageUrl || 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
 
                         // 각 메뉴 카드 링크 활성화
