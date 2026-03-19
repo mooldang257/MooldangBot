@@ -31,16 +31,5 @@ namespace MooldangAPI.Controllers
             string chzzkAuthUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
             return Redirect(chzzkAuthUrl);
         }
-
-        // 💡 봇 콜백(/Auth/callback)은 이제 AuthController에서 통합 처리합니다. 
-        // 기존의 BotCallback 메소드는 삭제합니다.
-    }
-
-        private void UpdateOrAddSetting(string key, string value)
-        {
-            var setting = _db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
-            if (setting == null) _db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
-            else setting.KeyValue = value;
-        }
     }
 }
