@@ -59,6 +59,17 @@ builder.Services.AddAuthentication(options => {
         }
         return Task.CompletedTask;
     };
+
+    // 💡 프록시 환경에서 Redirect URI가 http로 생성되는 문제를 방지하기 위해 강제로 https로 변환합니다.
+    options.Events.OnRedirectToAuthorizationEndpoint = context => {
+        var redirectUri = context.RedirectUri;
+        if (redirectUri.StartsWith("http://"))
+        {
+            redirectUri = redirectUri.Replace("http://", "https://");
+        }
+        context.Response.Redirect(redirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddAuthorization();
