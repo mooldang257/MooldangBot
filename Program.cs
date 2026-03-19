@@ -63,10 +63,18 @@ builder.Services.AddAuthentication(options => {
     // 💡 프록시 환경에서 Redirect URI가 http로 생성되는 문제를 방지하기 위해 강제로 https로 변환합니다.
     options.Events.OnRedirectToAuthorizationEndpoint = context => {
         var redirectUri = context.RedirectUri;
-        if (redirectUri.StartsWith("http://"))
+        if (redirectUri.Contains("redirect_uri=http%3A%2F%2F"))
         {
-            redirectUri = redirectUri.Replace("http://", "https://");
+            redirectUri = redirectUri.Replace("redirect_uri=http%3A%2F%2F", "redirect_uri=https%3A%2F%2F");
         }
+        else if (redirectUri.Contains("redirect_uri=http://"))
+        {
+            redirectUri = redirectUri.Replace("redirect_uri=http://", "redirect_uri=https://");
+        }
+
+        // 🔍 [로그 추가] 네이버로 보내는 최종 주소를 서버 콘솔에 출력하여 디버깅합니다.
+        Console.WriteLine($"[NaverAuth] Redirecting to Naver: {redirectUri}");
+        
         context.Response.Redirect(redirectUri);
         return Task.CompletedTask;
     };
