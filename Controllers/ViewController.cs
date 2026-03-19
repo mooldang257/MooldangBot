@@ -18,7 +18,6 @@ namespace MooldangAPI.Controllers
             _db = db;
         }
 
-        [HttpGet("/")]
         [HttpGet("/bot")]
         [AllowAnonymous]
         public IResult Index()
