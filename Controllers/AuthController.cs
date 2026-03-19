@@ -12,14 +12,15 @@ namespace MooldangAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IConfiguration _configuration;
         
-        // 💡 서버 이동 시 여기 주소만 바꾸면 됩니다! (Cloudflare 8443 대응)
-        private const string BaseDomain = "http://localhost:3000";
-        // private const string BaseDomain = "https://your-domain.com:8443";
+        // 💡 설정(appsettings.json)에서 도메인 정보를 읽어옵니다.
+        private string BaseDomain => _configuration["BaseDomain"] ?? "https://www.mooldang.store";
 
-        public AuthController(AppDbContext db)
+        public AuthController(AppDbContext db, IConfiguration configuration)
         {
             _db = db;
+            _configuration = configuration;
         }
 
         [HttpGet("/api/auth/chzzk-login")]

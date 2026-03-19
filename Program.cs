@@ -1,6 +1,7 @@
 using AspNet.Security.OAuth.Naver;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
 using MooldangAPI.Hubs;
@@ -63,6 +64,14 @@ builder.Services.AddAuthentication(options => {
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
+// ==========================================
+// ⭐ [추가] 프록시(Cloudflare, Nginx) 대응 설정
+// ==========================================
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // 미들웨어 설정
 app.UseStaticFiles();
 app.UseAuthentication();
@@ -72,6 +81,7 @@ app.UseAuthorization();
 // ==========================================
 // 3. 🌐 화면 라우팅 (View)
 // ==========================================
+app.MapGet("/", () => Results.Redirect("/bot"));
 
 
 
