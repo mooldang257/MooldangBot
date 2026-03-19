@@ -97,5 +97,11 @@ app.MapControllers();
 app.MapHub<OverlayHub>("/overlayHub");
 
 // 8443 포트 사용을 위해 ASPNETCORE_URLS 환경변수를 쓰거나 아래를 수정하세요.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 app.Run();
 
