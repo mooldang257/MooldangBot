@@ -37,7 +37,32 @@ namespace MooldangAPI.Controllers
             return Results.Redirect(authUrl);
         }
 
-        [HttpGet("/api/auth/me")]
+        [HttpGet("/api/proxy/image")]
+    public async Task<IResult> ProxyImage([FromQuery] string url)
+    {
+        if (string.IsNullOrEmpty(url)) return Results.NotFound();
+        
+        try 
+        {
+            using var client = new HttpClient();
+            // 💡 네이버/치지직 서버가 로봇으로 오해하지 않도록 User-Agent를 추가합니다.
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return Results.NotFound();
+            
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
+            var stream = await response.Content.ReadAsStreamAsync();
+            
+            return Results.Stream(stream, contentType);
+        }
+        catch 
+        {
+            return Results.NotFound();
+        }
+    }
+
+    [HttpGet("/api/auth/me")]
         public async Task<IResult> GetMyProfile()
         {
             if (User.Identity?.IsAuthenticated != true)
