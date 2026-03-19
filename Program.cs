@@ -95,6 +95,9 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardLimit = null // 프록시 제한을 풀어서 모든 홉을 신뢰하게 함
 });
 
+app.UseWebSockets();
+app.UseRouting();
+
 // 미들웨어 설정
 app.UseStaticFiles();
 app.UseAuthentication();
