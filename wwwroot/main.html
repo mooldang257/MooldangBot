@@ -367,7 +367,13 @@
                             profileImg.onerror = null; // 루프 방지
                             profileImg.src = 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
                         };
-                        profileImg.src = data.profileImageUrl || 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
+                        
+                        if (data.profileImageUrl) {
+                            // 💡 브라우저 보안 차단을 피하기 위해 서버 프록시를 통해 이미지를 불러옵니다.
+                            profileImg.src = `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}`;
+                        } else {
+                            profileImg.src = 'https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png';
+                        }
 
                         // 각 메뉴 카드 링크 활성화
                         btnSong.href = `/dashboard/${data.chzzkUid}`;
