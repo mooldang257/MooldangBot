@@ -124,6 +124,22 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // 💡 [DB 초기값 세팅] 리눅스 도커 환경에서 DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    
+    void EnsureSetting(string key, string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        if (!db.SystemSettings.Any(s => s.KeyName == key))
+        {
+            db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
+        }
+    }
+
+    EnsureSetting("ChzzkClientId", config["ChzzkApi:ClientId"]);
+    EnsureSetting("ChzzkClientSecret", config["ChzzkApi:ClientSecret"]);
+    db.SaveChanges();
 }
 
 app.Run();
