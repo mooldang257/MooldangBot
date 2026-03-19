@@ -21,4 +21,16 @@ public class OverlayHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, chzzkUid);
     }
+
+    // 💡 대시보드 상태 업데이트를 동일 그룹(chzzkUid)의 오버레이들에 전송
+    public async Task UpdateOverlayState(string chzzkUid, string stateJson)
+    {
+        await Clients.Group(chzzkUid).SendAsync("ReceiveOverlayState", stateJson);
+    }
+
+    // 💡 디자인 설정 업데이트를 동일 그룹(chzzkUid)의 오버레이들에 전송
+    public async Task UpdateOverlayStyle(string chzzkUid, string styleJson)
+    {
+        await Clients.Group(chzzkUid).SendAsync("ReceiveOverlayStyle", styleJson);
+    }
 }
