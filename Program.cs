@@ -8,6 +8,10 @@ using MooldangAPI.Models;
 using MooldangAPI.Services;
 using System.Security.Claims;
 using System.Text.Json;
+using MediatR;
+using MooldangAPI.Features.SongQueue;
+using MooldangAPI.Features.Roulette;
+using MooldangAPI.Strategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,14 +20,20 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+// -- Event-Driven Architecture 의존성 주입 --
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddSingleton<SongQueueState>();
+builder.Services.AddSingleton<RouletteState>();
+builder.Services.AddTransient<IOverlayRenderStrategy, DefaultChatRenderStrategy>();
+builder.Services.AddHostedService<ChzzkBackgroundService>();
+// ------------------------------------------
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
-// 백그라운드 봇 서비스 등록 (중복 방지)
-builder.Services.AddSingleton<BotManager>();
-builder.Services.AddHostedService(provider => provider.GetRequiredService<BotManager>());
+// Removed BotManager. ChzzkBackgroundService handles this via EDA.
 
 // ==========================================
 // 2. 네이버 로그인(문지기) 설정

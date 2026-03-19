@@ -1,25 +1,24 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
-namespace MooldangAPI.Hubs
+namespace MooldangAPI.Hubs;
+
+public class OverlayHub : Hub
 {
-    public class OverlayHub : Hub
+    // OBS 브라우저 소스 클라이언트가 연결될 때 호출
+    public override async Task OnConnectedAsync()
     {
-        // 1. 오버레이가 켜질 때 특정 스트리머의 채널(방)에 입장
-        public async Task JoinStreamerGroup(string chzzkUid)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, chzzkUid);
-        }
+        await Clients.Caller.SendAsync("Connected", "Overlay successfully connected.");
+        await base.OnConnectedAsync();
+    }
 
-        // 2. 대시보드 -> 오버레이 (곡 목록 및 상태 실시간 전송)
-        public async Task UpdateOverlayState(string chzzkUid, string jsonState)
-        {
-            await Clients.Group(chzzkUid).SendAsync("ReceiveOverlayState", jsonState);
-        }
+    // 클라이언트가 특정 스트리머의 채널 알림을 구독하도록 그룹에 추가합니다.
+    public async Task JoinStreamerGroup(string chzzkUid)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, chzzkUid);
+    }
 
-        // ⭐ 3. 설정창 -> 오버레이 (디자인 및 색상 설정 실시간 전송) - 이 부분이 핵심입니다!
-        public async Task UpdateOverlayStyle(string chzzkUid, string jsonStyle)
-        {
-            await Clients.Group(chzzkUid).SendAsync("ReceiveOverlayStyle", jsonStyle);
-        }
+    public async Task LeaveStreamerGroup(string chzzkUid)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, chzzkUid);
     }
 }

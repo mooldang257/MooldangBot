@@ -15,3 +15,9 @@ appsettings.Development.json
 
 # 기타 시스템 파일
 .DS_Store
+
+# 빌드 및 배포 폴더
+publish/
+wwwroot/images/avatars/
+*.md.tmp
+리눅스 반영.md

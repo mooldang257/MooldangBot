@@ -15,6 +15,7 @@ namespace MooldangAPI.Data
         public DbSet<SongQueue> SongQueues { get; set; }
         public DbSet<StreamerCommand> StreamerCommands { get; set; }
         public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
+        public DbSet<AvatarSetting> AvatarSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,6 +27,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<SystemSetting>().ToTable("systemsettings");
             modelBuilder.Entity<StreamerCommand>().ToTable("streamercommands");
             modelBuilder.Entity<StreamerOmakaseItem>().ToTable("streameromakases");
+            modelBuilder.Entity<AvatarSetting>().ToTable("avatarsettings");
         }
 
     }

@@ -1,4 +1,4 @@
-﻿using System.Net.WebSockets;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -69,15 +69,17 @@ public class ChzzkChannelWorker
                 using var scope = _serviceProvider.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
+                string currentUid = _uid;
+                var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == currentUid, stoppingToken);
                 if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
                 {
-                    _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 취소합니다.");
-                    return;
+                    _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 대기합니다.");
+                    await Task.Delay(10000, stoppingToken);
+                    continue;
                 }
 
                 // ==========================================================
-                // ⭐ [추가된 부분] 방에 들어가기 전에 무조건 토큰 유통기한부터 검사합니다!
+                // ⭐ [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
                 // ==========================================================
 
@@ -95,7 +97,8 @@ public class ChzzkChannelWorker
                 if (!authRes.IsSuccessStatusCode)
                 {
                     _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패: {authJson}");
-                    return;
+                    await Task.Delay(5000, stoppingToken);
+                    continue;
                 }
                 using var authDoc = JsonDocument.Parse(authJson);
                 string socketUrl = authDoc.RootElement.GetProperty("content").GetProperty("url").GetString() ?? "";
@@ -138,7 +141,12 @@ public class ChzzkChannelWorker
 
                 while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
                 {
-                    var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), stoppingToken);
+                    // ⭐ [타임아웃 안전장치] 치지직은 20초마다 Ping(2)을 보냅니다. 
+                    // 60초 동안 아무 신호도 안 오면 연결이 끊긴(좀비 상태) 것으로 간주하고 루프를 강제 파괴합니다!
+                    using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                    timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
+
+                    var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), timeoutCts.Token);
                     if (result.MessageType == WebSocketMessageType.Close) break;
 
                     string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
@@ -381,6 +389,15 @@ public class ChzzkChannelWorker
                                         ? payload.GetProperty("profile").GetString() ?? "{}"
                                         : payload.GetProperty("profile").GetRawText();
 
+                // ⭐ [이모티콘] emojis 파싱 (보안상 안전하게 dictionary 추출)
+                var emojisDict = new Dictionary<string, string>();
+                if (payload.TryGetProperty("emojis", out var emojisProp) && emojisProp.ValueKind == JsonValueKind.Object)
+                {
+                    try {
+                        emojisDict = JsonSerializer.Deserialize<Dictionary<string, string>>(emojisProp.GetRawText()) ?? new Dictionary<string, string>();
+                    } catch {}
+                }
+
                 using var profileDoc = JsonDocument.Parse(profileJson);
                 string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
 
@@ -395,9 +412,13 @@ public class ChzzkChannelWorker
                 //⭐ [봇계정 여부 확인] 봇 계정의 고유 ID를 봇으로 지정합니다.
                 bool isBot = senderId == "445df9c493713244a65d97e4fd1ed0b1";
 
-                _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg} (Master: {isMaster})");
-
                 _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg}");
+
+                // 🌟 [이벤트 발송] 다른 기능들(아바타 오버레이 등)이 채팅을 받을 수 있도록 중계기에 보냅니다.
+                using var mediatorScope = _serviceProvider.CreateScope();
+                var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+                await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
+                    profile, nickname, msg, userRole, senderId, _clientId, _clientSecret, emojisDict), token);
 
                 // 명령어 처리 (DB에서 설정한 값 사용)
                 string songCmd = profile.SongCommand ?? "!신청";
@@ -615,10 +636,6 @@ public class ChzzkChannelWorker
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"⚠️ [권한 부족] {nickname}님이 {firstWord} 명령어를 시도했으나 차단되었습니다.");
                         }
                     }
                 }

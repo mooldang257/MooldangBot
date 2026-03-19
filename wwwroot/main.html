@@ -327,6 +327,13 @@
                 <p class="menu-desc">채팅창에서 활용할 수 있는 내 방송만의 맞춤형 명령어를 설정합니다.</p>
                 <div class="login-overlay">로그인이 필요합니다</div>
             </a>
+
+            <a href="#" class="menu-card" id="btn-avatar">
+                <div class="menu-icon">🎭</div>
+                <h2 class="menu-title">팬 캐릭터 설정</h2>
+                <p class="menu-desc">화면 하단에 표시되는 팬 캐릭터(아바타) 이미지 및 애니메이션을 설정합니다.</p>
+                <div class="login-overlay">로그인이 필요합니다</div>
+            </a>
         </section>
     </main>
 
@@ -362,6 +369,8 @@
                         // 각 메뉴 카드 링크 활성화
                         btnSong.href = `/dashboard/${data.chzzkUid}`;
                         btnCmd.href = `/commands-manager/${data.chzzkUid}`;
+                        const btnAvatar = document.getElementById('btn-avatar');
+                        if(btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${data.chzzkUid}`;
 
                         // 로그인 오버레이 제거 (클릭 가능해짐)
                         overlays.forEach(overlay => overlay.style.display = 'none');

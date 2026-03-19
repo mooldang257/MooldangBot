@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>팬 캐릭터(아바타) 오버레이</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            overflow: hidden;
+            background-color: transparent; /* 투명 배경 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 100vw; height: 100vh;
+        }
+
+        #avatar-layer {
+            position: absolute;
+            bottom: 0px;
+            left: 0;
+            width: 100%;
+            height: 150px; /* 캐릭터들이 활동할 영역 (화면 하단) */
+            pointer-events: none; /* 드래그를 위해 자식요소에만 pointer-events 설정 */
+        }
+
+        .avatar-container {
+            position: absolute;
+            bottom: 0px;
+            pointer-events: auto; /* 스트리머 마우스 상호작용 용 */
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: left 0.1s linear, top 0.1s linear;
+        }
+
+        .avatar-container:active { cursor: grabbing; }
+
+        .avatar-img {
+            width: auto;
+            height: 80px;
+            object-fit: contain;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
+            transform-origin: center bottom;
+        }
+
+        /* 채팅 말풍선 */
+        .chat-bubble {
+            background-color: white;
+            color: #333;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+            max-width: 200px;
+            text-align: center;
+            opacity: 0; /* 기본적으로 안 보임 */
+            transform: translateY(10px);
+            transition: opacity 0.3s, transform 0.3s;
+            position: relative;
+            word-break: break-all;
+        }
+
+        /* 말풍선 꼬리 */
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px; left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+
+        .nickname {
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* 애니메이션 효과 */
+        .anim-walking {
+            animation: walking 0.6s alternate infinite ease-in-out;
+        }
+        .anim-running {
+            animation: walking 0.15s alternate infinite linear;
+        }
+        .anim-flying {
+            animation: flying 3s ease-in-out;
+        }
+        
+        /* ⭐ [CSS 변수 활용] 애니메이션과 가로 반전이 충돌하지 않도록 처리 */
+        .avatar-img { 
+            --flip: 1; 
+            transform: scaleX(var(--flip));
+            transition: transform 0.2s; /* 부드러운 방향 전환 */
+        }
+        .flip-h { --flip: -1; }
+
+        @keyframes walking {
+            0% { transform: scaleX(var(--flip)) translateY(0); }
+            100% { transform: scaleX(var(--flip)) translateY(-8px); }
+        }
+
+        @keyframes flying {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(150px, -600px); }
+            100% { transform: translate(300px, 0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="avatar-layer">
+        <!-- 동적으로 추가되는 아바타 컨테이너들이 들어옴 -->
+    </div>
+
+    <script>
+        // URL에서 chzzkUid 가져오기
+        const pathParts = window.location.pathname.split('/');
+        let chzzkUid = pathParts[pathParts.length - 1];
+        if(!chzzkUid || chzzkUid.includes(".html")) {
+            const urlParams = new URLSearchParams(window.location.search);
+            chzzkUid = urlParams.get('uid') || "TEST_UID";
+        }
+
+        let settings = {
+            isEnabled: true, showNickname: true, showChat: true,
+            disappearTimeSeconds: 60,
+            normalAvatarUrl: null, subscriberAvatarUrl: null, tier2AvatarUrl: null
+        };
+
+        const avatars = {}; // { senderId: { element, pos, dir, pinned, speed, state, chatTimer, destroyTimer } }
+        const MAX_WIDTH = window.innerWidth;
+        const DEFAULT_Y = 0; // bottom 0
+
+        async function initSettings() {
+            try {
+                const res = await fetch(`/api/avatar/settings/${chzzkUid}`);
+                if(res.ok) {
+                    const fetched = await res.json();
+                    settings = { ...settings, ...fetched }; // Merge, keeping defaults where missing
+                } else {
+                    console.log("No custom settings found. Using defaults.");
+                }
+            } catch(e) { console.error("Setting load failed", e); }
+        }
+
+        function getAvatarImg(userRole) {
+            if(userRole === 'tier2' && settings.tier2AvatarUrl) return settings.tier2AvatarUrl;
+            if((userRole === 'subscriber' || userRole === 'tier2') && settings.subscriberAvatarUrl) return settings.subscriberAvatarUrl;
+            if(settings.normalAvatarUrl) return settings.normalAvatarUrl;
+            return '/images/avatar_default.png'; // 예비용 기본 이미지 경로
+        }
+
+        function createAvatar(senderId, nickname, userRole) {
+            const layer = document.getElementById('avatar-layer');
+            const container = document.createElement('div');
+            container.className = 'avatar-container';
+            container.id = 'ava_' + senderId;
+            
+            // Random start position
+            const startX = Math.random() * (MAX_WIDTH - 100);
+            container.style.left = startX + 'px';
+            container.style.bottom = DEFAULT_Y + 'px';
+
+            const chatNode = document.createElement('div');
+            chatNode.className = 'chat-bubble';
+            chatNode.innerText = '';
+            chatNode.style.display = settings.showChat ? 'block' : 'none';
+
+            const nickNode = document.createElement('div');
+            nickNode.className = 'nickname';
+            nickNode.innerText = nickname;
+            nickNode.style.display = settings.showNickname ? 'block' : 'none';
+
+            const imgNode = document.createElement('img');
+            imgNode.className = 'avatar-img anim-walking';
+            imgNode.src = getAvatarImg(userRole);
+
+            // Append elements
+            container.appendChild(chatNode);
+            container.appendChild(nickNode);
+            container.appendChild(imgNode);
+            layer.appendChild(container);
+
+            avatars[senderId] = {
+                el: container,
+                imgEl: imgNode,
+                chatEl: chatNode,
+                x: startX,
+                y: DEFAULT_Y,
+                dirX: (Math.random() > 0.5 ? 1 : -1),
+                speed: 1 + Math.random(), // 1~2 px per tick
+                pinned: false,
+                state: 'walking', // walking, run, flying, idle
+                chatTimer: null,
+                destroyTimer: null,
+                nextThinkTime: Date.now() + 2000 + Math.random() * 3000 // 2~5초 뒤에 다음 행동 결정
+            };
+
+            makeDraggable(container, senderId);
+        }
+
+        function resetDestroyTimer(senderId) {
+            const av = avatars[senderId];
+            if(!av) return;
+            if(settings.disappearTimeSeconds > 0) {
+                if(av.destroyTimer) clearTimeout(av.destroyTimer);
+                av.destroyTimer = setTimeout(() => {
+                    av.el.remove();
+                    delete avatars[senderId];
+                }, settings.disappearTimeSeconds * 1000);
+            }
+        }
+
+        function showChatBubble(senderId, message, emojis) {
+            const av = avatars[senderId];
+            if(!av) return;
+
+            // XSS 방어 처리 (HTML 태그 이스케이프)
+            let safeMsg = document.createElement('div');
+            safeMsg.innerText = message;
+            let htmlMsg = safeMsg.innerHTML;
+
+            // 이모티콘 치환
+            if(emojis && Object.keys(emojis).length > 0) {
+                for (const key in emojis) {
+                    // 키값이 {: : }를 포함하지 않는 경우를 대비해 양쪽 케이스 모두 대응
+                    // Chzzk 이모티콘은 보통 {:키값:} 형태임
+                    let targetKey = key;
+                    if (!targetKey.startsWith('{:')) {
+                        targetKey = '{:' + targetKey + ':}';
+                    }
+
+                    const escapedKey = targetKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const imgTag = `<img src="${emojis[key]}" style="height:28px; vertical-align:middle; margin:0 2px;" />`;
+                    htmlMsg = htmlMsg.split(targetKey).join(imgTag); // 정규식 대신 split/join으로 더 안정적으로 교체
+                }
+            }
+
+            av.chatEl.innerHTML = htmlMsg;
+            av.chatEl.style.opacity = '1';
+            av.chatEl.style.transform = 'translateY(0)';
+            
+            if(av.chatTimer) clearTimeout(av.chatTimer);
+            av.chatTimer = setTimeout(() => {
+                av.chatEl.style.opacity = '0';
+                av.chatEl.style.transform = 'translateY(10px)';
+            }, 5000); // 5초 표출
+        }
+
+        function makeDraggable(el, id) {
+            let isDown = false;
+            let offset = [0,0];
+
+            el.addEventListener('mousedown', function(e) {
+                isDown = true;
+                offset = [
+                    el.offsetLeft - e.clientX,
+                    el.offsetTop - e.clientY
+                ];
+                avatars[id].pinned = true; // 드래그 시작 시 자동 이동 정지
+                el.style.bottom = 'auto'; // 드래그될 때는 top 기준으로 움직임 전환
+            }, true);
+
+            el.addEventListener('dblclick', function(e) {
+                avatars[id].pinned = false; // 더블클릭 시 고정 해제
+                el.style.bottom = '0px';
+                el.style.top = 'auto';
+            });
+
+            document.addEventListener('mouseup', function() { isDown = false; }, true);
+            document.addEventListener('mousemove', function(e) {
+                if(isDown) {
+                    const newLeft = e.clientX + offset[0];
+                    const newTop = e.clientY + offset[1];
+                    el.style.left = newLeft + 'px';
+                    el.style.top = newTop + 'px';
+                    avatars[id].x = newLeft; // 위치 갱신
+                }
+            }, true);
+        }
+
+        // 메인 루프: 이동 처리
+        function gameLoop() {
+            const now = Date.now();
+
+            for(let id in avatars) {
+                const av = avatars[id];
+                if(av.pinned) continue; // 고정된 상태면 자동 이동 안함
+
+                // AI 행동 결정 (일정 시간마다 상태 변경)
+                if (now > av.nextThinkTime && av.state !== 'run' && av.state !== 'flying') {
+                    const rnd = Math.random();
+                    if (rnd < 0.3) {
+                        av.state = 'idle';
+                        av.imgEl.classList.remove('anim-walking');
+                    } else {
+                        av.state = 'walking';
+                        av.imgEl.classList.add('anim-walking');
+                        // 방향 전환 확률
+                        if (Math.random() < 0.4) av.dirX *= -1;
+                        av.speed = 0.8 + Math.random() * 1.5;
+                    }
+                    av.nextThinkTime = now + 2000 + Math.random() * 5000;
+                }
+
+                if(av.state === 'walking' || av.state === 'run') {
+                    av.x += av.dirX * av.speed;
+                    // 화면 양쪽 끝에 닿으면 튕김
+                    if(av.x < 0) { av.x = 0; av.dirX = 1; }
+                    if(av.x > MAX_WIDTH - 80) { av.x = MAX_WIDTH - 80; av.dirX = -1; }
+
+                    av.el.style.left = av.x + 'px';
+                    
+                    // 방향에 따라 이미지 뒤집기
+                    if(av.dirX > 0) av.imgEl.classList.add('flip-h');
+                    else av.imgEl.classList.remove('flip-h');
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // SignalR 연결 및 이벤트 처리
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/overlayHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveChat", (jsonRaw) => {
+            if(!settings.isEnabled) return; // 기능 비활성화 시 무시
+
+            const data = JSON.parse(jsonRaw);
+            // 아바타 생성 체크
+            if(!avatars[data.senderId]) {
+                createAvatar(data.senderId, data.nickname, data.userRole);
+            }
+            
+            resetDestroyTimer(data.senderId); // 채팅을 칠 때마다 타이머 초기화
+
+            // 말풍선 출력
+            if(settings.showChat) {
+                showChatBubble(data.senderId, data.message, data.emojis);
+            }
+        });
+
+        connection.on("ReceiveAvatarCommand", (jsonRaw) => {
+            if(!settings.isEnabled) return;
+            const data = JSON.parse(jsonRaw);
+            
+            if(!avatars[data.senderId]) {
+                createAvatar(data.senderId, data.nickname, data.userRole);
+            }
+            
+            resetDestroyTimer(data.senderId);
+
+            const av = avatars[data.senderId];
+            av.state = data.command; 
+
+            if(data.command === 'run') {
+                av.speed = 5; // 속도 증가
+                av.imgEl.className = 'avatar-img anim-running';
+                if(!av.pinned) av.pinned = false;
+
+                // 5초 뒤 걷기 모드로 복귀
+                setTimeout(() => {
+                    if(av.state === 'run') {
+                        av.state = 'walking';
+                        av.speed = 1 + Math.random();
+                        av.imgEl.className = 'avatar-img anim-walking';
+                    }
+                }, 5000);
+            }
+            else if (data.command === 'fly') {
+                // 비행 처리 (CSS 애니메이션으로 위로 올림)
+                av.pinned = true; // 이동 중지
+                av.imgEl.className = 'avatar-img anim-flying';
+                
+                setTimeout(() => {
+                    // 애니메이션 종료 시 부드럽게 위치 반영 (왼쪽이나 오른쪽으로 대각선 이동한 만큼)
+                    av.x += (av.dirX * 300); // 방향에 맞춰 X좌표 갱신
+                    av.el.style.left = Math.max(0, Math.min(MAX_WIDTH - 80, av.x)) + 'px';
+
+                    av.imgEl.className = 'avatar-img anim-walking';
+                    av.pinned = false;
+                    av.state = 'walking';
+                }, 3000);
+            }
+        });
+
+        connection.start().then(() => {
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+            console.log("Overlay Hub Connected to group: " + chzzkUid);
+        });
+
+        // 초기화 및 게임루프 시작
+        initSettings().then(() => {
+            requestAnimationFrame(gameLoop);
+        });
+
+    </script>
+</body>
+</html>

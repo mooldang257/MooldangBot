@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팬 캐릭터(아바타) 설정</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        .card-header { background-color: #4a90e2; color: white; font-weight: bold; }
+        .image-preview { width: 100px; height: 100px; object-fit: contain; border: 1px dashed #ccc; margin-top: 10px; display: block; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container max-w-lg mt-4" style="max-width: 800px;">
+        <h2 class="mb-4">팬 캐릭터(아바타) 설정</h2>
+        
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+            <div style="word-break: break-all;">
+                <strong>오버레이 주소:</strong> <a href="#" id="overlayUrlLink" target="_blank" class="text-decoration-none">생성 중...</a>
+            </div>
+            <button class="btn btn-sm btn-primary ms-3 text-nowrap" onclick="copyOverlayUrl()">복사하기</button>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">기본 설정</div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="isEnabled">
+                    <label class="form-check-label" for="isEnabled">아바타 기능 켜기 (오버레이 하단에 표시)</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showNickname">
+                    <label class="form-check-label" for="showNickname">닉네임 표시</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showChat">
+                    <label class="form-check-label" for="showChat">채팅 내용 말풍선으로 표시</label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="disappearTimeSeconds">채팅 미입력 시 아바타 자동 숨김</label>
+                    <select class="form-select w-auto" id="disappearTimeSeconds">
+                        <option value="10">10초 뒤 숨김</option>
+                        <option value="30">30초 뒤 숨김</option>
+                        <option value="60" selected>1분 뒤 숨김 (기본)</option>
+                        <option value="300">5분 뒤 숨김</option>
+                        <option value="0">숨기지 않음 (항상 표시)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">시청자 등급별 아바타 이미지 설정</div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- 일반 시청자 -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">일반 시청자</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileNormal" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('normal', 'fileNormal', 'imgNormal')">업로드</button>
+                        <img id="imgNormal" class="image-preview" src="" alt="미등록">
+                    </div>
+                    <!-- 구독자 -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">구독자</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileSub" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('subscriber', 'fileSub', 'imgSub')">업로드</button>
+                        <img id="imgSub" class="image-preview" src="" alt="미등록">
+                    </div>
+                    <!-- 2티어 구독자 -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">2티어 구독자</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileTier2" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('tier2', 'fileTier2', 'imgTier2')">업로드</button>
+                        <img id="imgTier2" class="image-preview" src="" alt="미등록">
+                    </div>
+                </div>
+                <div class="text-muted small mt-2">* 움직이는 GIF 또는 배경이 투명한 PNG 이미지를 권장합니다. 좌우 대칭 이동이 가능하도록 앞모습이 좋습니다.</div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary w-100 p-2 fs-5" onclick="saveSettings()">설정 저장하기</button>
+        <div id="saveMsg" class="text-success text-center mt-3" style="display:none;">저장되었습니다! (오버레이 창을 새로고침하면 적용됩니다)</div>
+    </div>
+
+    <script>
+        // 현재 접속된 경로에서 chzzkUid 추출 (예: /avatar_settings.html?uid=12345)
+        const urlParams = new URLSearchParams(window.location.search);
+        let chzzkUid = urlParams.get('uid');
+
+        // URL에 없다면 로컬스토리지 등에서 가져오는 로직 (기본셋팅 페이지 방식과 동일하게)
+        if (!chzzkUid) {
+            chzzkUid = localStorage.getItem("chzzkUid") || prompt("치지직 UID를 입력해주세요 (테스트용):");
+            if(chzzkUid) localStorage.setItem("chzzkUid", chzzkUid);
+        }
+
+        let currentSettings = {
+            isEnabled: true, showNickname: true, showChat: true,
+            disappearTimeSeconds: 60,
+            normalAvatarUrl: null, subscriberAvatarUrl: null, tier2AvatarUrl: null
+        };
+
+        async function loadSettings() {
+            if(!chzzkUid) return;
+            try {
+                const res = await fetch(`/api/avatar/settings/${chzzkUid}`);
+                if (res.ok) {
+                    currentSettings = await res.json();
+                    document.getElementById('isEnabled').checked = currentSettings.isEnabled !== false; // 기본값 대응
+                    document.getElementById('showNickname').checked = currentSettings.showNickname !== false;
+                    document.getElementById('showChat').checked = currentSettings.showChat !== false;
+                    
+                    if(currentSettings.disappearTimeSeconds !== undefined) {
+                        document.getElementById('disappearTimeSeconds').value = currentSettings.disappearTimeSeconds;
+                    }
+                    
+                    if(currentSettings.normalAvatarUrl) document.getElementById('imgNormal').src = currentSettings.normalAvatarUrl;
+                    if(currentSettings.subscriberAvatarUrl) document.getElementById('imgSub').src = currentSettings.subscriberAvatarUrl;
+                    if(currentSettings.tier2AvatarUrl) document.getElementById('imgTier2').src = currentSettings.tier2AvatarUrl;
+                }
+            } catch (e) {
+                console.error("데이터 로드 실패", e);
+            }
+        }
+
+        async function uploadImage(tier, inputId, imgId) {
+            const fileInput = document.getElementById(inputId);
+            if(fileInput.files.length === 0) {
+                alert("업로드할 파일을 선택하세요.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("chzzkUid", chzzkUid);
+            formData.append("tier", tier);
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const res = await fetch(`/api/avatar/settings/upload-image`, {
+                    method: "POST",
+                    body: formData
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    document.getElementById(imgId).src = data.url;
+                    alert("성공적으로 업로드 되었습니다.");
+                    
+                    // Update local state URLs just in case
+                    if(tier === 'normal') currentSettings.normalAvatarUrl = data.url;
+                    if(tier === 'subscriber') currentSettings.subscriberAvatarUrl = data.url;
+                    if(tier === 'tier2') currentSettings.tier2AvatarUrl = data.url;
+                } else {
+                    alert("업로드 실패: " + await res.text());
+                }
+            } catch (e) {
+                alert("업로드 중 오류 발생");
+                console.error(e);
+            }
+        }
+
+        async function saveSettings() {
+            if(!chzzkUid) return;
+            const reqData = {
+                chzzkUid: chzzkUid,
+                isEnabled: document.getElementById('isEnabled').checked,
+                showNickname: document.getElementById('showNickname').checked,
+                showChat: document.getElementById('showChat').checked,
+                disappearTimeSeconds: parseInt(document.getElementById('disappearTimeSeconds').value) || 0,
+                normalAvatarUrl: currentSettings.normalAvatarUrl,
+                subscriberAvatarUrl: currentSettings.subscriberAvatarUrl,
+                tier2AvatarUrl: currentSettings.tier2AvatarUrl
+            };
+
+            try {
+                const res = await fetch(`/api/avatar/settings/update?chzzkUid=${chzzkUid}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reqData)
+                });
+                if(res.ok) {
+                    const msg = document.getElementById('saveMsg');
+                    msg.style.display = 'block';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                } else {
+                    alert("설정 저장 실패");
+                }
+            } catch (e) {
+                alert("저장 중 오류 발생");
+            }
+        }
+
+        function copyOverlayUrl() {
+            if(!chzzkUid) return;
+            const url = `${window.location.origin}/avatar_overlay.html?uid=${chzzkUid}`;
+            navigator.clipboard.writeText(url).then(() => {
+                alert("오버레이 주소가 복사되었습니다!\nOBS 브라우저 소스 URL에 붙여넣기 하세요.");
+            }).catch(err => {
+                prompt("아래 주소를 복사해주세요:", url);
+            });
+        }
+
+        // 페이지 로드 시
+        document.addEventListener("DOMContentLoaded", () => {
+            if(chzzkUid) {
+                const url = `${window.location.origin}/avatar_overlay.html?uid=${chzzkUid}`;
+                const link = document.getElementById('overlayUrlLink');
+                if(link) {
+                    link.href = url;
+                    link.innerText = url;
+                }
+            }
+            loadSettings();
+        });
+    </script>
+</body>
+</html>
