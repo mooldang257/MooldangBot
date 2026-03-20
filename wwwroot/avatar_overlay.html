@@ -146,7 +146,7 @@
                 const res = await fetch(`/api/avatar/settings/${chzzkUid}`);
                 if (res.ok) {
                     const fetched = await res.json();
-                    avatarSettings = {
+                    settings = {
                         isEnabled: fetched.isEnabled ?? fetched.IsEnabled ?? true,
                         showNickname: fetched.showNickname ?? fetched.ShowNickname ?? true,
                         showChat: fetched.showChat ?? fetched.ShowChat ?? true,
@@ -155,15 +155,16 @@
                         stopImageUrl: fetched.stopImageUrl ?? fetched.StopImageUrl ?? null,
                         interactionImageUrl: fetched.interactionImageUrl ?? fetched.InteractionImageUrl ?? null
                     };
-                    console.log("Settings loaded and normalized:", avatarSettings);
+                    console.log("Settings loaded and normalized:", settings);
                 }
             } catch(e) { console.error("Setting load failed", e); }
         }
 
         function getAvatarImg(state) {
-            if(state === 'flying' || state === 'interaction') return settings.interactionImageUrl || settings.walkingImageUrl || '/images/avatar_default.png';
-            if(state === 'stop' || state === 'idle') return settings.stopImageUrl || settings.walkingImageUrl || '/images/avatar_default.png';
-            return settings.walkingImageUrl || '/images/avatar_default.png';
+            const fallback = '/images/man.png';
+            if(state === 'flying' || state === 'interaction') return settings.interactionImageUrl || settings.walkingImageUrl || fallback;
+            if(state === 'stop' || state === 'idle') return settings.stopImageUrl || settings.walkingImageUrl || fallback;
+            return settings.walkingImageUrl || fallback;
         }
 
         function createAvatar(senderId, nickname, userRole) {
