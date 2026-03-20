@@ -109,9 +109,9 @@
         }
 
         @keyframes flying {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(150px, -600px); }
-            100% { transform: translate(300px, 0); }
+            0% { transform: translate(0, 0) scaleX(var(--flip)); }
+            50% { transform: translate(calc(var(--fly-x) * 0.5), -600px) scaleX(var(--flip)); }
+            100% { transform: translate(var(--fly-x), 0) scaleX(var(--flip)); }
         }
 
     </style>
@@ -144,9 +144,18 @@
         async function initSettings() {
             try {
                 const res = await fetch(`/api/avatar/settings/${chzzkUid}`);
-                if(res.ok) {
+                if (res.ok) {
                     const fetched = await res.json();
-                    settings = { ...settings, ...fetched }; 
+                    avatarSettings = {
+                        isEnabled: fetched.isEnabled ?? fetched.IsEnabled ?? true,
+                        showNickname: fetched.showNickname ?? fetched.ShowNickname ?? true,
+                        showChat: fetched.showChat ?? fetched.ShowChat ?? true,
+                        disappearTimeSeconds: fetched.disappearTimeSeconds ?? fetched.DisappearTimeSeconds ?? 60,
+                        walkingImageUrl: fetched.walkingImageUrl ?? fetched.WalkingImageUrl ?? null,
+                        stopImageUrl: fetched.stopImageUrl ?? fetched.StopImageUrl ?? null,
+                        interactionImageUrl: fetched.interactionImageUrl ?? fetched.InteractionImageUrl ?? null
+                    };
+                    console.log("Settings loaded and normalized:", avatarSettings);
                 }
             } catch(e) { console.error("Setting load failed", e); }
         }

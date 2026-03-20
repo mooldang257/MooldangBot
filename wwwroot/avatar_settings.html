@@ -118,7 +118,7 @@
         let currentSettings = {
             isEnabled: true, showNickname: true, showChat: true,
             disappearTimeSeconds: 60,
-            normalAvatarUrl: null, subscriberAvatarUrl: null, tier2AvatarUrl: null
+            walkingImageUrl: null, stopImageUrl: null, interactionImageUrl: null
         };
 
         async function loadSettings() {
@@ -126,14 +126,23 @@
             try {
                 const res = await fetch(`/api/avatar/settings/${chzzkUid}`);
                 if (res.ok) {
-                    currentSettings = await res.json();
-                    document.getElementById('isEnabled').checked = currentSettings.isEnabled !== false; // 기본값 대응
-                    document.getElementById('showNickname').checked = currentSettings.showNickname !== false;
-                    document.getElementById('showChat').checked = currentSettings.showChat !== false;
+                    const fetched = await res.json();
                     
-                    if(currentSettings.disappearTimeSeconds !== undefined) {
-                        document.getElementById('disappearTimeSeconds').value = currentSettings.disappearTimeSeconds;
-                    }
+                    // 필드명 정규화 (PascalCase -> camelCase 대응)
+                    currentSettings = {
+                        isEnabled: fetched.isEnabled ?? fetched.IsEnabled ?? true,
+                        showNickname: fetched.showNickname ?? fetched.ShowNickname ?? true,
+                        showChat: fetched.showChat ?? fetched.ShowChat ?? true,
+                        disappearTimeSeconds: fetched.disappearTimeSeconds ?? fetched.DisappearTimeSeconds ?? 60,
+                        walkingImageUrl: fetched.walkingImageUrl ?? fetched.WalkingImageUrl ?? null,
+                        stopImageUrl: fetched.stopImageUrl ?? fetched.StopImageUrl ?? null,
+                        interactionImageUrl: fetched.interactionImageUrl ?? fetched.InteractionImageUrl ?? null
+                    };
+
+                    document.getElementById('isEnabled').checked = currentSettings.isEnabled;
+                    document.getElementById('showNickname').checked = currentSettings.showNickname;
+                    document.getElementById('showChat').checked = currentSettings.showChat;
+                    document.getElementById('disappearTimeSeconds').value = currentSettings.disappearTimeSeconds;
                     
                     if(currentSettings.walkingImageUrl) document.getElementById('imgWalking').src = currentSettings.walkingImageUrl;
                     if(currentSettings.stopImageUrl) document.getElementById('imgStop').src = currentSettings.stopImageUrl;
