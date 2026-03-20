@@ -19,9 +19,9 @@ namespace MooldangAPI.Tests
             Assert.Equal(60, setting.DisappearTimeSeconds);
             
             // 이미지들은 기본적으로 비어 있어야 함
-            Assert.Null(setting.NormalAvatarUrl);
-            Assert.Null(setting.SubscriberAvatarUrl);
-            Assert.Null(setting.Tier2AvatarUrl);
+            Assert.Null(setting.WalkingImageUrl);
+            Assert.Null(setting.StopImageUrl);
+            Assert.Null(setting.InteractionImageUrl);
         }
     }
 }
