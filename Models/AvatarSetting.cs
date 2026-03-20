@@ -21,12 +21,12 @@ namespace MooldangAPI.Models
         public int DisappearTimeSeconds { get; set; } = 60;
 
         [MaxLength(1000)]
-        public string? NormalAvatarUrl { get; set; }
+        public string? WalkingImageUrl { get; set; }
 
-        [MaxLength(500)]
-        public string? SubscriberAvatarUrl { get; set; }
+        [MaxLength(1000)]
+        public string? StopImageUrl { get; set; }
 
-        [MaxLength(500)]
-        public string? Tier2AvatarUrl { get; set; }
+        [MaxLength(1000)]
+        public string? InteractionImageUrl { get; set; }
     }
 }

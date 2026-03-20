@@ -69,32 +69,33 @@
         </div>
 
         <div class="card">
-            <div class="card-header">시청자 등급별 아바타 이미지 설정</div>
+            <div class="card-header">동작별 캐릭터 이미지 설정</div>
             <div class="card-body">
                 <div class="row">
-                    <!-- 일반 시청자 -->
+                    <!-- 걷기(기본) -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">일반 시청자</label>
-                        <input class="form-control form-control-sm mb-2" type="file" id="fileNormal" accept="image/*">
-                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('normal', 'fileNormal', 'imgNormal')">업로드</button>
-                        <img id="imgNormal" class="image-preview" src="" alt="미등록">
+                        <label class="form-label fw-bold">걷기 (기본)</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileWalking" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('walking', 'fileWalking', 'imgWalking')">업로드</button>
+                        <img id="imgWalking" class="image-preview" src="" alt="미등록">
                     </div>
-                    <!-- 구독자 -->
+                    <!-- 정지 -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">구독자</label>
-                        <input class="form-control form-control-sm mb-2" type="file" id="fileSub" accept="image/*">
-                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('subscriber', 'fileSub', 'imgSub')">업로드</button>
-                        <img id="imgSub" class="image-preview" src="" alt="미등록">
+                        <label class="form-label fw-bold">정지</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileStop" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('stop', 'fileStop', 'imgStop')">업로드</button>
+                        <img id="imgStop" class="image-preview" src="" alt="미등록">
                     </div>
-                    <!-- 2티어 구독자 -->
+                    <!-- 상호작용(공중) -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">2티어 구독자</label>
-                        <input class="form-control form-control-sm mb-2" type="file" id="fileTier2" accept="image/*">
-                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('tier2', 'fileTier2', 'imgTier2')">업로드</button>
-                        <img id="imgTier2" class="image-preview" src="" alt="미등록">
+                        <label class="form-label fw-bold">상호작용 (공중)</label>
+                        <input class="form-control form-control-sm mb-2" type="file" id="fileInteraction" accept="image/*">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="uploadImage('interaction', 'fileInteraction', 'imgInteraction')">업로드</button>
+                        <img id="imgInteraction" class="image-preview" src="" alt="미등록">
                     </div>
                 </div>
-                <div class="text-muted small mt-2">* 움직이는 GIF 또는 배경이 투명한 PNG 이미지를 권장합니다. 좌우 대칭 이동이 가능하도록 앞모습이 좋습니다.</div>
+                <div class="text-muted small mt-2">* 움직이는 GIF 또는 배경이 투명한 PNG 이미지를 권장합니다.</div>
+                <div class="text-muted small">* 캐릭터 이미지는 <strong>왼쪽</strong>을 바라보는 것이 기준입니다.</div>
             </div>
         </div>
 
@@ -134,9 +135,9 @@
                         document.getElementById('disappearTimeSeconds').value = currentSettings.disappearTimeSeconds;
                     }
                     
-                    if(currentSettings.normalAvatarUrl) document.getElementById('imgNormal').src = currentSettings.normalAvatarUrl;
-                    if(currentSettings.subscriberAvatarUrl) document.getElementById('imgSub').src = currentSettings.subscriberAvatarUrl;
-                    if(currentSettings.tier2AvatarUrl) document.getElementById('imgTier2').src = currentSettings.tier2AvatarUrl;
+                    if(currentSettings.walkingImageUrl) document.getElementById('imgWalking').src = currentSettings.walkingImageUrl;
+                    if(currentSettings.stopImageUrl) document.getElementById('imgStop').src = currentSettings.stopImageUrl;
+                    if(currentSettings.interactionImageUrl) document.getElementById('imgInteraction').src = currentSettings.interactionImageUrl;
                 }
             } catch (e) {
                 console.error("데이터 로드 실패", e);
@@ -166,9 +167,9 @@
                     alert("성공적으로 업로드 되었습니다.");
                     
                     // Update local state URLs just in case
-                    if(tier === 'normal') currentSettings.normalAvatarUrl = data.url;
-                    if(tier === 'subscriber') currentSettings.subscriberAvatarUrl = data.url;
-                    if(tier === 'tier2') currentSettings.tier2AvatarUrl = data.url;
+                    if(tier === 'walking') currentSettings.walkingImageUrl = data.url;
+                    if(tier === 'stop') currentSettings.stopImageUrl = data.url;
+                    if(tier === 'interaction') currentSettings.interactionImageUrl = data.url;
                 } else {
                     alert("업로드 실패: " + await res.text());
                 }
@@ -186,9 +187,9 @@
                 showNickname: document.getElementById('showNickname').checked,
                 showChat: document.getElementById('showChat').checked,
                 disappearTimeSeconds: parseInt(document.getElementById('disappearTimeSeconds').value) || 0,
-                normalAvatarUrl: currentSettings.normalAvatarUrl,
-                subscriberAvatarUrl: currentSettings.subscriberAvatarUrl,
-                tier2AvatarUrl: currentSettings.tier2AvatarUrl
+                walkingImageUrl: currentSettings.walkingImageUrl,
+                stopImageUrl: currentSettings.stopImageUrl,
+                interactionImageUrl: currentSettings.interactionImageUrl
             };
 
             try {

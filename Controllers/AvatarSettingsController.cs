@@ -52,11 +52,9 @@ namespace MooldangAPI.Controllers
             setting.ShowChat = req.ShowChat;
             setting.DisappearTimeSeconds = req.DisappearTimeSeconds;
             
-            // Note: AvatarUrls shouldn't be overridden if they are null in the request, or we just override all
-            // We assume the frontend sends the existing URLs if not changed
-            setting.NormalAvatarUrl = req.NormalAvatarUrl;
-            setting.SubscriberAvatarUrl = req.SubscriberAvatarUrl;
-            setting.Tier2AvatarUrl = req.Tier2AvatarUrl;
+            setting.WalkingImageUrl = req.WalkingImageUrl;
+            setting.StopImageUrl = req.StopImageUrl;
+            setting.InteractionImageUrl = req.InteractionImageUrl;
 
             await _db.SaveChangesAsync();
             
@@ -102,9 +100,9 @@ namespace MooldangAPI.Controllers
                 _db.AvatarSettings.Add(setting);
             }
 
-            if (tier == "normal") setting.NormalAvatarUrl = fileUrl;
-            else if (tier == "subscriber") setting.SubscriberAvatarUrl = fileUrl;
-            else if (tier == "tier2") setting.Tier2AvatarUrl = fileUrl;
+            if (tier == "walking") setting.WalkingImageUrl = fileUrl;
+            else if (tier == "stop") setting.StopImageUrl = fileUrl;
+            else if (tier == "interaction") setting.InteractionImageUrl = fileUrl;
 
             await _db.SaveChangesAsync();
 
