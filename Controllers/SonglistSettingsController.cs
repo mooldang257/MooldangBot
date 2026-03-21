@@ -22,13 +22,18 @@ namespace MooldangAPI.Controllers
             if (profile == null) return Results.NotFound();
 
             var omakaseItems = await _db.StreamerOmakases.Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
+            var songCommands = await _db.StreamerCommands
+                .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
+                .Select(c => c.CommandKeyword)
+                .ToListAsync();
 
             return Results.Ok(new
             {
                 songCommand = profile.SongCommand,
+                songRequestCommands = songCommands,
                 songCheesePrice = profile.SongCheesePrice,
                 designSettingsJson = profile.DesignSettingsJson,
-                omakases = omakaseItems // New multiple items
+                omakases = omakaseItems
             });
         }
 
@@ -73,6 +78,29 @@ namespace MooldangAPI.Controllers
                             e.Icon = dto.Icon;
                             e.CheesePrice = dto.Price;
                         }
+                    }
+                }
+
+                // Sync SongRequest Commands
+                var existingSongCmds = await _db.StreamerCommands
+                    .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
+                    .ToListAsync();
+                _db.StreamerCommands.RemoveRange(existingSongCmds);
+
+                if (req.SongRequestCommands != null)
+                {
+                    foreach (var cmd in req.SongRequestCommands)
+                    {
+                        if (string.IsNullOrWhiteSpace(cmd)) continue;
+                        _db.StreamerCommands.Add(new StreamerCommand
+                        {
+                            ChzzkUid = chzzkUid,
+                            CommandKeyword = cmd.Trim(),
+                            ActionType = "SongRequest",
+                            RequiredRole = "all",
+                            Content = "SongRequest",
+                            CreatedAt = DateTime.Now
+                        });
                     }
                 }
 
