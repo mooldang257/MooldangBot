@@ -193,12 +193,15 @@
 
         async function saveRoulette() {
             const data = {
+                id: editingId || 0,
+                chzzkUid: chzzkUid,
                 name: document.getElementById('rName').value,
                 type: parseInt(document.getElementById('rType').value),
                 command: document.getElementById('rCommand').value,
                 costPerSpin: parseInt(document.getElementById('rCost').value),
                 isActive: true,
                 items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                    chzzkUid: chzzkUid,
                     itemName: row.querySelector('.item-name').value,
                     probability: parseFloat(row.querySelector('.item-prob').value) || 0,
                     probability10x: parseFloat(row.querySelector('.item-prob10x').value) || parseFloat(row.querySelector('.item-prob').value) || 0,
