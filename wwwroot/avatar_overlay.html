@@ -357,6 +357,10 @@
         connection.on("ReceiveChat", (jsonRaw) => {
             if (!settings.isEnabled) return;
             const data = JSON.parse(jsonRaw);
+            
+            // 💡 [요청 반영] 봇 채팅인 경우 아바타를 생성하거나 반응하지 않음 (isBot 플래그 사용)
+            if (data.isbot || data.isBot) return;
+
             if (!avatars[data.senderId]) {
                 createAvatar(data.senderId, data.nickname, data.userRole);
             }
@@ -367,6 +371,10 @@
         connection.on("ReceiveAvatarCommand", (jsonRaw) => {
             if (!settings.isEnabled) return;
             const data = JSON.parse(jsonRaw);
+            
+            // 💡 봇은 아바타 명령어도 무시
+            if (data.isbot || data.isBot) return;
+
             if (!avatars[data.senderId]) createAvatar(data.senderId, data.nickname, data.userRole);
             resetDestroyTimer(data.senderId);
 
