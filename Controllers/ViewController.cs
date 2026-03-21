@@ -25,7 +25,7 @@ namespace MooldangAPI.Controllers
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/main.html"), "text/html; charset=utf-8");
         }
 
-        [HttpGet("/settings/{chzzkUid}")]
+        [HttpGet("/songlist_settings/{chzzkUid}")]
         [Authorize]
         public async Task<IResult> SettingsPage(string chzzkUid)
         {
@@ -35,7 +35,7 @@ namespace MooldangAPI.Controllers
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");
 
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/settings.html"), "text/html; charset=utf-8");
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_settings.html"), "text/html; charset=utf-8");
         }
 
         [HttpGet("/login")]
@@ -47,7 +47,7 @@ namespace MooldangAPI.Controllers
             );
         }
 
-        [HttpGet("/dashboard/{chzzkUid}")]
+        [HttpGet("/songlist/{chzzkUid}")]
         [Authorize]
         public async Task<IResult> DashboardPage(string chzzkUid)
         {
@@ -57,7 +57,7 @@ namespace MooldangAPI.Controllers
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");
 
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/dashboard.html"), "text/html; charset=utf-8");
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist.html"), "text/html; charset=utf-8");
         }
 
         [HttpGet("/commands-manager/{chzzkUid}")]
@@ -72,6 +72,7 @@ namespace MooldangAPI.Controllers
 
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/commands.html"), "text/html; charset=utf-8");
         }
+
 
         [HttpGet("/overlay/{chzzkUid}")]
         public IResult OverlayPage(string chzzkUid)

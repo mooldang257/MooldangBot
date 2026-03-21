@@ -6,17 +6,17 @@ using MooldangAPI.Models;
 namespace MooldangAPI.Controllers
 {
     [ApiController]
-    public class SettingsController : ControllerBase
+    public class SonglistSettingsController : ControllerBase
     {
         private readonly AppDbContext _db;
 
-        public SettingsController(AppDbContext db)
+        public SonglistSettingsController(AppDbContext db)
         {
             _db = db;
         }
 
         [HttpGet("/api/settings/data/{chzzkUid}")]
-        public async Task<IResult> GetSettingsData(string chzzkUid)
+        public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
         {
             var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return Results.NotFound();
@@ -33,7 +33,7 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpPost("/api/settings/update")]
-        public async Task<IResult> UpdateSettings([FromQuery] string chzzkUid, [FromBody] SettingsUpdateRequest req)
+        public async Task<IResult> UpdateSonglistSettings([FromQuery] string chzzkUid, [FromBody] SonglistSettingsUpdateRequest req)
         {
             var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile != null)

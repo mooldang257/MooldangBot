@@ -5,7 +5,7 @@ namespace MooldangAPI.Models
         public string ChzzkUid { get; set; } = "";
     }
 
-    public class SettingsUpdateRequest
+    public class SonglistSettingsUpdateRequest
     {
         public string SongCommand { get; set; } = "!신청";
         public int SongCheesePrice { get; set; } = 0;

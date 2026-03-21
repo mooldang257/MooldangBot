@@ -10,7 +10,14 @@ function Update-HtmlFile {
     $content = $content.Replace('color: #00ffa3;', 'color: var(--primary);')
     $content = $content.Replace('color: #fff;', 'color: var(--text-dark);')
     
-    if ($path -match "dashboard.html") {
+    if ($path -match "songlist.html") {
+        Write-Host "Updating songlist.html JS loading... [Placeholder]" -ForegroundColor Cyan
+        $content = $content.Replace('border-color: #ff00ff; background: rgba(255, 0, 255, 0.05);', 'border: 1px solid var(--accent); background: rgba(255, 154, 158, 0.1);')
+        $content = $content.Replace('color: #ff00ff; border-bottom-color: #ff00ff;', 'color: var(--accent); border-bottom-color: rgba(255,154,158,0.3);')
+        $content = $content.Replace('flex: 2; border-color:#ff00ff; margin-bottom: 0;', 'flex: 2; margin-bottom: 0;')
+    }
+    elseif ($path -match "songlist_settings.html") {
+        Write-Host "Updating songlist_settings.html slider CSS..." -ForegroundColor Cyan
         $content = $content.Replace('border-color: #ff00ff; background: rgba(255, 0, 255, 0.05);', 'border: 1px solid var(--accent); background: rgba(255, 154, 158, 0.1);')
         $content = $content.Replace('color: #ff00ff; border-bottom-color: #ff00ff;', 'color: var(--accent); border-bottom-color: rgba(255,154,158,0.3);')
         $content = $content.Replace('flex: 2; border-color:#ff00ff; margin-bottom: 0;', 'flex: 2; margin-bottom: 0;')
@@ -41,6 +48,7 @@ function Update-HtmlFile {
     [IO.File]::WriteAllText($path, $content)
 }
 
-Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\dashboard.html"
+Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\admin.html"
+Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\songlist.html"
 Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\commands.html"
-Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\settings.html"
+Update-HtmlFile "c:\webapi\MooldangAPI\wwwroot\songlist_settings.html"

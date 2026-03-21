@@ -56,7 +56,7 @@ public class SongRequestEventHandler : INotificationHandler<ChatMessageReceivedE
                 _logger.LogInformation($"✅ [DB 저장 완료] {songInput} (신청자: {nickname}, 순번: {newSong.SortOrder})");
 
                 var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<OverlayHub>>();
-                await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshDashboard", cancellationToken: cancellationToken);
+                await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {

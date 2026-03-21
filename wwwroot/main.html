@@ -396,7 +396,7 @@
                         }
 
                         // 각 메뉴 카드 링크 활성화
-                        btnSong.href = `/dashboard/${data.chzzkUid}`;
+                        btnSong.href = `/songlist/${data.chzzkUid}`;
                         btnCmd.href = `/commands-manager/${data.chzzkUid}`;
                         const btnAvatar = document.getElementById('btn-avatar');
                         if (btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${data.chzzkUid}`;

@@ -120,7 +120,7 @@
             connection.invoke("JoinStreamerGroup", chzzkUid);
         });
 
-        connection.on("RefreshDashboard", async () => {
+        connection.on("RefreshSonglist", async () => {
             await loadDashboardData();
             broadcastState();
         });
@@ -132,7 +132,7 @@
         });
 
         async function loadDashboardData() {
-            const res = await fetch(`/api/dashboard/data/${chzzkUid}`);
+            const res = await fetch(`/api/songlist/data/${chzzkUid}`);
             if (res.ok) {
                 const data = await res.json();
                 document.getElementById('memoInput').value = data.memo;
@@ -197,7 +197,7 @@
             if (newCount < 0) newCount = 0;
             oma.count = newCount;
             renderOmakasesDash();
-            await fetch(`/api/dashboard/omakase/${id}?delta=${delta}`, { method: 'PUT' });
+            await fetch(`/api/songlist/omakase/${id}?delta=${delta}`, { method: 'PUT' });
             broadcastState();
         }
 
@@ -363,7 +363,7 @@
         }
 
         function goToSettings() {
-            window.location.href = `/settings/${chzzkUid}`;
+            window.location.href = `/songlist_settings/${chzzkUid}`;
         }
 
         window.onload = () => {

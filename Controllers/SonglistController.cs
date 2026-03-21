@@ -11,28 +11,39 @@ using System.Text;
 namespace MooldangAPI.Controllers
 {
     [ApiController]
-    public class DashboardController : ControllerBase
+    public class SonglistController : ControllerBase
     {
         private readonly AppDbContext _db;
         private readonly IMediator _mediator;
 
-        public DashboardController(AppDbContext db, IMediator mediator)
+        public SonglistController(AppDbContext db, IMediator mediator)
         {
             _db = db;
             _mediator = mediator;
         }
 
-        [HttpGet("/api/dashboard/data/{chzzkUid}")]
-        public async Task<IResult> GetDashboardData(string chzzkUid)
+        [HttpGet("/api/songlist/data/{chzzkUid}")]
+        public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-            var songs = await _db.SongQueues.Where(s => s.ChzzkUid == chzzkUid).OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedAt).ToListAsync();
-            var omakaseItems = await _db.StreamerOmakases.Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
+            var omakases = await _db.StreamerOmakases
+                .Where(o => o.ChzzkUid == chzzkUid)
+                .Select(o => new { o.Id, o.Name, o.Count, o.Icon })
+                .ToListAsync();
 
-            return Results.Ok(new { memo = profile?.NoticeMemo ?? "", omakases = omakaseItems, songs });
+            var songs = await _db.SongQueues
+                .Where(s => s.ChzzkUid == chzzkUid)
+                .OrderBy(s => s.SortOrder)
+                .ToListAsync();
+
+            var memo = await _db.SystemSettings
+                .Where(s => s.KeyName == $"Memo_{chzzkUid}")
+                .Select(s => s.KeyValue)
+                .FirstOrDefaultAsync() ?? "";
+
+            return Ok(new { memo, omakases, songs });
         }
 
-        [HttpPut("/api/dashboard/omakase/{id}")]
+        [HttpPut("/api/songlist/omakase/{id}")]
         public async Task<IResult> UpdateOmakaseCount(int id, [FromQuery] int delta)
         {
             var item = await _db.StreamerOmakases.FindAsync(id);

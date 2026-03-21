@@ -130,7 +130,7 @@
 
         async function fetchInitialData() {
             try {
-                const dashRes = await fetch(`/api/dashboard/data/${chzzkUid}`);
+                const dashRes = await fetch(`/api/songlist/data/${chzzkUid}`);
                 if (dashRes.ok) {
                     const d = await dashRes.json();
                     dashState = {
@@ -254,7 +254,7 @@
             designState = JSON.parse(jsonStyle); 
             applyDesignStyles(); 
             try {
-                const dashRes = await fetch(`/api/dashboard/data/${chzzkUid}`);
+                const dashRes = await fetch(`/api/songlist/data/${chzzkUid}`);
                 if (dashRes.ok) {
                     const d = await dashRes.json();
                     dashState.omakases = d.omakases || [];

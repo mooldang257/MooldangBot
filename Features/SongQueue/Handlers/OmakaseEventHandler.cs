@@ -60,7 +60,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
 
             // 5. 실시간 오버레이 갱신 신호 발송
             var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<OverlayHub>>();
-            await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshDashboard", cancellationToken: cancellationToken);
+            await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
         }
     }
 }

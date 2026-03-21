@@ -367,8 +367,8 @@
             if (res.ok) {
                 if (connection.state === "Connected") connection.invoke("UpdateOverlayStyle", chzzkUid, reqData.designSettingsJson);
                 if (returnToDash) {
-                    alert("✅ 저장되었습니다! 대시보드로 돌아갑니다.");
-                    window.location.href = `/dashboard/${chzzkUid}`;
+                    alert("설정이 갱신되었습니다!");
+                    window.location.href = `/songlist/${chzzkUid}`;
                 } else {
                     alert("✅ 실시간 오버레이에 즉시 적용되었습니다!");
                 }
@@ -578,8 +578,11 @@
         });
 
         window.onload = () => {
-            document.getElementById('backToDash').href = `/dashboard/${chzzkUid}`;
-            document.getElementById('topBackToDash').href = `/dashboard/${chzzkUid}`;
+            // Set back links
+            document.getElementById('backToDash').href = `/songlist/${chzzkUid}`;
+            document.getElementById('topBackToDash').href = `/songlist/${chzzkUid}`;
+            
+            // Fetch initial data
             connection.start().then(() => {
                 connection.invoke("JoinStreamerGroup", chzzkUid);
                 loadSettings();
