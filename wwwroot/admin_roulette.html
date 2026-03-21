@@ -63,8 +63,8 @@
                     <input type="text" id="rName" placeholder="예: 치즈 룰렛">
                     <span class="sub-title">유형</span>
                     <select id="rType" style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; margin-bottom:15px;">
-                        <option value="0">치즈 (후원금)</option>
-                        <option value="1">채팅 포인트</option>
+                        <option value="0" style="background:#2a2a2a; color:white;">치즈 (후원금)</option>
+                        <option value="1" style="background:#2a2a2a; color:white;">채팅 포인트</option>
                     </select>
                     <span class="sub-title">실행 명령어 (채팅 포인트용)</span>
                     <input type="text" id="rCommand" value="!룰렛">
@@ -201,7 +201,7 @@
                 costPerSpin: parseInt(document.getElementById('rCost').value),
                 isActive: true,
                 items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
-                    chzzkUid: chzzkUid,
+                    rouletteId: editingId || 0,
                     itemName: row.querySelector('.item-name').value,
                     probability: parseFloat(row.querySelector('.item-prob').value) || 0,
                     probability10x: parseFloat(row.querySelector('.item-prob10x').value) || parseFloat(row.querySelector('.item-prob').value) || 0,
