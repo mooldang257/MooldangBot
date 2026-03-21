@@ -158,10 +158,26 @@
             .withAutomaticReconnect()
             .build();
 
+        let rouletteQueue = [];
+        let isSpinning = false;
+
         connection.on("RouletteTriggered", (data) => {
-            console.log("룰렛 발생:", data);
-            startRouletteAnimation(data);
+            console.log("룰렛 발생, 대기열 추가:", data);
+            rouletteQueue.push(data);
+            processQueue();
         });
+
+        async function processQueue() {
+            if (isSpinning || rouletteQueue.length === 0) return;
+            
+            isSpinning = true;
+            const data = rouletteQueue.shift();
+            await startRouletteAnimation(data);
+            isSpinning = false;
+            
+            // 다음 항목이 있으면 계속 이어서 실행
+            processQueue();
+        }
 
         connection.start().then(() => {
             console.log("오버레이 연결됨:", chzzkUid);
@@ -172,71 +188,75 @@
             if (!data.results || data.results.length === 0) return;
 
             const isMulti = data.results.length > 1;
-            const finalResult = data.results[0]; // 보여주기용 첫 당첨자 또는 대표값
-            
-            // 룰렛판 렌더링 (간이)
-            // 실제 구현에서는 DB의 모든 아이템 정보를 가져와서 판을 채워야 하지만, 
-            // 여기서는 당첨 연출에 집중합니다.
-            
             const wrapper = document.getElementById('roulette-wrapper');
             const wheel = document.getElementById('roulette-wheel');
             const popup = document.getElementById('result-popup');
+            const multiContainer = document.getElementById('multi-results');
+            const singleName = document.getElementById('single-result-name');
             
-            // 1. 초기화
             wrapper.style.display = 'block';
-            wheel.style.transition = 'none';
-            wheel.style.transform = 'rotate(0deg)';
-            popup.classList.remove('active');
+            multiContainer.innerHTML = '';
             
-            // 룰렛판 아이템 채우기 (샘플링)
-            wheel.innerHTML = '';
-            const segments = 12; // 고정된 칸 수로 연출
-            for(let i=0; i<segments; i++){
-                const seg = document.createElement('div');
-                seg.className = 'segment';
-                const angle = (360 / segments);
-                seg.style.transform = `rotate(${i * angle}deg) skewY(${90 - angle}deg)`;
-                seg.style.backgroundColor = (i % 2 === 0) ? '#333' : '#444';
-                
-                // 마지막 칸 근처에 당첨 결과를 배치하여 멈췄을 때의 시각적 일관성 부여
-                // 실제 고도화 시에는 모든 아이템의 기하학적 배치가 필요함
-                wheel.appendChild(seg);
-            }
+            for (let i = 0; i < data.results.length; i++) {
+                const currentResult = data.results[i];
 
-            // 2. 애니메이션 실행
-            await new Promise(r => setTimeout(r, 50)); // 브라우저 배칭 방지
-            
-            const spinRounds = 10;
-            const extraAngle = Math.random() * 360;
-            wheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
-            wheel.style.transform = `rotate(${spinRounds * 360 + extraAngle}deg)`;
-
-            // 3. 종료 및 결과 팝업
-            setTimeout(() => {
-                document.getElementById('single-result-name').innerText = finalResult.itemName;
-                document.getElementById('single-result-name').style.color = finalResult.color;
+                // 1. 매 회차 초기화
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                popup.classList.remove('active');
                 
-                const multiContainer = document.getElementById('multi-results');
-                multiContainer.innerHTML = '';
+                // 룰렛판 아이템 채우기 (샘플링 연출)
+                wheel.innerHTML = '';
+                const segments = 12; // 고정된 칸 수로 연출
+                for(let j=0; j<segments; j++){
+                    const seg = document.createElement('div');
+                    seg.className = 'segment';
+                    const angle = (360 / segments);
+                    seg.style.transform = `rotate(${j * angle}deg) skewY(${90 - angle}deg)`;
+                    seg.style.backgroundColor = (j % 2 === 0) ? '#333' : '#444';
+                    wheel.appendChild(seg);
+                }
+
+                // 2. 애니메이션 대기 및 실행
+                await new Promise(r => setTimeout(r, 50)); // 브라우저 배칭 방지
+                
+                const spinRounds = 10;
+                const extraAngle = Math.random() * 360;
+                const spinDuration = isMulti ? 2.5 : 4; // 연차일 때는 2.5초, 단일일 때는 4초로 돌아감
+                
+                wheel.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.7, 0.1, 1)`;
+                wheel.style.transform = `rotate(${spinRounds * 360 + extraAngle}deg)`;
+
+                // 룰렛이 회전하는 동안 기다림
+                await new Promise(r => setTimeout(r, spinDuration * 1000 + 100));
+
+                // 3. 종료 및 결과 팝업 업데이트
+                singleName.innerText = currentResult.itemName;
+                singleName.style.color = currentResult.color;
                 
                 if (isMulti) {
-                    data.results.forEach(res => {
-                        const div = document.createElement('div');
-                        div.className = 'multi-item';
-                        div.style.borderColor = res.color;
-                        div.innerText = res.itemName;
-                        multiContainer.appendChild(div);
-                    });
+                    const div = document.createElement('div');
+                    div.className = 'multi-item';
+                    div.style.borderColor = currentResult.color;
+                    div.innerText = currentResult.itemName;
+                    multiContainer.appendChild(div);
                 }
                 
                 popup.classList.add('active');
 
-                // 5초 후 자동 숨김
-                setTimeout(() => {
+                // 3초 대기로 단축
+                await new Promise(r => setTimeout(r, 3000));
+                
+                // 다음 돌아갈 순서가 남아있으면 화면 정리만 하고 약간 대기
+                if (i < data.results.length - 1) {
                     popup.classList.remove('active');
-                    wrapper.style.display = 'none';
-                }, 7000);
-            }, 5500);
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
+            
+            // 모든 연차 애니메이션 완전 종료
+            popup.classList.remove('active');
+            wrapper.style.display = 'none';
         }
     </script>
 </body>
