@@ -47,6 +47,12 @@
                 <button class="btn btn-primary" onclick="showCreateForm()">➕ 새 룰렛 만들기</button>
             </h2>
 
+            <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,255,163,0.1); border: 1px solid var(--primary); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                <span style="white-space: nowrap; font-weight: bold; color: var(--primary);">오버레이 URL:</span>
+                <input type="text" id="overlayUrl" readonly style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px;" value="">
+                <button class="btn btn-primary" onclick="copyOverlayUrl()" style="white-space: nowrap; padding: 8px 15px;">📋 URL 복사</button>
+            </div>
+
             <div id="rouletteList">
                 <!-- JS Rendered -->
             </div>
@@ -95,11 +101,32 @@
         let editingId = null;
 
         async function loadRoulettes() {
-            const res = await fetch(`/api/admin/roulette`);
+            // 오버레이 URL 초기화
+            document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
+
+            const res = await fetch(`/api/admin/roulette`, { credentials: 'same-origin' });
             if (res.ok) {
                 roulettes = await res.json();
                 renderList();
             }
+        }
+
+        function copyOverlayUrl() {
+            const urlInput = document.getElementById('overlayUrl');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(urlInput.value).then(() => {
+                alert("룰렛 오버레이 URL이 클립보드에 복사되었습니다!\nOBS 화면의 브라우저 소스에 붙여넣기 해 주세요. 🚀");
+            }).catch(err => {
+                // HTTPS 환경이 아니거나 클립보드 권한이 없을 경우를 대비한 구형 방식 지원
+                try {
+                    document.execCommand('copy');
+                    alert("룰렛 오버레이 URL이 복사되었습니다.");
+                } catch (e) {
+                    alert("복사 실패. 주소창의 텍스트를 직접 복사해 주세요.");
+                }
+            });
         }
 
         function renderList() {
@@ -220,6 +247,7 @@
             const res = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(data)
             });
 
@@ -233,12 +261,12 @@
 
         async function deleteRoulette(id) {
             if (!confirm("정말 삭제하시겠습니까?")) return;
-            const res = await fetch(`/api/admin/roulette/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/admin/roulette/${id}`, { method: 'DELETE', credentials: 'same-origin' });
             if (res.ok) loadRoulettes();
         }
 
         async function runTestSpin(id, is10x) {
-            const res = await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, { method: 'POST' });
+            const res = await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, { method: 'POST', credentials: 'same-origin' });
             if (res.ok) {
                 const result = await res.json();
                 console.log("테스트 실행 결과:", result);
