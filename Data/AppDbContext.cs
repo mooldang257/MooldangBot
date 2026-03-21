@@ -38,6 +38,8 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<StreamerCommand>().ToTable("streamercommands");
             modelBuilder.Entity<StreamerOmakaseItem>().ToTable("streameromakases");
             modelBuilder.Entity<AvatarSetting>().ToTable("avatarsettings");
+            modelBuilder.Entity<ChzzkCategory>().ToTable("chzzkcategories");
+            modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("chzzkcategoryaliases");
         }
 
     }
