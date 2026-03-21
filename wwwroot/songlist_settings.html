@@ -248,21 +248,27 @@
             }
             songRequestCommands.forEach((cmd, index) => {
                 const div = document.createElement('div');
-                div.style.cssText = "display:flex; gap:10px; align-items:center;";
+                div.style.cssText = "display:grid; grid-template-columns: 1fr 120px auto; gap:10px; align-items:end; background:rgba(0,0,0,0.1); padding:8px; border-radius:8px;";
                 div.innerHTML = `
-                    <input type="text" value="${cmd}" onchange="updateSongCommandValue(${index}, this.value)" style="flex:1;">
+                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">키워드</label><input type="text" value="${cmd.keyword}" onchange="updateSongCommandValue(${index}, 'keyword', this.value)" placeholder="!신청"></div>
+                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">개별 금액(치즈)</label><input type="number" value="${cmd.price}" onchange="updateSongCommandValue(${index}, 'price', this.value)" placeholder="0"></div>
                     <button type="button" class="btn" style="background:#ff4757; color:white; padding:8px 12px; font-size:12px;" onclick="removeSongCommandItem(${index})">삭제</button>
                 `;
                 container.appendChild(div);
             });
         }
 
-        function updateSongCommandValue(index, value) {
-            songRequestCommands[index] = value.trim();
+        function updateSongCommandValue(index, field, value) {
+            if (field === 'price') {
+                songRequestCommands[index].price = parseInt(value) || 0;
+            } else {
+                songRequestCommands[index].keyword = value.trim();
+            }
         }
 
         function addSongCommandItem() {
-            songRequestCommands.push('!신청');
+            const defaultPrice = parseInt(document.getElementById('songPrice').value) || 0;
+            songRequestCommands.push({ keyword: '!신청', price: defaultPrice });
             renderSongCommandList();
         }
 
@@ -330,9 +336,13 @@
             if (res.ok) {
                 const data = await res.json();
                 // document.getElementById('cmdSong').value = data.songCommand; // 기존 싱글 필드 무시 (통합 관리)
-                songRequestCommands = data.songRequestCommands || [];
+                songRequestCommands = (data.songRequestCommands || []).map(c => ({
+                    keyword: c.keyword || c, // 문자열 호환
+                    price: c.price || 0
+                }));
+                
                 if (songRequestCommands.length === 0 && data.songCommand) {
-                    songRequestCommands = [data.songCommand]; // 기존 값 이관 표시
+                    songRequestCommands = [{ keyword: data.songCommand, price: data.songCheesePrice || 0 }]; // 기존 값 이관 표시
                 }
                 renderSongCommandList();
 
@@ -388,7 +398,7 @@
             const currentOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
 
             const reqData = {
-                songCommand: songRequestCommands[0] || "!신청", // 첫 번째 명령어를 대표값으로 유지
+                songCommand: songRequestCommands.length > 0 ? songRequestCommands[0].keyword : "!신청", // 첫 번째 명령어를 대표값으로 유지
                 songRequestCommands: songRequestCommands,
                 songCheesePrice: parseInt(document.getElementById('songPrice').value) || 0,
                 omakases: omakaseItems,

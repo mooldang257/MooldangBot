@@ -167,9 +167,12 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                         // 🎵 노래 신청 액션 처리 (명령어 관리소 등록 방식)
                         if (msg.Length > customCmd.CommandKeyword.Length)
                         {
-                            if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
+                            // 전역 설정보다 명령어 개별 설정(Price)을 우선순위로 사용
+                            int targetPrice = customCmd.Price > 0 ? customCmd.Price : streamerProfile.SongCheesePrice;
+
+                            if (targetPrice > 0 && notification.DonationAmount < targetPrice)
                             {
-                                _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                                _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {targetPrice}, 실제: {notification.DonationAmount})");
                             }
                             else
                             {

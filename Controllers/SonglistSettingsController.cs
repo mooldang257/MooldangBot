@@ -24,7 +24,7 @@ namespace MooldangAPI.Controllers
             var omakaseItems = await _db.StreamerOmakases.Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
             var songCommands = await _db.StreamerCommands
                 .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
-                .Select(c => c.CommandKeyword)
+                .Select(c => new { Keyword = c.CommandKeyword, Price = c.Price })
                 .ToListAsync();
 
             return Results.Ok(new
@@ -89,16 +89,17 @@ namespace MooldangAPI.Controllers
 
                 if (req.SongRequestCommands != null)
                 {
-                    foreach (var cmd in req.SongRequestCommands)
+                    foreach (var sc in req.SongRequestCommands)
                     {
-                        if (string.IsNullOrWhiteSpace(cmd)) continue;
+                        if (string.IsNullOrWhiteSpace(sc.Keyword)) continue;
                         _db.StreamerCommands.Add(new StreamerCommand
                         {
                             ChzzkUid = chzzkUid,
-                            CommandKeyword = cmd.Trim(),
+                            CommandKeyword = sc.Keyword.Trim(),
                             ActionType = "SongRequest",
                             RequiredRole = "all",
-                            Content = "SongRequest"
+                            Content = "SongRequest",
+                            Price = sc.Price
                         });
                     }
                 }

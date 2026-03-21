@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace MooldangAPI.Models;
 
@@ -26,4 +26,6 @@ public class StreamerCommand
     [Required]
     [MaxLength(20)]
     public string RequiredRole { get; set; } = "manager"; // 필요 권한: "streamer", "manager", "all"
+
+    public int Price { get; set; } = 0; // 이 명령어를 실행하기 위한 필요 금액 (노래신청 등에서 사용)
 }
