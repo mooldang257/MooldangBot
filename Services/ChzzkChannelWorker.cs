@@ -389,15 +389,6 @@ public class ChzzkChannelWorker
                                         ? payload.GetProperty("profile").GetString() ?? "{}"
                                         : payload.GetProperty("profile").GetRawText();
 
-                // ⭐ [이모티콘] emojis 파싱 (보안상 안전하게 dictionary 추출)
-                var emojisDict = new Dictionary<string, string>();
-                if (payload.TryGetProperty("emojis", out var emojisProp) && emojisProp.ValueKind == JsonValueKind.Object)
-                {
-                    try {
-                        emojisDict = JsonSerializer.Deserialize<Dictionary<string, string>>(emojisProp.GetRawText()) ?? new Dictionary<string, string>();
-                    } catch {}
-                }
-
                 using var profileDoc = JsonDocument.Parse(profileJson);
                 string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
 
@@ -414,11 +405,35 @@ public class ChzzkChannelWorker
 
                 _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg}");
 
+                // ⭐ [후원 금액] extras 파싱 (payAmount 추출)
+                int donationAmount = 0;
+                if (payload.TryGetProperty("extras", out var extrasProp) && extrasProp.ValueKind == JsonValueKind.String)
+                {
+                    try {
+                        string extrasJson = extrasProp.GetString() ?? "{}";
+                        using var extrasDoc = JsonDocument.Parse(extrasJson);
+                        if (extrasDoc.RootElement.TryGetProperty("payAmount", out var payProp))
+                        {
+                            donationAmount = payProp.GetInt32();
+                            _logger.LogInformation($"💰 [후원 발생] {nickname}님: {donationAmount}원");
+                        }
+                    } catch {}
+                }
+
+                // ⭐ [이모티콘] emojis 파싱 (보안상 안전하게 dictionary 추출)
+                var emojisDict = new Dictionary<string, string>();
+                if (payload.TryGetProperty("emojis", out var emojisProp) && emojisProp.ValueKind == JsonValueKind.Object)
+                {
+                    try {
+                        emojisDict = JsonSerializer.Deserialize<Dictionary<string, string>>(emojisProp.GetRawText()) ?? new Dictionary<string, string>();
+                    } catch {}
+                }
+
                 // 🌟 [이벤트 발송] 다른 기능들(아바타 오버레이 등)이 채팅을 받을 수 있도록 중계기에 보냅니다.
                 using var mediatorScope = _serviceProvider.CreateScope();
                 var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                 await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
-                    profile, nickname, msg, userRole, senderId, _clientId, _clientSecret, emojisDict), token);
+                    profile, nickname, msg, userRole, senderId, _clientId, _clientSecret, emojisDict, donationAmount), token);
 
                 // ==========================================
                 // 🚀 0. 고정 명령어 (!공지 {텍스트}) - 별도 등록 없이 즉시 실행

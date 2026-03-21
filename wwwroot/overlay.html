@@ -263,6 +263,12 @@
             renderOverlay(); 
         });
 
+        // 🚀 신규: 대시보드가 꺼져 있어도 백엔드에서 온 갱신 신호를 직접 수신
+        connection.on("RefreshDashboard", async () => {
+            console.log("⚡ 백엔드로부터 데이터 갱신 신호를 받았습니다. 최신 정보를 불러옵니다.");
+            await fetchInitialData();
+        });
+
         connection.start().then(() => { connection.invoke("JoinStreamerGroup", chzzkUid); fetchInitialData(); }).catch(err => { setTimeout(fetchInitialData, 5000); });
 
         connection.onreconnected((connectionId) => {
