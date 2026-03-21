@@ -41,7 +41,11 @@
                 <div class="group"><label>키워드</label><input type="text" id="newKeyword" placeholder="!명령어" style="margin-bottom:0;"></div>
                 <div class="group">
                     <label>동작</label>
-                    <select id="newAction" style="margin-bottom:0;"><option value="Notice">상단 공지</option><option value="Reply">채팅 답변</option></select>
+                    <select id="newAction" style="margin-bottom:0;">
+                        <option value="Notice">📢 상단 공지</option>
+                        <option value="Reply">💬 채팅 답변</option>
+                        <option value="SongRequest">🎵 노래 신청</option>
+                    </select>
                 </div>
                 <div class="group">
                     <label>권한</label>
@@ -75,7 +79,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="keyword">${c.commandKeyword}</td>
-                    <td><span class="badge">${c.actionType === 'Notice' ? '📢 공지' : '💬 답변'}</span></td>
+                    <td><span class="badge">${getActionLabel(c.actionType)}</span></td>
                     <td>${c.requiredRole === 'manager' ? '🛡️ 관리자' : '👥 전체'}</td>
                     <td>${c.content}</td>
                     <td><button class="btn btn-danger btn-sm" onclick="deleteCommand(${c.id})">삭제</button></td>
@@ -108,6 +112,15 @@
             if(!confirm("정말 삭제할까요?")) return;
             await fetch(`/api/commands/delete/${id}`, { method: 'DELETE' });
             loadCommands();
+        }
+
+        function getActionLabel(type) {
+            switch(type) {
+                case 'Notice': return '📢 공지';
+                case 'Reply': return '💬 답변';
+                case 'SongRequest': return '🎵 노래 신청';
+                default: return type;
+            }
         }
 
         window.onload = loadCommands;

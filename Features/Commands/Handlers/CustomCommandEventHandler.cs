@@ -141,10 +141,41 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
                 if (isAuthorized)
                 {
+                    // 🔹 추가: 노래 신청 (기존 프로필 설정 방식 하위 호환)
+                    string songCmd = streamerProfile.SongCommand ?? "!신청";
+                    if (firstWord == songCmd && msg.Length > songCmd.Length)
+                    {
+                        if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
+                        {
+                            _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                        }
+                        else
+                        {
+                            await HandleSongRequestInternalAsync(db, notification, msg.Substring(songCmd.Length).Trim(), cancellationToken);
+                            return;
+                        }
+                    }
+
                     if (customCmd.ActionType == "Notice")
                     {
                         string noticeText = customCmd.Content.Length > 100 ? customCmd.Content.Substring(0, 97) + "..." : customCmd.Content;
                         await ExecuteActionAsync(notification, noticeText, "https://openapi.chzzk.naver.com/open/v1/chats/notice", cancellationToken);
+                    }
+                    else if (customCmd.ActionType == "SongRequest")
+                    {
+                        // 🎵 노래 신청 액션 처리 (명령어 관리소 등록 방식)
+                        if (msg.Length > customCmd.CommandKeyword.Length)
+                        {
+                            if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
+                            {
+                                _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                            }
+                            else
+                            {
+                                await HandleSongRequestInternalAsync(db, notification, msg.Substring(customCmd.CommandKeyword.Length).Trim(), cancellationToken);
+                                return;
+                            }
+                        }
                     }
                     else if (customCmd.ActionType == "Reply" && !isBot)
                     {
@@ -189,6 +220,39 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                     }
                 }
             }
+        }
+    }
+
+    private async Task HandleSongRequestInternalAsync(AppDbContext db, ChatMessageReceivedEvent notification, string songInput, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"🎵 [곡 신청 포착(통합)] {notification.Username}님 -> {songInput} (후원: {notification.DonationAmount})");
+        try
+        {
+            int maxOrder = await db.SongQueues
+                .Where(s => s.ChzzkUid == notification.Profile.ChzzkUid)
+                .MaxAsync(s => (int?)s.SortOrder, cancellationToken) ?? 0;
+
+            var newSong = new MooldangAPI.Models.SongQueue
+            {
+                ChzzkUid = notification.Profile.ChzzkUid,
+                Title = songInput,
+                Artist = notification.Username,
+                Status = "Pending",
+                SortOrder = maxOrder + 1,
+                CreatedAt = DateTime.Now
+            };
+
+            db.SongQueues.Add(newSong);
+            await db.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation($"✅ [통합 신청 저장] {songInput} (순번: {newSong.SortOrder})");
+
+            var hubContext = _serviceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
+            await hubContext.Clients.Group(notification.Profile.ChzzkUid).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"❌ [통합 신청 실패] {ex.Message}");
         }
     }
 
