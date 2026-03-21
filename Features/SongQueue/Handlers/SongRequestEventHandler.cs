@@ -25,11 +25,19 @@ public class SongRequestEventHandler : INotificationHandler<ChatMessageReceivedE
         string nickname = notification.Username;
         
         string songCmd = profile.SongCommand ?? "!신청";
+        string firstWord = msg.Split(' ')[0];
         
-        if (msg.StartsWith(songCmd) && msg.Length > songCmd.Length)
+        if (firstWord == songCmd && msg.Length > songCmd.Length)
         {
+            // 후원 금액 조건 확인
+            if (profile.SongCheesePrice > 0 && notification.DonationAmount < profile.SongCheesePrice)
+            {
+                _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {profile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                return;
+            }
+
             string songInput = msg.Substring(songCmd.Length).Trim();
-            _logger.LogInformation($"🎵 [곡 신청 포착] {nickname}님 -> {songInput}");
+            _logger.LogInformation($"🎵 [곡 신청 포착] {nickname}님 -> {songInput} (후원: {notification.DonationAmount})");
 
             try
             {
