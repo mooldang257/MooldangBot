@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.ApiClients;
-using Microsoft.EntityFrameworkCore;
 
 namespace MooldangAPI.Features.Commands.Handlers;
 

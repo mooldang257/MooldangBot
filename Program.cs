@@ -13,6 +13,7 @@ using MediatR;
 using MooldangAPI.Features.SongQueue;
 using MooldangAPI.Features.Roulette;
 using MooldangAPI.Strategies;
+using MooldangAPI.ApiClients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,7 +95,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
     // 💡 클라우드플레어 터널 등 프록시 환경에서 프로토콜(HTTPS) 정보를 정확히 읽어오도록 신뢰 설정을 추가합니다.
-    KnownNetworks = { },
+    KnownIPNetworks = { },
     KnownProxies = { },
     ForwardLimit = null // 프록시 제한을 풀어서 모든 홉을 신뢰하게 함
 });
