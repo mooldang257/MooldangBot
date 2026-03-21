@@ -28,7 +28,7 @@ public class CategorySyncBackgroundService : BackgroundService
                     _logger.LogInformation($"⏰ [배치] 정기 카테고리 동기화 시간입니다. (현재시간: {now})");
                     using var scope = _serviceProvider.CreateScope();
                     var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
-                    await syncService.SyncCategoriesAsync(stoppingToken);
+                    await syncService.SyncCategoriesAsync(null, stoppingToken);
                     
                     _lastRunDate = now;
                 }
