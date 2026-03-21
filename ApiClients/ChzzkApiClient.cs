@@ -8,6 +8,8 @@ namespace MooldangAPI.ApiClients
     public class ChzzkApiClient
     {
         private readonly HttpClient _httpClient;
+        private readonly string _clientId;
+        private readonly string _clientSecret;
         private const string BaseUrl = "https://openapi.chzzk.naver.com"; // 치지직 공식 Open API 주소
         // IConfiguration을 주입받습니다.
         public ChzzkApiClient(HttpClient httpClient, IConfiguration config)
@@ -16,11 +18,11 @@ namespace MooldangAPI.ApiClients
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
-            string clientId = config["ChzzkApi:ClientId"] ?? "";
-            string clientSecret = config["ChzzkApi:ClientSecret"] ?? "";
+            _clientId = config["ChzzkApi:ClientId"] ?? "";
+            _clientSecret = config["ChzzkApi:ClientSecret"] ?? "";
 
-            _httpClient.DefaultRequestHeaders.Add("Client-Id", clientId);
-            _httpClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+            _httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+            _httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
         }
 
         /// <summary>
@@ -191,11 +193,17 @@ namespace MooldangAPI.ApiClients
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
                 {
-                    return content.GetProperty("status").GetString() == "OPEN";
+                    var status = content.GetProperty("status").GetString();
+                    Console.WriteLine($"[ChzzkApi] Channel {channelId} Live Status: {status}");
+                    return string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
                 }
                 return false;
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChzzkApi] IsLiveAsync Error: {ex.Message}");
+                return false;
+            }
         }
 
         /// <summary>
@@ -207,6 +215,8 @@ namespace MooldangAPI.ApiClients
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, "/open/v1/chats/send");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Add("Client-Id", _clientId);
+                request.Headers.Add("Client-Secret", _clientSecret);
                 
                 // 무한 루프 방지를 위해 투명 문자 추가
                 var payload = new { message = "\u200B" + message };
