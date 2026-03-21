@@ -422,24 +422,56 @@ public class ChzzkChannelWorker
             }
             else if (eventName == "DONATION")
             {
-                // 치즈 후원 이벤트 처리
-                string profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
-                                        ? payload.GetProperty("profile").GetString() ?? "{}"
-                                        : payload.GetProperty("profile").GetRawText();
-                using var profileDoc = JsonDocument.Parse(profileJson);
-                string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
-                string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
-                
-                int payAmount = 0;
-                if (payload.TryGetProperty("payAmount", out var payProp)) payAmount = payProp.GetInt32();
+                try
+                {
+                    // [디버깅] 실제 DONATION 페이로드가 어떻게 생겼는지 분석하기 위해 전체 출력
+                    _logger.LogInformation($"[DONATION 원본 데이터]: {payloadString}");
 
-                _logger.LogInformation($"💰 [후원 이벤트 수신] {nickname}님: {payAmount}치즈");
+                    string nickname = "익명의 후원자";
+                    if (payload.TryGetProperty("profile", out var profileProp))
+                    {
+                        string profileJson = profileProp.ValueKind == JsonValueKind.String 
+                            ? profileProp.GetString() ?? "{}" 
+                            : profileProp.GetRawText();
+                        using var profileDoc = JsonDocument.Parse(profileJson);
+                        if (profileDoc.RootElement.TryGetProperty("nickname", out var nickProp))
+                        {
+                            nickname = nickProp.GetString() ?? nickname;
+                        }
+                    }
 
-                // 후원 이벤트를 채팅 시스템에 전달 (룰렛 연동용)
-                using var mediatorScope = _serviceProvider.CreateScope();
-                var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
-                await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
-                    profile, nickname, "후원을 보냈습니다.", "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
+                    string senderId = payload.TryGetProperty("channelId", out var idProp) ? idProp.GetString() ?? "" : "";
+                    if (string.IsNullOrEmpty(senderId) && payload.TryGetProperty("senderChannelId", out var senderIdProp))
+                    {
+                        senderId = senderIdProp.GetString() ?? "";
+                    }
+
+                    int payAmount = 0;
+                    if (payload.TryGetProperty("donation", out var donProp))
+                    {
+                        if (donProp.TryGetProperty("payAmount", out var payProp)) payAmount = payProp.GetInt32();
+                    }
+                    else if (payload.TryGetProperty("payAmount", out var payProp)) // 기존 방식 Fallback
+                    {
+                        payAmount = payProp.GetInt32();
+                    }
+
+                    string message = payload.TryGetProperty("content", out var contentProp) ? contentProp.GetString() ?? "" : "";
+
+                    _logger.LogInformation($"💰 [후원 이벤트 수신 (안전파싱완료)] {nickname}님: {payAmount}치즈 / 메시지: {message}");
+
+                    if (payAmount > 0)
+                    {
+                        using var mediatorScope = _serviceProvider.CreateScope();
+                        var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+                        await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
+                            profile, nickname, "(후원) " + message, "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"❌ [DONATION 파싱 실패] {ex.Message} \n Raw: {payloadString}");
+                }
             }
             else if (eventName == "SUBSCRIPTION")
             {
