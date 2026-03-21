@@ -130,6 +130,8 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 .FirstOrDefaultAsync(c => c.ChzzkUid == notification.Profile.ChzzkUid &&
                                          (c.CommandKeyword == fullMessage || c.CommandKeyword == firstWord), cancellationToken);
 
+            _logger.LogInformation($"🔍 [명령어 대조] 수신: '{firstWord}' (전체: '{fullMessage}'), 결과: {(customCmd != null ? customCmd.CommandKeyword : "없음")}");
+
             if (customCmd != null)
             {
                 bool isAuthorized = isMaster;
@@ -150,10 +152,12 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                     else if (customCmd.ActionType == "SongRequest")
                     {
                         // 🎵 노래 신청 액션 처리 (명령어 관리소 등록 방식)
+                        _logger.LogInformation($"🎵 [개별 곡 신청 시도] 명령어: {customCmd.CommandKeyword}, 금액설정: {customCmd.Price}, 실제후원: {notification.DonationAmount}");
+                        
                         if (msg.Length > customCmd.CommandKeyword.Length)
                         {
-                            // 전역 설정보다 명령어 개별 설정(Price)을 우선순위로 사용
-                            int targetPrice = customCmd.Price > 0 ? customCmd.Price : streamerProfile.SongCheesePrice;
+                            // 전역 설정 상관없이 명령어 개별 설정(Price)을 최우선으로 사용
+                            int targetPrice = customCmd.Price;
 
                             if (targetPrice > 0 && notification.DonationAmount < targetPrice)
                             {

@@ -440,11 +440,9 @@ public class ChzzkChannelWorker
                         }
                     }
 
-                    string senderId = payload.TryGetProperty("channelId", out var idProp) ? idProp.GetString() ?? "" : "";
-                    if (string.IsNullOrEmpty(senderId) && payload.TryGetProperty("senderChannelId", out var senderIdProp))
-                    {
-                        senderId = senderIdProp.GetString() ?? "";
-                    }
+                    string senderId = payload.TryGetProperty("userChannelId", out var uIdProp) ? uIdProp.GetString() ?? "" : "";
+                    if (string.IsNullOrEmpty(senderId)) senderId = payload.TryGetProperty("channelId", out var idProp) ? idProp.GetString() ?? "" : "";
+                    if (string.IsNullOrEmpty(senderId) && payload.TryGetProperty("senderChannelId", out var scIdProp)) senderId = scIdProp.GetString() ?? "";
 
                     int payAmount = 0;
                     if (payload.TryGetProperty("donation", out var donProp))
@@ -456,7 +454,10 @@ public class ChzzkChannelWorker
                         payAmount = payProp.GetInt32();
                     }
 
-                    string message = payload.TryGetProperty("content", out var contentProp) ? contentProp.GetString() ?? "" : "";
+                    string message = "";
+                    if (payload.TryGetProperty("content", out var contentProp)) message = contentProp.GetString() ?? "";
+                    if (string.IsNullOrEmpty(message) && payload.TryGetProperty("comment", out var commentProp)) message = commentProp.GetString() ?? "";
+                    if (string.IsNullOrEmpty(message) && payload.TryGetProperty("donation", out var dProp) && dProp.TryGetProperty("comment", out var dcProp)) message = dcProp.GetString() ?? "";
 
                     _logger.LogInformation($"💰 [후원 이벤트 수신 (안전파싱완료)] {nickname}님: {payAmount}치즈 / 메시지: {message}");
 
