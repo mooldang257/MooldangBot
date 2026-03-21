@@ -502,44 +502,8 @@ public class ChzzkChannelWorker
                 }
 
                 // ==========================================
-                // 🚀 5. 방송 설정 변경 (!방제 / !카테고리) - 마스터/스트리머/매니저 전용
+                // 🚀 (방제 및 카테고리 로직은 ChannelSettingEventHandler.cs에서 분리되어 처리됨)
                 // ==========================================
-                else if (msg.StartsWith("!방제 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
-                {
-                    string newTitle = msg.Substring("!방제 ".Length).Trim();
-                    _logger.LogInformation($"🛠️ [방제 변경 요청 포착] {nickname}님 -> {newTitle}");
-
-                    // 변경 메서드 호출 (최적화된 파라미터 적용)
-                    await UpdateChannelInfoAsync(profile, newTitle, token);
-                }
-                else if (msg.StartsWith("!카테고리 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
-                {
-                    string inputKeyword = msg.Substring("!카테고리 ".Length).Trim();
-                    _logger.LogInformation($"🛠️ [카테고리 변경 요청] {nickname}님 -> 원본: {inputKeyword}");
-
-                    using var scope = _serviceProvider.CreateScope();
-                    var dbAliasContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var aliasObj = await dbAliasContext.ChzzkCategoryAliases.Include(a => a.Category).FirstOrDefaultAsync(a => a.Alias == inputKeyword, token);
-                    
-                    // 1. DB 단축어 사전에 있으면 정식 검색어로 치환, 없으면 입력한 그대로 검색
-                    string searchKeyword = aliasObj?.Category?.CategoryValue ?? inputKeyword;
-
-                    // 2. 치지직 카테고리 검색 API 호출 (첫 번째 결과 가져오기)
-                    var categoryInfo = await SearchChzzkCategoryAsync(profile, searchKeyword, token);
-
-                    if (categoryInfo != null)
-                    {
-                        // 3. 찾은 정확한 categoryType과 categoryId를 사용하여 변경 API 호출
-                        await UpdateChannelCategoryAsync(profile, categoryInfo.Value.Type, categoryInfo.Value.Id, categoryInfo.Value.Name, token);
-                    }
-                    else
-                    {
-                        // 검색 실패 시
-                        _logger.LogWarning($"⚠️ 카테고리 검색 실패: {searchKeyword}");
-                        await SendReplyChatAsync(profile, _clientId, _clientSecret, $"❌ '{searchKeyword}'(으)로 검색되는 치지직 카테고리가 없습니다.", token);
-                    }
-                }
-
                 // ==========================================
                 // 🚀 2. 동적 명령어 등록 로직 (!명령어등록) - 마스터/스트리머/매니저 전용
                 // 사용법: !명령어등록 공지 !노래책 https://mooldang.com/songs
