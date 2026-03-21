@@ -428,7 +428,11 @@ public class ChzzkChannelWorker
                     _logger.LogInformation($"[DONATION 원본 데이터]: {payloadString}");
 
                     string nickname = "익명의 후원자";
-                    if (payload.TryGetProperty("profile", out var profileProp))
+                    if (payload.TryGetProperty("donatorNickname", out var dNickProp))
+                    {
+                        nickname = dNickProp.GetString() ?? nickname;
+                    }
+                    else if (payload.TryGetProperty("profile", out var profileProp))
                     {
                         string profileJson = profileProp.ValueKind == JsonValueKind.String 
                             ? profileProp.GetString() ?? "{}" 
@@ -440,7 +444,8 @@ public class ChzzkChannelWorker
                         }
                     }
 
-                    string senderId = payload.TryGetProperty("userChannelId", out var uIdProp) ? uIdProp.GetString() ?? "" : "";
+                    string senderId = payload.TryGetProperty("donatorChannelId", out var dcIdProp) ? dcIdProp.GetString() ?? "" : "";
+                    if (string.IsNullOrEmpty(senderId)) senderId = payload.TryGetProperty("userChannelId", out var uIdProp) ? uIdProp.GetString() ?? "" : "";
                     if (string.IsNullOrEmpty(senderId)) senderId = payload.TryGetProperty("channelId", out var idProp) ? idProp.GetString() ?? "" : "";
                     if (string.IsNullOrEmpty(senderId) && payload.TryGetProperty("senderChannelId", out var scIdProp)) senderId = scIdProp.GetString() ?? "";
 
@@ -455,7 +460,8 @@ public class ChzzkChannelWorker
                     }
 
                     string message = "";
-                    if (payload.TryGetProperty("content", out var contentProp)) message = contentProp.GetString() ?? "";
+                    if (payload.TryGetProperty("donationText", out var dTextProp)) message = dTextProp.GetString() ?? "";
+                    if (string.IsNullOrEmpty(message) && payload.TryGetProperty("content", out var contentProp)) message = contentProp.GetString() ?? "";
                     if (string.IsNullOrEmpty(message) && payload.TryGetProperty("comment", out var commentProp)) message = commentProp.GetString() ?? "";
                     if (string.IsNullOrEmpty(message) && payload.TryGetProperty("donation", out var dProp) && dProp.TryGetProperty("comment", out var dcProp)) message = dcProp.GetString() ?? "";
 
