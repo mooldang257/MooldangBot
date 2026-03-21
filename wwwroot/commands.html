@@ -89,14 +89,19 @@
         }
 
         async function saveCommand() {
+            const action = document.getElementById('newAction').value;
+            const content = document.getElementById('newContent').value;
+
             const cmd = {
                 chzzkUid: chzzkUid,
                 commandKeyword: document.getElementById('newKeyword').value,
-                actionType: document.getElementById('newAction').value,
+                actionType: action,
                 requiredRole: document.getElementById('newRole').value,
-                content: document.getElementById('newContent').value
+                content: content || (action === 'SongRequest' ? 'SongRequest' : '')
             };
-            if(!cmd.commandKeyword || !cmd.content) return alert("빈칸을 채워주세요!");
+
+            if(!cmd.commandKeyword) return alert("키워드를 입력해 주세요!");
+            if(cmd.actionType !== 'SongRequest' && !cmd.content) return alert("내용을 입력해 주세요!");
 
             await fetch('/api/commands/save', {
                 method: 'POST',
