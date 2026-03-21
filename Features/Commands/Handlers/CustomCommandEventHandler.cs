@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.ApiClients;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MooldangAPI.Features.Commands.Handlers;
 
@@ -248,7 +249,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             _logger.LogInformation($"✅ [통합 신청 저장] {songInput} (순번: {newSong.SortOrder})");
 
             var hubContext = _serviceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
-            await hubContext.Clients.Group(notification.Profile.ChzzkUid).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+            await hubContext.Clients.Group(notification.Profile.ChzzkUid!).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -261,7 +262,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Client-Id", req.ClientId);
         client.DefaultRequestHeaders.Add("Client-Secret", req.ClientSecret);
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.Profile.ChzzkAccessToken);
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.Profile.ChzzkAccessToken!);
 
         var payload = new { message = text };
         await client.PostAsync(endpoint, new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"), token);
