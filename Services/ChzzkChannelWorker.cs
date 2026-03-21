@@ -467,7 +467,7 @@ public class ChzzkChannelWorker
                 // 🚀 2. 동적 명령어 등록 로직 (!명령어등록) - 마스터/스트리머/매니저 전용
                 // 사용법: !명령어등록 공지 !노래책 https://mooldang.com/songs
                 // ==========================================
-                else if (msg.StartsWith("!명령어등록 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
+                if (msg.StartsWith("!명령어등록 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
                 {
                     var parts = msg.Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
 
