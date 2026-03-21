@@ -39,7 +39,10 @@ namespace MooldangAPI.Features.Roulette.Handlers
 
                 foreach (var roulette in cheeseRoulettes)
                 {
-                    if (donationAmount >= roulette.CostPerSpin)
+                    // 명령어 첫 단어가 일치하는지 확인
+                    string firstWord = string.IsNullOrEmpty(msg) ? "" : msg.Split(' ')[0];
+
+                    if (donationAmount >= roulette.CostPerSpin && firstWord == roulette.Command)
                     {
                         // 10연차 판별 (금액이 10배 이상이면 10연차 실행)
                         if (donationAmount >= roulette.CostPerSpin * 10)

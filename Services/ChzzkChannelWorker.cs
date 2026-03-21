@@ -465,7 +465,7 @@ public class ChzzkChannelWorker
                         using var mediatorScope = _serviceProvider.CreateScope();
                         var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                         await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
-                            profile, nickname, "(후원) " + message, "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
+                            profile, nickname, message, "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
                     }
                 }
                 catch (Exception ex)
