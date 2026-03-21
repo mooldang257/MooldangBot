@@ -143,4 +143,5 @@ public class ChzzkCategorySyncService
     {
         IsRunning = false;
     }
+    }
 }
