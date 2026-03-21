@@ -403,6 +403,38 @@ public class ChzzkChannelWorker
                         _logger.LogError($"❌ [구독 실패] {await res.Content.ReadAsStringAsync()}");
                 }
             }
+            else if (eventName == "DONATION")
+            {
+                // 치즈 후원 이벤트 처리
+                string profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
+                                        ? payload.GetProperty("profile").GetString() ?? "{}"
+                                        : payload.GetProperty("profile").GetRawText();
+                using var profileDoc = JsonDocument.Parse(profileJson);
+                string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
+                string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
+                
+                int payAmount = 0;
+                if (payload.TryGetProperty("payAmount", out var payProp)) payAmount = payProp.GetInt32();
+
+                _logger.LogInformation($"💰 [후원 이벤트 수신] {nickname}님: {payAmount}치즈");
+
+                // 후원 이벤트를 채팅 시스템에 전달 (룰렛 연동용)
+                using var mediatorScope = _serviceProvider.CreateScope();
+                var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+                await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
+                    profile, nickname, "후원을 보냈습니다.", "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
+            }
+            else if (eventName == "SUBSCRIPTION")
+            {
+                // 정기 구독 이벤트 처리
+                string profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
+                                        ? payload.GetProperty("profile").GetString() ?? "{}"
+                                        : payload.GetProperty("profile").GetRawText();
+                using var profileDoc = JsonDocument.Parse(profileJson);
+                string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "시청자" : "시청자";
+                
+                _logger.LogInformation($"⭐ [구독 이벤트 수신] {nickname}님 구독 중!");
+            }
             else if (eventName == "CHAT")
             {
                 // CHAT 이벤트도 동일하게 이중 포장되어 들어옵니다.
