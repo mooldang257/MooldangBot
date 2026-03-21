@@ -354,12 +354,14 @@
             .withAutomaticReconnect()
             .build();
 
+        const BOT_UID = "445df9c493713244a65d97e4fd1ed0b1";
+
         connection.on("ReceiveChat", (jsonRaw) => {
             if (!settings.isEnabled) return;
             const data = JSON.parse(jsonRaw);
             
-            // 💡 [요청 반영] 봇 채팅인 경우 아바타를 생성하거나 반응하지 않음 (isBot 플래그 사용)
-            if (data.isbot || data.isBot) return;
+            // 💡 [요청 반영] 봇 UID인 경우 아바타를 생성하거나 반응하지 않음
+            if (data.senderId === BOT_UID) return;
 
             if (!avatars[data.senderId]) {
                 createAvatar(data.senderId, data.nickname, data.userRole);
@@ -373,7 +375,7 @@
             const data = JSON.parse(jsonRaw);
             
             // 💡 봇은 아바타 명령어도 무시
-            if (data.isbot || data.isBot) return;
+            if (data.senderId === BOT_UID) return;
 
             if (!avatars[data.senderId]) createAvatar(data.senderId, data.nickname, data.userRole);
             resetDestroyTimer(data.senderId);
