@@ -176,32 +176,6 @@ namespace MooldangAPI.ApiClients
                 return null;
             }
         }
-
-        /// <summary>
-        /// 스트리머가 현재 방송 중인지 확인합니다.
-        /// </summary>
-        public async Task<bool> IsLiveAsync(string channelId)
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"/open/v1/channels/{channelId}/live-status");
-                if (!response.IsSuccessStatusCode) return false;
-
-                using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-                if (doc.RootElement.TryGetProperty("content", out var content))
-                {
-                    if (content.TryGetProperty("status", out var status))
-                    {
-                        return status.GetString() == "OPEN";
-                    }
-                }
-                return false;
-            }
-            catch
-            {
-                return false;
-            }
-        }
     }
 }
 
