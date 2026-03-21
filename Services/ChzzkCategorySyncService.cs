@@ -65,7 +65,8 @@ public class ChzzkCategorySyncService
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Client-Id", clientId);
         client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+        // 카테고리 검색 API는 사용자 토큰(Bearer)을 사용하지 않는 API입니다.
+        // client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
 
         int addedCount = 0;
         int updatedCount = 0;
@@ -76,8 +77,13 @@ public class ChzzkCategorySyncService
 
             try 
             {
-                var response = await client.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?keyword={Uri.EscapeDataString(keyword)}&size=50", ct);
-                if (!response.IsSuccessStatusCode) continue;
+                var response = await client.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?query={Uri.EscapeDataString(keyword)}&size=50", ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(ct);
+                    _logger.LogWarning($"⚠️ [배치] 카테고리 API 400 에러 - Keyword: {keyword}, StatusCode: {response.StatusCode}, Content: {errorContent}");
+                    continue;
+                }
 
                 var json = await response.Content.ReadAsStringAsync(ct);
                 using var doc = JsonDocument.Parse(json);
