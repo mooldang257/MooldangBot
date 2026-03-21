@@ -45,12 +45,12 @@ namespace MooldangAPI.Features.Roulette.Handlers
                         if (donationAmount >= roulette.CostPerSpin * 10)
                         {
                             _logger.LogInformation($"🎰 [룰렛 10연차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name}");
-                            await rouletteService.SpinRoulette10xAsync(chzzkUid, roulette.Id);
+                            await rouletteService.SpinRoulette10xAsync(chzzkUid, roulette.Id, notification.Username);
                         }
                         else
                         {
                             _logger.LogInformation($"🎰 [룰렛 1회 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name}");
-                            await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id);
+                            await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, notification.Username);
                         }
                     }
                 }
@@ -80,7 +80,7 @@ namespace MooldangAPI.Features.Roulette.Handlers
                     await db.SaveChangesAsync(cancellationToken);
 
                     _logger.LogInformation($"🎰 [룰렛 실행] {notification.Username}님 포인트 차감 -> {roulette.Name}");
-                    await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id);
+                    await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, notification.Username);
                 }
             }
         }

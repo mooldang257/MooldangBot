@@ -222,7 +222,7 @@
                 
                 const spinRounds = 10;
                 const extraAngle = Math.random() * 360;
-                const spinDuration = isMulti ? 2.5 : 4; // 연차일 때는 2.5초, 단일일 때는 4초로 돌아감
+                const spinDuration = isMulti ? 1 : 2; // 회전 시간 단축
                 
                 wheel.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.7, 0.1, 1)`;
                 wheel.style.transform = `rotate(${spinRounds * 360 + extraAngle}deg)`;
@@ -244,13 +244,14 @@
                 
                 popup.classList.add('active');
 
-                // 3초 대기로 단축
-                await new Promise(r => setTimeout(r, 3000));
+                // 결과 표시 대기 시간 (3초에서 추가 단축)
+                const waitDuration = isMulti ? 1000 : 2000;
+                await new Promise(r => setTimeout(r, waitDuration));
                 
                 // 다음 돌아갈 순서가 남아있으면 화면 정리만 하고 약간 대기
                 if (i < data.results.length - 1) {
                     popup.classList.remove('active');
-                    await new Promise(r => setTimeout(r, 300));
+                    await new Promise(r => setTimeout(r, 100));
                 }
             }
             
