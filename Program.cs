@@ -31,6 +31,7 @@ builder.Services.AddTransient<IOverlayRenderStrategy, DefaultChatRenderStrategy>
 builder.Services.AddHostedService<ChzzkBackgroundService>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
+builder.Services.AddScoped<RouletteService>();
 // ------------------------------------------
 
 builder.Services.AddSignalR();

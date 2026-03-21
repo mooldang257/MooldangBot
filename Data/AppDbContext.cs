@@ -19,6 +19,8 @@ namespace MooldangAPI.Data
         public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
         public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
         public DbSet<ViewerProfile> ViewerProfiles { get; set; }
+        public DbSet<Roulette> Roulettes { get; set; }
+        public DbSet<RouletteItem> RouletteItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +43,9 @@ namespace MooldangAPI.Data
             
             modelBuilder.Entity<SongQueue>()
                 .HasIndex(s => s.ChzzkUid);
+            
+            modelBuilder.Entity<Roulette>()
+                .HasIndex(r => r.ChzzkUid);
 
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
@@ -52,6 +57,8 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<ChzzkCategory>().ToTable("chzzkcategories");
             modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("chzzkcategoryaliases");
             modelBuilder.Entity<ViewerProfile>().ToTable("viewerprofiles");
+            modelBuilder.Entity<Roulette>().ToTable("roulettes");
+            modelBuilder.Entity<RouletteItem>().ToTable("rouletteitems");
         }
 
     }

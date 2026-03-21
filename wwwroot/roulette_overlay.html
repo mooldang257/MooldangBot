@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>룰렛 오버레이</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+        }
+
+        #overlay-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            perspective: 1000px;
+        }
+
+        /* 원형 룰렛 디자인 */
+        #roulette-wrapper {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            border: 10px solid #fff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: none; /* 평소엔 숨김 */
+            background: #222;
+        }
+
+        #roulette-wheel {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 50%;
+            top: 50%;
+            transform-origin: 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-left: 50px;
+            box-sizing: border-box;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            font-size: 16px;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+
+        .pointer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff0055;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px gold);
+        }
+
+        /* 결과 연출 */
+        #result-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0,0,0,0.9);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid gold;
+            text-align: center;
+            z-index: 100;
+            transition: transform 0.5s ease;
+            min-width: 300px;
+        }
+
+        #result-popup.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .win-title {
+            font-size: 24px;
+            color: gold;
+            margin-bottom: 20px;
+        }
+
+        .win-item {
+            font-size: 40px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        /* 10연차 결과 그리드 */
+        #multi-results {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .multi-item {
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* 폭죽 보조 효과 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay-container">
+        <div id="roulette-wrapper">
+            <div class="pointer"></div>
+            <div id="roulette-wheel"></div>
+        </div>
+
+        <div id="result-popup">
+            <div class="win-title">🎊 REWARD 🎊</div>
+            <div id="single-result-name" class="win-item">아이템명</div>
+            <div id="multi-results"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const chzzkUid = pathParts[pathParts.length - 1];
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/overlayHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("RouletteTriggered", (data) => {
+            console.log("룰렛 발생:", data);
+            startRouletteAnimation(data);
+        });
+
+        connection.start().then(() => {
+            console.log("오버레이 연결됨:", chzzkUid);
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
+        async function startRouletteAnimation(data) {
+            if (!data.results || data.results.length === 0) return;
+
+            const isMulti = data.results.length > 1;
+            const finalResult = data.results[0]; // 보여주기용 첫 당첨자 또는 대표값
+            
+            // 룰렛판 렌더링 (간이)
+            // 실제 구현에서는 DB의 모든 아이템 정보를 가져와서 판을 채워야 하지만, 
+            // 여기서는 당첨 연출에 집중합니다.
+            
+            const wrapper = document.getElementById('roulette-wrapper');
+            const wheel = document.getElementById('roulette-wheel');
+            const popup = document.getElementById('result-popup');
+            
+            // 1. 초기화
+            wrapper.style.display = 'block';
+            wheel.style.transition = 'none';
+            wheel.style.transform = 'rotate(0deg)';
+            popup.classList.remove('active');
+            
+            // 룰렛판 아이템 채우기 (샘플링)
+            wheel.innerHTML = '';
+            const segments = 12; // 고정된 칸 수로 연출
+            for(let i=0; i<segments; i++){
+                const seg = document.createElement('div');
+                seg.className = 'segment';
+                const angle = (360 / segments);
+                seg.style.transform = `rotate(${i * angle}deg) skewY(${90 - angle}deg)`;
+                seg.style.backgroundColor = (i % 2 === 0) ? '#333' : '#444';
+                
+                // 마지막 칸 근처에 당첨 결과를 배치하여 멈췄을 때의 시각적 일관성 부여
+                // 실제 고도화 시에는 모든 아이템의 기하학적 배치가 필요함
+                wheel.appendChild(seg);
+            }
+
+            // 2. 애니메이션 실행
+            await new Promise(r => setTimeout(r, 50)); // 브라우저 배칭 방지
+            
+            const spinRounds = 10;
+            const extraAngle = Math.random() * 360;
+            wheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
+            wheel.style.transform = `rotate(${spinRounds * 360 + extraAngle}deg)`;
+
+            // 3. 종료 및 결과 팝업
+            setTimeout(() => {
+                document.getElementById('single-result-name').innerText = finalResult.itemName;
+                document.getElementById('single-result-name').style.color = finalResult.color;
+                
+                const multiContainer = document.getElementById('multi-results');
+                multiContainer.innerHTML = '';
+                
+                if (isMulti) {
+                    data.results.forEach(res => {
+                        const div = document.createElement('div');
+                        div.className = 'multi-item';
+                        div.style.borderColor = res.color;
+                        div.innerText = res.itemName;
+                        multiContainer.appendChild(div);
+                    });
+                }
+                
+                popup.classList.add('active');
+
+                // 5초 후 자동 숨김
+                setTimeout(() => {
+                    popup.classList.remove('active');
+                    wrapper.style.display = 'none';
+                }, 7000);
+            }, 5500);
+        }
+    </script>
+</body>
+</html>
