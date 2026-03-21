@@ -137,40 +137,64 @@ public class ChzzkChannelWorker
 
 
                 // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
-                var buffer = new byte[1024 * 16]; // 16KB 넉넉한 버퍼
+                var buffer = new byte[1024 * 16]; // 16KB 버퍼
 
                 while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
                 {
-                    // ⭐ [타임아웃 안전장치] 치지직은 20초마다 Ping(2)을 보냅니다. 
-                    // 60초 동안 아무 신호도 안 오면 연결이 끊긴(좀비 상태) 것으로 간주하고 루프를 강제 파괴합니다!
-                    using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                    timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
-
-                    var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), timeoutCts.Token);
-                    if (result.MessageType == WebSocketMessageType.Close) break;
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-
-                    // ⭐ [핵심 추가] 치지직 서버가 보내는 모든 날것(Raw)의 데이터를 터미널에 전부 출력합니다!
-                    _logger.LogWarning($"📥 [Raw 패킷] {message}");
-
-                    // 🧠 [Socket.IO 프로토콜 수동 해석기]
-                    if (message.StartsWith("0")) // 0: Open (서버가 인사함)
+                    string message = string.Empty;
+                    try 
                     {
-                        _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
-                        await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+                        // ⭐ [타임아웃 안전장치] 60초간 응답 없으면 연결 끊기
+                        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
+
+                        using var ms = new MemoryStream();
+                        WebSocketReceiveResult result;
+                        do
+                        {
+                            result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), timeoutCts.Token);
+                            ms.Write(buffer, 0, result.Count);
+                        } while (!result.EndOfMessage && !timeoutCts.Token.IsCancellationRequested);
+
+                        if (result.MessageType == WebSocketMessageType.Close) break;
+
+                        message = Encoding.UTF8.GetString(ms.ToArray());
                     }
-                    else if (message.StartsWith("2")) // 2: Ping (서버가 너 살아있냐고 물어봄)
+                    catch (OperationCanceledException)
                     {
-                        await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+                        _logger.LogWarning($"⚠️ [물댕봇] {_uid} 채널 소켓 응답 지연(타임아웃 60초). 재연결합니다.");
+                        break;
                     }
-                    else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
+                    catch (Exception ex)
                     {
-                        // 앞의 "42"를 떼어내고 순수 JSON 배열만 넘깁니다.
-                        await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
+                        _logger.LogError($"❌ [물댕봇] 수신 스트림 에러: {ex.Message}");
+                        break;
+                    }
+
+                    try
+                    {
+                        // 🧠 [Socket.IO 프로토콜 수동 해석기]
+                        if (message.StartsWith("0")) // 0: Open
+                        {
+                            _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
+                            await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+                        }
+                        else if (message.StartsWith("2")) // 2: Ping
+                        {
+                            await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+                        }
+                        else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
+                        {
+                            await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
+                        }
+                    }
+                    catch (Exception loopEx)
+                    {
+                        _logger.LogError($"❌ [물댕봇] 메시지 처리 중 지역 에러 (소켓유지): {loopEx.Message}\nRaw: {message.Substring(0, Math.Min(message.Length, 150))}");
+                        // 루프를 깨지 않고 다음 메시지를 계속 기다립니다.
                     }
                 }
-                _logger.LogWarning("⚠️ [물댕봇] 웹소켓 연결이 종료되었습니다. 3초 후 재연결을 시도합니다.");
+                _logger.LogWarning($"⚠️ [물댕봇] {_uid} 웹소켓 연결이 종료되었습니다. 3초 후 재연결을 시도합니다.");
             }
             catch (Exception ex)
             {
