@@ -11,7 +11,6 @@ namespace MooldangAPI.Data
 
         public DbSet<StreamerProfile> StreamerProfiles { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
-
         public DbSet<SongQueue> SongQueues { get; set; }
         public DbSet<StreamerCommand> StreamerCommands { get; set; }
         public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
@@ -21,6 +20,7 @@ namespace MooldangAPI.Data
         public DbSet<ViewerProfile> ViewerProfiles { get; set; }
         public DbSet<Roulette> Roulettes { get; set; }
         public DbSet<RouletteItem> RouletteItems { get; set; }
+        public DbSet<PeriodicMessage> PeriodicMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +46,9 @@ namespace MooldangAPI.Data
             
             modelBuilder.Entity<Roulette>()
                 .HasIndex(r => r.ChzzkUid);
+            
+            modelBuilder.Entity<PeriodicMessage>()
+                .HasIndex(p => p.ChzzkUid);
 
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
@@ -59,6 +62,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<ViewerProfile>().ToTable("viewerprofiles");
             modelBuilder.Entity<Roulette>().ToTable("roulettes");
             modelBuilder.Entity<RouletteItem>().ToTable("rouletteitems");
+            modelBuilder.Entity<PeriodicMessage>().ToTable("periodicmessages");
         }
 
     }

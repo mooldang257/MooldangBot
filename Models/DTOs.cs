@@ -28,4 +28,12 @@ namespace MooldangAPI.Models
         public string Icon { get; set; } = "🍣";
         public int Price { get; set; } = 1000;
     }
+
+    public class PeriodicMessageDto
+    {
+        public int Id { get; set; }
+        public int IntervalMinutes { get; set; }
+        public string Message { get; set; } = "";
+        public bool IsEnabled { get; set; }
+    }
 }

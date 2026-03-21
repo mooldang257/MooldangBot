@@ -63,10 +63,39 @@
                 <tbody id="commandTableBody"></tbody>
             </table>
         </div>
+
+        <h1 style="margin-top: 50px;">📢 정기 메세지 배치 (자동 홍보)</h1>
+        <div class="panel" style="background: rgba(255, 147, 0, 0.05); border-left: 4px solid #ffa500;">
+            <p style="margin-top:0; font-size: 0.9em; color: #555; line-height: 1.8;">
+                설정한 시간(분)마다 입력한 메세지가 채팅창에 자동으로 출력됩니다.<br>
+                <b>⚠️ 주의:</b> 이 기능은 스트리머가 <b>방송 중(OPEN 상태)</b>일 때만 동작하며, 봇 투명 문자(\u200B)가 자동으로 포함됩니다.
+            </p>
+        </div>
+
+        <div class="panel">
+            <div class="form-row" style="grid-template-columns: 120px 1fr auto;">
+                <div class="group"><label>주기(분)</label><input type="number" id="periodicInterval" value="10" min="1" style="margin-bottom:0;"></div>
+                <div class="group"><label>메세지 내용</label><input type="text" id="periodicMessage" placeholder="자동으로 보낼 메세지" style="margin-bottom:0;"></div>
+                <button class="btn btn-secondary" onclick="savePeriodicMessage()" style="height:44px; margin-bottom:0; background: #ffa500; border-color: #ffa500; color: white;">등록/수정</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <table>
+                <thead>
+                    <tr><th style="width:100px;">주기(분)</th><th>메세지 내용</th><th style="width:100px;">상태</th><th style="width:100px;">관리</th></tr>
+                </thead>
+                <tbody id="periodicTableBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const chzzkUid = window.location.pathname.split('/').pop();
+
+        async function loadAll() {
+            await Promise.all([loadCommands(), loadPeriodicMessages()]);
+        }
 
         async function loadCommands() {
             const res = await fetch(`/api/commands/list/${chzzkUid}`);
@@ -127,7 +156,62 @@
             }
         }
 
-        window.onload = loadCommands;
+        // --- Periodic Message UI Logic ---
+        async function loadPeriodicMessages() {
+            const res = await fetch(`/api/periodicmessage/list/${chzzkUid}`);
+            const list = await res.json();
+            const body = document.getElementById('periodicTableBody');
+            body.innerHTML = '';
+            
+            if (list.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">등록된 정기 메세지가 없습니다.</td></tr>';
+                return;
+            }
+
+            list.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center; font-weight:bold;">${m.intervalMinutes}분</td>
+                    <td>${m.message}</td>
+                    <td style="text-align:center;"><span class="badge" style="background:${m.isEnabled ? '#2ed573':'#ff4757'}; color:white; border:none;">${m.isEnabled ? 'ON' : 'OFF'}</span></td>
+                    <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="deletePeriodicMessage(${m.id})">삭제</button></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function savePeriodicMessage() {
+            const min = parseInt(document.getElementById('periodicInterval').value);
+            const msg = document.getElementById('periodicMessage').value.trim();
+            
+            if (!min || min < 1) return alert("주기를 1분 이상으로 입력해 주세요!");
+            if (!msg) return alert("메세지 내용을 입력해 주세요!");
+
+            const req = {
+                chzzkUid: chzzkUid,
+                intervalMinutes: min,
+                message: msg,
+                isEnabled: true
+            };
+
+            await fetch('/api/periodicmessage/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(req)
+            });
+
+            document.getElementById('periodicMessage').value = '';
+            loadPeriodicMessages();
+            alert("정기 메세지가 등록되었습니다.");
+        }
+
+        async function deletePeriodicMessage(id) {
+            if(!confirm("해당 정기 메세지를 삭제할까요?")) return;
+            await fetch(`/api/periodicmessage/delete/${id}`, { method: 'DELETE' });
+            loadPeriodicMessages();
+        }
+
+        window.onload = loadAll;
     </script>
 </body>
 </html>

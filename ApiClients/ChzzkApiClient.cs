@@ -176,6 +176,47 @@ namespace MooldangAPI.ApiClients
                 return null;
             }
         }
+
+        /// <summary>
+        /// 스트리머의 현재 방송 상태를 확인합니다.
+        /// </summary>
+        public async Task<bool> IsLiveAsync(string channelId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/open/v1/lives/status?channelId={channelId}");
+                if (!response.IsSuccessStatusCode) return false;
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
+                {
+                    return content.GetProperty("status").GetString() == "OPEN";
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// 치지직 채팅을 전송합니다.
+        /// </summary>
+        public async Task<bool> SendChatMessageAsync(string accessToken, string message)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, "/open/v1/chats/send");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                
+                // 무한 루프 방지를 위해 투명 문자 추가
+                var payload = new { message = "\u200B" + message };
+                request.Content = JsonContent.Create(payload);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch { return false; }
+        }
     }
 }
 
