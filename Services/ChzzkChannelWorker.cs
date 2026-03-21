@@ -375,6 +375,12 @@ public class ChzzkChannelWorker
             using var doc = JsonDocument.Parse(jsonArray);
             string eventName = doc.RootElement[0].GetString() ?? "";
 
+            // 📡 [분석용 로그 추가] 어떤 이벤트가 들어오는지 실시간으로 확인합니다.
+            if (eventName != "CHAT" && eventName != "SYSTEM")
+            {
+                _logger.LogInformation($"📡 [이벤트 분석] 새로운 이벤트 수신: {eventName}");
+            }
+
             // ⭐ [핵심 진범 검거] 두 번째 데이터는 JSON 문자열이므로, 한 번 더 Parse 해야 합니다!
             string payloadString = doc.RootElement[1].GetString() ?? "{}";
             using var payloadDoc = JsonDocument.Parse(payloadString);
