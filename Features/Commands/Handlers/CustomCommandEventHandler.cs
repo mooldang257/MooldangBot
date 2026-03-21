@@ -65,19 +65,25 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             return;
         }
 
-        // 2. 포인트 조회 전용 명령어 확인 (`PointCheckCommand`)
+        // 2. 명령어 실행 확인 로직
         string firstWord = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
         string fullMessage = msg.Trim();
 
-        if (!string.IsNullOrWhiteSpace(notification.Profile.PointCheckCommand))
+        using (var scope = _serviceProvider.CreateScope())
         {
-            var pointCmds = notification.Profile.PointCheckCommand.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim().ToLower());
-            if (pointCmds.Contains(fullMessage.ToLower()) || pointCmds.Contains(firstWord.ToLower()))
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                string replyText = notification.Profile.PointCheckReply ?? "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다!";
+            // ⭐ 최신 설정 반영을 위해 DB에서 스트리머 프로필을 즉시 조회합니다.
+            var streamerProfile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, cancellationToken);
+            if (streamerProfile == null) return;
+
+            // 포인트 조회 전용 명령어 확인 (`PointCheckCommand`)
+            if (!string.IsNullOrWhiteSpace(streamerProfile.PointCheckCommand))
+            {
+                var pointCmds = streamerProfile.PointCheckCommand.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim().ToLower());
+                if (pointCmds.Contains(fullMessage.ToLower()) || pointCmds.Contains(firstWord.ToLower()))
+                {
+                    string replyText = streamerProfile.PointCheckReply ?? "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다!";
                 replyText = replyText.Replace("{닉네임}", nickname);
 
                 if (replyText.Contains("{출석일수}") || replyText.Contains("{포인트}") || replyText.Contains("{연속출석일수}") || replyText.Contains("{팔로우일수}"))
@@ -116,14 +122,10 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 if (finalReplyText.Length > 500) finalReplyText = finalReplyText.Substring(0, 497) + "...";
                 await ExecuteActionAsync(notification, finalReplyText, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
                 return; // 포인트 전용 명령어 처리 후 종료
+                }
             }
-        }
 
-        // 3. 일반 커스텀 명령어 실행 확인 로직
-
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // 3. 일반 커스텀 명령어 실행 확인 로직
             var customCmd = await db.StreamerCommands
                 .FirstOrDefaultAsync(c => c.ChzzkUid == notification.Profile.ChzzkUid &&
                                          (c.CommandKeyword == fullMessage || c.CommandKeyword == firstWord), cancellationToken);
