@@ -268,6 +268,8 @@
         connection.onreconnected((connectionId) => {
             console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
             connection.invoke("JoinStreamerGroup", chzzkUid);
+            // 💡 서버 재시작 사이 유실된/새로운 상태를 화면에 띄우기 위해 최신 DB 조회
+            fetchInitialData();
         });
     </script>
 </body>
