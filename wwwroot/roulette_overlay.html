@@ -179,9 +179,17 @@
             processQueue();
         }
 
+        connection.onreconnected(() => {
+            console.log("재연결 성공. 그룹 재가입 시도...");
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
         connection.start().then(() => {
             console.log("오버레이 연결됨:", chzzkUid);
             connection.invoke("JoinStreamerGroup", chzzkUid);
+        }).catch(err => {
+            console.error("연결 실패:", err);
+            setTimeout(() => location.reload(), 5000);
         });
 
         async function startRouletteAnimation(data) {
