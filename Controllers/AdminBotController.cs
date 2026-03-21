@@ -7,6 +7,11 @@ using MooldangAPI.Services;
 
 namespace MooldangAPI.Controllers
 {
+    public class SyncRequest
+    {
+        public string? Keyword { get; set; }
+    }
+
     [ApiController]
     [Route("api/admin/bot")]
     public class AdminBotController : ControllerBase
@@ -51,22 +56,38 @@ namespace MooldangAPI.Controllers
 
         // 3. 카테고리 동기화 수동 시작
         [HttpPost("sync-categories")]
-        public async Task<IActionResult> StartSync()
+        public async Task<IActionResult> StartSync([FromBody] SyncRequest? req = null)
         {
             if (ChzzkCategorySyncService.IsRunning)
             {
                 return BadRequest(new { message = "이미 동기화가 진행 중입니다." });
             }
 
-            // 백그라운드에서 실행되도록 Fire and Forget 방식으로 호출
+            var specificKeyword = req?.Keyword;
+
+            if (!string.IsNullOrEmpty(specificKeyword))
+            {
+                // 단일 키워드 검색: 대기 후 즉시 결과 반환
+                using var scope = _scopeFactory.CreateScope();
+                var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
+                var results = await syncService.SearchAndSaveCategoryAsync(specificKeyword);
+
+                return Ok(new 
+                { 
+                    message = $"'{specificKeyword}' 키워드로 {results.Count}개의 카테고리를 동기화했습니다.",
+                    results = results
+                });
+            }
+
+            // 백그라운드에서 실행되도록 Fire and Forget 방식으로 호출 (전체 동기화)
             _ = Task.Run(async () =>
             {
                 using var scope = _scopeFactory.CreateScope();
                 var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
-                await syncService.SyncCategoriesAsync();
+                await syncService.SyncCategoriesAsync(null);
             });
 
-            return Ok(new { message = "카테고리 동기화를 시작했습니다." });
+            return Ok(new { message = "전체 카테고리 동기화를 시작했습니다." });
         }
     }
 }

@@ -160,7 +160,15 @@
                 <span id="data-counts">신규: 0, 갱신: 0</span>
             </div>
 
-            <button id="btn-sync" class="btn btn-primary" onclick="startSync()">지금 동기화 시작</button>
+            <div style="margin-top: 16px; margin-bottom: 8px;">
+                <input type="text" id="custom-keyword" placeholder="추가할 검색어 (예: 아이온)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-family: 'Pretendard', sans-serif;">
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-sync-custom" class="btn btn-secondary" onclick="startCustomSync()" style="margin-top: 0; flex: 1;">검색어 동기화</button>
+                <button id="btn-sync" class="btn btn-primary" onclick="startSync()" style="margin-top: 0; flex: 1;">전체 동기화</button>
+            </div>
+            
             <div id="sync-log"></div>
         </div>
 
@@ -183,17 +191,23 @@
 
             const badge = document.getElementById('sync-status-badge');
             const btn = document.getElementById('btn-sync');
+            const btnCustom = document.getElementById('btn-sync-custom');
+            const inputKeyword = document.getElementById('custom-keyword');
 
             if (data.isRunning) {
                 badge.innerText = 'SYNCING...';
                 badge.className = 'status-badge status-active';
                 btn.disabled = true;
-                btn.innerText = '동기화 진행 중...';
+                btnCustom.disabled = true;
+                inputKeyword.disabled = true;
+                btn.innerText = '진행 중...';
             } else {
                 badge.innerText = 'IDLE';
                 badge.className = 'status-badge status-idle';
                 btn.disabled = false;
-                btn.innerText = '지금 동기화 시작';
+                btnCustom.disabled = false;
+                inputKeyword.disabled = false;
+                btn.innerText = '전체 동기화';
             }
 
             document.getElementById('last-run').innerText = data.lastRunTime || '-';
@@ -206,13 +220,41 @@
     }
 
     async function startSync() {
-        if (!confirm('카테고리 동기화를 시작하시겠습니까? (최대 수 분이 소요될 수 있습니다)')) return;
+        if (!confirm('전체 카테고리 동기화를 시작하시겠습니까? (최대 수 분이 소요될 수 있습니다)')) return;
+        await sendSyncRequest(null);
+    }
 
+    async function startCustomSync() {
+        const keyword = document.getElementById('custom-keyword').value.trim();
+        if (!keyword) {
+            alert('먼저 검색어를 입력해주세요.');
+            return;
+        }
+        if (!confirm(`'${keyword}' 키워드로 카테고리를 동기화하시겠습니까? (약 수 초 소요)`)) return;
+        await sendSyncRequest(keyword);
+    }
+
+    async function sendSyncRequest(keyword) {
         try {
-            const res = await fetch('/api/admin/bot/sync-categories', { method: 'POST' });
+            const body = keyword ? JSON.stringify({ keyword: keyword }) : "{}";
+            const res = await fetch('/api/admin/bot/sync-categories', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: body
+            });
             const data = await res.json();
             
-            document.getElementById('sync-log').innerText = data.message;
+            let htmlLog = `<div>${data.message}</div>`;
+            if (data.results && data.results.length > 0) {
+                htmlLog += '<ul style="text-align: left; background: #1e293b; padding: 15px; border-radius: 8px; margin-top: 10px; max-height: 200px; overflow-y: auto; list-style-type: disc; margin-left: 20px;">';
+                data.results.forEach(c => {
+                    htmlLog += `<li style="margin-bottom: 4px; color: #f8fafc;"><strong>${c.categoryValue}</strong> <span style="font-size: 0.85em; color: #94a3b8;">[${c.categoryType}]</span></li>`;
+                });
+                htmlLog += '</ul>';
+            }
+            
+            document.getElementById('sync-log').innerHTML = htmlLog;
+            if (keyword) document.getElementById('custom-keyword').value = ''; // 입력 필드 초기화
             updateStatus();
         } catch (e) {
             alert('동기화 요청 실패');
