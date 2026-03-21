@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>물당봇 - 카테고리 약어 관리</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: var(--bg-dark);
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+        }
+        .btn-secondary:hover {
+            background-color: #334155;
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-item {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .category-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .category-type {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: #334155;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-left: 8px;
+        }
+
+        .aliases-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .alias-badge {
+            background-color: #312e81;
+            color: #c7d2fe;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .alias-delete {
+            cursor: pointer;
+            color: #fb7185;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .alias-delete:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .add-alias-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        
+        .add-alias-form input {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        
+        .add-alias-form button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .nav-links {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .a-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .a-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            background-color: var(--bg-card);
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-links">
+        <a href="admin.html" class="a-link">← 시스템 상태 관리로 돌아가기</a>
+    </div>
+
+    <h1>치지직 카테고리 약어 관리</h1>
+
+    <div class="search-card">
+        <input type="text" id="searchInput" placeholder="카테고리명 또는 기존 약어로 검색..." onkeypress="if(event.key === 'Enter') searchCategories()">
+        <button class="btn" onclick="searchCategories()">검색</button>
+    </div>
+
+    <div id="resultsContainer" class="list-container">
+        <div class="empty-state">검색어를 입력하고 검색 버튼을 눌러주세요.</div>
+    </div>
+</div>
+
+<script>
+    // 페이지 로드 시 기본 카테고리 불러오기 (최신순 100개)
+    window.onload = () => searchCategories();
+
+    async function searchCategories() {
+        const query = document.getElementById('searchInput').value.trim();
+        const container = document.getElementById('resultsContainer');
+        
+        container.innerHTML = '<div class="empty-state">검색 중...</div>';
+        
+        try {
+            const res = await fetch(`/api/admin/bot/categories?search=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+                return;
+            }
+            
+            renderCategories(data, container);
+        } catch(e) {
+            container.innerHTML = '<div class="empty-state" style="color: var(--danger)">데이터를 불러오는데 실패했습니다.</div>';
+            console.error(e);
+        }
+    }
+
+    function renderCategories(categories, container) {
+        container.innerHTML = '';
+        
+        categories.forEach(cat => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'category-item';
+            
+            // 뱃지 렌더링
+            let aliasesHtml = '';
+            if (cat.aliases && cat.aliases.length > 0) {
+                cat.aliases.forEach(a => {
+                    aliasesHtml += `
+                        <div class="alias-badge">
+                            ${a.alias}
+                            <span class="alias-delete" title="삭제" onclick="deleteAlias('${cat.categoryId}', ${a.id})">✕</span>
+                        </div>
+                    `;
+                });
+            } else {
+                aliasesHtml = '<span style="color:var(--text-muted); font-size:0.85rem;">등록된 약어가 없습니다.</span>';
+            }
+
+            itemDiv.innerHTML = `
+                <div class="category-header">
+                    <div>
+                        <span class="category-name">${cat.categoryValue}</span>
+                        <span class="category-type">${cat.categoryType}</span>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;">ID: ${cat.categoryId}</div>
+                </div>
+                
+                <div class="aliases-container" id="aliases-${cat.categoryId}">
+                    ${aliasesHtml}
+                </div>
+                
+                <div class="add-alias-form">
+                    <input type="text" id="input-${cat.categoryId}" placeholder="새로운 약어 입력..." onkeypress="if(event.key === 'Enter') addAlias('${cat.categoryId}')">
+                    <button class="btn btn-secondary" onclick="addAlias('${cat.categoryId}')">추가</button>
+                </div>
+            `;
+            
+            container.appendChild(itemDiv);
+        });
+    }
+
+    async function addAlias(categoryId) {
+        const input = document.getElementById(`input-${categoryId}`);
+        const aliasValue = input.value.trim();
+        
+        if (!aliasValue) {
+            alert('등록할 약어를 입력해주세요.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/bot/categories/${categoryId}/aliases`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alias: aliasValue })
+            });
+
+            if (res.ok) {
+                input.value = '';
+                // 효율을 위해 다시 검색된 상태로 리프레시
+                const currentQuery = document.getElementById('searchInput').value.trim();
+                searchCategories(); 
+            } else {
+                const errorText = await res.text();
+                alert(`추가 실패: ${errorText}`);
+            }
+        } catch(e) {
+            alert(`시스템 오류: ${e.message}`);
+        }
+    }
+
+    async function deleteAlias(categoryId, aliasId) {
+        if (!confirm('이 약어를 정말 삭제하시겠습니까?')) return;
+        
+        try {
+            const res = await fetch(`/api/admin/bot/categories/${categoryId}/aliases/${aliasId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                searchCategories();
+            } else {
+                const errorText = await res.text();
+                alert(`삭제 실패: ${errorText}`);
+            }
+        } catch(e) {
+            alert(`시스템 오류: ${e.message}`);
+        }
+    }
+</script>
+</body>
+</html>

@@ -517,8 +517,12 @@ public class ChzzkChannelWorker
                     string inputKeyword = msg.Substring("!카테고리 ".Length).Trim();
                     _logger.LogInformation($"🛠️ [카테고리 변경 요청] {nickname}님 -> 원본: {inputKeyword}");
 
-                    // 1. 단축어 사전에 있으면 정식 검색어로 치환, 없으면 입력한 그대로 검색
-                    string searchKeyword = CategorySearchAlias.TryGetValue(inputKeyword, out var alias) ? alias : inputKeyword;
+                    using var scope = _serviceProvider.CreateScope();
+                    var dbAliasContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var aliasObj = await dbAliasContext.ChzzkCategoryAliases.Include(a => a.Category).FirstOrDefaultAsync(a => a.Alias == inputKeyword, token);
+                    
+                    // 1. DB 단축어 사전에 있으면 정식 검색어로 치환, 없으면 입력한 그대로 검색
+                    string searchKeyword = aliasObj?.Category?.CategoryValue ?? inputKeyword;
 
                     // 2. 치지직 카테고리 검색 API 호출 (첫 번째 결과 가져오기)
                     var categoryInfo = await SearchChzzkCategoryAsync(profile, searchKeyword, token);
@@ -755,11 +759,11 @@ public class ChzzkChannelWorker
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
             httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+            // httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
 
-            // 검색 API 호출 (keyword 파라미터 URL 인코딩 필수)
-            string encodedKeyword = Uri.EscapeDataString(keyword);
-            var response = await httpClient.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?keyword={encodedKeyword}", token);
+            // 검색 API 호출
+            string encodedQuery = Uri.EscapeDataString(keyword);
+            var response = await httpClient.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?query={encodedQuery}&size=10", token);
 
             if (response.IsSuccessStatusCode)
             {

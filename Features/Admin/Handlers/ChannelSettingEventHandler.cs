@@ -2,23 +2,21 @@ using MediatR;
 using MooldangAPI.Features.Chat.Events;
 using System.Text.Json;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
+using MooldangAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangAPI.Features.Admin.Handlers;
 
 public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceivedEvent>
 {
     private readonly ILogger<ChannelSettingEventHandler> _logger;
-    private static readonly Dictionary<string, string> CategorySearchAlias = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "저챗", "talk" }, { "소통", "talk" }, { "노가리", "talk" },
-        { "먹방", "먹방/쿡방" }, { "노래", "음악/노래" }, { "종겜", "종합 게임" },
-        { "롤", "리그 오브 레전드" }, { "발로", "발로란트" }, { "배그", "BATTLEGROUNDS" },
-        { "마크", "Minecraft" }, { "메", "메이플스토리" }, { "로아", "로스트아크" }, { "철권", "철권 8" }
-    };
+    private readonly IServiceProvider _serviceProvider;
 
-    public ChannelSettingEventHandler(ILogger<ChannelSettingEventHandler> logger)
+    public ChannelSettingEventHandler(ILogger<ChannelSettingEventHandler> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
@@ -40,7 +38,12 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
             string inputKeyword = msg.Substring("!카테고리 ".Length).Trim();
             _logger.LogInformation($"🛠️ [카테고리 변경 요청] {nickname}님 -> 원본: {inputKeyword}");
             
-            string searchKeyword = CategorySearchAlias.TryGetValue(inputKeyword, out var alias) ? alias : inputKeyword;
+            // DB에서 약어 조회
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var aliasObj = await db.ChzzkCategoryAliases.Include(a => a.Category).FirstOrDefaultAsync(a => a.Alias == inputKeyword, cancellationToken);
+            
+            string searchKeyword = aliasObj?.Category?.CategoryValue ?? inputKeyword;
             var categoryInfo = await SearchChzzkCategoryAsync(notification, searchKeyword, cancellationToken);
 
             if (categoryInfo != null)
@@ -84,10 +87,11 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Client-Id", req.ClientId);
             httpClient.DefaultRequestHeaders.Add("Client-Secret", req.ClientSecret);
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.Profile.ChzzkAccessToken);
+            // 퍼블릭 카테고리 검색 API는 사용자 토큰 불필요
+            // httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.Profile.ChzzkAccessToken);
 
-            string encodedKeyword = Uri.EscapeDataString(keyword);
-            var response = await httpClient.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?keyword={encodedKeyword}", token);
+            string encodedQuery = Uri.EscapeDataString(keyword);
+            var response = await httpClient.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?query={encodedQuery}&size=30", token);
 
             if (response.IsSuccessStatusCode)
             {
