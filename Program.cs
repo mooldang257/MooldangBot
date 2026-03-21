@@ -32,6 +32,7 @@ builder.Services.AddHostedService<ChzzkBackgroundService>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
 builder.Services.AddScoped<RouletteService>();
+builder.Services.AddHttpClient<ChzzkApiClient>();
 // ------------------------------------------
 
 builder.Services.AddSignalR();

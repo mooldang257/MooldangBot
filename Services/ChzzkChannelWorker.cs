@@ -79,6 +79,19 @@ public class ChzzkChannelWorker
                 }
 
                 // ==========================================================
+                // ⭐ [방송 상태 체크] 방송이 켜져 있을 때만 연결합니다.
+                var apiClient = scope.ServiceProvider.GetRequiredService<ChzzkApiClient>();
+                bool isLive = await apiClient.IsLiveAsync(_uid);
+                
+                if (!isLive)
+                {
+                    _logger.LogInformation($"💤 [물댕봇] {_uid} 채널은 현재 방송 중이 아닙니다. 5분 뒤에 다시 확인합니다.");
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    continue;
+                }
+
+                _logger.LogInformation($"🔥 [물댕봇] {_uid} 채널 방송 중 감지! 웹소켓 연결을 준비합니다.");
+
                 // ⭐ [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
                 // ==========================================================
