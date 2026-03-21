@@ -264,6 +264,11 @@
         });
 
         connection.start().then(() => { connection.invoke("JoinStreamerGroup", chzzkUid); fetchInitialData(); }).catch(err => { setTimeout(fetchInitialData, 5000); });
+
+        connection.onreconnected((connectionId) => {
+            console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
     </script>
 </body>
 </html>

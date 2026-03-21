@@ -584,6 +584,11 @@
                 connection.invoke("JoinStreamerGroup", chzzkUid);
                 loadSettings();
             });
+
+            connection.onreconnected((connectionId) => {
+                console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
+                connection.invoke("JoinStreamerGroup", chzzkUid);
+            });
         };
     </script>
 </body>

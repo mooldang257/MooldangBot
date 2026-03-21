@@ -382,11 +382,41 @@
                         av.speed = (1 + Math.random()) * 0.6;
                         av.imgEl.className = 'avatar-img anim-walking';
                     }
-                }, 10000);
+                }, 5000);
             }
+            // else if (data.command === 'fly') {
+            //     av.state = 'flying';
+            //     av.pinned = true; 
+            //     av.imgEl.src = getAvatarImg('interaction');
+            //     av.imgEl.className = 'avatar-img anim-flying';
+
+            //     // 방향 유지 및 처리
+            //     if(av.dirX > 0) av.imgEl.classList.add('flip-h');
+            //     else av.imgEl.classList.remove('flip-h');
+
+            //     setTimeout(() => {
+            //         // 비행 종료 후 위치 유지
+            //         av.x += (av.dirX * 300); 
+            //         av.x = Math.max(0, Math.min(MAX_WIDTH - 80, av.x));
+            //         av.el.style.left = av.x + 'px';
+
+            //         // 공중에 뜬 상태 유지 (bottom을 top으로 변환된 값 그대로 두거나, 
+            //         // 요구사항이 "위치정보 기억"이므로 DEFAULT_Y로 돌아가지 않음을 의미함)
+            //         // 단, 드래그와 호환을 위해 pinned 해제 시 bottom:0으로 돌아가는 기존 로직 수정 필요
+            //         av.imgEl.src = getAvatarImg('walking');
+            //         av.imgEl.className = 'avatar-img anim-walking';
+            //         av.pinned = false; // 자동 이동 재개 (좌우)
+            //         av.state = 'walking';
+            //     }, 3000);
+            // }
         });
 
         connection.start().then(() => {
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
+        connection.onreconnected((connectionId) => {
+            console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
             connection.invoke("JoinStreamerGroup", chzzkUid);
         });
 
