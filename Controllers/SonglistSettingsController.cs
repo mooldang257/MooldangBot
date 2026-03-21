@@ -98,8 +98,7 @@ namespace MooldangAPI.Controllers
                             CommandKeyword = cmd.Trim(),
                             ActionType = "SongRequest",
                             RequiredRole = "all",
-                            Content = "SongRequest",
-                            CreatedAt = DateTime.Now
+                            Content = "SongRequest"
                         });
                     }
                 }
