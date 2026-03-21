@@ -65,9 +65,61 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             return;
         }
 
-        // 2. 명령어 실행 확인 로직
+        // 2. 포인트 조회 전용 명령어 확인 (`PointCheckCommand`)
         string firstWord = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
         string fullMessage = msg.Trim();
+
+        if (!string.IsNullOrWhiteSpace(notification.Profile.PointCheckCommand))
+        {
+            var pointCmds = notification.Profile.PointCheckCommand.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim().ToLower());
+            if (pointCmds.Contains(fullMessage.ToLower()) || pointCmds.Contains(firstWord.ToLower()))
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                string replyText = notification.Profile.PointCheckReply ?? "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다!";
+                replyText = replyText.Replace("{닉네임}", nickname);
+
+                if (replyText.Contains("{출석일수}") || replyText.Contains("{포인트}") || replyText.Contains("{연속출석일수}") || replyText.Contains("{팔로우일수}"))
+                {
+                    var viewer = await db.ViewerProfiles.FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUid == notification.SenderId, cancellationToken);
+                    int attendance = viewer?.AttendanceCount ?? 0;
+                    int consecutive = viewer?.ConsecutiveAttendanceCount ?? 0;
+                    int points = viewer?.Points ?? 0;
+                    
+                    replyText = replyText.Replace("{출석일수}", attendance.ToString())
+                                         .Replace("{연속출석일수}", consecutive.ToString())
+                                         .Replace("{포인트}", points.ToString());
+
+                    if (replyText.Contains("{팔로우일수}"))
+                    {
+                        var apiClient = _serviceProvider.GetRequiredService<ChzzkApiClient>();
+                        string? followDateStr = await apiClient.GetViewerFollowDateAsync(
+                            notification.Profile.ChzzkAccessToken ?? "",
+                            notification.ClientId,
+                            notification.ClientSecret,
+                            notification.SenderId);
+
+                        if (followDateStr != null && DateTime.TryParse(followDateStr, out var followDate))
+                        {
+                            int days = (int)(DateTime.UtcNow - followDate.ToUniversalTime()).TotalDays;
+                            replyText = replyText.Replace("{팔로우일수}", days.ToString());
+                        }
+                        else
+                        {
+                            replyText = replyText.Replace("{팔로우일수}", "?");
+                        }
+                    }
+                }
+
+                string finalReplyText = "\u200B" + replyText;
+                if (finalReplyText.Length > 500) finalReplyText = finalReplyText.Substring(0, 497) + "...";
+                await ExecuteActionAsync(notification, finalReplyText, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
+                return; // 포인트 전용 명령어 처리 후 종료
+            }
+        }
+
+        // 3. 일반 커스텀 명령어 실행 확인 로직
 
         using (var scope = _serviceProvider.CreateScope())
         {
@@ -95,16 +147,18 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                     }
                     else if (customCmd.ActionType == "Reply" && !isBot)
                     {
-                        string replyText = customCmd.Content;
+                        string replyText = customCmd.Content.Replace("{닉네임}", nickname);
 
                         // [추가] 동적 변수 치환 로직
-                        if (replyText.Contains("{출석일수}") || replyText.Contains("{포인트}") || replyText.Contains("{팔로우일수}"))
+                        if (replyText.Contains("{출석일수}") || replyText.Contains("{포인트}") || replyText.Contains("{연속출석일수}") || replyText.Contains("{팔로우일수}"))
                         {
                             var viewer = await db.ViewerProfiles.FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUid == notification.SenderId, cancellationToken);
                             int attendance = viewer?.AttendanceCount ?? 0;
+                            int consecutive = viewer?.ConsecutiveAttendanceCount ?? 0;
                             int points = viewer?.Points ?? 0;
                             
                             replyText = replyText.Replace("{출석일수}", attendance.ToString())
+                                                 .Replace("{연속출석일수}", consecutive.ToString())
                                                  .Replace("{포인트}", points.ToString());
 
                             if (replyText.Contains("{팔로우일수}"))

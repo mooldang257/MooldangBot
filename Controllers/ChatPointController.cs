@@ -26,7 +26,9 @@ namespace MooldangAPI.Controllers
                 pointPerDonation1000 = profile.PointPerDonation1000,
                 pointPerAttendance = profile.PointPerAttendance,
                 attendanceCommands = profile.AttendanceCommands,
-                attendanceReply = profile.AttendanceReply
+                attendanceReply = profile.AttendanceReply,
+                pointCheckCommand = profile.PointCheckCommand,
+                pointCheckReply = profile.PointCheckReply
             });
         }
 
@@ -41,6 +43,8 @@ namespace MooldangAPI.Controllers
             profile.PointPerAttendance = dto.PointPerAttendance;
             profile.AttendanceCommands = dto.AttendanceCommands ?? "";
             profile.AttendanceReply = dto.AttendanceReply ?? "";
+            profile.PointCheckCommand = dto.PointCheckCommand ?? "";
+            profile.PointCheckReply = dto.PointCheckReply ?? "";
 
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
@@ -71,5 +75,7 @@ namespace MooldangAPI.Controllers
         public int PointPerAttendance { get; set; }
         public string? AttendanceCommands { get; set; }
         public string? AttendanceReply { get; set; }
+        public string? PointCheckCommand { get; set; }
+        public string? PointCheckReply { get; set; }
     }
 }
