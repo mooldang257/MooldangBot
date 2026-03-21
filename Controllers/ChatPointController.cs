@@ -43,6 +43,23 @@ namespace MooldangAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
         }
+
+        [HttpGet("{chzzkUid}/viewers")]
+        public async Task<IActionResult> GetViewers(string chzzkUid)
+        {
+            var viewers = await _context.ViewerProfiles
+                .Where(v => v.StreamerChzzkUid == chzzkUid)
+                .OrderByDescending(v => v.Points) // 포인트 높은 순 정렬
+                .Select(v => new {
+                    v.Nickname,
+                    v.Points,
+                    v.AttendanceCount,
+                    v.LastAttendanceAt
+                })
+                .ToListAsync();
+
+            return Ok(viewers);
+        }
     }
 
     public class ChatPointSettingsDto
