@@ -296,6 +296,12 @@
                 <input type="number" id="pointPerAttendance" class="form-control" placeholder="예: 10" min="0">
             </div>
 
+            <div class="form-group">
+                <label for="attendanceReply">출석 봇 응답 메시지 포맷 (선택)</label>
+                <span class="desc">시청자가 출석했을 때 봇이 회신할 메시지입니다. 비워두면 봇이 채팅을 치지 않습니다.<br><b>사용 가능 변수:</b> {닉네임}, {연속출석일수}, {누적출석일수}, {마지막출석일}</span>
+                <input type="text" id="attendanceReply" class="form-control" placeholder="{닉네임}님 출석 고마워요! ({연속출석일수}일 연속)">
+            </div>
+
             <button id="btnSave" class="btn-save">설정 저장하기</button>
         </div>
 
@@ -339,6 +345,7 @@
             const inputDonation = document.getElementById('pointPerDonation');
             const inputAttCmds = document.getElementById('attendanceCommands');
             const inputAttPoint = document.getElementById('pointPerAttendance');
+            const inputAttReply = document.getElementById('attendanceReply');
             const btnSave = document.getElementById('btnSave');
             const toast = document.getElementById('toast');
 
@@ -351,6 +358,7 @@
                     inputDonation.value = data.pointPerDonation1000;
                     inputAttCmds.value = data.attendanceCommands;
                     inputAttPoint.value = data.pointPerAttendance;
+                    inputAttReply.value = data.attendanceReply || '';
                 }
             } catch (e) {
                 console.error("설정 불러오기 실패", e);
@@ -362,7 +370,8 @@
                     pointPerChat: parseInt(inputChat.value) || 0,
                     pointPerDonation1000: parseInt(inputDonation.value) || 0,
                     pointPerAttendance: parseInt(inputAttPoint.value) || 0,
-                    attendanceCommands: inputAttCmds.value.trim()
+                    attendanceCommands: inputAttCmds.value.trim(),
+                    attendanceReply: inputAttReply.value.trim()
                 };
 
                 btnSave.disabled = true;

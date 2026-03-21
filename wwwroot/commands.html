@@ -25,6 +25,17 @@
         <a href="javascript:history.back()" class="btn btn-outline" style="margin-bottom: 25px; display: inline-flex;">← 대시보드로 돌아가기</a>
         <h1>🛠️ 명령어 관리소</h1>
 
+        <div class="panel" style="background: rgba(0, 147, 233, 0.05); border-left: 4px solid var(--primary);">
+            <h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.1em; color: var(--text-dark);">✨ 챗봇 답변용 동적 변수 가이드</h3>
+            <p style="margin-top:0; font-size: 0.9em; color: #555; line-height: 1.8;">
+                내용 중에 아래의 변수표현을 사용하면, 채팅을 친 시청자 본인의 실제 정보로 자동 치환되어 답변됩니다.<br>
+                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{포인트}</span> <b>보유 포인트</b><br>
+                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{출석일수}</span> <b>누적 출석 횟수</b><br>
+                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{팔로우일수}</span> <b>방송을 팔로우한 일수 (치지직 연동)</b><br>
+                <span style="color:var(--primary); font-weight:bold;">💡 등록 예시 :</span> <code>!내정보</code> (키워드) ➔ <code>현재 {포인트}점 보유, {출석일수}일째 출석 중!</code> (내용)
+            </p>
+        </div>
+
         <div class="panel">
             <div class="form-row">
                 <div class="group"><label>키워드</label><input type="text" id="newKeyword" placeholder="!명령어" style="margin-bottom:0;"></div>

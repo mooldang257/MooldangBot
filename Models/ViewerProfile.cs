@@ -24,6 +24,8 @@ namespace MooldangAPI.Models
 
         public int AttendanceCount { get; set; } = 0;
 
+        public int ConsecutiveAttendanceCount { get; set; } = 0;
+
         public DateTime? LastAttendanceAt { get; set; }
     }
 }

@@ -61,6 +61,9 @@ namespace MooldangAPI.Models
         [MaxLength(200)]
         public string AttendanceCommands { get; set; } = "출석,물하,댕하";
 
+        [MaxLength(200)]
+        public string AttendanceReply { get; set; } = "{닉네임}님 출석 고마워요!";
+
         // [추가] 스트리머 전용 커스텀 봇 계정 토큰 정보
         public string? BotAccessToken { get; set; }
         public string? BotRefreshToken { get; set; }
