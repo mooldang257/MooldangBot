@@ -63,7 +63,7 @@ namespace MooldangAPI.Features.Roulette.Handlers
 
             foreach (var roulette in pointRoulettes)
             {
-                if (msg.StartsWith(roulette.Command))
+                if (msg == roulette.Command)
                 {
                     // 시청자 포인트 확인
                     var viewer = await db.ViewerProfiles
