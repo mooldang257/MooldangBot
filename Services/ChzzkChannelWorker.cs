@@ -457,49 +457,8 @@ public class ChzzkChannelWorker
                 string omaCmd = profile.OmakaseCommand ?? "!물마카세";
 
                 // ==========================================
-                // 🚀 1. 곡 신청 로직 (DB 저장 + SignalR 대시보드 새로고침)
+                // 🚀 1. 곡 신청 로직 (별도의 핸들러: SongRequestEventHandler.cs 로 위임됨)
                 // ==========================================
-                if (msg.StartsWith(songCmd) && msg.Length > songCmd.Length)
-                {
-                    string songInput = msg.Substring(songCmd.Length).Trim();
-                    _logger.LogInformation($"🎵 [곡 신청 포착] {nickname}님 -> {songInput}");
-
-                    try
-                    {
-                        using var scope = _serviceProvider.CreateScope();
-                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                        // 현재 대기열의 가장 마지막 순서 번호를 찾습니다.
-                        int maxOrder = await db.SongQueues
-                            .Where(s => s.ChzzkUid == profile.ChzzkUid)
-                            .MaxAsync(s => (int?)s.SortOrder, token) ?? 0;
-
-                        var newSong = new SongQueue
-                        {
-                            ChzzkUid = profile.ChzzkUid,
-                            Title = songInput,
-                            Artist = nickname, // 신청자 닉네임을 저장
-                            Status = "Pending",
-                            SortOrder = maxOrder + 1,
-                            CreatedAt = DateTime.Now
-                        };
-
-                        db.SongQueues.Add(newSong);
-                        await db.SaveChangesAsync(token);
-
-                        _logger.LogInformation($"✅ [DB 저장 완료] {songInput} (신청자: {nickname}, 순번: {newSong.SortOrder})");
-
-                        // 화면 실시간 업데이트 신호 발송 (SignalR)
-                        var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<OverlayHub>>();
-                        await hubContext.Clients.Group(profile.ChzzkUid).SendAsync("RefreshDashboard", cancellationToken: token);
-
-                        _logger.LogInformation($"📡 [SignalR 발송] 대시보드 새로고침 신호 발송 완료!");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"❌ [DB 저장 실패] {ex.Message}");
-                    }
-                }
 
                 // ==========================================
                 // 🚀 (방제 및 카테고리 로직은 ChannelSettingEventHandler.cs에서 분리되어 처리됨)
