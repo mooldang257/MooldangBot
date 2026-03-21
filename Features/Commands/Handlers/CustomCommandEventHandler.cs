@@ -142,21 +142,6 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
                 if (isAuthorized)
                 {
-                    // 🔹 추가: 노래 신청 (기존 프로필 설정 방식 하위 호환)
-                    string songCmd = streamerProfile.SongCommand ?? "!신청";
-                    if (firstWord == songCmd && msg.Length > songCmd.Length)
-                    {
-                        if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
-                        {
-                            _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
-                        }
-                        else
-                        {
-                            await HandleSongRequestInternalAsync(db, notification, msg.Substring(songCmd.Length).Trim(), cancellationToken);
-                            return;
-                        }
-                    }
-
                     if (customCmd.ActionType == "Notice")
                     {
                         string noticeText = customCmd.Content.Length > 100 ? customCmd.Content.Substring(0, 97) + "..." : customCmd.Content;
@@ -172,7 +157,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
                             if (targetPrice > 0 && notification.DonationAmount < targetPrice)
                             {
-                                _logger.LogWarning($"⚠️ [곡 신청 실패] {nickname}님 금액 부족 (요구: {targetPrice}, 실제: {notification.DonationAmount})");
+                                _logger.LogWarning($"⚠️ [커스텀 곡 신청 실패] {nickname}님 금액 부족 (요구: {targetPrice}, 실제: {notification.DonationAmount})");
                             }
                             else
                             {
@@ -221,7 +206,23 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                         string finalReplyText = "\u200B" + replyText;
                         if (finalReplyText.Length > 500) finalReplyText = finalReplyText.Substring(0, 497) + "...";
                         await ExecuteActionAsync(notification, finalReplyText, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
+                        return; // 실행 완료
                     }
+                }
+            }
+
+            // 4. 하위 호환성 폴백: 커스텀 명령어로 등록되지 않은 경우에도 프로필 기본 설정 확인
+            string profileSongCmd = streamerProfile.SongCommand ?? "!신청";
+            if (firstWord == profileSongCmd && msg.Length > profileSongCmd.Length)
+            {
+                if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
+                {
+                    _logger.LogWarning($"⚠️ [기본 곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                }
+                else
+                {
+                    await HandleSongRequestInternalAsync(db, notification, msg.Substring(profileSongCmd.Length).Trim(), cancellationToken);
+                    return;
                 }
             }
         }
