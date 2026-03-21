@@ -400,13 +400,24 @@ public class ChzzkChannelWorker
                     subClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
 
                     var subReq = new { channelId = profile.ChzzkUid };
-                    var res = await subClient.PostAsync($"https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat?sessionKey={sessionKey}",
+                    
+                    // 1. 채팅 구독
+                    var chatSubRes = await subClient.PostAsync($"https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat?sessionKey={sessionKey}",
                         new StringContent(JsonSerializer.Serialize(subReq), Encoding.UTF8, "application/json"), token);
 
-                    if (res.IsSuccessStatusCode)
-                        _logger.LogInformation($"🎉 [물댕봇] {_uid} 채널 구독 완료! 이제 채팅이 수신됩니다.");
+                    if (chatSubRes.IsSuccessStatusCode)
+                        _logger.LogInformation($"🎉 [물댕봇] {_uid} 채팅 이벤트 구독 완료!");
                     else
-                        _logger.LogError($"❌ [구독 실패] {await res.Content.ReadAsStringAsync()}");
+                        _logger.LogError($"❌ [채팅 구독 실패] {await chatSubRes.Content.ReadAsStringAsync()}");
+
+                    // 2. 후원(Donation) 구독
+                    var donSubRes = await subClient.PostAsync($"https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/donation?sessionKey={sessionKey}",
+                        new StringContent(JsonSerializer.Serialize(subReq), Encoding.UTF8, "application/json"), token);
+
+                    if (donSubRes.IsSuccessStatusCode)
+                        _logger.LogInformation($"💰 [물댕봇] {_uid} 후원 이벤트 구독 완료! 이제 진짜 치즈 후원을 인식합니다.");
+                    else
+                        _logger.LogError($"❌ [후원 구독 실패] {await donSubRes.Content.ReadAsStringAsync()}");
                 }
             }
             else if (eventName == "DONATION")
