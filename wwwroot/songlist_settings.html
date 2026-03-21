@@ -342,7 +342,10 @@
 
                 // document.getElementById('songPrice').value = data.songCheesePrice || 0; // 전역 필드 삭제됨
                 
-                omakaseItems = data.omakases || [];
+                omakaseItems = (data.omakases || []).map(o => ({
+                    ...o,
+                    price: o.cheesePrice !== undefined ? o.cheesePrice : (o.price || 0)
+                }));
                 renderOmakaseList();
 
                 if (data.designSettingsJson && data.designSettingsJson !== "{}") {
