@@ -125,12 +125,16 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 }
             }
 
-            // 3. 일반 커스텀 명령어 실행 확인 로직
-            var customCmd = await db.StreamerCommands
-                .FirstOrDefaultAsync(c => c.ChzzkUid == notification.Profile.ChzzkUid &&
-                                         (c.CommandKeyword == fullMessage || c.CommandKeyword == firstWord), cancellationToken);
+            // 3. 커스텀 명령어 조회 및 유연한 매칭 로직
+            var streamerCmds = await db.StreamerCommands
+                .Where(c => c.ChzzkUid == notification.Profile.ChzzkUid)
+                .ToListAsync(cancellationToken);
 
-            _logger.LogInformation($"🔍 [명령어 대조] 수신: '{firstWord}' (전체: '{fullMessage}'), 결과: {(customCmd != null ? customCmd.CommandKeyword : "없음")}");
+            // 메시지가 명령어 키워드로 시작하는지 확인 (대소문자 무시)
+            var customCmd = streamerCmds.FirstOrDefault(c => 
+                fullMessage.StartsWith(c.CommandKeyword, StringComparison.OrdinalIgnoreCase));
+
+            _logger.LogInformation($"🔍 [명령어 대조] 수신: '{fullMessage}', 매칭결과: {(customCmd != null ? customCmd.CommandKeyword : "없음")}");
 
             if (customCmd != null)
             {
@@ -217,7 +221,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
             // 4. 하위 호환성 폴백: 커스텀 명령어로 등록되지 않은 경우에도 프로필 기본 설정 확인
             string profileSongCmd = streamerProfile.SongCommand ?? "!신청";
-            if (firstWord == profileSongCmd && msg.Length > profileSongCmd.Length)
+            if (fullMessage.StartsWith(profileSongCmd, StringComparison.OrdinalIgnoreCase) && fullMessage.Length > profileSongCmd.Length)
             {
                 if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
                 {
@@ -225,7 +229,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 }
                 else
                 {
-                    await HandleSongRequestInternalAsync(db, notification, msg.Substring(profileSongCmd.Length).Trim(), cancellationToken);
+                    await HandleSongRequestInternalAsync(db, notification, fullMessage.Substring(profileSongCmd.Length).Trim(), cancellationToken);
                     return;
                 }
             }
