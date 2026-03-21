@@ -263,9 +263,14 @@
             renderOverlay(); 
         });
 
-        // 🚀 신규: 대시보드가 꺼져 있어도 백엔드에서 온 갱신 신호를 직접 수신
+        // 🚀 신규: 백엔드에서 온 갱신 신호를 직접 수신 (노래/오마카세 통합)
         connection.on("RefreshDashboard", async () => {
             console.log("⚡ 백엔드로부터 데이터 갱신 신호를 받았습니다. 최신 정보를 불러옵니다.");
+            await fetchInitialData();
+        });
+
+        connection.on("RefreshSonglist", async () => {
+            console.log("⚡ 백엔드로부터 곡 목록/오마카세 갱신 신호를 받았습니다.");
             await fetchInitialData();
         });
 

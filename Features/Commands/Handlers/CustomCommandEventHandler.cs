@@ -261,7 +261,9 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             _logger.LogInformation($"✅ [통합 신청 저장] {songInput} (순번: {newSong.SortOrder})");
 
             var hubContext = _serviceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
-            await hubContext.Clients.Group(notification.Profile.ChzzkUid!).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+            string groupName = notification.Profile.ChzzkUid!.ToLower();
+            await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+            await hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard", cancellationToken: cancellationToken); // 하위 호환용 추가
         }
         catch (Exception ex)
         {
