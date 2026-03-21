@@ -420,6 +420,38 @@ public class ChzzkChannelWorker
                 await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
                     profile, nickname, msg, userRole, senderId, _clientId, _clientSecret, emojisDict), token);
 
+                // ==========================================
+                // 🚀 0. 고정 명령어 (!공지 {텍스트}) - 별도 등록 없이 즉시 실행
+                // ==========================================
+                if (msg.StartsWith("!공지 ") && (isMaster || userRole == "streamer" || userRole == "manager"))
+                {
+                    string noticeText = msg.Substring("!공지 ".Length).Trim();
+                    if (!string.IsNullOrEmpty(noticeText))
+                    {
+                        _logger.LogInformation($"📢 [고정 공지 실행] {nickname}님 -> {noticeText}");
+
+                        using var noticeClient = new HttpClient();
+                        noticeClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+                        noticeClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
+                        noticeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+
+                        var noticeReq = new { message = noticeText };
+                        var noticeRes = await noticeClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
+                            new StringContent(JsonSerializer.Serialize(noticeReq), Encoding.UTF8, "application/json"), token);
+
+                        if (noticeRes.IsSuccessStatusCode)
+                        {
+                            _logger.LogInformation($"✅ [고정 공지 성공] {noticeText}");
+                        }
+                        else
+                        {
+                            string error = await noticeRes.Content.ReadAsStringAsync(token);
+                            _logger.LogError($"❌ [고정 공지 실패] {error}");
+                        }
+                        return; // 고정 명령어 처리 완료
+                    }
+                }
+
                 // 명령어 처리 (DB에서 설정한 값 사용)
                 string songCmd = profile.SongCommand ?? "!신청";
                 string omaCmd = profile.OmakaseCommand ?? "!물마카세";
