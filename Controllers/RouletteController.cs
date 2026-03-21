@@ -76,54 +76,77 @@ namespace MooldangAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoulette([FromBody] Roulette roulette)
         {
-            var chzzkUid = GetChzzkUid();
-            if (chzzkUid == null) return Unauthorized();
-
-            roulette.ChzzkUid = chzzkUid;
-            
-            // 확률 검증 (가중치 방식이면 합계가 0보다 커야 함)
-            if (!roulette.Items.Any() || roulette.Items.Sum(i => i.Probability) <= 0)
+            try
             {
-                return BadRequest("최소 하나 이상의 아이템과 유효한 확률 정보가 필요합니다.");
+                var chzzkUid = GetChzzkUid();
+                if (chzzkUid == null) return Unauthorized();
+
+                roulette.ChzzkUid = chzzkUid;
+                
+                // 확률 검증
+                if (!roulette.Items.Any() || roulette.Items.Sum(i => i.Probability) <= 0)
+                {
+                    return BadRequest("최소 하나 이상의 아이템과 유효한 확률 정보가 필요합니다.");
+                }
+
+                _db.Roulettes.Add(roulette);
+                await _db.SaveChangesAsync();
+
+                // 순환 참조 방지
+                foreach (var i in roulette.Items) i.Roulette = null;
+
+                return CreatedAtAction(nameof(GetRoulette), new { id = roulette.Id }, roulette);
             }
-
-            _db.Roulettes.Add(roulette);
-            await _db.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetRoulette), new { id = roulette.Id }, roulette);
+            catch (Exception ex)
+            {
+                var innerMsg = ex.InnerException?.Message ?? "";
+                return StatusCode(500, $"서버 에러(생성): {ex.Message} \n {innerMsg}");
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRoulette(int id, [FromBody] Roulette updated)
         {
-            var chzzkUid = GetChzzkUid();
-            if (chzzkUid == null) return Unauthorized();
-
-            var roulette = await _db.Roulettes
-                .Include(r => r.Items)
-                .FirstOrDefaultAsync(r => r.Id == id && r.ChzzkUid == chzzkUid);
-
-            if (roulette == null) return NotFound();
-
-            // 기본 정보 업데이트
-            roulette.Name = updated.Name;
-            roulette.Type = updated.Type;
-            roulette.Command = updated.Command;
-            roulette.CostPerSpin = updated.CostPerSpin;
-            roulette.IsActive = updated.IsActive;
-
-            // 아이템 업데이트 (단순화를 위해 기존 항목 삭제 후 재생성 또는 추적 업데이트)
-            _db.RouletteItems.RemoveRange(roulette.Items);
-            
-            foreach (var item in updated.Items)
+            try
             {
-                item.Id = 0; // 새 ID 할당 방지
-                item.RouletteId = id;
-            }
-            roulette.Items = updated.Items;
+                var chzzkUid = GetChzzkUid();
+                if (chzzkUid == null) return Unauthorized();
 
-            await _db.SaveChangesAsync();
-            return Ok(roulette);
+                var roulette = await _db.Roulettes
+                    .Include(r => r.Items)
+                    .FirstOrDefaultAsync(r => r.Id == id && r.ChzzkUid == chzzkUid);
+
+                if (roulette == null) return NotFound();
+
+                // 기본 정보 업데이트
+                roulette.Name = updated.Name;
+                roulette.Type = updated.Type;
+                roulette.Command = updated.Command;
+                roulette.CostPerSpin = updated.CostPerSpin;
+                roulette.IsActive = updated.IsActive;
+
+                // 아이템 치환
+                _db.RouletteItems.RemoveRange(roulette.Items);
+                
+                foreach (var item in updated.Items)
+                {
+                    item.Id = 0; // 새 ID 할당 대기
+                    item.RouletteId = id;
+                }
+                roulette.Items = updated.Items;
+
+                await _db.SaveChangesAsync();
+
+                // 순환 참조 방지
+                foreach (var i in roulette.Items) i.Roulette = null;
+
+                return Ok(roulette);
+            }
+            catch (Exception ex)
+            {
+                var innerMsg = ex.InnerException?.Message ?? "";
+                return StatusCode(500, $"서버 에러(수정): {ex.Message} \n {innerMsg}");
+            }
         }
 
         [HttpDelete("{id}")]
