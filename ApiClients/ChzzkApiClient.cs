@@ -1,4 +1,4 @@
-﻿using MooldangAPI.ApiClients;
+using MooldangAPI.ApiClients;
 using MooldangAPI.Models;
 using System.Net.Http.Headers;
 using System.Text.Json; // 상단에 추가되어 있는지 확인
@@ -122,6 +122,57 @@ namespace MooldangAPI.ApiClients
             catch (Exception ex)
             {
                 Console.WriteLine($"[하모니 경고] 프로필 파동 수신 오류: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// [임무: 팔로우 탐색] 특정 시청자가 스트리머를 언제 팔로우했는지 검색하여 반환합니다.
+        /// (치지직 Open API가 검색 파라미터를 미지원하므로 페이지네이션으로 순회)
+        /// </summary>
+        public async Task<string?> GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("Client-Id", clientId);
+                client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                int page = 0;
+                int maxPagesToSearch = 10; // 너무 오래 걸리지 않게 최대 10페이지만 검색
+
+                while (page < maxPagesToSearch)
+                {
+                    var response = await client.GetAsync($"https://openapi.chzzk.naver.com/open/v1/channels/followers?size=50&page={page}");
+                    if (!response.IsSuccessStatusCode) break;
+
+                    string json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    var contentNode = doc.RootElement.GetProperty("content");
+                    var dataArray = contentNode.GetProperty("data");
+
+                    if (dataArray.GetArrayLength() == 0) break; // 더 이상 팔로워 없음
+
+                    foreach (var follower in dataArray.EnumerateArray())
+                    {
+                        if (follower.GetProperty("channelId").GetString() == viewerId)
+                        {
+                            return follower.GetProperty("createdDate").GetString(); // 예: "2026-02-07 13:27:54"
+                        }
+                    }
+
+                    int totalPages = contentNode.GetProperty("totalPages").GetInt32();
+                    if (page >= totalPages - 1) break;
+
+                    page++;
+                }
+                
+                return null; // 못 찾음
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[하모니 경고] 팔로우 정보 수신 오류: {ex.Message}");
                 return null;
             }
         }

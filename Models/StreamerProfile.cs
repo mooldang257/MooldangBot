@@ -53,6 +53,14 @@ namespace MooldangAPI.Models
         // [추가] 4. 화면 세부 디자인 설정 (복잡한 컴포넌트 설정은 JSON으로 통째로 저장)
         public string? DesignSettingsJson { get; set; }
 
+        // [추가] 5. 시청자 포인트 및 출석 설정
+        public int PointPerChat { get; set; } = 1;
+        public int PointPerDonation1000 { get; set; } = 10;
+        public int PointPerAttendance { get; set; } = 10;
+
+        [MaxLength(200)]
+        public string AttendanceCommands { get; set; } = "출석,물하,댕하";
+
         // [추가] 스트리머 전용 커스텀 봇 계정 토큰 정보
         public string? BotAccessToken { get; set; }
         public string? BotRefreshToken { get; set; }

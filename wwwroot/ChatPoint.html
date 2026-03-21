@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 포인트 관리 - 물댕봇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary-accent: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.5);
+            --secondary-accent: #818cf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(129, 140, 248, 0.15) 0%, transparent 50%);
+            animation: bgShift 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgShift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: panelFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes panelFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        .form-group .desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.9rem 1.2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .btn-save {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-accent) 0%, var(--secondary-accent) 100%);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px -10px var(--primary-accent);
+        }
+
+        .btn-save::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px var(--primary-accent);
+        }
+
+        .btn-save:hover::after {
+            animation: shine 1.5s ease-out infinite;
+            opacity: 1;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: var(--primary-accent);
+        }
+
+        .btn-back svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="/main.html" class="btn-back">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            대시보드로 돌아가기
+        </a>
+
+        <div class="header">
+            <h1>시청자 포인트 관리</h1>
+            <p>스트리머만의 특별한 보상 규칙을 만드세요✨</p>
+        </div>
+
+        <div class="glass-panel">
+            <div class="form-group">
+                <label for="pointPerChat">채팅 1회당 포인트</label>
+                <span class="desc">시청자가 채팅을 칠 때마다 지급될 포인트입니다. 너무 높게 설정 시 채팅 도배의 원인이 될 수 있습니다.</span>
+                <input type="number" id="pointPerChat" class="form-control" placeholder="예: 1" min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="pointPerDonation">후원(치즈) 1,000개당 포인트</label>
+                <span class="desc">1,000원을 후원할 때마다 지급될 포인트 비율입니다.</span>
+                <input type="number" id="pointPerDonation" class="form-control" placeholder="예: 10" min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="attendanceCommands">출석 리액션 단어 (여러개 지정)</label>
+                <span class="desc">시청자가 하루 한 번 이 단어로 채팅을 치면 출석으로 인정됩니다. 여러 개일 경우 쉼표(,)로 구분하세요. (예: 출석,물하,댕하)</span>
+                <input type="text" id="attendanceCommands" class="form-control" placeholder="출석, 물하, 댕하">
+            </div>
+
+            <div class="form-group">
+                <label for="pointPerAttendance">출석 성공 특별 포인트</label>
+                <span class="desc">출석 리액션을 했을 때 그 날 한 번만 지급되는 보너스 포인트입니다.</span>
+                <input type="number" id="pointPerAttendance" class="form-control" placeholder="예: 10" min="0">
+            </div>
+
+            <button id="btnSave" class="btn-save">설정 저장하기</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">저장되었습니다!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const uid = urlParams.get('uid');
+
+            if (!uid) {
+                alert('잘못된 접근입니다.');
+                window.location.href = '/main.html';
+                return;
+            }
+
+            const inputChat = document.getElementById('pointPerChat');
+            const inputDonation = document.getElementById('pointPerDonation');
+            const inputAttCmds = document.getElementById('attendanceCommands');
+            const inputAttPoint = document.getElementById('pointPerAttendance');
+            const btnSave = document.getElementById('btnSave');
+            const toast = document.getElementById('toast');
+
+            // 1. 기존 설정 불러오기
+            try {
+                const res = await fetch(`/api/chatpoint/${uid}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    inputChat.value = data.pointPerChat;
+                    inputDonation.value = data.pointPerDonation1000;
+                    inputAttCmds.value = data.attendanceCommands;
+                    inputAttPoint.value = data.pointPerAttendance;
+                }
+            } catch (e) {
+                console.error("설정 불러오기 실패", e);
+            }
+
+            // 2. 설정 저장하기
+            btnSave.addEventListener('click', async () => {
+                const reqBody = {
+                    pointPerChat: parseInt(inputChat.value) || 0,
+                    pointPerDonation1000: parseInt(inputDonation.value) || 0,
+                    pointPerAttendance: parseInt(inputAttPoint.value) || 0,
+                    attendanceCommands: inputAttCmds.value.trim()
+                };
+
+                btnSave.disabled = true;
+                btnSave.textContent = '저장 중...';
+
+                try {
+                    const res = await fetch(`/api/chatpoint/${uid}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reqBody)
+                    });
+
+                    if (res.ok) {
+                        toast.classList.add('show');
+                        setTimeout(() => {
+                            toast.classList.remove('show');
+                        }, 3000);
+                    } else {
+                        alert('저장에 실패했습니다.');
+                    }
+                } catch (e) {
+                    console.error("설정 저장 실패", e);
+                    alert('네트워크 오류가 발생했습니다.');
+                } finally {
+                    btnSave.disabled = false;
+                    btnSave.textContent = '설정 저장하기';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

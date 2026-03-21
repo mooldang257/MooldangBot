@@ -18,6 +18,7 @@ namespace MooldangAPI.Data
         public DbSet<AvatarSetting> AvatarSettings { get; set; }
         public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
         public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
+        public DbSet<ViewerProfile> ViewerProfiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +41,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<AvatarSetting>().ToTable("avatarsettings");
             modelBuilder.Entity<ChzzkCategory>().ToTable("chzzkcategories");
             modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("chzzkcategoryaliases");
+            modelBuilder.Entity<ViewerProfile>().ToTable("viewerprofiles");
         }
 
     }

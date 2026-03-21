@@ -5,6 +5,8 @@ using MooldangAPI.Features.Chat.Events;
 using System.Text.Json;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using MooldangAPI.ApiClients;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangAPI.Features.Commands.Handlers;
 
@@ -93,9 +95,42 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                     }
                     else if (customCmd.ActionType == "Reply" && !isBot)
                     {
-                        string replyText = "\u200B" + customCmd.Content;
-                        if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
-                        await ExecuteActionAsync(notification, replyText, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
+                        string replyText = customCmd.Content;
+
+                        // [추가] 동적 변수 치환 로직
+                        if (replyText.Contains("{출석일수}") || replyText.Contains("{포인트}") || replyText.Contains("{팔로우일수}"))
+                        {
+                            var viewer = await db.ViewerProfiles.FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUid == notification.SenderId, cancellationToken);
+                            int attendance = viewer?.AttendanceCount ?? 0;
+                            int points = viewer?.Points ?? 0;
+                            
+                            replyText = replyText.Replace("{출석일수}", attendance.ToString())
+                                                 .Replace("{포인트}", points.ToString());
+
+                            if (replyText.Contains("{팔로우일수}"))
+                            {
+                                var apiClient = _serviceProvider.GetRequiredService<ChzzkApiClient>();
+                                string? followDateStr = await apiClient.GetViewerFollowDateAsync(
+                                    notification.Profile.ChzzkAccessToken ?? "",
+                                    notification.ClientId,
+                                    notification.ClientSecret,
+                                    notification.SenderId);
+
+                                if (followDateStr != null && DateTime.TryParse(followDateStr, out var followDate))
+                                {
+                                    int days = (int)(DateTime.UtcNow - followDate.ToUniversalTime()).TotalDays;
+                                    replyText = replyText.Replace("{팔로우일수}", days.ToString());
+                                }
+                                else
+                                {
+                                    replyText = replyText.Replace("{팔로우일수}", "?");
+                                }
+                            }
+                        }
+
+                        string finalReplyText = "\u200B" + replyText;
+                        if (finalReplyText.Length > 500) finalReplyText = finalReplyText.Substring(0, 497) + "...";
+                        await ExecuteActionAsync(notification, finalReplyText, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
                     }
                 }
             }

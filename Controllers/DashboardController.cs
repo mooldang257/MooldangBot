@@ -66,7 +66,9 @@ namespace MooldangAPI.Controllers
                 "streamer", 
                 "simulator_sender_id", 
                 clientId, 
-                clientSecret
+                clientSecret,
+                null, 
+                donation
             ));
 
             // 3. [실제 채팅 전송] 치지직 API를 통해 실제 채팅창에 메시지 전달

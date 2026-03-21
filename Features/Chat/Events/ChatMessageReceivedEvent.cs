@@ -11,5 +11,6 @@ public record ChatMessageReceivedEvent(
     string SenderId,
     string ClientId,
     string ClientSecret,
-    Dictionary<string, string>? Emojis = null
+    Dictionary<string, string>? Emojis = null,
+    int DonationAmount = 0
 ) : INotification;
