@@ -10,11 +10,13 @@ namespace MooldangAPI.Services
     {
         private readonly AppDbContext _db;
         private readonly IHubContext<OverlayHub> _hubContext;
+        private readonly IServiceProvider _serviceProvider;
 
-        public RouletteService(AppDbContext db, IHubContext<OverlayHub> hubContext)
+        public RouletteService(AppDbContext db, IHubContext<OverlayHub> hubContext, IServiceProvider serviceProvider)
         {
             _db = db;
             _hubContext = hubContext;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -103,7 +105,10 @@ namespace MooldangAPI.Services
         {
             try
             {
-                var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
                 if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken) || string.IsNullOrEmpty(streamer.ApiClientId) || string.IsNullOrEmpty(streamer.ApiClientSecret)) 
                     return;
 
