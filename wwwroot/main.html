@@ -299,7 +299,8 @@
                 스트리머 로그인
             </a>
             <div id="profile-box" class="profile-box">
-                <img id="profile-img" src="" alt="Profile" class="profile-img" style="display: none;" referrerpolicy="no-referrer">
+                <img id="profile-img" src="" alt="Profile" class="profile-img" style="display: none;"
+                    referrerpolicy="no-referrer">
                 <span id="profile-name" class="profile-name"></span>
             </div>
         </div>
@@ -335,6 +336,13 @@
                 <div class="login-overlay">로그인이 필요합니다</div>
             </a>
 
+            <a href="#" class="menu-card" id="btn-roulette">
+                <div class="menu-icon">🎡</div>
+                <h2 class="menu-title">룰렛 관리</h2>
+                <p class="menu-desc">치즈 후원 및 채팅 포인트로 돌릴 수 있는 오버레이용 룰렛 항목과 확률을 관리합니다.</p>
+                <div class="login-overlay">로그인이 필요합니다</div>
+            </a>
+
             <a href="#" class="menu-card" id="btn-chatpoint">
                 <div class="menu-icon">💎</div>
                 <h2 class="menu-title">채팅 포인트 관리</h2>
@@ -342,12 +350,6 @@
                 <div class="login-overlay">로그인이 필요합니다</div>
             </a>
 
-            <a href="#" class="menu-card" id="btn-roulette">
-                <div class="menu-icon">🎡</div>
-                <h2 class="menu-title">룰렛 관리</h2>
-                <p class="menu-desc">치즈 후원 및 채팅 포인트로 돌릴 수 있는 오버레이용 룰렛 항목과 확률을 관리합니다.</p>
-                <div class="login-overlay">로그인이 필요합니다</div>
-            </a>
         </section>
     </main>
 
@@ -378,14 +380,14 @@
                         // 치지직까지 모두 연동된 로그인 성공 상태
                         profileBox.style.display = 'flex';
                         profileName.textContent = data.channelName;
-                        
+
                         // 💡 이미지 태그가 있을 때만 처리하여 JS 오류 방지
                         if (profileImg) {
                             profileImg.onerror = () => {
-                                profileImg.onerror = null; 
+                                profileImg.onerror = null;
                                 profileImg.style.display = 'none'; // 실패 시 숨김
                             };
-                            
+
                             // 프로필 이미지가 있더라도 현재는 숨김 모드이므로 src만 설정하고 보이지 않게 유지
                             if (data.profileImageUrl) {
                                 profileImg.src = `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}`;
@@ -397,11 +399,11 @@
                         btnSong.href = `/dashboard/${data.chzzkUid}`;
                         btnCmd.href = `/commands-manager/${data.chzzkUid}`;
                         const btnAvatar = document.getElementById('btn-avatar');
-                        if(btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${data.chzzkUid}`;
+                        if (btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${data.chzzkUid}`;
                         const btnChatpoint = document.getElementById('btn-chatpoint');
-                        if(btnChatpoint) btnChatpoint.href = `/ChatPoint.html?uid=${data.chzzkUid}`;
+                        if (btnChatpoint) btnChatpoint.href = `/ChatPoint.html?uid=${data.chzzkUid}`;
                         const btnRoulette = document.getElementById('btn-roulette');
-                        if(btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${data.chzzkUid}`;
+                        if (btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${data.chzzkUid}`;
 
                         // 로그인 오버레이 제거 (클릭 가능해짐)
                         overlays.forEach(overlay => overlay.style.display = 'none');
