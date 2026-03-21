@@ -150,7 +150,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script>
         const pathParts = window.location.pathname.split('/');
-        const chzzkUid = pathParts[pathParts.length - 1];
+        const queryParams = new URLSearchParams(window.location.search);
+        const chzzkUid = queryParams.get('uid') || pathParts[pathParts.length - 1];
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/overlayHub")

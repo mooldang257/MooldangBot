@@ -88,7 +88,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script>
         const pathParts = window.location.pathname.split('/');
-        const chzzkUid = pathParts[pathParts.length - 1] || prompt("Chzzk UID를 입력하세요 (테스트용)");
+        const queryParams = new URLSearchParams(window.location.search);
+        const chzzkUid = queryParams.get('uid') || (pathParts.length > 1 && pathParts[pathParts.length - 1] !== "admin_roulette.html" ? pathParts[pathParts.length - 1] : prompt("Chzzk UID를 입력하세요 (테스트용)"));
         
         let roulettes = [];
         let editingId = null;
