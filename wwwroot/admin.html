@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>물댕봇 관리자 대시보드</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #00e676;
+            --secondary: #38bdf8;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            width: 100%;
+        }
+
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin: 0;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #334155;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-active { background-color: rgba(0, 230, 118, 0.1); color: var(--primary); }
+        .status-idle { background-color: rgba(148, 163, 184, 0.1); color: var(--text-muted); }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .info-label { color: var(--text-muted); }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: filter 0.2s;
+            margin-top: 16px;
+        }
+
+        .btn:disabled {
+            filter: grayscale(1);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-primary { background-color: var(--primary); color: #000; }
+        .btn-secondary { background-color: #334155; color: #fff; }
+
+        .btn:hover:not(:disabled) {
+            filter: brightness(1.1);
+        }
+
+        #sync-log {
+            margin-top: 16px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>물댕봇 관리자 패널</h1>
+        <p style="color: var(--text-muted)">시스템 설정을 관리하고 배치 작업을 실행합니다.</p>
+    </header>
+
+    <div class="grid">
+        <!-- 카테고리 동기화 카드 -->
+        <div class="card">
+            <h2>📦 치지직 카테고리 동기화</h2>
+            <div id="sync-status-badge" class="status-badge status-idle">IDLE</div>
+            
+            <div class="info-row">
+                <span class="info-label">마지막 실행</span>
+                <span id="last-run">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">결과</span>
+                <span id="last-result">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">데이터</span>
+                <span id="data-counts">신규: 0, 갱신: 0</span>
+            </div>
+
+            <button id="btn-sync" class="btn btn-primary" onclick="startSync()">지금 동기화 시작</button>
+            <div id="sync-log"></div>
+        </div>
+
+        <!-- 봇 연동 카드 -->
+        <div class="card">
+            <h2>🤖 시스템 봇 설정</h2>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px;">
+                명령어 응답에 사용할 기본 부계정을 치지직에 연동합니다.
+            </p>
+            <a href="/admin_bot.html" class="btn btn-secondary">봇 연동 페이지로 이동</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function updateStatus() {
+        try {
+            const res = await fetch('/api/admin/bot/sync-status');
+            const data = await res.json();
+
+            const badge = document.getElementById('sync-status-badge');
+            const btn = document.getElementById('btn-sync');
+
+            if (data.isRunning) {
+                badge.innerText = 'SYNCING...';
+                badge.className = 'status-badge status-active';
+                btn.disabled = true;
+                btn.innerText = '동기화 진행 중...';
+            } else {
+                badge.innerText = 'IDLE';
+                badge.className = 'status-badge status-idle';
+                btn.disabled = false;
+                btn.innerText = '지금 동기화 시작';
+            }
+
+            document.getElementById('last-run').innerText = data.lastRunTime || '-';
+            document.getElementById('last-result').innerText = data.lastResult || '-';
+            document.getElementById('data-counts').innerText = `신규: ${data.addedCount}, 갱신: ${data.updatedCount}`;
+
+        } catch (e) {
+            console.error('Status fetch failed', e);
+        }
+    }
+
+    async function startSync() {
+        if (!confirm('카테고리 동기화를 시작하시겠습니까? (최대 수 분이 소요될 수 있습니다)')) return;
+
+        try {
+            const res = await fetch('/api/admin/bot/sync-categories', { method: 'POST' });
+            const data = await res.json();
+            
+            document.getElementById('sync-log').innerText = data.message;
+            updateStatus();
+        } catch (e) {
+            alert('동기화 요청 실패');
+        }
+    }
+
+    // 3초마다 상태 갱신
+    setInterval(updateStatus, 3000);
+    updateStatus();
+</script>
+
+</body>
+</html>

@@ -29,6 +29,8 @@ builder.Services.AddSingleton<SongQueueState>();
 builder.Services.AddSingleton<RouletteState>();
 builder.Services.AddTransient<IOverlayRenderStrategy, DefaultChatRenderStrategy>();
 builder.Services.AddHostedService<ChzzkBackgroundService>();
+builder.Services.AddScoped<ChzzkCategorySyncService>();
+builder.Services.AddHostedService<CategorySyncBackgroundService>();
 // ------------------------------------------
 
 builder.Services.AddSignalR();

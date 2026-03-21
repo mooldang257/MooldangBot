@@ -16,10 +16,20 @@ namespace MooldangAPI.Data
         public DbSet<StreamerCommand> StreamerCommands { get; set; }
         public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
         public DbSet<AvatarSetting> AvatarSettings { get; set; }
+        public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
+        public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ChzzkCategory>()
+                .HasMany(c => c.Aliases)
+                .WithOne(a => a.Category)
+                .HasForeignKey(a => a.CategoryId);
+
+            modelBuilder.Entity<ChzzkCategoryAlias>()
+                .HasIndex(a => a.Alias);
 
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
