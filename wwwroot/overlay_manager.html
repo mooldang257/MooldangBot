@@ -1778,6 +1778,7 @@
         }
 
         // --- Overlay Design Settings logic ---
+        let activeDesignTab = 'playing';
         const stylePresets = {
             'default': {
                 playing: { bg: '#004422', text: '#00ffa3', size: 24, alpha: 90, customCss: ".now-title { font-weight: bold; }" },
@@ -1827,6 +1828,7 @@
         }
 
         function showDesignTab(tabName) {
+            activeDesignTab = tabName;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
@@ -1839,19 +1841,18 @@
                     const preset = stylePresets[presetName];
                     if (!preset) return;
 
-                    const comps = ['playing', 'pending', 'completed', 'omakase', 'notice', 'stats'];
-                    comps.forEach(c => {
-                        if (preset[c]) {
-                            if (document.getElementById(`design-bg-${c}`)) document.getElementById(`design-bg-${c}`).value = preset[c].bg;
-                            if (document.getElementById(`design-text-${c}`)) document.getElementById(`design-text-${c}`).value = preset[c].text;
-                            if (document.getElementById(`design-size-${c}`) && preset[c].size) document.getElementById(`design-size-${c}`).value = preset[c].size;
-                            if (document.getElementById(`design-alpha-${c}`)) document.getElementById(`design-alpha-${c}`).value = preset[c].alpha;
-                            if (document.getElementById(`design-css-${c}`)) document.getElementById(`design-css-${c}`).value = preset[c].customCss || "";
-                        }
-                    });
-
-                    document.getElementById('design-custom-css').value = preset.css;
-                    showToast(`${presetName} 테마가 적용되었습니다.`);
+                    if (activeDesignTab === 'custom') {
+                        document.getElementById('design-custom-css').value = preset.css;
+                        showToast(`${presetName} 테마의 전역 CSS가 적용되었습니다.`);
+                    } else if (preset[activeDesignTab]) {
+                        const c = activeDesignTab;
+                        if (document.getElementById(`design-bg-${c}`)) document.getElementById(`design-bg-${c}`).value = preset[c].bg;
+                        if (document.getElementById(`design-text-${c}`)) document.getElementById(`design-text-${c}`).value = preset[c].text;
+                        if (document.getElementById(`design-size-${c}`) && preset[c].size) document.getElementById(`design-size-${c}`).value = preset[c].size;
+                        if (document.getElementById(`design-alpha-${c}`)) document.getElementById(`design-alpha-${c}`).value = preset[c].alpha;
+                        if (document.getElementById(`design-css-${c}`)) document.getElementById(`design-css-${c}`).value = preset[c].customCss || "";
+                        showToast(`${presetName} 테마의 ${c.toUpperCase()} 스타일이 적용되었습니다.`);
+                    }
                 }
 
                 // 2. loadDesignSettings

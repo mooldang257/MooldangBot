@@ -187,7 +187,7 @@
 
         function applyDesignStyles() {
             const ds = designState;
-            let css = ds.customCss || "";
+            let css = ds.customCss || ""; // Global CSS at the top (Priority 2)
 
             const map = {
                 'Playing': '#playing-container',
@@ -202,13 +202,14 @@
                 if (ds[key]) {
                     const style = ds[key];
                     let rule = `${selector} { `;
-                    if (style.rgba) rule += `background: ${style.rgba}; `;
-                    if (style.text) rule += `color: ${style.text}; `;
-                    if (style.rgba) rule += `border-color: ${style.rgba.replace(/,[^,]*\)/, ', 1)')}; `;
-                    if (style.size) rule += `font-size: ${style.size}px; `;
+                    // !important ensures individual settings win over broad global CSS (Priority 1)
+                    if (style.rgba) rule += `background: ${style.rgba} !important; `;
+                    if (style.text) rule += `color: ${style.text} !important; `;
+                    if (style.rgba) rule += `border-color: ${style.rgba.replace(/,[^,]*\)/, ', 1)')} !important; `;
+                    if (style.size) rule += `font-size: ${style.size}px !important; `;
                     rule += `} `;
                     css += rule;
-                    // Inject per-widget custom CSS
+                    // Inject per-widget custom CSS after the base rules
                     if (style.customCss) css += `\n/* ${key} custom CSS */\n${style.customCss}\n`;
                 }
             }
