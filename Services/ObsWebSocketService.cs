@@ -14,8 +14,14 @@ namespace MooldangAPI.Services
             _obs = new OBSWebsocket();
             _logger = logger;
 
-            _obs.Connected += OnConnect;
-            _obs.Disconnected += OnDisconnect;
+            _obs.Connected += (s, e) => {
+                _isConnected = true;
+                _logger.LogInformation("OBS WebSocket Connected Event");
+            };
+            _obs.Disconnected += (s, e) => {
+                _isConnected = false;
+                _logger.LogWarning("OBS WebSocket Disconnected");
+            };
         }
 
         public async Task ConnectAsync(string url, string password)
@@ -51,16 +57,5 @@ namespace MooldangAPI.Services
             }
         }
 
-        private void OnConnect(object? sender, EventArgs e)
-        {
-            _isConnected = true;
-            _logger.LogInformation("OBS WebSocket Connected Event");
-        }
-
-        private void OnDisconnect(object? sender, EventArgs e)
-        {
-            _isConnected = false;
-            _logger.LogWarning("OBS WebSocket Disconnected");
-        }
     }
 }

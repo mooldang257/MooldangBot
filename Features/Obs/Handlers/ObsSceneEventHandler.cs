@@ -29,7 +29,7 @@ namespace MooldangAPI.Features.Obs.Handlers
                     string sceneName = msg.Substring(4).Trim();
                     if (!string.IsNullOrEmpty(sceneName))
                     {
-                        _logger.LogInformation($"OBS Scene switch requested: {sceneName} by {notification.Nickname}");
+                        _logger.LogInformation($"OBS Scene switch requested: {sceneName} by {notification.Username}");
                         
                         // 실제 운영 시에는 스트리머 프로필에 저장된 OBS 설정으로 Connect 후 전송해야 하지만, 
                         // 여기서는 기본 구조만 구현합니다.
