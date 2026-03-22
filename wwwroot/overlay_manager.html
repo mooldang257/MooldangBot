@@ -72,7 +72,13 @@
         .comp-title i { color: var(--text-muted); width: 16px; text-align: center; }
         
         .comp-controls { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); }
-        .z-controls { display: flex; gap: 5px; }
+        .z-controls { display: flex; align-items: center; gap: 8px; }
+        .z-input { 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 4px; padding: 4px 6px; width: 50px; 
+            text-align: center; font-size: 13px;
+        }
+        .z-input:focus { outline: 1px solid var(--primary); background: rgba(255,255,255,0.1); }
         .btn-icon { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
         .btn-icon:hover { background: rgba(255,255,255,0.2); }
 
@@ -283,10 +289,9 @@
                         </label>
                     </div>
                     <div class="comp-controls">
-                        <span>Z-Index: ${comp.zIndex}</span>
+                        <span>레이어 순서</span>
                         <div class="z-controls" onclick="event.stopPropagation()">
-                            <button class="btn-icon" onclick="changeZIndex('${comp.id}', 1)" title="앞으로"><i class="fas fa-arrow-up"></i></button>
-                            <button class="btn-icon" onclick="changeZIndex('${comp.id}', -1)" title="뒤로"><i class="fas fa-arrow-down"></i></button>
+                            <input type="number" class="z-input" value="${comp.zIndex}" onchange="setZIndex('${comp.id}', this.value)" title="Z-Index 직접 입력">
                         </div>
                     </div>
                 `;
@@ -338,7 +343,17 @@
             renderCanvas();
         }
 
-        function changeZIndex(id, delta) {
+        function setZIndex(id, value) {
+            const comp = components.find(c => c.id === id);
+            if (comp) {
+                comp.zIndex = parseInt(value) || 0;
+                renderCanvas();
+                // We don't need to re-render the whole sidebar here to avoid losing input focus 
+                // but let's update data and canvas.
+            }
+        }
+
+        function changeZIndex(id, delta) { // Keep for legacy or internal use if needed
             const comp = components.find(c => c.id === id);
             if (comp) {
                 comp.zIndex += delta;
