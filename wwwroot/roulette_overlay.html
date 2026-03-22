@@ -24,14 +24,14 @@
             perspective: 1000px;
         }
 
-        /* 원형 룰렛 디자인 */
+        /* 원형 룰렛 디자인 (화면 크기에 맞춰 유동적으로 조절) */
         #roulette-wrapper {
             position: relative;
-            width: 500px;
-            height: 500px;
+            width: 80vmin;   /* 가로/세로 중 작은 쪽의 80% */
+            height: 80vmin;
             border-radius: 50%;
-            border: 10px solid #fff;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            border: 0.5vmin solid #fff;
+            box-shadow: 0 0 5vmin rgba(0, 0, 0, 0.5);
             overflow: hidden;
             display: none;
             /* 평소엔 숨김 */
@@ -56,26 +56,26 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding-left: 50px;
+            padding-left: 10vmin;
             box-sizing: border-box;
             font-weight: bold;
-            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
-            font-size: 16px;
+            text-shadow: 0 0 0.5vmin rgba(0, 0, 0, 0.8);
+            font-size: 3vmin;
             clip-path: polygon(0 0, 100% 0, 100% 100%);
         }
 
         .pointer {
             position: absolute;
-            top: 10px;
+            top: 1vmin;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 40px solid #ff0055;
+            border-left: 3vmin solid transparent;
+            border-right: 3vmin solid transparent;
+            border-top: 5vmin solid #ff0055;
             z-index: 10;
-            filter: drop-shadow(0 0 5px gold);
+            filter: drop-shadow(0 0 1vmin gold);
         }
 
         /* 결과 연출 */
@@ -85,13 +85,13 @@
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
             background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 20px;
-            border: 3px solid gold;
+            padding: 3vmin;
+            border-radius: 4vmin;
+            border: 0.5vmin solid gold;
             text-align: center;
             z-index: 100;
             transition: transform 0.5s ease;
-            min-width: 300px;
+            min-width: 30vmin;
         }
 
         #result-popup.active {
@@ -99,31 +99,31 @@
         }
 
         .win-title {
-            font-size: 24px;
+            font-size: 3vmin;
             color: gold;
-            margin-bottom: 20px;
+            margin-bottom: 2vmin;
         }
 
         .win-item {
-            font-size: 40px;
+            font-size: 5vmin;
             font-weight: 800;
-            margin: 10px 0;
+            margin: 1vmin 0;
         }
 
         /* 10연차 결과 그리드 */
         #multi-results {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 20px;
+            gap: 1.5vmin;
+            margin-top: 2vmin;
         }
 
         .multi-item {
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 1.5vmin;
+            border-radius: 1.5vmin;
+            font-size: 1.8vmin;
             font-weight: bold;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 0.2vmin solid rgba(255, 255, 255, 0.3);
         }
 
         /* 폭죽 보조 효과 */
@@ -142,11 +142,12 @@
             align-items: center;
         }
         #sample-image {
-            max-width: 90%;
-            max-height: 90%;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            border: 5px solid gold;
-            border-radius: 20px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 5vmin rgba(0,0,0,0.8);
+            border: 0.5vmin solid gold;
+            border-radius: 4vmin;
         }
     </style>
 </head>
