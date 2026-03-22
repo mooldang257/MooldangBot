@@ -103,12 +103,18 @@ public class PeriodicMessageWorker : BackgroundService
 
             // 토큰 만료 임박 시 갱신
             var trackedProfile = await db.StreamerProfiles.FindAsync(new object[] { profile.Id }, stoppingToken);
-            string currentToken = profile.ChzzkAccessToken;
+            string? currentToken = profile.ChzzkAccessToken;
             
             if (trackedProfile != null)
             {
                 await RefreshTokenIfNeededAsync(trackedProfile, db);
                 currentToken = trackedProfile.ChzzkAccessToken;
+            }
+
+            if (string.IsNullOrEmpty(currentToken))
+            {
+                _logger.LogWarning($"[자동 메세지] {m.ChzzkUid}의 토큰을 가져올 수 없습니다.");
+                continue;
             }
 
             // 채팅 전송 (최신 토큰 사용)

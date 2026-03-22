@@ -45,6 +45,8 @@ public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceive
         
         string msgText = req.Message.Trim();
 
+        if (string.IsNullOrEmpty(chzzkUid)) return;
+
         // 아바타 애니메이션 명령 처리
         if (msgText == "!달리기" || msgText == "!비행")
         {

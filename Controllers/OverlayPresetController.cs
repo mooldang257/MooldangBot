@@ -6,6 +6,8 @@ using MooldangAPI.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.SignalR;
+using MooldangAPI.Hubs;
 
 namespace MooldangAPI.Controllers
 {

@@ -105,7 +105,10 @@ public class ViewerPointEventHandler : INotificationHandler<ChatMessageReceivedE
                         }
 
                         // 백그라운드에서 발송
-                        _ = SendChatReplyAsync(notification.Profile.ChzzkAccessToken, notification.ClientId, notification.ClientSecret, replyMsg);
+                        if (!string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
+                        {
+                            _ = SendChatReplyAsync(notification.Profile.ChzzkAccessToken, notification.ClientId, notification.ClientSecret, replyMsg);
+                        }
                     }
                 }
             }
