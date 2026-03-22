@@ -50,9 +50,9 @@
             <div class="config-grid">
                 <div>
                     <span class="sub-title">🏷️ 라벨 텍스트 설정</span>
-                    <input type="text" id="nowPlayingLabel" value="▶ NOW PLAYING" onchange="broadcastState()">
-                    <input type="text" id="upNextLabel" value="⏳ UP NEXT" onchange="broadcastState()">
-                    <input type="text" id="completedLabel" value="✔ COMPLETED" onchange="broadcastState()">
+                    <input type="text" id="nowPlayingLabel" value="▶ NOW PLAYING" onchange="saveLabels()">
+                    <input type="text" id="upNextLabel" value="⏳ UP NEXT" onchange="saveLabels()">
+                    <input type="text" id="completedLabel" value="✔ COMPLETED" onchange="saveLabels()">
                 </div>
                 <div>
                     <div id="omakaseListDash" style="display:flex; flex-direction:column; gap:8px;">
@@ -144,7 +144,12 @@
 
             const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
             if (setRes.ok) {
-                // Not actively getting designSettingsJson anymore for just currentOmakaseIcon
+                const sData = await setRes.json();
+                if (sData.labels) {
+                    document.getElementById('nowPlayingLabel').value = sData.labels.nowPlaying || "▶ NOW PLAYING";
+                    document.getElementById('upNextLabel').value = sData.labels.upNext || "⏳ UP NEXT";
+                    document.getElementById('completedLabel').value = sData.labels.completed || "✔ COMPLETED";
+                }
             }
         }
 
@@ -187,6 +192,20 @@
         async function saveMemo() {
             const memo = document.getElementById('memoInput').value;
             await fetch(`/api/memo/update?chzzkUid=${chzzkUid}&memo=${encodeURIComponent(memo)}`, { method: 'POST' });
+            broadcastState();
+        }
+
+        async function saveLabels() {
+            const labels = {
+                nowPlaying: document.getElementById("nowPlayingLabel").value,
+                upNext: document.getElementById("upNextLabel").value,
+                completed: document.getElementById("completedLabel").value
+            };
+            await fetch(`/api/settings/labels?chzzkUid=${chzzkUid}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(labels)
+            });
             broadcastState();
         }
 

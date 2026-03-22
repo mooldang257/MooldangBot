@@ -33,8 +33,40 @@ namespace MooldangAPI.Controllers
                 songRequestCommands = songCommands,
                 songCheesePrice = profile.SongCheesePrice,
                 designSettingsJson = profile.DesignSettingsJson,
-                omakases = omakaseItems
+                omakases = omakaseItems,
+                // 하위 호환 및 대시보드 직접 참조용 라벨 파싱
+                labels = TryGetLabels(profile.DesignSettingsJson)
             });
+        }
+
+        private object TryGetLabels(string? json)
+        {
+            if (string.IsNullOrEmpty(json)) return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
+            try {
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("Labels", out var labels)) {
+                    return labels;
+                }
+            } catch {}
+            return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
+        }
+
+        [HttpPost("/api/settings/labels")]
+        public async Task<IResult> UpdateLabels([FromQuery] string chzzkUid, [FromBody] System.Text.Json.JsonElement labels)
+        {
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            if (profile == null) return Results.NotFound();
+
+            var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+            var designData = string.IsNullOrEmpty(profile.DesignSettingsJson) 
+                ? new Dictionary<string, object>() 
+                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(profile.DesignSettingsJson) ?? new Dictionary<string, object>();
+
+            designData["Labels"] = labels;
+            profile.DesignSettingsJson = System.Text.Json.JsonSerializer.Serialize(designData, options);
+            
+            await _db.SaveChangesAsync();
+            return Results.Ok();
         }
 
         [HttpPost("/api/settings/update")]

@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangAPI.Data;
 using Microsoft.EntityFrameworkCore;
-
 using MooldangAPI.Models;
 using MediatR;
 using MooldangAPI.Features.Chat.Events;
 using System.Text.Json;
 using System.Text;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MooldangAPI.Controllers
 {
@@ -15,11 +15,13 @@ namespace MooldangAPI.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IMediator _mediator;
+        private readonly Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub> _hubContext;
 
-        public SonglistController(AppDbContext db, IMediator mediator)
+        public SonglistController(AppDbContext db, IMediator mediator, Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub> hubContext)
         {
             _db = db;
             _mediator = mediator;
+            _hubContext = hubContext;
         }
 
         [HttpGet("/api/songlist/data/{chzzkUid}")]
@@ -52,6 +54,11 @@ namespace MooldangAPI.Controllers
                 item.Count += delta;
                 if (item.Count < 0) item.Count = 0;
                 await _db.SaveChangesAsync();
+
+                // 실시간 갱신 신호 발송
+                string groupName = item.ChzzkUid.ToLower();
+                await _hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist");
+                await _hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard");
             }
             return Results.Ok();
         }

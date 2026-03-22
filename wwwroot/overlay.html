@@ -139,13 +139,27 @@
                         completedSongs: d.songs.filter(s => s.status === 'Completed'),
                         labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
                     };
+
                     const playing = d.songs.find(s => s.status === 'Playing');
-                    if (playing) { dashState.currentTitle = playing.title; dashState.currentArtist = playing.artist; }
+                    if (playing) { 
+                        dashState.currentTitle = playing.title; 
+                        dashState.currentArtist = playing.artist; 
+                    } else {
+                        dashState.currentTitle = "-";
+                        dashState.currentArtist = "";
+                    }
                 }
 
                 const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
                 if (setRes.ok) {
                     const s = await setRes.json();
+                    if (s.labels) {
+                        dashState.labels = {
+                            nowPlaying: s.labels.nowPlaying || "▶ NOW PLAYING",
+                            upNext: s.labels.upNext || "⏳ UP NEXT",
+                            completed: s.labels.completed || "✔ COMPLETED"
+                        };
+                    }
                     if (s.designSettingsJson && s.designSettingsJson !== "{}") {
                         designState = JSON.parse(s.designSettingsJson);
                         applyDesignStyles();

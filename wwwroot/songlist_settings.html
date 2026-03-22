@@ -233,6 +233,7 @@
 
         let omakaseItems = [];
         let songRequestCommands = [];
+        let savedLabels = { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" };
 
         function renderSongCommandList() {
             const container = document.getElementById('songCommandListContainer');
@@ -379,6 +380,7 @@
                             }
                         }
                     });
+                    if (ds.Labels) savedLabels = ds.Labels;
                     document.getElementById('customCss').value = ds.customCss || "";
                 }
             }
@@ -410,6 +412,7 @@
                 Playing: getCompData('Playing'),
                 Pending: getCompData('Pending'),
                 Completed: getCompData('Completed'),
+                Labels: savedLabels,
                 customCss: document.getElementById('customCss').value
             };
             reqData.designSettingsJson = JSON.stringify(ds);
