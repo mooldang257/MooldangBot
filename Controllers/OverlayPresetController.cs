@@ -5,6 +5,7 @@ using MooldangAPI.Data;
 using MooldangAPI.Models;
 using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 
 namespace MooldangAPI.Controllers
 {
@@ -15,9 +16,41 @@ namespace MooldangAPI.Controllers
     {
         private readonly AppDbContext _db;
 
-        public OverlayPresetController(AppDbContext db)
+        private readonly IWebHostEnvironment _env;
+ 
+        public OverlayPresetController(AppDbContext db, IWebHostEnvironment env)
         {
             _db = db;
+            _env = env;
+        }
+
+        [HttpPost("upload-image")]
+        public async Task<IActionResult> UploadImage(IFormFile image)
+        {
+            var chzzkUid = await GetCurrentChzzkUidAsync();
+            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
+
+            if (image == null || image.Length == 0)
+                return BadRequest("파일이 없습니다.");
+
+            var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif", ".mp4", ".webm" };
+            var ext = Path.GetExtension(image.FileName).ToLower();
+            if (!allowedExts.Contains(ext))
+                return BadRequest("허용되지 않는 파일 형식입니다.");
+
+            string uploadsFolder = Path.Combine(_env.WebRootPath, "images", "overlays");
+            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+            string fileName = $"{chzzkUid}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}{ext}";
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            string fileUrl = $"/images/overlays/{fileName}";
+            return Ok(new { url = fileUrl });
         }
 
         private async Task<string?> GetCurrentChzzkUidAsync()

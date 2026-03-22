@@ -568,8 +568,14 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    updateBackground('url', data.url);
+                    if (!background) background = { url: '', opacity: 0.5, visible: false };
+                    
+                    background.url = data.url;
+                    background.visible = true; // 업로드 시 자동 표시
+                    
+                    renderBackground();
                     syncBackgroundUI();
+                    saveLayout(false);
                     showToast("배경 이미지가 업로드되었습니다.");
                 }
             } catch (e) {
