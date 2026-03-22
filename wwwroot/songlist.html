@@ -25,7 +25,10 @@
         <!-- Dashboard Setup Panel -->
         <div class="panel">
             <h2 style="display:flex; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center;">물댕봇 대시보드 <span id="streamerDisplay" class="streamer-info"></span></div>
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    물댕봇 대시보드
+                    <button id="songlist-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleSonglistStatus()">조회 중...</button>
+                </div>
                 <div style="margin-left:auto; display:flex; gap:10px;">
                     <button onclick="goToSettings()" class="btn btn-outline">🎨 화면 스타일 설정</button>
                     <button onclick="window.location.href='/admin_roulette.html?uid=' + chzzkUid" class="btn btn-primary" style="background-color:#ff0055;">🎡 룰렛 설정</button>
@@ -385,10 +388,61 @@
             window.location.href = `/songlist_settings/${chzzkUid}`;
         }
 
+        let isSonglistActive = false;
+
+        async function fetchSonglistStatus() {
+            try {
+                const res = await fetch(`/api/songlist/status/${chzzkUid}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    isSonglistActive = data.isActive;
+                    updateToggleBtnUI();
+                }
+            } catch (e) { console.error("상태 조회 실패", e); }
+        }
+
+        async function toggleSonglistStatus() {
+            const btn = document.getElementById('songlist-toggle-btn');
+            btn.disabled = true;
+            btn.innerText = "처리 중...";
+            try {
+                const res = await fetch(`/api/songlist/toggle/${chzzkUid}`, { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    isSonglistActive = data.isActive;
+                    updateToggleBtnUI();
+                    
+                    if (isSonglistActive) {
+                        alert("✅ 송리스트가 활성화되었습니다. 이제 시청자들의 신청을 받습니다.");
+                    } else {
+                        alert("🚫 송리스트가 비활성화되었습니다. 새로운 신청을 받지 않습니다.");
+                    }
+                }
+            } catch (e) { 
+                console.error("토글 실패", e);
+                alert("상태 변경에 실패했습니다.");
+                updateToggleBtnUI();
+            }
+            btn.disabled = false;
+        }
+
+        function updateToggleBtnUI() {
+            const btn = document.getElementById('songlist-toggle-btn');
+            if (isSonglistActive) {
+                btn.innerText = "송리스트 활성화됨";
+                btn.style.background = "linear-gradient(135deg, #0093E9 0%, #80D0C7 100%)";
+                btn.style.boxShadow = "0 4px 12px rgba(0, 147, 233, 0.3)";
+            } else {
+                btn.innerText = "송리스트 비활성화됨";
+                btn.style.background = "linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)";
+                btn.style.boxShadow = "0 4px 12px rgba(255, 71, 87, 0.3)";
+            }
+        }
+
         window.onload = () => {
             document.getElementById("overlayUrlDisplay").innerText = window.location.origin + '/overlay/' + chzzkUid;
-            document.getElementById("streamerDisplay").innerText = `(UID: ${chzzkUid.substring(0, 8)}...)`;
             loadDashboardData();
+            fetchSonglistStatus();
         };
     </script>
 </body>

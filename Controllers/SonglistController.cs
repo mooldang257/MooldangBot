@@ -112,5 +112,50 @@ namespace MooldangAPI.Controllers
 
             return Results.Ok();
         }
+
+        // --- 송리스트 전용 활성화/비활성화 및 통계 관련 ---
+
+        [HttpGet("/api/songlist/status/{chzzkUid}")]
+        public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
+        {
+            var activeSession = await _db.SonglistSessions
+                .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                .FirstOrDefaultAsync();
+
+            return Ok(new { isActive = activeSession != null, session = activeSession });
+        }
+
+        [HttpPost("/api/songlist/toggle/{chzzkUid}")]
+        public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
+        {
+            var activeSession = await _db.SonglistSessions
+                .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                .FirstOrDefaultAsync();
+
+            bool nowActive;
+            if (activeSession != null)
+            {
+                // 현재 활성화 상태 -> 비활성화 처리
+                activeSession.IsActive = false;
+                activeSession.EndedAt = DateTime.Now;
+                nowActive = false;
+            }
+            else
+            {
+                // 현재 비활성화 상태 -> 새 세션 시작
+                _db.SonglistSessions.Add(new SonglistSession
+                {
+                    ChzzkUid = chzzkUid,
+                    StartedAt = DateTime.Now,
+                    IsActive = true,
+                    RequestCount = 0,
+                    CompleteCount = 0
+                });
+                nowActive = true;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok(new { success = true, isActive = nowActive });
+        }
     }
 }

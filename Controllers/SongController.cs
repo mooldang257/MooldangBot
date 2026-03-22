@@ -37,10 +37,36 @@ namespace MooldangAPI.Controllers
             var song = await _db.SongQueues.FindAsync(id);
             if (song != null)
             {
+                // --- 통계 기록 (세션 카운트) ---
+                var activeSession = await _db.SonglistSessions
+                    .Where(s => s.ChzzkUid == song.ChzzkUid && s.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (activeSession != null)
+                {
+                    // 완료로 변경될 때 +1
+                    if (status == "Completed" && song.Status != "Completed")
+                    {
+                        activeSession.CompleteCount++;
+                    }
+                    // 완료에서 다른 상태(대기/재생)로 돌아갈 때 -1
+                    else if (song.Status == "Completed" && status != "Completed")
+                    {
+                        activeSession.CompleteCount--;
+                        if (activeSession.CompleteCount < 0) activeSession.CompleteCount = 0;
+                    }
+                }
+                // -----------------------------
+
                 if (status == "Playing")
                 {
                     var current = await _db.SongQueues.FirstOrDefaultAsync(s => s.ChzzkUid == song.ChzzkUid && s.Status == "Playing");
-                    if (current != null) current.Status = "Completed";
+                    if (current != null)
+                    {
+                        // 기존 재생 중인 곡을 완료로 보낼 때도 카운트 증가
+                        current.Status = "Completed";
+                        if (activeSession != null) activeSession.CompleteCount++;
+                    }
                 }
                 song.Status = status;
                 await _db.SaveChangesAsync();

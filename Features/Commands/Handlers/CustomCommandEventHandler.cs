@@ -245,6 +245,19 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 .Where(s => s.ChzzkUid == notification.Profile.ChzzkUid)
                 .MaxAsync(s => (int?)s.SortOrder, cancellationToken) ?? 0;
 
+            // --- 송리스트 활성화 체크 ---
+            var activeSession = await db.SonglistSessions
+                .Where(s => s.ChzzkUid == notification.Profile.ChzzkUid && s.IsActive)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (activeSession == null)
+            {
+                _logger.LogWarning($"⚠️ [곡 신청 거부] {notification.Username}님의 신청 무시: {notification.Profile.ChzzkUid}의 송리스트가 비활성화 상태입니다.");
+                // 필요 시 채팅으로 비활성 알림을 보낼 수 있으나, 여기서는 로그로 처리
+                return;
+            }
+            // ---------------------------
+
             var newSong = new MooldangAPI.Models.SongQueue
             {
                 ChzzkUid = notification.Profile.ChzzkUid,
@@ -256,9 +269,10 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             };
 
             db.SongQueues.Add(newSong);
+            activeSession.RequestCount++; // 통계 카운트 증가
             await db.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation($"✅ [통합 신청 저장] {songInput} (순번: {newSong.SortOrder})");
+            _logger.LogInformation($"✅ [통합 신청 저장] {songInput} (순번: {newSong.SortOrder}, 세션 {activeSession.Id} 카운팅)");
 
             var hubContext = _serviceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
             string groupName = notification.Profile.ChzzkUid!.ToLower();
