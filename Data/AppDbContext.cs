@@ -56,6 +56,12 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<SonglistSession>()
                 .HasIndex(s => new { s.ChzzkUid, s.IsActive });
 
+            modelBuilder.Entity<OverlayPreset>()
+                .HasIndex(p => p.ChzzkUid);
+
+            modelBuilder.Entity<SharedComponent>()
+                .HasIndex(c => c.ChzzkUid);
+
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
             modelBuilder.Entity<SongQueue>().ToTable("songqueues");

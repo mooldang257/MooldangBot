@@ -32,45 +32,52 @@ namespace MooldangAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OverlayPresetDto>>> GetPresets()
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
-            var presets = await _db.OverlayPresets
-                .Where(p => p.ChzzkUid == chzzkUid)
-                .ToListAsync();
-
-            if (presets.Count == 0)
+            try
             {
-                // 기본 프리셋 생성
-                var defaultPreset = new OverlayPreset
+                var chzzkUid = await GetCurrentChzzkUidAsync();
+                if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
+
+                var presets = await _db.OverlayPresets
+                    .Where(p => p.ChzzkUid == chzzkUid)
+                    .ToListAsync();
+
+                if (presets.Count == 0)
                 {
-                    ChzzkUid = chzzkUid,
-                    Name = "기본 프리셋",
-                    ConfigJson = JsonSerializer.Serialize(new
+                    // 기본 프리셋 생성
+                    var defaultPreset = new OverlayPreset
                     {
-                        components = new[]
+                        ChzzkUid = chzzkUid,
+                        Name = "기본 프리셋",
+                        ConfigJson = JsonSerializer.Serialize(new
                         {
-                            new { id = "songlist_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "songlist", title = "노래 신청서", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
-                            new { id = "chat_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "chat", title = "채팅창", x = 50, y = 700, width = 400, height = 300, zIndex = 20, visible = true, opacity = 1.0 }
-                        },
-                        background = new { url = "", opacity = 0.5, visible = false }
-                    }),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                            components = new[]
+                            {
+                                new { id = "songlist_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "songlist", title = "노래 신청서", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
+                                new { id = "chat_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "chat", title = "채팅창", x = 50, y = 700, width = 400, height = 300, zIndex = 20, visible = true, opacity = 1.0 }
+                            },
+                            background = new { url = "", opacity = 0.5, visible = false }
+                        }),
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
 
-                _db.OverlayPresets.Add(defaultPreset);
-                await _db.SaveChangesAsync();
-                presets.Add(defaultPreset);
+                    _db.OverlayPresets.Add(defaultPreset);
+                    await _db.SaveChangesAsync();
+                    presets.Add(defaultPreset);
+                }
+
+                return Ok(presets.Select(p => new OverlayPresetDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    ConfigJson = p.ConfigJson,
+                    UpdatedAt = p.UpdatedAt
+                }));
             }
-
-            return Ok(presets.Select(p => new OverlayPresetDto
+            catch (Exception ex)
             {
-                Id = p.Id,
-                Name = p.Name,
-                ConfigJson = p.ConfigJson,
-                UpdatedAt = p.UpdatedAt
-            }));
+                return StatusCode(500, $"Internal Server Error: {ex.Message} \n {ex.InnerException?.Message}");
+            }
         }
 
         [HttpGet("{id}")]
@@ -116,28 +123,35 @@ namespace MooldangAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<OverlayPresetDto>> CreatePreset(OverlayPresetDto dto)
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
-            var preset = new OverlayPreset
+            try
             {
-                ChzzkUid = chzzkUid,
-                Name = dto.Name,
-                ConfigJson = dto.ConfigJson,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                var chzzkUid = await GetCurrentChzzkUidAsync();
+                if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-            _db.OverlayPresets.Add(preset);
-            await _db.SaveChangesAsync();
+                var preset = new OverlayPreset
+                {
+                    ChzzkUid = chzzkUid,
+                    Name = dto.Name ?? "새 프리셋",
+                    ConfigJson = dto.ConfigJson ?? "{}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
-            return CreatedAtAction(nameof(GetPreset), new { id = preset.Id }, new OverlayPresetDto
+                _db.OverlayPresets.Add(preset);
+                await _db.SaveChangesAsync();
+
+                return Ok(new OverlayPresetDto
+                {
+                    Id = preset.Id,
+                    Name = preset.Name,
+                    ConfigJson = preset.ConfigJson,
+                    UpdatedAt = preset.UpdatedAt
+                });
+            }
+            catch (Exception ex)
             {
-                Id = preset.Id,
-                Name = preset.Name,
-                ConfigJson = preset.ConfigJson,
-                UpdatedAt = preset.UpdatedAt
-            });
+                return StatusCode(500, $"Internal Server Error: {ex.Message} \n {ex.InnerException?.Message}");
+            }
         }
 
         [HttpPut("{id}")]
