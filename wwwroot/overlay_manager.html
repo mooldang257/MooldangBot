@@ -408,7 +408,7 @@
             sorted.forEach(comp => {
                 const li = document.createElement('li');
                 li.className = `component-item ${comp.id === selectedId ? 'active' : ''}`;
-                li.setAttribute('draggable', 'true');
+                li.setAttribute('draggable', 'false'); // Disabled until handle is targeted
                 li.setAttribute('data-id', comp.id);
                 li.onclick = () => selectElement(comp.id);
                 
@@ -424,7 +424,7 @@
                 // Row 1: Title and Basic Controls
                 const row1 = `
                     <div class="comp-row comp-row-top">
-                        <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                        <div class="drag-handle" onmousedown="this.closest('li').draggable=true" onmouseup="this.closest('li').draggable=false"><i class="fas fa-grip-vertical"></i></div>
                         <div class="comp-title-wrapper" id="title-wrapper-${comp.id}">
                             <i class="fas ${iconClass}" style="opacity: ${comp.opacity ?? 1}"></i>
                             <span class="comp-title-text" id="title-text-${comp.id}" style="opacity: ${comp.opacity ?? 1}">${comp.title || comp.id}</span>
@@ -680,11 +680,6 @@
         let dragSourceId = null;
 
         function handleDragStart(e) {
-            // Only allow dragging from the dedicated handle to avoid interference with sliders/inputs
-            if (!e.target.closest('.drag-handle')) {
-                e.preventDefault();
-                return false;
-            }
             dragSourceId = this.getAttribute('data-id');
             e.dataTransfer.effectAllowed = 'move';
             this.classList.add('dragging');
@@ -697,6 +692,7 @@
         }
 
         function handleDragEnd(e) {
+            this.draggable = false;
             document.querySelectorAll('.component-item').forEach(el => {
                 el.classList.remove('dragging');
                 el.classList.remove('drag-over');
