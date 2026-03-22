@@ -201,8 +201,10 @@
         }
         .btn-chevron:hover { color: white; }
         .component-item.expanded .btn-chevron { transform: rotate(180deg); color: var(--primary); }
-        .component-item.renaming .btn-chevron, .component-item.renaming .switch { display: none; }
-        .component-item.renaming .comp-title-wrapper { flex: 1; }
+        .component-item.renaming .drag-handle, 
+        .component-item.renaming .comp-actions:not(.title-wrapper-actions), 
+        .component-item.renaming .switch { display: none !important; }
+        .component-item.renaming .comp-title-wrapper { flex: 1; gap: 10px; }
 
         /* Toggle Switch */
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
@@ -1035,13 +1037,13 @@
                             <button class="btn-icon delete" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
-                            <button class="btn-chevron" onclick="toggleExpand('${comp.id}', event)" title="상세 설정">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
                             <label class="switch" onclick="event.stopPropagation()">
                                 <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
                                 <span class="slider"></span>
                             </label>
+                            <button class="btn-chevron" onclick="toggleExpand('${comp.id}', event)" title="상세 설정">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -1230,11 +1232,11 @@
 
             const iconClass = comp.type === 'image' ? 'fa-image' : (CORE_TEMPLATES[comp.templateId]?.icon || 'fa-box');
             wrapper.innerHTML = `
-                <i class="fas ${iconClass}" style="opacity: 0.5"></i>
+                <i class="fas ${iconClass}" style="opacity: 0.8; font-size: 14px;"></i>
                 <input type="text" class="title-input-inline" id="rename-input-${id}" value="${originalTitle}" 
                     onkeydown="if(event.key==='Enter') saveRename('${id}'); if(event.key==='Escape') renderSidebar();"
                     onclick="event.stopPropagation()">
-                <div class="comp-actions">
+                <div class="comp-actions title-wrapper-actions">
                     <button class="btn-icon" onclick="event.stopPropagation(); saveRename('${id}')" title="저장"><i class="fas fa-check"></i></button>
                     <button class="btn-icon" onclick="event.stopPropagation(); renderSidebar()" title="취소"><i class="fas fa-times"></i></button>
                 </div>
