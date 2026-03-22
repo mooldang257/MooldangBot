@@ -12,6 +12,8 @@ namespace MooldangAPI.Controllers
     [Route("api/overlay")]
     public class MasterOverlayController : ControllerBase
     {
+        private readonly AppDbContext _db;
+        private readonly IHubContext<OverlayHub> _hubContext;
         private readonly IWebHostEnvironment _env;
 
         public MasterOverlayController(AppDbContext db, IHubContext<OverlayHub> hubContext, IWebHostEnvironment env)
