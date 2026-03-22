@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>마스터 오버레이 관리자</title>
+    <title>마스터 오버레이 관리 - MooldangBot</title>
     <!-- 폰트 및 아이콘 -->
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SignalR Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <!-- UI 스타일링 -->
     <style>
@@ -62,6 +65,20 @@
             transition: all 0.2s; display: flex; align-items: center; gap: 8px;
         }
         .btn-save:hover { background: #3728f3; transform: translateY(-2px); }
+
+        /* Preset Management Styles */
+        .preset-select {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+            color: white; border-radius: 8px; padding: 10px 15px; font-size: 14px;
+            cursor: pointer; outline: none; min-width: 150px;
+        }
+        .preset-select:focus { border-color: var(--primary); }
+        .btn-preset-action {
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-preset-action:hover { background: rgba(255,255,255,0.2); color: var(--primary); }
+        .btn-preset-action.delete:hover { color: #ff4757; }
 
         /* Background Control Panel */
         .bg-panel {
@@ -263,12 +280,19 @@
     <div class="navbar">
         <h1><i class="fas fa-layer-group"></i> 마스터 오버레이 관리</h1>
         <div class="nav-right">
-            <div class="url-box">
-                <span>📺 오버레이 소스 URL:</span>
-                <span id="overlayUrl" class="url-text">생성 중...</span>
-                <button class="btn-copy" onclick="copyMasterUrl()" title="복사"><i class="fas fa-copy"></i></button>
+            <select id="presetSelector" class="preset-select" onchange="changePreset(this.value)">
+                <option value="">프리셋 선택...</option>
+            </select>
+            <button class="btn-preset-action" onclick="createNewPreset()" title="새 프리셋"><i class="fas fa-plus-circle"></i></button>
+            <button class="btn-preset-action" onclick="renameCurrentPreset()" title="이름 변경"><i class="fas fa-edit"></i></button>
+            <button class="btn-preset-action delete" onclick="deleteCurrentPreset()" title="프리셋 삭제"><i class="fas fa-trash-alt"></i></button>
+            
+            <div class="url-box" style="margin-left: 10px;">
+                <span>📺 프리셋 URL:</span>
+                <span id="overlayUrl" class="url-text">프리셋을 선택하세요</span>
+                <button class="btn-copy" onclick="copyPresetUrl()" title="복사"><i class="fas fa-copy"></i></button>
             </div>
-            <button class="btn-save" onclick="saveLayout()"><i class="fas fa-save"></i> 저장 및 즉시 적용</button>
+            <button class="btn-save" onclick="saveLayout()"><i class="fas fa-save"></i> 프리셋 저장</button>
         </div>
     </div>
 
@@ -277,9 +301,12 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2 style="margin-bottom:10px;">구성 요소 라이브러리</h2>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('bot_feature')"><i class="fas fa-plus"></i> 기능 추가</button>
-                    <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('image')"><i class="fas fa-image"></i> 이미지 추가</button>
+                <div style="display:flex; gap:5px; flex-direction:column;">
+                    <div style="display:flex; gap:5px; margin-bottom:5px;">
+                        <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('bot_feature')"><i class="fas fa-plus"></i> 기능 추가</button>
+                        <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('image')"><i class="fas fa-image"></i> 이미지 추가</button>
+                    </div>
+                    <button class="btn-primary" style="width:100%; font-size:12px; padding:8px; background-color:#2ed573; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="openLibrary()"><i class="fas fa-archive"></i> 보관함에서 불러오기</button>
                 </div>
             </div>
             <ul class="component-list" id="componentList">
@@ -306,16 +333,34 @@
     <div id="toast"><i class="fas fa-check-circle"></i> 적용되었습니다.</div>
     <input type="file" id="imageUploadInput" style="display:none" accept="image/*">
 
+    <!-- Library Modal -->
+    <div id="libraryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-archive"></i> 구성 요소 보관함</h3>
+                <span class="modal-close" onclick="closeLibrary()">&times;</span>
+            </div>
+            <ul id="libraryList" class="library-list">
+                <!-- Library items will be populated here by JS -->
+            </ul>
+        </div>
+    </div>
+
     <script>
         const SNAP_THRESHOLD = 15;
         const GRID_SIZE = 20;
         const CANVAS_W = 1920;
         const CANVAS_H = 1080;
 
-        let components = [];
-        let background = { url: '', opacity: 0.5, visible: false };
-        let scale = 1;
-        let selectedId = null;
+        let presets = [];
+        let currentPresetId = null;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/overlayHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start().catch(err => console.error("SignalR Connection Error: ", err));
 
         // 물댕봇 기본 기능 템플릿
         const CORE_TEMPLATES = {
@@ -327,58 +372,139 @@
 
         let chzzkUid = ""; 
         const pathParts = window.location.pathname.split('/');
-        chzzkUid = pathParts[pathParts.length - 1]; // From path if exists (/overlay_manager/{uid})
+        chzzkUid = pathParts[pathParts.length - 1]; 
 
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid'); // Query param takes precedence if provided
-
-        if (!chzzkUid || chzzkUid === "" || chzzkUid.endsWith(".html")) chzzkUid = "testStreamer"; 
+        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid'); 
 
         async function init() {
             adjustCanvasScale();
             window.addEventListener('resize', adjustCanvasScale);
 
-            // Set URL Display
-            const overlayUrl = window.location.origin + '/overlay/' + chzzkUid;
-            document.getElementById('overlayUrl').innerText = overlayUrl;
-
-            // Fetch layout from backend
-            try {
-                const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.components) {
-                        components = data.components;
-                        components.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
-                    }
-                    if (data && data.background) {
-                        background = { ...background, ...data.background };
-                    }
-                    syncBackgroundUI();
-                    renderBackground();
-                }
-            } catch (e) {
-                console.error("Failed to load layout", e);
-            }
- 
-            // Fallback for testing if empty
-            if (components.length === 0) {
-                Object.keys(CORE_TEMPLATES).forEach(id => {
-                    const t = CORE_TEMPLATES[id];
-                    components.push({
-                        id: id, type: 'bot_feature', title: t.title, icon: t.icon,
-                        x: 50, y: 50, width: t.width, height: t.height,
-                        zIndex: 10, visible: true
-                    });
-                });
-            }
-
+            await fetchPresets();
+            
             renderSidebar();
             renderCanvas();
             setupKeyboardNudging();
-            
-            // Set first element as selected default
-            if(components.length > 0) selectElement(components[0].id);
+        }
+
+        async function fetchPresets() {
+            try {
+                const res = await fetch('/api/OverlayPreset');
+                if (res.ok) {
+                    presets = await res.json();
+                    updatePresetSelector();
+                    
+                    if (presets.length > 0) {
+                        // 프리셋이 있으면 첫 번째 프리셋 선택
+                        changePreset(presets[0].id);
+                    } else {
+                        // 프리셋이 없으면 안내
+                        document.getElementById('overlayUrl').innerText = "프리셋을 생성하세요";
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch presets", e);
+            }
+        }
+
+        function updatePresetSelector() {
+            const selector = document.getElementById('presetSelector');
+            selector.innerHTML = presets.map(p => `<option value="${p.id}" ${p.id == currentPresetId ? 'selected' : ''}>${p.name}</option>`).join('');
+            if (presets.length === 0) {
+                selector.innerHTML = '<option value="">프리셋 없음</option>';
+            }
+        }
+
+        async function changePreset(id) {
+            if (!id) return;
+            currentPresetId = parseInt(id);
+            const preset = presets.find(p => p.id == currentPresetId);
+            if (preset) {
+                const config = JSON.parse(preset.configJson || '{}');
+                components = config.components || [];
+                background = config.background || { url: '', opacity: 0.5, visible: false };
+                
+                // URL 업데이트
+                const overlayUrl = window.location.origin + `/overlay.html?uid=${chzzkUid}&presetId=${currentPresetId}`;
+                document.getElementById('overlayUrl').innerText = overlayUrl;
+
+                syncBackgroundUI();
+                renderBackground();
+                renderSidebar();
+                renderCanvas();
+            }
+        }
+
+        async function createNewPreset() {
+            const name = prompt("새 프리셋 이름을 입력하세요:", "기본 프리셋");
+            if (!name) return;
+
+            try {
+                const res = await fetch('/api/OverlayPreset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, configJson: JSON.stringify({ components: [], background: { url: '', opacity: 0.5, visible: false } }) })
+                });
+
+                if (res.ok) {
+                    const newPreset = await res.json();
+                    presets.push(newPreset);
+                    updatePresetSelector();
+                    changePreset(newPreset.id);
+                    showToast("프리셋이 생성되었습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("생성 실패");
+            }
+        }
+
+        async function renameCurrentPreset() {
+            if (!currentPresetId) return;
+            const preset = presets.find(p => p.id == currentPresetId);
+            const newName = prompt("변경할 이름을 입력하세요:", preset.name);
+            if (!newName) return;
+
+            try {
+                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: currentPresetId, name: newName, configJson: JSON.stringify({ components, background }) })
+                });
+
+                if (res.ok) {
+                    preset.name = newName;
+                    updatePresetSelector();
+                    showToast("이름이 변경되었습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteCurrentPreset() {
+            if (!currentPresetId) return;
+            if (!confirm("정말 이 프리셋을 삭제하시겠습니까? 관련 설정이 모두 삭제됩니다.")) return;
+
+            try {
+                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    presets = presets.filter(p => p.id != currentPresetId);
+                    updatePresetSelector();
+                    if (presets.length > 0) changePreset(presets[0].id);
+                    else {
+                        currentPresetId = null;
+                        components = [];
+                        renderSidebar();
+                        renderCanvas();
+                        document.getElementById('overlayUrl').innerText = "프리셋을 선택하세요";
+                    }
+                    showToast("프리셋이 삭제되었습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function adjustCanvasScale() {
@@ -435,6 +561,9 @@
                             </button>
                             <button class="btn-icon delete" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
                                 <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <button class="btn-icon" onclick="event.stopPropagation(); saveToLibrary('${comp.id}')" title="보관함 저장" style="color: #2ed573;">
+                                <i class="fas fa-save"></i>
                             </button>
                             <label class="switch" onclick="event.stopPropagation()">
                                 <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
@@ -1047,24 +1176,33 @@
 
         // --- Save via API ---
         async function saveLayout() {
+            if (!currentPresetId) {
+                alert("선택된 프리셋이 없습니다.");
+                return;
+            }
+
             const btn = document.querySelector('.btn-save');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
             btn.disabled = true;
 
-            const payload = { 
-                components: components,
-                background: background
-            };
+            const configJson = JSON.stringify({ components, background });
+            const preset = presets.find(p => p.id == currentPresetId);
 
             try {
-                const res = await fetch(`/api/overlay/layout/${chzzkUid}`, {
-                    method: 'POST',
+                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ id: currentPresetId, name: preset.name, configJson })
                 });
 
                 if (res.ok) {
-                    showToast();
+                    preset.configJson = configJson;
+                    showToast("프리셋이 저장되었습니다.");
+                    
+                    // SignalR을 통해 실시간 업데이트 전송
+                    if (connection.state === signalR.HubConnectionState.Connected) {
+                        connection.invoke("UpdatePresetStyle", currentPresetId, configJson);
+                    }
                 } else {
                     alert("저장에 실패했습니다.");
                 }
@@ -1072,115 +1210,127 @@
                 console.error(e);
                 alert("서버 연결 오류");
             } finally {
-                btn.innerHTML = '<i class="fas fa-save"></i> 저장 및 즉시 적용';
+                btn.innerHTML = '<i class="fas fa-save"></i> 프리셋 저장';
                 btn.disabled = false;
             }
         }
 
-        function showToast() {
+        // --- Component Library Logic ---
+        async function saveToLibrary(compId) {
+            const comp = components.find(c => c.id === compId);
+            if (!comp) return;
+
+            const name = prompt("보관할 컴포넌트 이름을 입력하세요:", comp.title || "새 컴포넌트");
+            if (!name) return;
+
+            try {
+                const res = await fetch('/api/SharedComponent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        type: comp.type,
+                        configJson: JSON.stringify(comp)
+                    })
+                });
+
+                if (res.ok) {
+                    showToast("보관함에 저장되었습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("저장 실패");
+            }
+        }
+
+        async function openLibrary() {
+            const modal = document.getElementById('libraryModal');
+            modal.style.display = 'flex';
+            
+            const list = document.getElementById('libraryList');
+            list.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>';
+
+            try {
+                const res = await fetch('/api/SharedComponent');
+                if (res.ok) {
+                    const items = await res.json();
+                    if (items.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">보관된 컴포넌트가 없습니다.</div>';
+                        return;
+                    }
+
+                    list.innerHTML = items.map(item => `
+                        <div class="library-item" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:600;">${item.name}</div>
+                                <div style="font-size:12px; color:var(--text-muted);">${item.type}</div>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-icon" onclick="importFromLibrary(${item.id})" title="불러오기"><i class="fas fa-download"></i></button>
+                                <button class="btn-icon delete" onclick="deleteFromLibrary(${item.id})" title="삭제"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = '<div style="text-align:center; color:#ff4757; padding:20px;">로딩 실패</div>';
+            }
+        }
+
+        function closeLibrary() {
+            document.getElementById('libraryModal').style.display = 'none';
+        }
+
+        async function importFromLibrary(id) {
+            try {
+                const res = await fetch(`/api/SharedComponent/${id}`);
+                if (res.ok) {
+                    const item = await res.json();
+                    const compConfig = JSON.parse(item.configJson);
+                    
+                    // 새 ID 부여하여 추가
+                    compConfig.id = 'imported-' + Date.now();
+                    components.push(compConfig);
+                    
+                    renderSidebar();
+                    renderCanvas();
+                    closeLibrary();
+                    showToast("컴포넌트를 불러왔습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("불러오기 실패");
+            }
+        }
+
+        async function deleteFromLibrary(id) {
+            if (!confirm("정말 삭제하시겠습니까?")) return;
+            try {
+                const res = await fetch(`/api/SharedComponent/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    openLibrary(); // Refresh
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function showToast(msg) {
             const toast = document.getElementById('toast');
-            toast.className = ''; 
-            toast.innerHTML = '<i class="fas fa-check-circle"></i> 적용되었습니다.';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${msg || '적용되었습니다.'}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // --- Background Settings Logic ---
-        function updateBackgroundSettings() {
-            background.url = document.getElementById('bg-url').value.trim();
-            background.opacity = parseFloat(document.getElementById('bg-opacity').value);
-            background.visible = document.getElementById('bg-visible').checked;
-            
-            document.getElementById('bg-opacity-val').innerText = Math.round(background.opacity * 100) + '%';
-            renderBackground();
-        }
-
-        function syncBackgroundUI() {
-            document.getElementById('bg-url').value = background.url || '';
-            document.getElementById('bg-opacity').value = background.opacity;
-            document.getElementById('bg-opacity-val').innerText = Math.round(background.opacity * 100) + '%';
-            document.getElementById('bg-visible').checked = background.visible;
-        }
-
-        function renderBackground() {
-            const video = document.getElementById('canvas-bg-video');
-            const img = document.getElementById('canvas-bg-img');
-            const layer = document.getElementById('canvas-bg-layer');
-
-            if (!background.visible || !background.url) {
-                layer.style.opacity = 0;
-                video.style.display = 'none';
-                img.style.display = 'none';
-                video.src = '';
-                img.src = '';
+        function copyPresetUrl() {
+            const url = document.getElementById('overlayUrl').innerText;
+            if (url.includes("선택하세요")) {
+                alert("먼저 프리셋을 선택하거나 생성하세요.");
                 return;
             }
-
-            layer.style.opacity = background.opacity;
-            const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(background.url);
-
-            if (isVideo) {
-                if (video.src !== background.url) {
-                    video.src = background.url;
-                    video.style.display = 'block';
-                    img.style.display = 'none';
-                }
-            } else {
-                img.src = background.url;
-                img.style.display = 'block';
-                video.style.display = 'none';
-                video.src = '';
-            }
-        }
-
-        let isBgUpload = false;
-        function openBackgroundUpload() {
-            isBgUpload = true;
-            document.getElementById('imageUploadInput').click();
-        }
-
-        // Update the file input listener to handle background upload
-        setTimeout(() => {
-            const fileInput = document.getElementById('imageUploadInput');
-            const originalOnChange = fileInput.onchange;
-            fileInput.onchange = async (e) => {
-                if (!e.target.files || e.target.files.length === 0) return;
-                
-                const file = e.target.files[0];
-                const formData = new FormData();
-                formData.append('file', file);
-
-                try {
-                    const res = await fetch('/api/overlay/upload', { method: 'POST', body: formData });
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.success) {
-                            if (isBgUpload) {
-                                background.url = data.url;
-                                syncBackgroundUI();
-                                renderBackground();
-                            } else if (currentUploadId) {
-                                const comp = components.find(c => c.id === currentUploadId);
-                                if (comp) {
-                                    comp.customUrl = data.url;
-                                    renderSidebar();
-                                    renderCanvas();
-                                }
-                            }
-                        }
-                    } else { alert("업로드 실패"); }
-                } catch (err) { console.error(err); alert("서버 연결 오류"); }
-                isBgUpload = false; // Reset
-            };
-        }, 200);
-
-        function copyMasterUrl() {
-            const url = document.getElementById('overlayUrl').innerText;
             navigator.clipboard.writeText(url).then(() => {
-                const toast = document.getElementById('toast');
-                toast.innerHTML = '<i class="fas fa-copy"></i> URL이 복사되었습니다!';
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3000);
+                showToast("URL이 복사되었습니다!");
             });
         }
 

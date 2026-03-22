@@ -22,6 +22,8 @@ namespace MooldangAPI.Data
         public DbSet<RouletteItem> RouletteItems { get; set; }
         public DbSet<PeriodicMessage> PeriodicMessages { get; set; }
         public DbSet<SonglistSession> SonglistSessions { get; set; }
+        public DbSet<OverlayPreset> OverlayPresets { get; set; }
+        public DbSet<SharedComponent> SharedComponents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,6 +70,8 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<RouletteItem>().ToTable("rouletteitems");
             modelBuilder.Entity<PeriodicMessage>().ToTable("periodicmessages");
             modelBuilder.Entity<SonglistSession>().ToTable("songlistsessions");
+            modelBuilder.Entity<OverlayPreset>().ToTable("overlaypresets");
+            modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
         }
 
     }

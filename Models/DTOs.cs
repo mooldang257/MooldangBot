@@ -36,4 +36,20 @@ namespace MooldangAPI.Models
         public string Message { get; set; } = "";
         public bool IsEnabled { get; set; }
     }
+
+    public class OverlayPresetDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string ConfigJson { get; set; } = "{}";
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class SharedComponentDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string ConfigJson { get; set; } = "{}";
+    }
 }

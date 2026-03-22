@@ -35,6 +35,7 @@ builder.Services.AddHostedService<PeriodicMessageWorker>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
 builder.Services.AddScoped<RouletteService>();
+builder.Services.AddSingleton<ObsWebSocketService>();
 builder.Services.AddHttpClient<ChzzkApiClient>();
 // ------------------------------------------
 

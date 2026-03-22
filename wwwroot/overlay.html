@@ -192,16 +192,35 @@
             }
         }
 
+        const urlParams = new URL(window.location.href).searchParams;
+        const presetId = urlParams.get('presetId');
+
         async function fetchInitialLayout() {
             try {
-                const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
+                let url = `/api/overlay/layout/${chzzkUid}`; // Default fallback
+                if (presetId) {
+                    url = `/api/OverlayPreset/public/${presetId}`; // Specific preset
+                }
+
+                const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.components) applyLayout(data.components);
-                    if (data.background) applyBackground(data.background);
+                    
+                    // If it's from the new Preset API, the config is in .configJson
+                    let components = data.components;
+                    let background = data.background;
+
+                    if (data.configJson) {
+                        const config = JSON.parse(data.configJson);
+                        components = config.components;
+                        background = config.background;
+                    }
+
+                    if (components) applyLayout(components);
+                    if (background) applyBackground(background);
                 }
             } catch (e) {
-                console.error("초기 마스터 레이아웃 로드 실패", e);
+                console.error("초기 레이아웃 로드 실패", e);
             }
         }
 
@@ -229,16 +248,24 @@
 
         connection.start().then(() => { 
             console.log("마스터 오버레이 SignalR 연결 성공");
-            connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase()); 
+            if (presetId) {
+                connection.invoke("JoinPresetGroup", parseInt(presetId));
+            } else {
+                connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase()); 
+            }
             fetchInitialLayout(); 
         }).catch(err => { 
             console.error("SignalR 연결 실패, 5초 후 재시도", err);
             setTimeout(fetchInitialLayout, 5000); 
         });
-
+ 
         connection.onreconnected(() => {
-            console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
-            connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase());
+            console.log("SignalR 재연결 완료!");
+            if (presetId) {
+                connection.invoke("JoinPresetGroup", parseInt(presetId));
+            } else {
+                connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase());
+            }
             fetchInitialLayout();
         });
     </script>
