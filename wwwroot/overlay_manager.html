@@ -363,7 +363,7 @@
             switch(id) {
                 case 'songlist': return `/songlist_overlay/${chzzkUid}`;
                 case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}`;
-                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}`;
+                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&sample=true`;
                 case 'chat': return `/ChatPoint.html?uid=${chzzkUid}`; // 임시 맵핑
                 default: return ``; 
             }

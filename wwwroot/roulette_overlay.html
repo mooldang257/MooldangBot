@@ -133,6 +133,21 @@
             height: 10px;
             background: #f00;
         }
+
+        #sample-container {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        #sample-image {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border: 5px solid gold;
+            border-radius: 20px;
+        }
     </style>
 </head>
 
@@ -148,6 +163,10 @@
             <div id="single-result-name" class="win-item">아이템명</div>
             <div id="multi-results"></div>
         </div>
+
+        <div id="sample-container">
+            <img id="sample-image" src="/images/roulette_sample.png" alt="Roulette Sample">
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
@@ -155,6 +174,11 @@
         const pathParts = window.location.pathname.split('/');
         const queryParams = new URLSearchParams(window.location.search);
         const chzzkUid = queryParams.get('uid') || pathParts[pathParts.length - 1];
+        const isSample = queryParams.get('sample') === 'true';
+
+        if (isSample) {
+            document.getElementById('sample-container').style.display = 'flex';
+        }
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/overlayHub")
