@@ -99,6 +99,35 @@
         .z-input:focus { outline: 1px solid var(--primary); background: rgba(255,255,255,0.1); }
         .btn-icon { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
         .btn-icon:hover { background: rgba(255,255,255,0.2); }
+        .btn-icon.delete:hover { color: #ff4757; }
+
+        /* Drag and Drop Styles */
+        .component-item.dragging {
+            opacity: 0.5;
+            background-color: var(--primary) !important;
+            cursor: move;
+        }
+        .drag-handle {
+            cursor: move;
+            color: var(--text-muted); padding: 4px;
+            margin-right: 5px;
+        }
+        .drag-over { border: 2px dashed var(--primary); }
+
+        /* Row Layouts */
+        .comp-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+        .comp-row-top { margin-bottom: 8px; }
+        .comp-row-bottom { 
+            padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); 
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .comp-actions { display: flex; align-items: center; gap: 5px; }
+        .comp-title-wrapper { flex: 1; display: flex; align-items: center; gap: 5px; }
+        .title-input-inline {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--primary);
+            color: white; border-radius: 4px; padding: 2px 5px; font-size: 14px;
+            width: 100%;
+        }
 
         /* Toggle Switch */
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
@@ -248,6 +277,7 @@
     </div>
 
     <div id="toast"><i class="fas fa-check-circle"></i> 적용되었습니다.</div>
+    <input type="file" id="imageUploadInput" style="display:none" accept="image/*">
 
     <script>
         const SNAP_THRESHOLD = 15;
@@ -291,6 +321,8 @@
                     const data = await res.json();
                     if (data && data.components && data.components.length > 0) {
                         components = data.components;
+                        // Sort by zIndex descending initially
+                        components.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
                     }
                 }
             } catch (e) {
@@ -344,27 +376,32 @@
             sorted.forEach(comp => {
                 const li = document.createElement('li');
                 li.className = `component-item ${comp.id === selectedId ? 'active' : ''}`;
+                li.setAttribute('draggable', 'true');
+                li.setAttribute('data-id', comp.id);
                 li.onclick = () => selectElement(comp.id);
                 
-                const iconClass = comp.type === 'image' ? 'fa-image' : (comp.icon || 'fa-box');
-                
-                let typeOptions = '';
-                if (comp.type === 'bot_feature') {
-                    typeOptions = `
-                        <select class="z-input" style="width:100%; text-align:left; margin-top:5px;" onchange="setTemplate('${comp.id}', this.value)" onclick="event.stopPropagation()">
-                            ${Object.keys(CORE_TEMPLATES).map(k => `<option value="${k}" ${comp.templateId === k ? 'selected' : ''}>${CORE_TEMPLATES[k].title}</option>`).join('')}
-                        </select>
-                    `;
-                }
+                // Drag and Drop Event Listeners
+                li.addEventListener('dragstart', handleDragStart);
+                li.addEventListener('dragover', handleDragOver);
+                li.addEventListener('drop', handleDrop);
+                li.addEventListener('dragend', handleDragEnd);
+                li.addEventListener('dragenter', (e) => e.preventDefault());
 
-                li.innerHTML = `
-                    <div class="comp-header">
-                        <div class="comp-title">
-                            <i class="fas ${iconClass}"></i> 
-                            ${comp.title || comp.id}
+                const iconClass = comp.type === 'image' ? 'fa-image' : (CORE_TEMPLATES[comp.templateId]?.icon || 'fa-box');
+                
+                // Row 1: Title and Basic Controls
+                const row1 = `
+                    <div class="comp-row comp-row-top">
+                        <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                        <div class="comp-title-wrapper" id="title-wrapper-${comp.id}">
+                            <i class="fas ${iconClass}"></i>
+                            <span class="comp-title-text" id="title-text-${comp.id}">${comp.title || comp.id}</span>
                         </div>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <button class="btn-icon" style="background:none; padding:2px; color:#ff4757;" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
+                        <div class="comp-actions">
+                            <button class="btn-icon" onclick="event.stopPropagation(); startRename('${comp.id}')" title="이름 수정">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                             <label class="switch" onclick="event.stopPropagation()">
@@ -373,21 +410,35 @@
                             </label>
                         </div>
                     </div>
-                    <div class="comp-controls">
-                        <span>레이어 순서(Z)</span>
-                        <div class="z-controls" onclick="event.stopPropagation()">
-                            <input type="number" class="z-input" value="${comp.zIndex}" onchange="setZIndex('${comp.id}', this.value)" title="Z-Index 직접 입력">
-                        </div>
-                    </div>
-                    
-                    ${comp.type === 'bot_feature' ? `<div class="comp-controls" style="margin-top:5px; flex-direction:column; align-items:flex-start; gap:2px;"><span>기능 템플릿</span>${typeOptions}</div>` : ''}
+                `;
 
-                    <div class="comp-controls" style="margin-top:5px; flex-direction:column; align-items:flex-start; gap:5px;">
-                        <span>${comp.type === 'image' ? '이미지 URL' : '커스텀 URL (외부)'}</span>
+                // Row 2: Template / URL / Image Upload
+                let configArea = '';
+                if (comp.type === 'bot_feature') {
+                    configArea = `
                         <div style="display:flex; gap:5px; width:100%;">
-                            <input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="https://..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onclick="event.stopPropagation()">
-                            <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="적용"><i class="fas fa-play"></i></button>
+                            <select class="z-input" style="flex:1; text-align:left;" onchange="setTemplate('${comp.id}', this.value)" onclick="event.stopPropagation()">
+                                ${Object.keys(CORE_TEMPLATES).map(k => `<option value="${k}" ${comp.templateId === k ? 'selected' : ''}>${CORE_TEMPLATES[k].title}</option>`).join('')}
+                            </select>
                         </div>
+                    `;
+                }
+
+                const urlArea = `
+                    <div style="display:flex; gap:5px; width:100%; margin-top:5px;">
+                        ${comp.type === 'image' ? 
+                            `<button class="btn-icon" style="flex:1;" onclick="event.stopPropagation(); openImageUpload('${comp.id}')"><i class="fas fa-upload"></i> 이미지 업로드</button>` : 
+                            `<input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="커스텀 URL..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onclick="event.stopPropagation()">`
+                        }
+                        <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="적용"><i class="fas fa-play"></i></button>
+                    </div>
+                `;
+
+                li.innerHTML = `
+                    ${row1}
+                    <div class="comp-row-bottom" onclick="event.stopPropagation()">
+                        ${configArea}
+                        ${urlArea}
                     </div>
                 `;
                 list.appendChild(li);
@@ -487,8 +538,145 @@
         function applyCustomUrl(id) {
             const input = document.getElementById(`url-input-${id}`);
             const comp = components.find(c => c.id === id);
+            if (comp) {
+                if (input) comp.customUrl = input.value.trim();
+                renderCanvas(); 
+            }
+        }
+
+        // --- Rename Logic ---
+        function startRename(id) {
+            const comp = components.find(c => c.id === id);
+            if (!comp) return;
+
+            const wrapper = document.getElementById(`title-wrapper-${id}`);
+            const originalTitle = comp.title || comp.id;
+
+            wrapper.innerHTML = `
+                <input type="text" class="title-input-inline" id="rename-input-${id}" value="${originalTitle}" 
+                    onkeydown="if(event.key==='Enter') saveRename('${id}'); if(event.key==='Escape') renderSidebar();"
+                    onclick="event.stopPropagation()">
+                <button class="btn-icon" onclick="event.stopPropagation(); saveRename('${id}')" title="저장"><i class="fas fa-check"></i></button>
+                <button class="btn-icon" onclick="event.stopPropagation(); renderSidebar()" title="취소"><i class="fas fa-times"></i></button>
+            `;
+            const input = document.getElementById(`rename-input-${id}`);
+            input.focus();
+            input.select();
+        }
+
+        function saveRename(id) {
+            const input = document.getElementById(`rename-input-${id}`);
+            const comp = components.find(c => c.id === id);
             if (comp && input) {
-                comp.customUrl = input.value.trim();
+                const newTitle = input.value.trim();
+                if (newTitle) {
+                    comp.title = newTitle;
+                }
+            }
+            renderSidebar();
+            renderCanvas();
+        }
+
+        // --- Image Upload Logic ---
+        let currentUploadId = null;
+        function openImageUpload(id) {
+            currentUploadId = id;
+            document.getElementById('imageUploadInput').click();
+        }
+
+        // Setup file input listener once
+        setTimeout(() => {
+            const fileInput = document.getElementById('imageUploadInput');
+            fileInput.onchange = async (e) => {
+                if (!e.target.files || e.target.files.length === 0 || !currentUploadId) return;
+                
+                const file = e.target.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch('/api/overlay/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            const comp = components.find(c => c.id === currentUploadId);
+                            if (comp) {
+                                comp.customUrl = data.url;
+                                renderSidebar();
+                                renderCanvas();
+                            }
+                        }
+                    } else {
+                        alert("업로드 실패");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("서버 연결 오류");
+                }
+            };
+        }, 100);
+
+        // --- Drag and Drop Logic ---
+        let dragSourceId = null;
+
+        function handleDragStart(e) {
+            dragSourceId = this.getAttribute('data-id');
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            this.classList.add('drag-over');
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            document.querySelectorAll('.component-item').forEach(el => {
+                el.classList.remove('dragging');
+                el.classList.remove('drag-over');
+            });
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation();
+            const targetId = this.getAttribute('data-id');
+
+            if (dragSourceId !== targetId) {
+                // Reorder components array
+                const sourceIndex = components.findIndex(c => c.id === dragSourceId);
+                const targetIndex = components.findIndex(c => c.id === targetId);
+                
+                const [movedItem] = components.splice(sourceIndex, 1);
+                components.splice(targetIndex, 0, movedItem);
+
+                // Update Z-Index based on new order (Lower index = higher Z for manager display, 
+                // but actually reversed: bottom of list is bottom layer)
+                // Let's say top of list (index 0) is top layer (max Z-index)
+                updateZIndexesFromOrder();
+                
+                renderSidebar();
+                renderCanvas();
+            }
+            return false;
+        }
+
+        function updateZIndexesFromOrder() {
+            // Top of the list = highest Z-index
+            const total = components.length;
+            components.forEach((comp, idx) => {
+                comp.zIndex = (total - idx) * 10;
+            });
+        }
+
+        function applyCustomUrl(id) {
+            const input = document.getElementById(`url-input-${id}`);
+            const comp = components.find(c => c.id === id);
+            if (comp) {
+                if (input) comp.customUrl = input.value.trim();
                 renderCanvas(); 
             }
         }

@@ -12,13 +12,13 @@ namespace MooldangAPI.Controllers
     [Route("api/overlay")]
     public class MasterOverlayController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        private readonly IHubContext<OverlayHub> _hubContext;
+        private readonly IWebHostEnvironment _env;
 
-        public MasterOverlayController(AppDbContext db, IHubContext<OverlayHub> hubContext)
+        public MasterOverlayController(AppDbContext db, IHubContext<OverlayHub> hubContext, IWebHostEnvironment env)
         {
             _db = db;
             _hubContext = hubContext;
+            _env = env;
         }
 
         // GET /api/overlay/layout/{chzzkUid}
@@ -75,6 +75,29 @@ namespace MooldangAPI.Controllers
             await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveOverlayStyle", layoutJson);
 
             return Results.Ok(new { success = true, message = "레이아웃이 성공적으로 저장 및 적용되었습니다." });
+        }
+        // POST /api/overlay/upload
+        [HttpPost("upload")]
+        public async Task<IResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return Results.BadRequest("No file uploaded.");
+
+            // Ensure images directory exists
+            string uploadPath = Path.Combine(_env.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+
+            // Generate unique filename
+            string extension = Path.GetExtension(file.FileName);
+            string fileName = $"{Guid.NewGuid()}{extension}";
+            string filePath = Path.Combine(uploadPath, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            string relativePath = $"/uploads/{fileName}";
+            return Results.Ok(new { success = true, url = relativePath });
         }
     }
 }
