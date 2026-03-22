@@ -136,6 +136,8 @@
     <script>
         const urlParams = new URL(window.location.href).searchParams;
         const targetWidget = urlParams.get('widget')?.toLowerCase(); // e.g., 'playing', 'pending', 'completed', 'notice', 'omakase'
+        const isSample = urlParams.get('sample') === 'true';
+        
         if (targetWidget) document.body.classList.add('widget-mode');
         
         const pathParts = window.location.pathname.split('/');
@@ -144,7 +146,46 @@
         let dashState = { memo: "", omakases: [], currentTitle: "-", currentArtist: "", pendingSongs: [], completedSongs: [], labels: {} };
         let designState = {};
 
+        // 샘플 데이터 (프리뷰용)
+        const SAMPLE_DATA = {
+            memo: "📢 공지: 물댕봇 테스트 중입니다! \n디자인을 자유롭게 수정해 보세요.",
+            omakases: [
+                { name: "물마카세", count: 3, icon: "🍣" },
+                { name: "🎤 노래방", count: 1, icon: "🎤" }
+            ],
+            currentTitle: "테스트 곡 제목",
+            currentArtist: "테스트 가수",
+            pendingSongs: [
+                { title: "대기 중인 곡 1", artist: "시청자A" },
+                { title: "대기 중인 곡 2", artist: "시청자B" },
+                { title: "대기 중인 곡 3", artist: "시청자C" }
+            ],
+            completedSongs: [
+                { title: "어제 부른 노래", artist: "시청자D" },
+                { title: "방금 부른 노래", artist: "시청자E" }
+            ],
+            labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
+        };
+
         async function fetchInitialData() {
+            if (isSample) {
+                dashState = { ...SAMPLE_DATA };
+                renderOverlay();
+                // 디자인 설정은 서버에서 가져와야 미리보기 가능 (저장된 디자인 확인용)
+                try {
+                    const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
+                    if (setRes.ok) {
+                        const s = await setRes.json();
+                        if (s.designSettingsJson && s.designSettingsJson !== "{}") {
+                            designState = JSON.parse(s.designSettingsJson);
+                            applyDesignStyles();
+                        }
+                    }
+                } catch(e){}
+                renderOverlay();
+                return;
+            }
+
             try {
                 const dashRes = await fetch(`/api/songlist/data/${chzzkUid}`);
                 if (dashRes.ok) {

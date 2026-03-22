@@ -1081,8 +1081,14 @@
                 console.warn("chzzkUid is missing. Component URLs might be invalid.");
             }
 
+            // Songlist 하위 위젯들 (Playing, Pending, Completed, Notice, Omakase, Stats)
+            const songlistWidgets = ['playing', 'pending', 'completed', 'notice', 'omakase', 'stats'];
+            if (songlistWidgets.includes(tid)) {
+                return `/songlist_overlay/${chzzkUid}?widget=${tid}&sample=true&v=${v}`;
+            }
+
             switch(tid) {
-                case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
+                case 'songlist': return `/songlist_overlay/${chzzkUid}?sample=true&v=${v}`;
                 case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
                 case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&sample=true&v=${v}`;
                 case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`;
