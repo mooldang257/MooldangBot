@@ -509,13 +509,13 @@
         function renderCanvas() {
             const canvas = document.getElementById('canvas');
             // Remove existing component elements (keep bg and guides)
-            const els = canvas.querySelectorAll('.overlay-component');
+            const els = canvas.querySelectorAll('.canvas-element');
             els.forEach(el => el.remove());
 
             components.forEach(comp => {
                 const el = document.createElement('div');
                 el.id = `el-${comp.id}`;
-                el.className = `overlay-component ${comp.id === selectedId ? 'selected' : ''}`;
+                el.className = `canvas-element ${comp.id === selectedId ? 'selected' : ''}`;
                 el.style.left = comp.x + 'px';
                 el.style.top = comp.y + 'px';
                 el.style.width = comp.width + 'px';
@@ -559,7 +559,10 @@
                 });
 
                 // Setup Drag
-                el.onmousedown = (e) => startDrag(e, comp.id);
+                el.onmousedown = (e) => {
+                    if (e.target.classList.contains('resizer')) return;
+                    startDrag(e, comp.id);
+                };
                 
                 canvas.appendChild(el);
             });
