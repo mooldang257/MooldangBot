@@ -31,6 +31,7 @@
                     <button id="omakase-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleOmakaseStatus()">조회 중...</button>
                 </div>
                 <div style="margin-left:auto; display:flex; gap:10px;">
+                    <button onclick="window.location.href='/overlay_manager/' + chzzkUid" class="btn btn-outline">🖥️ 마스터 오버레이 설정</button>
                     <button onclick="goToSettings()" class="btn btn-outline">🎨 화면 스타일 설정</button>
                     <button onclick="window.location.href='/admin_roulette.html?uid=' + chzzkUid" class="btn btn-primary" style="background-color:#ff0055;">🎡 룰렛 설정</button>
                     <button onclick="window.location.href='/commands-manager/' + chzzkUid" class="btn btn-primary">🤖 명령어 설정</button>

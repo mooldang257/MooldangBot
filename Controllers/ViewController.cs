@@ -73,6 +73,19 @@ namespace MooldangAPI.Controllers
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/commands.html"), "text/html; charset=utf-8");
         }
 
+        [HttpGet("/overlay_manager/{chzzkUid}")]
+        [Authorize]
+        public async Task<IResult> OverlayManagerPage(string chzzkUid)
+        {
+            var naverId = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+
+            if (profile == null || profile.ChzzkUid != chzzkUid)
+                return Results.Redirect("/");
+
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/overlay_manager.html"), "text/html; charset=utf-8");
+        }
+
 
         [HttpGet("/songlist_overlay/{chzzkUid}")]
         public IResult SonglistOverlayPage(string chzzkUid)
