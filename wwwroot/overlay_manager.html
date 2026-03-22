@@ -129,14 +129,28 @@
 
         .canvas-element {
             position: absolute;
-            background: rgba(108, 92, 231, 0.2);
-            border: 2px dashed rgba(108, 92, 231, 0.6);
+            background: rgba(108, 92, 231, 0.1);
+            border: 1px solid rgba(108, 92, 231, 0.3);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; font-weight: 600; text-shadow: 1px 1px 2px black;
             cursor: grab;
             user-select: none;
             transition: border-color 0.2s, background-color 0.2s;
             box-sizing: border-box;
+            overflow: visible;
+        }
+        .canvas-element iframe {
+            width: 100%; height: 100%; border: none; pointer-events: none;
+            background: transparent;
+        }
+        .canvas-element .label-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.4); pointer-events: none;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .canvas-element.selected .label-overlay, .canvas-element:hover .label-overlay {
+            opacity: 1;
         }
         .canvas-element:active { cursor: grabbing; }
         .canvas-element.selected {
@@ -153,21 +167,26 @@
             opacity: 0.3; border-color: rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
         }
 
-        /* Resizer Handle */
+        /* Resizer Handles (8-way) */
         .resizer {
-            width: 15px; height: 15px;
+            width: 10px; height: 10px;
             background: var(--primary);
             position: absolute;
-            right: -7px; bottom: -7px;
-            cursor: nwse-resize;
-            border-radius: 50%;
-            display: none; /* Only show when selected */
+            border-radius: 2px;
+            display: none; 
             z-index: 1001;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
-        .canvas-element.selected .resizer {
-            display: block;
-        }
+        .canvas-element.selected .resizer { display: block; }
+
+        .resizer-tl { top: -5px; left: -5px; cursor: nw-resize; }
+        .resizer-tr { top: -5px; right: -5px; cursor: ne-resize; }
+        .resizer-bl { bottom: -5px; left: -5px; cursor: sw-resize; }
+        .resizer-br { bottom: -5px; right: -5px; cursor: se-resize; }
+        .resizer-t  { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .resizer-b  { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .resizer-l  { left: -5px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+        .resizer-r  { right: -5px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
 
         /* Guidelines for Snapping */
         .guide-line {
@@ -233,13 +252,17 @@
         const CANVAS_H = 1080;
 
         let components = [];
-        let chzzkUid = "testStreamer"; // TODO: 로그인 세션/URL 파라미터에서 가져오도록 수정
         let scale = 1;
         let selectedId = null;
 
-        // Fetch user context / param
+        let chzzkUid = ""; 
+        const pathParts = window.location.pathname.split('/');
+        chzzkUid = pathParts[pathParts.length - 1]; // From path if exists (/overlay_manager/{uid})
+
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid');
+        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid'); // Query param takes precedence if provided
+
+        if (!chzzkUid || chzzkUid === "" || chzzkUid.endsWith(".html")) chzzkUid = "testStreamer"; 
 
         async function init() {
             adjustCanvasScale();
@@ -323,9 +346,24 @@
                             <input type="number" class="z-input" value="${comp.zIndex}" onchange="setZIndex('${comp.id}', this.value)" title="Z-Index 직접 입력">
                         </div>
                     </div>
+                    <div class="comp-controls" style="margin-top:5px; flex-direction:column; align-items:flex-start; gap:5px;">
+                        <span>커스텀 URL (외부 주소)</span>
+                        <input type="text" class="z-input" style="width:100%; text-align:left;" placeholder="예: https://..." value="${comp.customUrl || ''}" onchange="setCustomUrl('${comp.id}', this.value)" onclick="event.stopPropagation()">
+                    </div>
                 `;
                 list.appendChild(li);
             });
+        }
+
+        function getComponentUrl(id, customUrl) {
+            if (customUrl && customUrl.trim() !== "") return customUrl;
+            switch(id) {
+                case 'songlist': return `/songlist_overlay/${chzzkUid}`;
+                case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}`;
+                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}`;
+                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}`; // 임시 맵핑
+                default: return ``; 
+            }
         }
 
         function renderCanvas() {
@@ -344,10 +382,23 @@
                 el.style.height = comp.height + 'px';
                 el.style.zIndex = comp.zIndex;
                 
+                const src = getComponentUrl(comp.id, comp.customUrl);
+                
                 el.innerHTML = `
-                    <div>${comp.title || comp.id}</div>
-                    <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
-                    <div class="resizer" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}')"></div>
+                    <iframe src="${src}"></iframe>
+                    <div class="label-overlay">
+                        <div>${comp.title || comp.id}</div>
+                        <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
+                    </div>
+                    
+                    <div class="resizer resizer-tl" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'tl')"></div>
+                    <div class="resizer resizer-tr" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'tr')"></div>
+                    <div class="resizer resizer-bl" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'bl')"></div>
+                    <div class="resizer resizer-br" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'br')"></div>
+                    <div class="resizer resizer-t" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 't')"></div>
+                    <div class="resizer resizer-b" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'b')"></div>
+                    <div class="resizer resizer-l" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'l')"></div>
+                    <div class="resizer resizer-r" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'r')"></div>
                 `;
 
                 // Setup Drag
@@ -377,8 +428,14 @@
             if (comp) {
                 comp.zIndex = parseInt(value) || 0;
                 renderCanvas();
-                // We don't need to re-render the whole sidebar here to avoid losing input focus 
-                // but let's update data and canvas.
+            }
+        }
+
+        function setCustomUrl(id, value) {
+            const comp = components.find(c => c.id === id);
+            if (comp) {
+                comp.customUrl = value.trim();
+                // If I had iframe previews, I would update them here.
             }
         }
 
@@ -512,15 +569,20 @@
         // --- Resize Logic ---
         let isResizing = false;
         let resizeTarget = null;
+        let resizeDir = '';
+        let initialX, initialY;
 
-        function startResize(e, id) {
+        function startResize(e, id, dir) {
             isResizing = true;
             resizeTarget = components.find(c => c.id === id);
+            resizeDir = dir;
             
             startX = e.clientX;
             startY = e.clientY;
             initialWidth = resizeTarget.width;
             initialHeight = resizeTarget.height;
+            initialLeft = resizeTarget.x;
+            initialTop = resizeTarget.y;
 
             document.addEventListener('mousemove', onResize);
             document.addEventListener('mouseup', endResize);
@@ -533,26 +595,52 @@
             const dx = (e.clientX - startX) / scale;
             const dy = (e.clientY - startY) / scale;
 
-            resizeTarget.width = Math.max(50, initialWidth + dx);
-            resizeTarget.height = Math.max(50, initialHeight + dy);
+            let newW = initialWidth;
+            let newH = initialHeight;
+            let newX = initialLeft;
+            let newY = initialTop;
 
-            // Bounds check
-            if (resizeTarget.x + resizeTarget.width > CANVAS_W) {
-                resizeTarget.width = CANVAS_W - resizeTarget.x;
+            // Horizontal Resize
+            if (resizeDir.includes('r')) {
+                newW = Math.max(50, initialWidth + dx);
+            } else if (resizeDir.includes('l')) {
+                const deltaX = Math.min(dx, initialWidth - 50);
+                newW = initialWidth - deltaX;
+                newX = initialLeft + deltaX;
             }
-            if (resizeTarget.y + resizeTarget.height > CANVAS_H) {
-                resizeTarget.height = CANVAS_H - resizeTarget.y;
+
+            // Vertical Resize
+            if (resizeDir.includes('b')) {
+                newH = Math.max(50, initialHeight + dy);
+            } else if (resizeDir.includes('t')) {
+                const deltaY = Math.min(dy, initialHeight - 50);
+                newH = initialHeight - deltaY;
+                newY = initialTop + deltaY;
             }
+
+            // Bounds Check
+            if (newX < 0) { newW += newX; newX = 0; }
+            if (newY < 0) { newH += newY; newY = 0; }
+            if (newX + newW > CANVAS_W) { newW = CANVAS_W - newX; }
+            if (newY + newH > CANVAS_H) { newH = CANVAS_H - newY; }
+
+            resizeTarget.width = Math.round(newW);
+            resizeTarget.height = Math.round(newH);
+            resizeTarget.x = Math.round(newX);
+            resizeTarget.y = Math.round(newY);
 
             const el = document.getElementById(`el-${resizeTarget.id}`);
             el.style.width = resizeTarget.width + 'px';
             el.style.height = resizeTarget.height + 'px';
-            el.querySelector('.size-label').innerHTML = `${Math.round(resizeTarget.x)}, ${Math.round(resizeTarget.y)} <br> ${Math.round(resizeTarget.width)}x${Math.round(resizeTarget.height)}`;
+            el.style.left = resizeTarget.x + 'px';
+            el.style.top = resizeTarget.y + 'px';
+            el.querySelector('.size-label').innerHTML = `${resizeTarget.x}, ${resizeTarget.y} <br> ${resizeTarget.width}x${resizeTarget.height}`;
         }
 
         function endResize() {
             isResizing = false;
             resizeTarget = null;
+            resizeDir = '';
             document.removeEventListener('mousemove', onResize);
             document.removeEventListener('mouseup', endResize);
         }
