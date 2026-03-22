@@ -78,5 +78,6 @@ namespace MooldangAPI.Models
         // [추가] 물댕봇 세션 활성화/비활성화 상태
         public bool IsBotEnabled { get; set; } = false;
 
+        public bool IsOmakaseEnabled { get; set; } = true;
     }
 }

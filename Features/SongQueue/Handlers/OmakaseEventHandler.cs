@@ -22,6 +22,15 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
         var profile = notification.Profile;
+        
+        // --- 오마카세 활성화 체크 ---
+        if (!profile.IsOmakaseEnabled)
+        {
+            _logger.LogDebug($"[오마카세 무시] {profile.ChzzkUid}의 오마카세 기능이 비활성화 상태입니다.");
+            return;
+        }
+        // -------------------------
+
         string msg = notification.Message.Trim();
         
         // 1. 스트리머의 모든 오마카세 동적 메뉴 가져오기

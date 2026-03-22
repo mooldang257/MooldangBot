@@ -118,11 +118,18 @@ namespace MooldangAPI.Controllers
         [HttpGet("/api/songlist/status/{chzzkUid}")]
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            if (profile == null) return NotFound();
+
             var activeSession = await _db.SonglistSessions
                 .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
                 .FirstOrDefaultAsync();
 
-            return Ok(new { isActive = activeSession != null, session = activeSession });
+            return Ok(new { 
+                isActive = activeSession != null, 
+                isOmakaseActive = profile.IsOmakaseEnabled,
+                session = activeSession 
+            });
         }
 
         [HttpPost("/api/songlist/toggle/{chzzkUid}")]
@@ -135,14 +142,12 @@ namespace MooldangAPI.Controllers
             bool nowActive;
             if (activeSession != null)
             {
-                // 현재 활성화 상태 -> 비활성화 처리
                 activeSession.IsActive = false;
                 activeSession.EndedAt = DateTime.Now;
                 nowActive = false;
             }
             else
             {
-                // 현재 비활성화 상태 -> 새 세션 시작
                 _db.SonglistSessions.Add(new SonglistSession
                 {
                     ChzzkUid = chzzkUid,
@@ -156,6 +161,18 @@ namespace MooldangAPI.Controllers
 
             await _db.SaveChangesAsync();
             return Ok(new { success = true, isActive = nowActive });
+        }
+
+        [HttpPost("/api/omakase/toggle/{chzzkUid}")]
+        public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
+        {
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            if (profile == null) return NotFound();
+
+            profile.IsOmakaseEnabled = !profile.IsOmakaseEnabled;
+            await _db.SaveChangesAsync();
+
+            return Ok(new { success = true, isOmakaseActive = profile.IsOmakaseEnabled });
         }
     }
 }

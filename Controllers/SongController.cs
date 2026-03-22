@@ -19,10 +19,32 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpPost("/api/song/add")]
-        public async Task<IResult> AddSong([FromBody] SongQueue newSong)
+        public async Task<IResult> AddSong([FromBody] SongQueue newSong, [FromQuery] int? omakaseId = null)
         {
             newSong.CreatedAt = DateTime.Now;
             _db.SongQueues.Add(newSong);
+
+            // --- 오마카세 연동 (수동 추가 시 카운트 차감 및 통계 반영) ---
+            if (omakaseId.HasValue)
+            {
+                var omakase = await _db.StreamerOmakases.FindAsync(omakaseId.Value);
+                if (omakase != null)
+                {
+                    omakase.Count--;
+                    if (omakase.Count < 0) omakase.Count = 0;
+
+                    // 활성 세션 통계에도 반영
+                    var activeSession = await _db.SonglistSessions
+                        .Where(s => s.ChzzkUid == newSong.ChzzkUid && s.IsActive)
+                        .FirstOrDefaultAsync();
+                    if (activeSession != null)
+                    {
+                        activeSession.RequestCount++;
+                    }
+                }
+            }
+            // --------------------------------------------------------
+
             await _db.SaveChangesAsync();
 
             // 실시간 갱신 신호 발송

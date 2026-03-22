@@ -28,6 +28,7 @@
                 <div style="display:flex; align-items:center; gap: 10px;">
                     물댕봇 대시보드
                     <button id="songlist-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleSonglistStatus()">조회 중...</button>
+                    <button id="omakase-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleOmakaseStatus()">조회 중...</button>
                 </div>
                 <div style="margin-left:auto; display:flex; gap:10px;">
                     <button onclick="goToSettings()" class="btn btn-outline">🎨 화면 스타일 설정</button>
@@ -170,7 +171,10 @@
                 box.className = 'omakase-box';
                 box.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid rgba(255,154,158,0.3); border-radius:8px;";
                 box.innerHTML = `
-                    <span style="color: var(--primary); font-weight: bold; font-size: 16px;">${iconStr}${o.name}</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="radio" name="omakaseSelect" value="${o.id}" class="oma-radio" style="width:18px; height:18px; cursor:pointer;" onclick="handleOmaRadioClick(this)">
+                        <span style="color: var(--primary); font-weight: bold; font-size: 16px;">${iconStr}${o.name}</span>
+                    </div>
                     <div class="omakase-controls" style="display:flex; align-items:center; gap:10px;">
                         <button class="omakase-btn" onclick="updateOmakase(${o.id}, -1)">-</button>
                         <span style="font-size: 20px; font-weight: bold; color: var(--primary); min-width:30px; text-align:center;">${o.count}</span>
@@ -178,6 +182,16 @@
                     </div>`;
                 container.appendChild(box);
             });
+        }
+
+        let lastCheckedOmaRadio = null;
+        function handleOmaRadioClick(radio) {
+            if (lastCheckedOmaRadio === radio) {
+                radio.checked = false;
+                lastCheckedOmaRadio = null;
+            } else {
+                lastCheckedOmaRadio = radio;
+            }
         }
 
         async function runSimulator() {
@@ -228,8 +242,13 @@
             const a = document.getElementById("newArtist");
             if (!t.value.trim()) return;
 
+            const selectedOma = document.querySelector('input[name="omakaseSelect"]:checked');
+            const omakaseId = selectedOma ? selectedOma.value : null;
+
             const newSong = { chzzkUid: chzzkUid, title: t.value, artist: a.value, status: 'Pending', sortOrder: songs.length };
-            const res = await fetch('/api/song/add', {
+            const apiUrl = omakaseId ? `/api/song/add?omakaseId=${omakaseId}` : '/api/song/add';
+            
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSong)
@@ -239,6 +258,14 @@
                 const savedSong = await res.json();
                 songs.push(savedSong);
                 t.value = ""; a.value = ""; t.focus();
+                
+                // 장바구니 리셋
+                if (selectedOma) {
+                    selectedOma.checked = false;
+                    lastCheckedOmaRadio = null;
+                }
+
+                await loadDashboardData(); // 카운트 갱신을 위해 재로드
                 renderAll(); broadcastState();
             }
         }
@@ -389,6 +416,7 @@
         }
 
         let isSonglistActive = false;
+        let isOmakaseActive = false;
 
         async function fetchSonglistStatus() {
             try {
@@ -396,6 +424,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     isSonglistActive = data.isActive;
+                    isOmakaseActive = data.isOmakaseActive;
                     updateToggleBtnUI();
                 }
             } catch (e) { console.error("상태 조회 실패", e); }
@@ -413,29 +442,63 @@
                     updateToggleBtnUI();
                     
                     if (isSonglistActive) {
-                        alert("✅ 송리스트가 활성화되었습니다. 이제 시청자들의 신청을 받습니다.");
+                        alert("✅ 송리스트가 활성화되었습니다.");
                     } else {
-                        alert("🚫 송리스트가 비활성화되었습니다. 새로운 신청을 받지 않습니다.");
+                        alert("🚫 송리스트가 비활성화되었습니다.");
                     }
                 }
             } catch (e) { 
                 console.error("토글 실패", e);
-                alert("상태 변경에 실패했습니다.");
+                updateToggleBtnUI();
+            }
+            btn.disabled = false;
+        }
+
+        async function toggleOmakaseStatus() {
+            const btn = document.getElementById('omakase-toggle-btn');
+            btn.disabled = true;
+            btn.innerText = "처리 중...";
+            try {
+                const res = await fetch(`/api/omakase/toggle/${chzzkUid}`, { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    isOmakaseActive = data.isOmakaseActive;
+                    updateToggleBtnUI();
+                    
+                    if (isOmakaseActive) {
+                        alert("✅ 오마카세 기능이 활성화되었습니다.");
+                    } else {
+                        alert("🚫 오마카세 기능이 비활성화되었습니다. (도네이션 카운팅 중단)");
+                    }
+                }
+            } catch (e) { 
+                console.error("토글 실패", e);
                 updateToggleBtnUI();
             }
             btn.disabled = false;
         }
 
         function updateToggleBtnUI() {
-            const btn = document.getElementById('songlist-toggle-btn');
+            const sBtn = document.getElementById('songlist-toggle-btn');
             if (isSonglistActive) {
-                btn.innerText = "송리스트 활성화됨";
-                btn.style.background = "linear-gradient(135deg, #0093E9 0%, #80D0C7 100%)";
-                btn.style.boxShadow = "0 4px 12px rgba(0, 147, 233, 0.3)";
+                sBtn.innerText = "송리스트 활성화됨";
+                sBtn.style.background = "linear-gradient(135deg, #0093E9 0%, #80D0C7 100%)";
+                sBtn.style.boxShadow = "0 4px 12px rgba(0, 147, 233, 0.3)";
             } else {
-                btn.innerText = "송리스트 비활성화됨";
-                btn.style.background = "linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)";
-                btn.style.boxShadow = "0 4px 12px rgba(255, 71, 87, 0.3)";
+                sBtn.innerText = "송리스트 비활성화됨";
+                sBtn.style.background = "linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)";
+                sBtn.style.boxShadow = "0 4px 12px rgba(255, 71, 87, 0.3)";
+            }
+
+            const oBtn = document.getElementById('omakase-toggle-btn');
+            if (isOmakaseActive) {
+                oBtn.innerText = "오마카세 활성화됨";
+                oBtn.style.background = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+                oBtn.style.boxShadow = "0 4px 12px rgba(240, 147, 251, 0.3)";
+            } else {
+                oBtn.innerText = "오마카세 비활성화됨";
+                oBtn.style.background = "linear-gradient(135deg, #747d8c 0%, #2f3542 100%)";
+                oBtn.style.boxShadow = "0 4px 12px rgba(116, 125, 140, 0.3)";
             }
         }
 
