@@ -168,25 +168,8 @@
         };
 
         async function fetchInitialData() {
-            if (isSample) {
-                dashState = { ...SAMPLE_DATA };
-                renderOverlay();
-                // 디자인 설정은 서버에서 가져와야 미리보기 가능 (저장된 디자인 확인용)
-                try {
-                    const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
-                    if (setRes.ok) {
-                        const s = await setRes.json();
-                        if (s.designSettingsJson && s.designSettingsJson !== "{}") {
-                            designState = JSON.parse(s.designSettingsJson);
-                            applyDesignStyles();
-                        }
-                    }
-                } catch(e){}
-                renderOverlay();
-                return;
-            }
-
             try {
+                // 1. 노래 데이터 및 대시보드 상태 가져오기
                 const dashRes = await fetch(`/api/songlist/data/${chzzkUid}`);
                 if (dashRes.ok) {
                     const d = await dashRes.json();
@@ -205,8 +188,21 @@
                         dashState.currentTitle = "-";
                         dashState.currentArtist = "";
                     }
-                }
 
+                    // ⭐ 샘플 모드인데 실제 데이터가 거의 없는 경우 샘플 데이터로 보완
+                    if (isSample) {
+                        if (dashState.currentTitle === "-" && dashState.pendingSongs.length === 0 && dashState.completedSongs.length === 0) {
+                            dashState.currentTitle = SAMPLE_DATA.currentTitle;
+                            dashState.currentArtist = SAMPLE_DATA.currentArtist;
+                            dashState.pendingSongs = SAMPLE_DATA.pendingSongs;
+                            dashState.completedSongs = SAMPLE_DATA.completedSongs;
+                        }
+                        if (dashState.omakases.length === 0) dashState.omakases = SAMPLE_DATA.omakases;
+                        if (!dashState.memo || dashState.memo.trim() === "") dashState.memo = SAMPLE_DATA.memo;
+                    }
+                }
+                
+                // 2. 디자인 설정 가져오기
                 const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
                 if (setRes.ok) {
                     const s = await setRes.json();
@@ -223,7 +219,13 @@
                     }
                 }
                 renderOverlay();
-            } catch (e) { console.error("초기 데이터 로드 실패", e); }
+            } catch (e) { 
+                console.error("데이터 로드 실패", e);
+                if (isSample) {
+                    dashState = { ...SAMPLE_DATA };
+                    renderOverlay();
+                }
+            }
         }
 
         function applyDesignStyles() {
