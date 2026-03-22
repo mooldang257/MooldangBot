@@ -157,6 +157,8 @@
             }
         }
 
+        let selectedOmakaseId = null;
+
         function renderOmakasesDash() {
             const container = document.getElementById('omakaseListDash');
             container.innerHTML = '';
@@ -170,9 +172,12 @@
                 const iconStr = iconVal ? `${iconVal} ` : '';
                 box.className = 'omakase-box';
                 box.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid rgba(255,154,158,0.3); border-radius:8px;";
+                
+                const isChecked = selectedOmakaseId == o.id ? 'checked' : '';
+                
                 box.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="radio" name="omakaseSelect" value="${o.id}" class="oma-radio" style="width:18px; height:18px; cursor:pointer;" onclick="handleOmaRadioClick(this)">
+                        <input type="radio" name="omakaseSelect" value="${o.id}" class="oma-radio" style="width:18px; height:18px; cursor:pointer;" ${isChecked} onclick="handleOmaRadioClick(this)">
                         <span style="color: var(--primary); font-weight: bold; font-size: 16px;">${iconStr}${o.name}</span>
                     </div>
                     <div class="omakase-controls" style="display:flex; align-items:center; gap:10px;">
@@ -184,13 +189,12 @@
             });
         }
 
-        let lastCheckedOmaRadio = null;
         function handleOmaRadioClick(radio) {
-            if (lastCheckedOmaRadio === radio) {
+            if (selectedOmakaseId == radio.value) {
                 radio.checked = false;
-                lastCheckedOmaRadio = null;
+                selectedOmakaseId = null;
             } else {
-                lastCheckedOmaRadio = radio;
+                selectedOmakaseId = radio.value;
             }
         }
 
@@ -259,12 +263,6 @@
                 songs.push(savedSong);
                 t.value = ""; a.value = ""; t.focus();
                 
-                // 장바구니 리셋
-                if (selectedOma) {
-                    selectedOma.checked = false;
-                    lastCheckedOmaRadio = null;
-                }
-
                 await loadDashboardData(); // 카운트 갱신을 위해 재로드
                 renderAll(); broadcastState();
             }
