@@ -186,20 +186,31 @@
         }
 
         function applyDesignStyles() {
-            let css = `${designState.customCss || ""}`;
+            const ds = designState;
+            let css = ds.customCss || "";
 
-            if (designState.Stats) {
-                css += `#stats-container { color: ${designState.Stats.text}; font-size: ${designState.Stats.size}px; }`;
-            }
-            if (designState.Notice) {
-                css += `#notice-container { background: ${designState.Notice.rgba}; color: ${designState.Notice.text}; font-size: ${designState.Notice.size}px; }
-                            #playing-container { background: ${designState.Playing.rgba}; color: ${designState.Playing.text}; }
-                            .now-title { font-size: ${designState.Playing.size}px; }
-                            #pending-container { background: ${designState.Pending.rgba}; color: ${designState.Pending.text}; }
-                            #completed-container { background: ${designState.Completed.rgba}; color: ${designState.Completed.text}; }`;
-            }
-            if (designState.Omakase) {
-                css += `#omakase-container { background: ${designState.Omakase.rgba}; color: ${designState.Omakase.text}; font-size: ${designState.Omakase.size}px; border-color: ${designState.Omakase.rgba.replace(/,[^,]*\)/, ', 1)')}; }`;
+            const map = {
+                'Playing': '#playing-container',
+                'Pending': '#pending-container',
+                'Completed': '#completed-container',
+                'Omakase': '#omakase-container',
+                'Notice': '#notice-container',
+                'Stats': '#stats-container'
+            };
+
+            for (const [key, selector] of Object.entries(map)) {
+                if (ds[key]) {
+                    const style = ds[key];
+                    let rule = `${selector} { `;
+                    if (style.rgba) rule += `background: ${style.rgba}; `;
+                    if (style.text) rule += `color: ${style.text}; `;
+                    if (style.rgba) rule += `border-color: ${style.rgba.replace(/,[^,]*\)/, ', 1)')}; `;
+                    if (style.size) rule += `font-size: ${style.size}px; `;
+                    rule += `} `;
+                    css += rule;
+                    // Inject per-widget custom CSS
+                    if (style.customCss) css += `\n/* ${key} custom CSS */\n${style.customCss}\n`;
+                }
             }
 
             document.getElementById("dynamic-styles").innerHTML = css;
