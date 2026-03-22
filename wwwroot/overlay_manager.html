@@ -303,7 +303,6 @@
                 <button class="btn-copy" onclick="copyPresetUrl()" title="복사"><i class="fas fa-copy"></i></button>
             </div>
             <button class="btn-save" onclick="saveLayout()"><i class="fas fa-save"></i> 프리셋 저장</button>
-            <button class="btn-sync" onclick="syncLayout()" title="현재 프리셋을 모든 라이브 오버레이에 즉시 적용합니다."><i class="fas fa-sync-alt"></i> 라이브 화면에 즉시 적용</button>
         </div>
     </div>
 
@@ -1351,7 +1350,7 @@
         }
 
         // --- Save via API ---
-        async function saveLayout(showSuccess = true) {
+        async function saveLayout() {
             if (!currentPresetId) {
                 alert("선택된 프리셋이 없습니다.");
                 return;
@@ -1373,7 +1372,7 @@
 
                 if (res.ok) {
                     preset.configJson = configJson;
-                    if (showSuccess) showToast("프리셋이 저장되었습니다.");
+                    showToast("프리셋이 저장되었습니다.");
                     
                     // SignalR을 통해 실시간 업데이트 전송
                     if (connection.state === signalR.HubConnectionState.Connected) {
@@ -1387,38 +1386,6 @@
                 alert("서버 연결 오류");
             } finally {
                 btn.innerHTML = '<i class="fas fa-save"></i> 프리셋 저장';
-                btn.disabled = false;
-            }
-        }
-        async function syncLayout() {
-            if (!currentPresetId) {
-                alert("선택된 프리셋이 없습니다.");
-                return;
-            }
-
-            // 먼저 변경사항 저장
-            await saveLayout(false);
-
-            const btn = document.querySelector('.btn-sync');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 적용 중...';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`/api/OverlayPreset/sync/${currentPresetId}`, {
-                    method: 'POST'
-                });
-
-                if (res.ok) {
-                    showToast("라이브 오버레이에 즉시 적용되었습니다.");
-                } else {
-                    alert("적용에 실패했습니다.");
-                }
-            } catch (e) {
-                console.error(e);
-                alert("서버 통신 오류");
-            } finally {
-                btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         }
