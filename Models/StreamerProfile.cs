@@ -75,5 +75,8 @@ namespace MooldangAPI.Models
         public string? BotRefreshToken { get; set; }
         public DateTime? BotTokenExpiresAt { get; set; }
 
+        // [추가] 물댕봇 세션 활성화/비활성화 상태
+        public bool IsBotEnabled { get; set; } = false;
+
     }
 }

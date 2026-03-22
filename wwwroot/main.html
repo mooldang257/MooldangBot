@@ -289,10 +289,13 @@
 <body>
 
     <nav class="navbar">
-        <a href="/" class="logo-area">
-            <img src="/images/wman_sd_transparent.png" alt="Logo" onerror="this.src='/images/wman_sd.png'">
-            물댕봇
-        </a>
+        <div style="display:flex; align-items:center; gap: 1rem;">
+            <a href="/" class="logo-area" style="gap: 0.5rem;">
+                <img src="/images/wman_sd_transparent.png" alt="Logo" onerror="this.src='/images/wman_sd.png'">
+                물댕봇
+            </a>
+            <button id="bot-toggle-btn" style="display: none; border: none; padding: 6px 14px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 0.9rem;" onclick="toggleBotStatus()"></button>
+        </div>
         <div class="auth-area">
             <div id="loading-indicator" class="loader"></div>
             <a href="/login" id="login-btn" class="btn-login" style="display: none;">
@@ -405,6 +408,10 @@
                         const btnRoulette = document.getElementById('btn-roulette');
                         if (btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${data.chzzkUid}`;
 
+                        // 물댕봇 토글 연동 시작
+                        currentChzzkUid = data.chzzkUid;
+                        fetchBotStatus();
+
                         // 로그인 오버레이 제거 (클릭 가능해짐)
                         overlays.forEach(overlay => overlay.style.display = 'none');
                     } else {
@@ -421,6 +428,60 @@
                 loginBtn.style.display = 'block';
             }
         });
+
+        let currentChzzkUid = null;
+        let isBotEnabled = false;
+        
+        async function fetchBotStatus() {
+            if (!currentChzzkUid) return;
+            try {
+                const res = await fetch(`/api/settings/bot/status/${currentChzzkUid}`);
+                if (res.ok) {
+                    const statusData = await res.json();
+                    isBotEnabled = statusData.isEnabled;
+                    updateBotToggleButton();
+                }
+            } catch(e) { console.error('봇 상태 조회 실패', e); }
+        }
+
+        async function toggleBotStatus() {
+            if (!currentChzzkUid) return;
+            const btn = document.getElementById('bot-toggle-btn');
+            btn.disabled = true;
+            btn.innerText = '처리 중...';
+            try {
+                const res = await fetch(`/api/settings/bot/toggle/${currentChzzkUid}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isEnabled: !isBotEnabled })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    isBotEnabled = data.isEnabled;
+                    updateBotToggleButton();
+                } else {
+                    alert('봇 상태 변경에 실패했습니다.');
+                    updateBotToggleButton();
+                }
+            } catch(e) {
+                console.error('봇 상태 변경 에러', e);
+                alert('봇 상태 변경에 실패했습니다.');
+                updateBotToggleButton();
+            }
+            btn.disabled = false;
+        }
+
+        function updateBotToggleButton() {
+            const btn = document.getElementById('bot-toggle-btn');
+            btn.style.display = 'inline-block';
+            if (isBotEnabled) {
+                btn.innerText = '활성화';
+                btn.style.background = 'var(--primary)';
+            } else {
+                btn.innerText = '비활성화';
+                btn.style.background = '#ff4757';
+            }
+        }
     </script>
 </body>
 

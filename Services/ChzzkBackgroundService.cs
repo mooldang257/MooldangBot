@@ -48,13 +48,27 @@ public class ChzzkBackgroundService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var streamerUids = await dbContext.StreamerProfiles.Select(p => p.ChzzkUid).ToListAsync();
+        // IsBotEnabled가 true인 스트리머만 가져온다.
+        var enabledUids = await dbContext.StreamerProfiles
+            .Where(p => p.IsBotEnabled)
+            .Select(p => p.ChzzkUid)
+            .ToListAsync();
 
-        foreach (var uid in streamerUids)
+        var enabledUidSet = new HashSet<string>(enabledUids.Where(u => !string.IsNullOrEmpty(u))!);
+
+        // 1. 활성화된 스트리머 봇 접속
+        foreach (var uid in enabledUidSet)
         {
-            if (!string.IsNullOrEmpty(uid))
+            StartBotForStreamer(uid);
+        }
+
+        // 2. 비활성화된 스트리머 봇 접속 해제
+        var currentActiveUids = _activeChannels.Keys.ToList();
+        foreach (var activeUid in currentActiveUids)
+        {
+            if (!enabledUidSet.Contains(activeUid))
             {
-                StartBotForStreamer(uid);
+                StopBotForStreamer(activeUid);
             }
         }
     }
@@ -85,6 +99,16 @@ public class ChzzkBackgroundService : BackgroundService
                     _logger.LogWarning($"[물댕봇] 채널 퇴장 완료: {uid}");
                 }
             }, cts.Token);
+        }
+    }
+
+    private void StopBotForStreamer(string uid)
+    {
+        if (_activeChannels.TryGetValue(uid, out var cts))
+        {
+            _logger.LogInformation($"[물댕봇] 채널 강제 퇴장 요청 (봇 비활성화): {uid}");
+            cts.Cancel(); 
+            // 취소 요청 시 worker.ConnectAndListenAsync 내부의 Task가 취소되며 finally 블록에서 TryRemove 됩니다.
         }
     }
 }
