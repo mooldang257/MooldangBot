@@ -44,9 +44,31 @@
             border: none;
             background: transparent;
         }
+
+        /* Animated Background Layer */
+        #bg-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -999;
+            pointer-events: none;
+            overflow: hidden;
+            background-color: black;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #bg-video, #bg-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div id="bg-layer">
+        <video id="bg-video" autoplay loop muted playsinline></video>
+        <img id="bg-img">
+    </div>
 
     <script>
         const pathParts = window.location.pathname.split('/');
@@ -131,14 +153,51 @@
             });
         }
 
+        function applyBackground(bg) {
+            const layer = document.getElementById('bg-layer');
+            const video = document.getElementById('bg-video');
+            const img = document.getElementById('bg-img');
+
+            if (!bg || !bg.visible || !bg.url) {
+                layer.style.opacity = 0;
+                setTimeout(() => {
+                    if (layer.style.opacity == 0) {
+                        video.src = '';
+                        img.src = '';
+                        video.style.display = 'none';
+                        img.style.display = 'none';
+                    }
+                }, 500);
+                return;
+            }
+
+            layer.style.opacity = bg.opacity ?? 0.5;
+            const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(bg.url);
+
+            if (isVideo) {
+                if (video.src !== bg.url) {
+                    video.src = bg.url;
+                    video.style.display = 'block';
+                    img.style.display = 'none';
+                    img.src = '';
+                }
+            } else {
+                if (img.src !== bg.url) {
+                    img.src = bg.url;
+                    img.style.display = 'block';
+                    video.style.display = 'none';
+                    video.src = '';
+                }
+            }
+        }
+
         async function fetchInitialLayout() {
             try {
                 const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.components) {
-                        applyLayout(data.components);
-                    }
+                    if (data.components) applyLayout(data.components);
+                    if (data.background) applyBackground(data.background);
                 }
             } catch (e) {
                 console.error("초기 마스터 레이아웃 로드 실패", e);
@@ -158,6 +217,9 @@
                 console.log("마스터 오버레이 레이아웃 업데이트 수신:", data);
                 if (data.components) {
                     applyLayout(data.components);
+                }
+                if (data.background) {
+                    applyBackground(data.background);
                 }
             } catch (e) {
                 console.error("수신된 레이아웃 데이터 파싱 실패", e);

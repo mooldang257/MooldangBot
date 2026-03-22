@@ -61,7 +61,29 @@
             font-size: 15px; font-weight: 600; cursor: pointer;
             transition: all 0.2s; display: flex; align-items: center; gap: 8px;
         }
-        .btn-save:hover { background-color: #5b4bc4; transform: translateY(-1px); }
+        .btn-save:hover { background: #3728f3; transform: translateY(-2px); }
+
+        /* Background Control Panel */
+        .bg-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .bg-panel h4 { margin: 0 0 10px 0; font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+        .bg-control-row { margin-bottom: 10px; }
+        .bg-control-row label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        
+        #canvas-bg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none; overflow: hidden;
+            background: #000;
+        }
+        #canvas-bg-video, #canvas-bg-img {
+            width: 100%; height: 100%; object-fit: cover;
+            display: none;
+        }
 
         /* Main Layout */
         .main-container {
@@ -271,6 +293,11 @@
                 <!-- Guide lines -->
                 <div class="guide-line guide-v" id="guide-v"></div>
                 <div class="guide-line guide-h" id="guide-h"></div>
+                <!-- 배경 레이어 (매니저 프리뷰용) -->
+                <div id="canvas-bg-layer">
+                    <video id="canvas-bg-video" autoplay loop muted playsinline></video>
+                    <img id="canvas-bg-img">
+                </div>
                 <!-- Elements will be injected here -->
             </div>
         </div>
@@ -286,6 +313,7 @@
         const CANVAS_H = 1080;
 
         let components = [];
+        let background = { url: '', opacity: 0.5, visible: false };
         let scale = 1;
         let selectedId = null;
 
@@ -319,11 +347,15 @@
                 const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && data.components && data.components.length > 0) {
+                    if (data && data.components) {
                         components = data.components;
-                        // Sort by zIndex descending initially
                         components.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
                     }
+                    if (data && data.background) {
+                        background = { ...background, ...data.background };
+                    }
+                    syncBackgroundUI();
+                    renderBackground();
                 }
             } catch (e) {
                 console.error("Failed to load layout", e);
@@ -980,7 +1012,10 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
             btn.disabled = true;
 
-            const payload = { components: components };
+            const payload = { 
+                components: components,
+                background: background
+            };
 
             try {
                 const res = await fetch(`/api/overlay/layout/${chzzkUid}`, {
@@ -1010,6 +1045,95 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
+
+        // --- Background Settings Logic ---
+        function updateBackgroundSettings() {
+            background.url = document.getElementById('bg-url').value.trim();
+            background.opacity = parseFloat(document.getElementById('bg-opacity').value);
+            background.visible = document.getElementById('bg-visible').checked;
+            
+            document.getElementById('bg-opacity-val').innerText = Math.round(background.opacity * 100) + '%';
+            renderBackground();
+        }
+
+        function syncBackgroundUI() {
+            document.getElementById('bg-url').value = background.url || '';
+            document.getElementById('bg-opacity').value = background.opacity;
+            document.getElementById('bg-opacity-val').innerText = Math.round(background.opacity * 100) + '%';
+            document.getElementById('bg-visible').checked = background.visible;
+        }
+
+        function renderBackground() {
+            const video = document.getElementById('canvas-bg-video');
+            const img = document.getElementById('canvas-bg-img');
+            const layer = document.getElementById('canvas-bg-layer');
+
+            if (!background.visible || !background.url) {
+                layer.style.opacity = 0;
+                video.style.display = 'none';
+                img.style.display = 'none';
+                video.src = '';
+                img.src = '';
+                return;
+            }
+
+            layer.style.opacity = background.opacity;
+            const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(background.url);
+
+            if (isVideo) {
+                if (video.src !== background.url) {
+                    video.src = background.url;
+                    video.style.display = 'block';
+                    img.style.display = 'none';
+                }
+            } else {
+                img.src = background.url;
+                img.style.display = 'block';
+                video.style.display = 'none';
+                video.src = '';
+            }
+        }
+
+        let isBgUpload = false;
+        function openBackgroundUpload() {
+            isBgUpload = true;
+            document.getElementById('imageUploadInput').click();
+        }
+
+        // Update the file input listener to handle background upload
+        setTimeout(() => {
+            const fileInput = document.getElementById('imageUploadInput');
+            const originalOnChange = fileInput.onchange;
+            fileInput.onchange = async (e) => {
+                if (!e.target.files || e.target.files.length === 0) return;
+                
+                const file = e.target.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch('/api/overlay/upload', { method: 'POST', body: formData });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            if (isBgUpload) {
+                                background.url = data.url;
+                                syncBackgroundUI();
+                                renderBackground();
+                            } else if (currentUploadId) {
+                                const comp = components.find(c => c.id === currentUploadId);
+                                if (comp) {
+                                    comp.customUrl = data.url;
+                                    renderSidebar();
+                                    renderCanvas();
+                                }
+                            }
+                        }
+                    } else { alert("업로드 실패"); }
+                } catch (err) { console.error(err); alert("서버 연결 오류"); }
+                isBgUpload = false; // Reset
+            };
+        }, 200);
 
         function copyMasterUrl() {
             const url = document.getElementById('overlayUrl').innerText;
