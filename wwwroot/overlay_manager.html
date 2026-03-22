@@ -573,6 +573,19 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- Shared Widget URLs -->
+                <div style="margin-top:25px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                    <h4 style="margin-bottom:12px; font-size:14px; color:var(--primary);"><i class="fas fa-link"></i> 개별 위젯 OBS URL 복사</h4>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:10px;">
+                        <button class="btn-preset-action" style="text-align:left; font-size:12px; padding:8px 12px;" onclick="copyWidgetUrl('playing')">🎧 재생 중 곡 위젯</button>
+                        <button class="btn-preset-action" style="text-align:left; font-size:12px; padding:8px 12px;" onclick="copyWidgetUrl('pending')">⏳ 대기열 목록 위젯</button>
+                        <button class="btn-preset-action" style="text-align:left; font-size:12px; padding:8px 12px;" onclick="copyWidgetUrl('completed')">✔ 완료 목록 위젯</button>
+                        <button class="btn-preset-action" style="text-align:left; font-size:12px; padding:8px 12px;" onclick="copyWidgetUrl('notice')">📢 공지사항 위젯</button>
+                        <button class="btn-preset-action" style="text-align:left; font-size:12px; padding:8px 12px;" onclick="copyWidgetUrl('omakase')">🍣 오마카세 위젯</button>
+                    </div>
+                    <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">브라우저 소스 추가 시 너비/높이를 적절히 조절하여 배치하세요.</p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-modal-cancel" onclick="closeDesignModal()">취소</button>
@@ -603,7 +616,13 @@
 
         // 물댕봇 기본 기능 템플릿
         const CORE_TEMPLATES = {
-            'songlist': { title: '노래 신청서', width: 400, height: 600, icon: 'fa-music' },
+            'playing': { title: '🎧 재생 중 위젯', width: 400, height: 160, icon: 'fa-play-circle' },
+            'pending': { title: '⏳ 대기열 목록', width: 400, height: 400, icon: 'fa-list-ul' },
+            'completed': { title: '✔ 완료 목록', width: 400, height: 300, icon: 'fa-check-double' },
+            'omakase': { title: '🍣 오마카세 현황', width: 160, height: 160, icon: 'fa-utensils' },
+            'notice': { title: '📢 공지사항', width: 600, height: 100, icon: 'fa-bullhorn' },
+            'stats': { title: '📊 현황 통계', width: 220, height: 60, icon: 'fa-chart-bar' },
+            'songlist': { title: '노래 신청서 (통합)', width: 400, height: 600, icon: 'fa-music' },
             'avatar': { title: '캐릭터 아바타', width: 300, height: 400, icon: 'fa-user-astronaut' },
             'roulette': { title: '룰렛', width: 500, height: 500, icon: 'fa-dharmachakra' },
             'chat': { title: '채팅 포인트', width: 400, height: 300, icon: 'fa-comments' }
@@ -1262,7 +1281,7 @@
             }
         }
 
-        function addComponent(type) {
+        function addComponent(type, tid = 'playing') {
             const id = 'custom-' + Date.now();
             let newComp = {
                 id: id,
@@ -1273,13 +1292,13 @@
                 opacity: 1,
                 customUrl: ''
             };
-
+            
+            // templateId가 지정되지 않았고 bot_feature일 경우 기본값
             if (type === 'bot_feature') {
-                const tid = 'songlist';
                 newComp.templateId = tid;
-                newComp.title = CORE_TEMPLATES[tid].title;
-                newComp.width = CORE_TEMPLATES[tid].width;
-                newComp.height = CORE_TEMPLATES[tid].height;
+                newComp.title = CORE_TEMPLATES[tid]?.title || '새 기능';
+                newComp.width = CORE_TEMPLATES[tid]?.width || 300;
+                newComp.height = CORE_TEMPLATES[tid]?.height || 300;
             }
 
             components.push(newComp);
@@ -1869,6 +1888,14 @@
                 console.error(e);
                 alert("네트워크 오류");
             }
+        }
+
+        function copyWidgetUrl(widgetName) {
+            const baseUrl = window.location.origin + `/songlist_overlay/${chzzkUid}`;
+            const url = `${baseUrl}?widget=${widgetName}`;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast(`${widgetName.toUpperCase()} 위젯 URL 복사 완료!`);
+            });
         }
 
         // Initialize application

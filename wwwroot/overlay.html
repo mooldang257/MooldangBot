@@ -85,8 +85,10 @@
             return lastPart;
         }
 
+        const urlParams = new URL(window.location.href).searchParams;
+        const targetWidget = urlParams.get('widget');
         const chzzkUid = getChzzkUid();
-        console.log("Master Overlay: Extracted UID =", chzzkUid);
+        console.log("Master Overlay: Extracted UID =", chzzkUid, "Target Widget =", targetWidget);
 
         // 각 컴포넌트 ID별 로드할 실제 오버레이 소스 URL 매핑
         function getComponentUrl(id, customUrl, type, templateId) {
@@ -95,13 +97,25 @@
 
             const v = Date.now(); // 캐시 방지용 파라미터
             const tid = templateId || id;
+            let baseUrl = '';
             switch(tid) {
-                case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
-                case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
-                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&v=${v}`;
-                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`;
-                default: return ``; 
+                case 'playing':
+                case 'pending':
+                case 'completed':
+                case 'omakase':
+                case 'notice':
+                case 'stats':
+                    baseUrl = `/songlist_overlay/${chzzkUid}?v=${v}&widget=${tid}`; break;
+                case 'songlist': baseUrl = `/songlist_overlay/${chzzkUid}?v=${v}`; break;
+                case 'avatar': baseUrl = `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`; break;
+                case 'roulette': baseUrl = `/roulette_overlay.html?uid=${chzzkUid}&v=${v}`; break;
+                case 'chat': baseUrl = `/ChatPoint.html?uid=${chzzkUid}&v=${v}`; break;
+                default: baseUrl = ``; 
             }
+            if (baseUrl && targetWidget) {
+                baseUrl += (baseUrl.includes('?') ? '&' : '?') + `widget=${targetWidget}`;
+            }
+            return baseUrl;
         }
 
         function applyLayout(components) {
@@ -206,7 +220,7 @@
             }
         }
 
-        const urlParams = new URL(window.location.href).searchParams;
+        // const urlParams = new URL(window.location.href).searchParams; // 전역에 선언됨
         const presetId = urlParams.get('presetId');
 
         async function fetchInitialLayout() {
