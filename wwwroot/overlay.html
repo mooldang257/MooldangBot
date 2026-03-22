@@ -20,12 +20,29 @@
          * 모든 마스터 컴포넌트는 position: absolute 로 설정되며
          * 백엔드(SignalR)에서 전달받은 위치 및 크기로 실시간 업데이트 됩니다.
          */
-        iframe.overlay-component {
+        /* 
+         * 모든 마스터 컴포넌트는 position: absolute 로 설정되며
+         * 백엔드(SignalR)에서 전달받은 위치 및 크기로 실시간 업데이트 됩니다.
+         */
+        .overlay-component {
             position: absolute;
             border: none;
             background-color: transparent;
             pointer-events: none; /* 오버레이이므로 마우스 이벤트 무시 */
             transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .overlay-component img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .overlay-component iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
         }
     </style>
 </head>
@@ -36,15 +53,17 @@
         const chzzkUid = pathParts[pathParts.length - 1];
 
         // 각 컴포넌트 ID별 로드할 실제 오버레이 소스 URL 매핑
-        function getComponentUrl(id, customUrl) {
+        function getComponentUrl(id, customUrl, type, templateId) {
             if (customUrl && customUrl.trim() !== "") return customUrl;
-            
+            if (type === 'image') return customUrl; // 이미지 타입은 URL이 필수
+
             const v = Date.now(); // 캐시 방지용 파라미터
-            switch(id) {
+            const tid = templateId || id;
+            switch(tid) {
                 case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
                 case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
                 case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&v=${v}`;
-                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`; // 임시 맵핑
+                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`;
                 default: return ``; 
             }
         }
@@ -52,35 +71,63 @@
         function applyLayout(components) {
             if (!components || !Array.isArray(components)) return;
 
+            // 제거된 컴포넌트 처리
+            const currentIds = components.map(c => `master-${c.id}`);
+            const existingEls = document.querySelectorAll('.overlay-component');
+            existingEls.forEach(el => {
+                if (!currentIds.includes(el.id)) {
+                    el.remove();
+                }
+            });
+
             components.forEach(comp => {
-                let iframe = document.getElementById(`master-${comp.id}`);
+                let el = document.getElementById(`master-${comp.id}`);
+                const srcUrl = getComponentUrl(comp.id, comp.customUrl, comp.type, comp.templateId);
                 
                 // 엘리먼트가 없으면 생성
-                if (!iframe) {
-                    const srcUrl = getComponentUrl(comp.id, comp.customUrl);
-                    if (!srcUrl) return; // 알 수 없는 컴포넌트는 무시
+                if (!el) {
+                    if (!srcUrl && comp.type !== 'image') return;
 
-                    iframe = document.createElement('iframe');
-                    iframe.id = `master-${comp.id}`;
-                    iframe.className = 'overlay-component';
-                    iframe.src = srcUrl;
-                    document.body.appendChild(iframe);
+                    el = document.createElement('div');
+                    el.id = `master-${comp.id}`;
+                    el.className = 'overlay-component';
+                    
+                    if (comp.type === 'image') {
+                        const img = document.createElement('img');
+                        img.src = srcUrl || '';
+                        el.appendChild(img);
+                    } else {
+                        const iframe = document.createElement('iframe');
+                        iframe.src = srcUrl;
+                        el.appendChild(iframe);
+                    }
+                    
+                    el.setAttribute('data-src', srcUrl);
+                    el.setAttribute('data-type', comp.type || 'bot_feature');
+                    document.body.appendChild(el);
                 } else {
-                    // URL이 변경되었는지 확인하여 갱신 (커스텀 URL 변경 대응)
-                    const currentSrc = getComponentUrl(comp.id, comp.customUrl);
-                    if (iframe.getAttribute('data-src') !== currentSrc) {
-                        iframe.src = currentSrc;
-                        iframe.setAttribute('data-src', currentSrc);
+                    // 타입이 바뀌었으면 재성성 방식을 취하거나 내부 교체
+                    if (el.getAttribute('data-type') !== (comp.type || 'bot_feature')) {
+                        el.remove();
+                        applyLayout([comp]); // 재귀적 생성
+                        return;
+                    }
+
+                    // URL 갱신 확인
+                    if (el.getAttribute('data-src') !== srcUrl) {
+                        const inner = el.querySelector('img, iframe');
+                        if (inner) inner.src = srcUrl;
+                        el.setAttribute('data-src', srcUrl);
                     }
                 }
 
-                // 속성 업데이트 (x, y, width, height, zIndex, visible)
-                iframe.style.left = comp.x + 'px';
-                iframe.style.top = comp.y + 'px';
-                iframe.style.width = comp.width + 'px';
-                iframe.style.height = comp.height + 'px';
-                iframe.style.zIndex = comp.zIndex;
-                iframe.style.display = comp.visible ? 'block' : 'none';
+                // 속성 업데이트
+                el.style.left = comp.x + 'px';
+                el.style.top = comp.y + 'px';
+                el.style.width = comp.width + 'px';
+                el.style.height = comp.height + 'px';
+                el.style.zIndex = comp.zIndex;
+                el.style.display = comp.visible ? 'block' : 'none';
             });
         }
 
@@ -119,7 +166,7 @@
 
         connection.start().then(() => { 
             console.log("마스터 오버레이 SignalR 연결 성공");
-            connection.invoke("JoinStreamerGroup", chzzkUid); 
+            connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase()); 
             fetchInitialLayout(); 
         }).catch(err => { 
             console.error("SignalR 연결 실패, 5초 후 재시도", err);
@@ -128,7 +175,7 @@
 
         connection.onreconnected(() => {
             console.log("SignalR 재연결 완료! 방명록에 다시 가입합니다.");
-            connection.invoke("JoinStreamerGroup", chzzkUid);
+            connection.invoke("JoinStreamerGroup", chzzkUid.toLowerCase());
             fetchInitialLayout();
         });
     </script>

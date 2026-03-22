@@ -225,7 +225,11 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>구성 요소 목록</h2>
+                <h2 style="margin-bottom:10px;">구성 요소 라이브러리</h2>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('bot_feature')"><i class="fas fa-plus"></i> 기능 추가</button>
+                    <button class="btn-primary" style="flex:1; font-size:12px; padding:8px; background-color:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="addComponent('image')"><i class="fas fa-image"></i> 이미지 추가</button>
+                </div>
             </div>
             <ul class="component-list" id="componentList">
                 <!-- Javascript will populate this -->
@@ -255,6 +259,14 @@
         let scale = 1;
         let selectedId = null;
 
+        // 물댕봇 기본 기능 템플릿
+        const CORE_TEMPLATES = {
+            'songlist': { title: '노래 신청서', width: 400, height: 600, icon: 'fa-music' },
+            'avatar': { title: '캐릭터 아바타', width: 300, height: 400, icon: 'fa-user-astronaut' },
+            'roulette': { title: '룰렛', width: 500, height: 500, icon: 'fa-dharmachakra' },
+            'chat': { title: '채팅 포인트', width: 400, height: 300, icon: 'fa-comments' }
+        };
+
         let chzzkUid = ""; 
         const pathParts = window.location.pathname.split('/');
         chzzkUid = pathParts[pathParts.length - 1]; // From path if exists (/overlay_manager/{uid})
@@ -277,20 +289,24 @@
                 const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
                 if (res.ok) {
                     const data = await res.json();
-                    components = data.components || [];
+                    if (data && data.components && data.components.length > 0) {
+                        components = data.components;
+                    }
                 }
             } catch (e) {
                 console.error("Failed to load layout", e);
             }
-
+ 
             // Fallback for testing if empty
             if (components.length === 0) {
-                components = [
-                    { id: "songlist", title: "노래 신청서", icon: "fa-music", x: 50, y: 50, width: 400, height: 600, zIndex: 10, visible: true },
-                    { id: "avatar", title: "캐릭터 아바타", icon: "fa-user-astronaut", x: 1400, y: 500, width: 400, height: 500, zIndex: 20, visible: true },
-                    { id: "roulette", title: "룰렛", icon: "fa-dharmachakra", x: 500, y: 100, width: 800, height: 800, zIndex: 30, visible: false },
-                    { id: "chat", title: "채팅창", icon: "fa-comments", x: 50, y: 700, width: 400, height: 300, zIndex: 40, visible: true }
-                ];
+                Object.keys(CORE_TEMPLATES).forEach(id => {
+                    const t = CORE_TEMPLATES[id];
+                    components.push({
+                        id: id, type: 'bot_feature', title: t.title, icon: t.icon,
+                        x: 50, y: 50, width: t.width, height: t.height,
+                        zIndex: 10, visible: true
+                    });
+                });
             }
 
             renderSidebar();
@@ -330,27 +346,47 @@
                 li.className = `component-item ${comp.id === selectedId ? 'active' : ''}`;
                 li.onclick = () => selectElement(comp.id);
                 
-                const iconClass = comp.icon || 'fa-box';
+                const iconClass = comp.type === 'image' ? 'fa-image' : (comp.icon || 'fa-box');
                 
+                let typeOptions = '';
+                if (comp.type === 'bot_feature') {
+                    typeOptions = `
+                        <select class="z-input" style="width:100%; text-align:left; margin-top:5px;" onchange="setTemplate('${comp.id}', this.value)" onclick="event.stopPropagation()">
+                            ${Object.keys(CORE_TEMPLATES).map(k => `<option value="${k}" ${comp.templateId === k ? 'selected' : ''}>${CORE_TEMPLATES[k].title}</option>`).join('')}
+                        </select>
+                    `;
+                }
+
                 li.innerHTML = `
                     <div class="comp-header">
-                        <div class="comp-title"><i class="fas ${iconClass}"></i> ${comp.title || comp.id}</div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
+                        <div class="comp-title">
+                            <i class="fas ${iconClass}"></i> 
+                            ${comp.title || comp.id}
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button class="btn-icon" style="background:none; padding:2px; color:#ff4757;" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <label class="switch" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                     <div class="comp-controls">
-                        <span>레이어 순서</span>
+                        <span>레이어 순서(Z)</span>
                         <div class="z-controls" onclick="event.stopPropagation()">
                             <input type="number" class="z-input" value="${comp.zIndex}" onchange="setZIndex('${comp.id}', this.value)" title="Z-Index 직접 입력">
                         </div>
                     </div>
+                    
+                    ${comp.type === 'bot_feature' ? `<div class="comp-controls" style="margin-top:5px; flex-direction:column; align-items:flex-start; gap:2px;"><span>기능 템플릿</span>${typeOptions}</div>` : ''}
+
                     <div class="comp-controls" style="margin-top:5px; flex-direction:column; align-items:flex-start; gap:5px;">
-                        <span>커스텀 URL (외부 주소)</span>
+                        <span>${comp.type === 'image' ? '이미지 URL' : '커스텀 URL (외부)'}</span>
                         <div style="display:flex; gap:5px; width:100%;">
-                            <input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="예: https://..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onclick="event.stopPropagation()">
-                            <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="미리보기 적용"><i class="fas fa-play"></i></button>
+                            <input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="https://..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onclick="event.stopPropagation()">
+                            <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="적용"><i class="fas fa-play"></i></button>
                         </div>
                     </div>
                 `;
@@ -358,14 +394,17 @@
             });
         }
 
-        function getComponentUrl(id, customUrl) {
+        function getComponentUrl(compId, customUrl, type, templateId) {
             if (customUrl && customUrl.trim() !== "") return customUrl;
+            if (type === 'image') return customUrl || '/images/roulette_sample.png'; // 기본 이미지
+
             const v = Date.now();
-            switch(id) {
+            const tid = templateId || compId; // fallback
+            switch(tid) {
                 case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
                 case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
                 case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&sample=true&v=${v}`;
-                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`; // 임시 맵핑
+                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`;
                 default: return ``; 
             }
         }
@@ -386,24 +425,34 @@
                 el.style.height = comp.height + 'px';
                 el.style.zIndex = comp.zIndex;
                 
-                const src = getComponentUrl(comp.id, comp.customUrl);
+                const src = getComponentUrl(comp.id, comp.customUrl, comp.type, comp.templateId);
                 
-                el.innerHTML = `
-                    <iframe src="${src}"></iframe>
-                    <div class="label-overlay">
-                        <div>${comp.title || comp.id}</div>
-                        <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
-                    </div>
-                    
-                    <div class="resizer resizer-tl" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'tl')"></div>
-                    <div class="resizer resizer-tr" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'tr')"></div>
-                    <div class="resizer resizer-bl" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'bl')"></div>
-                    <div class="resizer resizer-br" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'br')"></div>
-                    <div class="resizer resizer-t" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 't')"></div>
-                    <div class="resizer resizer-b" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'b')"></div>
-                    <div class="resizer resizer-l" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'l')"></div>
-                    <div class="resizer resizer-r" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}', 'r')"></div>
-                `;
+                if (comp.type === 'image' && src) {
+                   el.innerHTML = `
+                        <img src="${src}" style="width:100%; height:100%; object-fit:contain;">
+                        <div class="label-overlay">
+                            <div>IMAGE: ${comp.title || comp.id}</div>
+                            <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
+                        </div>
+                    `;
+                } else {
+                    el.innerHTML = `
+                        <iframe src="${src}"></iframe>
+                        <div class="label-overlay">
+                            <div>${comp.title || comp.id}</div>
+                            <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
+                        </div>
+                    `;
+                }
+
+                // Append resizers
+                const resizers = ['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'];
+                resizers.forEach(dir => {
+                    const r = document.createElement('div');
+                    r.className = `resizer resizer-${dir}`;
+                    r.onmousedown = (e) => { e.stopPropagation(); startResize(e, comp.id, dir); };
+                    el.appendChild(r);
+                });
 
                 // Setup Drag
                 el.onmousedown = (e) => startDrag(e, comp.id);
@@ -448,6 +497,53 @@
             const comp = components.find(c => c.id === id);
             if (comp) {
                 comp.customUrl = value.trim();
+            }
+        }
+
+        function addComponent(type) {
+            const id = 'custom-' + Date.now();
+            let newComp = {
+                id: id,
+                type: type,
+                title: type === 'image' ? '새 이미지' : '새 기능',
+                x: 100, y: 100, width: 300, height: 300,
+                zIndex: 50, visible: true,
+                customUrl: ''
+            };
+
+            if (type === 'bot_feature') {
+                const tid = 'songlist';
+                newComp.templateId = tid;
+                newComp.title = CORE_TEMPLATES[tid].title;
+                newComp.width = CORE_TEMPLATES[tid].width;
+                newComp.height = CORE_TEMPLATES[tid].height;
+            }
+
+            components.push(newComp);
+            selectedId = newComp.id;
+            renderSidebar();
+            renderCanvas();
+        }
+
+        function removeComponent(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                components = components.filter(c => c.id !== id);
+                if (selectedId === id) selectedId = null;
+                renderSidebar();
+                renderCanvas();
+            }
+        }
+
+        function setTemplate(compId, templateId) {
+            const comp = components.find(c => c.id === compId);
+            const template = CORE_TEMPLATES[templateId];
+            if (comp && template) {
+                comp.templateId = templateId;
+                comp.title = template.title;
+                comp.width = template.width;
+                comp.height = template.height;
+                renderSidebar();
+                renderCanvas();
             }
         }
 
