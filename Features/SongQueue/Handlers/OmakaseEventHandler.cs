@@ -21,24 +21,26 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
 
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
-        var profile = notification.Profile;
-        
-        // --- 오마카세 활성화 체크 ---
-        if (!profile.IsOmakaseEnabled)
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // --- 오마카세 활성화 체크 (DB에서 최신 정보 직접 조회) ---
+        var currentProfile = await db.StreamerProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, cancellationToken);
+
+        if (currentProfile == null || !currentProfile.IsOmakaseEnabled)
         {
-            _logger.LogDebug($"[오마카세 무시] {profile.ChzzkUid}의 오마카세 기능이 비활성화 상태입니다.");
+            _logger.LogDebug($"[오마카세 무시] {notification.Profile.ChzzkUid}의 오마카세 기능이 비활성화 상태이거나 프로필을 찾을 수 없습니다.");
             return;
         }
-        // -------------------------
+        // --------------------------------------------------
 
         string msg = notification.Message.Trim();
         
         // 1. 스트리머의 모든 오마카세 동적 메뉴 가져오기
-        using var scope = _serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        
         var omakaseItems = await db.StreamerOmakases
-            .Where(o => o.ChzzkUid == profile.ChzzkUid)
+            .Where(o => o.ChzzkUid == notification.Profile.ChzzkUid)
             .ToListAsync(cancellationToken);
 
         if (omakaseItems.Count == 0) return;
@@ -74,9 +76,13 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
 
             // 5. 실시간 오버레이 갱신 신호 발송
             var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<OverlayHub>>();
-            string groupName = profile.ChzzkUid.ToLower();
-            await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
-            await hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard", cancellationToken: cancellationToken); // 하위 호환용 추가
+            string? targetUid = notification.Profile.ChzzkUid;
+            if (!string.IsNullOrEmpty(targetUid))
+            {
+                string groupName = targetUid.ToLower();
+                await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+                await hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard", cancellationToken: cancellationToken);
+            }
         }
     }
 }
