@@ -178,7 +178,7 @@
 
         /* Canvas Area */
         .workspace {
-            flex: 1; display: flex; justify-content: center; align-items: center;
+            flex: 1; 
             background-color: #121216; background-image: 
                 linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
@@ -187,10 +187,9 @@
         }
 
         .canvas-wrapper {
-            position: relative;
+            position: absolute;
             background-color: rgba(0, 0, 0, 0.4);
             box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.5);
-            /* Scaling will be applied via style in JS */
             width: 1920px; height: 1080px;
             transform-origin: top left;
         }
@@ -515,17 +514,24 @@
             const workspace = document.getElementById('workspace');
             const wrapper = document.getElementById('canvas');
             
-            // Calculate scale to fit 90% of workspace
-            const scaleX = (workspace.clientWidth * 0.9) / CANVAS_W;
-            const scaleY = (workspace.clientHeight * 0.9) / CANVAS_H;
+            const padding = 60; // 여백 추가
+            const availableW = workspace.clientWidth - padding;
+            const availableH = workspace.clientHeight - padding;
+
+            const scaleX = availableW / CANVAS_W;
+            const scaleY = availableH / CANVAS_H;
             
             scale = Math.min(scaleX, scaleY);
+            if (scale > 1) scale = 0.9; // 너무 커지지 않게
+
+            // 중앙 정렬을 위한 좌표 계산 (scaled 기준)
+            const scaledW = CANVAS_W * scale;
+            const scaledH = CANVAS_H * scale;
             
-            // Center it manually
-            const translateX = (workspace.clientWidth - CANVAS_W) / 2;
-            const translateY = (workspace.clientHeight - CANVAS_H) / 2;
+            const offsetX = Math.max(padding / 2, (workspace.clientWidth - scaledW) / 2);
+            const offsetY = Math.max(padding / 2, (workspace.clientHeight - scaledH) / 2);
             
-            wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            wrapper.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
         }
 
         function renderSidebar() {
