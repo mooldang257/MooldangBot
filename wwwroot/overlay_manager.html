@@ -680,6 +680,11 @@
         let dragSourceId = null;
 
         function handleDragStart(e) {
+            // Only allow dragging from the dedicated handle to avoid interference with sliders/inputs
+            if (!e.target.closest('.drag-handle')) {
+                e.preventDefault();
+                return false;
+            }
             dragSourceId = this.getAttribute('data-id');
             e.dataTransfer.effectAllowed = 'move';
             this.classList.add('dragging');
