@@ -449,7 +449,7 @@
                 if (comp.type === 'bot_feature') {
                     configArea = `
                         <div style="display:flex; gap:5px; width:100%;">
-                            <select class="z-input" style="flex:1; text-align:left;" onchange="setTemplate('${comp.id}', this.value)" onclick="event.stopPropagation()">
+                            <select class="z-input" style="flex:1; text-align:left;" onchange="setTemplate('${comp.id}', this.value)" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">
                                 ${Object.keys(CORE_TEMPLATES).map(k => `<option value="${k}" ${comp.templateId === k ? 'selected' : ''}>${CORE_TEMPLATES[k].title}</option>`).join('')}
                             </select>
                         </div>
@@ -460,7 +460,7 @@
                     <div style="display:flex; gap:5px; width:100%; margin-top:5px;">
                         ${comp.type === 'image' ? 
                             `<button class="btn-icon" style="flex:1;" onclick="event.stopPropagation(); openImageUpload('${comp.id}')"><i class="fas fa-upload"></i> 이미지 업로드</button>` : 
-                            `<input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="커스텀 URL..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onclick="event.stopPropagation()">`
+                            `<input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="커스텀 URL..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">`
                         }
                         <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="적용"><i class="fas fa-play"></i></button>
                     </div>
@@ -475,6 +475,7 @@
                         <input type="range" min="0" max="1" step="0.01" value="${comp.opacity ?? 1}" 
                             style="width:100%; height:4px;" 
                             oninput="setComponentOpacity('${comp.id}', this.value)" 
+                            onmousedown="event.stopPropagation()" 
                             onclick="event.stopPropagation()">
                     </div>
                 `;
