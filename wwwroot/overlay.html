@@ -39,11 +39,12 @@
         function getComponentUrl(id, customUrl) {
             if (customUrl && customUrl.trim() !== "") return customUrl;
             
+            const v = Date.now(); // 캐시 방지용 파라미터
             switch(id) {
-                case 'songlist': return `/songlist_overlay/${chzzkUid}`;
-                case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}`;
-                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}`;
-                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}`; // 임시 맵핑
+                case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
+                case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
+                case 'roulette': return `/roulette_overlay.html?uid=${chzzkUid}&v=${v}`;
+                case 'chat': return `/ChatPoint.html?uid=${chzzkUid}&v=${v}`; // 임시 맵핑
                 default: return ``; 
             }
         }

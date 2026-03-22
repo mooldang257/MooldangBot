@@ -20,22 +20,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            perspective: 1000px;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 5%;
         }
 
-        /* 원형 룰렛 디자인 (화면 크기에 맞춰 유동적으로 조절) */
+        /* 원형 룰렛 디자인 (컨테이너에 맞춰 최대 크기로 유지) */
         #roulette-wrapper {
             position: relative;
-            width: 80vmin;   /* 가로/세로 중 작은 쪽의 80% */
-            height: 80vmin;
+            width: 100%;
+            height: 100%;
+            max-width: 100vh;
+            max-height: 100vw;
             border-radius: 50%;
             border: 0.5vmin solid #fff;
             box-shadow: 0 0 5vmin rgba(0, 0, 0, 0.5);
             overflow: hidden;
             display: none;
-            /* 평소엔 숨김 */
             background: #222;
+            aspect-ratio: 1/1; /* 원형 유지 */
         }
 
         #roulette-wheel {
