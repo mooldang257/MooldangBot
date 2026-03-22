@@ -74,6 +74,12 @@ namespace MooldangAPI.Controllers
         }
 
 
+        [HttpGet("/songlist_overlay/{chzzkUid}")]
+        public IResult SonglistOverlayPage(string chzzkUid)
+        {
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_overlay.html"), "text/html; charset=utf-8");
+        }
+
         [HttpGet("/overlay/{chzzkUid}")]
         public IResult OverlayPage(string chzzkUid)
         {

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마스터 오버레이 관리자</title>
+    <!-- 폰트 및 아이콘 -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- UI 스타일링 -->
+    <style>
+        :root {
+            --bg-dark: #1e1e24;
+            --panel-bg: #2b2b36;
+            --primary: #6c5ce7;
+            --text-main: #f5f6fa;
+            --text-muted: #a4b0be;
+            --canvas-width: 1920;
+            --canvas-height: 1080;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 30px; background-color: var(--panel-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 100;
+        }
+        .navbar h1 { margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .btn-save {
+            background-color: var(--primary); color: white;
+            border: none; padding: 10px 24px; border-radius: 8px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-save:hover { background-color: #5b4bc4; transform: translateY(-1px); }
+
+        /* Main Layout */
+        .main-container {
+            display: flex; flex: 1; overflow: hidden;
+        }
+
+        /* Sidebar Control Panel */
+        .sidebar {
+            width: 320px; background-color: var(--panel-bg);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        
+        .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+
+        .component-list { list-style: none; padding: 0; margin: 0; }
+        .component-item {
+            padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; gap: 10px;
+            transition: background 0.2s; cursor: pointer;
+        }
+        .component-item:hover, .component-item.active { background-color: rgba(255,255,255,0.05); }
+        .comp-header { display: flex; justify-content: space-between; align-items: center; }
+        .comp-title { font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .comp-title i { color: var(--text-muted); width: 16px; text-align: center; }
+        
+        .comp-controls { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); }
+        .z-controls { display: flex; gap: 5px; }
+        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+        .btn-icon:hover { background: rgba(255,255,255,0.2); }
+
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Canvas Area */
+        .workspace {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background-color: #121216; background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative; overflow: auto;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.5);
+            /* Scaling will be applied via style in JS */
+            width: 1920px; height: 1080px;
+            transform-origin: top left;
+        }
+
+        .canvas-element {
+            position: absolute;
+            background: rgba(108, 92, 231, 0.2);
+            border: 2px dashed rgba(108, 92, 231, 0.6);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; font-weight: 600; text-shadow: 1px 1px 2px black;
+            cursor: grab;
+            user-select: none;
+            transition: border-color 0.2s, background-color 0.2s;
+            box-sizing: border-box;
+        }
+        .canvas-element:active { cursor: grabbing; }
+        .canvas-element.selected {
+            border: 2px solid var(--primary);
+            background: rgba(108, 92, 231, 0.4);
+            box-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
+            z-index: 9999 !important; /* Always on top while editing if selected */
+        }
+        .canvas-element .size-label {
+            font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.8);
+            margin-top: 5px;
+        }
+        .canvas-element.hidden {
+            opacity: 0.3; border-color: rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
+        }
+
+        /* Guidelines for Snapping */
+        .guide-line {
+            position: absolute; background-color: #ff4757; z-index: 10000;
+            display: none; pointer-events: none;
+        }
+        .guide-v { width: 1px; height: 100%; top: 0; }
+        .guide-h { height: 1px; width: 100%; left: 0; }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #2ed573; color: white; padding: 12px 24px; border-radius: 8px;
+            font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999;
+        }
+        #toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1><i class="fas fa-layer-group"></i> 마스터 오버레이 관리</h1>
+        <button class="btn-save" onclick="saveLayout()"><i class="fas fa-save"></i> 저장 및 즉시 적용</button>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>구성 요소 목록</h2>
+            </div>
+            <ul class="component-list" id="componentList">
+                <!-- Javascript will populate this -->
+            </ul>
+        </div>
+
+        <!-- Workspace -->
+        <div class="workspace" id="workspace">
+            <div class="canvas-wrapper" id="canvas">
+                <!-- Guide lines -->
+                <div class="guide-line guide-v" id="guide-v"></div>
+                <div class="guide-line guide-h" id="guide-h"></div>
+                <!-- Elements will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"><i class="fas fa-check-circle"></i> 적용되었습니다.</div>
+
+    <script>
+        const SNAP_THRESHOLD = 15;
+        const GRID_SIZE = 20;
+        const CANVAS_W = 1920;
+        const CANVAS_H = 1080;
+
+        let components = [];
+        let chzzkUid = "testStreamer"; // TODO: 로그인 세션/URL 파라미터에서 가져오도록 수정
+        let scale = 1;
+        let selectedId = null;
+
+        // Fetch user context / param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid');
+
+        async function init() {
+            adjustCanvasScale();
+            window.addEventListener('resize', adjustCanvasScale);
+
+            // Fetch layout from backend
+            try {
+                const res = await fetch(`/api/overlay/layout/${chzzkUid}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    components = data.components || [];
+                }
+            } catch (e) {
+                console.error("Failed to load layout", e);
+            }
+
+            // Fallback for testing if empty
+            if (components.length === 0) {
+                components = [
+                    { id: "songlist", title: "노래 신청서", icon: "fa-music", x: 50, y: 50, width: 400, height: 600, zIndex: 10, visible: true },
+                    { id: "avatar", title: "캐릭터 아바타", icon: "fa-user-astronaut", x: 1400, y: 500, width: 400, height: 500, zIndex: 20, visible: true },
+                    { id: "roulette", title: "룰렛", icon: "fa-dharmachakra", x: 500, y: 100, width: 800, height: 800, zIndex: 30, visible: false },
+                    { id: "chat", title: "채팅창", icon: "fa-comments", x: 50, y: 700, width: 400, height: 300, zIndex: 40, visible: true }
+                ];
+            }
+
+            renderSidebar();
+            renderCanvas();
+            setupKeyboardNudging();
+            
+            // Set first element as selected default
+            if(components.length > 0) selectElement(components[0].id);
+        }
+
+        function adjustCanvasScale() {
+            const workspace = document.getElementById('workspace');
+            const wrapper = document.getElementById('canvas');
+            
+            // Calculate scale to fit 90% of workspace
+            const scaleX = (workspace.clientWidth * 0.9) / CANVAS_W;
+            const scaleY = (workspace.clientHeight * 0.9) / CANVAS_H;
+            
+            scale = Math.min(scaleX, scaleY);
+            
+            // Center it manually
+            const translateX = (workspace.clientWidth - CANVAS_W) / 2;
+            const translateY = (workspace.clientHeight - CANVAS_H) / 2;
+            
+            wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('componentList');
+            list.innerHTML = '';
+            
+            // Sort by zIndex descending for sidebar display
+            const sorted = [...components].sort((a,b) => b.zIndex - a.zIndex);
+
+            sorted.forEach(comp => {
+                const li = document.createElement('li');
+                li.className = `component-item ${comp.id === selectedId ? 'active' : ''}`;
+                li.onclick = () => selectElement(comp.id);
+                
+                const iconClass = comp.icon || 'fa-box';
+                
+                li.innerHTML = `
+                    <div class="comp-header">
+                        <div class="comp-title"><i class="fas ${iconClass}"></i> ${comp.title || comp.id}</div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="comp-controls">
+                        <span>Z-Index: ${comp.zIndex}</span>
+                        <div class="z-controls" onclick="event.stopPropagation()">
+                            <button class="btn-icon" onclick="changeZIndex('${comp.id}', 1)" title="앞으로"><i class="fas fa-arrow-up"></i></button>
+                            <button class="btn-icon" onclick="changeZIndex('${comp.id}', -1)" title="뒤로"><i class="fas fa-arrow-down"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function renderCanvas() {
+            const canvas = document.getElementById('canvas');
+            // Remove existing elements
+            const existing = canvas.querySelectorAll('.canvas-element');
+            existing.forEach(e => e.remove());
+
+            components.forEach(comp => {
+                const el = document.createElement('div');
+                el.className = `canvas-element ${comp.id === selectedId ? 'selected' : ''} ${!comp.visible ? 'hidden' : ''}`;
+                el.id = `el-${comp.id}`;
+                el.style.left = comp.x + 'px';
+                el.style.top = comp.y + 'px';
+                el.style.width = comp.width + 'px';
+                el.style.height = comp.height + 'px';
+                el.style.zIndex = comp.zIndex;
+                
+                el.innerHTML = `
+                    <div>${comp.title || comp.id}</div>
+                    <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
+                `;
+
+                // Setup Drag
+                el.onmousedown = (e) => startDrag(e, comp.id);
+                
+                canvas.appendChild(el);
+            });
+        }
+
+        function selectElement(id) {
+            selectedId = id;
+            renderSidebar();
+            
+            document.querySelectorAll('.canvas-element').forEach(el => el.classList.remove('selected'));
+            const target = document.getElementById(`el-${id}`);
+            if(target) target.classList.add('selected');
+        }
+
+        function toggleVisible(id, isVisible) {
+            const comp = components.find(c => c.id === id);
+            if (comp) comp.visible = isVisible;
+            renderCanvas();
+        }
+
+        function changeZIndex(id, delta) {
+            const comp = components.find(c => c.id === id);
+            if (comp) {
+                comp.zIndex += delta;
+                renderCanvas();
+                renderSidebar();
+            }
+        }
+
+        // --- Drag and Magnetic Snapping Logic ---
+        let isDragging = false;
+        let dragTarget = null;
+        let startX, startY;
+        let initialLeft, initialTop;
+
+        function startDrag(e, id) {
+            if(e.button !== 0) return; // Left click only
+            selectElement(id);
+            isDragging = true;
+            dragTarget = components.find(c => c.id === id);
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = dragTarget.x;
+            initialTop = dragTarget.y;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+            e.preventDefault();
+        }
+
+        function onDrag(e) {
+            if (!isDragging || !dragTarget) return;
+
+            // Calculate scaled movement
+            const dx = (e.clientX - startX) / scale;
+            const dy = (e.clientY - startY) / scale;
+
+            let newX = initialLeft + dx;
+            let newY = initialTop + dy;
+
+            // Apply Snap
+            const snapResult = applySnap(newX, newY, dragTarget.width, dragTarget.height);
+            newX = snapResult.x;
+            newY = snapResult.y;
+
+            // Confine to Canvas Bounds (Optional, but good for UX)
+            newX = Math.max(0, Math.min(newX, CANVAS_W - dragTarget.width));
+            newY = Math.max(0, Math.min(newY, CANVAS_H - dragTarget.height));
+
+            // Update DOM and Data temporarily
+            dragTarget.x = Math.round(newX);
+            dragTarget.y = Math.round(newY);
+            
+            const el = document.getElementById(`el-${dragTarget.id}`);
+            el.style.left = dragTarget.x + 'px';
+            el.style.top = dragTarget.y + 'px';
+            el.querySelector('.size-label').innerHTML = `${dragTarget.x}, ${dragTarget.y} <br> ${dragTarget.width}x${dragTarget.height}`;
+        }
+
+        function endDrag() {
+            isDragging = false;
+            dragTarget = null;
+            hideGuides();
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        function applySnap(x, y, w, h) {
+            let snappedX = x;
+            let snappedY = y;
+            let showGuideV = false;
+            let showGuideH = false;
+            let guideVx = 0;
+            let guideHy = 0;
+
+            // Target coords
+            const targetLeft = x;
+            const targetCenterX = x + w / 2;
+            const targetRight = x + w;
+            const targetTop = y;
+            const targetCenterY = y + h / 2;
+            const targetBottom = y + h;
+
+            // Check Canvas Edges and Center
+            const snapLinesX = [0, CANVAS_W / 2, CANVAS_W];
+            const snapLinesY = [0, CANVAS_H / 2, CANVAS_H];
+
+            // Snap X
+            for (let line of snapLinesX) {
+                if (Math.abs(targetLeft - line) < SNAP_THRESHOLD) { snappedX = line; showGuideV = true; guideVx = line; break; }
+                if (Math.abs(targetCenterX - line) < SNAP_THRESHOLD) { snappedX = line - w / 2; showGuideV = true; guideVx = line; break; }
+                if (Math.abs(targetRight - line) < SNAP_THRESHOLD) { snappedX = line - w; showGuideV = true; guideVx = line; break; }
+            }
+
+            // Snap Y
+            for (let line of snapLinesY) {
+                if (Math.abs(targetTop - line) < SNAP_THRESHOLD) { snappedY = line; showGuideH = true; guideHy = line; break; }
+                if (Math.abs(targetCenterY - line) < SNAP_THRESHOLD) { snappedY = line - h / 2; showGuideH = true; guideHy = line; break; }
+                if (Math.abs(targetBottom - line) < SNAP_THRESHOLD) { snappedY = line - h; showGuideH = true; guideHy = line; break; }
+            }
+
+            // Grid Snap (if not snapped to main lines)
+            if (!showGuideV) {
+                const gridSnapX = Math.round(x / GRID_SIZE) * GRID_SIZE;
+                if(Math.abs(x - gridSnapX) < SNAP_THRESHOLD / 2) { snappedX = gridSnapX; }
+            }
+            if (!showGuideH) {
+                const gridSnapY = Math.round(y / GRID_SIZE) * GRID_SIZE;
+                if(Math.abs(y - gridSnapY) < SNAP_THRESHOLD / 2) { snappedY = gridSnapY; }
+            }
+
+            updateGuides(showGuideV, guideVx, showGuideH, guideHy);
+
+            return { x: snappedX, y: snappedY };
+        }
+
+        function updateGuides(showV, vx, showH, hy) {
+            const gV = document.getElementById('guide-v');
+            const gH = document.getElementById('guide-h');
+            
+            if (showV) { gV.style.display = 'block'; gV.style.left = vx + 'px'; } else { gV.style.display = 'none'; }
+            if (showH) { gH.style.display = 'block'; gH.style.top = hy + 'px'; } else { gH.style.display = 'none'; }
+        }
+        function hideGuides() { updateGuides(false, 0, false, 0); }
+
+        // --- Keyboard Nudging ---
+        function setupKeyboardNudging() {
+            document.addEventListener('keydown', (e) => {
+                if (!selectedId || e.target.tagName === 'INPUT') return;
+
+                const step = e.shiftKey ? 1 : 5;
+                const comp = components.find(c => c.id === selectedId);
+                if (!comp) return;
+
+                let moved = false;
+                switch (e.key) {
+                    case 'ArrowUp': comp.y -= step; moved = true; break;
+                    case 'ArrowDown': comp.y += step; moved = true; break;
+                    case 'ArrowLeft': comp.x -= step; moved = true; break;
+                    case 'ArrowRight': comp.x += step; moved = true; break;
+                }
+
+                if (moved) {
+                    e.preventDefault(); // Prevent scrolling
+                    // Format constraints
+                    comp.x = Math.max(0, Math.min(comp.x, CANVAS_W - comp.width));
+                    comp.y = Math.max(0, Math.min(comp.y, CANVAS_H - comp.height));
+                    
+                    const el = document.getElementById(`el-${comp.id}`);
+                    if(el) {
+                        el.style.left = comp.x + 'px';
+                        el.style.top = comp.y + 'px';
+                        el.querySelector('.size-label').innerHTML = `${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}`;
+                    }
+                }
+            });
+        }
+
+        // --- Save via API ---
+        async function saveLayout() {
+            const btn = document.querySelector('.btn-save');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+            btn.disabled = true;
+
+            const payload = { components: components };
+
+            try {
+                const res = await fetch(`/api/overlay/layout/${chzzkUid}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showToast();
+                } else {
+                    alert("저장에 실패했습니다.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("서버 연결 오류");
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save"></i> 저장 및 즉시 적용';
+                btn.disabled = false;
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Initialize application
+        window.onload = init;
+    </script>
+</body>
+</html>
