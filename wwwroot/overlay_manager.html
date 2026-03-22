@@ -311,6 +311,30 @@
             <ul class="component-list" id="componentList">
                 <!-- Javascript will populate this -->
             </ul>
+
+            <!-- Background Control Panel -->
+            <div class="bg-panel">
+                <h4><i class="fas fa-image"></i> 오버레이 배경 설정</h4>
+                <div class="bg-control-row">
+                    <label>배경 URL (이미지/비디오)</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="bgUrlInput" class="preset-select" style="flex:1; padding:5px; font-size:12px;" placeholder="URL 입력..." onchange="updateBackground('url', this.value)">
+                        <button class="btn-preset-action" title="이미지 업로드" onclick="document.getElementById('bgImageUpload').click()"><i class="fas fa-upload"></i></button>
+                    </div>
+                    <input type="file" id="bgImageUpload" style="display:none" accept="image/*" onchange="uploadBgImage(this)">
+                </div>
+                <div class="bg-control-row" style="display:flex; align-items:center; gap:10px;">
+                    <div style="flex:1">
+                        <label>투명도</label>
+                        <input type="range" id="bgOpacityInput" min="0" max="1" step="0.1" style="width:100%" oninput="updateBackground('opacity', this.value)">
+                    </div>
+                    <div style="padding-top:15px;">
+                        <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+                            <input type="checkbox" id="bgVisibleInput" onchange="updateBackground('visible', this.checked)"> 표시
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Workspace -->
@@ -442,8 +466,20 @@
             const preset = presets.find(p => p.id == currentPresetId);
             
             if (preset) {
+                console.log("Raw preset data:", preset);
+                console.log("ConfigJson content:", preset.configJson);
+
                 try {
-                    const config = JSON.parse(preset.configJson || '{}');
+                    let config = {};
+                    if (preset.configJson) {
+                        // 만약 데이터가 객체 형태로 이미 있다면 파싱 생략
+                        if (typeof preset.configJson === 'object') {
+                            config = preset.configJson;
+                        } else {
+                            config = JSON.parse(preset.configJson);
+                        }
+                    }
+                    
                     components = config.components || [];
                     background = config.background || { url: '', opacity: 0.5, visible: false };
                     
@@ -459,11 +495,86 @@
                     renderSidebar();
                     renderCanvas();
                 } catch (e) {
-                    console.error("Error parsing preset configJson", e);
-                    alert("프리셋 설정 데이터를 읽는 중 오류가 발생했습니다.");
+                    console.error("Error parsing preset configJson", e, "Raw data:", preset.configJson);
+                    alert("프리셋 설정 데이터를 읽는 중 오류가 발생했습니다. \n내용: " + preset.configJson?.substring(0, 100));
                 }
             } else {
                 console.error("Preset not found in list:", currentPresetId);
+            }
+        }
+
+        function syncBackgroundUI() {
+            if (!background) return;
+            document.getElementById('bgUrlInput').value = background.url || '';
+            document.getElementById('bgOpacityInput').value = background.opacity ?? 0.5;
+            document.getElementById('bgVisibleInput').checked = background.visible ?? false;
+        }
+
+        function renderBackground() {
+            const layer = document.getElementById('canvas-bg-layer');
+            const video = document.getElementById('canvas-bg-video');
+            const img = document.getElementById('canvas-bg-img');
+
+            if (!background || !background.visible || !background.url) {
+                layer.style.display = 'none';
+                video.src = '';
+                img.src = '';
+                return;
+            }
+
+            layer.style.display = 'block';
+            layer.style.opacity = background.opacity ?? 0.5;
+
+            const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(background.url);
+            if (isVideo) {
+                if (video.src !== background.url) {
+                    video.src = background.url;
+                    video.style.display = 'block';
+                    img.style.display = 'none';
+                    img.src = '';
+                }
+            } else {
+                if (img.src !== background.url) {
+                    img.src = background.url;
+                    img.style.display = 'block';
+                    video.style.display = 'none';
+                    video.src = '';
+                }
+            }
+        }
+
+        function updateBackground(field, value) {
+            if (!background) background = { url: '', opacity: 0.5, visible: false };
+            
+            if (field === 'opacity') background.opacity = parseFloat(value);
+            else if (field === 'visible') background.visible = value;
+            else if (field === 'url') background.url = value;
+
+            renderBackground();
+            // 자동 저장 (선택 사항 - 여기서는 즉시 반영을 위해 호출)
+            saveLayout(false); 
+        }
+
+        async function uploadBgImage(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('image', input.files[0]);
+
+            try {
+                const res = await fetch('/api/OverlayPreset/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    updateBackground('url', data.url);
+                    syncBackgroundUI();
+                    showToast("배경 이미지가 업로드되었습니다.");
+                }
+            } catch (e) {
+                console.error("배경 업로드 실패", e);
+                alert("업로드 중 오류가 발생했습니다.");
             }
         }
 
