@@ -135,9 +135,10 @@
             transition: background 0.2s; cursor: pointer;
         }
         .component-item:hover, .component-item.active { background-color: rgba(255,255,255,0.05); }
-        .comp-header { display: flex; justify-content: space-between; align-items: center; }
-        .comp-title { font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-        .comp-title i { color: var(--text-muted); width: 16px; text-align: center; }
+        .comp-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .comp-title { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+        .comp-title i { color: var(--text-muted); width: 16px; text-align: center; flex-shrink: 0; }
+        .comp-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .comp-controls { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); }
         .z-controls { display: flex; align-items: center; gap: 8px; }
@@ -178,18 +179,30 @@
 
         /* Row Layouts */
         .comp-row { display: flex; align-items: center; gap: 8px; width: 100%; }
-        .comp-row-top { margin-bottom: 8px; }
+        .comp-row-top { min-height: 32px; }
         .comp-row-bottom { 
-            padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); 
-            display: flex; flex-direction: column; gap: 8px;
+            padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); 
+            display: none; flex-direction: column; gap: 8px;
         }
-        .comp-actions { display: flex; align-items: center; gap: 5px; }
-        .comp-title-wrapper { flex: 1; display: flex; align-items: center; gap: 5px; }
+        .component-item.expanded .comp-row-bottom { display: flex; }
+        
+        .comp-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .comp-title-wrapper { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; }
         .title-input-inline {
-            background: rgba(255,255,255,0.1); border: 1px solid var(--primary);
-            color: white; border-radius: 4px; padding: 2px 5px; font-size: 14px;
-            width: 100%;
+            background: rgba(0,0,0,0.3); border: 1px solid var(--primary);
+            color: white; border-radius: 4px; padding: 4px 8px; font-size: 13px;
+            width: 100%; box-sizing: border-box; outline: none;
         }
+        
+        .btn-chevron {
+            background: none; border: none; color: var(--text-muted); 
+            cursor: pointer; padding: 4px; transition: transform 0.2s, color 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-chevron:hover { color: white; }
+        .component-item.expanded .btn-chevron { transform: rotate(180deg); color: var(--primary); }
+        .component-item.renaming .btn-chevron, .component-item.renaming .switch { display: none; }
+        .component-item.renaming .comp-title-wrapper { flex: 1; }
 
         /* Toggle Switch */
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
@@ -666,6 +679,17 @@
         let currentPresetId = null;
         let selectedId = null;
         let scale = 1;
+        let expandedIds = new Set(); // Track expanded components in sidebar
+
+        function toggleExpand(id, event) {
+            if (event) event.stopPropagation();
+            if (expandedIds.has(id)) {
+                expandedIds.delete(id);
+            } else {
+                expandedIds.add(id);
+            }
+            renderSidebar();
+        }
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/overlayHub")
@@ -982,12 +1006,12 @@
 
             sorted.forEach(comp => {
                 const li = document.createElement('li');
-                li.className = `component-item ${comp.id === selectedId ? 'active' : ''}`;
-                li.setAttribute('draggable', 'false'); // Disabled until handle is targeted
+                const isExpanded = expandedIds.has(comp.id);
+                li.className = `component-item ${comp.id === selectedId ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`;
+                li.setAttribute('draggable', 'false');
                 li.setAttribute('data-id', comp.id);
                 li.onclick = () => selectElement(comp.id);
                 
-                // Drag and Drop Event Listeners
                 li.addEventListener('dragstart', handleDragStart);
                 li.addEventListener('dragover', handleDragOver);
                 li.addEventListener('drop', handleDrop);
@@ -1011,8 +1035,8 @@
                             <button class="btn-icon delete" onclick="event.stopPropagation(); removeComponent('${comp.id}')" title="삭제">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
-                            <button class="btn-icon" onclick="event.stopPropagation(); saveToLibrary('${comp.id}')" title="보관함 저장" style="color: #2ed573;">
-                                <i class="fas fa-save"></i>
+                            <button class="btn-chevron" onclick="toggleExpand('${comp.id}', event)" title="상세 설정">
+                                <i class="fas fa-chevron-down"></i>
                             </button>
                             <label class="switch" onclick="event.stopPropagation()">
                                 <input type="checkbox" ${comp.visible ? 'checked' : ''} onchange="toggleVisible('${comp.id}', this.checked)">
@@ -1022,7 +1046,7 @@
                     </div>
                 `;
 
-                // Row 2: Template / URL / Image Upload
+                // Hidden/Expandable Details
                 let configArea = '';
                 if (comp.type === 'bot_feature') {
                     configArea = `
@@ -1041,6 +1065,9 @@
                             `<input type="text" class="z-input" style="flex:1; text-align:left;" placeholder="커스텀 URL..." value="${comp.customUrl || ''}" id="url-input-${comp.id}" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">`
                         }
                         <button class="btn-icon" onclick="applyCustomUrl('${comp.id}')" title="적용"><i class="fas fa-play"></i></button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); saveToLibrary('${comp.id}')" title="보관함 저장" style="color: #2ed573;">
+                            <i class="fas fa-save"></i>
+                        </button>
                     </div>
                 `;
 
@@ -1195,15 +1222,22 @@
             const comp = components.find(c => c.id === id);
             if (!comp) return;
 
+            const li = document.querySelector(`.component-item[data-id="${id}"]`);
+            if (li) li.classList.add('renaming');
+
             const wrapper = document.getElementById(`title-wrapper-${id}`);
             const originalTitle = comp.title || comp.id;
 
+            const iconClass = comp.type === 'image' ? 'fa-image' : (CORE_TEMPLATES[comp.templateId]?.icon || 'fa-box');
             wrapper.innerHTML = `
+                <i class="fas ${iconClass}" style="opacity: 0.5"></i>
                 <input type="text" class="title-input-inline" id="rename-input-${id}" value="${originalTitle}" 
                     onkeydown="if(event.key==='Enter') saveRename('${id}'); if(event.key==='Escape') renderSidebar();"
                     onclick="event.stopPropagation()">
-                <button class="btn-icon" onclick="event.stopPropagation(); saveRename('${id}')" title="저장"><i class="fas fa-check"></i></button>
-                <button class="btn-icon" onclick="event.stopPropagation(); renderSidebar()" title="취소"><i class="fas fa-times"></i></button>
+                <div class="comp-actions">
+                    <button class="btn-icon" onclick="event.stopPropagation(); saveRename('${id}')" title="저장"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); renderSidebar()" title="취소"><i class="fas fa-times"></i></button>
+                </div>
             `;
             const input = document.getElementById(`rename-input-${id}`);
             input.focus();
