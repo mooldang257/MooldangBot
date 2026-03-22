@@ -39,10 +39,10 @@ namespace MooldangAPI.Controllers
                 {
                     components = new[]
                     {
-                        new { id = "songlist", title = "노래 신청서", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true },
-                        new { id = "avatar", title = "캐릭터 아바타", x = 1400, y = 500, width = 400, height = 500, zIndex = 20, visible = true },
-                        new { id = "roulette", title = "룰렛", x = 500, y = 100, width = 800, height = 800, zIndex = 30, visible = false },
-                        new { id = "chat", title = "채팅창", x = 50, y = 700, width = 400, height = 300, zIndex = 40, visible = true }
+                        new { id = "songlist", templateId = "songlist", title = "노래 신청서", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
+                        new { id = "avatar", templateId = "avatar", title = "캐릭터 아바타", x = 1400, y = 500, width = 400, height = 500, zIndex = 20, visible = true, opacity = 1.0 },
+                        new { id = "roulette", templateId = "roulette", title = "룰렛", x = 500, y = 100, width = 800, height = 800, zIndex = 30, visible = false, opacity = 1.0 },
+                        new { id = "chat", templateId = "chat", title = "채팅창", x = 50, y = 700, width = 400, height = 300, zIndex = 40, visible = true, opacity = 1.0 }
                     }
                 };
                 return Results.Ok(defaultLayout);

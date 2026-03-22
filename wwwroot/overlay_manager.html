@@ -426,8 +426,8 @@
                     <div class="comp-row comp-row-top">
                         <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
                         <div class="comp-title-wrapper" id="title-wrapper-${comp.id}">
-                            <i class="fas ${iconClass}"></i>
-                            <span class="comp-title-text" id="title-text-${comp.id}">${comp.title || comp.id}</span>
+                            <i class="fas ${iconClass}" style="opacity: ${comp.opacity ?? 1}"></i>
+                            <span class="comp-title-text" id="title-text-${comp.id}" style="opacity: ${comp.opacity ?? 1}">${comp.title || comp.id}</span>
                         </div>
                         <div class="comp-actions">
                             <button class="btn-icon" onclick="event.stopPropagation(); startRename('${comp.id}')" title="이름 수정">
@@ -466,9 +466,23 @@
                     </div>
                 `;
 
+                const opacityArea = `
+                    <div style="display:flex; flex-direction:column; gap:2px; padding: 4px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:11px; color:var(--text-muted);">불투명도</span>
+                            <span id="opacity-val-${comp.id}" style="font-size:11px; color:var(--primary);">${Math.round((comp.opacity ?? 1) * 100)}%</span>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.01" value="${comp.opacity ?? 1}" 
+                            style="width:100%; height:4px;" 
+                            oninput="setComponentOpacity('${comp.id}', this.value)" 
+                            onclick="event.stopPropagation()">
+                    </div>
+                `;
+
                 li.innerHTML = `
                     ${row1}
                     <div class="comp-row-bottom" onclick="event.stopPropagation()">
+                        ${opacityArea}
                         ${configArea}
                         ${urlArea}
                     </div>
@@ -494,19 +508,26 @@
 
         function renderCanvas() {
             const canvas = document.getElementById('canvas');
-            // Remove existing elements
-            const existing = canvas.querySelectorAll('.canvas-element');
-            existing.forEach(e => e.remove());
+            // Remove existing component elements (keep bg and guides)
+            const els = canvas.querySelectorAll('.overlay-component');
+            els.forEach(el => el.remove());
 
             components.forEach(comp => {
                 const el = document.createElement('div');
-                el.className = `canvas-element ${comp.id === selectedId ? 'selected' : ''} ${!comp.visible ? 'hidden' : ''}`;
                 el.id = `el-${comp.id}`;
+                el.className = `overlay-component ${comp.id === selectedId ? 'selected' : ''}`;
                 el.style.left = comp.x + 'px';
                 el.style.top = comp.y + 'px';
                 el.style.width = comp.width + 'px';
                 el.style.height = comp.height + 'px';
                 el.style.zIndex = comp.zIndex;
+                el.style.display = comp.visible ? 'block' : 'none';
+                el.style.opacity = comp.opacity ?? 1;
+                
+                el.onmousedown = (e) => {
+                    if (e.target.classList.contains('resizer')) return;
+                    startDrag(e, comp.id);
+                };
                 
                 const src = getComponentUrl(comp.id, comp.customUrl, comp.type, comp.templateId);
                 
@@ -720,6 +741,18 @@
             }
         }
 
+        function setComponentOpacity(id, value) {
+            const comp = components.find(c => c.id === id);
+            if (comp) {
+                comp.opacity = parseFloat(value);
+                const valSpan = document.getElementById(`opacity-val-${id}`);
+                if (valSpan) valSpan.innerText = Math.round(comp.opacity * 100) + '%';
+                
+                const el = document.getElementById(`el-${id}`);
+                if (el) el.style.opacity = comp.opacity;
+            }
+        }
+
         function addComponent(type) {
             const id = 'custom-' + Date.now();
             let newComp = {
@@ -728,6 +761,7 @@
                 title: type === 'image' ? '새 이미지' : '새 기능',
                 x: 100, y: 100, width: 300, height: 300,
                 zIndex: 50, visible: true,
+                opacity: 1,
                 customUrl: ''
             };
 

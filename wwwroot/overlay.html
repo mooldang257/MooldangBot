@@ -150,6 +150,7 @@
                 el.style.height = comp.height + 'px';
                 el.style.zIndex = comp.zIndex;
                 el.style.display = comp.visible ? 'block' : 'none';
+                el.style.opacity = comp.opacity ?? 1;
             });
         }
 
