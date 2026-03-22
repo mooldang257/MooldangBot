@@ -35,18 +35,41 @@ namespace MooldangAPI.Controllers
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
             var presets = await _db.OverlayPresets
-                .AsNoTracking()
                 .Where(p => p.ChzzkUid == chzzkUid)
-                .Select(p => new OverlayPresetDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    ConfigJson = p.ConfigJson,
-                    UpdatedAt = p.UpdatedAt
-                })
                 .ToListAsync();
 
-            return Ok(presets);
+            if (presets.Count == 0)
+            {
+                // 기본 프리셋 생성
+                var defaultPreset = new OverlayPreset
+                {
+                    ChzzkUid = chzzkUid,
+                    Name = "기본 프리셋",
+                    ConfigJson = JsonSerializer.Serialize(new
+                    {
+                        components = new[]
+                        {
+                            new { id = "songlist_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "songlist", title = "노래 신청서", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
+                            new { id = "chat_" + Guid.NewGuid().ToString("N").Substring(0, 8), templateId = "chat", title = "채팅창", x = 50, y = 700, width = 400, height = 300, zIndex = 20, visible = true, opacity = 1.0 }
+                        },
+                        background = new { url = "", opacity = 0.5, visible = false }
+                    }),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _db.OverlayPresets.Add(defaultPreset);
+                await _db.SaveChangesAsync();
+                presets.Add(defaultPreset);
+            }
+
+            return Ok(presets.Select(p => new OverlayPresetDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                ConfigJson = p.ConfigJson,
+                UpdatedAt = p.UpdatedAt
+            }));
         }
 
         [HttpGet("{id}")]

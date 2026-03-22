@@ -453,10 +453,14 @@
                     updatePresetSelector();
                     changePreset(newPreset.id);
                     showToast("프리셋이 생성되었습니다.");
+                } else {
+                    const errorText = await res.text();
+                    console.error("Create preset failed:", errorText);
+                    alert("생성 실패: " + (res.status === 401 ? "로그인이 필요합니다." : errorText));
                 }
             } catch (e) {
                 console.error(e);
-                alert("생성 실패");
+                alert("생성 중 네트워크 오류 발생");
             }
         }
 
