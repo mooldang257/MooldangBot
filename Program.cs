@@ -29,7 +29,8 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddSingleton<SongQueueState>();
 builder.Services.AddSingleton<RouletteState>();
 builder.Services.AddTransient<IOverlayRenderStrategy, DefaultChatRenderStrategy>();
-builder.Services.AddHostedService<ChzzkBackgroundService>();
+builder.Services.AddSingleton<ChzzkBackgroundService>();
+builder.Services.AddHostedService<ChzzkBackgroundService>(sp => sp.GetRequiredService<ChzzkBackgroundService>());
 builder.Services.AddHostedService<PeriodicMessageWorker>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();

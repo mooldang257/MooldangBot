@@ -73,6 +73,15 @@ public class PeriodicMessageWorker : BackgroundService
             // 라이브 상태 확인 (캐시 사용)
             if (!liveStatusCache.TryGetValue(m.ChzzkUid, out bool isLive))
             {
+                // 스트리머 프로필에서 봇 활성화 여부 먼저 확인
+                var profileCheck = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == m.ChzzkUid, stoppingToken);
+                if (profileCheck == null || !profileCheck.IsBotEnabled)
+                {
+                    liveStatusCache[m.ChzzkUid] = false; // 봇이 비활성화면 라이브 여부와 상관없이 발송 안 함
+                    _logger.LogDebug($"[자동 메세지] {m.ChzzkUid} 채널의 물댕봇이 비활성화 상태입니다.");
+                    continue;
+                }
+
                 isLive = await _chzzkApiClient.IsLiveAsync(m.ChzzkUid);
                 liveStatusCache[m.ChzzkUid] = isLive;
                 _logger.LogInformation($"[자동 메세지] {m.ChzzkUid} 라이브 상태: {isLive}");

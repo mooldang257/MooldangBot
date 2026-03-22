@@ -43,6 +43,23 @@ public class ChzzkBackgroundService : BackgroundService
         }
     }
 
+    // 특정 채널의 봇 상태를 즉시 갱신 (활성화 시 시작, 비활성화 시 종료)
+    public async Task RefreshChannelAsync(string uid)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+
+        if (profile == null || !profile.IsBotEnabled)
+        {
+            StopBotForStreamer(uid);
+        }
+        else
+        {
+            StartBotForStreamer(uid);
+        }
+    }
+
     private async Task StartAllBotsAsync()
     {
         using var scope = _serviceProvider.CreateScope();

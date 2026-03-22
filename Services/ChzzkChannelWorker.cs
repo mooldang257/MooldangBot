@@ -71,9 +71,9 @@ public class ChzzkChannelWorker
 
                 string currentUid = _uid;
                 var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == currentUid, stoppingToken);
-                if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+                if (profile == null || !profile.IsBotEnabled || string.IsNullOrEmpty(profile.ChzzkAccessToken))
                 {
-                    _logger.LogWarning($"[물댕봇] {_uid}의 액세스 토큰이 없어 연결을 대기합니다.");
+                    _logger.LogWarning($"[물댕봇] {_uid}의 봇이 비활성화 상태이거나 액세스 토큰이 없어 연결을 대기합니다.");
                     await Task.Delay(10000, stoppingToken);
                     continue;
                 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
+using MooldangAPI.Services;
 
 namespace MooldangAPI.Controllers
 {
@@ -9,10 +10,12 @@ namespace MooldangAPI.Controllers
     public class BotConfigController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly ChzzkBackgroundService _chzzkService;
 
-        public BotConfigController(AppDbContext db)
+        public BotConfigController(AppDbContext db, ChzzkBackgroundService chzzkService)
         {
             _db = db;
+            _chzzkService = chzzkService;
         }
 
         // 1. 현재 봇 활성화 상태 조회
@@ -35,8 +38,10 @@ namespace MooldangAPI.Controllers
             streamer.IsBotEnabled = req.IsEnabled;
             await _db.SaveChangesAsync();
 
-            // 백그라운드 서비스(ChzzkBackgroundService)는 최대 60초 내에 DB를 스캔하여 자동으로 세션을 연결 또는 해제합니다.
-            return Ok(new { success = true, isEnabled = streamer.IsBotEnabled, message = "봇 설정이 변경되었습니다. 최대 1분 내에 반영됩니다." });
+            // 백그라운드 서비스에 즉시 반영 요청
+            await _chzzkService.RefreshChannelAsync(uid);
+
+            return Ok(new { success = true, isEnabled = streamer.IsBotEnabled, message = "봇 설정이 즉시 변경되었습니다." });
         }
     }
 
