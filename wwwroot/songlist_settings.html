@@ -330,22 +330,31 @@
             const res = await fetch(`/api/settings/data/${chzzkUid}`);
             if (res.ok) {
                 const data = await res.json();
-                // document.getElementById('cmdSong').value = data.songCommand; // 기존 싱글 필드 무시 (통합 관리)
-                songRequestCommands = (data.songRequestCommands || []).map(c => ({
-                    keyword: c.keyword || c, // 문자열 호환
-                    price: c.price || 0
-                }));
+                
+                // 1. 명령어 목록 로드 (대소문자 구분 없이 매핑)
+                songRequestCommands = (data.songRequestCommands || []).map(c => {
+                    if (typeof c === 'string') return { keyword: c, price: 0 };
+                    return {
+                        keyword: c.keyword || c.Keyword || "",
+                        price: c.price !== undefined ? c.price : (c.Price !== undefined ? c.Price : 0)
+                    };
+                });
                 
                 if (songRequestCommands.length === 0 && data.songCommand) {
-                    songRequestCommands = [{ keyword: data.songCommand, price: data.songCheesePrice || 0 }]; // 기존 값 이관 표시
+                    songRequestCommands = [{ 
+                        keyword: data.songCommand, 
+                        price: data.songCheesePrice !== undefined ? data.songCheesePrice : (data.SongCheesePrice || 0) 
+                    }];
                 }
                 renderSongCommandList();
 
-                // document.getElementById('songPrice').value = data.songCheesePrice || 0; // 전역 필드 삭제됨
-                
+                // 2. 오마카세 목록 로드 (대소문자 및 필드명 차이 대응)
                 omakaseItems = (data.omakases || []).map(o => ({
-                    ...o,
-                    price: o.cheesePrice !== undefined ? o.cheesePrice : (o.price || 0)
+                    id: o.id !== undefined ? o.id : (o.Id || 0),
+                    name: o.name || o.Name || "",
+                    command: o.command || o.Command || "",
+                    icon: o.icon !== undefined ? o.icon : (o.Icon || "🍣"),
+                    price: o.cheesePrice !== undefined ? o.cheesePrice : (o.CheesePrice !== undefined ? o.CheesePrice : (o.price || o.Price || 0))
                 }));
                 renderOmakaseList();
 
