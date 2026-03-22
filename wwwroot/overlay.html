@@ -71,8 +71,22 @@
     </div>
 
     <script>
-        const pathParts = window.location.pathname.split('/');
-        const chzzkUid = pathParts[pathParts.length - 1];
+        function getChzzkUid() {
+            // 1. URL 쿼리 파라미터 확인
+            const urlParams = new URL(window.location.href).searchParams;
+            if (urlParams.get('uid')) return urlParams.get('uid');
+            
+            // 2. 경로에서 추출 (마지막 "/" 제외 필터링)
+            const pathParts = window.location.pathname.split('/').filter(p => p !== "");
+            const lastPart = pathParts[pathParts.length - 1];
+            
+            // 만약 마지막 부분이 overlay 이거나 .html 이면 UID 아님
+            if (!lastPart || lastPart === 'overlay' || lastPart.includes('.html')) return "";
+            return lastPart;
+        }
+
+        const chzzkUid = getChzzkUid();
+        console.log("Master Overlay: Extracted UID =", chzzkUid);
 
         // 각 컴포넌트 ID별 로드할 실제 오버레이 소스 URL 매핑
         function getComponentUrl(id, customUrl, type, templateId) {
@@ -197,11 +211,17 @@
 
         async function fetchInitialLayout() {
             try {
+                if (!chzzkUid && !presetId) {
+                    console.error("No UID or PresetID found for overlay.");
+                    return;
+                }
+
                 let url = `/api/overlay/layout/${chzzkUid}`; // Default fallback
                 if (presetId) {
                     url = `/api/OverlayPreset/public/${presetId}`; // Specific preset
                 }
 
+                console.log("Fetching layout from:", url);
                 const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
@@ -211,13 +231,20 @@
                     let background = data.background;
 
                     if (data.configJson) {
-                        const config = JSON.parse(data.configJson);
-                        components = config.components;
-                        background = config.background;
+                        try {
+                            const config = JSON.parse(data.configJson);
+                            components = config.components;
+                            background = config.background;
+                        } catch (e) {
+                            console.error("Error parsing configJson from server", e);
+                        }
                     }
 
+                    console.log(`Layout received: ${components ? components.length : 0} components`);
                     if (components) applyLayout(components);
                     if (background) applyBackground(background);
+                } else {
+                    console.error("Failed to fetch layout:", res.status);
                 }
             } catch (e) {
                 console.error("초기 레이아웃 로드 실패", e);

@@ -352,7 +352,11 @@
         const CANVAS_H = 1080;
 
         let presets = [];
+        let components = [];
+        let background = { url: '', opacity: 0.5, visible: false };
         let currentPresetId = null;
+        let selectedId = null;
+        let scale = 1;
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/overlayHub")
@@ -369,21 +373,37 @@
             'chat': { title: '채팅 포인트', width: 400, height: 300, icon: 'fa-comments' }
         };
 
-        let chzzkUid = ""; 
-        const pathParts = window.location.pathname.split('/');
-        chzzkUid = pathParts[pathParts.length - 1]; 
+        function getChzzkUid() {
+            // 1. URL 쿼리 파라미터 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('uid')) return urlParams.get('uid');
+            
+            // 2. 경로에서 추출 (마지막 "/" 제외 필터링)
+            const pathParts = window.location.pathname.split('/').filter(p => p !== "");
+            const lastPart = pathParts[pathParts.length - 1];
+            
+            // 만약 마지막 부분이 overlay_manager 이거나 .html 이면 UID 아님
+            if (!lastPart || lastPart === 'overlay_manager' || lastPart.includes('.html')) return "";
+            return lastPart;
+        }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('uid')) chzzkUid = urlParams.get('uid'); 
+        let chzzkUid = getChzzkUid();
+        console.log("Current ChzzkUid extracted:", chzzkUid);
 
         async function init() {
+            console.log("Initializing Overlay Manager...");
             adjustCanvasScale();
             window.addEventListener('resize', adjustCanvasScale);
 
             await fetchPresets();
             
-            renderSidebar();
-            renderCanvas();
+            // fetchPresets 내부에서 changePreset을 호출하므로 
+            // 여기서 중복으로 renderCanvas를 호출할 필요는 없으나, 
+            // 프리셋이 없을 경우를 위해 안전하게 호출
+            if (presets.length === 0) {
+                renderSidebar();
+                renderCanvas();
+            }
             setupKeyboardNudging();
         }
 
@@ -417,21 +437,33 @@
 
         async function changePreset(id) {
             if (!id) return;
+            console.log("Changing to preset:", id);
             currentPresetId = parseInt(id);
             const preset = presets.find(p => p.id == currentPresetId);
+            
             if (preset) {
-                const config = JSON.parse(preset.configJson || '{}');
-                components = config.components || [];
-                background = config.background || { url: '', opacity: 0.5, visible: false };
-                
-                // URL 업데이트
-                const overlayUrl = window.location.origin + `/overlay.html?uid=${chzzkUid}&presetId=${currentPresetId}`;
-                document.getElementById('overlayUrl').innerText = overlayUrl;
+                try {
+                    const config = JSON.parse(preset.configJson || '{}');
+                    components = config.components || [];
+                    background = config.background || { url: '', opacity: 0.5, visible: false };
+                    
+                    console.log(`Loaded preset "${preset.name}" with ${components.length} components`);
+                    
+                    // URL 업데이트
+                    const overlayUrl = window.location.origin + `/overlay.html?uid=${chzzkUid}&presetId=${currentPresetId}`;
+                    document.getElementById('overlayUrl').innerText = overlayUrl;
 
-                syncBackgroundUI();
-                renderBackground();
-                renderSidebar();
-                renderCanvas();
+                    selectedId = null; // 프리셋 변경 시 선택 해제
+                    syncBackgroundUI();
+                    renderBackground();
+                    renderSidebar();
+                    renderCanvas();
+                } catch (e) {
+                    console.error("Error parsing preset configJson", e);
+                    alert("프리셋 설정 데이터를 읽는 중 오류가 발생했습니다.");
+                }
+            } else {
+                console.error("Preset not found in list:", currentPresetId);
             }
         }
 
@@ -637,6 +669,11 @@
 
             const v = Date.now();
             const tid = templateId || compId; // fallback
+            
+            if (!chzzkUid) {
+                console.warn("chzzkUid is missing. Component URLs might be invalid.");
+            }
+
             switch(tid) {
                 case 'songlist': return `/songlist_overlay/${chzzkUid}?v=${v}`;
                 case 'avatar': return `/avatar_overlay.html?uid=${chzzkUid}&v=${v}`;
