@@ -129,6 +129,22 @@
             opacity: 0.3; border-color: rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
         }
 
+        /* Resizer Handle */
+        .resizer {
+            width: 15px; height: 15px;
+            background: var(--primary);
+            position: absolute;
+            right: -7px; bottom: -7px;
+            cursor: nwse-resize;
+            border-radius: 50%;
+            display: none; /* Only show when selected */
+            z-index: 1001;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .canvas-element.selected .resizer {
+            display: block;
+        }
+
         /* Guidelines for Snapping */
         .guide-line {
             position: absolute; background-color: #ff4757; z-index: 10000;
@@ -297,6 +313,7 @@
                 el.innerHTML = `
                     <div>${comp.title || comp.id}</div>
                     <div class="size-label">${comp.x}, ${comp.y} <br> ${comp.width}x${comp.height}</div>
+                    <div class="resizer" onmousedown="event.stopPropagation(); startResize(event, '${comp.id}')"></div>
                 `;
 
                 // Setup Drag
@@ -335,6 +352,7 @@
         let dragTarget = null;
         let startX, startY;
         let initialLeft, initialTop;
+        let initialWidth, initialHeight;
 
         function startDrag(e, id) {
             if(e.button !== 0) return; // Left click only
@@ -446,6 +464,54 @@
             if (showH) { gH.style.display = 'block'; gH.style.top = hy + 'px'; } else { gH.style.display = 'none'; }
         }
         function hideGuides() { updateGuides(false, 0, false, 0); }
+
+        // --- Resize Logic ---
+        let isResizing = false;
+        let resizeTarget = null;
+
+        function startResize(e, id) {
+            isResizing = true;
+            resizeTarget = components.find(c => c.id === id);
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            initialWidth = resizeTarget.width;
+            initialHeight = resizeTarget.height;
+
+            document.addEventListener('mousemove', onResize);
+            document.addEventListener('mouseup', endResize);
+            e.preventDefault();
+        }
+
+        function onResize(e) {
+            if (!isResizing || !resizeTarget) return;
+
+            const dx = (e.clientX - startX) / scale;
+            const dy = (e.clientY - startY) / scale;
+
+            resizeTarget.width = Math.max(50, initialWidth + dx);
+            resizeTarget.height = Math.max(50, initialHeight + dy);
+
+            // Bounds check
+            if (resizeTarget.x + resizeTarget.width > CANVAS_W) {
+                resizeTarget.width = CANVAS_W - resizeTarget.x;
+            }
+            if (resizeTarget.y + resizeTarget.height > CANVAS_H) {
+                resizeTarget.height = CANVAS_H - resizeTarget.y;
+            }
+
+            const el = document.getElementById(`el-${resizeTarget.id}`);
+            el.style.width = resizeTarget.width + 'px';
+            el.style.height = resizeTarget.height + 'px';
+            el.querySelector('.size-label').innerHTML = `${Math.round(resizeTarget.x)}, ${Math.round(resizeTarget.y)} <br> ${Math.round(resizeTarget.width)}x${Math.round(resizeTarget.height)}`;
+        }
+
+        function endResize() {
+            isResizing = false;
+            resizeTarget = null;
+            document.removeEventListener('mousemove', onResize);
+            document.removeEventListener('mouseup', endResize);
+        }
 
         // --- Keyboard Nudging ---
         function setupKeyboardNudging() {
