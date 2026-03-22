@@ -57,10 +57,10 @@ namespace MooldangAPI.Services
             _logger.LogInformation("OBS WebSocket Connected Event");
         }
 
-        private void OnDisconnect(object? sender, ObsDisconnectionInfo e)
+        private void OnDisconnect(object? sender, EventArgs e)
         {
             _isConnected = false;
-            _logger.LogWarning($"OBS WebSocket Disconnected: {e.DisconnectReason}");
+            _logger.LogWarning("OBS WebSocket Disconnected");
         }
     }
 }
