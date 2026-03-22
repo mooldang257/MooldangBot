@@ -216,25 +216,23 @@
                     return;
                 }
 
-                let url = `/api/overlay/layout/${chzzkUid}`; // Default fallback
+                let url = '';
                 if (presetId) {
-                    url = `/api/OverlayPreset/public/${presetId}`; // Specific preset
+                    url = `/api/OverlayPreset/public/${presetId}`; // 특정 프리셋 고정 모드
+                } else {
+                    url = `/api/OverlayPreset/active/${chzzkUid}`; // 서버 관리 유동 모드
                 }
-
+ 
                 console.log("Fetching layout from:", url);
                 const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
                     
-                    // If it's from the new Preset API, the config is in .configJson
-                    let components = data.components;
-                    let background = data.background;
-
                     if (data.configJson) {
                         try {
                             const config = JSON.parse(data.configJson);
-                            components = config.components;
-                            background = config.background;
+                            applyLayout(config.components);
+                            applyBackground(config.background);
                         } catch (e) {
                             console.error("Error parsing configJson from server", e);
                         }

@@ -1,22 +1,31 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
 using System.Collections.Concurrent;
-
+using MooldangAPI.ApiClients;
+using Microsoft.AspNetCore.SignalR;
+using MooldangAPI.Hubs;
+ 
 namespace MooldangAPI.Services;
-
+ 
 public class ChzzkBackgroundService : BackgroundService
 {
     private readonly ILogger<ChzzkBackgroundService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ChzzkApiClient _chzzkApiClient;
+    private readonly IHubContext<OverlayHub> _hubContext;
     private string _clientId = "";
     private string _clientSecret = "";
-
+ 
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _activeChannels = new();
-
-    public ChzzkBackgroundService(ILogger<ChzzkBackgroundService> logger, IServiceProvider serviceProvider)
+    // 라이브 상태 추적용 (이전 상태와 비교하여 롤백 트리거)
+    private readonly ConcurrentDictionary<string, bool> _lastLiveState = new();
+ 
+    public ChzzkBackgroundService(ILogger<ChzzkBackgroundService> logger, IServiceProvider serviceProvider, ChzzkApiClient chzzkApiClient, IHubContext<OverlayHub> hubContext)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _chzzkApiClient = chzzkApiClient;
+        _hubContext = hubContext;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -39,6 +48,7 @@ public class ChzzkBackgroundService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await StartAllBotsAsync();
+            await CheckLiveStatusAndRollbackAsync(stoppingToken);
             await Task.Delay(60000, stoppingToken);
         }
     }
@@ -116,6 +126,54 @@ public class ChzzkBackgroundService : BackgroundService
                     _logger.LogWarning($"[물댕봇] 채널 퇴장 완료: {uid}");
                 }
             }, cts.Token);
+        }
+    }
+
+    private async Task CheckLiveStatusAndRollbackAsync(CancellationToken stoppingToken)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var profiles = await dbContext.StreamerProfiles
+            .Where(p => p.IsBotEnabled && !string.IsNullOrEmpty(p.ChzzkUid))
+            .ToListAsync(stoppingToken);
+
+        foreach (var profile in profiles)
+        {
+            try
+            {
+                bool isLive = await _chzzkApiClient.IsLiveAsync(profile.ChzzkUid!);
+                bool wasLive = _lastLiveState.TryGetValue(profile.ChzzkUid!, out bool last) && last;
+
+                // Live -> Offline 전환 감지
+                if (wasLive && !isLive)
+                {
+                    _logger.LogInformation($"[Rollback] Streamer {profile.ChzzkUid} went offline. Rolling back preset...");
+
+                    // 1. 기본 프리셋 찾기 (첫 번째 프리셋 또는 '기본 프리셋' 이름)
+                    var defaultPreset = await dbContext.OverlayPresets
+                        .Where(p => p.ChzzkUid == profile.ChzzkUid)
+                        .OrderBy(p => p.Id)
+                        .FirstOrDefaultAsync(stoppingToken);
+
+                    if (defaultPreset != null)
+                    {
+                        // 2. 프로필 롤백
+                        profile.ActiveOverlayPresetId = defaultPreset.Id;
+                        await dbContext.SaveChangesAsync(stoppingToken);
+
+                        // 3. SignalR 브로드캐스트 (모든 오버레이 초기화)
+                        await _hubContext.Clients.Group(profile.ChzzkUid!).SendAsync("ReceiveOverlayStyle", defaultPreset.ConfigJson, stoppingToken);
+                        _logger.LogInformation($"[Rollback] Preset rolled back to {defaultPreset.Name} for {profile.ChzzkUid}");
+                    }
+                }
+
+                _lastLiveState[profile.ChzzkUid!] = isLive;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[Rollback Error] Failed to check status for {profile.ChzzkUid}: {ex.Message}");
+            }
         }
     }
 

@@ -141,8 +141,46 @@ namespace MooldangAPI.Controllers
             var preset = await _db.OverlayPresets
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
-
+ 
             if (preset == null) return NotFound();
+ 
+            return Ok(new OverlayPresetDto
+            {
+                Id = preset.Id,
+                Name = preset.Name,
+                ConfigJson = preset.ConfigJson,
+                UpdatedAt = preset.UpdatedAt
+            });
+        }
+
+        [HttpGet("active/{chzzkUid}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<OverlayPresetDto>> GetActivePreset(string chzzkUid)
+        {
+            var profile = await _db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+            if (profile == null) return NotFound("Profile not found");
+
+            OverlayPreset? preset = null;
+            if (profile.ActiveOverlayPresetId.HasValue)
+            {
+                preset = await _db.OverlayPresets
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == profile.ActiveOverlayPresetId.Value);
+            }
+
+            // 활성 프리셋이 없거나 유효하지 않으면 첫 번째(기본) 프리셋 반환
+            if (preset == null)
+            {
+                preset = await _db.OverlayPresets
+                    .Where(p => p.ChzzkUid == chzzkUid)
+                    .OrderBy(p => p.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (preset == null) return NotFound("No presets found for this streamer");
 
             return Ok(new OverlayPresetDto
             {
@@ -218,6 +256,31 @@ namespace MooldangAPI.Controllers
             await _db.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpPost("sync/{id}")]
+        public async Task<IActionResult> SyncPreset(int id)
+        {
+            var preset = await _db.OverlayPresets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (preset == null) return NotFound("Preset not found");
+
+            var profile = await _db.StreamerProfiles
+                .FirstOrDefaultAsync(p => p.ChzzkUid == preset.ChzzkUid);
+
+            if (profile == null) return NotFound("Profile not found");
+
+            // 1. 활성 프리셋 ID 업데이트
+            profile.ActiveOverlayPresetId = preset.Id;
+            await _db.SaveChangesAsync();
+
+            // 2. SignalR 브로드캐스트 (실시간 업데이트)
+            var hubContext = HttpContext.RequestServices.GetRequiredService<IHubContext<OverlayHub>>();
+            await hubContext.Clients.Group(profile.ChzzkUid!).SendAsync("ReceiveOverlayStyle", preset.ConfigJson);
+
+            return Ok(new { success = true });
         }
     }
 }

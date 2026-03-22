@@ -79,5 +79,7 @@ namespace MooldangAPI.Models
         public bool IsBotEnabled { get; set; } = false;
 
         public bool IsOmakaseEnabled { get; set; } = true;
+
+        public int? ActiveOverlayPresetId { get; set; }
     }
 }
