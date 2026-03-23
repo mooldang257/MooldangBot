@@ -11,6 +11,18 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # ⭐ [자동 마이그레이션] 배포 시 자동으로 DB를 업데이트하는 서비스
+  migration:
+    build: .
+    entrypoint: ./efbundle --connection "Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;"
+    depends_on:
+      db:
+        condition: service_healthy
 
   app:
     build: .
@@ -25,10 +37,13 @@ services:
       - ConnectionStrings__DefaultConnection=Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      migration:
+        condition: service_started
     volumes:
       - avatar_data:/app/wwwroot/images/avatars
 
 volumes:
   db_data:
-  avatar_data:
+  avatar_data:
