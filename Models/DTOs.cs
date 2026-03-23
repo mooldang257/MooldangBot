@@ -68,4 +68,22 @@ namespace MooldangAPI.Models
         [JsonPropertyName("configJson")]
         public string ConfigJson { get; set; } = "{}";
     }
+
+    public class CombinedCommandDto
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty; // "Custom:12", "Roulette:5" 등
+
+        [JsonPropertyName("keyword")]
+        public string Keyword { get; set; } = string.Empty;
+
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty; // "Custom", "Song", "Attendance", "Point", "Roulette", "Omakase"
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("requiredRole")]
+        public string RequiredRole { get; set; } = "all";
+    }
 }

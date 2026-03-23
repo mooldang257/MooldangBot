@@ -58,7 +58,7 @@
         <div class="panel">
             <table>
                 <thead>
-                    <tr><th>키워드</th><th>동작</th><th>권한</th><th>내용</th><th>관리</th></tr>
+                    <tr><th>유형</th><th>키워드</th><th>동작</th><th>권한</th><th>내용</th><th>관리</th></tr>
                 </thead>
                 <tbody id="commandTableBody"></tbody>
             </table>
@@ -105,15 +105,42 @@
 
             list.forEach(c => {
                 const tr = document.createElement('tr');
+                const isSystem = c.type !== 'Custom';
+                
                 tr.innerHTML = `
-                    <td class="keyword">${c.commandKeyword}</td>
-                    <td><span class="badge">${getActionLabel(c.actionType)}</span></td>
+                    <td><span class="badge" style="background:${getTypeColor(c.type)}; color:white; border:none;">${getTypeLabel(c.type)}</span></td>
+                    <td class="keyword">${c.keyword}</td>
+                    <td><span class="badge">${isSystem ? '⚙️ 시스템' : getActionLabel(c.actionType)}</span></td>
                     <td>${c.requiredRole === 'manager' ? '🛡️ 관리자' : '👥 전체'}</td>
-                    <td>${c.content}</td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteCommand(${c.id})">삭제</button></td>
+                    <td style="font-size:0.9em; color:#666;">${c.description}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteCommand('${c.id}')">삭제</button></td>
                 `;
                 body.appendChild(tr);
             });
+        }
+
+        function getTypeLabel(type) {
+            switch(type) {
+                case 'Custom': return '커스텀';
+                case 'Song': return '노래신청';
+                case 'Attendance': return '출석체크';
+                case 'Point': return '포인트';
+                case 'Roulette': return '룰렛';
+                case 'Omakase': return '오마카세';
+                default: return type;
+            }
+        }
+
+        function getTypeColor(type) {
+            switch(type) {
+                case 'Custom': return 'var(--primary)';
+                case 'Song': return '#ff4757';
+                case 'Attendance': return '#2ed573';
+                case 'Point': return '#ffa500';
+                case 'Roulette': return '#747d8c';
+                case 'Omakase': return '#5352ed';
+                default: return '#747d8c';
+            }
         }
 
         async function saveCommand() {
