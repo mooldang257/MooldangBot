@@ -106,12 +106,18 @@ using (var scope = app.Services.CreateScope())
     // 💡 [DB 초기값 세팅] 리눅스 도커 환경에서 DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     
-    void EnsureSetting(string key, string? value)
+    void EnsureSetting(string key, string? val)
     {
-        if (string.IsNullOrEmpty(value)) return;
-        if (!db.SystemSettings.Any(s => s.KeyName == key))
+        if (string.IsNullOrEmpty(val)) return;
+        var setting = db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
+        if (setting == null)
         {
-            db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
+            db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = val });
+        }
+        else
+        {
+            // [강제 업데이트] appsettings.json의 최신값을 DB에 반영
+            setting.KeyValue = val;
         }
     }
 

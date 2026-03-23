@@ -213,7 +213,11 @@ namespace MooldangAPI.Controllers
 
                 return Results.Redirect("/");
             }
-            catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }
+            catch (Exception ex) 
+            { 
+                string errorMsg = ex.InnerException != null ? $"{ex.Message} --> {ex.InnerException.Message}" : ex.Message;
+                return Results.Text($"에러 발생: {errorMsg}"); 
+            }
         }
     }
 }
