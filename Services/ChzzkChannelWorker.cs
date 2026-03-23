@@ -92,7 +92,17 @@ public class ChzzkChannelWorker
                 }
 
                 // ==========================================================
-                // ⭐ [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
+                // ⭐ [최적화] 웹소켓 연결 전에 방송 상태부터 확인합니다! (오프라인 시 1분 대기)
+                var chzzkClient = scope.ServiceProvider.GetRequiredService<ChzzkApiClient>();
+                bool isLive = await chzzkClient.IsLiveAsync(_uid, profile.ChzzkAccessToken);
+                if (!isLive)
+                {
+                    _logger.LogInformation($"[물댕봇] {_uid} 채널이 현재 오프라인입니다. 1분 후 다시 확인합니다.");
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    continue;
+                }
+
+                // [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
                 // ==========================================================
 
@@ -175,12 +185,12 @@ public class ChzzkChannelWorker
                     }
                     catch (OperationCanceledException)
                     {
-                        _logger.LogWarning($"⚠️ [물댕봇] {_uid} 채널 소켓 응답 지연(타임아웃 60초). 재연결합니다.");
+                        _logger.LogDebug($"⚠️ [물댕봇] {_uid} 채널 소켓 응답 지연(타임아웃 60초). 방송 상태를 재확인합니다.");
                         break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"❌ [물댕봇] 수신 스트림 에러: {ex.Message}");
+                        _logger.LogDebug($"❌ [물댕봇] 수신 스트림 에러: {ex.Message}");
                         break;
                     }
 
@@ -424,6 +434,12 @@ public class ChzzkChannelWorker
             string payloadString = doc.RootElement[1].GetString() ?? "{}";
             using var payloadDoc = JsonDocument.Parse(payloadString);
             var payload = payloadDoc.RootElement;
+
+            if (eventName == "error")
+            {
+                _logger.LogDebug($"📡 [ChzzkWorker] 소켓 IO 에러 수신: {payloadString}");
+                return;
+            }
 
             if (eventName == "SYSTEM")
             {
