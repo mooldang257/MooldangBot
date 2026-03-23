@@ -47,6 +47,10 @@ public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceive
 
         if (string.IsNullOrEmpty(chzzkUid)) return;
 
+        // 일반 채팅 방송 (모든 오버레이용)
+        // [수정] isAvatarEnabled 여부와 상관없이 ReceiveChat을 전송하여 룰렛 등 다른 오버레이도 채팅을 인식하도록 함
+        await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChat", JsonSerializer.Serialize(chatMsg), cancellationToken);
+
         // 아바타 애니메이션 명령 처리
         if (msgText == "!달리기" || msgText == "!비행")
         {
@@ -58,17 +62,8 @@ public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceive
                 senderId = req.SenderId
             };
             
-            // "ReceiveAvatarCommand" 인보크
-            await _hubContext.Clients.Group(chzzkUid).SendAsync("ReceiveAvatarCommand", JsonSerializer.Serialize(commandMsg), cancellationToken);
+            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveAvatarCommand", JsonSerializer.Serialize(commandMsg), cancellationToken);
             _logger.LogInformation($"[아바타] {req.Username} 님이 {msgText} 애니메이션을 실행했습니다.");
-        }
-        else
-        {
-            // 명령어가 아닌 일반 채팅 시
-            if(isAvatarEnabled)
-            {
-                await _hubContext.Clients.Group(chzzkUid).SendAsync("ReceiveChat", JsonSerializer.Serialize(chatMsg), cancellationToken);
-            }
         }
     }
 }

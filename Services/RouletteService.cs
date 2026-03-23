@@ -33,8 +33,8 @@ namespace MooldangAPI.Services
 
             var result = DrawItem(roulette.Items, is10x: false);
             
-            // SignalR 알림 전송
-            await _hubContext.Clients.Group(chzzkUid).SendAsync("RouletteTriggered", new
+            // SignalR 알림 전송 (소문자 그룹명 사용)
+            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
             {
                 RouletteId = rouletteId,
                 RouletteName = roulette.Name,
@@ -66,8 +66,8 @@ namespace MooldangAPI.Services
                 results.Add(DrawItem(roulette.Items, is10x: true));
             }
 
-            // SignalR 알림 전송
-            await _hubContext.Clients.Group(chzzkUid).SendAsync("RouletteTriggered", new
+            // SignalR 알림 전송 (소문자 그룹명 사용)
+            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
             {
                 RouletteId = rouletteId,
                 RouletteName = roulette.Name,
