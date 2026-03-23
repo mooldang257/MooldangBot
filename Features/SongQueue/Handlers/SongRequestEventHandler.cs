@@ -51,7 +51,7 @@ namespace MooldangAPI.Features.SongQueue.Handlers
                 }
 
                 // 2. DB에 곡 추가
-                var newSong = new SongQueue
+                var newSong = new MooldangAPI.Models.SongQueue
                 {
                     ChzzkUid = chzzkUid,
                     Title = songTitle,
