@@ -35,12 +35,26 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
         // 1. [시스템 명령어] !명령어등록 (마스터/스트리머/매니저 전용)
         if (msg.StartsWith("!명령어등록 ") && isAuthorizedAdmin)
         {
-            var parts = msg.Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 4)
+            var parts = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 3)
             {
-                string actionType = parts[1] == "공지" ? "Notice" : "Reply";
-                string triggerWord = parts[2];
-                string contentText = parts[3];
+                string actionType = "Reply";
+                string triggerWord = "";
+                string contentText = "";
+
+                if (parts.Length == 3)
+                {
+                    // !명령어등록 {명령어} {내용} -> 기본 응답(Reply) 취급
+                    triggerWord = parts[1];
+                    contentText = parts[2];
+                }
+                else
+                {
+                    // !명령어등록 {유형} {명령어} {내용...}
+                    actionType = parts[1] == "공지" ? "Notice" : "Reply";
+                    triggerWord = parts[2];
+                    contentText = string.Join(' ', parts.Skip(3)); // 4번째 조각부터 끝까지 내용으로 합침
+                }
 
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
