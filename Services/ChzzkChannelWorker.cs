@@ -151,27 +151,39 @@ public class ChzzkChannelWorker
 
 
                 // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
-                var buffer = new byte[1024 * 16]; // 16KB 버퍼
+                var buffer = new byte[1024 * 4]; // 버퍼는 작아도 됩니다 (조각을 모을 것이므로)
 
                 while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
                 {
                     string message = string.Empty;
                     try 
                     {
-                        // ⭐ [타임아웃 안전장치] 60초간 응답 없으면 연결 끊기
+                        // ⭐ [타임아웃 안전장치] 60초 유지 (치지직은 20초마다 Ping을 보냄)
                         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(180));
+                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
 
+                        // ⭐ [최적화 1] EndOfMessage가 true일 때까지 모든 파동(조각)을 끝까지 수집합니다.
                         using var ms = new MemoryStream();
                         WebSocketReceiveResult result;
+                        
                         do
                         {
                             result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), timeoutCts.Token);
+                            
+                            if (result.MessageType == WebSocketMessageType.Close) 
+                            {
+                                _logger.LogWarning($"⚠️ [물댕봇] {_uid} 서버가 정상적으로 종료(Close)를 요청했습니다.");
+                                break;
+                            }
+                            
                             ms.Write(buffer, 0, result.Count);
-                        } while (!result.EndOfMessage && !timeoutCts.Token.IsCancellationRequested);
+                        } 
+                        while (!result.EndOfMessage);
 
+                        // 루프를 빠져나온 이유가 Close 요청이라면 수신 루프 종료
                         if (result.MessageType == WebSocketMessageType.Close) break;
 
+                        // 모인 byte 배열을 한 번에 문자열로 변환
                         message = Encoding.UTF8.GetString(ms.ToArray());
                     }
                     catch (OperationCanceledException)
@@ -191,21 +203,22 @@ public class ChzzkChannelWorker
                         if (message.StartsWith("0")) // 0: Open
                         {
                             _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
-                            await SendMessageAsync(ws, "40", stoppingToken); // 40: Connect 패킷 발송
+                            await SendMessageAsync(ws, "40", stoppingToken);
                         }
                         else if (message.StartsWith("2")) // 2: Ping
                         {
-                            await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong (살아있다고 대답)
+                            await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong
                         }
-                        else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
+                        else if (message.StartsWith("42")) // 42: Event
                         {
-                            await HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken);
+                            // ⭐ [최적화 2] 파이어-앤-포겟(Fire-and-forget)
+                            // 수신 루프(귀)가 막히지 않도록, 이벤트 처리(뇌)는 별도의 Task로 비동기 실행합니다.
+                            _ = Task.Run(() => HandleEventAsync(message.Substring(2), profile, _clientId, _clientSecret, stoppingToken), stoppingToken);
                         }
                     }
                     catch (Exception loopEx)
                     {
-                        _logger.LogError($"❌ [물댕봇] 메시지 처리 중 지역 에러 (소켓유지): {loopEx.Message}\nRaw: {message.Substring(0, Math.Min(message.Length, 150))}");
-                        // 루프를 깨지 않고 다음 메시지를 계속 기다립니다.
+                        _logger.LogError($"❌ [물댕봇] 메시지 처리 중 지역 에러 (소켓유지): {loopEx.Message}");
                     }
                 }
                 _logger.LogWarning($"⚠️ [물댕봇] {_uid} 웹소켓 연결이 종료되었습니다. 3초 후 재연결을 시도합니다.");
