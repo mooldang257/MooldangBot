@@ -38,9 +38,7 @@ namespace MooldangAPI.Controllers
         public IActionResult BotLogin()
         {
             string clientId = ApiClients.SecretGuardian.GetClientId();
-            string baseDomain = _configuration["BaseDomain"] ?? "https://www.mooldang.store";
-            string redirectUri = $"{baseDomain}/Auth/callback"; 
-            string state = "bot_setup_" + Guid.NewGuid().ToString();
+            string redirectUri = $"{Request.Scheme}://{Request.Host}/Auth/callback";             string state = "bot_setup_" + Guid.NewGuid().ToString();
 
             string chzzkAuthUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
             return Redirect(chzzkAuthUrl);

@@ -101,8 +101,7 @@ app.MapHub<OverlayHub>("/overlayHub");
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-
+    // db.Database.Migrate(); // [수동 관리] 기존 테이블 충돌 방지를 위해 자동 마이그레이션 비활성화DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
     // 💡 [DB 초기값 세팅] 리눅스 도커 환경에서 DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     
