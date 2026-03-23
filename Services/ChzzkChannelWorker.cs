@@ -93,17 +93,6 @@ public class ChzzkChannelWorker
                     continue;
                 }
 
-                // ==========================================================
-                // ⭐ [최적화] 웹소켓 연결 전에 방송 상태부터 확인합니다! (오프라인 시 1분 대기)
-                var chzzkClient = scope.ServiceProvider.GetRequiredService<ChzzkApiClient>();
-                bool isLive = await chzzkClient.IsLiveAsync(_uid, profile.ChzzkAccessToken);
-                if (!isLive)
-                {
-                    _logger.LogInformation($"[물댕봇] {_uid} 채널이 현재 오프라인입니다. 1분 후 다시 확인합니다.");
-                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
-                    continue;
-                }
-
                 // [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
                 // ==========================================================
@@ -171,7 +160,7 @@ public class ChzzkChannelWorker
                     {
                         // ⭐ [타임아웃 안전장치] 60초간 응답 없으면 연결 끊기
                         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
+                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(180));
 
                         using var ms = new MemoryStream();
                         WebSocketReceiveResult result;
