@@ -7,9 +7,6 @@ namespace MooldangAPI.Models
         [Key]
         public int Id { get; set; }
 
-        [MaxLength(100)]
-        public string NaverId { get; set; } = string.Empty; // [임시 유지] DB NOT NULL 제약 조건 대응용
-
         [MaxLength(50)]
         public string? ChzzkUid { get; set; }
 
