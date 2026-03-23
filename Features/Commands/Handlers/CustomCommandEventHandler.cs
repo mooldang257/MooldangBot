@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.ApiClients;
 using Microsoft.AspNetCore.SignalR;
+using MooldangAPI.Services;
 
 namespace MooldangAPI.Features.Commands.Handlers;
 
