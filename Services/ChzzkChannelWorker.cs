@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data; // DB 컨텍스트 네임스페이스
 using MooldangAPI.Models; // 모델 네임스페이스
 using Microsoft.AspNetCore.SignalR;
-using MooldangAPI.Hubs; // OverlayHub가 있는 네임스페이스로 맞춰주세요.
+using MooldangAPI.Hubs;
+using MooldangAPI.ApiClients;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MooldangAPI.Services;
 
