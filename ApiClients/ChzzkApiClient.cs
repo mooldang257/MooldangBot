@@ -196,57 +196,70 @@ namespace MooldangAPI.ApiClients
 
                 var response = await _httpClient.SendAsync(request);
                 
-                // [오시리스의 규율]: 404는 오류가 아닌 '방송 오프라인'이라는 자연 질서입니다.
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return false;
-                }
-
+                // [오시리스의 규율]: 일부 채널은 live-status를 지원하지 않고 404를 반환할 수 있습니다.
+                // 이 경우 조용히 시도 2(채널 목록)로 넘어가며, 다른 오류(500 등)인 경우에만 경고를 남깁니다.
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning($"[하모니 경고] 치지직 서버 이상 감지: {response.StatusCode}. 폴백 시도... (ID: {channelId})");
+                    if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                    {
+                        _logger.LogWarning($"[하모니 경고] 치지직 서버 이상 감지: {response.StatusCode}. 폴백 시도... (ID: {channelId})");
+                    }
                     
-                    // [시도 2] 채널 목록 API (쿼리 스트링 방식)
-                    // ⚠️ 주의: Naver Open API 중 일부(목록 조회 등)는 사용자 토큰 포함 시 401("토큰 인증 API가 아닙니다")을 반환하므로 헤더를 제외합니다.
-                    using var fallbackReq = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels?channelIds={channelId}");
-                        
-                    var fallbackRes = await _httpClient.SendAsync(fallbackReq);
-                    if (fallbackRes.IsSuccessStatusCode)
-                    {
-                        var json = await fallbackRes.Content.ReadAsStringAsync();
-                        using var doc = JsonDocument.Parse(json);
-                        // 응답 구조: { content: { data: [ { channelId, openLive, ... } ] } }
-                        if (doc.RootElement.TryGetProperty("content", out var ct) && ct.TryGetProperty("data", out var dt) && dt.ValueKind == JsonValueKind.Array && dt.GetArrayLength() > 0)
-                        {
-                            var first = dt[0];
-                            bool isLive = first.TryGetProperty("openLive", out var ol) && ol.GetBoolean();
-                            _logger.LogInformation($"[ChzzkApi] Fallback Success: {channelId} isLive={isLive}");
-                            return isLive;
-                        }
-                    }
-                    else
-                    {
-                        string err = await fallbackRes.Content.ReadAsStringAsync();
-                        _logger.LogError($"❌ [ChzzkApi] Fallback Failed (HTTP {fallbackRes.StatusCode}): {err}");
-                    }
-                    return false;
+                    return await CheckLiveViaChannelListFallbackAsync(channelId);
                 }
 
                 var jsonResp = await response.Content.ReadAsStringAsync();
                 using var resDoc = JsonDocument.Parse(jsonResp);
                 if (resDoc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
                 {
+                    // "OPEN" 또는 "CLOSE" 상태
                     var status = content.GetProperty("status").GetString();
-                    _logger.LogInformation($"[ChzzkApi] Channel {channelId} Live Status: {status}");
-                    return string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
+                    bool isLive = string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
+                    
+                    // 만약 live-status가 CLOSE로 나오더라도, 혹시 모를 오판을 대비해 한 번 더 폴백 환경을 타볼 수 있지만
+                    // 일단 OPEN이면 즉시 true를 반환합니다. 
+                    if (isLive) return true;
                 }
-                return false;
+
+                // [최후의 보루]: 첫 번째 시도가 명시적으로 OPEN이 아니거나 실패한 경우, 채널 목록의 openLive 필드를 최종 확인합니다.
+                return await CheckLiveViaChannelListFallbackAsync(channelId);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"[ChzzkApi] IsLiveAsync Error: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// [시도 2] 채널 목록 API를 통해 라이브 상태를 최종 확인합니다 (폴백).
+        /// </summary>
+        private async Task<bool> CheckLiveViaChannelListFallbackAsync(string channelId)
+        {
+            try
+            {
+                using var fallbackReq = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels?channelIds={channelId}");
+                var fallbackRes = await _httpClient.SendAsync(fallbackReq);
+                
+                if (fallbackRes.IsSuccessStatusCode)
+                {
+                    var json = await fallbackRes.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("content", out var ct) && 
+                        ct.TryGetProperty("data", out var dt) && dt.ValueKind == JsonValueKind.Array && dt.GetArrayLength() > 0)
+                    {
+                        var first = dt[0];
+                        bool isLive = first.TryGetProperty("openLive", out var ol) && ol.GetBoolean();
+                        
+                        // 오프라인일 때는 로그를 남기지 않고, 온라인일 때만 정보를 남깁니다. (정숙함 유지)
+                        if (isLive) _logger.LogInformation($"[ChzzkApi] Live Detected via Fallback: {channelId}");
+                        return isLive;
+                    }
+                }
+            }
+            catch { /* Ignored */ }
+            return false;
+        }
         }
 
         /// <summary>
