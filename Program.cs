@@ -163,8 +163,8 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    EnsureSetting("ChzzkClientId", config["Chzzk:ClientId"]);
-    EnsureSetting("ChzzkClientSecret", config["Chzzk:ClientSecret"]);
+    EnsureSetting("ChzzkClientId", config["ChzzkApi:ClientId"]);
+    EnsureSetting("ChzzkClientSecret", config["ChzzkApi:ClientSecret"]);
     db.SaveChanges();
 }
 

@@ -23,7 +23,7 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
     {
         string msg = notification.Message;
         string nickname = notification.Username;
-        bool isMaster = notification.SenderId == "ca98875d5e0edf02776047fbc70f5449";
+        bool isMaster = notification.SenderId == notification.Profile.ChzzkUid || notification.SenderId == "ca98875d5e0edf02776047fbc70f5449";
         
         bool isAuthorized = isMaster || notification.UserRole == "streamer" || notification.UserRole == "manager";
 

@@ -11,10 +11,13 @@ namespace MooldangAPI.ApiClients
         private readonly string _clientId;
         private readonly string _clientSecret;
         private const string BaseUrl = "https://openapi.chzzk.naver.com"; // 치지직 공식 Open API 주소
+        private readonly ILogger<ChzzkApiClient> _logger;
+
         // IConfiguration을 주입받습니다.
-        public ChzzkApiClient(HttpClient httpClient, IConfiguration config)
+        public ChzzkApiClient(HttpClient httpClient, IConfiguration config, ILogger<ChzzkApiClient> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
@@ -186,8 +189,13 @@ namespace MooldangAPI.ApiClients
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/open/v1/lives/status?channelId={channelId}");
-                if (!response.IsSuccessStatusCode) return false;
+                // [수정] 404 에러 해결: 치지직 Open API 정식 규격으로 엔드포인트 수정
+                var response = await _httpClient.GetAsync($"/open/v1/channels/{channelId}/live-status");
+                if (!response.IsSuccessStatusCode) 
+                {
+                    _logger.LogWarning($"⚠️ [ChzzkApi] 라이브 상태 확인 실패 (HTTP {response.StatusCode}) - UID: {channelId}");
+                    return false;
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
