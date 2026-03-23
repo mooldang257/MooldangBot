@@ -232,8 +232,8 @@ namespace MooldangAPI.Controllers
             var preset = await _db.OverlayPresets.FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
             if (preset == null) return NotFound();
 
-            preset.Name = dto.Name;
-            preset.ConfigJson = dto.ConfigJson;
+            preset.Name = dto.Name ?? preset.Name;
+            preset.ConfigJson = dto.ConfigJson ?? preset.ConfigJson;
             preset.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();

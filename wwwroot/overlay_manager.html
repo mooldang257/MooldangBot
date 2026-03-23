@@ -721,6 +721,12 @@
             
             // 2. 경로에서 추출 (마지막 "/" 제외 필터링)
             const pathParts = window.location.pathname.split('/').filter(p => p !== "");
+            
+            // 만약 경로가 /overlay_manager/{uid} 형태라면 마지막 파트가 UID
+            if (pathParts.length >= 2 && pathParts[pathParts.length-2] === 'overlay_manager') {
+                return pathParts[pathParts.length-1];
+            }
+
             const lastPart = pathParts[pathParts.length - 1];
             
             // 만약 마지막 부분이 overlay_manager 이거나 .html 이면 UID 아님
@@ -757,7 +763,8 @@
                     
                     if (presets.length > 0) {
                         // 프리셋이 있으면 첫 번째 프리셋 선택
-                        changePreset(presets[0].id);
+                        const firstId = presets[0].id || presets[0].Id;
+                        changePreset(firstId);
                     } else {
                         // 프리셋이 없으면 안내
                         document.getElementById('overlayUrl').innerText = "프리셋을 생성하세요";
@@ -770,7 +777,12 @@
 
         function updatePresetSelector() {
             const selector = document.getElementById('presetSelector');
-            selector.innerHTML = presets.map(p => `<option value="${p.id}" ${p.id == currentPresetId ? 'selected' : ''}>${p.name}</option>`).join('');
+            selector.innerHTML = presets.map(p => {
+                const id = p.id || p.Id;
+                const name = p.name || p.Name;
+                return `<option value="${id}" ${id == currentPresetId ? 'selected' : ''}>${name}</option>`;
+            }).join('');
+            
             if (presets.length === 0) {
                 selector.innerHTML = '<option value="">프리셋 없음</option>';
             }
@@ -780,7 +792,7 @@
             if (!id) return;
             console.log("Changing to preset:", id);
             currentPresetId = parseInt(id);
-            const preset = presets.find(p => p.id == currentPresetId);
+            const preset = presets.find(p => (p.id || p.Id) == currentPresetId);
             
             if (preset) {
                 console.log("Raw preset data:", preset);
@@ -915,12 +927,16 @@
                     const newPreset = await res.json();
                     presets.push(newPreset);
                     updatePresetSelector();
-                    changePreset(newPreset.id);
+                    changePreset(newPreset.id || newPreset.Id);
                     showToast("프리셋이 생성되었습니다.");
                 } else {
-                    const errorText = await res.text();
+                    let errorText = "";
+                    try {
+                        errorText = await res.text();
+                    } catch(e) { errorText = "알 수 없는 에러"; }
+                    
                     console.error("Create preset failed:", errorText);
-                    alert("생성 실패: " + (res.status === 401 ? "로그인이 필요합니다." : errorText));
+                    alert("생성 실패 (" + res.status + "): " + (res.status === 401 ? "로그인이 필요합니다." : errorText));
                 }
             } catch (e) {
                 console.error(e);
@@ -930,8 +946,8 @@
 
         async function renameCurrentPreset() {
             if (!currentPresetId) return;
-            const preset = presets.find(p => p.id == currentPresetId);
-            const newName = prompt("변경할 이름을 입력하세요:", preset.name);
+            const preset = presets.find(p => (p.id || p.Id) == currentPresetId);
+            const newName = prompt("변경할 이름을 입력하세요:", preset.name || preset.Name);
             if (!newName) return;
 
             try {
@@ -942,7 +958,8 @@
                 });
 
                 if (res.ok) {
-                    preset.name = newName;
+                    if (preset.name) preset.name = newName;
+                    if (preset.Name) preset.Name = newName;
                     updatePresetSelector();
                     showToast("이름이 변경되었습니다.");
                 }
@@ -958,7 +975,7 @@
             try {
                 const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, { method: 'DELETE' });
                 if (res.ok) {
-                    presets = presets.filter(p => p.id != currentPresetId);
+                    presets = presets.filter(p => (p.id || p.Id) != currentPresetId);
                     updatePresetSelector();
                     if (presets.length > 0) changePreset(presets[0].id);
                     else {
@@ -1682,7 +1699,7 @@
             btn.disabled = true;
 
             const configJson = JSON.stringify({ components, background });
-            const preset = presets.find(p => p.id == currentPresetId);
+            const preset = presets.find(p => (p.id || p.Id) == currentPresetId);
 
             try {
                 const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, {
@@ -1692,7 +1709,8 @@
                 });
 
                 if (res.ok) {
-                    preset.configJson = configJson;
+                    if (preset.configJson !== undefined) preset.configJson = configJson;
+                    if (preset.ConfigJson !== undefined) preset.ConfigJson = configJson;
                     showToast("프리셋이 저장되었습니다.");
                     
                     // SignalR을 통해 실시간 업데이트 전송

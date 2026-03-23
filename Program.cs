@@ -1,3 +1,4 @@
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -14,7 +15,15 @@ using MooldangAPI.Features.Roulette;
 using MooldangAPI.Strategies;
 using MooldangAPI.ApiClients;
 
+// ✅ .env 파일이 있으면 환경변수로 로드 (없으면 무시)
+if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".env")))
+{
+    Env.Load();
+}
+
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 // 💡 리버스 프록시(Nginx 등) 환경에서 HTTPS 프로토콜을 올바르게 인식하도록 설정합니다.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

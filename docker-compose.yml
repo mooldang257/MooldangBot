@@ -17,13 +17,13 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;
-      - BaseDomain=https://www.mooldang.store
-      - Chzzk__ClientId=172f9790-da2a-4322-a1ff-58e534454b8a
-      - Chzzk__ClientSecret=OihzgJAhRQmsUXek-dV0h1VL_4GUqxFM3AplypS9z1k
+
     depends_on:
       - db
     volumes:

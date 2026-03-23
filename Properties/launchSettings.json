@@ -6,11 +6,9 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:3000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "Chzzk__ClientId": "eaa125b1-870a-4d29-9d98-f0567f0892f5",
-        "Chzzk__ClientSecret": "O71Jgu719HnBgkYvaT93FhH2roIGaOOznyTsOSjGiCw",
-        "BaseDomain": "http://localhost:3000"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
+
     }
   }
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MooldangAPI.Models
 {
     public class SetupRequest
@@ -39,17 +41,31 @@ namespace MooldangAPI.Models
 
     public class OverlayPresetDto
     {
+        [JsonPropertyName("id")]
         public int Id { get; set; }
+
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("configJson")]
         public string ConfigJson { get; set; } = "{}";
+
+        [JsonPropertyName("updatedAt")]
         public DateTime UpdatedAt { get; set; }
     }
 
     public class SharedComponentDto
     {
+        [JsonPropertyName("id")]
         public int Id { get; set; }
+
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("configJson")]
         public string ConfigJson { get; set; } = "{}";
     }
 }
