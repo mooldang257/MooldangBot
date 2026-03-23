@@ -91,17 +91,22 @@
     </div>
 
     <script>
-        const chzzkUid = window.location.pathname.split('/').pop();
+        const chzzkUid = decodeURIComponent(window.location.pathname.split('/').pop()).trim();
+        console.log("Current ChzzkUid:", chzzkUid);
 
         async function loadAll() {
             await Promise.all([loadCommands(), loadPeriodicMessages()]);
         }
 
         async function loadCommands() {
-            const res = await fetch(`/api/commands/list/${chzzkUid}`);
-            const list = await res.json();
-            const body = document.getElementById('commandTableBody');
-            body.innerHTML = '';
+            try {
+                const res = await fetch(`/api/commands/list/${chzzkUid}`);
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                
+                const list = await res.json();
+                console.log("Commands loaded:", list);
+                const body = document.getElementById('commandTableBody');
+                body.innerHTML = '';
 
             list.forEach(c => {
                 const tr = document.createElement('tr');

@@ -83,6 +83,9 @@ namespace MooldangAPI.Models
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
+        [JsonPropertyName("actionType")]
+        public string? ActionType { get; set; }
+
         [JsonPropertyName("requiredRole")]
         public string RequiredRole { get; set; } = "all";
     }
