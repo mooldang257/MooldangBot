@@ -41,6 +41,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserSession, UserSession>();
+
 // -- Event-Driven Architecture 의존성 주입 --
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddSingleton<SongQueueState>();
@@ -94,6 +97,24 @@ app.UseRouting();
 // 미들웨어 설정
 app.UseStaticFiles();
 app.UseAuthentication();
+
+// 🔐 [추가] 인증된 세션에 StreamerId(ChzzkUid)가 반드시 포함되어 있는지 검증하는 미들웨어
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var streamerId = context.User.FindFirstValue("StreamerId");
+        if (string.IsNullOrEmpty(streamerId))
+        {
+            // 인증은 되었으나 식별값이 없는 비정상 세션인 경우 로그아웃 처리 후 로그인 페이지로 유도
+            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            context.Response.Redirect("/api/auth/chzzk-login");
+            return;
+        }
+    }
+    await next();
+});
+
 app.UseAuthorization();
 
 

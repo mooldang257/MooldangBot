@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MooldangAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Models;
+using System.Security.Claims;
 
 namespace MooldangAPI.Controllers
 {
@@ -102,7 +103,7 @@ namespace MooldangAPI.Controllers
             }));
 
             // 4. 오마카세 명령어
-            var omakases = await _db.StreamerOmakaseItems
+            var omakases = await _db.StreamerOmakases
                 .AsNoTracking()
                 .Where(o => o.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
@@ -175,8 +176,8 @@ namespace MooldangAPI.Controllers
             {
                 if (int.TryParse(idVal, out int id))
                 {
-                    var omakase = await _db.StreamerOmakaseItems.FindAsync(id);
-                    if (omakase != null) { _db.StreamerOmakaseItems.Remove(omakase); await _db.SaveChangesAsync(); }
+                    var omakase = await _db.StreamerOmakases.FindAsync(id);
+                    if (omakase != null) { _db.StreamerOmakases.Remove(omakase); await _db.SaveChangesAsync(); }
                 }
             }
 

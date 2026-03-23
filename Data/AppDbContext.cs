@@ -5,8 +5,11 @@ namespace MooldangAPI.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        private readonly IUserSession _userSession;
+
+        public AppDbContext(DbContextOptions<AppDbContext> options, IUserSession userSession) : base(options)
         {
+            _userSession = userSession;
         }
 
         public DbSet<StreamerProfile> StreamerProfiles { get; set; }
@@ -78,6 +81,24 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<SonglistSession>().ToTable("songlistsessions");
             modelBuilder.Entity<OverlayPreset>().ToTable("overlaypresets");
             modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
+
+            // 🔐 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 자동 적용
+            // 스트리머가 로그인된 경우, 본인의 ChzzkUid를 가진 데이터만 조회되도록 강제합니다.
+            // 💡 [주의] 람다 식 내부에서 _userSession.ChzzkUid를 직접 참조해야 쿼리 실행 시점에 동적으로 값이 바뀝니다.
+            
+            modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<SongQueue>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<StreamerCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<StreamerOmakaseItem>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<Roulette>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<PeriodicMessage>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<SonglistSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<OverlayPreset>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<SharedComponent>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+
+            // 필드명이 다른 경우 예외 처리
+            modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerChzzkUid == _userSession.ChzzkUid);
         }
 
     }

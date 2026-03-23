@@ -7,8 +7,9 @@ namespace MooldangAPI.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
         [MaxLength(50)]
-        public string? ChzzkUid { get; set; }
+        public string ChzzkUid { get; set; } = string.Empty;
 
         // ⭐ 치지직 프로필 닉네임 저장 필드 추가
         [MaxLength(100)]
@@ -34,6 +35,7 @@ namespace MooldangAPI.Models
         public string? NoticeMemo { get; set; }
 
         // [추가] 3. 물마카세(오마카세) 및 명령어 설정
+        [ConcurrencyCheck]
         public int OmakaseCount { get; set; } = 0; // 현재 쌓인 물마카세 개수
 
         [MaxLength(50)]
