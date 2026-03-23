@@ -17,6 +17,14 @@ public class ChzzkChannelWorker
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ChzzkChannelWorker> _logger;
 
+    // ⭐ [성능 개선] 공유 HttpClient (매 요청마다 new HttpClient() 생성하지 않음)
+    private readonly HttpClient _httpClient;
+
+    // ⭐ [성능 개선 #1] 명령어 캐시: DB 조회 없이 메모리에서 바로 검색
+    private List<StreamerCommand>? _commandCache;
+    private DateTime _commandCacheExpiry = DateTime.MinValue;
+    private static readonly TimeSpan CommandCacheTtl = TimeSpan.FromSeconds(30);
+
     // ChzzkChannelWorker.cs 클래스 내부 전역 변수로 추가
 
     // 💡 [카테고리 사전]: 사용자가 입력하는 단축어 -> (타입, 치지직_카테고리_ID, 공식명칭)
@@ -56,6 +64,11 @@ public class ChzzkChannelWorker
         _clientSecret = clientSecret;
         _serviceProvider = serviceProvider;
         _logger = serviceProvider.GetRequiredService<ILogger<ChzzkChannelWorker>>();
+
+        // ⭐ [성능 개선 #4] 공유 HttpClient 초기화 (소켓 고갈 방지)
+        _httpClient = new HttpClient();
+        _httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+        _httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
     }
 
     public async Task ConnectAndListenAsync(CancellationToken stoppingToken)
@@ -255,9 +268,12 @@ public class ChzzkChannelWorker
         // ==========================================
         // 🥈 2순위: 시스템 공통 봇 계정 확인 및 갱신 (SystemSettings)
         // ==========================================
-        var globalTokenSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotAccessToken");
-        var globalRefreshSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotRefreshToken");
-        var globalExpiresSetting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == "BotTokenExpiresAt");
+        // ⭐ [성능 개선 #5] 3번 개별 쿼리 → 1번 IN 쿼리로 통합
+        var botKeys = new[] { "BotAccessToken", "BotRefreshToken", "BotTokenExpiresAt" };
+        var globalSettings = await db.SystemSettings.Where(s => botKeys.Contains(s.KeyName)).ToListAsync();
+        var globalTokenSetting = globalSettings.FirstOrDefault(s => s.KeyName == "BotAccessToken");
+        var globalRefreshSetting = globalSettings.FirstOrDefault(s => s.KeyName == "BotRefreshToken");
+        var globalExpiresSetting = globalSettings.FirstOrDefault(s => s.KeyName == "BotTokenExpiresAt");
 
         string? globalToken = globalTokenSetting?.KeyValue;
         string? globalRefresh = globalRefreshSetting?.KeyValue;
@@ -316,9 +332,24 @@ public class ChzzkChannelWorker
     // 헬퍼 메서드 (동일)
     private void UpdateOrAddSystemSetting(AppDbContext db, string key, string value)
     {
-        var setting = db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
+        var setting = db.SystemSettings.Local.FirstOrDefault(s => s.KeyName == key)
+                   ?? db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
         if (setting == null) db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
         else setting.KeyValue = value;
+    }
+
+    // ⭐ [성능 개선 #1] 명령어 캐시 갱신 메서드
+    private async Task RefreshCommandCacheAsync(string chzzkUid, CancellationToken token)
+    {
+        if (DateTime.Now < _commandCacheExpiry && _commandCache != null) return;
+
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        _commandCache = await db.StreamerCommands
+            .AsNoTracking()
+            .Where(c => c.ChzzkUid == chzzkUid)
+            .ToListAsync(token);
+        _commandCacheExpiry = DateTime.Now.Add(CommandCacheTtl);
     }
 
     // ⭐ [비밀 무기] 토큰 유통기한 확인 및 자동 갱신 메서드
@@ -557,13 +588,10 @@ public class ChzzkChannelWorker
                     {
                         _logger.LogInformation($"📢 [고정 공지 실행] {nickname}님 -> {noticeText}");
 
-                        using var noticeClient = new HttpClient();
-                        noticeClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-                        noticeClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-                        noticeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
+                        // ⭐ [성능 개선 #4] 공유 HttpClient 사용
+                        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
                         var noticeReq = new { message = noticeText };
-                        var noticeRes = await noticeClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
+                        var noticeRes = await _httpClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
                             new StringContent(JsonSerializer.Serialize(noticeReq), Encoding.UTF8, "application/json"), token);
 
                         if (noticeRes.IsSuccessStatusCode)
@@ -683,13 +711,10 @@ public class ChzzkChannelWorker
                                 {
                                     string noticeText = customCmd.Content.Length > 100 ? customCmd.Content.Substring(0, 97) + "..." : customCmd.Content;
 
-                                    using var noticeClient = new HttpClient();
-                                    noticeClient.DefaultRequestHeaders.Add("Client-Id", clientId);
-                                    noticeClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-                                    noticeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
+                                    // ⭐ [성능 개선 #4] 공유 HttpClient 사용
+                                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
                                     var noticeReq = new { message = noticeText };
-                                    var noticeRes = await noticeClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
+                                    var noticeRes = await _httpClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/notice",
                                         new StringContent(JsonSerializer.Serialize(noticeReq), Encoding.UTF8, "application/json"), token);
 
                                     if (noticeRes.IsSuccessStatusCode)
@@ -700,10 +725,8 @@ public class ChzzkChannelWorker
                                 {
                                     if (!isBot)
                                     {
-                                        using var replyClient = new HttpClient();
-                                        replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
-                                        replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-                                        replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
+                                        // ⭐ [성능 개선 #4] 공유 HttpClient 사용
+                                        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
 
                                         // ⭐ [마법의 코드 추가] 봇이 보내는 메시지 맨 앞에 '투명 문자(\u200B)'를 삽입합니다.
                                         string replyText = "\u200B" + customCmd.Content;
@@ -712,7 +735,7 @@ public class ChzzkChannelWorker
                                         if (replyText.Length > 500) replyText = replyText.Substring(0, 497) + "...";
 
                                         var replyReq = new { message = replyText };
-                                        var replyRes = await replyClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
+                                        var replyRes = await _httpClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
                                             new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
 
                                         if (replyRes.IsSuccessStatusCode)
@@ -894,15 +917,12 @@ public class ChzzkChannelWorker
     }
 
     // 편의를 위한 봇 채팅 응답 헬퍼 메서드
+    // ⭐ [성능 개선 #4] 공유 HttpClient 사용
     private async Task SendReplyChatAsync(StreamerProfile profile, string clientId, string clientSecret, string message, CancellationToken token)
     {
-        using var replyClient = new HttpClient();
-        replyClient.DefaultRequestHeaders.Add("Client-Id", clientId);
-        replyClient.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-        replyClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
+        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
         var replyReq = new { message = message };
-        await replyClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
+        await _httpClient.PostAsync("https://openapi.chzzk.naver.com/open/v1/chats/send",
             new StringContent(JsonSerializer.Serialize(replyReq), Encoding.UTF8, "application/json"), token);
     }
 

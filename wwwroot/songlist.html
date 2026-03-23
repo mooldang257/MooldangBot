@@ -125,7 +125,7 @@
             connection.invoke("JoinStreamerGroup", chzzkUid);
         });
 
-        connection.on("RefreshSonglist", async () => {
+        connection.on("RefreshSongAndDashboard", async () => {
             await loadDashboardData();
             broadcastState();
         });

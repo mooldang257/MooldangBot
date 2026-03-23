@@ -118,8 +118,9 @@ namespace MooldangAPI.Controllers
         private async Task NotifyOverlayAsync(string chzzkUid)
         {
             string groupName = chzzkUid.ToLower();
-            await _hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist");
-            await _hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard");
+            // ⭐ [성능 개선 #6] 2번 개별 SignalR 전송 → 1번으로 통합
+            // 프론트엔드에서 'RefreshSongAndDashboard' 이벤트 하나로 답장 화면 + 대시보드 갱신 명령어를 모두 처리해야 함
+            await _hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard");
         }
     }
 }

@@ -138,7 +138,8 @@ public class ChzzkBackgroundService : BackgroundService
             .Where(p => p.IsBotEnabled && !string.IsNullOrEmpty(p.ChzzkUid))
             .ToListAsync(stoppingToken);
 
-        foreach (var profile in profiles)
+        // ⭐ [성능 개선 #3] 스트리머별 라이브 상태 API 호출을 순차 → Task.WhenAll 병력로 변경
+        var tasks = profiles.Select(async profile =>
         {
             try
             {
@@ -150,20 +151,26 @@ public class ChzzkBackgroundService : BackgroundService
                 {
                     _logger.LogInformation($"[Rollback] Streamer {profile.ChzzkUid} went offline. Rolling back preset...");
 
-                    // 1. 기본 프리셋 찾기 (첫 번째 프리셋 또는 '기본 프리셋' 이름)
-                    var defaultPreset = await dbContext.OverlayPresets
+                    // ⭐ 롤백 작업은 별도 scope에서 DB 사용
+                    using var rollbackScope = _serviceProvider.CreateScope();
+                    var rollbackDb = rollbackScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var hubContext = rollbackScope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
+
+                    var defaultPreset = await rollbackDb.OverlayPresets
                         .Where(p => p.ChzzkUid == profile.ChzzkUid)
                         .OrderBy(p => p.Id)
                         .FirstOrDefaultAsync(stoppingToken);
 
                     if (defaultPreset != null)
                     {
-                        // 2. 프로필 롤백
-                        profile.ActiveOverlayPresetId = defaultPreset.Id;
-                        await dbContext.SaveChangesAsync(stoppingToken);
+                        var profileToUpdate = await rollbackDb.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == profile.ChzzkUid, stoppingToken);
+                        if (profileToUpdate != null)
+                        {
+                            profileToUpdate.ActiveOverlayPresetId = defaultPreset.Id;
+                            await rollbackDb.SaveChangesAsync(stoppingToken);
+                        }
 
-                        // 3. SignalR 브로드캐스트 (모든 오버레이 초기화)
-                        await _hubContext.Clients.Group(profile.ChzzkUid!).SendAsync("ReceiveOverlayStyle", defaultPreset.ConfigJson, stoppingToken);
+                        await hubContext.Clients.Group(profile.ChzzkUid!).SendAsync("ReceiveOverlayStyle", defaultPreset.ConfigJson, stoppingToken);
                         _logger.LogInformation($"[Rollback] Preset rolled back to {defaultPreset.Name} for {profile.ChzzkUid}");
                     }
                 }
@@ -174,7 +181,9 @@ public class ChzzkBackgroundService : BackgroundService
             {
                 _logger.LogError($"[Rollback Error] Failed to check status for {profile.ChzzkUid}: {ex.Message}");
             }
-        }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     private void StopBotForStreamer(string uid)

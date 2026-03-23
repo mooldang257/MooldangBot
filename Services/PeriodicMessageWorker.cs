@@ -70,69 +70,77 @@ public class PeriodicMessageWorker : BackgroundService
             if (m.LastSentAt.HasValue && now < m.LastSentAt.Value.AddMinutes(m.IntervalMinutes))
                 continue;
 
-            // 라이브 상태 확인 (캐시 사용)
-            if (!liveStatusCache.TryGetValue(m.ChzzkUid, out bool isLive))
+            // ⭐ [성능 개선 #2] 동일 스트리머 프로파일을 3번 조회 → 1번으로 통합
+            // 라이브 상태 캨시가 없으면 DB에서 한 번 조회용
+            if (!liveStatusCache.ContainsKey(m.ChzzkUid))
             {
-                // 스트리머 프로필에서 봇 활성화 여부 먼저 확인
-                var profileCheck = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == m.ChzzkUid, stoppingToken);
-                if (profileCheck == null || !profileCheck.IsBotEnabled)
+                // 프로파일 + 보트 활성화 여부를 한 번에 조회
+                var profile = await db.StreamerProfiles
+                    .FirstOrDefaultAsync(p => p.ChzzkUid == m.ChzzkUid, stoppingToken);
+
+                if (profile == null || !profile.IsBotEnabled)
                 {
-                    liveStatusCache[m.ChzzkUid] = false; // 봇이 비활성화면 라이브 여부와 상관없이 발송 안 함
-                    _logger.LogDebug($"[자동 메세지] {m.ChzzkUid} 채널의 물댕봇이 비활성화 상태입니다.");
+                    liveStatusCache[m.ChzzkUid] = false;
+                    _logger.LogDebug($"[자동 메세지] {m.ChzzkUid} 채널의 물댓보이 비활성화 상태입니다.");
                     continue;
                 }
 
-                isLive = await _chzzkApiClient.IsLiveAsync(m.ChzzkUid);
+                bool isLive = await _chzzkApiClient.IsLiveAsync(m.ChzzkUid);
                 liveStatusCache[m.ChzzkUid] = isLive;
                 _logger.LogInformation($"[자동 메세지] {m.ChzzkUid} 라이브 상태: {isLive}");
+
+                if (!isLive)
+                {
+                    _logger.LogDebug($"[자동 메세지] {m.ChzzkUid} 채널이 현재 방송 중이 아닙니다.");
+                    continue;
+                }
+
+                // 토큰 만료 임박 시 갱신 (AsTracking 상태)
+                await RefreshTokenIfNeededAsync(profile, db);
+
+                string? currentToken = profile.ChzzkAccessToken;
+                if (string.IsNullOrEmpty(currentToken))
+                {
+                    _logger.LogWarning($"[자동 메세지] {m.ChzzkUid}의 토큰을 가져올 수 없습니다.");
+                    continue;
+                }
+
+                // 채팅 전송 (최신 토큰 사용)
+                bool success = await _chzzkApiClient.SendChatMessageAsync(currentToken, m.Message);
+                if (success)
+                {
+                    var trackedMsg = await db.PeriodicMessages.FindAsync(new object[] { m.Id }, stoppingToken);
+                    if (trackedMsg != null) trackedMsg.LastSentAt = now;
+                    _logger.LogInformation($"✅ [자동 메세지] {m.ChzzkUid} 채널에 메세지 발송 완료: {m.Message}");
+                }
+                else
+                {
+                    _logger.LogWarning($"❌ [자동 메세지] {m.ChzzkUid} 채널 메세지 발송 실패");
+                }
+                continue;
             }
 
-            if (!isLive) 
+            // 기존 캐시에 라이브 상태가 있는 스트리머
+            if (!liveStatusCache[m.ChzzkUid])
             {
                 _logger.LogDebug($"[자동 메세지] {m.ChzzkUid} 채널이 현재 방송 중이 아닙니다.");
                 continue;
             }
 
-            // 스트리머 프로필 및 토큰 정보 가져오기
-            var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == m.ChzzkUid, stoppingToken);
-            if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken)) 
-            {
-                _logger.LogWarning($"[자동 메세지] {m.ChzzkUid}의 프로필 또는 토큰이 없습니다.");
-                continue;
-            }
+            var cachedProfile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == m.ChzzkUid, stoppingToken);
+            if (cachedProfile == null || string.IsNullOrEmpty(cachedProfile.ChzzkAccessToken)) continue;
 
-            // 토큰 만료 임박 시 갱신
-            var trackedProfile = await db.StreamerProfiles.FindAsync(new object[] { profile.Id }, stoppingToken);
-            string? currentToken = profile.ChzzkAccessToken;
-            
-            if (trackedProfile != null)
-            {
-                await RefreshTokenIfNeededAsync(trackedProfile, db);
-                currentToken = trackedProfile.ChzzkAccessToken;
-            }
+            await RefreshTokenIfNeededAsync(cachedProfile, db);
 
-            if (string.IsNullOrEmpty(currentToken))
+            bool sent = await _chzzkApiClient.SendChatMessageAsync(cachedProfile.ChzzkAccessToken!, m.Message);
+            if (sent)
             {
-                _logger.LogWarning($"[자동 메세지] {m.ChzzkUid}의 토큰을 가져올 수 없습니다.");
-                continue;
-            }
-
-            // 채팅 전송 (최신 토큰 사용)
-            bool success = await _chzzkApiClient.SendChatMessageAsync(currentToken, m.Message);
-            if (success)
-            {
-                // 엔티티를 다시 가져와서 상태 업데이트 (교차 방지용 추적 객체 사용)
                 var trackedMsg = await db.PeriodicMessages.FindAsync(new object[] { m.Id }, stoppingToken);
-                if (trackedMsg != null)
-                {
-                    trackedMsg.LastSentAt = now;
-                }
+                if (trackedMsg != null) trackedMsg.LastSentAt = now;
                 _logger.LogInformation($"✅ [자동 메세지] {m.ChzzkUid} 채널에 메세지 발송 완료: {m.Message}");
             }
             else
-            {
                 _logger.LogWarning($"❌ [자동 메세지] {m.ChzzkUid} 채널 메세지 발송 실패");
-            }
         }
 
         await db.SaveChangesAsync(stoppingToken);
