@@ -11,7 +11,7 @@ namespace MooldangAPI.Models
     {
         public string SongCommand { get; set; } = "!신청";
         public List<SongRequestCommandDto> SongRequestCommands { get; set; } = new();
-        public int SongCheesePrice { get; set; } = 0;
+        public int SongPrice { get; set; } = 0;
         public string DesignSettingsJson { get; set; } = "{}";
         public List<OmakaseDto> Omakases { get; set; } = new();
     }

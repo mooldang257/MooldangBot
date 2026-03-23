@@ -343,7 +343,7 @@
                 if (songRequestCommands.length === 0 && data.songCommand) {
                     songRequestCommands = [{ 
                         keyword: data.songCommand, 
-                        price: data.songCheesePrice !== undefined ? data.songCheesePrice : (data.SongCheesePrice || 0) 
+                        price: data.songPrice !== undefined ? data.songPrice : (data.SongPrice || 0) 
                     }];
                 }
                 renderSongCommandList();
@@ -408,7 +408,7 @@
             const reqData = {
                 songCommand: songRequestCommands.length > 0 ? songRequestCommands[0].keyword : "!신청", // 첫 번째 명령어를 대표값으로 유지
                 songRequestCommands: songRequestCommands,
-                songCheesePrice: songRequestCommands.length > 0 ? songRequestCommands[0].price : 0, // 첫 번째 가격을 전역 필드에도 동기화 (호환성)
+                songPrice: songRequestCommands.length > 0 ? songRequestCommands[0].price : 0, // 첫 번째 가격을 전역 필드에도 동기화 (호환성)
                 omakases: omakaseItems,
                 designSettingsJson: ""
             };

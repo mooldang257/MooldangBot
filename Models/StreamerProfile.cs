@@ -41,12 +41,12 @@ namespace MooldangAPI.Models
         [MaxLength(50)]
         public string OmakaseCommand { get; set; } = "!물마카세"; // 오마카세 명령어
 
-        public int OmakaseCheesePrice { get; set; } = 1000; // 기준 치즈 금액
+        public int OmakasePrice { get; set; } = 1000; // 기준 치즈 금액
 
         [MaxLength(50)]
         public string SongCommand { get; set; } = "!신청"; // 일반 신청 명령어
 
-        public int SongCheesePrice { get; set; } = 0; // 일반 신청 기준 금액 (0이면 무료)
+        public int SongPrice { get; set; } = 0; // 일반 신청 기준 금액 (0이면 무료)
 
         // [추가] 4. 화면 세부 디자인 설정 (복잡한 컴포넌트 설정은 JSON으로 통째로 저장)
         public string? DesignSettingsJson { get; set; }

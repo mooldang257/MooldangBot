@@ -223,9 +223,9 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             string profileSongCmd = streamerProfile.SongCommand ?? "!신청";
             if (fullMessage.StartsWith(profileSongCmd, StringComparison.OrdinalIgnoreCase) && fullMessage.Length > profileSongCmd.Length)
             {
-                if (streamerProfile.SongCheesePrice > 0 && notification.DonationAmount < streamerProfile.SongCheesePrice)
+                if (streamerProfile.SongPrice > 0 && notification.DonationAmount < streamerProfile.SongPrice)
                 {
-                    _logger.LogWarning($"⚠️ [기본 곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongCheesePrice}, 실제: {notification.DonationAmount})");
+                    _logger.LogWarning($"⚠️ [기본 곡 신청 실패] {nickname}님 금액 부족 (요구: {streamerProfile.SongPrice}, 실제: {notification.DonationAmount})");
                 }
                 else
                 {

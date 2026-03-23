@@ -114,7 +114,7 @@ namespace MooldangAPI.Controllers
                 Keyword = o.Command,
                 Type = "Omakase",
                 ActionType = "System",
-                Description = $"{o.Name} 실행 (비용: {o.CheesePrice}치즈)",
+                Description = $"{o.Name} 실행 (비용: {o.Price}치즈)",
                 RequiredRole = "all"
             }));
 

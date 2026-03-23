@@ -23,8 +23,9 @@ namespace MooldangAPI.Models
         [MaxLength(20)]
         public string Icon { get; set; } = "🍣";
 
-        public int CheesePrice { get; set; } = 1000;
+        public int Price { get; set; } = 1000;
 
+        [ConcurrencyCheck]
         public int Count { get; set; } = 0;
     }
 }

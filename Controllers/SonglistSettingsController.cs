@@ -31,9 +31,15 @@ namespace MooldangAPI.Controllers
             {
                 songCommand = profile.SongCommand,
                 songRequestCommands = songCommands,
-                songCheesePrice = profile.SongCheesePrice,
+                songPrice = profile.SongPrice,
                 designSettingsJson = profile.DesignSettingsJson,
-                omakases = omakaseItems,
+                omakases = omakaseItems.Select(o => new {
+                    id = o.Id,
+                    name = o.Name,
+                    command = o.Command,
+                    icon = o.Icon,
+                    price = o.Price
+                }),
                 // 하위 호환 및 대시보드 직접 참조용 라벨 파싱
                 labels = TryGetLabels(profile.DesignSettingsJson)
             });
@@ -76,7 +82,7 @@ namespace MooldangAPI.Controllers
             if (profile != null)
             {
                 profile.SongCommand = req.SongCommand;
-                profile.SongCheesePrice = req.SongCheesePrice;
+                profile.SongPrice = req.SongPrice;
                 profile.DesignSettingsJson = req.DesignSettingsJson;
 
                 // Sync Omakases
@@ -96,7 +102,7 @@ namespace MooldangAPI.Controllers
                             Name = dto.Name,
                             Command = dto.Command,
                             Icon = dto.Icon,
-                            CheesePrice = dto.Price,
+                            Price = dto.Price,
                             Count = 0
                         });
                     }
@@ -108,7 +114,7 @@ namespace MooldangAPI.Controllers
                             e.Name = dto.Name;
                             e.Command = dto.Command;
                             e.Icon = dto.Icon;
-                            e.CheesePrice = dto.Price;
+                            e.Price = dto.Price;
                         }
                     }
                 }

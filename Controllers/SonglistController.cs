@@ -51,9 +51,31 @@ namespace MooldangAPI.Controllers
             var item = await _db.StreamerOmakases.FindAsync(id);
             if (item != null)
             {
-                item.Count += delta;
-                if (item.Count < 0) item.Count = 0;
-                await _db.SaveChangesAsync();
+                int retryCount = 0;
+                const int maxRetries = 3;
+                bool saved = false;
+
+                while (!saved && retryCount < maxRetries)
+                {
+                    try
+                    {
+                        item.Count += delta;
+                        if (item.Count < 0) item.Count = 0;
+                        await _db.SaveChangesAsync();
+                        saved = true;
+                    }
+                    catch (DbUpdateConcurrencyException ex)
+                    {
+                        retryCount++;
+                        foreach (var entry in ex.Entries)
+                        {
+                            var dbValues = await entry.GetDatabaseValuesAsync();
+                            if (dbValues != null) entry.OriginalValues.SetValues(dbValues);
+                        }
+
+                        if (retryCount >= maxRetries) throw;
+                    }
+                }
 
                 // 실시간 갱신 신호 발송
                 string groupName = item.ChzzkUid.ToLower();

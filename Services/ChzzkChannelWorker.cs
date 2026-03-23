@@ -478,32 +478,43 @@ public class ChzzkChannelWorker
                     string senderId = payload.TryGetProperty("donatorChannelId", out var dcIdProp) ? dcIdProp.GetString() ?? "" : "";
                     if (string.IsNullOrEmpty(senderId)) senderId = payload.TryGetProperty("userChannelId", out var uIdProp) ? uIdProp.GetString() ?? "" : "";
                     if (string.IsNullOrEmpty(senderId)) senderId = payload.TryGetProperty("channelId", out var idProp) ? idProp.GetString() ?? "" : "";
-                    if (string.IsNullOrEmpty(senderId) && payload.TryGetProperty("senderChannelId", out var scIdProp)) senderId = scIdProp.GetString() ?? "";
 
                     int payAmount = 0;
-                    if (payload.TryGetProperty("donation", out var donProp))
+                    if (payload.TryGetProperty("payAmount", out var payProp))
                     {
-                        if (donProp.TryGetProperty("payAmount", out var payProp)) payAmount = payProp.GetInt32();
+                        if (payProp.ValueKind == JsonValueKind.Number) payAmount = payProp.GetInt32();
+                        else if (payProp.ValueKind == JsonValueKind.String && int.TryParse(payProp.GetString(), out int parsedPay)) payAmount = parsedPay;
                     }
-                    else if (payload.TryGetProperty("payAmount", out var payProp)) // 기존 방식 Fallback
+                    else if (payload.TryGetProperty("donation", out var donProp) && donProp.TryGetProperty("payAmount", out var dpProp))
                     {
-                        payAmount = payProp.GetInt32();
+                        if (dpProp.ValueKind == JsonValueKind.Number) payAmount = dpProp.GetInt32();
+                        else if (dpProp.ValueKind == JsonValueKind.String && int.TryParse(dpProp.GetString(), out int parsedPay)) payAmount = parsedPay;
                     }
 
                     string message = "";
                     if (payload.TryGetProperty("donationText", out var dTextProp)) message = dTextProp.GetString() ?? "";
                     if (string.IsNullOrEmpty(message) && payload.TryGetProperty("content", out var contentProp)) message = contentProp.GetString() ?? "";
                     if (string.IsNullOrEmpty(message) && payload.TryGetProperty("comment", out var commentProp)) message = commentProp.GetString() ?? "";
-                    if (string.IsNullOrEmpty(message) && payload.TryGetProperty("donation", out var dProp) && dProp.TryGetProperty("comment", out var dcProp)) message = dcProp.GetString() ?? "";
 
-                    _logger.LogInformation($"💰 [후원 이벤트 수신 (안전파싱완료)] {nickname}님: {payAmount}치즈 / 메시지: {message}");
+                    // [추가] 이모티콘 맵 추출
+                    var emojis = new Dictionary<string, string>();
+                    if (payload.TryGetProperty("emojis", out var emojiProp) && emojiProp.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var prop in emojiProp.EnumerateObject())
+                        {
+                            string url = prop.Value.ValueKind == JsonValueKind.String ? prop.Value.GetString() ?? "" : "";
+                            if (!string.IsNullOrEmpty(url)) emojis[prop.Name] = url;
+                        }
+                    }
+
+                    _logger.LogInformation($"💰 [후원 수신] {nickname}님: {payAmount}원 / 메시지: {message} / 이모티콘 {emojis.Count}개");
 
                     if (payAmount > 0)
                     {
                         using var mediatorScope = _serviceProvider.CreateScope();
                         var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                         await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
-                            profile, nickname, message, "common_user", senderId, clientId, clientSecret, new Dictionary<string, string>(), payAmount), token);
+                            profile, nickname, message, "common_user", senderId, clientId, clientSecret, emojis, payAmount), token);
                     }
                 }
                 catch (Exception ex)
