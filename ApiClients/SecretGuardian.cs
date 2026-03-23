@@ -1,4 +1,4 @@
-﻿
+
 using System.Text;
 
 
@@ -27,13 +27,13 @@ namespace MooldangAPI.ApiClients
 
             // "chzzk_실제키값..." 형태로 복원됨
             //return Encoding.UTF8.GetString(combined.ToArray()) + "YOUR_REAL_ID_PART";
-            return "172f9790-da2a-4322-a1ff-58e534454b8a";
+            return "eaa125b1-870a-4d29-9d98-f0567f0892f5";
         }
 
         public static string GetClientSecret()
         {
             // Secret Key 역시 동일한 방식으로 바이트 단위로 숨겨둡니다.
-            return "OihzgJAhRQmsUXek-dV0h1VL_4GUqxFM3AplypS9z1k";
+            return "O71Jgu719HnBgkYvaT93FhH2roIGaOOznyTsOSjGiCw";
         }
     }
 }

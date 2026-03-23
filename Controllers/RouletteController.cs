@@ -24,13 +24,7 @@ namespace MooldangAPI.Controllers
 
         private string? GetChzzkUid()
         {
-            var naverId = User.FindFirst("StreamerId")?.Value;
-            if (string.IsNullOrEmpty(naverId)) return null;
-
-            return _db.StreamerProfiles
-                .Where(p => p.NaverId == naverId)
-                .Select(p => p.ChzzkUid)
-                .FirstOrDefault();
+            return User.FindFirst("StreamerId")?.Value;
         }
 
         [HttpGet]

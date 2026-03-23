@@ -21,11 +21,7 @@ namespace MooldangAPI.Controllers
 
         private async Task<string?> GetCurrentChzzkUidAsync()
         {
-            var naverId = User.FindFirstValue("StreamerId");
-            if (string.IsNullOrEmpty(naverId)) return null;
-
-            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.NaverId == naverId);
-            return profile?.ChzzkUid;
+            return await Task.FromResult(User.FindFirstValue("StreamerId"));
         }
 
         [HttpGet]

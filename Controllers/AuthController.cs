@@ -5,6 +5,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using MooldangAPI.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MooldangAPI.Controllers
 {
@@ -30,8 +32,7 @@ namespace MooldangAPI.Controllers
             string clientId = clientIdConf?.KeyValue ?? "";
             string redirectUri = $"{BaseDomain}/Auth/callback";
 
-            var naverId = User.FindFirstValue("StreamerId") ?? "";
-            string state = $"{Guid.NewGuid()}_naver_{naverId}";
+            string state = Guid.NewGuid().ToString();
 
             string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
             return Results.Redirect(authUrl);
@@ -62,7 +63,7 @@ namespace MooldangAPI.Controllers
         }
     }
 
-    [HttpGet("/api/auth/me")]
+        [HttpGet("/api/auth/me")]
         public async Task<IResult> GetMyProfile()
         {
             if (User.Identity?.IsAuthenticated != true)
@@ -70,12 +71,10 @@ namespace MooldangAPI.Controllers
                 return Results.Json(new { isAuthenticated = false });
             }
 
-            var naverId = User.FindFirstValue("StreamerId");
-            // 중복 레코드가 혹시 있다면 ChzzkUid가 존재하는 것을 우선 찾습니다.
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId && p.ChzzkUid != null) 
-                          ?? await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+            var chzzkUid = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-            if (profile != null && !string.IsNullOrEmpty(profile.ChzzkUid) && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
+            if (profile != null && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
             {
                 return Results.Json(new {
                     isAuthenticated = true,
@@ -86,6 +85,7 @@ namespace MooldangAPI.Controllers
                 });
             }
 
+            // 치지직 토큰이 없으면 연동이 안 된 것으로 간주
             return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
         }
 
@@ -165,14 +165,7 @@ namespace MooldangAPI.Controllers
                     return Results.Content(htmlResponse, "text/html; charset=utf-8");
                 }
 
-                // 일반 스트리머 로그인 (State에서 naverId 복구)
-                string? callbackNaverId = null;
-                if (state != null && state.Contains("_naver_"))
-                {
-                    callbackNaverId = state.Split("_naver_").LastOrDefault();
-                }
-                if (string.IsNullOrEmpty(callbackNaverId)) callbackNaverId = User.FindFirstValue("StreamerId"); // fallback
-
+                // 치지직 사용자 정보 조회
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
                 var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
                 string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
@@ -182,19 +175,12 @@ namespace MooldangAPI.Controllers
                 if (profileRes.GetProperty("content").TryGetProperty("channelName", out var nameEl)) channelName = nameEl.GetString();
                 if (profileRes.GetProperty("content").TryGetProperty("channelImageUrl", out var imgEl)) profileImageUrl = imgEl.GetString();
 
-                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid) 
-                            ?? await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == callbackNaverId && !string.IsNullOrEmpty(p.NaverId));
+                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
                 if (streamer == null)
                 {
-                    streamer = new StreamerProfile { ChzzkUid = chzzkUid, NaverId = callbackNaverId ?? "" };
+                    streamer = new StreamerProfile { ChzzkUid = chzzkUid };
                     _db.StreamerProfiles.Add(streamer);
-                }
-                else if (!string.IsNullOrEmpty(callbackNaverId))
-                {
-                    // Update NaverId just in case it was blank
-                    streamer.NaverId = callbackNaverId;
-                    streamer.ChzzkUid = chzzkUid;
                 }
                 
                 if (!string.IsNullOrEmpty(channelName)) streamer.ChannelName = channelName;
@@ -205,6 +191,26 @@ namespace MooldangAPI.Controllers
                 streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
 
                 await _db.SaveChangesAsync();
+
+                // 🔐 세션 쿠키 생성 (치지직 UID를 StreamerId 클레임으로 저장)
+                var claims = new List<Claim>
+                {
+                    new Claim("StreamerId", chzzkUid),
+                    new Claim(ClaimTypes.Name, channelName ?? "Streamer")
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
                 return Results.Redirect("/");
             }
             catch (Exception ex) { return Results.Text($"에러 발생: {ex.Message}"); }

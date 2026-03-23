@@ -1,4 +1,3 @@
-using AspNet.Security.OAuth.Naver;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -45,47 +44,15 @@ builder.Services.AddControllers();
 // Removed BotManager. ChzzkBackgroundService handles this via EDA.
 
 // ==========================================
-// 2. 네이버 로그인(문지기) 설정
+// 2. 인증(Authentication) 설정
 // ==========================================
 builder.Services.AddAuthentication(options => {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = NaverAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
-.AddCookie(options => { options.LoginPath = "/login"; })
-.AddNaver(options => {
-    // appsettings.json 또는 환경 변수에서 값을 가져옵니다.
-    options.ClientId = builder.Configuration["NaverOAuth:ClientId"] ?? throw new InvalidOperationException("Naver ClientId is missing.");
-    options.ClientSecret = builder.Configuration["NaverOAuth:ClientSecret"] ?? throw new InvalidOperationException("Naver ClientSecret is missing.");
-
-    options.Events.OnCreatingTicket = context => {
-        if (context.User.TryGetProperty("response", out var responseElement) &&
-            responseElement.TryGetProperty("id", out var idElement))
-        {
-            var naverId = idElement.GetString();
-            var identity = (ClaimsIdentity)context.Principal!.Identity!;
-            if (!string.IsNullOrEmpty(naverId)) identity.AddClaim(new Claim("StreamerId", naverId));
-        }
-        return Task.CompletedTask;
-    };
-
-    // 💡 프록시 환경에서 Redirect URI가 http로 생성되는 문제를 방지하기 위해 강제로 https로 변환합니다.
-    options.Events.OnRedirectToAuthorizationEndpoint = context => {
-        var redirectUri = context.RedirectUri;
-        if (redirectUri.Contains("redirect_uri=http%3A%2F%2F"))
-        {
-            redirectUri = redirectUri.Replace("redirect_uri=http%3A%2F%2F", "redirect_uri=https%3A%2F%2F");
-        }
-        else if (redirectUri.Contains("redirect_uri=http://"))
-        {
-            redirectUri = redirectUri.Replace("redirect_uri=http://", "redirect_uri=https://");
-        }
-
-        // 🔍 [로그 추가] 네이버로 보내는 최종 주소를 서버 콘솔에 출력하여 디버깅합니다.
-        Console.WriteLine($"[NaverAuth] Redirecting to Naver: {redirectUri}");
-        
-        context.Response.Redirect(redirectUri);
-        return Task.CompletedTask;
-    };
+.AddCookie(options => { 
+    options.LoginPath = "/api/auth/chzzk-login"; 
+    options.AccessDeniedPath = "/bot";
 });
 
 builder.Services.AddAuthorization();
@@ -148,8 +115,8 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    EnsureSetting("ChzzkClientId", config["ChzzkApi:ClientId"]);
-    EnsureSetting("ChzzkClientSecret", config["ChzzkApi:ClientSecret"]);
+    EnsureSetting("ChzzkClientId", config["Chzzk:ClientId"]);
+    EnsureSetting("ChzzkClientSecret", config["Chzzk:ClientSecret"]);
     db.SaveChanges();
 }
 

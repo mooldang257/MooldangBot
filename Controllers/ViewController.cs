@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using AspNet.Security.OAuth.Naver;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MooldangAPI.Controllers
 {
@@ -29,8 +29,8 @@ namespace MooldangAPI.Controllers
         [Authorize]
         public async Task<IResult> SettingsPage(string chzzkUid)
         {
-            var naverId = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+            var userChzzkUid = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
 
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");
@@ -41,18 +41,15 @@ namespace MooldangAPI.Controllers
         [HttpGet("/login")]
         public IResult Login()
         {
-            return Results.Challenge(
-                new AuthenticationProperties { RedirectUri = "/" },
-                new[] { NaverAuthenticationDefaults.AuthenticationScheme }
-            );
+            return Results.Redirect("/api/auth/chzzk-login");
         }
 
         [HttpGet("/songlist/{chzzkUid}")]
         [Authorize]
         public async Task<IResult> DashboardPage(string chzzkUid)
         {
-            var naverId = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+            var userChzzkUid = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
 
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");
@@ -64,8 +61,8 @@ namespace MooldangAPI.Controllers
         [Authorize]
         public async Task<IResult> CommandsManagerPage(string chzzkUid)
         {
-            var naverId = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+            var userChzzkUid = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
 
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");
@@ -77,8 +74,8 @@ namespace MooldangAPI.Controllers
         [Authorize]
         public async Task<IResult> OverlayManagerPage(string chzzkUid)
         {
-            var naverId = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.NaverId == naverId);
+            var userChzzkUid = User.FindFirstValue("StreamerId");
+            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
 
             if (profile == null || profile.ChzzkUid != chzzkUid)
                 return Results.Redirect("/");

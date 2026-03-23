@@ -7,9 +7,8 @@ namespace MooldangAPI.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
         [MaxLength(100)]
-        public string NaverId { get; set; } = string.Empty;
+        public string? NaverId { get; set; }
 
         [MaxLength(50)]
         public string? ChzzkUid { get; set; }
