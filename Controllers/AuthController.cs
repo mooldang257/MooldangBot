@@ -46,7 +46,8 @@ namespace MooldangAPI.Controllers
 
             string state = Guid.NewGuid().ToString();
 
-            string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
+            string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
+            string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}";
             return Results.Redirect(authUrl);
         }
 
@@ -110,7 +111,8 @@ namespace MooldangAPI.Controllers
             string redirectUri = $"{BaseDomain}/Auth/callback";
             string state = "bot_setup_" + Guid.NewGuid().ToString();
 
-            string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
+            string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
+            string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}";
             return Results.Redirect(authUrl);
         }
 
@@ -127,6 +129,7 @@ namespace MooldangAPI.Controllers
 
                 using var httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+                httpClient.Timeout = TimeSpan.FromSeconds(10); // 💡 타임아웃 설정 (10초)
 
                 var tokenRequest = new
                 {
@@ -137,8 +140,13 @@ namespace MooldangAPI.Controllers
                     state = state
                 };
 
+                // 1단계: 토큰 교환 시도
                 var response = await httpClient.PostAsJsonAsync("https://openapi.chzzk.naver.com/auth/v1/token", tokenRequest);
-                if (!response.IsSuccessStatusCode) return Results.Text($"토큰 발급 실패: {await response.Content.ReadAsStringAsync()}");
+                if (!response.IsSuccessStatusCode) 
+                {
+                    string errorDetail = await response.Content.ReadAsStringAsync();
+                    return Results.Text($"[인증 오류] 토큰 발급 실패 (Status: {response.StatusCode}): {errorDetail}");
+                }
 
                 var tokenContent = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("content");
                 string accessToken = tokenContent.GetProperty("accessToken").GetString()!;
@@ -177,9 +185,15 @@ namespace MooldangAPI.Controllers
                     return Results.Content(htmlResponse, "text/html; charset=utf-8");
                 }
 
-                // 치지직 사용자 정보 조회
+                // 2단계: 사용자 정보 조회
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-                var profileRes = await httpClient.GetFromJsonAsync<JsonElement>("https://openapi.chzzk.naver.com/open/v1/users/me");
+                var profileResponse = await httpClient.GetAsync("https://openapi.chzzk.naver.com/open/v1/users/me");
+                if (!profileResponse.IsSuccessStatusCode)
+                {
+                    return Results.Text($"[인증 오류] 사용자 정보 조회 실패 (Status: {profileResponse.StatusCode})");
+                }
+                
+                var profileRes = await profileResponse.Content.ReadFromJsonAsync<JsonElement>();
                 string chzzkUid = profileRes.GetProperty("content").GetProperty("channelId").GetString()!;
                 
                 string? channelName = null;
