@@ -201,9 +201,8 @@ namespace MooldangAPI.ApiClients
                     _logger.LogWarning($"⚠️ [ChzzkApi] live-status 404 발생. 채널 목록 API(?channelIds=)로 폴백 시도... (ID: {channelId})");
                     
                     // [시도 2] 채널 목록 API (쿼리 스트링 방식)
+                    // ⚠️ 주의: Naver Open API 중 일부(목록 조회 등)는 사용자 토큰 포함 시 401("토큰 인증 API가 아닙니다")을 반환하므로 헤더를 제외합니다.
                     using var fallbackReq = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels?channelIds={channelId}");
-                    if (!string.IsNullOrEmpty(accessToken))
-                        fallbackReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                         
                     var fallbackRes = await _httpClient.SendAsync(fallbackReq);
                     if (fallbackRes.IsSuccessStatusCode)
