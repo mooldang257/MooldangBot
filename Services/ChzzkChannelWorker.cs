@@ -402,6 +402,13 @@ public class ChzzkChannelWorker
     {
         try
         {
+            // ⭐ [추가] 이벤트 처리 전 토큰 만료 여부를 상시 체크하여 갱신합니다.
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await RefreshTokenIfNeededAsync(profile, clientId, clientSecret, db);
+            }
+
             using var doc = JsonDocument.Parse(jsonArray);
             string eventName = doc.RootElement[0].GetString() ?? "";
 
@@ -616,154 +623,6 @@ public class ChzzkChannelWorker
     // ChzzkChannelWorker.cs 하단에 추가 (SendMessageAsync 메서드 아래 등)
 
     // ChzzkChannelWorker.cs
-
-    /// <summary>
-    /// 🌟 [정식 API]: 치지직 OpenAPI를 활용한 방송 설정(방제/카테고리) 변경
-    /// </summary>
-    private async Task UpdateChannelInfoAsync(StreamerProfile profile, string? newTitle, CancellationToken token)
-    {
-        try
-        {
-            using var httpClient = new HttpClient();
-
-            // 1. 치지직 정식 OAuth 인증 헤더 세팅
-            httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-            httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
-            // 2. 변경할 데이터 객체 구성
-            var updateData = new Dictionary<string, object>();
-
-            if (!string.IsNullOrEmpty(newTitle))
-            {
-                updateData["defaultLiveTitle"] = newTitle; // 방제 변경
-            }
-
-            // 보낼 데이터가 없으면 취소
-            if (updateData.Count == 0) return;
-
-            var content = new StringContent(JsonSerializer.Serialize(updateData), Encoding.UTF8, "application/json");
-
-            // 3. 정식 API 엔드포인트 호출 (PATCH)
-            var response = await httpClient.PatchAsync("https://openapi.chzzk.naver.com/open/v1/lives/setting", content, token);
-
-            if (response.IsSuccessStatusCode)
-            {
-                _logger.LogInformation($"✨ [{profile.ChzzkUid}] 정식 API로 방송 설정 변경 완료!");
-                await SendReplyChatAsync(profile, _clientId, _clientSecret, "✅ 방송 설정이 변경되었습니다.", token);
-            }
-            else
-            {
-                string error = await response.Content.ReadAsStringAsync(token);
-                _logger.LogError($"❌ [{profile.ChzzkUid}] 정식 API 통신 실패: {error}");
-
-                // 4. 권한 부족(403) 시 친절한 안내
-                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                {
-                    await SendReplyChatAsync(profile, _clientId, _clientSecret,
-                        "❌ 봇에 '방송 설정 변경' 권한이 없습니다. 대시보드에서 봇을 다시 연동해주세요.", token);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"❌ [정식 API 통신 오류] {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 🔍 [정식 API]: 치지직에 카테고리를 검색하여 가장 정확한 1개의 결과를 반환합니다.
-    /// </summary>
-    private async Task<(string Type, string Id, string Name)?> SearchChzzkCategoryAsync(StreamerProfile profile, string keyword, CancellationToken token)
-    {
-        try
-        {
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-            httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-            // httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
-            // 검색 API 호출
-            string encodedQuery = Uri.EscapeDataString(keyword);
-            var response = await httpClient.GetAsync($"https://openapi.chzzk.naver.com/open/v1/categories/search?query={encodedQuery}&size=10", token);
-
-            if (response.IsSuccessStatusCode)
-            {
-                string jsonResult = await response.Content.ReadAsStringAsync(token);
-                using var doc = JsonDocument.Parse(jsonResult);
-                var contentNode = doc.RootElement.GetProperty("content");
-                var dataArray = contentNode.GetProperty("data");
-
-                // 검색 결과가 1개 이상 존재할 경우
-                if (dataArray.ValueKind == JsonValueKind.Array && dataArray.GetArrayLength() > 0)
-                {
-                    // 가장 정확도 높은 첫 번째 결과를 선택
-                    var firstResult = dataArray[0];
-                    string cType = firstResult.GetProperty("categoryType").GetString() ?? "ETC";
-                    string cId = firstResult.GetProperty("categoryId").GetString() ?? "";
-                    string cValue = firstResult.GetProperty("categoryValue").GetString() ?? keyword;
-
-                    _logger.LogInformation($"🎯 [카테고리 검색 성공] 검색어: {keyword} -> ID: {cId} ({cValue}, {cType})");
-                    return (cType, cId, cValue);
-                }
-            }
-            else
-            {
-                _logger.LogError($"❌ [카테고리 검색 API 실패] {await response.Content.ReadAsStringAsync(token)}");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"❌ [카테고리 검색 오류] {ex.Message}");
-        }
-
-        return null; // 검색 결과 없음
-    }
-
-    /// <summary>
-    /// 🌟 [정식 API]: 방송 카테고리를 변경합니다.
-    /// </summary>
-    private async Task UpdateChannelCategoryAsync(StreamerProfile profile, string categoryType, string categoryId, string categoryName, CancellationToken token)
-    {
-        try
-        {
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-            httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", profile.ChzzkAccessToken);
-
-            // 정식 API 규격에 맞는 데이터 구성
-            var updateData = new Dictionary<string, object>
-        {
-            { "categoryType", categoryType },
-            { "categoryId", categoryId }
-        };
-
-            var content = new StringContent(JsonSerializer.Serialize(updateData), Encoding.UTF8, "application/json");
-
-            var response = await httpClient.PatchAsync("https://openapi.chzzk.naver.com/open/v1/lives/setting", content, token);
-
-            if (response.IsSuccessStatusCode)
-            {
-                _logger.LogInformation($"✨ [{profile.ChzzkUid}] 카테고리 변경 완료: {categoryName}");
-                await SendReplyChatAsync(profile, _clientId, _clientSecret, $"✅ 카테고리가 [{categoryName}](으)로 변경되었습니다.", token);
-            }
-            else
-            {
-                string error = await response.Content.ReadAsStringAsync(token);
-                _logger.LogError($"❌ [{profile.ChzzkUid}] 정식 API 통신 실패: {error}");
-
-                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                {
-                    await SendReplyChatAsync(profile, _clientId, _clientSecret, "❌ 봇에 '방송 설정 변경' 권한이 없습니다. 대시보드에서 봇을 다시 연동해주세요.", token);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"❌ [정식 API 통신 오류] {ex.Message}");
-        }
-    }
 
     // 편의를 위한 봇 채팅 응답 헬퍼 메서드
     // ⭐ [성능 개선 #4] 공유 HttpClient 사용

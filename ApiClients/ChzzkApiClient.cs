@@ -196,9 +196,15 @@ namespace MooldangAPI.ApiClients
 
                 var response = await _httpClient.SendAsync(request);
                 
+                // [오시리스의 규율]: 404는 오류가 아닌 '방송 오프라인'이라는 자연 질서입니다.
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning($"⚠️ [ChzzkApi] live-status 404 발생. 채널 목록 API(?channelIds=)로 폴백 시도... (ID: {channelId})");
+                    return false;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning($"[하모니 경고] 치지직 서버 이상 감지: {response.StatusCode}. 폴백 시도... (ID: {channelId})");
                     
                     // [시도 2] 채널 목록 API (쿼리 스트링 방식)
                     // ⚠️ 주의: Naver Open API 중 일부(목록 조회 등)는 사용자 토큰 포함 시 401("토큰 인증 API가 아닙니다")을 반환하므로 헤더를 제외합니다.
@@ -225,8 +231,6 @@ namespace MooldangAPI.ApiClients
                     }
                     return false;
                 }
-
-                if (!response.IsSuccessStatusCode) return false;
 
                 var jsonResp = await response.Content.ReadAsStringAsync();
                 using var resDoc = JsonDocument.Parse(jsonResp);

@@ -13,6 +13,24 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
     private readonly ILogger<ChannelSettingEventHandler> _logger;
     private readonly IServiceProvider _serviceProvider;
 
+    // 💡 [카테고리 사전]: 사용자가 입력하는 단축어 -> 검색용 키워드
+    private static readonly Dictionary<string, string> CategorySearchAlias = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "저챗", "talk" },
+        { "소통", "talk" },
+        { "노가리", "talk" },
+        { "먹방", "먹방/쿡방" },
+        { "노래", "음악/노래" },
+        { "종겜", "종합 게임" },
+        { "롤", "리그 오브 레전드" },
+        { "발로", "발로란트" },
+        { "배그", "BATTLEGROUNDS" },
+        { "마크", "Minecraft" },
+        { "메", "메이플스토리" },
+        { "로아", "로스트아크" },
+        { "철권", "철권 8" }
+    };
+
     public ChannelSettingEventHandler(ILogger<ChannelSettingEventHandler> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
@@ -43,7 +61,7 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var aliasObj = await db.ChzzkCategoryAliases.Include(a => a.Category).FirstOrDefaultAsync(a => a.Alias == inputKeyword, cancellationToken);
             
-            string searchKeyword = aliasObj?.Category?.CategoryValue ?? inputKeyword;
+            string searchKeyword = aliasObj?.Category?.CategoryValue ?? (CategorySearchAlias.TryGetValue(inputKeyword, out var hardcoded) ? hardcoded : inputKeyword);
             var categoryInfo = await SearchChzzkCategoryAsync(notification, searchKeyword, cancellationToken);
 
             if (categoryInfo != null)
@@ -74,7 +92,25 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation($"✨ [{req.Profile.ChzzkUid}] 방제 변경 완료!");
-                await SendReplyChatAsync(req, "✅ 방송 설정이 변경되었습니다.", token);
+                await SendReplyChatAsync(req, "✅ 방송 제목이 변경되었습니다.", token);
+            }
+            else
+            {
+                string error = await response.Content.ReadAsStringAsync(token);
+                _logger.LogError($"❌ [방제 변경 실패] {error}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    await SendReplyChatAsync(req, "❌ 인증이 만료되었습니다. 대시보드에서 봇을 다시 연동해주세요.", token);
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    await SendReplyChatAsync(req, "❌ 봇에 '방송 설정 변경' 권한이 없습니다.", token);
+                }
+                else
+                {
+                    await SendReplyChatAsync(req, $"❌ 방제 변경 실패 (HTTP {(int)response.StatusCode})", token);
+                }
             }
         }
         catch (Exception ex) { _logger.LogError($"❌ [정식 API 통신 오류] {ex.Message}"); }
@@ -128,6 +164,20 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
             if (response.IsSuccessStatusCode)
             {
                 await SendReplyChatAsync(req, $"✅ 카테고리가 [{name}](으)로 변경되었습니다.", token);
+            }
+            else
+            {
+                string error = await response.Content.ReadAsStringAsync(token);
+                _logger.LogError($"❌ [카테고리 변경 실패] {error}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    await SendReplyChatAsync(req, "❌ 인증이 만료되었습니다. 대시보드에서 봇을 다시 연동해주세요.", token);
+                }
+                else
+                {
+                    await SendReplyChatAsync(req, $"❌ 카테고리 변경 실패 (HTTP {(int)response.StatusCode})", token);
+                }
             }
         }
         catch (Exception ex) { _logger.LogError($"❌ {ex.Message}"); }
