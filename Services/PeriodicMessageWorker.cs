@@ -85,7 +85,7 @@ public class PeriodicMessageWorker : BackgroundService
                     continue;
                 }
 
-                bool isLive = await _chzzkApiClient.IsLiveAsync(m.ChzzkUid);
+                bool isLive = await _chzzkApiClient.IsLiveAsync(m.ChzzkUid, profile.ChzzkAccessToken);
                 liveStatusCache[m.ChzzkUid] = isLive;
                 _logger.LogInformation($"[자동 메세지] {m.ChzzkUid} 라이브 상태: {isLive}");
 

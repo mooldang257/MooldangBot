@@ -185,31 +185,50 @@ namespace MooldangAPI.ApiClients
         /// <summary>
         /// 스트리머의 현재 방송 상태를 확인합니다.
         /// </summary>
-        public async Task<bool> IsLiveAsync(string channelId)
+        public async Task<bool> IsLiveAsync(string channelId, string? accessToken = null)
         {
             try
             {
-                // [수정] 404 에러 해결: 치지직 Open API 정식 규격으로 엔드포인트 수정
-                var response = await _httpClient.GetAsync($"/open/v1/channels/{channelId}/live-status");
-                if (!response.IsSuccessStatusCode) 
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels/{channelId}/live-status");
+                if (!string.IsNullOrEmpty(accessToken))
                 {
-                    _logger.LogWarning($"⚠️ [ChzzkApi] 라이브 상태 확인 실패 (HTTP {response.StatusCode}) - UID: {channelId}");
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                }
+
+                var response = await _httpClient.SendAsync(request);
+                
+                // 404 발생 시 폴백: 채널 정보 API 시도
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning($"⚠️ [ChzzkApi] live-status 404 발생. 채널 정보 API로 폴백 시도... (ID: {channelId})");
+                    var channelInfoRes = await _httpClient.GetAsync($"/open/v1/channels/{channelId}");
+                    if (channelInfoRes.IsSuccessStatusCode)
+                    {
+                        var infoJson = await channelInfoRes.Content.ReadAsStringAsync();
+                        using var infoDoc = JsonDocument.Parse(infoJson);
+                        if (infoDoc.RootElement.TryGetProperty("content", out var c) && c.TryGetProperty("openLive", out var ol))
+                        {
+                            return ol.GetBoolean(); // openLive 필드가 true이면 방송 중
+                        }
+                    }
                     return false;
                 }
+
+                if (!response.IsSuccessStatusCode) return false;
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
                 {
                     var status = content.GetProperty("status").GetString();
-                    Console.WriteLine($"[ChzzkApi] Channel {channelId} Live Status: {status}");
+                    _logger.LogInformation($"[ChzzkApi] Channel {channelId} Live Status: {status}");
                     return string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
                 }
                 return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ChzzkApi] IsLiveAsync Error: {ex.Message}");
+                _logger.LogError($"[ChzzkApi] IsLiveAsync Error: {ex.Message}");
                 return false;
             }
         }

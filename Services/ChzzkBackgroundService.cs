@@ -143,7 +143,7 @@ public class ChzzkBackgroundService : BackgroundService
         {
             try
             {
-                bool isLive = await _chzzkApiClient.IsLiveAsync(profile.ChzzkUid!);
+                bool isLive = await _chzzkApiClient.IsLiveAsync(profile.ChzzkUid!, profile.ChzzkAccessToken);
                 bool wasLive = _lastLiveState.TryGetValue(profile.ChzzkUid!, out bool last) && last;
 
                 // Live -> Offline 전환 감지
