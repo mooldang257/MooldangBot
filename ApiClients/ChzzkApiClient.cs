@@ -189,36 +189,49 @@ namespace MooldangAPI.ApiClients
         {
             try
             {
+                // [시도 1] 정식 live-status (만약 존재한다면)
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels/{channelId}/live-status");
                 if (!string.IsNullOrEmpty(accessToken))
-                {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                }
 
                 var response = await _httpClient.SendAsync(request);
                 
-                // 404 발생 시 폴백: 채널 정보 API 시도
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning($"⚠️ [ChzzkApi] live-status 404 발생. 채널 정보 API로 폴백 시도... (ID: {channelId})");
-                    var channelInfoRes = await _httpClient.GetAsync($"/open/v1/channels/{channelId}");
-                    if (channelInfoRes.IsSuccessStatusCode)
+                    _logger.LogWarning($"⚠️ [ChzzkApi] live-status 404 발생. 채널 목록 API(?channelIds=)로 폴백 시도... (ID: {channelId})");
+                    
+                    // [시도 2] 채널 목록 API (쿼리 스트링 방식)
+                    using var fallbackReq = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels?channelIds={channelId}");
+                    if (!string.IsNullOrEmpty(accessToken))
+                        fallbackReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                        
+                    var fallbackRes = await _httpClient.SendAsync(fallbackReq);
+                    if (fallbackRes.IsSuccessStatusCode)
                     {
-                        var infoJson = await channelInfoRes.Content.ReadAsStringAsync();
-                        using var infoDoc = JsonDocument.Parse(infoJson);
-                        if (infoDoc.RootElement.TryGetProperty("content", out var c) && c.TryGetProperty("openLive", out var ol))
+                        var json = await fallbackRes.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(json);
+                        // 응답 구조: { content: { data: [ { channelId, openLive, ... } ] } }
+                        if (doc.RootElement.TryGetProperty("content", out var ct) && ct.TryGetProperty("data", out var dt) && dt.ValueKind == JsonValueKind.Array && dt.GetArrayLength() > 0)
                         {
-                            return ol.GetBoolean(); // openLive 필드가 true이면 방송 중
+                            var first = dt[0];
+                            bool isLive = first.TryGetProperty("openLive", out var ol) && ol.GetBoolean();
+                            _logger.LogInformation($"[ChzzkApi] Fallback Success: {channelId} isLive={isLive}");
+                            return isLive;
                         }
+                    }
+                    else
+                    {
+                        string err = await fallbackRes.Content.ReadAsStringAsync();
+                        _logger.LogError($"❌ [ChzzkApi] Fallback Failed (HTTP {fallbackRes.StatusCode}): {err}");
                     }
                     return false;
                 }
 
                 if (!response.IsSuccessStatusCode) return false;
 
-                var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
+                var jsonResp = await response.Content.ReadAsStringAsync();
+                using var resDoc = JsonDocument.Parse(jsonResp);
+                if (resDoc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
                 {
                     var status = content.GetProperty("status").GetString();
                     _logger.LogInformation($"[ChzzkApi] Channel {channelId} Live Status: {status}");
