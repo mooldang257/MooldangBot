@@ -22,10 +22,8 @@ public class ChzzkChannelWorker
     // ⭐ [성능 개선] 공유 HttpClient (매 요청마다 new HttpClient() 생성하지 않음)
     private readonly HttpClient _httpClient;
 
-    // ⭐ [성능 개선 #1] 명령어 캐시: DB 조회 없이 메모리에서 바로 검색
-    private List<StreamerCommand>? _commandCache;
-    private DateTime _commandCacheExpiry = DateTime.MinValue;
-    private static readonly TimeSpan CommandCacheTtl = TimeSpan.FromSeconds(30);
+    // ⭐ [성능 개선 #1] 명령어 캐시 서비스 주입
+    private readonly ICommandCacheService _cacheService;
 
     // ChzzkChannelWorker.cs 클래스 내부 전역 변수로 추가
 
@@ -66,6 +64,7 @@ public class ChzzkChannelWorker
         _clientSecret = clientSecret;
         _serviceProvider = serviceProvider;
         _logger = serviceProvider.GetRequiredService<ILogger<ChzzkChannelWorker>>();
+        _cacheService = serviceProvider.GetRequiredService<ICommandCacheService>();
 
         // ⭐ [성능 개선 #4] 공유 HttpClient 초기화 (소켓 고갈 방지)
         _httpClient = new HttpClient();
@@ -95,6 +94,9 @@ public class ChzzkChannelWorker
 
                 // [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, _clientId, _clientSecret, dbContext);
+
+                // ⭐ [성능 개선 #1] 방 매니저 시작 시 명령어를 메모리에 캐싱합니다!
+                await _cacheService.RefreshAsync(currentUid, stoppingToken);
                 // ==========================================================
 
                 // 2. 치지직 오픈 API에 세션 연결 요청 (HTTP)
@@ -351,19 +353,6 @@ public class ChzzkChannelWorker
             else setting.KeyValue = value;
         }
 
-    // ⭐ [성능 개선 #1] 명령어 캐시 갱신 메서드
-    private async Task RefreshCommandCacheAsync(string chzzkUid, CancellationToken token)
-    {
-        if (DateTime.Now < _commandCacheExpiry && _commandCache != null) return;
-
-        using var scope = _serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        _commandCache = await db.StreamerCommands
-            .AsNoTracking()
-            .Where(c => c.ChzzkUid == chzzkUid)
-            .ToListAsync(token);
-        _commandCacheExpiry = DateTime.Now.Add(CommandCacheTtl);
-    }
 
     // ⭐ [비밀 무기] 토큰 유통기한 확인 및 자동 갱신 메서드
     private async Task RefreshTokenIfNeededAsync(StreamerProfile profile, string clientId, string clientSecret, AppDbContext db)

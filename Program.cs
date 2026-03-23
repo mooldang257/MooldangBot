@@ -60,6 +60,7 @@ builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
 builder.Services.AddScoped<RouletteService>();
 builder.Services.AddSingleton<ObsWebSocketService>();
+builder.Services.AddSingleton<ICommandCacheService, CommandCacheService>();
 builder.Services.AddHttpClient<ChzzkApiClient>();
 // ------------------------------------------
 

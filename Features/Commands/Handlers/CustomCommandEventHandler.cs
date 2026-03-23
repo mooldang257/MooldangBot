@@ -14,11 +14,13 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CustomCommandEventHandler> _logger;
+    private readonly ICommandCacheService _cacheService;
 
-    public CustomCommandEventHandler(IServiceProvider serviceProvider, ILogger<CustomCommandEventHandler> logger)
+    public CustomCommandEventHandler(IServiceProvider serviceProvider, ILogger<CustomCommandEventHandler> logger, ICommandCacheService cacheService)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _cacheService = cacheService;
     }
 
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
@@ -61,6 +63,9 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 }
                 await db.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation($"⚙️ [명령어 등록 완료] {triggerWord} -> {actionType} ({contentText})");
+
+                // ⭐ [성능 개선 #1] DB 저장 후 메모리 캐시도 함께 즉시 최신화!
+                await _cacheService.RefreshAsync(notification.Profile.ChzzkUid, cancellationToken);
             }
             return;
         }
@@ -139,10 +144,8 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 }
             }
 
-            // 3. 커스텀 명령어 조회 및 유연한 매칭 로직
-            var streamerCmds = await db.StreamerCommands
-                .Where(c => c.ChzzkUid == notification.Profile.ChzzkUid)
-                .ToListAsync(cancellationToken);
+            // 3. 커스텀 명령어 조회 및 유연한 매칭 로직 (⭐ DB 조회 대신 메모리 캐시 사용)
+            var streamerCmds = _cacheService.GetAllCommands(notification.Profile.ChzzkUid);
 
             // 메시지가 명령어 키워드로 시작하는지 확인 (대소문자 무시)
             var customCmd = streamerCmds.FirstOrDefault(c => 
