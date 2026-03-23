@@ -16,6 +16,15 @@ using MooldangAPI.ApiClients;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 💡 리버스 프록시(Nginx 등) 환경에서 HTTPS 프로토콜을 올바르게 인식하도록 설정합니다.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+    options.ForwardLimit = null; // 프록시 제한을 풀어서 모든 홉을 신뢰하게 함
+});
+
 // ==========================================
 // 1. 핵심 인프라 및 DB 설정 수정테스트
 // ==========================================

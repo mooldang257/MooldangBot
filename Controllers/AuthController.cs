@@ -25,12 +25,14 @@ namespace MooldangAPI.Controllers
             _configuration = configuration;
         }
 
+        private string BaseDomain => _configuration["BaseDomain"] ?? $"{Request.Scheme}://{Request.Host}";
+
         [HttpGet("/api/auth/chzzk-login")]
         public async Task<IResult> ChzzkLogin()
         {
             var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
             string clientId = clientIdConf?.KeyValue ?? "";
-            string redirectUri = $"{Request.Scheme}://{Request.Host}/Auth/callback";
+            string redirectUri = $"{BaseDomain}/Auth/callback";
 
             string state = Guid.NewGuid().ToString();
 
@@ -95,7 +97,7 @@ namespace MooldangAPI.Controllers
             var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
             string clientId = clientIdConf?.KeyValue ?? "";
 
-            string redirectUri = $"{Request.Scheme}://{Request.Host}/Auth/callback";
+            string redirectUri = $"{BaseDomain}/Auth/callback";
             string state = "bot_setup_" + Guid.NewGuid().ToString();
 
             string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={redirectUri}&state={state}";
