@@ -124,6 +124,9 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/commands/save")]
         public async Task<IResult> SaveCommand([FromBody] StreamerCommand cmd)
         {
+            // DB에 저장할 때 명시적으로 Id의 간섭을 배제하여 뒤틀림을 방지합니다.
+            cmd.Id = 0; 
+
             var existing = await _db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == cmd.ChzzkUid && c.CommandKeyword == cmd.CommandKeyword);
             if (existing == null) _db.StreamerCommands.Add(cmd);
             else { existing.ActionType = cmd.ActionType; existing.Content = cmd.Content; existing.RequiredRole = cmd.RequiredRole; }
