@@ -2002,10 +2002,20 @@
                 }
 
         function copyWidgetUrl(widgetName) {
-            const baseUrl = window.location.origin + `/songlist_overlay/${chzzkUid}`;
-            const url = `${baseUrl}?widget=${widgetName}`;
+            let pathName = 'songlist_overlay';
+            if (widgetName === 'roulette') pathName = 'roulette_overlay';
+            else if (widgetName === 'avatar') pathName = 'avatar_overlay';
+            
+            const url = window.location.origin + `/${pathName}/${chzzkUid}`;
             navigator.clipboard.writeText(url).then(() => {
-                showToast(`${widgetName.toUpperCase()} 위젯 URL 복사 완료!`);
+                showToast(`${widgetName.toUpperCase()} URL 복사 완료!`);
+            });
+        }
+
+        function copyMasterUrl() {
+            const url = window.location.origin + `/overlay/${chzzkUid}`;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast(`마스터 오버레이 URL 복사 완료!`);
             });
         }
 

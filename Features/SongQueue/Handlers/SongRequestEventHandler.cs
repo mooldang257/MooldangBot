@@ -68,7 +68,7 @@ namespace MooldangAPI.Features.SongQueue.Handlers
 
                 // 3. 오버레이 갱신 신호 발송 (소문자 UID 그룹 사용)
                 string groupName = chzzkUid.ToLower();
-                await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
+                await hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard", cancellationToken: cancellationToken);
                 await hubContext.Clients.Group(groupName).SendAsync("SongAdded", notification.Username, songTitle, cancellationToken: cancellationToken);
             }
         }

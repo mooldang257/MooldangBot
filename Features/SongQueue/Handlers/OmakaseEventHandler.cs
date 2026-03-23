@@ -110,8 +110,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
             if (!string.IsNullOrEmpty(targetUid))
             {
                 string groupName = targetUid.ToLower();
-                await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
-                await hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard", cancellationToken: cancellationToken);
+                await hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard", cancellationToken: cancellationToken);
             }
         }
     }

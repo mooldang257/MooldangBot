@@ -79,8 +79,7 @@ namespace MooldangAPI.Controllers
 
                 // 실시간 갱신 신호 발송
                 string groupName = item.ChzzkUid.ToLower();
-                await _hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist");
-                await _hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard");
+                await _hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard");
             }
             return Results.Ok();
         }

@@ -90,6 +90,18 @@ namespace MooldangAPI.Controllers
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_overlay.html"), "text/html; charset=utf-8");
         }
 
+        [HttpGet("/roulette_overlay/{chzzkUid}")]
+        public IResult RouletteOverlayPage(string chzzkUid)
+        {
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/roulette_overlay.html"), "text/html; charset=utf-8");
+        }
+
+        [HttpGet("/avatar_overlay/{chzzkUid}")]
+        public IResult AvatarOverlayPage(string chzzkUid)
+        {
+            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatar_overlay.html"), "text/html; charset=utf-8");
+        }
+
         [HttpGet("/overlay/{chzzkUid}")]
         public IResult OverlayPage(string chzzkUid)
         {
