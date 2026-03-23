@@ -29,7 +29,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
         bool isBot = notification.SenderId == "445df9c493713244a65d97e4fd1ed0b1";
         bool isAuthorizedAdmin = isMaster || notification.UserRole == "streamer" || notification.UserRole == "manager";
 
-        // 1. 동적 명령어 등록 (!명령어등록 공지 !트게더 주소)
+        // 1. [시스템 명령어] !명령어등록 (마스터/스트리머/매니저 전용)
         if (msg.StartsWith("!명령어등록 ") && isAuthorizedAdmin)
         {
             var parts = msg.Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
@@ -64,6 +64,20 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             }
             return;
         }
+
+        // 2. [시스템 명령어] !공지 {텍스트} (마스터/스트리머/매니저 전용)
+        if (msg.StartsWith("!공지 ") && isAuthorizedAdmin)
+        {
+            string noticeText = msg.Substring("!공지 ".Length).Trim();
+            if (!string.IsNullOrEmpty(noticeText))
+            {
+                _logger.LogInformation($"📢 [시스템 공지 실행] {nickname}님 -> {noticeText}");
+                // 스트리머 본인의 토큰을 사용하여 권한 문제 해결
+                await ExecuteActionAsync(notification, noticeText, "https://openapi.chzzk.naver.com/open/v1/chats/notice", cancellationToken);
+            }
+            return;
+        }
+
 
         // 2. 명령어 실행 확인 로직
         string firstWord = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
@@ -221,7 +235,10 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
             // 4. 하위 호환성 폴백: 커스텀 명령어로 등록되지 않은 경우에도 프로필 기본 설정 확인
             string profileSongCmd = streamerProfile.SongCommand ?? "!신청";
-            if (fullMessage.StartsWith(profileSongCmd, StringComparison.OrdinalIgnoreCase) && fullMessage.Length > profileSongCmd.Length)
+            bool isBasicRequest = fullMessage.StartsWith(profileSongCmd, StringComparison.OrdinalIgnoreCase) && fullMessage.Length > profileSongCmd.Length;
+            bool isOldNotice = fullMessage.StartsWith("!곡신청", StringComparison.OrdinalIgnoreCase) && fullMessage.Length > 4;
+
+            if (isBasicRequest || isOldNotice)
             {
                 if (streamerProfile.SongPrice > 0 && notification.DonationAmount < streamerProfile.SongPrice)
                 {
@@ -229,7 +246,8 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 }
                 else
                 {
-                    await HandleSongRequestInternalAsync(db, notification, fullMessage.Substring(profileSongCmd.Length).Trim(), cancellationToken);
+                    string input = isBasicRequest ? fullMessage.Substring(profileSongCmd.Length).Trim() : fullMessage.Substring(4).Trim();
+                    await HandleSongRequestInternalAsync(db, notification, input, cancellationToken);
                     return;
                 }
             }
@@ -253,7 +271,10 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             if (activeSession == null)
             {
                 _logger.LogWarning($"⚠️ [곡 신청 거부] {notification.Username}님의 신청 무시: {notification.Profile.ChzzkUid}의 송리스트가 비활성화 상태입니다.");
-                // 필요 시 채팅으로 비활성 알림을 보낼 수 있으나, 여기서는 로그로 처리
+                
+                // 시청자에게 안내 메시지 발급
+                string inactiveMsg = "\u200B⚠️ 현재 신청곡(송리스트) 기능이 비활성화 상태입니다.";
+                await ExecuteActionAsync(notification, inactiveMsg, "https://openapi.chzzk.naver.com/open/v1/chats/send", cancellationToken);
                 return;
             }
             // ---------------------------
@@ -276,8 +297,8 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
 
             var hubContext = _serviceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<MooldangAPI.Hubs.OverlayHub>>();
             string groupName = notification.Profile.ChzzkUid!.ToLower();
-            await hubContext.Clients.Group(groupName).SendAsync("RefreshSonglist", cancellationToken: cancellationToken);
-            await hubContext.Clients.Group(groupName).SendAsync("RefreshDashboard", cancellationToken: cancellationToken); // 하위 호환용 추가
+            await hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard", cancellationToken: cancellationToken);
+            await hubContext.Clients.Group(groupName).SendAsync("SongAdded", notification.Username, songInput, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
