@@ -8,10 +8,11 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 
 # 소스 복사 및 빌드
 COPY . ./
-RUN dotnet restore
+RUN dotnet restore -r linux-x64
 
 # 마이그레이션 번들 생성 (서버에서 수동 실행 가능하도록)
 RUN dotnet ef migrations bundle -o efbundle --runtime linux-x64 --self-contained
+
 
 RUN dotnet publish -c Release -o out
 
