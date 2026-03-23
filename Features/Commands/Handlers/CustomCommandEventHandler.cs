@@ -59,12 +59,13 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                var existingCmd = await db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == notification.Profile.ChzzkUid && c.CommandKeyword == triggerWord, cancellationToken);
+                string normalizedUid = notification.Profile.ChzzkUid.ToLower();
+                var existingCmd = await db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == normalizedUid && c.CommandKeyword == triggerWord, cancellationToken);
                 if (existingCmd == null)
                 {
                     db.StreamerCommands.Add(new StreamerCommand
                     {
-                        ChzzkUid = notification.Profile.ChzzkUid,
+                        ChzzkUid = normalizedUid,
                         CommandKeyword = triggerWord,
                         ActionType = actionType,
                         Content = contentText,

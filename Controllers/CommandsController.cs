@@ -4,16 +4,22 @@ using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Models;
 using System.Security.Claims;
 
+using MooldangAPI.Services;
+
 namespace MooldangAPI.Controllers
 {
     [ApiController]
     public class CommandsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly ICommandCacheService _cacheService;
+        private readonly ILogger<CommandsController> _logger;
 
-        public CommandsController(AppDbContext db)
+        public CommandsController(AppDbContext db, ICommandCacheService cacheService, ILogger<CommandsController> logger)
         {
             _db = db;
+            _cacheService = cacheService;
+            _logger = logger;
         }
 
         [HttpGet("/api/commands/list/{chzzkUid}")]
@@ -21,12 +27,16 @@ namespace MooldangAPI.Controllers
         {
             var combinedList = new List<CombinedCommandDto>();
             var targetUid = chzzkUid.Trim().ToLower();
+            
+            _logger.LogInformation($"🔍 [CommandsApi] 명령어 리스트 요청 수신. TargetUid: {targetUid}");
 
             // 1. 일반 커스텀 명령어 (StreamerCommands)
             var customCmds = await _db.StreamerCommands
                 .AsNoTracking()
                 .Where(c => c.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
+
+            _logger.LogInformation($"🔍 [CommandsApi] DB 조회 결과: {customCmds.Count}개의 커스텀 명령어 발견.");
                 
             combinedList.AddRange(customCmds.Select(c => new CombinedCommandDto
             {
@@ -131,6 +141,10 @@ namespace MooldangAPI.Controllers
             if (existing == null) _db.StreamerCommands.Add(cmd);
             else { existing.ActionType = cmd.ActionType; existing.Content = cmd.Content; existing.RequiredRole = cmd.RequiredRole; }
             await _db.SaveChangesAsync();
+            
+            // 🤖 [동기화] 웹에서 변경한 내용을 봇 캐시에 즉시 반영
+            await _cacheService.RefreshAsync(cmd.ChzzkUid, default);
+            
             return Results.Ok();
         }
 
@@ -148,7 +162,15 @@ namespace MooldangAPI.Controllers
                 if (int.TryParse(idVal, out int id))
                 {
                     var cmd = await _db.StreamerCommands.FindAsync(id);
-                    if (cmd != null) { _db.StreamerCommands.Remove(cmd); await _db.SaveChangesAsync(); }
+                    if (cmd != null) 
+                    { 
+                        string ownerUid = cmd.ChzzkUid;
+                        _db.StreamerCommands.Remove(cmd); 
+                        await _db.SaveChangesAsync(); 
+                        
+                        // 🤖 [동기화] 삭제된 내용을 봇 캐시에 즉시 반영
+                        await _cacheService.RefreshAsync(ownerUid, default);
+                    }
                 }
             }
             else if (type == "Profile")
