@@ -16,16 +16,26 @@ namespace MooldangAPI.Controllers
         private readonly AppDbContext _db;
         private readonly IConfiguration _configuration;
         
-        // 💡 설정(appsettings.json)에서 도메인 정보를 읽어옵니다.
-        private string BaseDomain => _configuration["BaseDomain"] ?? "https://www.mooldang.store";
+        // 💡 설정(appsettings.json)에서 도메인 정보를 읽어옵니다. 없으면 현재 요청 기반으로 생성합니다.
+        private string BaseDomain 
+        {
+            get {
+                var val = _configuration["BaseDomain"];
+                if (!string.IsNullOrEmpty(val)) return val;
+                
+                string scheme = Request.Scheme;
+                // 💡 프록시 환경에서 HTTP로 인식되더라도 mooldang.store 도메인이면 HTTPS로 강제 유도
+                if (Request.Host.Host.Contains("mooldang.store")) scheme = "https";
+                
+                return $"{scheme}://{Request.Host}";
+            }
+        }
 
         public AuthController(AppDbContext db, IConfiguration configuration)
         {
             _db = db;
             _configuration = configuration;
         }
-
-        private string BaseDomain => _configuration["BaseDomain"] ?? $"{Request.Scheme}://{Request.Host}";
 
         [HttpGet("/api/auth/chzzk-login")]
         public async Task<IResult> ChzzkLogin()
