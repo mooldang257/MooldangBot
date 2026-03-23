@@ -37,10 +37,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // ==========================================
 // 1. 핵심 인프라 및 DB 설정 수정테스트
 // ==========================================
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 // 💡 빌드 시점(Docker Build 등)에서 DB 연결 없이도 컨텍스트를 구성할 수 있도록 버전을 명시적으로 지정합니다.
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 36)); 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, serverVersion));
+
 
 
 builder.Services.AddHttpContextAccessor();
