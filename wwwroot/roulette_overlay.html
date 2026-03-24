@@ -223,7 +223,7 @@
             setTimeout(() => location.reload(), 5000);
         });
 
-        async function completeAnimation(SpinId, retryCount = 0) {
+        async function notifyComplete(SpinId, retryCount = 0) {
             if (!SpinId) return;
             try {
                 const res = await fetch('/api/admin/roulette/complete', {
@@ -232,13 +232,15 @@
                     body: JSON.stringify({ SpinId: SpinId })
                 });
                 if (!res.ok) {
+                    // 상세 에러 로그 출력 (401, 404, 500 등 구분)
+                    console.error(`[Roulette] Callback failed. Status: ${res.status} (${res.statusText})`);
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
-                console.log("애니메이션 완료 보고 성공:", SpinId);
+                console.log("[Roulette] Animation complete notified:", SpinId);
             } catch (err) {
-                console.error(`애니메이션 완료 보고 실패 (시도 ${retryCount + 1}):`, err);
+                console.error(`[Roulette] Network error during callback (시도 ${retryCount + 1}):`, err);
                 if (retryCount < 2) {
-                    setTimeout(() => completeAnimation(SpinId, retryCount + 1), 2000);
+                    setTimeout(() => notifyComplete(SpinId, retryCount + 1), 2000);
                 }
             }
         }
@@ -321,7 +323,7 @@
 
             // 📣 서버에 애니메이션 종료 알림 (채팅 전송 트리거)
             if (data.SpinId) {
-                await completeAnimation(data.SpinId);
+                await notifyComplete(data.SpinId);
             }
         }
     </script>

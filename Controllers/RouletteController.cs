@@ -204,21 +204,24 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpPost("complete")]
+        [AllowAnonymous] // 🔐 OBS 오버레이 환경 대응 (인증 없이 콜백 허용)
         public async Task<IActionResult> CompleteAnimation([FromBody] CompleteRequest Request)
         {
-            if (string.IsNullOrEmpty(Request.SpinId)) return BadRequest();
+            if (string.IsNullOrWhiteSpace(Request.SpinId)) return BadRequest("Invalid SpinId");
 
-            if (_cache.TryGetValue($"Spin:{Request.SpinId}", out SpinResultContext? Context))
+            var CacheKey = $"Spin:{Request.SpinId}";
+
+            // 캐시에서 꺼내오고 즉시 삭제 (중복 전송 방지 - Atomicity)
+            if (_cache.TryGetValue(CacheKey, out SpinResultContext? Context) && Context != null)
             {
-                if (Context != null)
-                {
-                    await _rouletteService.SendDelayedChatResultAsync(Context);
-                    _cache.Remove($"Spin:{Request.SpinId}");
-                    return Ok();
-                }
+                _cache.Remove(CacheKey);
+
+                await _rouletteService.SendDelayedChatResultAsync(Context);
+                
+                return Ok(new { Success = true });
             }
 
-            return NotFound("유효하지 않거나 이미 처리된 SpinId입니다.");
+            return NotFound("Spin context expired or already processed.");
         }
 
         [HttpPatch("items/{ItemId}/status")]
