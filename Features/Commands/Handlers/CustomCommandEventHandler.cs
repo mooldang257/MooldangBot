@@ -30,8 +30,9 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
     {
         string msg = notification.Message;
         string nickname = notification.Username;
-        bool isMaster = notification.SenderId == notification.Profile.ChzzkUid || notification.SenderId == "ca98875d5e0edf02776047fbc70f5449";
-        bool isBot = notification.SenderId == "445df9c493713244a65d97e4fd1ed0b1";
+        bool isMaster = notification.SenderId.Equals(notification.Profile.ChzzkUid, StringComparison.OrdinalIgnoreCase) || 
+                        notification.SenderId.Equals("ca98875d5e0edf02776047fbc70f5449", StringComparison.OrdinalIgnoreCase);
+        bool isBot = notification.SenderId.Equals("445df9c493713244a65d97e4fd1ed0b1", StringComparison.OrdinalIgnoreCase);
         bool isAuthorizedAdmin = isMaster || notification.UserRole == "streamer" || notification.UserRole == "manager";
 
         // 1. [시스템 명령어] !명령어등록 (마스터/스트리머/매니저 전용)

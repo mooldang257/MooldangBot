@@ -196,8 +196,8 @@ public class ChzzkChannelWorker
                         }
                         else if (message.StartsWith("42")) // 42: Event
                         {
-                            // ⭐ [최적화 2] 파이어-앤-포겟(Fire-and-forget)
-                            // 수신 루프(귀)가 막히지 않도록, 이벤트 처리(뇌)는 별도의 Task로 비동기 실행합니다.
+                            // ⭐ [최적화] 수신 루프가 막히지 않도록 이벤트 처리는 별도의 Task로 실행합니다.
+                            // [주의] 여기서 매번 RefreshToken을 체크하면 DB 부하가 극심해지므로 제거했습니다.
                             _ = Task.Run(() => HandleEventAsync(message.Substring(2), profile, stoppingToken), stoppingToken);
                         }
                     }
@@ -358,12 +358,6 @@ public class ChzzkChannelWorker
     {
         try
         {
-            // ⭐ [추가] 이벤트 처리 전 토큰 만료 여부를 상시 체크하여 갱신합니다.
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await RefreshTokenIfNeededAsync(profile, db);
-            }
 
             using var doc = JsonDocument.Parse(jsonArray);
             string eventName = doc.RootElement[0].GetString() ?? "";
@@ -383,7 +377,7 @@ public class ChzzkChannelWorker
 
             if (eventName == "error")
             {
-                _logger.LogDebug($"📡 [ChzzkWorker] 소켓 IO 에러 수신: {payloadString}");
+                _logger.LogWarning($"📡 [ChzzkWorker] {_uid} 소켓 IO 에러 수신: {payloadString}");
                 return;
             }
 
@@ -510,11 +504,12 @@ public class ChzzkChannelWorker
                 // ⭐ [마스터 키 추가] 채팅을 보낸 사람의 고유 ID 추출
                 string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
 
-                // ⭐ [슈퍼 유저 여부 확인] mooldang님의 고유 ID를 마스터로 지정하는 대신, 스트리머 본인이면 무조건 마스터로 인정합니다.
-                bool isMaster = senderId == profile.ChzzkUid || senderId == "ca98875d5e0edf02776047fbc70f5449";
+                // ⭐ [슈퍼 유저 여부 확인] 스트리머 본인이거나 관리 코드를 가진 경우 마스터로 인정
+                bool isMaster = senderId.Equals(profile.ChzzkUid, StringComparison.OrdinalIgnoreCase) || 
+                                senderId.Equals("ca98875d5e0edf02776047fbc70f5449", StringComparison.OrdinalIgnoreCase);
                 
-                //⭐ [봇계정 여부 확인] 봇 계정의 고유 ID를 봇으로 지정합니다. (시스템 설정에 등록된 봇 ID가 있다면 그것도 연동 필요)
-                bool isBot = senderId == "445df9c493713244a65d97e4fd1ed0b1";
+                //⭐ [봇계정 여부 확인] 봇 계정의 고유 ID를 봇으로 지정합니다.
+                bool isBot = senderId.Equals("445df9c493713244a65d97e4fd1ed0b1", StringComparison.OrdinalIgnoreCase);
 
                 _logger.LogInformation($"💬 [{nickname}({userRole})]: {msg} (IsMaster: {isMaster})");
 
