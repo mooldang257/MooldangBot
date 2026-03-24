@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using MooldangAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MooldangAPI.Controllers
 {
     [ApiController]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 노래방 설정 관리에 채널 매니저 정책 적용
     public class SonglistSettingsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -18,11 +20,16 @@ namespace MooldangAPI.Controllers
         [HttpGet("/api/settings/data/{chzzkUid}")]
         public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return Results.NotFound();
 
-            var omakaseItems = await _db.StreamerOmakases.Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
+            var omakaseItems = await _db.StreamerOmakases
+                .IgnoreQueryFilters()
+                .Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
             var songCommands = await _db.StreamerCommands
+                .IgnoreQueryFilters()
                 .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
                 .Select(c => new { Keyword = c.CommandKeyword, Price = c.Price })
                 .ToListAsync();
@@ -57,10 +64,12 @@ namespace MooldangAPI.Controllers
             return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
         }
 
-        [HttpPost("/api/settings/labels")]
-        public async Task<IResult> UpdateLabels([FromQuery] string chzzkUid, [FromBody] System.Text.Json.JsonElement labels)
+        [HttpPost("/api/settings/labels/{chzzkUid}")]
+        public async Task<IResult> UpdateLabels(string chzzkUid, [FromBody] System.Text.Json.JsonElement labels)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return Results.NotFound();
 
             var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
@@ -75,10 +84,12 @@ namespace MooldangAPI.Controllers
             return Results.Ok();
         }
 
-        [HttpPost("/api/settings/update")]
-        public async Task<IResult> UpdateSonglistSettings([FromQuery] string chzzkUid, [FromBody] SonglistSettingsUpdateRequest req)
+        [HttpPost("/api/settings/update/{chzzkUid}")]
+        public async Task<IResult> UpdateSonglistSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest req)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile != null)
             {
                 profile.SongCommand = req.SongCommand;
@@ -86,7 +97,9 @@ namespace MooldangAPI.Controllers
                 profile.DesignSettingsJson = req.DesignSettingsJson;
 
                 // Sync Omakases
-                var existing = await _db.StreamerOmakases.Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
+                var existing = await _db.StreamerOmakases
+                    .IgnoreQueryFilters()
+                    .Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
                 var incomingIds = req.Omakases.Select(o => o.Id).ToList();
                 
                 var toDelete = existing.Where(e => !incomingIds.Contains(e.Id));
@@ -121,6 +134,7 @@ namespace MooldangAPI.Controllers
 
                 // Sync SongRequest Commands
                 var existingSongCmds = await _db.StreamerCommands
+                    .IgnoreQueryFilters()
                     .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
                     .ToListAsync();
                 _db.StreamerCommands.RemoveRange(existingSongCmds);

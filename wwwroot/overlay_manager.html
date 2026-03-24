@@ -756,7 +756,7 @@
 
         async function fetchPresets() {
             try {
-                const res = await fetch('/api/OverlayPreset');
+                const res = await fetch(`/api/OverlayPreset/list/${chzzkUid}`);
                 if (res.ok) {
                     presets = await res.json();
                     updatePresetSelector();
@@ -890,7 +890,7 @@
             formData.append('image', input.files[0]);
 
             try {
-                const res = await fetch('/api/OverlayPreset/upload-image', {
+                const res = await fetch(`/api/OverlayPreset/upload-image/${chzzkUid}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -917,7 +917,7 @@
             if (!name) return;
 
             try {
-                const res = await fetch('/api/OverlayPreset', {
+                const res = await fetch(`/api/OverlayPreset/${chzzkUid}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name, configJson: JSON.stringify({ components: [], background: { url: '', opacity: 0.5, visible: false } }) })
@@ -951,7 +951,7 @@
             if (!newName) return;
 
             try {
-                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, {
+                const res = await fetch(`/api/OverlayPreset/${chzzkUid}/${currentPresetId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: currentPresetId, name: newName, configJson: JSON.stringify({ components, background }) })
@@ -973,7 +973,7 @@
             if (!confirm("정말 이 프리셋을 삭제하시겠습니까? 관련 설정이 모두 삭제됩니다.")) return;
 
             try {
-                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, { method: 'DELETE' });
+                const res = await fetch(`/api/OverlayPreset/${chzzkUid}/${currentPresetId}`, { method: 'DELETE' });
                 if (res.ok) {
                     presets = presets.filter(p => (p.id || p.Id) != currentPresetId);
                     updatePresetSelector();
@@ -1294,7 +1294,7 @@
                 formData.append('file', file);
 
                 try {
-                    const res = await fetch('/api/overlay/upload', {
+                    const res = await fetch(`/api/OverlayPreset/upload-image/${chzzkUid}`, {
                         method: 'POST',
                         body: formData
                     });
@@ -1702,7 +1702,7 @@
             const preset = presets.find(p => (p.id || p.Id) == currentPresetId);
 
             try {
-                const res = await fetch(`/api/OverlayPreset/${currentPresetId}`, {
+                const res = await fetch(`/api/OverlayPreset/${chzzkUid}/${currentPresetId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: currentPresetId, name: preset.name, configJson })
@@ -1986,7 +1986,7 @@
 
                     const jsonString = JSON.stringify(newDs);
                     try {
-                        const res = await fetch(`/api/settings/update?chzzkUid=${chzzkUid}`, {
+                        const res = await fetch(`/api/settings/update/${chzzkUid}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ designSettingsJson: jsonString })

@@ -426,7 +426,7 @@
             };
             reqData.designSettingsJson = JSON.stringify(ds);
 
-            const res = await fetch(`/api/settings/update?chzzkUid=${chzzkUid}`, {
+            const res = await fetch(`/api/settings/update/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reqData)

@@ -13,7 +13,7 @@ namespace MooldangAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 오버레이 프리셋 관리에 채널 매니저 정책 적용
     public class OverlayPresetController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -26,12 +26,9 @@ namespace MooldangAPI.Controllers
             _env = env;
         }
 
-        [HttpPost("upload-image")]
-        public async Task<IActionResult> UploadImage(IFormFile image)
+        [HttpPost("upload-image/{chzzkUid}")]
+        public async Task<IActionResult> UploadImage(string chzzkUid, IFormFile image)
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
             if (image == null || image.Length == 0)
                 return BadRequest("파일이 없습니다.");
 
@@ -55,20 +52,14 @@ namespace MooldangAPI.Controllers
             return Ok(new { url = fileUrl });
         }
 
-        private async Task<string?> GetCurrentChzzkUidAsync()
-        {
-            return await Task.FromResult(User.FindFirstValue("StreamerId"));
-        }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<OverlayPresetDto>>> GetPresets()
+        [HttpGet("list/{chzzkUid}")]
+        public async Task<ActionResult<IEnumerable<OverlayPresetDto>>> GetPresets(string chzzkUid)
         {
             try
             {
-                var chzzkUid = await GetCurrentChzzkUidAsync();
-                if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
                 var presets = await _db.OverlayPresets
+                    .IgnoreQueryFilters() // 🛡️ 마스터 계정 대응
                     .Where(p => p.ChzzkUid == chzzkUid)
                     .ToListAsync();
 
@@ -107,17 +98,15 @@ namespace MooldangAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal Server Error: {ex.Message} \n {ex.InnerException?.Message}");
+                return StatusCode(500, $"Internal Server Error: {ex.Message}");
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<OverlayPresetDto>> GetPreset(int id)
+        [HttpGet("{chzzkUid}/{id}")]
+        public async Task<ActionResult<OverlayPresetDto>> GetPreset(string chzzkUid, int id)
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
             var preset = await _db.OverlayPresets
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
 
@@ -137,6 +126,7 @@ namespace MooldangAPI.Controllers
         public async Task<ActionResult<OverlayPresetDto>> GetPublicPreset(int id)
         {
             var preset = await _db.OverlayPresets
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
  
@@ -156,6 +146,7 @@ namespace MooldangAPI.Controllers
         public async Task<ActionResult<OverlayPresetDto>> GetActivePreset(string chzzkUid)
         {
             var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
@@ -165,14 +156,15 @@ namespace MooldangAPI.Controllers
             if (profile.ActiveOverlayPresetId.HasValue)
             {
                 preset = await _db.OverlayPresets
+                    .IgnoreQueryFilters()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == profile.ActiveOverlayPresetId.Value);
             }
 
-            // 활성 프리셋이 없거나 유효하지 않으면 첫 번째(기본) 프리셋 반환
             if (preset == null)
             {
                 preset = await _db.OverlayPresets
+                    .IgnoreQueryFilters()
                     .Where(p => p.ChzzkUid == chzzkUid)
                     .OrderBy(p => p.Id)
                     .FirstOrDefaultAsync();
@@ -189,14 +181,11 @@ namespace MooldangAPI.Controllers
             });
         }
 
-        [HttpPost]
-        public async Task<ActionResult<OverlayPresetDto>> CreatePreset(OverlayPresetDto dto)
+        [HttpPost("{chzzkUid}")]
+        public async Task<ActionResult<OverlayPresetDto>> CreatePreset(string chzzkUid, OverlayPresetDto dto)
         {
             try
             {
-                var chzzkUid = await GetCurrentChzzkUidAsync();
-                if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
                 var preset = new OverlayPreset
                 {
                     ChzzkUid = chzzkUid,
@@ -223,13 +212,13 @@ namespace MooldangAPI.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePreset(int id, OverlayPresetDto dto)
+        [HttpPut("{chzzkUid}/{id}")]
+        public async Task<IActionResult> UpdatePreset(string chzzkUid, int id, OverlayPresetDto dto)
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
-            var preset = await _db.OverlayPresets.FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+            var preset = await _db.OverlayPresets
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+            
             if (preset == null) return NotFound();
 
             preset.Name = dto.Name ?? preset.Name;
@@ -237,17 +226,16 @@ namespace MooldangAPI.Controllers
             preset.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
-
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePreset(int id)
+        [HttpDelete("{chzzkUid}/{id}")]
+        public async Task<IActionResult> DeletePreset(string chzzkUid, int id)
         {
-            var chzzkUid = await GetCurrentChzzkUidAsync();
-            if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
-
-            var preset = await _db.OverlayPresets.FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+            var preset = await _db.OverlayPresets
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+            
             if (preset == null) return NotFound();
 
             _db.OverlayPresets.Remove(preset);
@@ -256,27 +244,27 @@ namespace MooldangAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost("sync/{id}")]
-        public async Task<IActionResult> SyncPreset(int id)
+        [HttpPost("sync/{chzzkUid}/{id}")]
+        public async Task<IActionResult> SyncPreset(string chzzkUid, int id)
         {
             var preset = await _db.OverlayPresets
+                .IgnoreQueryFilters()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
 
             if (preset == null) return NotFound("Preset not found");
 
             var profile = await _db.StreamerProfiles
-                .FirstOrDefaultAsync(p => p.ChzzkUid == preset.ChzzkUid);
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
             if (profile == null) return NotFound("Profile not found");
 
-            // 1. 활성 프리셋 ID 업데이트
             profile.ActiveOverlayPresetId = preset.Id;
             await _db.SaveChangesAsync();
 
-            // 2. SignalR 브로드캐스트 (실시간 업데이트)
             var hubContext = HttpContext.RequestServices.GetRequiredService<IHubContext<OverlayHub>>();
-            await hubContext.Clients.Group(profile.ChzzkUid!).SendAsync("ReceiveOverlayStyle", preset.ConfigJson);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveOverlayStyle", preset.ConfigJson);
 
             return Ok(new { success = true });
         }
