@@ -28,6 +28,8 @@ namespace MooldangAPI.Models
         [MaxLength(20)]
         public string Color { get; set; } = "#FFFFFF";
 
+        public bool IsActive { get; set; } = true;
+
         [JsonIgnore]
         public Roulette? Roulette { get; set; }
     }

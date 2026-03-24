@@ -4,13 +4,30 @@ using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
 using MooldangAPI.Models;
 using MooldangAPI.Services;
-using System.Security.Claims;
 
 namespace MooldangAPI.Controllers
 {
+    public class RouletteSummaryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public RouletteType Type { get; set; }
+        public string Command { get; set; } = string.Empty;
+        public int CostPerSpin { get; set; }
+        public bool IsActive { get; set; }
+        public int ActiveItemCount { get; set; }
+        public DateTime LstUpdDt { get; set; }
+    }
+
+    public class PagedResponse<T>
+    {
+        public List<T> Data { get; set; } = new();
+        public int? NextLastId { get; set; }
+    }
+
     [ApiController]
     [Route("api/admin/roulette")]
-    [Authorize] // 네이버 로그인 필요
+    [Authorize]
     public class RouletteController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -28,24 +45,39 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRoulettes()
+        public async Task<IActionResult> GetRoulettes([FromQuery] int lastId = 0, [FromQuery] int pageSize = 10)
         {
             var chzzkUid = GetChzzkUid();
             if (chzzkUid == null) return Unauthorized();
 
-            var roulettes = await _db.Roulettes
-                .Include(r => r.Items)
-                .Where(r => r.ChzzkUid == chzzkUid)
+            // 💡 N+1 조회 방식을 사용하여 다음 페이지 유무 판별
+            var rawData = await _db.Roulettes
+                .Where(r => r.ChzzkUid == chzzkUid && r.Id > lastId)
+                .OrderBy(r => r.Id)
+                .Take(pageSize + 1)
+                .Select(r => new RouletteSummaryDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Type = r.Type,
+                    Command = r.Command,
+                    CostPerSpin = r.CostPerSpin,
+                    IsActive = r.IsActive,
+                    ActiveItemCount = r.Items.Count(i => i.IsActive),
+                    LstUpdDt = r.UpdatedAt
+                })
                 .AsNoTracking()
                 .ToListAsync();
 
-            // 순환 참조 방지
-            foreach (var r in roulettes)
-            {
-                foreach (var i in r.Items) i.Roulette = null;
-            }
+            bool hasNext = rawData.Count > pageSize;
+            var data = rawData.Take(pageSize).ToList();
+            var nextLastId = hasNext ? data.Last().Id : (int?)null;
 
-            return Ok(roulettes);
+            return Ok(new PagedResponse<RouletteSummaryDto>
+            {
+                Data = data,
+                NextLastId = nextLastId
+            });
         }
 
         [HttpGet("{id}")]
@@ -61,7 +93,6 @@ namespace MooldangAPI.Controllers
 
             if (roulette == null) return NotFound();
 
-            // 순환 참조 방지
             foreach (var i in roulette.Items) i.Roulette = null;
 
             return Ok(roulette);
@@ -76,8 +107,8 @@ namespace MooldangAPI.Controllers
                 if (chzzkUid == null) return Unauthorized();
 
                 roulette.ChzzkUid = chzzkUid;
+                roulette.UpdatedAt = DateTime.UtcNow;
                 
-                // 확률 검증
                 if (!roulette.Items.Any() || roulette.Items.Sum(i => i.Probability) <= 0)
                 {
                     return BadRequest("최소 하나 이상의 아이템과 유효한 확률 정보가 필요합니다.");
@@ -86,15 +117,13 @@ namespace MooldangAPI.Controllers
                 _db.Roulettes.Add(roulette);
                 await _db.SaveChangesAsync();
 
-                // 순환 참조 방지
                 foreach (var i in roulette.Items) i.Roulette = null;
 
                 return CreatedAtAction(nameof(GetRoulette), new { id = roulette.Id }, roulette);
             }
             catch (Exception ex)
             {
-                var innerMsg = ex.InnerException?.Message ?? "";
-                return StatusCode(500, $"서버 에러(생성): {ex.Message} \n {innerMsg}");
+                return StatusCode(500, $"서버 에러(생성): {ex.Message}");
             }
         }
 
@@ -112,35 +141,54 @@ namespace MooldangAPI.Controllers
 
                 if (roulette == null) return NotFound();
 
-                // 기본 정보 업데이트
                 roulette.Name = updated.Name;
                 roulette.Type = updated.Type;
                 roulette.Command = updated.Command;
                 roulette.CostPerSpin = updated.CostPerSpin;
                 roulette.IsActive = updated.IsActive;
+                roulette.UpdatedAt = DateTime.UtcNow;
 
-                // 아이템 치환
                 _db.RouletteItems.RemoveRange(roulette.Items);
-                
                 foreach (var item in updated.Items)
                 {
-                    item.Id = 0; // 새 ID 할당 대기
+                    item.Id = 0;
                     item.RouletteId = id;
                 }
                 roulette.Items = updated.Items;
 
                 await _db.SaveChangesAsync();
 
-                // 순환 참조 방지
                 foreach (var i in roulette.Items) i.Roulette = null;
 
                 return Ok(roulette);
             }
             catch (Exception ex)
             {
-                var innerMsg = ex.InnerException?.Message ?? "";
-                return StatusCode(500, $"서버 에러(수정): {ex.Message} \n {innerMsg}");
+                return StatusCode(500, $"서버 에러(수정): {ex.Message}");
             }
+        }
+
+        [HttpPatch("items/{itemId}/status")]
+        public async Task<IActionResult> ToggleItemStatus(int itemId, [FromBody] bool isActive)
+        {
+            var chzzkUid = GetChzzkUid();
+            if (chzzkUid == null) return Unauthorized();
+
+            var affectedRows = await _db.RouletteItems
+                .Where(i => i.Id == itemId && i.Roulette.ChzzkUid == chzzkUid)
+                .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsActive, isActive));
+
+            if (affectedRows > 0)
+            {
+                // 소속된 룰렛의 수정 시간도 함께 업데이트
+                await _db.Roulettes
+                    .Where(r => r.Items.Any(i => i.Id == itemId))
+                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.UpdatedAt, DateTime.UtcNow));
+                    
+                return Ok();
+            }
+
+            return NotFound();
         }
 
         [HttpDelete("{id}")]
@@ -160,9 +208,6 @@ namespace MooldangAPI.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// 테스트용: 즉시 룰렛 추첨 실행 (관리자용)
-        /// </summary>
         [HttpPost("{id}/test")]
         public async Task<IActionResult> TestSpin(int id, [FromQuery] bool is10x = false)
         {

@@ -11,6 +11,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
+            position: relative;
         }
         .item-row {
             display: flex;
@@ -37,6 +38,33 @@
             display: flex;
             gap: 5px;
         }
+        .last-update {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 5px;
+        }
+        .load-more-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        /* 스위치 스타일 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(14px); }
     </style>
 </head>
 <body>
@@ -56,10 +84,13 @@
             <div id="rouletteList">
                 <!-- JS Rendered -->
             </div>
+            <div class="load-more-container" id="loadMoreArea">
+                <button class="btn btn-outline" id="btnLoadMore" style="display:none;" onclick="loadRoulettes(true)">더 보기 🔽</button>
+            </div>
         </div>
     </div>
 
-    <!-- 룰렛 편집 모달 (간이 구현) -->
+    <!-- 룰렛 편집 모달 -->
     <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; padding: 40px 0;">
         <div class="panel" style="max-width:800px; margin:auto; background: #1a1a1a;">
             <h2 id="modalTitle">룰렛 설정</h2>
@@ -76,6 +107,13 @@
                     <input type="text" id="rCommand" value="!룰렛">
                     <span class="sub-title">1회 실행 비용</span>
                     <input type="number" id="rCost" value="1000">
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:15px;">
+                        <span class="sub-title" style="margin-bottom:0;">활성화 여부</span>
+                        <label class="switch">
+                            <input type="checkbox" id="rIsActive" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <span class="sub-title">아이템 목록 (확률/가중치 설정)</span>
@@ -91,63 +129,64 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script>
-        const pathParts = window.location.pathname.split('/');
-        const queryParams = new URLSearchParams(window.location.search);
-        const chzzkUid = queryParams.get('uid') || (pathParts.length > 1 && pathParts[pathParts.length - 1] !== "admin_roulette.html" ? pathParts[pathParts.length - 1] : prompt("Chzzk UID를 입력하세요 (테스트용)"));
-        
+        let lastId = 0;
+        let isEnd = false;
         let roulettes = [];
         let editingId = null;
 
-        async function loadRoulettes() {
+        async function loadRoulettes(append = false) {
+            if (!append) {
+                lastId = 0;
+                isEnd = false;
+                roulettes = [];
+                document.getElementById('rouletteList').innerHTML = '';
+            }
+
             // 오버레이 URL 초기화
+            const queryParams = new URLSearchParams(window.location.search);
+            const chzzkUid = queryParams.get('uid') || ""; 
             document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
 
-            const res = await fetch(`/api/admin/roulette`, { credentials: 'same-origin' });
-            if (res.ok) {
-                roulettes = await res.json();
-                renderList();
+            try {
+                const res = await fetch(`/api/admin/roulette?lastId=${lastId}&pageSize=10`, { credentials: 'same-origin' });
+                if (res.ok) {
+                    const result = await res.json();
+                    roulettes = roulettes.concat(result.data);
+                    renderList(result.data, append);
+                    
+                    if (result.nextLastId) {
+                        lastId = result.nextLastId;
+                        document.getElementById('btnLoadMore').style.display = 'inline-block';
+                    } else {
+                        isEnd = true;
+                        document.getElementById('btnLoadMore').style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("데이터 로딩 실패:", err);
             }
         }
 
-        function copyOverlayUrl() {
-            const urlInput = document.getElementById('overlayUrl');
-            urlInput.select();
-            urlInput.setSelectionRange(0, 99999);
-            
-            navigator.clipboard.writeText(urlInput.value).then(() => {
-                alert("룰렛 오버레이 URL이 클립보드에 복사되었습니다!\nOBS 화면의 브라우저 소스에 붙여넣기 해 주세요. 🚀");
-            }).catch(err => {
-                // HTTPS 환경이 아니거나 클립보드 권한이 없을 경우를 대비한 구형 방식 지원
-                try {
-                    document.execCommand('copy');
-                    alert("룰렛 오버레이 URL이 복사되었습니다.");
-                } catch (e) {
-                    alert("복사 실패. 주소창의 텍스트를 직접 복사해 주세요.");
-                }
-            });
-        }
-
-        function renderList() {
+        function renderList(newData, append) {
             const container = document.getElementById('rouletteList');
-            container.innerHTML = '';
             
-            if (roulettes.length === 0) {
+            if (!append && newData.length === 0) {
                 container.innerHTML = '<div style="padding:40px; text-align:center; color:rgba(255,255,255,0.3);">등록된 룰렛이 없습니다.</div>';
                 return;
             }
 
-            roulettes.forEach(r => {
+            newData.forEach(r => {
                 const card = document.createElement('div');
                 card.className = 'roulette-card';
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
                         <div>
-                            <h3 style="margin:0; color:var(--primary);">${r.name}</h3>
+                            <h3 style="margin:0; color:var(--primary);">${r.name} ${r.isActive ? '' : '<span style="color:#ff4444; font-size:12px;">(비활성)</span>'}</h3>
                             <span class="prob-badge" style="background:rgba(255,255,255,0.1); margin-top:5px; display:inline-block;">
                                 ${r.type === 0 ? '🧀 치즈' : '🪙 포인트'} | ${r.costPerSpin.toLocaleString()} ${r.type === 0 ? '치즈' : 'P'} | 명령어: ${r.command}
                             </span>
+                            <div class="last-update">최종 수정: ${new Date(r.lstUpdDt).toLocaleString()}</div>
                         </div>
                         <div class="test-btns">
                             <button class="btn btn-secondary btn-sm" onclick="runTestSpin(${r.id}, false)">🚀 1회 테스트</button>
@@ -156,29 +195,15 @@
                             <button class="btn btn-danger btn-sm" onclick="deleteRoulette(${r.id})">🗑️ 삭제</button>
                         </div>
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:13px;">
-                        ${r.items.map(i => `<span style="border:1px solid ${i.color}; padding:2px 8px; border-radius:15px; color:${i.color}">${i.itemName} (${i.probability}%)</span>`).join('')}
-                    </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function showCreateForm() {
-            editingId = null;
-            document.getElementById('modalTitle').innerText = '새 룰렛 생성';
-            document.getElementById('rName').value = '';
-            document.getElementById('rType').value = '0';
-            document.getElementById('rCommand').value = '!룰렛';
-            document.getElementById('rCost').value = '1000';
-            document.getElementById('itemListContainer').innerHTML = '';
-            addItemRow();
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        function showEditForm(id) {
-            const r = roulettes.find(x => x.id === id);
-            if (!r) return;
+        async function showEditForm(id) {
+            const res = await fetch(`/api/admin/roulette/${id}`, { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const r = await res.json();
             
             editingId = id;
             document.getElementById('modalTitle').innerText = '룰렛 수정';
@@ -186,6 +211,7 @@
             document.getElementById('rType').value = r.type.toString();
             document.getElementById('rCommand').value = r.command;
             document.getElementById('rCost').value = r.costPerSpin;
+            document.getElementById('rIsActive').checked = r.isActive;
             
             const itemContainer = document.getElementById('itemListContainer');
             itemContainer.innerHTML = '';
@@ -200,9 +226,12 @@
             const row = document.createElement('div');
             row.className = 'item-row';
             row.innerHTML = `
+                <label class="switch" title="활성/비활성">
+                    <input type="checkbox" class="item-active" ${(!item || item.isActive) ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
                 <input type="text" class="item-name" placeholder="항목명" value="${item ? item.itemName : ''}" style="flex:2;">
-                <input type="number" class="item-prob" placeholder="1회 가중치" value="${item ? item.probability : 10}" style="flex:1;" onchange="updateTotalProb()">
-                <input type="number" class="item-prob10x" placeholder="10연차 가중치" value="${item ? item.probability10x : 10}" style="flex:1;">
+                <input type="number" class="item-prob" placeholder="가중치" value="${item ? item.probability : 10}" style="flex:1;" onchange="updateTotalProb()">
                 <input type="color" class="item-color" value="${item ? item.color : '#ff0055'}" style="width:40px; padding:2px; height:38px; border:none; background:none; cursor:pointer;">
                 <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); updateTotalProb();">✖</button>
             `;
@@ -210,42 +239,25 @@
             updateTotalProb();
         }
 
-        function updateTotalProb() {
-            let total = 0;
-            document.querySelectorAll('.item-prob').forEach(input => {
-                total += parseFloat(input.value) || 0;
-            });
-            document.getElementById('totalProbDisplay').innerText = `총 가중치 합: ${total.toFixed(2)}`;
-        }
-
         async function saveRoulette() {
             const data = {
                 id: editingId || 0,
-                chzzkUid: chzzkUid,
                 name: document.getElementById('rName').value,
                 type: parseInt(document.getElementById('rType').value),
                 command: document.getElementById('rCommand').value,
                 costPerSpin: parseInt(document.getElementById('rCost').value),
-                isActive: true,
+                isActive: document.getElementById('rIsActive').checked,
                 items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
-                    rouletteId: editingId || 0,
                     itemName: row.querySelector('.item-name').value,
                     probability: parseFloat(row.querySelector('.item-prob').value) || 0,
-                    probability10x: parseFloat(row.querySelector('.item-prob10x').value) || parseFloat(row.querySelector('.item-prob').value) || 0,
-                    color: row.querySelector('.item-color').value
+                    probability10x: parseFloat(row.querySelector('.item-prob').value) || 0,
+                    color: row.querySelector('.item-color').value,
+                    isActive: row.querySelector('.item-active').checked
                 }))
             };
 
-            if (!data.name || data.items.length === 0) {
-                alert("이름과 아이템을 입력해주세요.");
-                return;
-            }
-
-            const method = editingId ? 'PUT' : 'POST';
-            const url = editingId ? `/api/admin/roulette/${editingId}` : '/api/admin/roulette';
-
-            const res = await fetch(url, {
-                method: method,
+            const res = await fetch(editingId ? `/api/admin/roulette/${editingId}` : '/api/admin/roulette', {
+                method: editingId ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
                 body: JSON.stringify(data)
@@ -255,27 +267,34 @@
                 closeModal();
                 loadRoulettes();
             } else {
-                alert("저장 실패: " + await res.text());
+                alert("저장 실패");
             }
         }
 
-        async function deleteRoulette(id) {
-            if (!confirm("정말 삭제하시겠습니까?")) return;
-            const res = await fetch(`/api/admin/roulette/${id}`, { method: 'DELETE', credentials: 'same-origin' });
-            if (res.ok) loadRoulettes();
+        function showCreateForm() {
+            editingId = null;
+            document.getElementById('modalTitle').innerText = '새 룰렛 생성';
+            document.getElementById('rName').value = '';
+            document.getElementById('rIsActive').checked = true;
+            document.getElementById('itemListContainer').innerHTML = '';
+            addItemRow();
+            document.getElementById('editModal').style.display = 'block';
         }
 
-        async function runTestSpin(id, is10x) {
-            const res = await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, { method: 'POST', credentials: 'same-origin' });
-            if (res.ok) {
-                const result = await res.json();
-                console.log("테스트 실행 결과:", result);
-                // 결과는 오버레이로 자동 전송됨 (SignalR)
-            }
+        // 기존 함수들
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+        async function deleteRoulette(id) { if(confirm("삭제하시겠습니까?")) { await fetch(`/api/admin/roulette/${id}`, {method:'DELETE', credentials:'same-origin'}); loadRoulettes(); } }
+        async function runTestSpin(id, is10x) { await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, {method:'POST', credentials:'same-origin'}); }
+        function updateTotalProb() {
+            let total = 0;
+            document.querySelectorAll('.item-prob').forEach(input => total += parseFloat(input.value) || 0);
+            document.getElementById('totalProbDisplay').innerText = `총 가중치 합: ${total.toFixed(2)}`;
         }
-
-        function closeModal() {
-            document.getElementById('editModal').style.display = 'none';
+        function copyOverlayUrl() { 
+            const urlInput = document.getElementById('overlayUrl');
+            urlInput.select();
+            document.execCommand('copy');
+            alert("URL이 복사되었습니다.");
         }
 
         window.onload = loadRoulettes;

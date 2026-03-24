@@ -52,7 +52,7 @@ namespace MooldangAPI.Data
                 .HasIndex(s => s.ChzzkUid);
             
             modelBuilder.Entity<Roulette>()
-                .HasIndex(r => r.ChzzkUid);
+                .HasIndex(r => new { r.ChzzkUid, r.Id });
             
             modelBuilder.Entity<PeriodicMessage>()
                 .HasIndex(p => p.ChzzkUid);

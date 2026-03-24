@@ -26,6 +26,8 @@ namespace MooldangAPI.Models
 
         public bool IsActive { get; set; } = true;
 
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public List<RouletteItem> Items { get; set; } = new();
     }
 }
