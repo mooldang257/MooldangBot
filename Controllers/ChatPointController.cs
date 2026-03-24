@@ -25,7 +25,10 @@ namespace MooldangAPI.Controllers
         public async Task<IActionResult> GetSettings(string chzzkUid)
         {
             _logger.LogInformation("GetSettings called for Uid: {Uid}", chzzkUid);
-            var profile = await _context.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            // ⭐ [권한 대응] 채널 매니저 권한이 확인된 경우 전역 쿼리 필터를 무시하고 해당 채널 정보를 가져옵니다.
+            var profile = await _context.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return NotFound("Streamer not found");
 
             return Ok(new {
@@ -44,7 +47,10 @@ namespace MooldangAPI.Controllers
         {
             _logger.LogInformation("SaveSettings attempt for Uid: {Uid} by User: {User}", chzzkUid, User.Identity?.Name);
             
-            var profile = await _context.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            // ⭐ [권한 대응] 채널 매니저 권한이 확인된 경우 전역 쿼리 필터를 무시하고 해당 채널 정보를 가져옵니다.
+            var profile = await _context.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
             {
                 _logger.LogWarning("Streamer not found for Uid: {Uid}", chzzkUid);
@@ -66,14 +72,16 @@ namespace MooldangAPI.Controllers
         [HttpGet("{chzzkUid}/viewers")]
         public async Task<IActionResult> GetViewers(string chzzkUid)
         {
+            // ⭐ [권한 대응] 채널 매니저 권한이 확인된 경우 전역 쿼리 필터를 무시하고 해당 채널의 시청자 목록을 가져옵니다.
             var viewers = await _context.ViewerProfiles
+                .IgnoreQueryFilters()
                 .Where(v => v.StreamerChzzkUid == chzzkUid)
                 .OrderByDescending(v => v.Points) // 포인트 높은 순 정렬
                 .Select(v => new {
-                    v.Nickname,
-                    v.Points,
-                    v.AttendanceCount,
-                    v.LastAttendanceAt
+                    nickname = v.Nickname,
+                    points = v.Points,
+                    attendanceCount = v.AttendanceCount,
+                    lastAttendanceAt = v.LastAttendanceAt
                 })
                 .ToListAsync();
 
