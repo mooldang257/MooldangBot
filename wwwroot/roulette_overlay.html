@@ -223,6 +223,26 @@
             setTimeout(() => location.reload(), 5000);
         });
 
+        async function completeAnimation(SpinId, retryCount = 0) {
+            if (!SpinId) return;
+            try {
+                const res = await fetch('/api/admin/roulette/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ SpinId: SpinId })
+                });
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                console.log("애니메이션 완료 보고 성공:", SpinId);
+            } catch (err) {
+                console.error(`애니메이션 완료 보고 실패 (시도 ${retryCount + 1}):`, err);
+                if (retryCount < 2) {
+                    setTimeout(() => completeAnimation(SpinId, retryCount + 1), 2000);
+                }
+            }
+        }
+
         async function startRouletteAnimation(data) {
             if (!data.results || data.results.length === 0) return;
 
@@ -298,6 +318,11 @@
             // 모든 연차 애니메이션 완전 종료
             popup.classList.remove('active');
             wrapper.style.display = 'none';
+
+            // 📣 서버에 애니메이션 종료 알림 (채팅 전송 트리거)
+            if (data.SpinId) {
+                await completeAnimation(data.SpinId);
+            }
         }
     </script>
 </body>

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
 using MooldangAPI.Models;
 using MooldangAPI.Services;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangAPI.Controllers
 {
@@ -25,6 +26,19 @@ namespace MooldangAPI.Controllers
         public int? NextLastId { get; set; }
     }
 
+    public class SpinResultContext
+    {
+        public string ChzzkUid { get; set; } = string.Empty;
+        public string RouletteName { get; set; } = string.Empty;
+        public string? ViewerNickname { get; set; }
+        public List<string> WinningItems { get; set; } = new();
+    }
+
+    public class CompleteRequest
+    {
+        public string SpinId { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("api/admin/roulette")]
     [Authorize]
@@ -32,11 +46,13 @@ namespace MooldangAPI.Controllers
     {
         private readonly AppDbContext _db;
         private readonly RouletteService _rouletteService;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-        public RouletteController(AppDbContext db, RouletteService rouletteService)
+        public RouletteController(AppDbContext db, RouletteService rouletteService, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _db = db;
             _rouletteService = rouletteService;
+            _cache = cache;
         }
 
         private string? GetChzzkUid()
@@ -185,6 +201,24 @@ namespace MooldangAPI.Controllers
                     .SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
 
             return AffectedRows == 0 ? NotFound() : Ok();
+        }
+
+        [HttpPost("complete")]
+        public async Task<IActionResult> CompleteAnimation([FromBody] CompleteRequest Request)
+        {
+            if (string.IsNullOrEmpty(Request.SpinId)) return BadRequest();
+
+            if (_cache.TryGetValue($"Spin:{Request.SpinId}", out SpinResultContext? Context))
+            {
+                if (Context != null)
+                {
+                    await _rouletteService.SendDelayedChatResultAsync(Context);
+                    _cache.Remove($"Spin:{Request.SpinId}");
+                    return Ok();
+                }
+            }
+
+            return NotFound("유효하지 않거나 이미 처리된 SpinId입니다.");
         }
 
         [HttpPatch("items/{ItemId}/status")]

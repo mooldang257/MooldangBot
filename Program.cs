@@ -78,6 +78,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
 // Removed BotManager. ChzzkBackgroundService handles this via EDA.

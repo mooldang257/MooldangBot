@@ -4,6 +4,7 @@ using MooldangAPI.Data;
 using MooldangAPI.Hubs;
 using MooldangAPI.Models;
 using MooldangAPI.ApiClients;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangAPI.Services
 {
@@ -14,14 +15,16 @@ namespace MooldangAPI.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ChzzkApiClient _chzzkApi;
         private readonly ILogger<RouletteService> _logger;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-        public RouletteService(AppDbContext db, IHubContext<OverlayHub> hubContext, IServiceProvider serviceProvider, ChzzkApiClient chzzkApi, ILogger<RouletteService> logger)
+        public RouletteService(AppDbContext db, IHubContext<OverlayHub> hubContext, IServiceProvider serviceProvider, ChzzkApiClient chzzkApi, ILogger<RouletteService> logger, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _db = db;
             _hubContext = hubContext;
             _serviceProvider = serviceProvider;
             _chzzkApi = chzzkApi;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string? viewerNickname = null)
@@ -51,15 +54,26 @@ namespace MooldangAPI.Services
 
             var result = DrawItem(activeItems, is10x: false);
             
+            // 🏷️ SpinId 생성 및 결과 캐싱 (지연 알림용)
+            string SpinId = Guid.NewGuid().ToString();
+            var Context = new Controllers.SpinResultContext
+            {
+                ChzzkUid = chzzkUid,
+                RouletteName = roulette.Name,
+                ViewerNickname = viewerNickname,
+                WinningItems = new List<string> { result.ItemName }
+            };
+            _cache.Set($"Spin:{SpinId}", Context, TimeSpan.FromMinutes(1));
+
             await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
             {
+                SpinId = SpinId,
                 RouletteId = rouletteId,
                 RouletteName = roulette.Name,
                 Results = new List<RouletteItem> { result }
             });
 
-            var resultList = new List<RouletteItem> { result };
-            _ = SendChatResultAsync(chzzkUid, roulette.Name, viewerNickname, resultList);
+            // _ = SendChatResultAsync(chzzkUid, roulette.Name, viewerNickname, resultList); // 즉시 전송 중단
 
             return result;
         }
@@ -94,14 +108,26 @@ namespace MooldangAPI.Services
                 results.Add(DrawItem(activeItems, is10x: true));
             }
 
+            // 🏷️ SpinId 생성 및 결과 캐싱 (지연 알림용)
+            string SpinId = Guid.NewGuid().ToString();
+            var Context = new Controllers.SpinResultContext
+            {
+                ChzzkUid = chzzkUid,
+                RouletteName = roulette.Name,
+                ViewerNickname = viewerNickname,
+                WinningItems = results.Select(r => r.ItemName).ToList()
+            };
+            _cache.Set($"Spin:{SpinId}", Context, TimeSpan.FromMinutes(1));
+
             await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
             {
+                SpinId = SpinId,
                 RouletteId = rouletteId,
                 RouletteName = roulette.Name,
                 Results = results
             });
 
-            _ = SendChatResultAsync(chzzkUid, roulette.Name, viewerNickname, results);
+            // _ = SendChatResultAsync(chzzkUid, roulette.Name, viewerNickname, results); // 즉시 전송 중단
 
             return results;
         }
@@ -146,19 +172,32 @@ namespace MooldangAPI.Services
 
         private async Task SendChatResultAsync(string chzzkUid, string rouletteName, string? viewerNickname, List<RouletteItem> results)
         {
+            // 하위 호환성 유지
+            var context = new Controllers.SpinResultContext
+            {
+                ChzzkUid = chzzkUid,
+                RouletteName = rouletteName,
+                ViewerNickname = viewerNickname,
+                WinningItems = results.Select(r => r.ItemName).ToList()
+            };
+            await SendDelayedChatResultAsync(context);
+        }
+
+        public async Task SendDelayedChatResultAsync(Controllers.SpinResultContext Context)
+        {
             try
             {
-                string nickPrefix = string.IsNullOrEmpty(viewerNickname) ? "관리자테스트" : viewerNickname;
-                var grouped = results.GroupBy(r => r.ItemName)
+                string nickPrefix = string.IsNullOrEmpty(Context.ViewerNickname) ? "관리자테스트" : Context.ViewerNickname;
+                var grouped = Context.WinningItems.GroupBy(name => name)
                                      .Select(g => g.Count() > 1 ? $"{g.Key}x{g.Count()}" : g.Key);
                 string resultStr = string.Join(", ", grouped);
-                string message = $"{nickPrefix}({rouletteName})> {resultStr}";
+                string message = $"{nickPrefix}({Context.RouletteName})> {resultStr}";
 
-                await SendChatMessageAsync(chzzkUid, message);
+                await SendChatMessageAsync(Context.ChzzkUid, message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "룰렛 결과 채팅 전송 중 오류 발생");
+                _logger.LogError(ex, "룰렛 지연 결과 채팅 전송 중 오류 발생");
             }
         }
     }

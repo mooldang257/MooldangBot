@@ -265,9 +265,15 @@
         }
 
         async function saveRoulette() {
+            const name = document.getElementById('rName').value.trim();
+            if (!name) {
+                alert("⚠️ 룰렛 이름을 입력해주세요.");
+                return;
+            }
+
             const Data = {
                 Id: editingId || 0,
-                Name: document.getElementById('rName').value,
+                Name: name,
                 Type: parseInt(document.getElementById('rType').value),
                 Command: document.getElementById('rCommand').value,
                 CostPerSpin: parseInt(document.getElementById('rCost').value),
