@@ -238,7 +238,7 @@
             if (newCount < 0) newCount = 0;
             oma.count = newCount;
             renderOmakasesDash();
-            await fetch(`/api/songlist/omakase/${id}?delta=${delta}`, { method: 'PUT' });
+            await fetch(`/api/songlist/omakase/${chzzkUid}/${id}?delta=${delta}`, { method: 'PUT' });
             broadcastState();
         }
 
@@ -251,7 +251,7 @@
             const omakaseId = selectedOma ? selectedOma.value : null;
 
             const newSong = { chzzkUid: chzzkUid, title: t.value, artist: a.value, status: 'Pending', sortOrder: songs.length };
-            const apiUrl = omakaseId ? `/api/song/add?omakaseId=${omakaseId}` : '/api/song/add';
+            const apiUrl = omakaseId ? `/api/song/add/${chzzkUid}?omakaseId=${omakaseId}` : `/api/song/add/${chzzkUid}`;
             
             const res = await fetch(apiUrl, {
                 method: 'POST',
@@ -270,7 +270,7 @@
         }
 
         async function changeSongStatus(id, newStatus) {
-            await fetch(`/api/song/${id}/status?status=${newStatus}`, { method: 'PUT' });
+            await fetch(`/api/song/${chzzkUid}/${id}/status?status=${newStatus}`, { method: 'PUT' });
             if (newStatus === 'Playing') {
                 songs.forEach(s => { if (s.status === 'Playing') s.status = 'Completed'; });
             }
@@ -291,7 +291,7 @@
             const newTitle = prompt("수정할 곡 제목을 입력하세요:", song.title);
             if (newTitle === null || newTitle.trim() === "") return;
             const newArtist = prompt("수정할 가수를 입력하세요:", song.artist || "");
-            await fetch(`/api/song/${id}/edit?title=${encodeURIComponent(newTitle)}&artist=${encodeURIComponent(newArtist)}`, { method: 'PUT' });
+            await fetch(`/api/song/${chzzkUid}/${id}/edit?title=${encodeURIComponent(newTitle)}&artist=${encodeURIComponent(newArtist)}`, { method: 'PUT' });
             song.title = newTitle;
             song.artist = newArtist;
             renderAll(); broadcastState();
@@ -302,7 +302,7 @@
             const ids = Array.from(document.querySelectorAll(`${cbClass}:checked`)).map(cb => parseInt(cb.dataset.id));
             if (ids.length === 0) return alert("삭제할 곡을 선택해주세요.");
             if (!confirm(`선택한 ${ids.length}곡을 완전히 삭제하시겠습니까?`)) return;
-            await fetch('/api/song/delete', {
+            await fetch(`/api/song/delete/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ids)
@@ -313,7 +313,7 @@
 
         async function deleteSingle(id) {
             if (!confirm("이 곡을 완전히 삭제하시겠습니까?")) return;
-            await fetch('/api/song/delete', {
+            await fetch(`/api/song/delete/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([id])

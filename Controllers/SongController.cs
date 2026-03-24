@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace MooldangAPI.Controllers
 {
     [ApiController]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 신청곡 관리에 채널 매니저 정책 적용
     public class SongController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -18,24 +19,29 @@ namespace MooldangAPI.Controllers
             _hubContext = hubContext;
         }
 
-        [HttpPost("/api/song/add")]
-        public async Task<IResult> AddSong([FromBody] SongQueue newSong, [FromQuery] int? omakaseId = null)
+        [HttpPost("/api/song/add/{chzzkUid}")]
+        public async Task<IResult> AddSong(string chzzkUid, [FromBody] SongQueue newSong, [FromQuery] int? omakaseId = null)
         {
+            newSong.Id = 0;
+            newSong.ChzzkUid = chzzkUid; // 🛡️ 경로상의 UID로 강제 고정
             newSong.CreatedAt = DateTime.Now;
             _db.SongQueues.Add(newSong);
 
-            // --- 오마카세 연동 (수동 추가 시 카운트 차감 및 통계 반영) ---
+            // --- 오마카세 연동 ---
             if (omakaseId.HasValue)
             {
-                var omakase = await _db.StreamerOmakases.FindAsync(omakaseId.Value);
+                var omakase = await _db.StreamerOmakases
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.ChzzkUid == chzzkUid);
+                    
                 if (omakase != null)
                 {
                     omakase.Count--;
                     if (omakase.Count < 0) omakase.Count = 0;
 
-                    // 활성 세션 통계에도 반영
                     var activeSession = await _db.SonglistSessions
-                        .Where(s => s.ChzzkUid == newSong.ChzzkUid && s.IsActive)
+                        .IgnoreQueryFilters()
+                        .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
                         .FirstOrDefaultAsync();
                     if (activeSession != null)
                     {
@@ -43,49 +49,46 @@ namespace MooldangAPI.Controllers
                     }
                 }
             }
-            // --------------------------------------------------------
 
             await _db.SaveChangesAsync();
-
-            // 실시간 갱신 신호 발송
-            await NotifyOverlayAsync(newSong.ChzzkUid!);
-
+            await NotifyOverlayAsync(chzzkUid);
             return Results.Ok(newSong);
         }
 
-        [HttpPut("/api/song/{id}/status")]
-        public async Task<IResult> UpdateStatus(int id, [FromQuery] string status)
+        [HttpPut("/api/song/{chzzkUid}/{id}/status")]
+        public async Task<IResult> UpdateStatus(string chzzkUid, int id, [FromQuery] string status)
         {
-            var song = await _db.SongQueues.FindAsync(id);
+            var song = await _db.SongQueues
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid == chzzkUid);
+                
             if (song != null)
             {
-                // --- 통계 기록 (세션 카운트) ---
                 var activeSession = await _db.SonglistSessions
-                    .Where(s => s.ChzzkUid == song.ChzzkUid && s.IsActive)
+                    .IgnoreQueryFilters()
+                    .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
                     .FirstOrDefaultAsync();
 
                 if (activeSession != null)
                 {
-                    // 완료로 변경될 때 +1
                     if (status == "Completed" && song.Status != "Completed")
                     {
                         activeSession.CompleteCount++;
                     }
-                    // 완료에서 다른 상태(대기/재생)로 돌아갈 때 -1
                     else if (song.Status == "Completed" && status != "Completed")
                     {
                         activeSession.CompleteCount--;
                         if (activeSession.CompleteCount < 0) activeSession.CompleteCount = 0;
                     }
                 }
-                // -----------------------------
 
                 if (status == "Playing")
                 {
-                    var current = await _db.SongQueues.FirstOrDefaultAsync(s => s.ChzzkUid == song.ChzzkUid && s.Status == "Playing");
+                    var current = await _db.SongQueues
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid && s.Status == "Playing");
                     if (current != null)
                     {
-                        // 기존 재생 중인 곡을 완료로 보낼 때도 카운트 증가
                         current.Status = "Completed";
                         if (activeSession != null) activeSession.CompleteCount++;
                     }
@@ -93,24 +96,25 @@ namespace MooldangAPI.Controllers
                 song.Status = status;
                 await _db.SaveChangesAsync();
 
-                // 실시간 갱신 신호 발송
-                await NotifyOverlayAsync(song.ChzzkUid!);
+                await NotifyOverlayAsync(chzzkUid);
             }
             return Results.Ok();
         }
 
-        [HttpPost("/api/song/delete")]
-        public async Task<IResult> DeleteSongs([FromBody] List<int> ids)
+        [HttpPost("/api/song/delete/{chzzkUid}")]
+        public async Task<IResult> DeleteSongs(string chzzkUid, [FromBody] List<int> ids)
         {
-            var songs = await _db.SongQueues.Where(s => ids.Contains(s.Id)).ToListAsync();
+            var songs = await _db.SongQueues
+                .IgnoreQueryFilters()
+                .Where(s => ids.Contains(s.Id) && s.ChzzkUid == chzzkUid)
+                .ToListAsync();
+                
             if (songs.Any())
             {
-                string uid = songs.First().ChzzkUid!;
                 _db.SongQueues.RemoveRange(songs);
                 await _db.SaveChangesAsync();
 
-                // 실시간 갱신 신호 발송
-                await NotifyOverlayAsync(uid);
+                await NotifyOverlayAsync(chzzkUid);
             }
             return Results.Ok();
         }

@@ -168,7 +168,7 @@
             if(!cmd.commandKeyword) return alert("키워드를 입력해 주세요!");
             if(cmd.actionType !== 'SongRequest' && !cmd.content) return alert("내용을 입력해 주세요!");
 
-            await fetch('/api/commands/save', {
+            await fetch(`/api/commands/save/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cmd)
@@ -180,7 +180,7 @@
 
         async function deleteCommand(id) {
             if(!confirm("정말 삭제할까요?")) return;
-            await fetch(`/api/commands/delete/${id}`, { method: 'DELETE' });
+            await fetch(`/api/commands/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
             loadCommands();
         }
 
@@ -231,7 +231,7 @@
                 isEnabled: true
             };
 
-            await fetch('/api/periodicmessage/save', {
+            await fetch(`/api/periodicmessage/save/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(req)
@@ -244,7 +244,7 @@
 
         async function deletePeriodicMessage(id) {
             if(!confirm("해당 정기 메세지를 삭제할까요?")) return;
-            await fetch(`/api/periodicmessage/delete/${id}`, { method: 'DELETE' });
+            await fetch(`/api/periodicmessage/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
             loadPeriodicMessages();
         }
 

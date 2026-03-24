@@ -25,15 +25,9 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("/songlist_settings/{chzzkUid}")]
-        [Authorize]
-        public async Task<IResult> SettingsPage(string chzzkUid)
+        [Authorize(Policy = "ChannelManager")]
+        public IResult SettingsPage(string chzzkUid)
         {
-            var userChzzkUid = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
-
-            if (profile == null || profile.ChzzkUid != chzzkUid)
-                return Results.Redirect("/");
-
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_settings.html"), "text/html; charset=utf-8");
         }
 
@@ -44,41 +38,23 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("/songlist/{chzzkUid}")]
-        [Authorize]
-        public async Task<IResult> DashboardPage(string chzzkUid)
+        [Authorize(Policy = "ChannelManager")]
+        public IResult DashboardPage(string chzzkUid)
         {
-            var userChzzkUid = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
-
-            if (profile == null || profile.ChzzkUid != chzzkUid)
-                return Results.Redirect("/");
-
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist.html"), "text/html; charset=utf-8");
         }
 
         [HttpGet("/commands-manager/{chzzkUid}")]
-        [Authorize]
-        public async Task<IResult> CommandsManagerPage(string chzzkUid)
+        [Authorize(Policy = "ChannelManager")]
+        public IResult CommandsManagerPage(string chzzkUid)
         {
-            var userChzzkUid = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
-
-            if (profile == null || profile.ChzzkUid != chzzkUid)
-                return Results.Redirect("/");
-
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/commands.html"), "text/html; charset=utf-8");
         }
 
         [HttpGet("/overlay_manager/{chzzkUid}")]
-        [Authorize]
-        public async Task<IResult> OverlayManagerPage(string chzzkUid)
+        [Authorize(Policy = "ChannelManager")]
+        public IResult OverlayManagerPage(string chzzkUid)
         {
-            var userChzzkUid = User.FindFirstValue("StreamerId");
-            var profile = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
-
-            if (profile == null || profile.ChzzkUid != chzzkUid)
-                return Results.Redirect("/");
-
             return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/overlay_manager.html"), "text/html; charset=utf-8");
         }
 

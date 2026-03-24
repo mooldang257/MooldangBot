@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace MooldangAPI.Controllers
 {
     [ApiController]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 세션 데이터 관리에 채널 매니저 정책 적용
     public class SonglistController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -31,16 +32,19 @@ namespace MooldangAPI.Controllers
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
             var omakases = await _db.StreamerOmakases
+                .IgnoreQueryFilters() // 💡 [마스터 대응] 필터 우회
                 .Where(o => o.ChzzkUid == chzzkUid)
                 .Select(o => new { o.Id, o.Name, o.Count, o.Icon })
                 .ToListAsync();
 
             var songs = await _db.SongQueues
+                .IgnoreQueryFilters()
                 .Where(s => s.ChzzkUid == chzzkUid)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
             var memo = await _db.SystemSettings
+                .IgnoreQueryFilters()
                 .Where(s => s.KeyName == $"Memo_{chzzkUid}")
                 .Select(s => s.KeyValue)
                 .FirstOrDefaultAsync() ?? "";
@@ -48,10 +52,13 @@ namespace MooldangAPI.Controllers
             return Ok(new { memo, omakases, songs });
         }
 
-        [HttpPut("/api/songlist/omakase/{id}")]
-        public async Task<IResult> UpdateOmakaseCount(int id, [FromQuery] int delta)
+        [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]
+        public async Task<IResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
-            var item = await _db.StreamerOmakases.FindAsync(id);
+            var item = await _db.StreamerOmakases
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(o => o.Id == id && o.ChzzkUid == chzzkUid);
+
             if (item != null)
             {
                 int retryCount = 0;
@@ -81,8 +88,7 @@ namespace MooldangAPI.Controllers
                 }
 
                 // 실시간 갱신 신호 발송
-                string groupName = item.ChzzkUid.ToLower();
-                await _hubContext.Clients.Group(groupName).SendAsync("RefreshSongAndDashboard");
+                await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard");
             }
             return Results.Ok();
         }
@@ -91,8 +97,11 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/test/chat")]
         public async Task<IResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
         {
-            // 1. 스트리머 프로필 조회
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            // 💡 [Gotcha 대응] 마스터 권한 고려하여 프로필 조회
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                
             if (profile == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
 
             // 2. [내부 시뮬레이션] MediatR 이벤트를 발생시켜 곡 신청 등 백엔드 로직 트리거
@@ -120,10 +129,13 @@ namespace MooldangAPI.Controllers
         [HttpGet("/api/songlist/status/{chzzkUid}")]
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return NotFound();
 
             var activeSession = await _db.SonglistSessions
+                .IgnoreQueryFilters()
                 .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
                 .FirstOrDefaultAsync();
 
@@ -138,6 +150,7 @@ namespace MooldangAPI.Controllers
         public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
         {
             var activeSession = await _db.SonglistSessions
+                .IgnoreQueryFilters()
                 .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
                 .FirstOrDefaultAsync();
 
@@ -168,7 +181,9 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/omakase/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return NotFound();
 
             profile.IsOmakaseEnabled = !profile.IsOmakaseEnabled;

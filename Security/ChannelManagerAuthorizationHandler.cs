@@ -20,37 +20,44 @@ public class ChannelManagerAuthorizationHandler : AuthorizationHandler<ChannelMa
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ChannelManagerRequirement requirement)
     {
-        // 1. 마스터 권한은 모든 채널 관리 가능
-        if (_userSession.Role == "master")
+        // 1. 마스터 권한 (Master / Bot)은 모든 채널 관리 가능 (프리패스)
+        if (context.User.IsInRole("master"))
         {
+            _logger.LogInformation("ChannelManagerPolicy: Master/Bot access granted for {User}", UserIdentityName(context));
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
 
-        // 2. 요청 경로에서 chzzkUid 추출
+        // 2. 요청 경로 또는 리소스에서 대상 대상 UID(chzzkUid) 추출
         var httpContext = _httpContextAccessor.HttpContext;
         var routeData = httpContext?.GetRouteData();
         
-        // "chzzkUid" 뿐만 아니라 대소문자 변형이나 "uid" 등도 확인할 수 있도록 유연하게 처리 (현재는 chzzkUid 고정)
-        var chzzkUid = routeData?.Values["chzzkUid"]?.ToString();
+        // 경로 변수 {chzzkUid} 또는 {uid} 확인
+        var chzzkUid = routeData?.Values["chzzkUid"]?.ToString() 
+                    ?? routeData?.Values["uid"]?.ToString();
+
+        // 💡 [Gotcha 대응] 라우트 데이터에 없으면 리소스(컨트롤러에서 넘긴 값) 확인
+        if (string.IsNullOrEmpty(chzzkUid) && context.Resource is string resourceUid)
+        {
+            chzzkUid = resourceUid;
+        }
 
         if (string.IsNullOrEmpty(chzzkUid))
         {
-            _logger.LogWarning("ChannelManagerPolicy: chzzkUid not found in route data. Path: {Path}", httpContext?.Request.Path);
+            _logger.LogWarning("ChannelManagerPolicy: target UID not found. Path: {Path}", httpContext?.Request.Path);
             return Task.CompletedTask;
         }
 
-        // 3. 현재 사용자가 해당 채널의 관리 권한(AllowedChannelId)을 가지고 있는지 확인
+        // 3. 현재 사용자가 해당 채널의 권한을 가지고 있는지 확인 (본인 포함)
         var allowedIds = _userSession.AllowedChannelIds;
         if (allowedIds.Contains(chzzkUid, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("ChannelManagerPolicy: Success for User {User} on Channel {Channel}", UserIdentityName(context), chzzkUid);
+            _logger.LogInformation("ChannelManagerPolicy: Access granted for User {User} on Channel {Channel}", UserIdentityName(context), chzzkUid);
             context.Succeed(requirement);
         }
         else
         {
-            _logger.LogWarning("ChannelManagerPolicy: Denied for User {User} on Channel {Channel}. Allowed: {Allowed}", 
-                UserIdentityName(context), chzzkUid, string.Join(", ", allowedIds));
+            _logger.LogWarning("ChannelManagerPolicy: Access denied for User {User} on Channel {Channel}", UserIdentityName(context), chzzkUid);
         }
 
         return Task.CompletedTask;

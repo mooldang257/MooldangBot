@@ -9,6 +9,7 @@ using MooldangAPI.Services;
 namespace MooldangAPI.Controllers
 {
     [ApiController]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 모든 명령어 관리에 채널 매니저 정책 적용
     public class CommandsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -32,6 +33,7 @@ namespace MooldangAPI.Controllers
 
             // 1. 일반 커스텀 명령어 (StreamerCommands)
             var customCmds = await _db.StreamerCommands
+                .IgnoreQueryFilters() // 💡 [마스터 대응] 필터 우회
                 .AsNoTracking()
                 .Where(c => c.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
@@ -50,6 +52,7 @@ namespace MooldangAPI.Controllers
 
             // 2. 스트리머 프로필 기본 설정 명령어
             var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
                 
@@ -98,6 +101,7 @@ namespace MooldangAPI.Controllers
 
             // 3. 룰렛 명령어
             var roulettes = await _db.Roulettes
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Where(r => r.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
@@ -114,6 +118,7 @@ namespace MooldangAPI.Controllers
 
             // 4. 오마카세 명령어
             var omakases = await _db.StreamerOmakases
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Where(o => o.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
@@ -131,25 +136,27 @@ namespace MooldangAPI.Controllers
             return Results.Ok(combinedList);
         }
 
-        [HttpPost("/api/commands/save")]
-        public async Task<IResult> SaveCommand([FromBody] StreamerCommand cmd)
+        [HttpPost("/api/commands/save/{chzzkUid}")]
+        public async Task<IResult> SaveCommand(string chzzkUid, [FromBody] StreamerCommand cmd)
         {
-            // DB에 저장할 때 명시적으로 Id의 간섭을 배제하여 뒤틀림을 방지합니다.
             cmd.Id = 0; 
+            cmd.ChzzkUid = chzzkUid; // 🛡️ 경로상의 UID로 강제 고정
 
-            var existing = await _db.StreamerCommands.FirstOrDefaultAsync(c => c.ChzzkUid == cmd.ChzzkUid && c.CommandKeyword == cmd.CommandKeyword);
+            var existing = await _db.StreamerCommands
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.ChzzkUid == chzzkUid && c.CommandKeyword == cmd.CommandKeyword);
+
             if (existing == null) _db.StreamerCommands.Add(cmd);
             else { existing.ActionType = cmd.ActionType; existing.Content = cmd.Content; existing.RequiredRole = cmd.RequiredRole; }
             await _db.SaveChangesAsync();
             
-            // 🤖 [동기화] 웹에서 변경한 내용을 봇 캐시에 즉시 반영
-            await _cacheService.RefreshAsync(cmd.ChzzkUid, default);
+            await _cacheService.RefreshAsync(chzzkUid, default);
             
             return Results.Ok();
         }
 
-        [HttpDelete("/api/commands/delete/{idStr}")]
-        public async Task<IResult> DeleteCommand(string idStr)
+        [HttpDelete("/api/commands/delete/{chzzkUid}/{idStr}")]
+        public async Task<IResult> DeleteCommand(string chzzkUid, string idStr)
         {
             var parts = idStr.Split(':');
             if (parts.Length < 2) return Results.BadRequest("Invalid ID format");
@@ -161,39 +168,32 @@ namespace MooldangAPI.Controllers
             {
                 if (int.TryParse(idVal, out int id))
                 {
-                    var cmd = await _db.StreamerCommands.FindAsync(id);
+                    var cmd = await _db.StreamerCommands.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == chzzkUid);
                     if (cmd != null) 
                     { 
-                        string ownerUid = cmd.ChzzkUid;
                         _db.StreamerCommands.Remove(cmd); 
                         await _db.SaveChangesAsync(); 
-                        
-                        // 🤖 [동기화] 삭제된 내용을 봇 캐시에 즉시 반영
-                        await _cacheService.RefreshAsync(ownerUid, default);
+                        await _cacheService.RefreshAsync(chzzkUid, default);
                     }
                 }
             }
             else if (type == "Profile")
             {
-                var userChzzkUid = User.FindFirstValue("StreamerId");
-                if (!string.IsNullOrEmpty(userChzzkUid))
+                var profile = await _db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                if (profile != null)
                 {
-                    var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == userChzzkUid);
-                    if (profile != null)
-                    {
-                        if (idVal == "Song") profile.SongCommand = string.Empty;
-                        else if (idVal == "Attendance") profile.AttendanceCommands = string.Empty;
-                        else if (idVal == "Point") profile.PointCheckCommand = string.Empty;
-                        
-                        await _db.SaveChangesAsync();
-                    }
+                    if (idVal == "Song") profile.SongCommand = string.Empty;
+                    else if (idVal == "Attendance") profile.AttendanceCommands = string.Empty;
+                    else if (idVal == "Point") profile.PointCheckCommand = string.Empty;
+                    
+                    await _db.SaveChangesAsync();
                 }
             }
             else if (type == "Roulette")
             {
                 if (int.TryParse(idVal, out int id))
                 {
-                    var roulette = await _db.Roulettes.FindAsync(id);
+                    var roulette = await _db.Roulettes.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == id && r.ChzzkUid == chzzkUid);
                     if (roulette != null) { _db.Roulettes.Remove(roulette); await _db.SaveChangesAsync(); }
                 }
             }
@@ -201,7 +201,7 @@ namespace MooldangAPI.Controllers
             {
                 if (int.TryParse(idVal, out int id))
                 {
-                    var omakase = await _db.StreamerOmakases.FindAsync(id);
+                    var omakase = await _db.StreamerOmakases.IgnoreQueryFilters().FirstOrDefaultAsync(o => o.Id == id && o.ChzzkUid == chzzkUid);
                     if (omakase != null) { _db.StreamerOmakases.Remove(omakase); await _db.SaveChangesAsync(); }
                 }
             }

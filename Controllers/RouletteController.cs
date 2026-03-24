@@ -41,7 +41,7 @@ namespace MooldangAPI.Controllers
 
     [ApiController]
     [Route("api/admin/roulette")]
-    [Authorize]
+    [Authorize(Policy = "ChannelManager")] // 🛡️ 채널 매니저(마스터 포함) 정책 적용
     public class RouletteController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -60,15 +60,16 @@ namespace MooldangAPI.Controllers
             return User.FindFirst("StreamerId")?.Value;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetRoulettes([FromQuery] int LastId = 0, [FromQuery] int PageSize = 10)
+        [HttpGet("{chzzkUid}")]
+        public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] int LastId = 0, [FromQuery] int PageSize = 10)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
+            // 💡 [Gotcha 대응] 마스터는 모든 데이터 조회를 위해 필터 우회
+            var query = _db.Roulettes
+                 .IgnoreQueryFilters()
+                 .Where(R => R.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId));
 
             // .NET 10: 최신순 정렬 및 효율적인 인풋 페이징
-            var RawData = await _db.Roulettes
-                .Where(R => R.ChzzkUid == ChzzkUid && (LastId == 0 || R.Id < LastId))
+            var RawData = await query
                 .OrderByDescending(R => R.Id)
                 .Take(PageSize + 1)
                 .Select(R => new RouletteSummaryDto
@@ -98,16 +99,14 @@ namespace MooldangAPI.Controllers
             });
         }
 
-        [HttpGet("{Id}")]
-        public async Task<IActionResult> GetRoulette(int Id)
+        [HttpGet("{chzzkUid}/{Id}")]
+        public async Task<IActionResult> GetRoulette(string chzzkUid, int Id)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
-
             var RouletteObj = await _db.Roulettes
+                .IgnoreQueryFilters()
                 .Include(R => R.Items)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == ChzzkUid);
+                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
 
             if (RouletteObj == null) return NotFound();
 
@@ -116,15 +115,13 @@ namespace MooldangAPI.Controllers
             return Ok(RouletteObj);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateRoulette([FromBody] Roulette RouletteObj)
+        [HttpPost("{chzzkUid}")]
+        public async Task<IActionResult> CreateRoulette(string chzzkUid, [FromBody] Roulette RouletteObj)
         {
             try
             {
-                var ChzzkUid = GetChzzkUid();
-                if (ChzzkUid == null) return Unauthorized();
-
-                RouletteObj.ChzzkUid = ChzzkUid;
+                RouletteObj.Id = 0; // ID 자동 생성 유도
+                RouletteObj.ChzzkUid = chzzkUid;
                 RouletteObj.UpdatedAt = DateTime.UtcNow;
                 
                 if (!RouletteObj.Items.Any() || RouletteObj.Items.Sum(I => I.Probability) <= 0)
@@ -132,12 +129,12 @@ namespace MooldangAPI.Controllers
                     return BadRequest("최소 하나 이상의 아이템과 유효한 확률 정보가 필요합니다.");
                 }
 
+                foreach (var I in RouletteObj.Items) I.Roulette = null;
+
                 _db.Roulettes.Add(RouletteObj);
                 await _db.SaveChangesAsync();
 
-                foreach (var I in RouletteObj.Items) I.Roulette = null;
-
-                return CreatedAtAction(nameof(GetRoulette), new { Id = RouletteObj.Id }, RouletteObj);
+                return CreatedAtAction(nameof(GetRoulette), new { chzzkUid, Id = RouletteObj.Id }, RouletteObj);
             }
             catch (Exception Ex)
             {
@@ -145,19 +142,17 @@ namespace MooldangAPI.Controllers
             }
         }
 
-        [HttpPut("{Id}")]
-        public async Task<IActionResult> UpdateRoulette(int Id, [FromBody] Roulette Updated)
+        [HttpPut("{chzzkUid}/{Id}")]
+        public async Task<IActionResult> UpdateRoulette(string chzzkUid, int Id, [FromBody] Roulette Updated)
         {
             try
             {
                 if (Id <= 0) return BadRequest("유효하지 않은 Id입니다.");
 
-                var ChzzkUid = GetChzzkUid();
-                if (ChzzkUid == null) return Unauthorized();
-
                 var RouletteObj = await _db.Roulettes
+                    .IgnoreQueryFilters()
                     .Include(R => R.Items)
-                    .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == ChzzkUid);
+                    .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
 
                 if (RouletteObj == null) return NotFound();
 
@@ -188,14 +183,12 @@ namespace MooldangAPI.Controllers
             }
         }
 
-        [HttpPatch("{Id}/status")]
-        public async Task<IActionResult> ToggleRouletteStatus(int Id, [FromBody] bool IsActive)
+        [HttpPatch("{chzzkUid}/{Id}/status")]
+        public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool IsActive)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
-
             var AffectedRows = await _db.Roulettes
-                .Where(R => R.Id == Id && R.ChzzkUid == ChzzkUid)
+                .IgnoreQueryFilters()
+                .Where(R => R.Id == Id && R.ChzzkUid == chzzkUid)
                 .ExecuteUpdateAsync(S => S
                     .SetProperty(R => R.IsActive, IsActive)
                     .SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
@@ -224,20 +217,19 @@ namespace MooldangAPI.Controllers
             return NotFound("Spin context expired or already processed.");
         }
 
-        [HttpPatch("items/{ItemId}/status")]
-        public async Task<IActionResult> ToggleItemStatus(int ItemId, [FromBody] bool IsActive)
+        [HttpPatch("{chzzkUid}/items/{ItemId}/status")]
+        public async Task<IActionResult> ToggleItemStatus(string chzzkUid, int ItemId, [FromBody] bool IsActive)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
-
             var AffectedRows = await _db.RouletteItems
-                .Where(I => I.Id == ItemId && I.Roulette.ChzzkUid == ChzzkUid)
+                .IgnoreQueryFilters()
+                .Where(I => I.Id == ItemId && I.Roulette.ChzzkUid == chzzkUid)
                 .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, IsActive));
 
             if (AffectedRows > 0)
             {
                 // 소속된 룰렛의 수정 시간도 함께 업데이트
                 await _db.Roulettes
+                    .IgnoreQueryFilters()
                     .Where(R => R.Items.Any(I => I.Id == ItemId))
                     .ExecuteUpdateAsync(S => S.SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
                     
@@ -247,14 +239,12 @@ namespace MooldangAPI.Controllers
             return NotFound();
         }
 
-        [HttpDelete("{Id}")]
-        public async Task<IActionResult> DeleteRoulette(int Id)
+        [HttpDelete("{chzzkUid}/{Id}")]
+        public async Task<IActionResult> DeleteRoulette(string chzzkUid, int Id)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
-
             var RouletteObj = await _db.Roulettes
-                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == ChzzkUid);
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
 
             if (RouletteObj == null) return NotFound();
 
@@ -264,20 +254,17 @@ namespace MooldangAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost("{Id}/test")]
-        public async Task<IActionResult> TestSpin(int Id, [FromQuery] bool Is10x = false)
+        [HttpPost("{chzzkUid}/{Id}/test")]
+        public async Task<IActionResult> TestSpin(string chzzkUid, int Id, [FromQuery] bool Is10x = false)
         {
-            var ChzzkUid = GetChzzkUid();
-            if (ChzzkUid == null) return Unauthorized();
-
             if (Is10x)
             {
-                var Results = await _rouletteService.SpinRoulette10xAsync(ChzzkUid, Id);
+                var Results = await _rouletteService.SpinRoulette10xAsync(chzzkUid, Id);
                 return Ok(Results);
             }
             else
             {
-                var Result = await _rouletteService.SpinRouletteAsync(ChzzkUid, Id);
+                var Result = await _rouletteService.SpinRouletteAsync(chzzkUid, Id);
                 return Ok(Result);
             }
         }

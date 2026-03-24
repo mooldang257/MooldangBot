@@ -20,6 +20,7 @@ namespace MooldangAPI.Controllers
 
     [ApiController]
     [Route("api/admin/bot")]
+    [Authorize(Roles = "master")] // 🔐 마스터 및 봇 전용 보안 강화
     public class AdminBotController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -31,6 +32,28 @@ namespace MooldangAPI.Controllers
             _db = db;
             _configuration = configuration;
             _scopeFactory = scopeFactory;
+        }
+
+        // 0. 등록된 전체 스트리머 목록 조회 (어드민용)
+        [HttpGet("streamers")]
+        public async Task<IActionResult> GetStreamers()
+        {
+            // 💡 [최적화] 읽기 전용 쿼리이므로 AsNoTracking 적용 (홈 서버 메모리 효율)
+            // 전역 쿼리 필터 무시 (어드민 뷰)
+            var streamers = await _db.StreamerProfiles
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .OrderByDescending(p => p.Id)
+                .Select(p => new {
+                    chzzkUid = p.ChzzkUid,
+                    channelName = p.ChannelName,
+                    profileImageUrl = p.ProfileImageUrl,
+                    isBotEnabled = !string.IsNullOrEmpty(p.ChzzkAccessToken),
+                    lastActiveAt = p.TokenExpiresAt // 대략적인 활동 지표로 활용
+                })
+                .ToListAsync();
+
+            return Ok(streamers);
         }
 
         // 1. 봇 연동 시작 (브라우저에서 이 주소로 접속)

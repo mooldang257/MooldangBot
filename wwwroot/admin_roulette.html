@@ -148,7 +148,7 @@
             document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
 
             try {
-                const res = await fetch(`/api/admin/roulette?LastId=${lastId}&PageSize=10`, { credentials: 'same-origin' });
+                const res = await fetch(`/api/admin/roulette/${chzzkUid}?LastId=${lastId}&PageSize=10`, { credentials: 'same-origin' });
                 if (res.ok) {
                     const result = await res.json();
                     roulettes = roulettes.concat(result.Data);
@@ -206,8 +206,9 @@
         }
 
         async function toggleRouletteStatus(Id, IsActive) {
+            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
             try {
-                const res = await fetch(`/api/admin/roulette/${Id}/status`, {
+                const res = await fetch(`/api/admin/roulette/${chzzkUid}/${Id}/status`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(IsActive),
@@ -224,7 +225,8 @@
         }
 
         async function showEditForm(Id) {
-            const res = await fetch(`/api/admin/roulette/${Id}`, { credentials: 'same-origin' });
+            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
+            const res = await fetch(`/api/admin/roulette/${chzzkUid}/${Id}`, { credentials: 'same-origin' });
             if (!res.ok) return;
             const R = await res.json();
             
@@ -293,7 +295,8 @@
                 return;
             }
 
-            const res = await fetch(editingId ? `/api/admin/roulette/${editingId}` : '/api/admin/roulette', {
+            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
+            const res = await fetch(editingId ? `/api/admin/roulette/${chzzkUid}/${editingId}` : `/api/admin/roulette/${chzzkUid}`, {
                 method: editingId ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
@@ -319,8 +322,17 @@
         }
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-        async function deleteRoulette(id) { if(confirm("삭제하시겠습니까?")) { await fetch(`/api/admin/roulette/${id}`, {method:'DELETE', credentials:'same-origin'}); loadRoulettes(); } }
-        async function runTestSpin(id, is10x) { await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, {method:'POST', credentials:'same-origin'}); }
+        async function deleteRoulette(id) { 
+            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
+            if(confirm("삭제하시겠습니까?")) { 
+                await fetch(`/api/admin/roulette/${chzzkUid}/${id}`, {method:'DELETE', credentials:'same-origin'}); 
+                loadRoulettes(); 
+            } 
+        }
+        async function runTestSpin(id, is10x) { 
+            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
+            await fetch(`/api/admin/roulette/${chzzkUid}/${id}/test?is10x=${is10x}`, {method:'POST', credentials:'same-origin'}); 
+        }
         function updateTotalProb() {
             let total = 0;
             document.querySelectorAll('.item-prob').forEach(input => total += parseFloat(input.value) || 0);

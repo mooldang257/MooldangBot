@@ -208,7 +208,9 @@ namespace MooldangAPI.Controllers
 
                 // 마스터 확인 (하드코딩된 마스터 ID 또는 DB 설정)
                 const string MasterUid = "ca98875d5e0edf02776047fbc70f5449";
-                if (chzzkUid == MasterUid)
+                const string BotUid = "445df9c493713244a65d97e4fd1ed0b1";
+
+                if (chzzkUid == MasterUid || chzzkUid == BotUid)
                 {
                     userRole = "master";
                 }
