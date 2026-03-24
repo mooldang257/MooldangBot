@@ -72,7 +72,11 @@ builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHan
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 // ------------------------------------------
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+    });
 builder.Services.AddMemoryCache();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -93,6 +97,18 @@ builder.Services.AddAuthentication(options => {
 .AddCookie(options => { 
     options.LoginPath = "/api/auth/chzzk-login"; 
     options.AccessDeniedPath = "/bot";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS 강제
+    
+    // AJAX 요청인 경우 302 리다이렉트 대신 401 Unauthorized 반환
+    options.Events.OnRedirectToLogin = context => {
+        if (context.Request.Path.StartsWithSegments("/api")) {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        } else {
+            context.Response.Redirect(context.RedirectUri);
+        }
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddAuthorization(options =>

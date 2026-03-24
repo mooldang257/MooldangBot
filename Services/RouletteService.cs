@@ -65,7 +65,7 @@ namespace MooldangAPI.Services
             };
             _cache.Set($"Spin:{SpinId}", Context, TimeSpan.FromMinutes(1));
 
-            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
+            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveRouletteResult", new
             {
                 SpinId = SpinId,
                 RouletteId = rouletteId,
@@ -119,7 +119,7 @@ namespace MooldangAPI.Services
             };
             _cache.Set($"Spin:{SpinId}", Context, TimeSpan.FromMinutes(1));
 
-            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RouletteTriggered", new
+            await _hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveRouletteResult", new
             {
                 SpinId = SpinId,
                 RouletteId = rouletteId,

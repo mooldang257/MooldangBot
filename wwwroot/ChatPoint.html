@@ -369,7 +369,10 @@
 
             // 1. 기존 설정 불러오기
             try {
-                const res = await fetch(`/api/chatpoint/${uid}`);
+                const res = await fetch(`/api/chatpoint/${uid}`, {
+                    credentials: 'include',
+                    headers: { 'Accept': 'application/json' }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     inputChat.value = data.pointPerChat;
@@ -379,6 +382,8 @@
                     inputAttReply.value = data.attendanceReply || '';
                     inputPointCmd.value = data.pointCheckCommand || '';
                     inputPointReply.value = data.pointCheckReply || '';
+                } else if (res.status === 401) {
+                    console.error("인증 세션이 만료되었습니다. 다시 로그인해주세요.");
                 }
             } catch (e) {
                 console.error("설정 불러오기 실패", e);
@@ -402,7 +407,11 @@
                 try {
                     const res = await fetch(`/api/chatpoint/${uid}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify(reqBody)
                     });
 
@@ -411,8 +420,13 @@
                         setTimeout(() => {
                             toast.classList.remove('show');
                         }, 3000);
+                    } else if (res.status === 401) {
+                        alert('인증이 만료되었습니다. 다시 로그인해 주세요.');
+                        window.location.href = '/api/auth/chzzk-login';
+                    } else if (res.status === 403) {
+                        alert('이 채널을 설정할 권한이 없습니다.');
                     } else {
-                        alert('저장에 실패했습니다.');
+                        alert(`저장에 실패했습니다. (Error: ${res.status})`);
                     }
                 } catch (e) {
                     console.error("설정 저장 실패", e);
@@ -433,7 +447,10 @@
             tBody.innerHTML = '';
 
             try {
-                const res = await fetch(`/api/chatpoint/${uid}/viewers`);
+                const res = await fetch(`/api/chatpoint/${uid}/viewers`, {
+                    credentials: 'include',
+                    headers: { 'Accept': 'application/json' }
+                });
                 if (res.ok) {
                     const viewers = await res.json();
                     

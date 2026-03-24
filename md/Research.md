@@ -532,5 +532,24 @@ OBS 브라우저 소스 / 대시보드 실시간 업데이트
 
 ---
 
+## 10. 2026-03-24 보안 및 인증 강화 패치
+
+최근 `ChatPoint.html`에서 설정을 저장할 때 발생하던 `401 Unauthorized` 에러를 해결하고, 전반적인 API 보안을 강화했습니다.
+
+### 10-1. 주요 수정 사항
+
+| 대상 | 파일 | 내용 |
+|------|------|------|
+| **Backend** | `Program.cs` | AJAX 요청(`StartsWithSegments("/api")`)에 대해 302 리다이렉트 대신 401을 반환하도록 Cookie Authentication 이벤트 구성. 쿠키 `SameSite=Lax`, `SecurePolicy=Always` 설정 강제. |
+| **Backend** | `ChatPointController.cs` | `ILogger` 주입 및 인가 로깅 추가. `[Authorize(Policy = "ChannelManager")]` 정책 적용 상태 유지. |
+| **Backend** | `ChannelManagerAuth...` | 경로 변수(`chzzkUid`) 추출 로직 강화 및 거부 사유 로깅 추가. |
+| **Frontend** | `ChatPoint.html` | 모든 `fetch` 요청에 `credentials: 'include'` 및 `Accept: 'application/json'` 헤더 추가. 401/403 응답에 대한 사용자 피드백(알림창) 강화. |
+
+### 10-2. 해결된 문제
+- 리버스 프록시(Nginx/Cloudflare) 환경에서 쿠키가 AJAX 요청 시 누락되거나, 세션 만료 시 브라우저가 리다이렉트를 추적하다 실패하는 현상 해결.
+- 정책 핸들러에서 경로 변수를 찾지 못해 비정상적으로 거부되는 잠재적 결함 수정.
+
+---
+
 *이 보고서는 `MooldangBot` 프로젝트의 전체 소스코드를 심층 분석하여 작성되었습니다.*  
-*분석 기준: 2026-03-24, 물멍(AI) 작성*
+*최종 업데이트: 2026-03-24, 물멍(AI)*

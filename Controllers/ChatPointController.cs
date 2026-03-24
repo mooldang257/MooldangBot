@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace MooldangAPI.Controllers
 {
@@ -12,15 +13,18 @@ namespace MooldangAPI.Controllers
     public class ChatPointController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<ChatPointController> _logger;
 
-        public ChatPointController(AppDbContext context)
+        public ChatPointController(AppDbContext context, ILogger<ChatPointController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetSettings(string chzzkUid)
         {
+            _logger.LogInformation("GetSettings called for Uid: {Uid}", chzzkUid);
             var profile = await _context.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return NotFound("Streamer not found");
 
@@ -38,8 +42,14 @@ namespace MooldangAPI.Controllers
         [HttpPost("{chzzkUid}")]
         public async Task<IActionResult> SaveSettings(string chzzkUid, [FromBody] ChatPointSettingsDto dto)
         {
+            _logger.LogInformation("SaveSettings attempt for Uid: {Uid} by User: {User}", chzzkUid, User.Identity?.Name);
+            
             var profile = await _context.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-            if (profile == null) return NotFound("Streamer not found");
+            if (profile == null) 
+            {
+                _logger.LogWarning("Streamer not found for Uid: {Uid}", chzzkUid);
+                return NotFound("Streamer not found");
+            }
 
             profile.PointPerChat = dto.PointPerChat;
             profile.PointPerDonation1000 = dto.PointPerDonation1000;

@@ -38,7 +38,8 @@
             overflow: hidden;
             display: none;
             background: #222;
-            aspect-ratio: 1/1; /* 원형 유지 */
+            aspect-ratio: 1/1;
+            /* 원형 유지 */
         }
 
         #roulette-wheel {
@@ -144,11 +145,12 @@
             justify-content: center;
             align-items: center;
         }
+
         #sample-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            box-shadow: 0 0 5vmin rgba(0,0,0,0.8);
+            box-shadow: 0 0 5vmin rgba(0, 0, 0, 0.8);
             border: 0.5vmin solid gold;
             border-radius: 4vmin;
         }
@@ -192,8 +194,13 @@
         let rouletteQueue = [];
         let isSpinning = false;
 
-        connection.on("RouletteTriggered", (data) => {
-            console.log("룰렛 발생, 대기열 추가:", data);
+        connection.on("ReceiveRouletteResult", (data) => {
+            // 💡 데이터 구조 검증 (PascalCase 정합성 체크)
+            if (!data || !data.SpinId) {
+                console.error("🚨 SignalR Data Mismatch! Check PascalCase. Data:", data);
+                return;
+            }
+            console.log(`[Roulette] SpinId received: ${data.SpinId}`, data);
             rouletteQueue.push(data);
             processQueue();
         });
@@ -246,9 +253,8 @@
         }
 
         async function startRouletteAnimation(data) {
-            if (!data.results || data.results.length === 0) return;
-
-            const isMulti = data.results.length > 1;
+            if (!data.Results || data.Results.length === 0) return;
+            const isMulti = data.Results.length > 1;
             const wrapper = document.getElementById('roulette-wrapper');
             const wheel = document.getElementById('roulette-wheel');
             const popup = document.getElementById('result-popup');
@@ -258,8 +264,8 @@
             wrapper.style.display = 'block';
             multiContainer.innerHTML = '';
 
-            for (let i = 0; i < data.results.length; i++) {
-                const currentResult = data.results[i];
+            for (let i = 0; i < data.Results.length; i++) {
+                const currentResult = data.Results[i];
 
                 // 1. 매 회차 초기화
                 wheel.style.transition = 'none';
@@ -292,14 +298,14 @@
                 await new Promise(r => setTimeout(r, spinDuration * 1000 + 100));
 
                 // 3. 종료 및 결과 팝업 업데이트
-                singleName.innerText = currentResult.itemName;
-                singleName.style.color = currentResult.color;
+                singleName.innerText = currentResult.ItemName;
+                singleName.style.color = currentResult.Color;
 
                 if (isMulti) {
                     const div = document.createElement('div');
                     div.className = 'multi-item';
-                    div.style.borderColor = currentResult.color;
-                    div.innerText = currentResult.itemName;
+                    div.style.borderColor = currentResult.Color;
+                    div.innerText = currentResult.ItemName;
                     multiContainer.appendChild(div);
                 }
 
@@ -310,7 +316,7 @@
                 await new Promise(r => setTimeout(r, waitDuration));
 
                 // 다음 돌아갈 순서가 남아있으면 화면 정리만 하고 약간 대기
-                if (i < data.results.length - 1) {
+                if (i < data.Results.length - 1) {
                     popup.classList.remove('active');
                     await new Promise(r => setTimeout(r, 100));
                 }
