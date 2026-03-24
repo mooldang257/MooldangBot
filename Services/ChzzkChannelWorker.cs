@@ -22,7 +22,8 @@ public class ChzzkChannelWorker
     // ⭐ [성능 개선 #1] 명령어 캐시 서비스 주입
     private readonly ICommandCacheService _cacheService;
 
-    // ChzzkChannelWorker.cs 클래스 내부 전역 변수로 추가
+    // 💡 [무중단 안정성 #1] Scoped DB 컨텍스트 관리를 위한 팩토리 주입
+    private readonly IServiceScopeFactory _scopeFactory;
 
     // 💡 [카테고리 사전]: 사용자가 입력하는 단축어 -> (타입, 치지직_카테고리_ID, 공식명칭)
     // 주의: "JustChatting", "LeagueOfLegends" 등의 ID 값은 실제 치지직 OpenAPI 규격에 맞는 고유 ID로 교체가 필요합니다.
@@ -61,161 +62,180 @@ public class ChzzkChannelWorker
         _serviceProvider = serviceProvider;
         _logger = serviceProvider.GetRequiredService<ILogger<ChzzkChannelWorker>>();
         _cacheService = serviceProvider.GetRequiredService<ICommandCacheService>();
+        _scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
         _chzzkApi = chzzkApi;
     }
 
     public async Task ConnectAndListenAsync(CancellationToken stoppingToken)
     {
-        // 바깥쪽에 무한 루프를 씌워 소켓이 끊어지면 3초 뒤 다시 연결을 시도하도록 합니다.
         while (!stoppingToken.IsCancellationRequested)
         {
+            using var ws = new ClientWebSocket();
+            ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0");
+            ws.Options.SetRequestHeader("Origin", "https://chzzk.naver.com");
+            ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+
             try
             {
-                // 1. DB에서 스트리머 정보와 API 키를 안전하게 가져옵니다.
-                using var scope = _serviceProvider.CreateScope();
+                // 1. 스트리머 정보 및 토큰 준비
+                using var scope = _scopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                string currentUid = _uid;
-                var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == currentUid, stoppingToken);
+                var profile = await dbContext.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
                 if (profile == null || !profile.IsBotEnabled || string.IsNullOrEmpty(profile.ChzzkAccessToken))
                 {
-                    _logger.LogWarning($"[물댕봇] {_uid}의 봇이 비활성화 상태이거나 액세스 토큰이 없어 연결을 대기합니다.");
+                    _logger.LogWarning($"[물댕봇] {_uid} 봇 비활성화 또는 토큰 없음. 10초 대기...");
                     await Task.Delay(10000, stoppingToken);
                     continue;
                 }
 
-                // [추가된 부분] 방에 들어가기 전에 액세스 토큰 리프레시부터 검사합니다!
                 await RefreshTokenIfNeededAsync(profile, dbContext);
+                await _cacheService.RefreshAsync(_uid, stoppingToken);
 
-                // ⭐ [성능 개선 #1] 방 매니저 시작 시 명령어를 메모리에 캐싱합니다!
-                await _cacheService.RefreshAsync(currentUid, stoppingToken);
-                // ==========================================================
-
-                // 2. 치지직 오픈 API에 세션 연결 요청 (HTTP)
-                // [성능 개선 #4] ChzzkApiClient를 통해 세션 인증 수행
+                // 2. 세션 인증 및 소켓 URL 조립
                 var sessionAuth = await _chzzkApi.GetSessionAuthAsync(profile.ChzzkAccessToken!);
                 if (sessionAuth == null)
                 {
-                    _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패");
+                    _logger.LogError($"❌ [물댕봇] {_uid} 세션 발급 실패. 5초 대기...");
                     await Task.Delay(5000, stoppingToken);
                     continue;
                 }
+
                 string socketUrl = sessionAuth.Content?.Url ?? "";
-
-                // ⭐ [진범 검거] 완벽한 웹소켓 주소(문 + 열쇠)를 조립합니다.
-                UriBuilder uriBuilder = new UriBuilder(socketUrl);
-                uriBuilder.Scheme = "wss"; // https를 wss로 강제 변환
-
-                // ⭐ [핵심] 치지직 Socket.IO 서버의 진짜 대문을 달아줍니다.
-                if (uriBuilder.Path == "/")
-                {
-                    uriBuilder.Path = "/socket.io/";
-                }
-
-                // ⭐ 기존 인증키(auth) 뒤에 웹소켓 필수 옵션(EIO=3)을 쇠사슬처럼 묶습니다.
+                UriBuilder uriBuilder = new UriBuilder(socketUrl) { Scheme = "wss" };
+                if (uriBuilder.Path == "/") uriBuilder.Path = "/socket.io/";
+                
                 string extraQuery = "transport=websocket&EIO=3";
-                if (uriBuilder.Query.Length > 1) // 기존에 ?auth= 가 있다면
-                {
-                    uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + extraQuery;
-                }
-                else
-                {
-                    uriBuilder.Query = extraQuery;
-                }
+                uriBuilder.Query = string.IsNullOrEmpty(uriBuilder.Query) 
+                    ? extraQuery 
+                    : uriBuilder.Query.Substring(1) + "&" + extraQuery;
 
                 string finalSocketUrl = uriBuilder.ToString();
                 _logger.LogWarning($"📡 [물댕봇] 조립된 최종 URL: {finalSocketUrl}");
 
-                // 3. 순정 웹소켓(ClientWebSocket) 연결
-                using var ws = new ClientWebSocket();
-                ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0");
-                ws.Options.SetRequestHeader("Origin", "https://chzzk.naver.com");
-
+                // 3. 소켓 연결
                 await ws.ConnectAsync(new Uri(finalSocketUrl), stoppingToken);
-                _logger.LogInformation($"✅ [물댕봇] {_uid} 물리적 연결 성공! 핸드셰이크를 시작합니다.");
+                _logger.LogInformation($"✅ [물댕봇] {_uid} 물리적 연결 성공! 무중단 병렬 루프를 시작합니다.");
 
+                // 4. [핵심] 무중단 병렬 루프 (수신 vs 심장박동)
+                using var loopCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                
+                var receiveTask = ReceiveLoopAsync(ws, profile, loopCts.Token);
+                var pingTask = PingLoopAsync(ws, loopCts.Token);
 
-                // 4. 데이터 수신 대기 루프 (매니저가 취소하기 전까지 무한 반복)
-                var buffer = new byte[1024 * 4]; // 버퍼는 작아도 됩니다 (조각을 모을 것이므로)
-
-                while (ws.State == WebSocketState.Open && !stoppingToken.IsCancellationRequested)
+                // 둘 중 하나라도 예외가 발생하거나 종료되면 즉각 리셋 및 재시작
+                var completedTask = await Task.WhenAny(receiveTask, pingTask);
+                
+                if (completedTask.IsFaulted)
                 {
-                    string message = string.Empty;
-                    try 
-                    {
-                        // ⭐ [타임아웃 안전장치] 60초 유지 (치지직은 20초마다 Ping을 보냄)
-                        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                        timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
-
-                        // ⭐ [최적화 1] EndOfMessage가 true일 때까지 모든 파동(조각)을 끝까지 수집합니다.
-                        using var ms = new MemoryStream();
-                        WebSocketReceiveResult result;
-                        
-                        do
-                        {
-                            result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), timeoutCts.Token);
-                            
-                            if (result.MessageType == WebSocketMessageType.Close) 
-                            {
-                                _logger.LogWarning($"⚠️ [물댕봇] {_uid} 서버가 정상적으로 종료(Close)를 요청했습니다.");
-                                break;
-                            }
-                            
-                            ms.Write(buffer, 0, result.Count);
-                        } 
-                        while (!result.EndOfMessage);
-
-                        // 루프를 빠져나온 이유가 Close 요청이라면 수신 루프 종료
-                        if (result.MessageType == WebSocketMessageType.Close) break;
-
-                        // 모인 byte 배열을 한 번에 문자열로 변환
-                        message = Encoding.UTF8.GetString(ms.ToArray());
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        _logger.LogDebug($"⚠️ [물댕봇] {_uid} 채널 소켓 응답 지연(타임아웃 60초). 방송 상태를 재확인합니다.");
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogDebug($"❌ [물댕봇] 수신 스트림 에러: {ex.Message}");
-                        break;
-                    }
-
-                    try
-                    {
-                        // 🧠 [Socket.IO 프로토콜 수동 해석기]
-                        if (message.StartsWith("0")) // 0: Open
-                        {
-                            _logger.LogInformation($"📦 [물댕봇] 서버 입장 수락. 방 입장(Connect)을 요청합니다.");
-                            await SendMessageAsync(ws, "40", stoppingToken);
-                        }
-                        else if (message.StartsWith("2")) // 2: Ping
-                        {
-                            await SendMessageAsync(ws, "3", stoppingToken); // 3: Pong
-                        }
-                        else if (message.StartsWith("42")) // 42: Event
-                        {
-                            // ⭐ [최적화] 수신 루프가 막히지 않도록 이벤트 처리는 별도의 Task로 실행합니다.
-                            // [주의] 여기서 매번 RefreshToken을 체크하면 DB 부하가 극심해지므로 제거했습니다.
-                            _ = Task.Run(() => HandleEventAsync(message.Substring(2), profile, stoppingToken), stoppingToken);
-                        }
-                    }
-                    catch (Exception loopEx)
-                    {
-                        _logger.LogError($"❌ [물댕봇] 메시지 처리 중 지역 에러 (소켓유지): {loopEx.Message}");
-                    }
+                    _logger.LogError(completedTask.Exception, "❌ [무중단] 루프 내 작업 중 심각한 오류 발생!");
                 }
-                _logger.LogWarning($"⚠️ [물댕봇] {_uid} 웹소켓 연결이 종료되었습니다. 3초 후 재연결을 시도합니다.");
+                
+                loopCts.Cancel(); // 나머지 작업 강제 종료
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ [물댕봇] 소켓 통신 에러: {ex.Message}");
+                _logger.LogError(ex, $"❌ [물댕봇] 소켓 통신/연결 에러. 즉각 재연결을 시도합니다.");
             }
+            finally
+            {
+                if (ws.State == WebSocketState.Open)
+                {
+                    try { await ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Reconnecting", CancellationToken.None); } catch { }
+                }
+                
+                _logger.LogWarning("⚠️ [물댕봇] 소켓 연결이 해제되었습니다. 0.5초 후 복구를 시작합니다.");
+                if (!stoppingToken.IsCancellationRequested) await Task.Delay(500, stoppingToken);
+            }
+        }
+    }
 
-            // 루프를 빠져나왔다 = 소켓이 끊어졌다. 
-            // 서버에 무리를 주지 않기 위해 3초 대기 후 다시 바깥쪽 while 루프의 처음(재연결)으로 돌아갑니다.
-            await Task.Delay(3000, stoppingToken);
+    // 🩺 [심장 박동] 치지직 서버에 10초마다 생존 신고(Ping)
+    private async Task PingLoopAsync(ClientWebSocket ws, CancellationToken ct)
+    {
+        var pingMessage = Encoding.UTF8.GetBytes("2");
+        var buffer = new ArraySegment<byte>(pingMessage);
+
+        while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
+                if (ws.State == WebSocketState.Open)
+                {
+                    await ws.SendAsync(buffer, WebSocketMessageType.Text, true, ct);
+                    _logger.LogDebug($"📡 [심장박동] {_uid} Ping 완료");
+                }
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"⚠️ [심장박동] {_uid} 전송 중 이상 감지: {ex.Message}");
+                throw; // Task.WhenAny에서 감지하도록 던짐
+            }
+        }
+    }
+
+    // 📨 [메시지 수집] 16KB 대용량 버퍼로 메시지 수집
+    private async Task ReceiveLoopAsync(ClientWebSocket ws, StreamerProfile profile, CancellationToken ct)
+    {
+        var buffer = new byte[1024 * 16]; // 16KB 확장
+        using var ms = new MemoryStream();
+
+        while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
+        {
+            try
+            {
+                WebSocketReceiveResult result;
+                do
+                {
+                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        _logger.LogWarning($"⚠️ [Receive] {_uid} 서버에서 Close 요청 수신.");
+                        return;
+                    }
+                    ms.Write(buffer, 0, result.Count);
+                } while (!result.EndOfMessage);
+
+                var message = Encoding.UTF8.GetString(ms.ToArray());
+                ms.SetLength(0);
+
+                if (string.IsNullOrEmpty(message)) continue;
+
+                // Socket.IO 프로토콜 해석 및 분기
+                if (message.StartsWith("0")) // Open
+                {
+                    _logger.LogInformation("📦 [Receive] 서버 입장 수락. 방 입장 요청(40)");
+                    await SendMessageAsync(ws, "40", ct);
+                }
+                else if (message.StartsWith("2")) // Ping 수신 시 Pong(3) 즉각 대응
+                {
+                    await SendMessageAsync(ws, "3", ct);
+                }
+                else if (message.StartsWith("42")) // Event (메시지/후원 등)
+                {
+                    // 수신 루프가 막히지 않도록 비동기로 처리하되, 전용 Scope 부여
+                    _ = Task.Run(async () =>
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        try 
+                        {
+                            await HandleEventAsync(message.Substring(2), profile, scope, ct);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "❌ [HandleEvent] 비동기 처리 중 에러 발생");
+                        }
+                    }, ct);
+                }
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"⚠️ [Receive] {_uid} 수신 스트림 오류: {ex.Message}");
+                throw; // Task.WhenAny에서 감지하도록 던짐
+            }
         }
     }
 
@@ -354,7 +374,7 @@ public class ChzzkChannelWorker
     }
 
     // 데이터 처리기
-    private async Task HandleEventAsync(string jsonArray, StreamerProfile profile, CancellationToken token)
+    private async Task HandleEventAsync(string jsonArray, StreamerProfile profile, IServiceScope scope, CancellationToken token)
     {
         try
         {
@@ -463,8 +483,7 @@ public class ChzzkChannelWorker
 
                     if (payAmount > 0)
                     {
-                        using var mediatorScope = _serviceProvider.CreateScope();
-                        var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+                        var mediator = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                         await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
                             profile, nickname, message, "common_user", senderId, emojis, payAmount), token);
                     }
@@ -539,8 +558,7 @@ public class ChzzkChannelWorker
 
                 // 명령어 처리는 이제 CustomCommandEventHandler (MediatR)에서 통합 관리합니다.
                 // 🌟 [이벤트 발송] 중계기를 통해 모든 핸들러가 채팅을 받을 수 있도록 합니다.
-                using var mediatorScope = _serviceProvider.CreateScope();
-                var mediator = mediatorScope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+                var mediator = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                 await mediator.Publish(new MooldangAPI.Features.Chat.Events.ChatMessageReceivedEvent(
                     profile, nickname, msg, userRole, senderId, emojisDict, donationAmount), token);
 
@@ -575,7 +593,7 @@ public class ChzzkChannelWorker
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             string? tokenToUse = await GetAndRefreshBotTokenAsync(profile, db);
 
