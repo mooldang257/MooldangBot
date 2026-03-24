@@ -238,12 +238,14 @@ flowchart TD
     PMW -->|IsLiveAsync + SendChatMessageAsync| CHZZK_REST
 
     Frontend -->|HTTP 요청| POL
-    POL -->|1차 검증 성공| Controllers
+    POL -->|1차 검증(ChzzkUid/Role)| Controllers
     Controllers -->|Command/Query 발송| PIPE
-    PIPE -->|2차 교차 검증 성공| EDA
+    PIPE -->|2차 교차 검증(Data Ownership)| EDA
     EDA -->|DB 접근| DB
     OH -->|실시간 브로드캐스트| Frontend
     DB --- MTTEN
+
+    style SecurityLayer fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ---
@@ -259,8 +261,8 @@ flowchart TD
 | `INotification` | MediatR (외부 라이브러리) | 이벤트 마커 인터페이스 — `ChatMessageReceivedEvent`가 구현 |
 | `INotificationHandler<TNotification>` | MediatR (외부 라이브러리) | 이벤트 핸들러 마커 — 6개 Handler가 구현 |
 | `IUserSession` | `Data/IUserSession.cs` | 현재 로그인한 스트리머 세션 추상화 (멀티테넌트 격리 핵심) |
-| `IAuthorizationHandler` | `Security/` | .NET 10 Policy 기반의 채널 관리 권한 **1차 검증** |
-| `IPipelineBehavior<T, R>` | `Security/` | MediatR 파이프라인 상의 애플리케이션 계층 **2차 교차 검증** |
+| `IAuthorizationHandler` | `Security/` | 보안 계층: Policy 기반의 채널 관리 권한 **1차 검증** |
+| `IPipelineBehavior<TRequest, TResponse>` | `Security/` | MediatR 파이프라인: 애플리케이션 계층 내부 커맨드 실행 권한 **2차 교차 검증** |
 | `ICommandCacheService` | `Services/ICommandCacheService.cs` | 인메모리 명령어 캐시 추상화 |
 | `IOverlayRenderStrategy` | `Strategies/IOverlayRenderStrategy.cs` | 채팅 HTML 렌더링 전략 패턴 인터페이스 |
 
@@ -578,23 +580,24 @@ SignalR Hub. OBS 브라우저 소스가 연결/구독하는 실시간 채널.
 
 ### 5-6. 심층 방어 기반 권한 및 보안 (Security & Authorization)
 
-MooldangBot은 스트리머 본인뿐만 아니라 매니저, 관리자 등이 시스템에 참여하는 멀티유저 환경을 지원하기 위해 **심층 방어(Defense in Depth)** 아키텍처를 채택하고 있습니다.
+MooldangBot은 스트리머 본인뿐만 아니라 매니저, 관리자 등이 시스템에 참여하는 멀티유저 환경을 지원하기 위해 **심층 방어(Defense in Depth)** 아키텍처를 채택하고 있습니다. 이는 단순한 인증을 넘어, 데이터가 애플리케이션의 어느 경로로 흐르더라도 권한 없는 접근을 원천 차단하는 것을 목표로 합니다.
 
-#### 1단계: Policy-based Authorization (HTTP 계층)
-- **메커니즘:** `.NET 10`의 표준 정책 기반 인가를 사용합니다.
+#### 🛡️ 1단계: Policy-based Authorization (HTTP 계층 - 1차 방어)
+- **메커니즘:** `.NET 10`의 표준 정책 기반 인가(PBAC)를 사용합니다.
 - **구현:** `ChannelManagerRequirement`와 `ChannelManagerAuthorizationHandler`를 통해 구현됩니다.
-- **역할:** 사용자가 특정 스트리머의 채널(`chzzkUid`)에 대한 관리 권한(매니저 여부 등)을 가졌는지 검증합니다. 컨트롤러에 `[Authorize(Policy = "ChannelManager")]`만 선언하면 되므로 비즈니스 로직과 보안 코드가 완벽히 분리됩니다.
+- **역할:** 사용자가 특정 스트리머의 채널(`chzzkUid`)에 대한 관리 권한(매니저 여부 등)을 가졌는지 검증합니다. 컨트롤러에 `[Authorize(Policy = "ChannelManager")]`만 선언하면 되므로 비즈니스 로직과 보안 코드가 완벽히 분리됩니다. 사용자의 `Claim` 정보를 바탕으로 1차적인 '진입'을 통제합니다.
 
-#### 2단계: MediatR Pipeline 교차 검증 (애플리케이션 계층)
+#### 🛡️ 2단계: MediatR Pipeline 교차 검증 (애플리케이션 계층 - 2차 방어)
 - **메커니즘:** `IPipelineBehavior`를 활용한 `AuthorizationBehavior`를 도입했습니다.
 - **구현:** `IAuthorizedRequest` 마커 인터페이스를 구현한 모든 Command/Query를 가로채어 권한을 재검증합니다.
-- **역할:** 컨트롤러를 거치지 않는 내부 호출이나 실수로 속성이 누락된 엔드포인트에서도 동일한 보안 검증이 수행되도록 강제하는 **최후의 보루** 역할을 합니다. 권한 부재 시 `UnauthorizedAccessException`을 발생시켜 프로세스를 중단합니다.
+- **역할:** 컨트롤러를 거치지 않는 내부 호출이나 실수로 보안 속성이 누락된 엔드포인트에서도 동일한 보안 검증이 수행되도록 강제하는 **최후의 보루** 역할을 합니다. 1단계가 '채널 접근 권한'을 봤다면, 2단계는 '명령 실행 시점의 데이터 소유권'을 다시 한번 교차 검증합니다. 권한 부재 시 `UnauthorizedAccessException`을 발생시켜 프로세스를 중단합니다.
 
-#### 3단계: Global Query Filter (데이터 계층)
+#### 🛡️ 3단계: Global Query Filter (데이터 계층 - 최후 방어)
 - **메커니즘:** `AppDbContext` 수준의 자동 필터링입니다.
-- **역할:** 비즈니스 로직에서 실수로 필터를 누락하더라도, 현재 세션(`IUserSession`)의 권한 범위를 벗어난 데이터는 DB에서 원천적으로 조회되지 않도록 차단합니다.
+- **구현:** `modelBuilder.Entity<T>().HasQueryFilter(e => e.ChzzkUid == _userSession.ChzzkUid)`
+- **역할:** 비즈니스 로직에서 실수로 `Where` 절을 누락하더라도, 현재 세션(`IUserSession`)의 권한 범위를 벗어난 데이터는 DB에서 원천적으로 조회되지 않도록 차단합니다. 다중 테넌트 환경에서 데이터 격리의 기술적 정점을 이룹니다.
 
-> **물멍의 통찰:** "이러한 3중 보안 레이어는 관리자가 늘어나거나 시스템이 복잡해지더라도 데이터 격리의 무결성을 보장하며, 개발자가 보안을 깜빡하더라도 아키텍처가 스스로를 보호하도록 설계되었습니다."
+> **물멍의 분석:** "Policy(1차) → Pipeline(2차) → Query Filter(3차)로 이어지는 3중 보안 레이어는 관리자가 늘어나거나 시스템이 복잡해지더라도 데이터 무결성을 보장하며, 개발자가 보안을 깜빡하더라도 아키텍처가 스스로를 보호하도록 설계되었습니다. 이는 특히 스트리머와 매니저의 권한이 융합된 멀티테넌트 환경에서 필수적인 안전장치입니다."
 
 ---
 
