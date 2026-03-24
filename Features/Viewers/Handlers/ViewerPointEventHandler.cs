@@ -32,62 +32,105 @@ public class ViewerPointEventHandler : INotificationHandler<ChatMessageReceivedE
         var viewerUid = notification.SenderId;
         var nickname = notification.Username;
 
-        // --- 데이터 조회 및 계산 (Phase 4 복구) ---
-        var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid, cancellationToken);
+        // --- 데이터 조회 및 판별 (Tracking 쿼리) ---
+        var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid, cancellationToken);
         if (streamer == null) return;
 
-        var viewer = await db.ViewerProfiles.AsNoTracking().FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUid == viewerUid, cancellationToken);
+        var viewer = await db.ViewerProfiles.FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUid == viewerUid, cancellationToken);
 
-        int pointToAdd = streamer.PointPerChat;
-        bool isAttendance = false;
+        var koreaTime = MooldangAPI.Common.TimeContext.KstNow;
+        var today = koreaTime.Date;
+        
+        int totalPointToAdd = streamer.PointPerChat; // 기본 채팅 포인트
+        bool isFirstAttendanceToday = false;
 
-        // 출석 명령어 체크
+        // 1. 출석 명령어 체크
         if (!string.IsNullOrWhiteSpace(streamer.AttendanceCommands))
         {
             var attCmds = streamer.AttendanceCommands.Split(',', StringSplitOptions.RemoveEmptyEntries)
                                                      .Select(c => c.Trim().ToLower())
                                                      .ToList();
 
-            string msgLower = notification.Message.Trim().ToLower();
+            string userMsg = notification.Message.Trim().ToLower();
 
-            if (attCmds.Contains(msgLower))
+            if (attCmds.Contains(userMsg))
             {
-                var koreaTime = MooldangAPI.Common.TimeContext.KstNow;
-                
-                // 오늘 이미 출석했는지 체크
-                if (viewer == null || !viewer.LastAttendanceAt.HasValue || viewer.LastAttendanceAt.Value.Date < koreaTime.Date)
-                {
-                    // 출석 데이터를 수동으로 맞추는 대신, PointTransactionService에 "출석" 여부를 넘겨서 처리하는 게 좋지만
-                    // 우선은 기존 로직대로 가산 포인트만 계산
-                    pointToAdd += streamer.PointPerAttendance;
-                    isAttendance = true;
+                var lastDate = viewer?.LastAttendanceAt?.Date;
 
-                    // [주의] 연속 출석 및 누적 회수는 PointTransactionService 내부에서 처리하도록 고도화가 필요할 수 있으나
-                    // 현재는 핸들러에서 메시지 처리를 위해 유지
+                // 오늘 이미 출석했는지 체크 (.Date 비교로 시간 오차 방지)
+                if (lastDate != today)
+                {
+                    isFirstAttendanceToday = true;
+                    totalPointToAdd += streamer.PointPerAttendance;
+
+                    // 2. 뷰어 프로필 및 출석 데이터 갱신
+                    if (viewer == null)
+                    {
+                        viewer = new ViewerProfile
+                        {
+                            StreamerChzzkUid = streamerUid,
+                            ViewerUid = viewerUid,
+                            Nickname = nickname,
+                            Points = 0,
+                            AttendanceCount = 1,
+                            ConsecutiveAttendanceCount = 1,
+                            LastAttendanceAt = koreaTime
+                        };
+                        db.ViewerProfiles.Add(viewer);
+                    }
+                    else
+                    {
+                        // 연속 출석 판별 (어제 출석했는가?)
+                        if (lastDate.HasValue && (today - lastDate.Value).TotalDays == 1)
+                            viewer.ConsecutiveAttendanceCount++;
+                        else
+                            viewer.ConsecutiveAttendanceCount = 1;
+
+                        viewer.AttendanceCount++;
+                        viewer.LastAttendanceAt = koreaTime;
+                        viewer.Nickname = nickname; // 닉네임 동기화
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation($"[출석 스킵] {nickname}님은 이미 오늘 출석했습니다.");
                 }
             }
         }
 
-        // 후원 포인트 계산
+        // 3. 후원 포인트 계산
         if (notification.DonationAmount > 0)
         {
             int donationPoints = (notification.DonationAmount / 1000) * streamer.PointPerDonation1000;
-            pointToAdd += donationPoints;
+            totalPointToAdd += donationPoints;
         }
 
-        // --- 포인트 처리 (Phase 4: PointTransactionService 통합) ---
-        var pointService = scope.ServiceProvider.GetRequiredService<IPointTransactionService>();
-        var (success, currentPoints) = await pointService.AddPointsAsync(streamerUid, viewerUid, nickname, pointToAdd, cancellationToken);
+        // 4. 포인트 합산 및 DB 최종 반영
+        if (viewer != null)
+        {
+            viewer.Points += totalPointToAdd;
+            await db.SaveChangesAsync(cancellationToken);
 
-        if (!success)
-        {
-            _logger.LogError($"❌ [포인트 처리 실패] {nickname}님 포인트 반영 실패");
+            _logger.LogInformation($"✅ [출석/포인트 적립] {nickname}: +{totalPointToAdd}점 (현재 {viewer.Points}점, 오늘첫출석:{isFirstAttendanceToday})");
+
+            // 5. [자동 응답] 오늘 첫 출석인 경우에만 템플릿 치환 후 발송
+            if (isFirstAttendanceToday && !string.IsNullOrWhiteSpace(streamer.AttendanceReply))
+            {
+                string reply = streamer.AttendanceReply
+                    .Replace("{닉네임}", nickname)
+                    .Replace("{포인트}", viewer.Points.ToString("N0"))
+                    .Replace("{출석일수}", viewer.AttendanceCount.ToString())
+                    .Replace("{연속출석일수}", viewer.ConsecutiveAttendanceCount.ToString());
+
+                await SendChatReplyAsync(_chzzkApi, streamer.ChzzkAccessToken ?? "", reply);
+            }
         }
-        else if (pointToAdd > 0)
+        else if (totalPointToAdd > 0)
         {
-            _logger.LogDebug($"[포인트 적립 완료] {nickname}: +{pointToAdd}점 (현재 {currentPoints}점, 출석:{isAttendance})");
-            
-            // 출석 성공 메시지 발송 등 부가 로직은 기존대로 유지 (로그만 출력)
+            // 신규 유저가 출석 키워드 없이 첫 채팅만 친 경우 등의 폴백
+            var pointService = scope.ServiceProvider.GetRequiredService<IPointTransactionService>();
+            await pointService.AddPointsAsync(streamerUid, viewerUid, nickname, totalPointToAdd, cancellationToken);
+            _logger.LogInformation($"✅ [포인트 적립] {nickname}: +{totalPointToAdd}점 (신규 방문자)");
         }
     }
 
