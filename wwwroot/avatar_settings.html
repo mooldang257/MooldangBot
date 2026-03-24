@@ -238,6 +238,11 @@
                     link.href = url;
                     link.innerText = url;
                 }
+                
+                // 💡 [추가] 대시보드로 돌아가기 링크에 UID 파라미터 유지
+                document.querySelectorAll('.btn-main-home').forEach(btn => {
+                    btn.href = `/main.html?uid=${chzzkUid}`;
+                });
             }
             loadSettings();
         });

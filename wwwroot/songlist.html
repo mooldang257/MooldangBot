@@ -26,6 +26,7 @@
         <div class="panel">
             <h2 style="display:flex; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap: 10px;">
+                    <a id="btn-home" href="/main.html" class="btn btn-outline" style="text-decoration:none; font-size: 0.8rem; padding: 4px 10px;">🏠 홈</a>
                     물댕봇 대시보드
                     <button id="songlist-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleSonglistStatus()">조회 중...</button>
                     <button id="omakase-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleOmakaseStatus()">조회 중...</button>
@@ -109,6 +110,9 @@
     <script>
         const pathParts = window.location.pathname.split('/');
         const chzzkUid = pathParts[pathParts.length - 1];
+
+        // 💡 [추가] 로고나 홈 버튼이 생길 경우를 대비해 초기화 시 UID 파라미터 전파 준비
+        const homeUrl = `/main.html?uid=${chzzkUid}`;
 
         let songs = [];
         let omakases = [];
@@ -502,6 +506,9 @@
         }
 
         window.onload = () => {
+            const homeBtn = document.getElementById('btn-home');
+            if (homeBtn) homeBtn.href = homeUrl;
+
             document.getElementById("overlayUrlDisplay").innerText = window.location.origin + '/overlay/' + chzzkUid;
             loadDashboardData();
             fetchSonglistStatus();

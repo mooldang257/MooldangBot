@@ -375,6 +375,10 @@
             const btnCmd = document.getElementById('btn-cmd');
 
             try {
+                // 💡 [추가] URL에서 관리 대상 UID(?uid=...) 추출
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetUid = urlParams.get('uid');
+
                 // 내 정보 불러오기 API 호출
                 const response = await fetch('/api/auth/me');
 
@@ -387,9 +391,16 @@
 
                 if (data.isAuthenticated) {
                     if (data.isChzzkLinked) {
+                        // 💡 [핵심] 관리자 모드인 경우 targetUid를 우선 사용, 아니면 본인 UID 사용
+                        const effectiveUid = targetUid || data.chzzkUid;
+                        currentChzzkUid = effectiveUid;
+
                         // 치지직까지 모두 연동된 로그인 성공 상태
                         profileBox.style.display = 'flex';
                         profileName.textContent = data.channelName;
+                        if (targetUid) {
+                            profileName.innerHTML = `${data.channelName} <span style="font-size: 0.7em; opacity: 0.7; margin-left: 5px;">(관리 모드)</span>`;
+                        }
 
                         // 💡 이미지 태그가 있을 때만 처리하여 JS 오류 방지
                         if (profileImg) {
@@ -405,20 +416,25 @@
                             profileImg.style.display = 'none';
                         }
 
-                        // 각 메뉴 카드 링크 활성화
-                        btnSong.href = `/songlist/${data.chzzkUid}`;
-                        btnCmd.href = `/commands-manager/${data.chzzkUid}`;
+                        // 💡 [추가] 로고 링크에도 UID 파라미터 유지 (메인으로 돌아와도 관리 모드 유지)
+                        const logoLink = document.querySelector('.logo-area');
+                        if (logoLink && targetUid) {
+                            logoLink.href = `/main.html?uid=${targetUid}`;
+                        }
+
+                        // 각 메뉴 카드 링크 활성화 (effectiveUid 적용)
+                        btnSong.href = `/songlist/${effectiveUid}`;
+                        btnCmd.href = `/commands-manager/${effectiveUid}`;
                         const btnAvatar = document.getElementById('btn-avatar');
-                        if (btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${data.chzzkUid}`;
+                        if (btnAvatar) btnAvatar.href = `/avatar_settings.html?uid=${effectiveUid}`;
                         const btnChatpoint = document.getElementById('btn-chatpoint');
-                        if (btnChatpoint) btnChatpoint.href = `/ChatPoint.html?uid=${data.chzzkUid}`;
+                        if (btnChatpoint) btnChatpoint.href = `/ChatPoint.html?uid=${effectiveUid}`;
                         const btnRoulette = document.getElementById('btn-roulette');
-                        if (btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${data.chzzkUid}`;
+                        if (btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${effectiveUid}`;
                         const btnOverlay = document.getElementById('btn-overlay');
-                        if (btnOverlay) btnOverlay.href = `/overlay_manager/${data.chzzkUid}`;
+                        if (btnOverlay) btnOverlay.href = `/overlay_manager/${effectiveUid}`;
 
                         // 물댕봇 토글 연동 시작
-                        currentChzzkUid = data.chzzkUid;
                         fetchBotStatus();
 
                         // 로그인 오버레이 제거 (클릭 가능해짐)

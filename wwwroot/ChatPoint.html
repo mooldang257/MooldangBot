@@ -357,6 +357,12 @@
                 return;
             }
 
+            // 💡 [추가] 대시보드로 돌아가기 링크에 UID 파라미터 유지
+            const backBtn = document.querySelector('.btn-back');
+            if (backBtn) {
+                backBtn.href = `/main.html?uid=${uid}`;
+            }
+
             const inputChat = document.getElementById('pointPerChat');
             const inputDonation = document.getElementById('pointPerDonation');
             const inputAttCmds = document.getElementById('attendanceCommands');

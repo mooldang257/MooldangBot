@@ -69,6 +69,7 @@
 </head>
 <body>
     <div class="main-container">
+        <a id="btn-back-home" href="/main.html" class="btn btn-outline" style="margin-bottom: 20px; display: inline-flex; text-decoration: none;">← 대시보드로 돌아가기</a>
         <div class="panel">
             <h2 style="display:flex; justify-content:space-between; align-items:center;">
                 🎡 룰렛 시스템 관리
@@ -130,6 +131,17 @@
     </div>
 
     <script>
+        const urlParams = new URL(window.location.href).searchParams;
+        const chzzkUid = urlParams.get('uid') || ''; 
+
+        // 💡 [추가] 대시보드로 돌아가기 링크에 UID 파라미터 유지
+        document.addEventListener('DOMContentLoaded', () => {
+            const backBtn = document.getElementById('btn-back-home');
+            if (backBtn && chzzkUid) {
+                backBtn.href = `/main.html?uid=${chzzkUid}`;
+            }
+        });
+
         let lastId = 0;
         let isEnd = false;
         let roulettes = [];
@@ -143,8 +155,6 @@
                 document.getElementById('rouletteList').innerHTML = '';
             }
 
-            const queryParams = new URLSearchParams(window.location.search);
-            const chzzkUid = queryParams.get('uid') || ""; 
             document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
 
             try {
