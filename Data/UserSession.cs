@@ -21,6 +21,17 @@ namespace MooldangAPI.Data
             }
         }
 
+        public string? Role => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
+
+        public IEnumerable<string> AllowedChannelIds 
+        {
+            get
+            {
+                var claims = _httpContextAccessor.HttpContext?.User?.FindAll("AllowedChannelId");
+                return claims?.Select(c => c.Value) ?? Enumerable.Empty<string>();
+            }
+        }
+
         public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
     }
 }

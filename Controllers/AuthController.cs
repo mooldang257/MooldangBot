@@ -218,12 +218,48 @@ namespace MooldangAPI.Controllers
 
                 await _db.SaveChangesAsync();
 
-                // 🔐 세션 쿠키 생성 (치지직 UID를 StreamerId 클레임으로 저장)
+                // 3단계: 역할 및 권한 조회 (RBAC)
+                var userRole = "viewer";
+                var allowedChannels = new List<string> { chzzkUid }; // 본인 채널은 기본 포함
+
+                // 마스터 확인 (하드코딩된 마스터 ID 또는 DB 설정)
+                const string MasterUid = "ca98875d5e0edf02776047fbc70f5449";
+                if (chzzkUid == MasterUid)
+                {
+                    userRole = "master";
+                }
+                else
+                {
+                    // 매니저 권한 조회
+                    var managedChannels = await _db.StreamerManagers
+                        .Where(m => m.ManagerChzzkUid == chzzkUid)
+                        .Select(m => m.StreamerChzzkUid)
+                        .ToListAsync();
+
+                    if (managedChannels.Any())
+                    {
+                        userRole = "manager";
+                        allowedChannels.AddRange(managedChannels);
+                    }
+                    else if (streamer != null)
+                    {
+                        userRole = "streamer";
+                    }
+                }
+
+                // 🔐 세션 쿠키 생성
                 var claims = new List<Claim>
                 {
                     new Claim("StreamerId", chzzkUid),
-                    new Claim(ClaimTypes.Name, channelName ?? "Streamer")
+                    new Claim(ClaimTypes.Name, channelName ?? "User"),
+                    new Claim(ClaimTypes.Role, userRole)
                 };
+
+                // 관리 권한이 있는 모든 채널 ID 추가
+                foreach (var channelId in allowedChannels.Distinct())
+                {
+                    claims.Add(new Claim("AllowedChannelId", channelId));
+                }
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties

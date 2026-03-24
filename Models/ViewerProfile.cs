@@ -20,8 +20,10 @@ namespace MooldangAPI.Models
         [MaxLength(100)]
         public string Nickname { get; set; } = string.Empty;
 
+        [ConcurrencyCheck]
         public int Points { get; set; } = 0;
 
+        [ConcurrencyCheck]
         public int AttendanceCount { get; set; } = 0;
 
         public int ConsecutiveAttendanceCount { get; set; } = 0;

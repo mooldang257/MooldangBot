@@ -27,6 +27,7 @@ namespace MooldangAPI.Data
         public DbSet<SonglistSession> SonglistSessions { get; set; }
         public DbSet<OverlayPreset> OverlayPresets { get; set; }
         public DbSet<SharedComponent> SharedComponents { get; set; }
+        public DbSet<StreamerManager> StreamerManagers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +66,9 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<SharedComponent>()
                 .HasIndex(c => c.ChzzkUid);
 
+            modelBuilder.Entity<StreamerManager>()
+                .HasIndex(m => m.ManagerChzzkUid);
+
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
             modelBuilder.Entity<SongQueue>().ToTable("songqueues");
@@ -81,6 +85,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<SonglistSession>().ToTable("songlistsessions");
             modelBuilder.Entity<OverlayPreset>().ToTable("overlaypresets");
             modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
+            modelBuilder.Entity<StreamerManager>().ToTable("streamermanagers");
 
             // 🔐 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 자동 적용
             // 스트리머가 로그인된 경우, 본인의 ChzzkUid를 가진 데이터만 조회되도록 강제합니다.

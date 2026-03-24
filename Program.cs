@@ -14,6 +14,8 @@ using MooldangAPI.Features.SongQueue;
 using MooldangAPI.Features.Roulette;
 using MooldangAPI.Strategies;
 using MooldangAPI.ApiClients;
+using Microsoft.AspNetCore.Authorization;
+using MooldangAPI.Security;
 
 // ✅ .env 파일이 있으면 환경변수로 로드 (없으면 무시)
 if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".env")))
@@ -59,12 +61,18 @@ builder.Services.AddHostedService<PeriodicMessageWorker>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
 builder.Services.AddScoped<RouletteService>();
+builder.Services.AddScoped<IPointTransactionService, PointTransactionService>();
 builder.Services.AddSingleton<ObsWebSocketService>();
 builder.Services.AddSingleton<ICommandCacheService, CommandCacheService>();
 builder.Services.AddHttpClient<ChzzkApiClient>();
+
+// 🛡️ 보안 및 권한 설정 등록
+builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 // ------------------------------------------
 
 builder.Services.AddSignalR();
+builder.Services.AddMemoryCache();
 builder.Services.AddControllers();
 
 // Removed BotManager. ChzzkBackgroundService handles this via EDA.
@@ -81,7 +89,11 @@ builder.Services.AddAuthentication(options => {
     options.AccessDeniedPath = "/bot";
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ChannelManager", policy =>
+        policy.Requirements.Add(new ChannelManagerRequirement()));
+});
 var app = builder.Build();
 
 // ==========================================

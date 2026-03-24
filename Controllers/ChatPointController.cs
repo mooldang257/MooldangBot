@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.Data;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace MooldangAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/chatpoint")]
+    [Authorize(Policy = "ChannelManager")]
     public class ChatPointController : ControllerBase
     {
         private readonly AppDbContext _context;

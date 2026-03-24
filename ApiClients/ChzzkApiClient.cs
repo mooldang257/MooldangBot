@@ -3,6 +3,7 @@ using MooldangAPI.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangAPI.ApiClients
 {
@@ -12,13 +13,14 @@ namespace MooldangAPI.ApiClients
         private readonly string _clientId;
         private readonly string _clientSecret;
         private const string BaseUrl = "https://openapi.chzzk.naver.com"; // 치지직 공식 Open API 주소
+        private readonly IMemoryCache _cache;
         private readonly ILogger<ChzzkApiClient> _logger;
 
-        // IConfiguration을 주입받습니다.
-        public ChzzkApiClient(HttpClient httpClient, IConfiguration config, ILogger<ChzzkApiClient> logger)
+        public ChzzkApiClient(HttpClient httpClient, IConfiguration config, ILogger<ChzzkApiClient> logger, IMemoryCache cache)
         {
             _httpClient = httpClient;
             _logger = logger;
+            _cache = cache;
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
@@ -138,19 +140,26 @@ namespace MooldangAPI.ApiClients
         /// </summary>
         public async Task<string?> GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId)
         {
+            string cacheKey = $"follow_{viewerId}";
+            if (_cache.TryGetValue(cacheKey, out string? cachedDate))
+            {
+                return cachedDate;
+            }
+
             try
             {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("Client-Id", clientId);
-                client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
+                // 공용 HttpClient를 사용하되, 이번 요청에만 필요한 인증 헤더를 설정하기 위해 HttpRequestMessage 사용
                 int page = 0;
-                int maxPagesToSearch = 10; // 너무 오래 걸리지 않게 최대 10페이지만 검색
+                int maxPagesToSearch = 5; // 성능을 위해 검색 범위 축소 (원본 10 -> 5)
 
                 while (page < maxPagesToSearch)
                 {
-                    var response = await client.GetAsync($"https://openapi.chzzk.naver.com/open/v1/channels/followers?size=50&page={page}");
+                    using var request = new HttpRequestMessage(HttpMethod.Get, $"https://openapi.chzzk.naver.com/open/v1/channels/followers?size=50&page={page}");
+                    request.Headers.Add("Client-Id", clientId);
+                    request.Headers.Add("Client-Secret", clientSecret);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    var response = await _httpClient.SendAsync(request);
                     if (!response.IsSuccessStatusCode) break;
 
                     string json = await response.Content.ReadAsStringAsync();
@@ -158,13 +167,19 @@ namespace MooldangAPI.ApiClients
                     var contentNode = doc.RootElement.GetProperty("content");
                     var dataArray = contentNode.GetProperty("data");
 
-                    if (dataArray.GetArrayLength() == 0) break; // 더 이상 팔로워 없음
+                    if (dataArray.GetArrayLength() == 0) break;
 
                     foreach (var follower in dataArray.EnumerateArray())
                     {
                         if (follower.GetProperty("channelId").GetString() == viewerId)
                         {
-                            return follower.GetProperty("createdDate").GetString(); // 예: "2026-02-07 13:27:54"
+                            string? followDate = follower.GetProperty("createdDate").GetString();
+                            if (followDate != null)
+                            {
+                                // 1시간 동안 캐싱
+                                _cache.Set(cacheKey, followDate, TimeSpan.FromHours(1));
+                            }
+                            return followDate;
                         }
                     }
 
@@ -174,11 +189,11 @@ namespace MooldangAPI.ApiClients
                     page++;
                 }
                 
-                return null; // 못 찾음
+                return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[하모니 경고] 팔로우 정보 수신 오류: {ex.Message}");
+                _logger.LogError($"[ChzzkApi] 팔로우 정보 수신 오류: {ex.Message}");
                 return null;
             }
         }
