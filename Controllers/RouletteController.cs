@@ -170,22 +170,37 @@ namespace MooldangAPI.Controllers
             }
         }
 
-        [HttpPatch("items/{itemId}/status")]
-        public async Task<IActionResult> ToggleItemStatus(int itemId, [FromBody] bool isActive)
+        [HttpPatch("{Id}/status")]
+        public async Task<IActionResult> ToggleRouletteStatus(int Id, [FromBody] bool IsActive)
         {
-            var chzzkUid = GetChzzkUid();
-            if (chzzkUid == null) return Unauthorized();
+            var ChzzkUid = GetChzzkUid();
+            if (ChzzkUid == null) return Unauthorized();
 
-            var affectedRows = await _db.RouletteItems
-                .Where(i => i.Id == itemId && i.Roulette.ChzzkUid == chzzkUid)
-                .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsActive, isActive));
+            var AffectedRows = await _db.Roulettes
+                .Where(R => R.Id == Id && R.ChzzkUid == ChzzkUid)
+                .ExecuteUpdateAsync(S => S
+                    .SetProperty(R => R.IsActive, IsActive)
+                    .SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
 
-            if (affectedRows > 0)
+            return AffectedRows == 0 ? NotFound() : Ok();
+        }
+
+        [HttpPatch("items/{ItemId}/status")]
+        public async Task<IActionResult> ToggleItemStatus(int ItemId, [FromBody] bool IsActive)
+        {
+            var ChzzkUid = GetChzzkUid();
+            if (ChzzkUid == null) return Unauthorized();
+
+            var AffectedRows = await _db.RouletteItems
+                .Where(I => I.Id == ItemId && I.Roulette.ChzzkUid == ChzzkUid)
+                .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, IsActive));
+
+            if (AffectedRows > 0)
             {
                 // 소속된 룰렛의 수정 시간도 함께 업데이트
                 await _db.Roulettes
-                    .Where(r => r.Items.Any(i => i.Id == itemId))
-                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.UpdatedAt, DateTime.UtcNow));
+                    .Where(R => R.Items.Any(I => I.Id == ItemId))
+                    .ExecuteUpdateAsync(S => S.SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
                     
                 return Ok();
             }

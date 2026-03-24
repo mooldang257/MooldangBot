@@ -143,7 +143,6 @@
                 document.getElementById('rouletteList').innerHTML = '';
             }
 
-            // 오버레이 URL 초기화
             const queryParams = new URLSearchParams(window.location.search);
             const chzzkUid = queryParams.get('uid') || ""; 
             document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
@@ -152,11 +151,11 @@
                 const res = await fetch(`/api/admin/roulette?lastId=${lastId}&pageSize=10`, { credentials: 'same-origin' });
                 if (res.ok) {
                     const result = await res.json();
-                    roulettes = roulettes.concat(result.data);
-                    renderList(result.data, append);
+                    roulettes = roulettes.concat(result.Data);
+                    renderList(result.Data, append);
                     
-                    if (result.nextLastId) {
-                        lastId = result.nextLastId;
+                    if (result.NextLastId) {
+                        lastId = result.NextLastId;
                         document.getElementById('btnLoadMore').style.display = 'inline-block';
                     } else {
                         isEnd = true;
@@ -176,23 +175,29 @@
                 return;
             }
 
-            newData.forEach(r => {
+            newData.forEach(R => {
                 const card = document.createElement('div');
                 card.className = 'roulette-card';
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                        <div>
-                            <h3 style="margin:0; color:var(--primary);">${r.name} ${r.isActive ? '' : '<span style="color:#ff4444; font-size:12px;">(비활성)</span>'}</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div style="flex:1;">
+                            <h3 style="margin:0; color:var(--primary);">${R.Name}</h3>
                             <span class="prob-badge" style="background:rgba(255,255,255,0.1); margin-top:5px; display:inline-block;">
-                                ${r.type === 0 ? '🧀 치즈' : '🪙 포인트'} | ${r.costPerSpin.toLocaleString()} ${r.type === 0 ? '치즈' : 'P'} | 명령어: ${r.command}
+                                ${R.Type === 0 ? '🧀 치즈' : '🪙 포인트'} | ${R.CostPerSpin.toLocaleString()} ${R.Type === 0 ? '치즈' : 'P'} | 명령어: ${R.Command}
                             </span>
-                            <div class="last-update">최종 수정: ${new Date(r.lstUpdDt).toLocaleString()}</div>
+                            <div class="last-update">최종 수정: ${new Date(R.LstUpdDt).toLocaleString()}</div>
                         </div>
-                        <div class="test-btns">
-                            <button class="btn btn-secondary btn-sm" onclick="runTestSpin(${r.id}, false)">🚀 1회 테스트</button>
-                            <button class="btn btn-danger btn-sm" onclick="runTestSpin(${r.id}, true)">🔥 10연차 테스트</button>
-                            <button class="btn btn-outline btn-sm" onclick="showEditForm(${r.id})">✏️ 수정</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteRoulette(${r.id})">🗑️ 삭제</button>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <label class="switch" title="룰렛 활성/비활성">
+                                <input type="checkbox" onchange="toggleRouletteStatus(${R.Id}, this.checked)" ${R.IsActive ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                            <div class="test-btns">
+                                <button class="btn btn-secondary btn-sm" onclick="runTestSpin(${R.Id}, false)">🚀 1회 테스트</button>
+                                <button class="btn btn-danger btn-sm" onclick="runTestSpin(${R.Id}, true)">🔥 10연차 테스트</button>
+                                <button class="btn btn-outline btn-sm" onclick="showEditForm(${R.Id})">✏️ 수정</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRoulette(${R.Id})">🗑️ 삭제</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -200,39 +205,59 @@
             });
         }
 
-        async function showEditForm(id) {
-            const res = await fetch(`/api/admin/roulette/${id}`, { credentials: 'same-origin' });
+        async function toggleRouletteStatus(Id, IsActive) {
+            try {
+                const res = await fetch(`/api/admin/roulette/${Id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(IsActive),
+                    credentials: 'same-origin'
+                });
+                if (!res.ok) {
+                    alert("상태 변경 실패");
+                    loadRoulettes();
+                }
+            } catch (err) {
+                console.error("통신 오류:", err);
+                loadRoulettes();
+            }
+        }
+
+        async function showEditForm(Id) {
+            const res = await fetch(`/api/admin/roulette/${Id}`, { credentials: 'same-origin' });
             if (!res.ok) return;
-            const r = await res.json();
+            const R = await res.json();
             
-            editingId = id;
+            editingId = Id;
             document.getElementById('modalTitle').innerText = '룰렛 수정';
-            document.getElementById('rName').value = r.name;
-            document.getElementById('rType').value = r.type.toString();
-            document.getElementById('rCommand').value = r.command;
-            document.getElementById('rCost').value = r.costPerSpin;
-            document.getElementById('rIsActive').checked = r.isActive;
+            document.getElementById('rName').value = R.Name;
+            document.getElementById('rType').value = R.Type.toString();
+            document.getElementById('rCommand').value = R.Command;
+            document.getElementById('rCost').value = R.CostPerSpin;
+            document.getElementById('rIsActive').checked = R.IsActive;
             
             const itemContainer = document.getElementById('itemListContainer');
             itemContainer.innerHTML = '';
-            r.items.forEach(i => addItemRow(i));
+            R.Items.forEach(I => addItemRow(I));
             
             updateTotalProb();
             document.getElementById('editModal').style.display = 'block';
         }
 
-        function addItemRow(item = null) {
+        function addItemRow(Item = null) {
             const container = document.getElementById('itemListContainer');
             const row = document.createElement('div');
             row.className = 'item-row';
+            // 💡 PascalCase 대응 (Item.IsActive 또는 Item.isActive 처리)
+            const isActive = Item ? (Item.IsActive ?? Item.isActive ?? true) : true;
             row.innerHTML = `
                 <label class="switch" title="활성/비활성">
-                    <input type="checkbox" class="item-active" ${(!item || item.isActive) ? 'checked' : ''}>
+                    <input type="checkbox" class="item-active" ${isActive ? 'checked' : ''}>
                     <span class="slider"></span>
                 </label>
-                <input type="text" class="item-name" placeholder="항목명" value="${item ? item.itemName : ''}" style="flex:2;">
-                <input type="number" class="item-prob" placeholder="가중치" value="${item ? item.probability : 10}" style="flex:1;" onchange="updateTotalProb()">
-                <input type="color" class="item-color" value="${item ? item.color : '#ff0055'}" style="width:40px; padding:2px; height:38px; border:none; background:none; cursor:pointer;">
+                <input type="text" class="item-name" placeholder="항목명" value="${Item ? Item.ItemName : ''}" style="flex:2;">
+                <input type="number" class="item-prob" placeholder="가중치" value="${Item ? Item.Probability : 10}" style="flex:1;" onchange="updateTotalProb()">
+                <input type="color" class="item-color" value="${Item ? Item.Color : '#ff0055'}" style="width:40px; padding:2px; height:38px; border:none; background:none; cursor:pointer;">
                 <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); updateTotalProb();">✖</button>
             `;
             container.appendChild(row);
@@ -240,27 +265,33 @@
         }
 
         async function saveRoulette() {
-            const data = {
-                id: editingId || 0,
-                name: document.getElementById('rName').value,
-                type: parseInt(document.getElementById('rType').value),
-                command: document.getElementById('rCommand').value,
-                costPerSpin: parseInt(document.getElementById('rCost').value),
-                isActive: document.getElementById('rIsActive').checked,
-                items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
-                    itemName: row.querySelector('.item-name').value,
-                    probability: parseFloat(row.querySelector('.item-prob').value) || 0,
-                    probability10x: parseFloat(row.querySelector('.item-prob').value) || 0,
-                    color: row.querySelector('.item-color').value,
-                    isActive: row.querySelector('.item-active').checked
+            const Data = {
+                Id: editingId || 0,
+                Name: document.getElementById('rName').value,
+                Type: parseInt(document.getElementById('rType').value),
+                Command: document.getElementById('rCommand').value,
+                CostPerSpin: parseInt(document.getElementById('rCost').value),
+                IsActive: document.getElementById('rIsActive').checked,
+                Items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                    ItemName: row.querySelector('.item-name').value,
+                    Probability: parseFloat(row.querySelector('.item-prob').value) || 0,
+                    Probability10x: parseFloat(row.querySelector('.item-prob').value) || 0,
+                    Color: row.querySelector('.item-color').value,
+                    IsActive: row.querySelector('.item-active').checked
                 }))
             };
+
+            // 💡 방어 로직: 적어도 하나 이상의 항목 활성화 확인
+            if (!Data.Items.some(I => I.IsActive)) {
+                alert("⚠️ 적어도 하나 이상의 항목은 활성화되어야 합니다.");
+                return;
+            }
 
             const res = await fetch(editingId ? `/api/admin/roulette/${editingId}` : '/api/admin/roulette', {
                 method: editingId ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify(data)
+                body: JSON.stringify(Data)
             });
 
             if (res.ok) {
@@ -281,7 +312,6 @@
             document.getElementById('editModal').style.display = 'block';
         }
 
-        // 기존 함수들
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
         async function deleteRoulette(id) { if(confirm("삭제하시겠습니까?")) { await fetch(`/api/admin/roulette/${id}`, {method:'DELETE', credentials:'same-origin'}); loadRoulettes(); } }
         async function runTestSpin(id, is10x) { await fetch(`/api/admin/roulette/${id}/test?is10x=${is10x}`, {method:'POST', credentials:'same-origin'}); }

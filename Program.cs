@@ -74,7 +74,11 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Authorization
 
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    });
 
 // Removed BotManager. ChzzkBackgroundService handles this via EDA.
 
