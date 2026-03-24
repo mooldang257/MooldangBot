@@ -50,10 +50,10 @@ namespace MooldangAPI.Controllers
             var chzzkUid = GetChzzkUid();
             if (chzzkUid == null) return Unauthorized();
 
-            // 💡 N+1 조회 방식을 사용하여 다음 페이지 유무 판별
+            // .NET 10: 최신순 정렬 및 효율적인 인풋 페이징
             var rawData = await _db.Roulettes
-                .Where(r => r.ChzzkUid == chzzkUid && r.Id > lastId)
-                .OrderBy(r => r.Id)
+                .Where(r => r.ChzzkUid == chzzkUid && (lastId == 0 || r.Id < lastId))
+                .OrderByDescending(r => r.Id)
                 .Take(pageSize + 1)
                 .Select(r => new RouletteSummaryDto
                 {
@@ -69,9 +69,11 @@ namespace MooldangAPI.Controllers
                 .AsNoTracking()
                 .ToListAsync();
 
-            bool hasNext = rawData.Count > pageSize;
-            var data = rawData.Take(pageSize).ToList();
-            var nextLastId = hasNext ? data.Last().Id : (int?)null;
+            var hasNext = rawData.Count > pageSize;
+            
+            // .NET 10: 범위(Range) 및 인덱스(Index) 연산자 활용
+            var data = hasNext ? rawData[..pageSize] : rawData;
+            int? nextLastId = hasNext ? data[^1].Id : null;
 
             return Ok(new PagedResponse<RouletteSummaryDto>
             {

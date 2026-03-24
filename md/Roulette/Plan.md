@@ -116,9 +116,10 @@ public async Task<IActionResult> GetRoulettes([FromQuery] int lastId = 0, [FromQ
     var chzzkUid = GetChzzkUid();
     if (chzzkUid == null) return Unauthorized();
 
+    // .NET 10: 최신순 정렬 및 효율적인 인풋 페이징
     var rawData = await _db.Roulettes
-        .Where(r => r.ChzzkUid == chzzkUid && r.Id > lastId)
-        .OrderBy(r => r.Id)
+        .Where(r => r.ChzzkUid == chzzkUid && (lastId == 0 || r.Id < lastId))
+        .OrderByDescending(r => r.Id)
         .Take(pageSize + 1)
         .Select(r => new RouletteSummaryDto {
             Id = r.Id,
@@ -128,14 +129,16 @@ public async Task<IActionResult> GetRoulettes([FromQuery] int lastId = 0, [FromQ
             CostPerSpin = r.CostPerSpin,
             IsActive = r.IsActive,
             ActiveItemCount = r.Items.Count(i => i.IsActive),
-            LstUpdDt = r.UpdatedAt // DB에 저장된 최종 수정일시 매핑 (Roulette 엔티티에 UpdatedAt 필드가 있다고 가정)
+            LstUpdDt = r.UpdatedAt
         })
         .AsNoTracking()
         .ToListAsync();
 
-    bool hasNext = rawData.Count > pageSize;
-    var data = rawData.Take(pageSize).ToList();
-    var nextLastId = hasNext ? data.Last().Id : (int?)null;
+    var hasNext = rawData.Count > pageSize;
+    
+    // .NET 10: 범위(Range) 및 인덱스(Index) 연산자 활용
+    var data = hasNext ? rawData[..pageSize] : rawData;
+    int? nextLastId = hasNext ? data[^1].Id : null;
 
     return Ok(new PagedResponse<RouletteSummaryDto> { 
         Data = data, 
