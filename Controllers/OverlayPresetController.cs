@@ -103,6 +103,7 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("{chzzkUid}/{id}")]
+        [AllowAnonymous] // 🛡️ 오버레이 스타일 다이렉트 로딩 대응
         public async Task<ActionResult<OverlayPresetDto>> GetPreset(string chzzkUid, int id)
         {
             var preset = await _db.OverlayPresets

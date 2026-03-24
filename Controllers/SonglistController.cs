@@ -30,6 +30,7 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("/api/songlist/data/{chzzkUid}")]
+        [AllowAnonymous] // 🛡️ 오버레이 로딩 대응
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
             var omakases = await _db.StreamerOmakases
@@ -128,6 +129,7 @@ namespace MooldangAPI.Controllers
         // --- 송리스트 전용 활성화/비활성화 및 통계 관련 ---
 
         [HttpGet("/api/songlist/status/{chzzkUid}")]
+        [AllowAnonymous] // 🛡️ 오버레이 로딩 대응
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
             var profile = await _db.StreamerProfiles

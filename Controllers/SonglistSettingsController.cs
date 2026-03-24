@@ -18,6 +18,7 @@ namespace MooldangAPI.Controllers
         }
 
         [HttpGet("/api/settings/data/{chzzkUid}")]
+        [AllowAnonymous] // 🛡️ 오버레이 디자인/라벨 로딩 대응
         public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
         {
             var profile = await _db.StreamerProfiles

@@ -23,7 +23,7 @@ public class ChannelManagerAuthorizationHandler : AuthorizationHandler<ChannelMa
         // 1. 마스터 권한 (Master / Bot)은 모든 채널 관리 가능 (프리패스)
         if (context.User.IsInRole("master"))
         {
-            _logger.LogInformation("ChannelManagerPolicy: Master/Bot access granted for {User}", UserIdentityName(context));
+            _logger.LogInformation("ChannelManagerPolicy: Master/Bot access granted for {User}", UserInfo(context));
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
@@ -52,17 +52,27 @@ public class ChannelManagerAuthorizationHandler : AuthorizationHandler<ChannelMa
         var allowedIds = _userSession.AllowedChannelIds;
         if (allowedIds.Contains(chzzkUid, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("ChannelManagerPolicy: Access granted for User {User} on Channel {Channel}", UserIdentityName(context), chzzkUid);
+            _logger.LogInformation("ChannelManagerPolicy: Access GRANTED for {User} on Channel {Channel}", UserInfo(context), chzzkUid);
             context.Succeed(requirement);
         }
         else
         {
-            _logger.LogWarning("ChannelManagerPolicy: Access denied for User {User} on Channel {Channel}", UserIdentityName(context), chzzkUid);
+            _logger.LogWarning("ChannelManagerPolicy: Access DENIED for {User} on Channel {Channel}. IsAuth: {IsAuth}", 
+                UserInfo(context), chzzkUid, context.User.Identity?.IsAuthenticated);
         }
 
         return Task.CompletedTask;
     }
 
-    private string UserIdentityName(AuthorizationHandlerContext context) 
-        => context.User.Identity?.Name ?? "Unknown";
+    private string UserInfo(AuthorizationHandlerContext context) 
+    {
+        var identity = context.User.Identity;
+        if (identity == null || !identity.IsAuthenticated) return "UnauthenticatedUser";
+        
+        var name = identity.Name ?? "NoName";
+        var uid = _userSession.ChzzkUid ?? "NoUid";
+        var role = _userSession.Role ?? "NoRole";
+        
+        return $"{name}({uid}/{role})";
+    }
 }

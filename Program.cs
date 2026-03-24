@@ -114,7 +114,10 @@ builder.Services.AddAuthentication(options => {
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ChannelManager", policy =>
-        policy.Requirements.Add(new ChannelManagerRequirement()));
+    {
+        policy.RequireAuthenticatedUser(); // 🛡️ 익명 사용자는 정책 검사 전 401 Unauthorized 유도
+        policy.Requirements.Add(new ChannelManagerRequirement());
+    });
 });
 var app = builder.Build();
 
