@@ -148,7 +148,7 @@
             document.getElementById('overlayUrl').value = `${window.location.origin}/roulette_overlay.html?uid=${chzzkUid}`;
 
             try {
-                const res = await fetch(`/api/admin/roulette?lastId=${lastId}&pageSize=10`, { credentials: 'same-origin' });
+                const res = await fetch(`/api/admin/roulette?LastId=${lastId}&PageSize=10`, { credentials: 'same-origin' });
                 if (res.ok) {
                     const result = await res.json();
                     roulettes = roulettes.concat(result.Data);

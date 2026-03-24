@@ -7,9 +7,7 @@ namespace MooldangAPI.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public string? ChzzkUid { get; set; }
 
         [Required]
         [MaxLength(100)]
