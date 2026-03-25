@@ -312,6 +312,36 @@ namespace MooldangAPI.ApiClients
         {
             return await SendChatInternalAsync(accessToken, "/open/v1/chats/notice", message);
         }
+        // 치지직 최대 글자수 100자 중, 접두어(\u200B) 1자를 제외한 임계값
+        private const int MaxMessageLength = 99;
+        private const string ZeroWidthSpace = "\u200B";
+
+        /// <summary>
+        /// 메시지를 99자 단위로 분할하여 전송합니다.
+        /// </summary>
+        public async Task<bool> SendChatAsync(string accessToken, string endpoint, string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return false;
+
+            // .NET 10 스타일: ReadOnlySpan을 활용한 효율적인 문자열 분할 처리 가능
+            // 여기서는 비동기 전송 순서를 보장하기 위해 순차적으로 처리합니다.
+            var chunks = message.Chunk(MaxMessageLength);
+            bool allSuccess = true;
+
+            foreach (var chunk in chunks)
+            {
+                string part = new string(chunk);
+                // 각 조각마다 접두어를 붙여 전송
+                bool result = await SendChatInternalAsync(accessToken, endpoint, part);
+
+                if (!result) allSuccess = false;
+
+                // API 레이트 리밋을 고려하여 짧은 대기 시간을 가질 수 있습니다.
+                await Task.Delay(100);
+            }
+
+            return allSuccess;
+        }
 
         private async Task<bool> SendChatInternalAsync(string accessToken, string endpoint, string message)
         {
@@ -319,20 +349,48 @@ namespace MooldangAPI.ApiClients
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                
-                // 무한 루프 방지를 위해 투명 문자 추가
-                var payload = new { message = "\u200B" + message };
+
+                // 무한 루프 방지용 투명 문자 결합 (최종 100자 이하 보장)
+                var payload = new { message = ZeroWidthSpace + message };
                 request.Content = JsonContent.Create(payload);
 
                 var response = await _httpClient.SendAsync(request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorDetail = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"[ChzzkApi] 전송 실패: {response.StatusCode}, 상세: {errorDetail}");
+                }
+
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[ChzzkApi] Chat Send Error ({endpoint}): {ex.Message}");
+                _logger.LogError(ex, $"[ChzzkApi] Chat Send Exception: {ex.Message}");
                 return false;
             }
         }
+
+        //private async Task<bool> SendChatInternalAsync(string accessToken, string endpoint, string message)
+        //{
+        //    try
+        //    {
+        //        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        //        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                
+        //        // 무한 루프 방지를 위해 투명 문자 추가
+        //        var payload = new { message = "\u200B" + message };
+        //        request.Content = JsonContent.Create(payload);
+
+        //        var response = await _httpClient.SendAsync(request);
+        //        return response.IsSuccessStatusCode;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError($"[ChzzkApi] Chat Send Error ({endpoint}): {ex.Message}");
+        //        return false;
+        //    }
+        //}
 
         /// <summary>
         /// 웹소켓 연결을 위한 세션 인증 정보를 가져옵니다.
