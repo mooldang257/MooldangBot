@@ -82,6 +82,8 @@ namespace MooldangAPI.Services
                     logs.Add(new RouletteLog
                     {
                         ChzzkUid = chzzkUid,
+                        RouletteId = rouletteId,
+                        RouletteName = roulette.Name,
                         ViewerNickname = viewerNickname ?? "비회원",
                         ItemName = result.ItemName,
                         IsMission = result.IsMission,

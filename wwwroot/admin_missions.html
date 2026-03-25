@@ -132,6 +132,35 @@
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
+
+        /* Load More Button */
+        .load-more-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        #btn-load-more {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+            padding: 12px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #btn-load-more:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #btn-load-more:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -148,6 +177,10 @@
 
         <div id="mission-list">
             <!-- 미션 목록이 여기에 동적으로 추가됨 -->
+        </div>
+
+        <div class="load-more-container">
+            <button id="btn-load-more" onclick="loadHistory(true)" style="display: none;">더 보기</button>
         </div>
     </div>
 
@@ -173,17 +206,46 @@
             }
         }
 
-        async function loadHistory() {
-            const res = await fetch(`/api/admin/roulette/${streamerUid}/history?status=${currentStatus}`);
-            if (res.ok) {
-                const result = await res.json();
-                renderList(result.data, false);
+        let lastId = 0;
+        let isLoading = false;
+
+        async function loadHistory(isLoadMore = false) {
+            if (isLoading) return;
+            
+            if (!isLoadMore) {
+                lastId = 0;
+                document.getElementById('mission-list').innerHTML = '';
+            }
+
+            isLoading = true;
+            const btn = document.getElementById('btn-load-more');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '로딩 중...';
+            }
+
+            try {
+                const res = await fetch(`/api/admin/roulette/${streamerUid}/history?status=${currentStatus}&lastId=${lastId}&pageSize=20`);
+                if (res.ok) {
+                    const result = await res.json();
+                    renderList(result.data, false); // 항상 append (이미 clear 처리함)
+                    lastId = result.nextLastId || 0;
+                    
+                    if (btn) {
+                        btn.style.display = lastId > 0 ? 'block' : 'none';
+                        btn.innerText = '더 보기';
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load history:", err);
+            } finally {
+                isLoading = false;
+                if (btn) btn.disabled = false;
             }
         }
 
         function renderList(logs, prepend = false) {
             const list = document.getElementById('mission-list');
-            if (!prepend) list.innerHTML = '';
 
             logs.forEach(log => {
                 const card = document.createElement('div');
@@ -191,10 +253,11 @@
                 card.id = `mission-${log.id}`;
                 
                 const timeStr = new Date(log.createdAt).toLocaleTimeString();
+                const rouletteNameTag = log.rouletteName ? `<span style="color: var(--primary); font-size: 13px;">[${log.rouletteName}]</span> ` : '';
 
                 card.innerHTML = `
                     <div class="mission-info">
-                        <div class="viewer">${log.viewerNickname}</div>
+                        <div class="viewer">${rouletteNameTag}${log.viewerNickname}</div>
                         <div class="item-name">${log.itemName}</div>
                         <div class="time">${timeStr}</div>
                     </div>

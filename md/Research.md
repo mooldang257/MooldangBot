@@ -230,12 +230,27 @@ erDiagram
         string ConfigJson
     }
 
+    RouletteLog {
+        long Id PK
+        string ChzzkUid
+        int RouletteId
+        string RouletteName
+        string ViewerNickname
+        string ItemName
+        bool IsMission
+        int Status
+        DateTime CreatedAt
+        DateTime ProcessedAt
+    }
+
     StreamerProfile ||--o{ SongQueue : "has"
     StreamerProfile ||--o{ StreamerCommand : "has"
     StreamerProfile ||--o{ StreamerOmakaseItem : "has"
     StreamerProfile ||--o{ Roulette : "has"
     StreamerProfile ||--o{ ViewerProfile : "collects"
+    StreamerProfile ||--o{ RouletteLog : "tracks"
     Roulette ||--o{ RouletteItem : "contains"
+    Roulette ||--o{ RouletteLog : "logs"
 ```
 
 ---
@@ -841,3 +856,28 @@ sequenceDiagram
 ### 13-2. 전후 비교 (v1.3 패치 효과)
 - **기존**: 포인트만 가산되고 누적/연속 출석 데이터는 갱신되지 않았으며, 봇의 환영 인사가 나가지 않았음.
 - **변경**: 출석 시 봇이 `{닉네임}`을 태그하여 축하 메시지를 보내며, 연속 출석일수가 정확하게 추적되어 시청자 로열티 증진에 기여함.
+
+---
+
+## 24. 2026-03-25 룰렛 로그 정밀화 및 인풋 페이징(Keyset) 도입 패치
+
+룰렛 당첨 로그의 역정규화(Denormalization)를 통해 데이터 불변성을 확보하고, 대규모 로그 조회 성능을 위해 Keyset Pagination(Id 기반) 최적화를 적용한 패치입니다.
+
+### 24-1. 주요 수정 사항
+
+| 레이어 | 기술 요소 | 상세 내용 |
+|------|------|------|
+| **Data Architecture** | **Metadata Persistence** | `RouletteLog`에 `RouletteId`와 `RouletteName` 필드를 추가. 룰렛이 삭제되거나 이름이 변경되어도 과거 로그의 정확성 유지. |
+| **Performance** | **Keyset Pagination** | `lastId` 기반의 페이징(Id < lastId) 방식을 도입하여 Offset 방식의 성능 저하(Deep Page) 문제 해결. |
+| **Optimization** | **Index & Tracking** | `RouletteId` 컬럼에 인덱스 추가 및 전용 `RouletteLogDto` 구축. 읽기 전용 쿼리에 `.AsNoTracking()`을 강제하여 서버 부하 최소화. |
+| **Frontend UI** | **Load More UX** | 미션 대시보드에 '더 보기' 버튼 구현. 20개 단위로 데이터를 순차 로딩하며 로딩 상태 및 데이터 소멸 여부 자동 감지. |
+| **DevOps** | **Surgical Migration** | 기존 스키마와의 충돌을 방지하기 위한 수동 튜닝된 EF Core 마이그레이션 적용. |
+
+### 24-2. 기대 효과
+- **추적성 강화**: 어떤 룰렛에서 당첨된 미션인지 대시보드에서 즉시 확인 가능 (예: `[포인트 룰렛]`).
+- **시스템 안정성**: 로그가 수만 건 쌓여도 "더 보기" 기능이 일정한 속도로 동작함.
+- **데이터 불변성**: 룰렛 설정을 변경해도 과거의 당첨 기록은 당시의 룰렛 이름을 그대로 유지하여 신뢰성 있는 히스토리 제공.
+
+---
+
+*최종 업데이트: 2026-03-25, Senior Full-Stack AI Partner 물멍*

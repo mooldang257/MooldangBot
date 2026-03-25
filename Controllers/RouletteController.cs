@@ -67,6 +67,8 @@ namespace MooldangAPI.Controllers
         public string SpinId { get; set; } = string.Empty;
     }
 
+    public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, DateTime CreatedAt, int Status);
+
     [ApiController]
     [Route("api/admin/roulette")]
     [Authorize(Policy = "ChannelManager")] // 🛡️ 채널 매니저(마스터 포함) 정책 적용
@@ -287,6 +289,7 @@ namespace MooldangAPI.Controllers
         {
             var query = _db.RouletteLogs
                 .IgnoreQueryFilters()
+                .AsNoTracking()
                 .Where(l => l.ChzzkUid == chzzkUid);
 
             if (status.HasValue)
@@ -302,7 +305,15 @@ namespace MooldangAPI.Controllers
             var logs = await query
                 .OrderByDescending(l => l.Id)
                 .Take(pageSize + 1)
-                .AsNoTracking()
+                .Select(l => new RouletteLogDto(
+                    l.Id, 
+                    l.RouletteId, 
+                    l.RouletteName, 
+                    l.ViewerNickname, 
+                    l.ItemName, 
+                    l.CreatedAt, 
+                    (int)l.Status
+                ))
                 .ToListAsync();
 
             var hasNext = logs.Count > pageSize;

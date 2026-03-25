@@ -119,6 +119,9 @@ namespace MooldangAPI.Data
                 .HasIndex(s => new { s.ChzzkUid, s.Id }).IsDescending(false, true);
 
             modelBuilder.Entity<RouletteLog>()
+                .HasIndex(l => l.RouletteId);
+
+            modelBuilder.Entity<RouletteLog>()
                 .HasIndex(l => new { l.ChzzkUid, l.Status, l.Id })
                 .IsDescending(false, false, true);
 

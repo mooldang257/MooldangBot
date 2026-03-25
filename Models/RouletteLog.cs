@@ -13,6 +13,11 @@ namespace MooldangAPI.Models
         [MaxLength(100)]
         public string ChzzkUid { get; set; } = string.Empty;
 
+        public int RouletteId { get; set; }
+
+        [MaxLength(100)]
+        public string RouletteName { get; set; } = string.Empty;
+
         [Required]
         [MaxLength(100)]
         public string ViewerNickname { get; set; } = string.Empty;
