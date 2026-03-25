@@ -173,22 +173,22 @@
             }
             omakases.forEach(o => {
                 const box = document.createElement('div');
-                const iconVal = o.icon !== undefined ? o.icon : '🍣';
+                const iconVal = o.Icon || o.icon || '🍣';
                 const iconStr = iconVal ? `${iconVal} ` : '';
                 box.className = 'omakase-box';
                 box.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid rgba(255,154,158,0.3); border-radius:8px;";
                 
-                const isChecked = selectedOmakaseId == o.id ? 'checked' : '';
+                const isChecked = selectedOmakaseId == (o.Id || o.id) ? 'checked' : '';
                 
                 box.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="radio" name="omakaseSelect" value="${o.Id}" class="oma-radio" style="width:18px; height:18px; cursor:pointer;" ${isChecked} onclick="handleOmaRadioClick(this)">
-                        <span style="color: var(--primary); font-weight: bold; font-size: 16px;">${iconStr}${o.Name}</span>
+                        <input type="radio" name="omakaseSelect" value="${o.Id || o.id}" class="oma-radio" style="width:18px; height:18px; cursor:pointer;" ${isChecked} onclick="handleOmaRadioClick(this)">
+                        <span style="color: var(--primary); font-weight: bold; font-size: 16px;">${iconStr}${o.Name || o.name}</span>
                     </div>
                     <div class="omakase-controls" style="display:flex; align-items:center; gap:10px;">
-                        <button class="omakase-btn" onclick="updateOmakase(${o.Id}, -1)">-</button>
-                        <span style="font-size: 20px; font-weight: bold; color: var(--primary); min-width:30px; text-align:center;">${o.Count}</span>
-                        <button class="omakase-btn" onclick="updateOmakase(${o.Id}, 1)">+</button>
+                        <button class="omakase-btn" onclick="updateOmakase(${o.Id || o.id}, -1)">-</button>
+                        <span style="font-size: 20px; font-weight: bold; color: var(--primary); min-width:30px; text-align:center;">${o.Count || o.count || 0}</span>
+                        <button class="omakase-btn" onclick="updateOmakase(${o.Id || o.id}, 1)">+</button>
                     </div>`;
                 container.appendChild(box);
             });
@@ -276,10 +276,10 @@
         async function changeSongStatus(id, newStatus) {
             await fetch(`/api/song/${chzzkUid}/${id}/status?status=${newStatus}`, { method: 'PUT' });
             if (newStatus === 'Playing') {
-                songs.forEach(s => { if (s.Status === 'Playing') s.Status = 'Completed'; });
+                songs.forEach(s => { if ((s.Status || s.status) === 'Playing') { if (s.Status) s.Status = 'Completed'; else s.status = 'Completed'; } });
             }
-            const song = songs.find(s => s.Id === id);
-            if (song) song.Status = newStatus;
+            const song = songs.find(s => (s.Id || s.id) === id);
+            if (song) { if (song.Status) song.Status = newStatus; else song.status = newStatus; }
             renderAll(); broadcastState();
         }
 
@@ -357,27 +357,27 @@
         function createItem(s, listType) {
             const li = document.createElement("li");
             li.className = "song-item";
-            li.dataset.id = s.Id;
+            li.dataset.id = s.Id || s.id;
 
             const cbClass = listType === 'pending' ? 'cb-pending' : 'cb-completed';
             let buttonsHtml = '';
 
             if (listType === 'pending') {
                 buttonsHtml = `
-                    <button class="btn btn-secondary icon-btn" onclick="editSong(${s.Id})" title="수정">✏️</button>
-                    <button class="btn btn-outline icon-btn" onclick="changeSongStatus(${s.Id}, 'Playing')" title="재생">▶️</button>
-                    <button class="btn btn-primary icon-btn" onclick="changeSongStatus(${s.Id}, 'Completed')" title="완료">✔️</button>
-                    <button class="btn btn-danger icon-btn" onclick="deleteSingle(${s.Id})" title="삭제">🗑️</button>`;
+                    <button class="btn btn-secondary icon-btn" onclick="editSong(${s.Id || s.id})" title="수정">✏️</button>
+                    <button class="btn btn-outline icon-btn" onclick="changeSongStatus(${s.Id || s.id}, 'Playing')" title="재생">▶️</button>
+                    <button class="btn btn-primary icon-btn" onclick="changeSongStatus(${s.Id || s.id}, 'Completed')" title="완료">✔️</button>
+                    <button class="btn btn-danger icon-btn" onclick="deleteSingle(${s.Id || s.id})" title="삭제">🗑️</button>`;
             } else {
                 buttonsHtml = `
-                    <button class="btn btn-outline icon-btn" onclick="changeSongStatus(${s.Id}, 'Playing')" title="재생">▶️</button>
-                    <button class="btn btn-secondary icon-btn" onclick="changeSongStatus(${s.Id}, 'Pending')" title="대기열로 복귀">↩️</button>
-                    <button class="btn btn-danger icon-btn" onclick="deleteSingle(${s.Id})" title="삭제">🗑️</button>`;
+                    <button class="btn btn-outline icon-btn" onclick="changeSongStatus(${s.Id || s.id}, 'Playing')" title="재생">▶️</button>
+                    <button class="btn btn-secondary icon-btn" onclick="changeSongStatus(${s.Id || s.id}, 'Pending')" title="대기열로 복귀">↩️</button>
+                    <button class="btn btn-danger icon-btn" onclick="deleteSingle(${s.Id || s.id})" title="삭제">🗑️</button>`;
             }
 
             li.innerHTML = `
-                <input type="checkbox" class="${cbClass}" data-id="${s.Id}" style="margin-right: 12px; width:16px; height:16px; cursor:pointer;">
-                <div class="song-info"><strong>${s.Title}</strong><span>${s.Artist || ''}</span></div>
+                <input type="checkbox" class="${cbClass}" data-id="${s.Id || s.id}" style="margin-right: 12px; width:16px; height:16px; cursor:pointer;">
+                <div class="song-info"><strong>${s.Title || s.title}</strong><span>${s.Artist || s.artist || ''}</span></div>
                 <div class="btn-group">${buttonsHtml}</div>`;
             return li;
         }

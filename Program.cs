@@ -204,6 +204,22 @@ using (var scope = app.Services.CreateScope())
     EnsureSetting("ChzzkClientId", config["ChzzkApi:ClientId"]);
     EnsureSetting("ChzzkClientSecret", config["ChzzkApi:ClientSecret"]);
     db.SaveChanges();
+
+    // 🏗️ [DB 스키마 유지보수] SongBook 테이블이 없으면 자동 생성 (수동 관리 환경 대응)
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS `songbooks` (
+            `Id` INT NOT NULL AUTO_INCREMENT,
+            `ChzzkUid` VARCHAR(50) NOT NULL,
+            `Title` VARCHAR(200) NOT NULL,
+            `Artist` VARCHAR(100) NULL,
+            `IsActive` TINYINT(1) NOT NULL DEFAULT 1,
+            `UsageCount` INT NOT NULL DEFAULT 0,
+            `CreatedAt` DATETIME(6) NOT NULL,
+            `UpdatedAt` DATETIME(6) NOT NULL,
+            PRIMARY KEY (`Id`),
+            INDEX `IX_songbooks_ChzzkUid_Id` (`ChzzkUid` ASC, `Id` DESC)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
 }
 
 app.Run();

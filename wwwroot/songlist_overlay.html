@@ -269,9 +269,9 @@
             const showStats = ds.Stats ? ds.Stats.show : true;
             if (showStats) {
                 stats.style.display = "block";
-                const omaTotal = st.omakases ? st.omakases.reduce((acc, o) => acc + o.count, 0) : 0;
-                const pendingTotal = st.pendingSongs.length + omaTotal;
-                stats.innerHTML = `완료 ${st.completedSongs.length} / 대기 ${pendingTotal}`;
+                const omaTotal = st.omakases ? st.omakases.reduce((acc, o) => acc + (o.Count || o.count || 0), 0) : 0;
+                const pendingTotal = (st.pendingSongs ? st.pendingSongs.length : 0) + omaTotal;
+                stats.innerHTML = `완료 ${(st.completedSongs || []).length} / 대기 ${pendingTotal}`;
             } else { stats.style.display = "none"; }
 
             const notice = document.getElementById("notice-container");
@@ -282,33 +282,33 @@
             const omakase = document.getElementById("omakase-container");
             const showOmakase = ds.Omakase ? ds.Omakase.show : true;
 
-            if (showOmakase && st.omakases && st.omakases.some(o => o.count > 0)) {
+            if (showOmakase && st.omakases && st.omakases.some(o => (o.Count || o.count) > 0)) {
                 omakase.style.display = "block";
-                const htmlArray = st.omakases.filter(o => o.count > 0).map(o => {
-                    const iconVal = o.icon !== undefined ? o.icon : '🍣';
+                const htmlArray = st.omakases.filter(o => (o.Count || o.count) > 0).map(o => {
+                    const iconVal = o.Icon || o.icon || '🍣';
                     const iconStr = iconVal ? `${iconVal} ` : '';
-                    return `<span>${iconStr}${o.name}</span> x ${o.count}`;
+                    return `<span>${iconStr}${o.Name || o.name}</span> x ${o.Count || o.count}`;
                 });
                 omakase.innerHTML = htmlArray.join('<br><div style="margin:5px 0;"></div>');
             } else { omakase.style.display = "none"; }
 
             const playing = document.getElementById("playing-container");
-            if (ds.Playing && ds.Playing.show && st.currentTitle !== "-") {
+            if (ds.Playing && ds.Playing.show && (st.CurrentTitle || st.currentTitle) !== "-") {
                 playing.style.display = "block";
-                playing.innerHTML = `<div class="now-label">${st.labels.nowPlaying || "▶ NOW PLAYING"}</div>
-                                         <div class="now-title">🎵 ${st.currentTitle}</div>
-                                         <div class="now-artist">${st.currentArtist ? "- " + st.currentArtist : ""}</div>`;
+                playing.innerHTML = `<div class="now-label">${(st.Labels || st.labels || {}).nowPlaying || "▶ NOW PLAYING"}</div>
+                                         <div class="now-title">🎵 ${st.CurrentTitle || st.currentTitle}</div>
+                                         <div class="now-artist">${(st.CurrentArtist || st.currentArtist) ? "- " + (st.CurrentArtist || st.currentArtist) : ""}</div>`;
             } else { playing.style.display = "none"; }
 
             const pending = document.getElementById("pending-container");
             if (ds.Pending && ds.Pending.show && st.pendingSongs.length > 0) {
                 pending.style.display = "block";
-                const limit = parseInt(ds.Pending.limit) || 5;
-                let html = `<div class="list-title">${st.labels.upNext || "⏳ UP NEXT"}</div>`;
-                st.pendingSongs.slice(0, limit).forEach((song, index) => {
-                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.Title}</span><span class="item-artist">${song.Artist || ""}</span></div>`;
+                const limit = parseInt(ds.Pending ? ds.Pending.limit : 5) || 5;
+                let html = `<div class="list-title">${(st.Labels || st.labels || {}).upNext || "⏳ UP NEXT"}</div>`;
+                (st.pendingSongs || []).slice(0, limit).forEach((song, index) => {
+                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.Title || song.title}</span><span class="item-artist">${song.Artist || song.artist || ""}</span></div>`;
                 });
-                if (st.pendingSongs.length > limit) html += `<div style="text-align:center; font-size:11px; opacity:0.6; margin-top:5px;">...외 ${st.pendingSongs.length - limit}곡 대기 중</div>`;
+                if ((st.pendingSongs || []).length > limit) html += `<div style="text-align:center; font-size:11px; opacity:0.6; margin-top:5px;">...외 ${(st.pendingSongs || []).length - limit}곡 대기 중</div>`;
                 pending.innerHTML = html;
             } else { pending.style.display = "none"; }
 
