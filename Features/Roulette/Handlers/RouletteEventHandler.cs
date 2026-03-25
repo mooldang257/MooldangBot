@@ -44,15 +44,21 @@ namespace MooldangAPI.Features.Roulette.Handlers
 
                     if (donationAmount >= roulette.CostPerSpin && firstWord == roulette.Command)
                     {
-                        // 10연차 판별 (금액이 10배 이상이면 10연차 실행)
-                        if (donationAmount >= roulette.CostPerSpin * 10)
+                        int totalSpins = (int)(donationAmount / roulette.CostPerSpin);
+                        int tens = totalSpins / 10;
+                        int remain = totalSpins % 10;
+
+                        _logger.LogInformation($"🎰 [룰렛 다회차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name} (총 {totalSpins}회: 10연차 {tens}번 + 단일 {remain}번)");
+
+                        // 1. 10연차 그룹 실행
+                        for (int i = 0; i < tens; i++)
                         {
-                            _logger.LogInformation($"🎰 [룰렛 10연차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name}");
                             await rouletteService.SpinRoulette10xAsync(chzzkUid, roulette.Id, notification.Username);
                         }
-                        else
+
+                        // 2. 남은 단일 회차 루프 실행
+                        for (int i = 0; i < remain; i++)
                         {
-                            _logger.LogInformation($"🎰 [룰렛 1회 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name}");
                             await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, notification.Username);
                         }
                     }

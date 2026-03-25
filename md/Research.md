@@ -701,8 +701,46 @@ OBS 브라우저 소스 / 대시보드 실시간 업데이트
 
 ---
 
-*이 보고서는 `MooldangBot` 프로젝트의 전체 소스코드를 심층 분석하여 작성되었습니다.*  
-*최종 업데이트: 2026-03-25, 물멍(AI)*
+## 21. 2026-03-25 룰렛 시스템 안정화 및 다회차(N연차) 실행 패치
+
+룰렛 오버레이의 데이터 표시 오류를 근본적으로 해결하고, 후원 금액에 따라 자동으로 여러 번의 룰렛이 실행되도록 지능형 로직을 도입한 패치입니다.
+
+### 21-1. 주요 수정 사항
+
+| 레이어 | 기술 요소 | 상세 내용 |
+|------|------|------|
+| **Frontend** | **Harmony v2 (Normalization)** | `Proxy` 대신 모든 필드를 `PascalCase`와 `camelCase` 양방향으로 복제하는 **Deep Normalization** 방식을 채택하여 라이브러리/환경 의존성 없는 완벽한 데이터 참조 보장. |
+| **Logic** | **Donation Quotient Loop** | 후원 금액을 룰렛 비용으로 나눈 몫(Quotient)을 계산하여 10회 단위(10연차)와 남은 횟수(단일 연차 루프)를 조합해 자동 실행. |
+| **Stability** | **Defensive UI Rendering** | 렌더링 시 필드 유무를 체크하는 방어적 코드(`||`, `??`)를 적용하여 데이터 누락 시에도 자바스크립트 중단 방지. |
+| **Caching** | **Script Versioning** | 브라우저 캐시로 인한 구버전 스크립트 오작동을 방지하기 위해 `v=20260325_v2` 버전 파라미터 강제 적용. |
+
+### 21-2. 해결된 핵심 페인 포인트
+- **1000치즈 후원 시 1회만 동작하던 문제**: 이제 250치즈 비용 룰렛 기준, 1000치즈 후원 시 자동으로 4회의 애니메이션과 채팅 알림이 순차적으로 발생함.
+- **오버레이 `undefined` 현상**: `ItemName`, `Color` 등 핵심 필드가 케이싱 불일치로 인해 표시되지 않던 구형 Proxy 방식의 한계를 Normalization v2로 완전 극복.
+- **서버 통신 오류 메시지**: `undefined.toLocaleString()` 등으로 인해 발생하던 런타임 예외를 방지하여 관리 페이지의 안정성 확보.
+
+### 21-3. 아키텍처 다이어그램 (다회차 실행 flow)
+```mermaid
+sequenceDiagram
+    participant Chzzk as Chzzk Server
+    participant Handler as RouletteEventHandler
+    participant Service as RouletteService
+    participant Overlay as OBS Overlay (JS Queue)
+
+    Chzzk->>Handler: 1000 Cheese Donation (!룰렛)
+    Handler->>Handler: Calculate Spins (1000 / 250 = 4)
+    Loop 4 Times
+        Handler->>Service: SpinRouletteAsync()
+        Service->>Overlay: SignalR: ReceiveRouletteResult (SpinId: unique)
+    End
+    Note over Overlay: Animations queued & Played sequentially
+    Overlay->>Service: Callback: Complete (SpinId)
+    Service->>Chzzk: Send Result to Chat
+```
+
+---
+
+*작성일: 2026-03-25, Senior Full-Stack AI Partner 물멍 작성*
 
 ---
 
