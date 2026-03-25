@@ -11,6 +11,7 @@
             --bg-color: transparent;
             --slot-bg: rgba(20, 20, 20, 0.9);
             --gold-color: #ffd700;
+            --item-h: 60px; /* v6 refinement: 높이 절반으로 축소 */
         }
 
         body {
@@ -27,139 +28,119 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* 최상단 배치 */
             align-items: center;
             position: relative;
+            padding-top: 50px; /* 상단 여백 */
         }
 
         /* 슬롯 머신 컨테이너 */
         #slot-machine {
-            width: 500px;
-            height: 120px;
+            width: 450px;
+            height: var(--item-h);
             background: var(--slot-bg);
-            border: 4px solid #333;
-            border-radius: 15px;
+            border: 3px solid #444;
+            border-radius: 10px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
-            display: none; /* 시작 전엔 숨김 */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: none; 
+            margin-bottom: 20px; /* 결과 바와의 간격 */
         }
 
         #slot-machine.active {
             display: flex;
-            animation: slot-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: slot-enter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
         }
 
         @keyframes slot-enter {
-            from { transform: scale(0.8) translateY(50px); opacity: 0; }
-            to { transform: scale(1) translateY(0); opacity: 1; }
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         #slot-window {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            pointer-events: none;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5; pointer-events: none;
         }
 
-        /* 당첨 라인 표시기 */
         .win-indicator {
-            position: absolute;
-            width: 100%;
-            height: 4px;
+            position: absolute; width: 100%; height: 3px;
             background: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-color);
             z-index: 10;
         }
 
-        #slot-reel {
-            width: 100%;
-            will-change: transform;
-        }
+        #slot-reel { width: 100%; will-change: transform; }
 
         .slot-item {
-            height: 120px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            font-weight: 800;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            letter-spacing: -1px;
+            height: var(--item-h);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; font-weight: 800;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            letter-spacing: -0.5px;
         }
 
-        /* 하단 히스토리 바 (v6: 화면 너비 초과 시 행변환 지원) */
+        /* 결과 바 (v6: 슬롯 하단에 위치하며 아래로 확장) */
         #history-bar {
-            position: absolute;
-            bottom: 30px;
             width: 90%;
-            min-height: 60px;
-            max-height: 240px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 15px;
+            max-height: 400px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            padding: 10px 20px;
+            padding: 15px;
             overflow-y: auto;
-            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            /* 위쪽에서 아래쪽으로 서서히 나타나는 효과 */
+            mask-image: linear-gradient(to bottom, black 90%, transparent);
         }
 
         #history-track {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
-            transition: all 0.5s ease;
+            gap: 12px;
             width: 100%;
         }
 
         .history-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex; align-items: center; gap: 6px;
+            animation: item-appear 0.3s ease-out forwards;
+        }
+
+        @keyframes item-appear {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .history-item .reward { font-weight: bold; }
-        .history-item .count { color: var(--gold-color); font-weight: 800; font-size: 20px; }
+        .history-item .count { color: var(--gold-color); font-weight: 800; }
 
     </style>
 </head>
 
 <body>
     <div id="overlay-container">
-        <!-- 슬롯 머신 -->
+        <!-- 슬롯 머신 (최상단) -->
         <div id="slot-machine">
             <div class="win-indicator" style="top: 0;"></div>
             <div id="slot-window"></div>
-            <div id="slot-reel">
-                <!-- 아이템들이 수직으로 나열됨 -->
-            </div>
+            <div id="slot-reel"></div>
             <div class="win-indicator" style="bottom: 0;"></div>
         </div>
 
-        <!-- 하단 히스토리 -->
+        <!-- 결과 목록 (슬롯 하단에 위치) -->
         <div id="history-bar">
-            <div id="history-track">
-                <!-- 당첨 내역이 여기에 추가됨 -->
-            </div>
+            <div id="history-track"></div>
         </div>
     </div>
 
-    <!-- [JS] Logic -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script src="/js/overlay_utils.js"></script>
     <script>
@@ -170,6 +151,7 @@
         const reels = document.getElementById('slot-reel');
         const machine = document.getElementById('slot-machine');
         const historyTrack = document.getElementById('history-track');
+        const historyBar = document.getElementById('history-bar');
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/overlayHub")
@@ -178,8 +160,7 @@
 
         let queue = [];
         let isRunning = false;
-        let lastTimestamp = 0;
-        const ITEM_HEIGHT = 120;
+        const ITEM_HEIGHT = 60; // 120 -> 60 절반 축소
 
         connection.on("ReceiveRouletteResult", (data) => {
             data = createSafeData(data);
@@ -201,7 +182,6 @@
             const results = data.Results || data.results;
             const isMulti = results.length > 1;
 
-            // [v6 규칙] 새로운 룰렛 시작 시 히스토리 초기화
             historyTrack.innerHTML = '';
             machine.classList.add('active');
 
@@ -210,7 +190,6 @@
                 const itemName = result.ItemName || result.itemName;
                 const itemColor = result.Color || result.color || '#ffffff';
 
-                // 1. 슬롯 데이터 채우기
                 const dummyCount = isFastMode ? 20 : (isMulti ? 30 : 50); 
                 reels.innerHTML = '';
                 reels.style.transition = 'none';
@@ -231,17 +210,15 @@
 
                 reels.offsetHeight;
 
-                // 2. 애니메이션 실행
-                const duration = isFastMode ? 0.6 : (isMulti ? 1.0 : 3.5); 
+                const duration = isFastMode ? 0.5 : (isMulti ? 0.8 : 3.0); 
                 reels.style.transition = `transform ${duration}s cubic-bezier(0.1, 0, 0.1, 1)`;
                 reels.style.transform = `translateY(-${dummyCount * ITEM_HEIGHT}px)`;
 
                 await new Promise(r => setTimeout(r, duration * 1000));
 
-                // 3. [v6 Refinement] 결과 연출 (실시간 히스토리 누적)
                 updateRealtimeHistory(itemName, itemColor);
                 
-                const wait = isFastMode ? 300 : (isMulti ? 600 : 1500);
+                const wait = isFastMode ? 200 : (isMulti ? 400 : 1000);
                 await new Promise(r => setTimeout(r, wait));
             }
 
@@ -250,17 +227,14 @@
         }
 
         function updateRealtimeHistory(name, color) {
-            // 해당 이름의 아이템이 이미 있는지 확인 (Dataset 사용)
             const existing = Array.from(historyTrack.children).find(el => el.dataset.itemName === name);
             
             if (existing) {
                 const countSpan = existing.querySelector('.count');
                 const currentCount = parseInt(countSpan.innerText.replace('x', '')) || 1;
                 countSpan.innerText = `x${currentCount + 1}`;
-                
-                // 시각적 피드백
                 existing.style.transform = 'scale(1.1)';
-                setTimeout(() => existing.style.transform = 'scale(1)', 200);
+                setTimeout(() => existing.style.transform = 'scale(1)', 150);
             } else {
                 const div = document.createElement('div');
                 div.className = 'history-item';
@@ -270,20 +244,10 @@
                     <span class="count">x1</span>
                 `;
                 historyTrack.appendChild(div);
-                
-                // 애니메이션 효과
-                div.style.opacity = '0';
-                div.style.transform = 'translateY(10px)';
-                requestAnimationFrame(() => {
-                    div.style.transition = 'all 0.3s ease';
-                    div.style.opacity = '1';
-                    div.style.transform = 'translateY(0)';
-                });
             }
             
-            // 자동 스크롤 하단 유지
-            const bar = document.getElementById('history-bar');
-            bar.scrollTop = bar.scrollHeight;
+            // 실시간 스크롤 하단 유지
+            historyBar.scrollTop = historyBar.scrollHeight;
         }
 
         async function notifyComplete(spinId) {
