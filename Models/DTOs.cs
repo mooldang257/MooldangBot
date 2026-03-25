@@ -131,4 +131,7 @@ namespace MooldangAPI.Models
         [JsonPropertyName("requiredRole")]
         public string RequiredRole { get; set; } = "all";
     }
+
+    // 🎵 대기열 곡 정보 수정을 위한 DTO (.NET 10 record 활용)
+    public record SongUpdateRequest(string? Title, string? Artist);
 }

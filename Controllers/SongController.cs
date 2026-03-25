@@ -120,6 +120,42 @@ namespace MooldangAPI.Controllers
             return Results.Ok();
         }
 
+        /// <summary>
+        /// 대기열 내 특정 곡의 정보를 수정합니다. (PUT /api/song/{chzzkUid}/{id}/edit)
+        /// </summary>
+        [HttpPut("/api/song/{chzzkUid}/{id:int}/edit")]
+        public async Task<IActionResult> UpdateSongDetails(string chzzkUid, int id, [FromBody] SongUpdateRequest request)
+        {
+            // 1. 데이터 조회 (해당 스트리머의 대기열에 속한 곡인지 검증)
+            var songItem = await _db.SongQueues
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid == chzzkUid);
+
+            if (songItem == null)
+            {
+                return NotFound(new { message = "수정할 곡을 찾을 수 없습니다." });
+            }
+
+            // 2. 비즈니스 로직: 요청된 필드 업데이트
+            // SongBook과의 연동 없이 SongQueue 테이블의 데이터만 직접 수정합니다.
+            if (!string.IsNullOrWhiteSpace(request.Title)) songItem.Title = request.Title;
+            if (request.Artist != null) songItem.Artist = request.Artist; // 가수 정보는 null 허용이므로 빈 칸 공백 체크보다 직접 대입 (또는 null 체크)
+            
+            try
+            {
+                await _db.SaveChangesAsync();
+                
+                // 3. 실시간 동기화: 백엔드 주도로 오버레이에 즉시 알림 전송
+                await NotifyOverlayAsync(chzzkUid);
+
+                return Ok(new { success = true, message = "곡 정보가 성공적으로 수정되었습니다.", data = songItem });
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new { message = "데이터베이스 저장 중 오류가 발생했습니다.", details = ex.Message });
+            }
+        }
+
         private async Task NotifyOverlayAsync(string chzzkUid)
         {
             string groupName = chzzkUid.ToLower();
