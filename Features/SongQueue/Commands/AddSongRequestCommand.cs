@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using MooldangAPI.Hubs;
+using System.Text.Json.Serialization;
 
 namespace MooldangAPI.Features.SongQueue.Commands;
 

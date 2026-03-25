@@ -6,7 +6,6 @@ using MooldangAPI.Models;
 using MooldangAPI.Features.Chat.Events;
 using System.Net.Http.Headers;
 using MooldangAPI.Services;
-using MooldangAPI.ApiClients;
 
 namespace MooldangAPI.Features.Viewers.Handlers;
 
