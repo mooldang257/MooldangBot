@@ -14,6 +14,9 @@ window.HarmonyProxy = {
             get: function(target, prop) {
                 if (prop === '__isHarmonyProxy') return true;
                 
+                // 💡 [안정성] Symbol이나 문자열이 아닌 속성 접근 시 원본 그대로 반환 (SignalR 내부 동작 대응)
+                if (typeof prop !== 'string') return target[prop];
+
                 let value;
                 // 1. 실제 존재하는 프로퍼티면 즉시 반환
                 if (prop in target) {
