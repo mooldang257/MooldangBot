@@ -239,9 +239,18 @@ using (var scope = app.Services.CreateScope())
     ");
 
     // 🏗️ [DB 스키마 유지보수] 기존 rouletteitems 테이블에 IsMission 컬럼 추가 (v5 대응)
-    db.Database.ExecuteSqlRaw(@"
-        ALTER TABLE `rouletteitems` ADD COLUMN IF NOT EXISTS `IsMission` TINYINT(1) NOT NULL DEFAULT 0;
-    ");
+    try
+    {
+        // MySQL/MariaDB 버전에 따라 IF NOT EXISTS 지원 여부가 다를 수 있으므로 try-catch로 안전하게 처리
+        db.Database.ExecuteSqlRaw(@"
+            ALTER TABLE `rouletteitems` ADD COLUMN `IsMission` TINYINT(1) NOT NULL DEFAULT 0;
+        ");
+    }
+    catch (Exception ex)
+    {
+        // 이미 컬럼이 존재하는 경우(Duplicate column error) 무시하고 진행
+        Console.WriteLine($"[DB 체크] IsMission 컬럼 확인 중: {ex.Message}");
+    }
 }
 
 app.Run();
