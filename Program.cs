@@ -237,6 +237,11 @@ using (var scope = app.Services.CreateScope())
             INDEX `IX_roulettelogs_ChzzkUid_Status_Id` (`ChzzkUid` ASC, `Status` ASC, `Id` DESC)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // 🏗️ [DB 스키마 유지보수] 기존 rouletteitems 테이블에 IsMission 컬럼 추가 (v5 대응)
+    db.Database.ExecuteSqlRaw(@"
+        ALTER TABLE `rouletteitems` ADD COLUMN IF NOT EXISTS `IsMission` TINYINT(1) NOT NULL DEFAULT 0;
+    ");
 }
 
 app.Run();
