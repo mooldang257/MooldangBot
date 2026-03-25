@@ -118,6 +118,7 @@ namespace MooldangAPI.Services
                     SpinId,
                     rouletteId,
                     roulette.Name,
+                    viewerNickname,
                     results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
                     summary
                 );

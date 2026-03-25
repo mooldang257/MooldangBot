@@ -158,5 +158,5 @@ namespace MooldangAPI.Models
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
     public record RouletteSummaryDto(string ItemName, int Count, bool IsMission, string Color);
-    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
+    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
 }

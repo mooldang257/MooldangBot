@@ -218,7 +218,11 @@
                 const currentIdx = i + 1;
 
                 // 타이틀 업데이트: {이름}님의 {룰렛명} 룰렛 {차수}/{총회수}
-                titleEl.innerText = `${viewerNickname}님의 ${rouletteName} 룰렛 ${currentIdx}/${totalCount}`;
+                let displayRouletteName = rouletteName;
+                if (!displayRouletteName.endsWith("룰렛")) {
+                    displayRouletteName += " 룰렛";
+                }
+                titleEl.innerText = `${viewerNickname}님의 ${displayRouletteName} ${currentIdx}/${totalCount}`;
 
                 const dummyCount = isFastMode ? 20 : (isMulti ? 30 : 50); 
                 reels.innerHTML = '';
