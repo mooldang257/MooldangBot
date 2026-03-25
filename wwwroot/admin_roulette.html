@@ -175,7 +175,7 @@
             </div>
         </div>
     </div>
-
+    <script src="/js/overlay_utils.js"></script>
     <script>
         const urlParams = new URL(window.location.href).searchParams;
         const chzzkUid = urlParams.get('uid') || '';
@@ -206,7 +206,9 @@
             try {
                 const res = await fetch(`/api/admin/roulette/${chzzkUid}?LastId=${lastId}&PageSize=10`, { credentials: 'same-origin' });
                 if (res.ok) {
-                    const result = await res.json();
+                    let result = await res.json();
+                    result = createSafeData(result);
+                    
                     roulettes = roulettes.concat(result.Data);
                     renderList(result.Data, append);
 
@@ -284,7 +286,8 @@
             const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
             const res = await fetch(`/api/admin/roulette/${chzzkUid}/${Id}`, { credentials: 'same-origin' });
             if (!res.ok) return;
-            const R = await res.json();
+            let R = await res.json();
+            R = createSafeData(R);
 
             editingId = Id;
             document.getElementById('modalTitle').innerText = '룰렛 수정';

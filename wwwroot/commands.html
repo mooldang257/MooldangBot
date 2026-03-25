@@ -89,7 +89,7 @@
             </table>
         </div>
     </div>
-
+    <script src="/js/overlay_utils.js"></script>
     <script>
         const pathParts = window.location.pathname.split('/').filter(p => p);
         const chzzkUid = decodeURIComponent(pathParts[pathParts.length - 1] || '').trim();
@@ -105,7 +105,8 @@
                 const res = await fetch(`/api/commands/list/${chzzkUid}`);
                 if (!res.ok) throw new Error("HTTP error " + res.status);
                 
-                const list = await res.json();
+                let list = await res.json();
+                list = createSafeData(list);
                 console.log("Commands loaded:", list);
                 const body = document.getElementById('commandTableBody');
                 body.innerHTML = '';
