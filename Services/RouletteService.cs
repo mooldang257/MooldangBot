@@ -189,9 +189,10 @@ namespace MooldangAPI.Services
             {
                 string nickPrefix = string.IsNullOrEmpty(Context.ViewerNickname) ? "관리자테스트" : Context.ViewerNickname;
                 var grouped = Context.WinningItems.GroupBy(name => name)
-                                     .Select(g => g.Count() > 1 ? $"{g.Key}x{g.Count()}" : g.Key);
+                                     .Select(g => g.Count() > 1 ? $"[{g.Key}] x{g.Count()}" : $"[{g.Key}]");
                 string resultStr = string.Join(", ", grouped);
                 string message = $"{nickPrefix}({Context.RouletteName})> {resultStr}";
+
 
                 await SendChatMessageAsync(Context.ChzzkUid, message);
             }
