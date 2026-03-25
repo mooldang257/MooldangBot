@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>룰렛 관리 - 물댕봇</title>
@@ -13,40 +14,48 @@
             border-radius: 12px;
             position: relative;
         }
+
         .item-row {
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
             align-items: center;
         }
+
         .item-row input {
             margin-bottom: 0;
         }
+
         .prob-badge {
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
         }
+
         .total-prob {
             text-align: right;
             font-weight: bold;
             margin-top: 10px;
             color: var(--primary);
         }
+
         .test-btns {
             display: flex;
             gap: 5px;
         }
+
         .last-update {
             font-size: 11px;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255, 255, 255, 0.4);
             margin-top: 5px;
         }
+
         .load-more-container {
             text-align: center;
             margin: 20px 0;
         }
+
         /* 스위치 스타일 */
         .switch {
             position: relative;
@@ -54,45 +63,80 @@
             width: 34px;
             height: 20px;
         }
-        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
         .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333; transition: .4s; border-radius: 20px;
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
         }
+
         .slider:before {
-            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
-            background-color: white; transition: .4s; border-radius: 50%;
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(14px); }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(14px);
+        }
     </style>
 </head>
+
 <body>
     <div class="main-container">
-        <a id="btn-back-home" href="/main.html" class="btn btn-outline" style="margin-bottom: 20px; display: inline-flex; text-decoration: none;">← 대시보드로 돌아가기</a>
+        <a id="btn-back-home" href="/main.html" class="btn btn-outline"
+            style="margin-bottom: 20px; display: inline-flex; text-decoration: none;">← 대시보드로 돌아가기</a>
         <div class="panel">
             <h2 style="display:flex; justify-content:space-between; align-items:center;">
                 🎡 룰렛 시스템 관리
                 <button class="btn btn-primary" onclick="showCreateForm()">➕ 새 룰렛 만들기</button>
             </h2>
 
-            <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,255,163,0.1); border: 1px solid var(--primary); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+            <div
+                style="margin-bottom: 20px; padding: 15px; background: rgba(0,255,163,0.1); border: 1px solid var(--primary); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
                 <span style="white-space: nowrap; font-weight: bold; color: var(--primary);">오버레이 URL:</span>
-                <input type="text" id="overlayUrl" readonly style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px;" value="">
-                <button class="btn btn-primary" onclick="copyOverlayUrl()" style="white-space: nowrap; padding: 8px 15px;">📋 URL 복사</button>
+                <input type="text" id="overlayUrl" readonly
+                    style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px;"
+                    value="">
+                <button class="btn btn-primary" onclick="copyOverlayUrl()"
+                    style="white-space: nowrap; padding: 8px 15px;">📋 URL 복사</button>
             </div>
 
             <div id="rouletteList">
                 <!-- JS Rendered -->
             </div>
             <div class="load-more-container" id="loadMoreArea">
-                <button class="btn btn-outline" id="btnLoadMore" style="display:none;" onclick="loadRoulettes(true)">더 보기 🔽</button>
+                <button class="btn btn-outline" id="btnLoadMore" style="display:none;" onclick="loadRoulettes(true)">더
+                    보기 🔽</button>
             </div>
         </div>
     </div>
 
     <!-- 룰렛 편집 모달 -->
-    <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; padding: 40px 0;">
+    <div id="editModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; padding: 40px 0;">
         <div class="panel" style="max-width:800px; margin:auto; background: #1a1a1a;">
             <h2 id="modalTitle">룰렛 설정</h2>
             <div class="config-grid">
@@ -100,7 +144,8 @@
                     <span class="sub-title">룰렛 이름</span>
                     <input type="text" id="rName" placeholder="예: 치즈 룰렛">
                     <span class="sub-title">유형</span>
-                    <select id="rType" style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; margin-bottom:15px;">
+                    <select id="rType"
+                        style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; margin-bottom:15px;">
                         <option value="0" style="background:#2a2a2a; color:white;">치즈 (후원금)</option>
                         <option value="1" style="background:#2a2a2a; color:white;">채팅 포인트</option>
                     </select>
@@ -119,7 +164,8 @@
                 <div>
                     <span class="sub-title">아이템 목록 (확률/가중치 설정)</span>
                     <div id="itemListContainer"></div>
-                    <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addItemRow()">➕ 아이템 추가</button>
+                    <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addItemRow()">➕ 아이템
+                        추가</button>
                     <div class="total-prob" id="totalProbDisplay">총 가중치: 0</div>
                 </div>
             </div>
@@ -132,7 +178,7 @@
 
     <script>
         const urlParams = new URL(window.location.href).searchParams;
-        const chzzkUid = urlParams.get('uid') || ''; 
+        const chzzkUid = urlParams.get('uid') || '';
 
         // 💡 [추가] 대시보드로 돌아가기 링크에 UID 파라미터 유지
         document.addEventListener('DOMContentLoaded', () => {
@@ -163,7 +209,7 @@
                     const result = await res.json();
                     roulettes = roulettes.concat(result.Data);
                     renderList(result.Data, append);
-                    
+
                     if (result.NextLastId) {
                         lastId = result.NextLastId;
                         document.getElementById('btnLoadMore').style.display = 'inline-block';
@@ -179,7 +225,7 @@
 
         function renderList(newData, append) {
             const container = document.getElementById('rouletteList');
-            
+
             if (!append && newData.length === 0) {
                 container.innerHTML = '<div style="padding:40px; text-align:center; color:rgba(255,255,255,0.3);">등록된 룰렛이 없습니다.</div>';
                 return;
@@ -239,7 +285,7 @@
             const res = await fetch(`/api/admin/roulette/${chzzkUid}/${Id}`, { credentials: 'same-origin' });
             if (!res.ok) return;
             const R = await res.json();
-            
+
             editingId = Id;
             document.getElementById('modalTitle').innerText = '룰렛 수정';
             document.getElementById('rName').value = R.Name;
@@ -247,11 +293,11 @@
             document.getElementById('rCommand').value = R.Command;
             document.getElementById('rCost').value = R.CostPerSpin;
             document.getElementById('rIsActive').checked = R.IsActive;
-            
+
             const itemContainer = document.getElementById('itemListContainer');
             itemContainer.innerHTML = '';
             R.Items.forEach(I => addItemRow(I));
-            
+
             updateTotalProb();
             document.getElementById('editModal').style.display = 'block';
         }
@@ -332,23 +378,23 @@
         }
 
         function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-        async function deleteRoulette(id) { 
+        async function deleteRoulette(id) {
             const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
-            if(confirm("삭제하시겠습니까?")) { 
-                await fetch(`/api/admin/roulette/${chzzkUid}/${id}`, {method:'DELETE', credentials:'same-origin'}); 
-                loadRoulettes(); 
-            } 
+            if (confirm("삭제하시겠습니까?")) {
+                await fetch(`/api/admin/roulette/${chzzkUid}/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+                loadRoulettes();
+            }
         }
-        async function runTestSpin(id, is10x) { 
+        async function runTestSpin(id, is10x) {
             const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
-            await fetch(`/api/admin/roulette/${chzzkUid}/${id}/test?is10x=${is10x}`, {method:'POST', credentials:'same-origin'}); 
+            await fetch(`/api/admin/roulette/${chzzkUid}/${id}/test?is10x=${is10x}`, { method: 'POST', credentials: 'same-origin' });
         }
         function updateTotalProb() {
             let total = 0;
             document.querySelectorAll('.item-prob').forEach(input => total += parseFloat(input.value) || 0);
             document.getElementById('totalProbDisplay').innerText = `총 가중치 합: ${total.toFixed(2)}`;
         }
-        function copyOverlayUrl() { 
+        function copyOverlayUrl() {
             const urlInput = document.getElementById('overlayUrl');
             urlInput.select();
             document.execCommand('copy');
@@ -358,4 +404,5 @@
         window.onload = loadRoulettes;
     </script>
 </body>
+
 </html>

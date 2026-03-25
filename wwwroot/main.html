@@ -325,6 +325,13 @@
                 <div class="login-overlay">로그인이 필요합니다</div>
             </a>
 
+            <a href="#" class="menu-card" id="btn-songbook">
+                <div class="menu-icon">📚</div>
+                <h2 class="menu-title">노래책 관리</h2>
+                <p class="menu-desc">내가 부를 수 있는 모든 곡들을 등록하고 관리합니다. 대량의 곡 조회를 지원합니다.</p>
+                <div class="login-overlay">로그인이 필요합니다</div>
+            </a>
+
             <a href="#" class="menu-card" id="btn-cmd">
                 <div class="menu-icon">⚡</div>
                 <h2 class="menu-title">명령어 관리</h2>
@@ -431,6 +438,8 @@
                         if (btnChatpoint) btnChatpoint.href = `/ChatPoint.html?uid=${effectiveUid}`;
                         const btnRoulette = document.getElementById('btn-roulette');
                         if (btnRoulette) btnRoulette.href = `/admin_roulette.html?uid=${effectiveUid}`;
+                        const btnSongbook = document.getElementById('btn-songbook');
+                        if (btnSongbook) btnSongbook.href = `/admin_songbook.html?uid=${effectiveUid}`;
                         const btnOverlay = document.getElementById('btn-overlay');
                         if (btnOverlay) btnOverlay.href = `/overlay_manager/${effectiveUid}`;
 

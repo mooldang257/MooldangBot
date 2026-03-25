@@ -1,8 +1,8 @@
-# MooldangBot (MooldangAPI) 시스템 상세 분석 보고서 v3
+# MooldangBot (MooldangAPI) 시스템 상세 분석 보고서 v4
 
-> 작성일: 2026-03-24  
+> 작성일: 2026-03-25  
 > 분석자: 물멍 (Senior Full-Stack AI Partner)  
-> 기반 문서: `md/Research3.md` + `md/Roulette/Plan1~6` 통합 분석
+> 기반 문서: `md/Research3.md` + `md/SongQueueResearch.md` 통합 분석
 
 ---
 
@@ -11,78 +11,54 @@
 **MooldangBot**은 치지직(CHZZK) 스트리밍 플랫폼과 연동되는 **멀티테넌트 스트리밍 봇 & 대시보드 API 서버**입니다.  
 C# .NET 10, EF Core (MariaDB), MediatR, SignalR을 핵심 기술 스택으로 사용하며, **이벤트 드리븐 아키텍처(EDA)** 위에서 동작합니다.
 
-### 최신 업데이트 (v3)
-- **룰렛 시스템 고도화**: 애니메이션 지연 알림(SpinId), 인풋 페이징(Seek Pagination), PascalCase 전역 통일 완료.
+### 최신 업데이트 (v4)
+- **노래책(Songbook) 설계**: 대량의 곡 목록 관리를 위한 신규 엔터티 및 **인풋 페이징(Seek Pagination)** 도입 확정.
+- **오버레이 안정화**: `undefined` 표시 버그의 원인(PascalCase 필드명 불일치) 규명 및 전역 규격 통일 계획 수립.
+- **룰렛 시스템 고도화**: 애니메이션 지연 알림(SpinId) 및 PascalCase 전역 통일 완료.
 
 ---
 
 ## 2. 📁 주요 폴더 구조 및 핵심 파일
 
-- `Services/RouletteService.cs`: 가중치 기반 추첨 및 **SpinId 생성/캐싱** 로직 포함.
-- `Controllers/RouletteController.cs`: 룰렛 CRUD 및 **애니메이션 완료 콜백([AllowAnonymous])** 처리.
-- `wwwroot/roulette_overlay.html`: SignalR 수신 및 **애니메이션 종료 후 서버 콜백** 수행.
-- `Program.cs`: **JSON 및 SignalR의 PascalCase 직렬화** 강제 설정.
+- `Controllers/SongBookController.cs`: **[NEW]** 노래책 CRUD 및 인풋 페이징 처리.
+- `Models/SongBook.cs`: **[NEW]** 스트리머 전체 레퍼토리 관리 엔터티.
+- `wwwroot/songlist_overlay.html`: PascalCase 동기화 적용으로 **UI 버그 해결 예정**.
+- `md/SongQueueResearch.md`: **[NEW]** 신청곡 및 노래책 시스템 상세 설계 도큐먼트.
 
 ---
 
-## 3. 핵심 아키텍처: 룰렛 지연 알림 (Post-Animation Chat)
+## 3. 핵심 아키텍처: 인풋 페이징 (Seek Pagination)
 
-룰렛 결과가 오버레이 애니메이션 종료 시점에 맞춰 채팅창에 출력되도록 하는 **원자적 콜백 구조**입니다.
+대규모 데이터를 조회할 때 `OFFSET` 방식의 성능 한계를 극복하기 위해 `LastId` 기반의 페이징 아키텍처를 적용합니다.
 
 ```mermaid
 sequenceDiagram
-    participant Viewer as 시청자 (채팅/치즈)
-    participant Server as MooldangAPI (Server)
-    participant Cache as IMemoryCache
-    participant Overlay as OBS 오버레이 (SignalR)
-    participant Chzzk as 치지직 API
+    participant Frontend as 관리자 대시보드
+    participant API as SongBookController
+    participant DB as MariaDB (Index: Id DESC)
 
-    Viewer->>Server: 룰렛 명령어/후원 발생
-    Server->>Server: 가중치 기반 추첨 실행
-    Server->>Server: SpinId (GUID) 생성
-    Server->>Cache: SpinId: {결과데이터} 저장 (TTL 1분)
-    Server->>Overlay: ReceiveRouletteResult (SpinId, 결과) 전송
-    Note over Overlay: 룰렛 애니메이션 시작 (약 5~10초)
-    Overlay->>Overlay: 애니메이션 종료 대기
-    Overlay->>Server: POST /api/admin/roulette/complete {SpinId}
-    Server->>Cache: SpinId로 결과 데이터 조회
-    Server->>Chzzk: 실제 당첨 결과 채팅 전송 (SendChatMessageAsync)
-    Server->>Cache: SpinId 데이터 삭제 (중복 방지)
+    Frontend->>API: GET /api/songbook?lastId=0&pageSize=20
+    API->>DB: WHERE Id < 0 (All) ORDER BY Id DESC LIMIT 21
+    DB-->>API: 21개 데이터 반환
+    API->>Frontend: Data(20개), NextLastId(20번째 ID) 반환
+    Note over Frontend: 사용자가 스크롤/더보기 클릭
+    Frontend->>API: GET /api/songbook?lastId={NextLastId}&pageSize=20
+    API->>DB: WHERE Id < {NextLastId} ORDER BY Id DESC LIMIT 21
 ```
 
 ---
 
-## 4. 기술적 의사결정 및 최적화
-
-### 4.1. 성능 최적화: 인풋 페이징 (Seek Pagination)
-- **문제**: `OFFSET` 방식은 페이지가 뒤로 갈수록 DB 부하가 급증함.
-- **해결**: `LastId`를 기준으로 `WHERE Id < LastId` 쿼리를 수행하여 일정한 응답 속도 보장.
-- **인덱스**: `(ChzzkUid, Id DESC)` 복합 인덱스를 활용하여 최적의 성능 도출.
-
-### 4.2. 데이터 정합성: PascalCase 단일화
-- **설정**: `Program.cs`에서 SignalR과 일반 API의 JSON 정책을 `null`로 설정하여 C# 프로퍼티명 그대로(PascalCase) 사용.
-- **효과**: JS에서 `data.Results`, `data.SpinId`와 같이 직관적인 접근 가능, 대소문자 실수로 인한 데이터 누락 원천 차단.
-
-### 4.3. 운영 안정성: [AllowAnonymous] 콜백
-- **배경**: OBS 브라우저 소스는 관리자 세션 쿠키를 공유하지 않음.
-- **해결**: 완료 콜백 엔드포인트에 `[AllowAnonymous]`를 적용하되, 추측 불가능한 `SpinId`를 토큰으로 활용하여 보안과 편의성 동시 확보.
+## 4. 데이터 정합성 강화 계획
+- **PascalCase 통일**: 백엔드 `JsonOptions` 설정에 맞춰 프론트엔드 속성 참조를 `Title`, `Artist`, `Status` 등으로 즉시 일원화.
+- **오버레이 렌더링**: `songlist_overlay.html`의 렌더링 루프에서 `undefined` 방지 처리(`item.Title || "제목 없음"`) 추가.
 
 ---
 
-## 5. 데이터 모델 (Roulette 관련)
+## 5. 향후 과제 (Next Steps)
 
-| 엔터티 | 주요 필드 | 설명 |
-|--------|-----------|------|
-| **Roulette** | `IsActive`, `Type`, `CostPerSpin` | 룰렛의 기본 상태 및 활성 여부 |
-| **RouletteItem** | `IsActive`, `Probability`, `Probability10x` | 항목별 활성 제어 및 확률 설정 |
-
----
-
-## 6. 향후 과제 (Next Steps)
-
-1. **기타 오버레이 전환**: 송리스트, 채팅 오버레이 등의 데이터 규격을 PascalCase로 점진적 전환.
-2. **리팩토링**: `ChzzkChannelWorker`의 비대해진 로직 분리 및 하드코딩된 시스템 UID 관리화.
-3. **OBS 연동 확장**: `ObsSceneEventHandler`를 통한 실제 장면 전환 기능 구현.
+1. **노래책 구현**: `SongBook` 테이블 생성 및 인풋 페이징 API/UI 실제 구축.
+2. **검색 기능**: 노래책 내 제목/가수 통합 검색 인덱스 적용.
+3. **오마카세 연동**: 오마카세 메뉴와 노래책의 곡 정보를 매핑하여 자동 신청 기능 강화.
 
 ---
-*분석 기준: 2026-03-24, 물멍(AI) v3 작성*
+*분석 기준: 2026-03-25, 물멍(AI) v4 작성*

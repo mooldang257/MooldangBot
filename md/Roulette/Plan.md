@@ -1,193 +1,67 @@
-# 🎡 룰렛 항목별 활성화 및 인풋 페이징 구현 계획서 (Detailed Plan)
+# 🎵 노래책 및 송리스트 오버레이 개선 기술 설계서
 
-이 문서는 스트리머가 룰렛 항목을 개별적으로 관리하고, 대량의 데이터 조회 시 성능을 보장하기 위한 기술적 설계안입니다.
-
----
-
-## 1. 목표 (Goal)
-- [x] **항목별 제어**: 룰렛을 수정하지 않고도 특정 항목을 일시적으로 추첨에서 제외할 수 있는 기능 제공.
-- [x] **성능 최적화**: `OFFSET` 방식의 페이징 대신 `lastId`를 활용한 **인풋 페이징(Seek Pagination)**을 적용하여 조회 성능 향상.
-- [x] **안정성 및 UX 강화**: 비동기 예외 처리 최적화, 추첨 엔진 엣지 케이스 처리, 페이징 중복 요청 방지.
+본 문서는 노래책(Songbook) 시스템의 인풋 페이징 구현과 오버레이 버그(`undefined` 표시) 수정을 위한 상세 기술 설계안입니다.
 
 ---
 
-## 2. 주요 수정 사항
+## 1. 오버레이 버그 분석 및 해결 (Issue Fix)
 
-### 2.1. 데이터베이스 모델 및 성능 최적화
-`RouletteItem` 엔터티에 활성 상태 필드를 추가하고, 조회 성능을 위한 복합 인덱스를 구성합니다.
-
-```csharp
-// Models/RouletteItem.cs
-public class RouletteItem
-{
-    // ... 기존 필드
-    public bool IsActive { get; set; } = true;
-}
-
-// Data/AppDbContext.cs (OnModelCreating)
-modelBuilder.Entity<Roulette>()
-    .HasIndex(r => new { r.ChzzkUid, r.Id });
-```
-
-### 2.2. 서비스 로직 수정 (추첨 엔진 & 비동기 예외 처리)
-비동기 작업의 안정성을 위해 `Fire and Forget` 방식을 지양하고 `await`와 `try-catch`를 적용합니다.
-
-```csharp
-// Services/RouletteService.cs
-public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string? viewerNickname = null)
-{
-    var roulette = await _db.Roulettes
-        .Include(r => r.Items)
-        .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid && r.IsActive);
-
-    if (roulette == null) return null;
-
-    var activeItems = roulette.Items.Where(i => i.IsActive).ToList();
-    if (!activeItems.Any())
-    {
-        // 🚨 UX 및 안정성 개선: await + try-catch 적용
-        _logger.LogWarning($"[Roulette] {rouletteId}번에 활성화된 항목이 없습니다.");
-        try 
-        {
-            await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "비활성화 안내 메시지 전송 중 오류 발생");
-        }
-        return null; 
-    }
-
-    var result = DrawItem(activeItems, is10x: false);
-    // ... 결과 전송 로직에도 await/try-catch 적용
-}
-
-private RouletteItem DrawItem(List<RouletteItem> activeItems, bool is10x)
-{
-    double totalWeight = activeItems.Sum(i => is10x ? i.Probability10x : i.Probability);
-    
-    if (totalWeight <= 0) 
-    {
-        _logger.LogError($"[Roulette] {activeItems.First().RouletteId}번 가중치 합 0 오류. 첫 번째 항목 강제 당첨.");
-        return activeItems.First();
-    }
-
-    double randomValue = Random.Shared.NextDouble() * totalWeight;
-    double cursor = 0;
-
-    foreach (var item in activeItems)
-    {
-        cursor += is10x ? item.Probability10x : item.Probability;
-        if (randomValue <= cursor) return item;
-    }
-
-    return activeItems.Last();
-}
-```
-
-### 2.3. 컨트롤러 API 확장 (N+1 조회를 통한 페이징 정교화)
-다음 페이지 존재 여부를 정확히 판단하기 위해 `pageSize + 1`개를 조회합니다.
-
-```csharp
-// DTO 정의
-public class RouletteSummaryDto
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public RouletteType Type { get; set; }
-    public string Command { get; set; }
-    public int CostPerSpin { get; set; }
-    public bool IsActive { get; set; }
-    public int ActiveItemCount { get; set; }
-    public DateTime LstUpdDt { get; set; } // 🕒 최종 수정일시 추가
-}
-
-public class PagedResponse<T>
-{
-    public List<T> Data { get; set; }
-    public int? NextLastId { get; set; }
-}
-
-// Controllers/RouletteController.cs
-
-[HttpGet]
-public async Task<IActionResult> GetRoulettes([FromQuery] int lastId = 0, [FromQuery] int pageSize = 10)
-{
-    var chzzkUid = GetChzzkUid();
-    if (chzzkUid == null) return Unauthorized();
-
-    // .NET 10: 최신순 정렬 및 효율적인 인풋 페이징
-    var rawData = await _db.Roulettes
-        .Where(r => r.ChzzkUid == chzzkUid && (lastId == 0 || r.Id < lastId))
-        .OrderByDescending(r => r.Id)
-        .Take(pageSize + 1)
-        .Select(r => new RouletteSummaryDto {
-            Id = r.Id,
-            Name = r.Name,
-            Type = r.Type,
-            Command = r.Command,
-            CostPerSpin = r.CostPerSpin,
-            IsActive = r.IsActive,
-            ActiveItemCount = r.Items.Count(i => i.IsActive),
-            LstUpdDt = r.UpdatedAt
-        })
-        .AsNoTracking()
-        .ToListAsync();
-
-    var hasNext = rawData.Count > pageSize;
-    
-    // .NET 10: 범위(Range) 및 인덱스(Index) 연산자 활용
-    var data = hasNext ? rawData[..pageSize] : rawData;
-    int? nextLastId = hasNext ? data[^1].Id : null;
-
-    return Ok(new PagedResponse<RouletteSummaryDto> { 
-        Data = data, 
-        NextLastId = nextLastId 
-    });
-}
-
-[HttpPatch("items/{itemId}/status")]
-public async Task<IActionResult> ToggleItemStatus(int itemId, [FromBody] bool isActive)
-{
-    var chzzkUid = GetChzzkUid();
-    
-    // 1. 항목 활성 상태 업데이트
-    var affectedRows = await _db.RouletteItems
-        .Where(i => i.Id == itemId && i.Roulette.ChzzkUid == chzzkUid)
-        .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsActive, isActive));
-
-    if (affectedRows > 0)
-    {
-        // 2. 🔗 연관 업데이트: 소속된 룰렛의 최종 수정 시간도 함께 갱신 (데이터 추적성 확보)
-        await _db.Roulettes
-            .Where(r => r.Items.Any(i => i.Id == itemId))
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.UpdatedAt, DateTime.UtcNow));
-            
-        return Ok();
-    }
-
-    return NotFound();
-}
-```
-
+### 1.1. 원인 분석
+- **현상**: `songlist_overlay.html`에서 곡 제목과 가수가 `undefined`로 출력됨.
+- **원인**: `Program.cs`에서 JSON 직렬화 정책이 `PropertyNamingPolicy = null`(PascalCase 유지)로 설정되어 있으나, 프론트엔드 JS에서는 `song.title`, `song.artist`와 같이 lowercase로 접근함.
+- **해결 방안**: 프론트엔드 코드를 `song.Title`, `song.Artist`로 수정하여 데이터 정합성을 확보함.
 
 ---
 
-## 3. 프론트엔드 연동 계획
+## 2. 노래책(Songbook) 인풋 페이징 설계
 
-### 3.1. 룰렛 목록 (Input Paging)
-- `admin_roulette.html`에서 `response.nextLastId`가 `null`이면 "더 보기" 버튼을 즉시 숨깁니다.
-- `pageSize + 1` 서버 로직 덕분에 불필요한 빈 페이지 요청이 발생하지 않습니다.
+### 2.1. 인풋 페이징 (Seek Pagination) 도입
+`OFFSET` 방식의 페이징(Page 1, 2...)은 데이터가 많아질수록 성능이 비선형적으로 저하됩니다. 이를 해결하기 위해 `LastId`를 활용한 정렬 및 조회를 수행합니다.
 
-### 3.2. 항목 토글 UI
-- 항목 리스트에 스위치 UI를 배치하고, `onchange` 이벤트 발생 시 `PATCH` API를 비동기로 호출합니다.
+#### API 명세 (Draft)
+- **Method**: `GET /api/songbook/{chzzkUid}`
+- **Query Params**:
+  - `LastId`: 마지막으로 조회된 곡의 ID (기본값 0)
+  - `PageSize`: 한 페이지당 로드할 개수 (기본값 20)
+  - `Search`: 제목 또는 가수 검색어 (선택 사항)
+
+#### SQL 및 LINQ 최적화
+```csharp
+var query = _db.SongBooks
+    .Where(s => s.ChzzkUid == chzzkUid && (lastId == 0 || s.Id < lastId))
+    .OrderByDescending(s => s.Id)
+    .Take(pageSize + 1);
+```
+
+### 2.2. 데이터베이스 스키마
+`SongBook` 테이블은 스트리머의 전체 레퍼토리(노래책)를 관리합니다.
+
+| 필드명 | 데이터 타입 | 제약 조건 | 설명 |
+|---|---|---|---|
+| **Id** | int | PK, AI | 고유 식별자 |
+| **ChzzkUid** | string(50) | Indexed | 스트리머 UID |
+| **Title** | string(200) | Required | 곡 제목 |
+| **Artist** | string(100) | - | 가수 이름 |
+| **IsActive** | bool | Default(true) | 신청 가능 여부 |
+| **UsageCount** | int | Default(0) | 지금까지 신청된 횟수 |
+
+---
+
+## 3. 프론트엔드 구현 전략
+
+### 3.1. 관리자 UI (`admin_songbook.html`)
+- `admin_roulette.html`의 인풋 페이징 UI 패턴을 재사용합니다.
+- 사용자가 하단으로 스크롤하거나 "더 보기" 버튼을 누르면 `LastId`를 전달하여 다음 데이터를 fetch합니다.
+
+### 3.2. 오버레이 데이터 연동
+- 오버레이 렌더링 시 전역 JSON 명명 정책(PascalCase)을 철저히 준수하도록 수정합니다.
 
 ---
 
 ## 4. 기대 효과
-- **데이터 일관성**: 개별 항목 변경 시에도 상위 룰렛의 수정일시가 갱신되어 정확한 관리 이력 제공.
-- **성능 및 확장성**: 복합 인덱스, DTO 프로젝션, `ExecuteUpdate`를 통한 최상의 응답 속도.
-- **운영 안정성**: 확률 설정 오류나 항목 부재 시 명확한 로그와 알림으로 장애 대응 시간 단축.
+- **성능 보장**: 수천 곡의 노래책 데이터도 일정한 응답 속도로 조회 가능.
+- **버그 근절**: 데이터 필드명 불일치로 인한 UI 오류 완전 해결.
+- **확장성**: 향후 룰렛 시스템과의 통합(노래책에서 룰렛 항목 자동 생성 등) 기반 마련.
 
 ---
-*작성일: 2026-03-24 (5차 피드백 반영), 물멍(AI) 작성*
+*작성일: 2026-03-25, Senior Full-Stack AI Partner 물멍 작성*

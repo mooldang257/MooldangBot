@@ -28,6 +28,7 @@ namespace MooldangAPI.Data
         public DbSet<OverlayPreset> OverlayPresets { get; set; }
         public DbSet<SharedComponent> SharedComponents { get; set; }
         public DbSet<StreamerManager> StreamerManagers { get; set; }
+        public DbSet<SongBook> SongBooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,6 +70,9 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<StreamerManager>()
                 .HasIndex(m => m.ManagerChzzkUid);
 
+            modelBuilder.Entity<SongBook>()
+                .HasIndex(s => new { s.ChzzkUid, s.Id }).IsDescending(false, true);
+
             // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
             modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
             modelBuilder.Entity<SongQueue>().ToTable("songqueues");
@@ -86,6 +90,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<OverlayPreset>().ToTable("overlaypresets");
             modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
             modelBuilder.Entity<StreamerManager>().ToTable("streamermanagers");
+            modelBuilder.Entity<SongBook>().ToTable("songbooks");
 
             // 🔐 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 자동 적용
             // 스트리머가 로그인된 경우, 본인의 ChzzkUid를 가진 데이터만 조회되도록 강제합니다.
@@ -101,6 +106,7 @@ namespace MooldangAPI.Data
             modelBuilder.Entity<OverlayPreset>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
             modelBuilder.Entity<SharedComponent>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
             modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+            modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
 
             // 필드명이 다른 경우 예외 처리
             modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerChzzkUid == _userSession.ChzzkUid);

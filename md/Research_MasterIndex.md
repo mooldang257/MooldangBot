@@ -5,7 +5,7 @@
 > 
 > * **채팅 포인트 & 출석 관련:** `md/ChatPointResearch.md` 참조
 > * **오마카세 및 커스텀 명령어 관련:** (예정) `md/CommandResearch.md` 참조
-> * **신청곡 큐 (SongQueue) 관련:** (예정) `md/SongQueueResearch.md` 참조
+> * **신청곡 큐 (SongQueue) 및 노래책 관련:** `md/SongQueueResearch.md` 참조
 
 ---
 

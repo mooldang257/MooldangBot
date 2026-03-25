@@ -306,7 +306,7 @@
                 const limit = parseInt(ds.Pending.limit) || 5;
                 let html = `<div class="list-title">${st.labels.upNext || "⏳ UP NEXT"}</div>`;
                 st.pendingSongs.slice(0, limit).forEach((song, index) => {
-                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.title}</span><span class="item-artist">${song.artist}</span></div>`;
+                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.Title}</span><span class="item-artist">${song.Artist || ""}</span></div>`;
                 });
                 if (st.pendingSongs.length > limit) html += `<div style="text-align:center; font-size:11px; opacity:0.6; margin-top:5px;">...외 ${st.pendingSongs.length - limit}곡 대기 중</div>`;
                 pending.innerHTML = html;
