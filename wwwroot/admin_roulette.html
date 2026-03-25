@@ -219,9 +219,14 @@
                         isEnd = true;
                         document.getElementById('btnLoadMore').style.display = 'none';
                     }
+                } else {
+                    const errorMsg = res.status === 401 ? "로그인이 필요하거나 권한이 없습니다." : 
+                                   res.status === 403 ? "접근 권한이 없습니다." : "데이터 로딩 실패 (Status: " + res.status + ")";
+                    document.getElementById('rouletteList').innerHTML = `<div style="padding:40px; text-align:center; color:#ff4757;">⚠️ ${errorMsg}</div>`;
                 }
             } catch (err) {
                 console.error("데이터 로딩 실패:", err);
+                document.getElementById('rouletteList').innerHTML = `<div style="padding:40px; text-align:center; color:#ff4757;">⚠️ 서버 통신 오류가 발생했습니다.</div>`;
             }
         }
 
