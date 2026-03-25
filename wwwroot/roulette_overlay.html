@@ -240,7 +240,7 @@
                 const res = await fetch('/api/admin/roulette/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ SpinId: SpinId })
+                    body: JSON.stringify({ spinId: SpinId })
                 });
                 if (!res.ok) {
                     // 상세 에러 로그 출력 (401, 404, 500 등 구분)
