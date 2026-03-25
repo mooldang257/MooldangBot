@@ -36,7 +36,7 @@ namespace MooldangAPI.Controllers
             var omakases = await _db.StreamerOmakases
                 .IgnoreQueryFilters() 
                 .Where(o => o.ChzzkUid == chzzkUid)
-                .ToListAsync(); // 💡 [PascalCase 보장] 익명 객체 대신 전체 모델 반환
+                .ToListAsync();
 
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
@@ -50,7 +50,22 @@ namespace MooldangAPI.Controllers
                 .Select(s => s.KeyValue)
                 .FirstOrDefaultAsync() ?? "";
 
-            return Ok(new { memo, omakases, songs });
+            var omakaseDtos = omakases.Select(o => new OmakaseDto { 
+                Id = o.Id, Name = o.Name, Count = o.Count, Icon = o.Icon 
+            }).ToList();
+
+            var songDtos = songs.Select(s => new SongQueueDto { 
+                Id = s.Id, Title = s.Title, Artist = s.Artist ?? "", Status = s.Status, SortOrder = s.SortOrder 
+            }).ToList();
+
+            var result = new SonglistDataDto
+            {
+                Memo = memo,
+                Omakases = omakaseDtos,
+                Songs = songDtos
+            };
+
+            return Ok(result);
         }
 
         [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]

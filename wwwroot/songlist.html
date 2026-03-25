@@ -144,10 +144,27 @@
             const res = await fetch(`/api/songlist/data/${chzzkUid}`);
             if (res.ok) {
                 const data = await res.json();
-                console.log("[DEBUG] Dashboard Data:", data); // 🧪 디버깅용 로그 추가
-                document.getElementById('memoInput').value = data.memo || data.Memo || "";
-                omakases = data.omakases || data.Omakases || [];
-                songs = data.songs || data.Songs || [];
+                console.log("[DEBUG] Dashboard Raw Data:", data); 
+                
+                // DTO 규격(PascalCase)을 최우선으로 하되 기존 하위 호환성 유지
+                omakases = data.Omakases || data.omakases || [];
+                songs = data.Songs || data.songs || [];
+                document.getElementById('memoInput').value = data.Memo || data.memo || "";
+
+                // 내부 데이터 키 정규화 (모든 아이템이 PascalCase를 가지도록 보장)
+                omakases.forEach(o => {
+                    if (o.Name === undefined && o.name !== undefined) o.Name = o.name;
+                    if (o.Count === undefined && o.count !== undefined) o.Count = o.count;
+                    if (o.Id === undefined && o.id !== undefined) o.Id = o.id;
+                    if (o.Icon === undefined && o.icon !== undefined) o.Icon = o.icon;
+                });
+                songs.forEach(s => {
+                    if (s.Title === undefined && s.title !== undefined) s.Title = s.title;
+                    if (s.Artist === undefined && s.artist !== undefined) s.Artist = s.artist;
+                    if (s.Id === undefined && s.id !== undefined) s.Id = s.id;
+                    if (s.Status === undefined && s.status !== undefined) s.Status = s.status;
+                });
+
                 renderAll();
                 renderOmakasesDash();
             }
