@@ -282,6 +282,57 @@ namespace MooldangAPI.Controllers
             return NoContent();
         }
 
+        [HttpGet("{chzzkUid}/history")]
+        public async Task<IActionResult> GetHistory(string chzzkUid, [FromQuery] RouletteLogStatus? status = null, [FromQuery] long lastId = 0, [FromQuery] int pageSize = 20)
+        {
+            var query = _db.RouletteLogs
+                .IgnoreQueryFilters()
+                .Where(l => l.ChzzkUid == chzzkUid);
+
+            if (status.HasValue)
+            {
+                query = query.Where(l => l.Status == status.Value);
+            }
+
+            if (lastId > 0)
+            {
+                query = query.Where(l => l.Id < lastId);
+            }
+
+            var logs = await query
+                .OrderByDescending(l => l.Id)
+                .Take(pageSize + 1)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var hasNext = logs.Count > pageSize;
+            var outputData = hasNext ? logs[..pageSize] : logs;
+            long? nextLastId = hasNext ? outputData[^1].Id : null;
+
+            return Ok(new
+            {
+                Data = outputData,
+                NextLastId = nextLastId
+            });
+        }
+
+        [HttpPut("history/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(long id, [FromBody] RouletteLogStatus status)
+        {
+            var log = await _db.RouletteLogs
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(l => l.Id == id && l.ChzzkUid == (GetChzzkUid() ?? "None"));
+
+            if (log == null) return NotFound("로그를 찾을 수 없거나 접근 권한이 없습니다.");
+
+            log.Status = status;
+            log.ProcessedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(log);
+        }
+
         [HttpPost("{chzzkUid}/{Id}/test")]
         public async Task<IActionResult> TestSpin(string chzzkUid, int Id, [FromQuery] bool Is10x = false)
         {

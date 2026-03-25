@@ -36,6 +36,9 @@ namespace MooldangAPI.Models
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
 
+        [JsonPropertyName("isMission")]
+        public bool IsMission { get; set; } = false;
+
         [JsonIgnore]
         public Roulette? Roulette { get; set; }
     }

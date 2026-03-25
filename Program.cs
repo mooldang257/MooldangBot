@@ -60,6 +60,7 @@ builder.Services.AddHostedService<ChzzkBackgroundService>(sp => sp.GetRequiredSe
 builder.Services.AddHostedService<PeriodicMessageWorker>();
 builder.Services.AddScoped<ChzzkCategorySyncService>();
 builder.Services.AddHostedService<CategorySyncBackgroundService>();
+builder.Services.AddHostedService<RouletteLogCleanupService>();
 builder.Services.AddScoped<RouletteService>();
 builder.Services.AddScoped<IPointTransactionService, PointTransactionService>();
 builder.Services.AddSingleton<ObsWebSocketService>();
@@ -220,6 +221,21 @@ using (var scope = app.Services.CreateScope())
             PRIMARY KEY (`Id`),
             INDEX `IX_songbooks_ChzzkUid_Id` (`ChzzkUid` ASC, `Id` DESC)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ");
+
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS `roulettelogs` (
+            `Id` BIGINT NOT NULL AUTO_INCREMENT,
+            `ChzzkUid` VARCHAR(100) NOT NULL,
+            `ViewerNickname` VARCHAR(100) NOT NULL,
+            `ItemName` VARCHAR(200) NOT NULL,
+            `IsMission` TINYINT(1) NOT NULL,
+            `Status` INT NOT NULL,
+            `CreatedAt` DATETIME(6) NOT NULL,
+            `ProcessedAt` DATETIME(6) NULL,
+            PRIMARY KEY (`Id`),
+            INDEX `IX_roulettelogs_ChzzkUid_Status_Id` (`ChzzkUid` ASC, `Status` ASC, `Id` DESC)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
 

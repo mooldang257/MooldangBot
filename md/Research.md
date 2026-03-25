@@ -740,6 +740,30 @@ sequenceDiagram
 
 ---
 
+---
+
+## 22. 2026-03-25 룰렛 미션 관리 시스템 (Roulette Mission System v5) 패치
+
+룰렛 오버레이를 현대적인 수직 슬롯 머신 스타일로 개편하고, 스트리머가 당첨된 미션을 관리할 수 있는 전용 대시보드와 백엔드 시스템을 구축한 대규모 업데이트입니다.
+
+### 22-1. 주요 업데이트 사항
+
+| 레이어 | 기술 요소 | 상세 내용 |
+|------|------|------|
+| **Backend** | **Transactional Spinning** | `SemaphoreSlim`과 `IDbContextTransaction`을 도입하여 포인트 차감 및 당첨 로그 기록의 원자성(Atomicity)과 스레드 안전성 확보. |
+| **Backend** | **Mission Logging** | `RouletteLog` 엔터티를 통한 당첨 내역 영속화. `IsMission` 플래그에 따른 자동 완료(`Completed`) 처리 로직 구현. |
+| **Backend** | **Auto-Cleanup** | `RouletteLogCleanupService` (BackgroundService)를 통해 30일 경과된 로그 자동 삭제. 단, 미완료(`Pending`) 미션은 삭제 대상에서 제외하여 보호. |
+| **Frontend** | **Vertical Slot UI** | 기존 원형 룰렛을 `rAF(requestAnimationFrame)` 기반의 고성능 수직 슬롯 머신 애니메이션으로 대체. |
+| **Frontend** | **Mission Dashboard** | `admin_missions.html`을 통해 실시간 미션 수신(SignalR), 상태 변경(완료/취소), 오디오 알림 및 토스트 알림 기능 제공. |
+| **Overlay** | **Spin History Bar** | 오버레이 하단에 최근 당첨 내역을 보여주는 실시간 히스토리 트랙 추가. |
+
+### 22-2. 아키텍처 및 보안
+- **인덱스 최적화**: `(ChzzkUid, Status, Id DESC)` 복합 인덱스를 적용하여 수천 건의 로그 중 미처리 미션만 초고속으로 조회 가능.
+- **보안 검증**: 모든 미션 상태 업데이트 API는 세션의 `ChzzkUid`와 로그의 소유주를 엄격히 비교하여 타인의 데이터 조작을 원천 차단.
+- **rAF 방어 로직**: 브라우저 탭 비활성화 등으로 인한 애니메이션 지연(Lag) 발생 시 타임스탬프를 체크하여 건너뛰기(Skip) 또는 보정 수행.
+
+---
+
 *작성일: 2026-03-25, Senior Full-Stack AI Partner 물멍 작성*
 
 ---
