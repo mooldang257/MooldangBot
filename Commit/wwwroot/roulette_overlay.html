@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>룰렛 오버레이</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+        }
+
+        #overlay-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 5%;
+        }
+
+        /* 원형 룰렛 디자인 (컨테이너에 맞춰 최대 크기로 유지) */
+        #roulette-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 100vh;
+            max-height: 100vw;
+            border-radius: 50%;
+            border: 0.5vmin solid #fff;
+            box-shadow: 0 0 5vmin rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: none;
+            background: #222;
+            aspect-ratio: 1/1;
+            /* 원형 유지 */
+        }
+
+        #roulette-wheel {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 50%;
+            top: 50%;
+            transform-origin: 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-left: 10vmin;
+            box-sizing: border-box;
+            font-weight: bold;
+            text-shadow: 0 0 0.5vmin rgba(0, 0, 0, 0.8);
+            font-size: 3vmin;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+
+        .pointer {
+            position: absolute;
+            top: 1vmin;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 3vmin solid transparent;
+            border-right: 3vmin solid transparent;
+            border-top: 5vmin solid #ff0055;
+            z-index: 10;
+            filter: drop-shadow(0 0 1vmin gold);
+        }
+
+        /* 결과 연출 */
+        #result-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 3vmin;
+            border-radius: 4vmin;
+            border: 0.5vmin solid gold;
+            text-align: center;
+            z-index: 100;
+            transition: transform 0.5s ease;
+            min-width: 30vmin;
+        }
+
+        #result-popup.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .win-title {
+            font-size: 3vmin;
+            color: gold;
+            margin-bottom: 2vmin;
+        }
+
+        .win-item {
+            font-size: 5vmin;
+            font-weight: 800;
+            margin: 1vmin 0;
+        }
+
+        /* 10연차 결과 그리드 */
+        #multi-results {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5vmin;
+            margin-top: 2vmin;
+        }
+
+        .multi-item {
+            padding: 1.5vmin;
+            border-radius: 1.5vmin;
+            font-size: 1.8vmin;
+            font-weight: bold;
+            border: 0.2vmin solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 폭죽 보조 효과 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+        }
+
+        #sample-container {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #sample-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 5vmin rgba(0, 0, 0, 0.8);
+            border: 0.5vmin solid gold;
+            border-radius: 4vmin;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay-container">
+        <div id="roulette-wrapper">
+            <div class="pointer"></div>
+            <div id="roulette-wheel"></div>
+        </div>
+
+        <div id="result-popup">
+            <div class="win-title">🎊 REWARD 🎊</div>
+            <div id="single-result-name" class="win-item">아이템명</div>
+            <div id="multi-results"></div>
+        </div>
+
+        <div id="sample-container">
+            <img id="sample-image" src="/images/roulette_sample.png" alt="Roulette Sample">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script src="/js/overlay_utils.js"></script>
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const queryParams = new URLSearchParams(window.location.search);
+        const chzzkUid = queryParams.get('uid') || pathParts[pathParts.length - 1];
+        const isSample = queryParams.get('sample') === 'true';
+
+        if (isSample) {
+            document.getElementById('sample-container').style.display = 'flex';
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/overlayHub")
+            .withAutomaticReconnect()
+            .build();
+
+        let rouletteQueue = [];
+        let isSpinning = false;
+
+        connection.on("ReceiveRouletteResult", (data) => {
+            // SignalR camelCase 전환 대응을 위해 프록시 래핑
+            data = createSafeData(data);
+            
+            // 💡 데이터 구조 검증 (PascalCase 정합성 체크)
+            if (!data || !data.SpinId) {
+                console.error("🚨 SignalR Data Mismatch! Check PascalCase. Data:", data);
+                return;
+            }
+            console.log(`[Roulette] SpinId received: ${data.SpinId}`, data);
+            rouletteQueue.push(data);
+            processQueue();
+        });
+
+        async function processQueue() {
+            if (isSpinning || rouletteQueue.length === 0) return;
+
+            isSpinning = true;
+            const data = rouletteQueue.shift();
+            await startRouletteAnimation(data);
+            isSpinning = false;
+
+            // 다음 항목이 있으면 계속 이어서 실행
+            processQueue();
+        }
+
+        connection.onreconnected(() => {
+            console.log("재연결 성공. 그룹 재가입 시도...");
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
+        connection.start().then(() => {
+            console.log("오버레이 연결됨:", chzzkUid);
+            connection.invoke("JoinStreamerGroup", chzzkUid);
+        }).catch(err => {
+            console.error("연결 실패:", err);
+            setTimeout(() => location.reload(), 5000);
+        });
+
+        async function notifyComplete(SpinId, retryCount = 0) {
+            if (!SpinId) return;
+            try {
+                const res = await fetch('/api/admin/roulette/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ SpinId: SpinId })
+                });
+                if (!res.ok) {
+                    // 상세 에러 로그 출력 (401, 404, 500 등 구분)
+                    console.error(`[Roulette] Callback failed. Status: ${res.status} (${res.statusText})`);
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                console.log("[Roulette] Animation complete notified:", SpinId);
+            } catch (err) {
+                console.error(`[Roulette] Network error during callback (시도 ${retryCount + 1}):`, err);
+                if (retryCount < 2) {
+                    setTimeout(() => notifyComplete(SpinId, retryCount + 1), 2000);
+                }
+            }
+        }
+
+        async function startRouletteAnimation(data) {
+            if (!data.Results || data.Results.length === 0) return;
+            const isMulti = data.Results.length > 1;
+            const wrapper = document.getElementById('roulette-wrapper');
+            const wheel = document.getElementById('roulette-wheel');
+            const popup = document.getElementById('result-popup');
+            const multiContainer = document.getElementById('multi-results');
+            const singleName = document.getElementById('single-result-name');
+
+            wrapper.style.display = 'block';
+            multiContainer.innerHTML = '';
+
+            for (let i = 0; i < data.Results.length; i++) {
+                const currentResult = data.Results[i];
+
+                // 1. 매 회차 초기화
+                wheel.style.transition = 'none';
+                wheel.style.transform = 'rotate(0deg)';
+                popup.classList.remove('active');
+
+                // 룰렛판 아이템 채우기 (샘플링 연출)
+                wheel.innerHTML = '';
+                const segments = 12; // 고정된 칸 수로 연출
+                for (let j = 0; j < segments; j++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'segment';
+                    const angle = (360 / segments);
+                    seg.style.transform = `rotate(${j * angle}deg) skewY(${90 - angle}deg)`;
+                    seg.style.backgroundColor = (j % 2 === 0) ? '#333' : '#444';
+                    wheel.appendChild(seg);
+                }
+
+                // 2. 애니메이션 대기 및 실행
+                await new Promise(r => setTimeout(r, 50)); // 브라우저 배칭 방지
+
+                const spinRounds = 10;
+                const extraAngle = Math.random() * 360;
+                const spinDuration = isMulti ? 1 : 2; // 회전 시간 단축
+
+                wheel.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0.7, 0.1, 1)`;
+                wheel.style.transform = `rotate(${spinRounds * 360 + extraAngle}deg)`;
+
+                // 룰렛이 회전하는 동안 기다림
+                await new Promise(r => setTimeout(r, spinDuration * 1000 + 100));
+
+                // 3. 종료 및 결과 팝업 업데이트
+                singleName.innerText = currentResult.ItemName;
+                singleName.style.color = currentResult.Color;
+
+                if (isMulti) {
+                    const div = document.createElement('div');
+                    div.className = 'multi-item';
+                    div.style.borderColor = currentResult.Color;
+                    div.innerText = currentResult.ItemName;
+                    multiContainer.appendChild(div);
+                }
+
+                popup.classList.add('active');
+
+                // 결과 표시 대기 시간 (3초에서 추가 단축)
+                const waitDuration = isMulti ? 1000 : 2000;
+                await new Promise(r => setTimeout(r, waitDuration));
+
+                // 다음 돌아갈 순서가 남아있으면 화면 정리만 하고 약간 대기
+                if (i < data.Results.length - 1) {
+                    popup.classList.remove('active');
+                    await new Promise(r => setTimeout(r, 100));
+                }
+            }
+
+
+            // 모든 연차 애니메이션 완전 종료
+            popup.classList.remove('active');
+            wrapper.style.display = 'none';
+
+            // 📣 서버에 애니메이션 종료 알림 (채팅 전송 트리거)
+            if (data.SpinId) {
+                await notifyComplete(data.SpinId);
+            }
+        }
+    </script>
+</body>
+
+</html>
