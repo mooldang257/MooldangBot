@@ -21,9 +21,12 @@ namespace MooldangAPI.Controllers
         [AllowAnonymous] // 🛡️ 오버레이 디자인/라벨 로딩 대응
         public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
         {
+            // [Safe Lookup] UID 대소문자 무관성 보장
+            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+            
             if (profile == null) return Results.NotFound();
 
             var omakaseItems = await _db.StreamerOmakases
@@ -68,9 +71,10 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/settings/labels/{chzzkUid}")]
         public async Task<IResult> UpdateLabels(string chzzkUid, [FromBody] System.Text.Json.JsonElement labels)
         {
+            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             if (profile == null) return Results.NotFound();
 
             var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
@@ -88,9 +92,10 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/settings/update/{chzzkUid}")]
         public async Task<IResult> UpdateSonglistSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest req)
         {
+            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             if (profile != null)
             {
                 profile.SongCommand = req.SongCommand;

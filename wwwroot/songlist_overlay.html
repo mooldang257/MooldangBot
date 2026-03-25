@@ -173,17 +173,21 @@
                 const dashRes = await fetch(`/api/songlist/data/${chzzkUid}`);
                 if (dashRes.ok) {
                     const d = await dashRes.json();
+                    
+                    // [Safe Casing] PascalCase와 camelCase 모두 대응
                     dashState = {
-                        memo: d.memo, omakases: d.omakases || [],
-                        pendingSongs: d.songs.filter(s => s.status === 'Pending'),
-                        completedSongs: d.songs.filter(s => s.status === 'Completed'),
+                        memo: d.Memo ?? d.memo ?? "",
+                        omakases: d.Omakases ?? d.omakases ?? [],
+                        pendingSongs: (d.Songs ?? d.songs ?? []).filter(s => (s.Status ?? s.status) === 'Pending'),
+                        completedSongs: (d.Songs ?? d.songs ?? []).filter(s => (s.Status ?? s.status) === 'Completed'),
                         labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
                     };
 
-                    const playing = d.songs.find(s => s.status === 'Playing');
+                    const songs = d.Songs ?? d.songs ?? [];
+                    const playing = songs.find(s => (s.Status ?? s.status) === 'Playing');
                     if (playing) { 
-                        dashState.currentTitle = playing.title; 
-                        dashState.currentArtist = playing.artist; 
+                        dashState.currentTitle = playing.Title ?? playing.title ?? "-"; 
+                        dashState.currentArtist = playing.Artist ?? playing.artist ?? ""; 
                     } else {
                         dashState.currentTitle = "-";
                         dashState.currentArtist = "";
@@ -206,15 +210,20 @@
                 const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
                 if (setRes.ok) {
                     const s = await setRes.json();
-                    if (s.labels) {
+                    
+                    // [Safe Casing] labels/Labels 및 내부 필드 대응
+                    const labels = s.Labels ?? s.labels;
+                    if (labels) {
                         dashState.labels = {
-                            nowPlaying: s.labels.nowPlaying || "▶ NOW PLAYING",
-                            upNext: s.labels.upNext || "⏳ UP NEXT",
-                            completed: s.labels.completed || "✔ COMPLETED"
+                            nowPlaying: labels.NowPlaying ?? labels.nowPlaying ?? "▶ NOW PLAYING",
+                            upNext: labels.UpNext ?? labels.upNext ?? "⏳ UP NEXT",
+                            completed: labels.Completed ?? labels.completed ?? "✔ COMPLETED"
                         };
                     }
-                    if (s.designSettingsJson && s.designSettingsJson !== "{}") {
-                        designState = JSON.parse(s.designSettingsJson);
+
+                    const designJson = s.DesignSettingsJson ?? s.designSettingsJson;
+                    if (designJson && designJson !== "{}") {
+                        designState = typeof designJson === 'string' ? JSON.parse(designJson) : designJson;
                         applyDesignStyles();
                     }
                 }
@@ -230,7 +239,8 @@
 
         function applyDesignStyles() {
             const ds = designState;
-            let css = ds.customCss || ""; // Global CSS at the top (Priority 2)
+            // [Safe Casing] 전역 커스텀 CSS
+            let css = ds.CustomCss ?? ds.customCss ?? ""; 
 
             const map = {
                 'Playing': '#playing-container',
@@ -242,18 +252,23 @@
             };
 
             for (const [key, selector] of Object.entries(map)) {
-                if (ds[key]) {
-                    const style = ds[key];
+                // [Safe Casing] PascalCase와 camelCase 모두 체크
+                const style = ds[key] ?? ds[key.toLowerCase()];
+                if (style) {
                     let rule = `${selector} { `;
-                    // !important ensures individual settings win over broad global CSS (Priority 1)
-                    if (style.rgba) rule += `background: ${style.rgba} !important; `;
-                    if (style.text) rule += `color: ${style.text} !important; `;
-                    if (style.rgba) rule += `border-color: ${style.rgba.replace(/,[^,]*\)/, ', 1)')} !important; `;
-                    if (style.size) rule += `font-size: ${style.size}px !important; `;
+                    const rgba = style.Rgba ?? style.rgba;
+                    const text = style.Text ?? style.text;
+                    const size = style.Size ?? style.size;
+                    
+                    if (rgba) rule += `background: ${rgba} !important; `;
+                    if (text) rule += `color: ${text} !important; `;
+                    if (rgba) rule += `border-color: ${rgba.replace(/,[^,]*\)/, ', 1)')} !important; `;
+                    if (size) rule += `font-size: ${size}px !important; `;
                     rule += `} `;
                     css += rule;
-                    // Inject per-widget custom CSS after the base rules
-                    if (style.customCss) css += `\n/* ${key} custom CSS */\n${style.customCss}\n`;
+                    
+                    const custom = style.CustomCss ?? style.customCss;
+                    if (custom) css += `\n/* ${key} custom CSS */\n${custom}\n`;
                 }
             }
 
@@ -264,61 +279,74 @@
             const st = dashState;
             const ds = designState;
 
+            // [Safe Helper] 대소문자 무시 속성 가져오기
+            const getDS = (key) => ds[key] ?? ds[key.toLowerCase()] ?? {};
+
             // ⭐ 1. 내부 데이터 갱신
             const stats = document.getElementById("stats-container");
-            const showStats = ds.Stats ? ds.Stats.show : true;
+            const dsStats = getDS('Stats');
+            const showStats = dsStats.Show ?? dsStats.show ?? true;
             if (showStats) {
                 stats.style.display = "block";
-                const omaTotal = st.omakases ? st.omakases.reduce((acc, o) => acc + (o.Count || o.count || 0), 0) : 0;
+                const omaTotal = st.omakases ? st.omakases.reduce((acc, o) => acc + (o.Count ?? o.count ?? 0), 0) : 0;
                 const pendingTotal = (st.pendingSongs ? st.pendingSongs.length : 0) + omaTotal;
                 stats.innerHTML = `완료 ${(st.completedSongs || []).length} / 대기 ${pendingTotal}`;
             } else { stats.style.display = "none"; }
 
             const notice = document.getElementById("notice-container");
-            if (ds.Notice && ds.Notice.show && st.memo.trim() !== "") {
+            const dsNotice = getDS('Notice');
+            const showNotice = dsNotice.Show ?? dsNotice.show ?? true;
+            if (showNotice && st.memo && st.memo.trim() !== "") {
                 notice.style.display = "block"; notice.innerText = st.memo;
             } else { notice.style.display = "none"; }
 
             const omakase = document.getElementById("omakase-container");
-            const showOmakase = ds.Omakase ? ds.Omakase.show : true;
+            const dsOmakase = getDS('Omakase');
+            const showOmakase = dsOmakase.Show ?? dsOmakase.show ?? true;
 
-            if (showOmakase && st.omakases && st.omakases.some(o => (o.Count || o.count) > 0)) {
+            if (showOmakase && st.omakases && st.omakases.some(o => (o.Count ?? o.count ?? 0) > 0)) {
                 omakase.style.display = "block";
-                const htmlArray = st.omakases.filter(o => (o.Count || o.count) > 0).map(o => {
-                    const iconVal = o.Icon || o.icon || '🍣';
+                const htmlArray = st.omakases.filter(o => (o.Count ?? o.count ?? 0) > 0).map(o => {
+                    const iconVal = o.Icon ?? o.icon ?? '🍣';
                     const iconStr = iconVal ? `${iconVal} ` : '';
-                    return `<span>${iconStr}${o.Name || o.name}</span> x ${o.Count || o.count}`;
+                    return `<span>${iconStr}${o.Name ?? o.name}</span> x ${o.Count ?? o.count}`;
                 });
                 omakase.innerHTML = htmlArray.join('<br><div style="margin:5px 0;"></div>');
             } else { omakase.style.display = "none"; }
 
             const playing = document.getElementById("playing-container");
-            if (ds.Playing && ds.Playing.show && (st.CurrentTitle || st.currentTitle) !== "-") {
+            const dsPlaying = getDS('Playing');
+            const showPlaying = dsPlaying.Show ?? dsPlaying.show ?? true;
+            if (showPlaying && st.currentTitle !== "-") {
                 playing.style.display = "block";
-                playing.innerHTML = `<div class="now-label">${(st.Labels || st.labels || {}).nowPlaying || "▶ NOW PLAYING"}</div>
-                                         <div class="now-title">🎵 ${st.CurrentTitle || st.currentTitle}</div>
-                                         <div class="now-artist">${(st.CurrentArtist || st.currentArtist) ? "- " + (st.CurrentArtist || st.currentArtist) : ""}</div>`;
+                playing.innerHTML = `<div class="now-label">${(st.labels || {}).nowPlaying || "▶ NOW PLAYING"}</div>
+                                         <div class="now-title">🎵 ${st.currentTitle}</div>
+                                         <div class="now-artist">${st.currentArtist ? "- " + st.currentArtist : ""}</div>`;
             } else { playing.style.display = "none"; }
 
             const pending = document.getElementById("pending-container");
-            if (ds.Pending && ds.Pending.show && st.pendingSongs.length > 0) {
+            const dsPending = getDS('Pending');
+            const showPending = dsPending.Show ?? dsPending.show ?? true;
+            if (showPending && st.pendingSongs.length > 0) {
                 pending.style.display = "block";
-                const limit = parseInt(ds.Pending ? ds.Pending.limit : 5) || 5;
-                let html = `<div class="list-title">${(st.Labels || st.labels || {}).upNext || "⏳ UP NEXT"}</div>`;
+                const limit = parseInt(dsPending.Limit ?? dsPending.limit ?? 5) || 5;
+                let html = `<div class="list-title">${(st.labels || {}).upNext || "⏳ UP NEXT"}</div>`;
                 (st.pendingSongs || []).slice(0, limit).forEach((song, index) => {
-                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.Title || song.title}</span><span class="item-artist">${song.Artist || song.artist || ""}</span></div>`;
+                    html += `<div class="list-item"><span class="item-title"><span style="color:#aaa;font-size:0.8em;margin-right:5px;">${index + 1}</span>${song.Title ?? song.title}</span><span class="item-artist">${song.Artist ?? song.artist ?? ""}</span></div>`;
                 });
                 if ((st.pendingSongs || []).length > limit) html += `<div style="text-align:center; font-size:11px; opacity:0.6; margin-top:5px;">...외 ${(st.pendingSongs || []).length - limit}곡 대기 중</div>`;
                 pending.innerHTML = html;
             } else { pending.style.display = "none"; }
 
             const completed = document.getElementById("completed-container");
-            if (ds.Completed && ds.Completed.show && st.completedSongs.length > 0) {
+            const dsCompleted = getDS('Completed');
+            const showCompleted = dsCompleted.Show ?? dsCompleted.show ?? true;
+            if (showCompleted && st.completedSongs.length > 0) {
                 completed.style.display = "block";
-                const limit = parseInt(ds.Completed.limit) || 3;
-                let html = `<div class="list-title">${st.labels.completed || "✔ COMPLETED"}</div>`;
+                const limit = parseInt(dsCompleted.Limit ?? dsCompleted.limit ?? 3) || 3;
+                let html = `<div class="list-title">${(st.labels || {}).completed || "✔ COMPLETED"}</div>`;
                 [...st.completedSongs].reverse().slice(0, limit).forEach(song => {
-                    html += `<div class="list-item" style="opacity:0.7;"><span class="item-title" style="text-decoration: line-through;">${song.title}</span><span class="item-artist">${song.artist}</span></div>`;
+                    html += `<div class="list-item" style="opacity:0.7;"><span class="item-title" style="text-decoration: line-through;">${song.Title ?? song.title}</span><span class="item-artist">${song.Artist ?? song.artist ?? ""}</span></div>`;
                 });
                 completed.innerHTML = html;
             } else { completed.style.display = "none"; }

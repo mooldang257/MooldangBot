@@ -33,20 +33,21 @@ namespace MooldangAPI.Controllers
         [AllowAnonymous] // 🛡️ 오버레이 로딩 대응
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
+            var targetUid = chzzkUid.ToLower();
             var omakases = await _db.StreamerOmakases
                 .IgnoreQueryFilters() 
-                .Where(o => o.ChzzkUid == chzzkUid)
+                .Where(o => o.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
 
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid == chzzkUid)
+                .Where(s => s.ChzzkUid.ToLower() == targetUid)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
             var memo = await _db.SystemSettings
                 .IgnoreQueryFilters()
-                .Where(s => s.KeyName == $"Memo_{chzzkUid}")
+                .Where(s => s.KeyName == $"Memo_{targetUid}")
                 .Select(s => s.KeyValue)
                 .FirstOrDefaultAsync() ?? "";
 
@@ -71,9 +72,10 @@ namespace MooldangAPI.Controllers
         [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]
         public async Task<IResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
+            var targetUid = chzzkUid.ToLower();
             var item = await _db.StreamerOmakases
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(o => o.Id == id && o.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(o => o.Id == id && o.ChzzkUid.ToLower() == targetUid);
 
             if (item != null)
             {
@@ -113,10 +115,11 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/test/chat")]
         public async Task<IResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
         {
+            var targetUid = chzzkUid.ToLower();
             // 💡 [Gotcha 대응] 마스터 권한 고려하여 프로필 조회
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
                 
             if (profile == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
 
@@ -146,14 +149,15 @@ namespace MooldangAPI.Controllers
         [AllowAnonymous] // 🛡️ 오버레이 로딩 대응
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
+            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             if (profile == null) return NotFound();
 
             var activeSession = await _db.SonglistSessions
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
                 .FirstOrDefaultAsync();
 
             return Ok(new { 
@@ -166,9 +170,10 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/songlist/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
         {
+            var targetUid = chzzkUid.ToLower();
             var activeSession = await _db.SonglistSessions
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
                 .FirstOrDefaultAsync();
 
             bool nowActive;
@@ -198,9 +203,10 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/omakase/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
         {
+            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             if (profile == null) return NotFound();
 
             profile.IsOmakaseEnabled = !profile.IsOmakaseEnabled;

@@ -31,9 +31,10 @@ namespace MooldangAPI.Controllers
             // --- 오마카세 연동 ---
             if (omakaseId.HasValue)
             {
+                var targetUid = chzzkUid.ToLower();
                 var omakase = await _db.StreamerOmakases
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.ChzzkUid == chzzkUid);
+                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.ChzzkUid.ToLower() == targetUid);
                     
                 if (omakase != null)
                 {
@@ -42,7 +43,7 @@ namespace MooldangAPI.Controllers
 
                     var activeSession = await _db.SonglistSessions
                         .IgnoreQueryFilters()
-                        .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                        .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
                         .FirstOrDefaultAsync();
                     if (activeSession != null)
                     {
@@ -59,15 +60,16 @@ namespace MooldangAPI.Controllers
         [HttpPut("/api/song/{chzzkUid}/{id}/status")]
         public async Task<IResult> UpdateStatus(string chzzkUid, int id, [FromQuery] string status)
         {
+            var targetUid = chzzkUid.ToLower();
             var song = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid.ToLower() == targetUid);
                 
             if (song != null)
             {
                 var activeSession = await _db.SonglistSessions
                     .IgnoreQueryFilters()
-                    .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+                    .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
                     .FirstOrDefaultAsync();
 
                 if (activeSession != null)
@@ -87,7 +89,7 @@ namespace MooldangAPI.Controllers
                 {
                     var current = await _db.SongQueues
                         .IgnoreQueryFilters()
-                        .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid && s.Status == "Playing");
+                        .FirstOrDefaultAsync(s => s.ChzzkUid.ToLower() == targetUid && s.Status == "Playing");
                     if (current != null)
                     {
                         current.Status = "Completed";
@@ -105,9 +107,10 @@ namespace MooldangAPI.Controllers
         [HttpPost("/api/song/delete/{chzzkUid}")]
         public async Task<IResult> DeleteSongs(string chzzkUid, [FromBody] List<int> ids)
         {
+            var targetUid = chzzkUid.ToLower();
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .Where(s => ids.Contains(s.Id) && s.ChzzkUid == chzzkUid)
+                .Where(s => ids.Contains(s.Id) && s.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
                 
             if (songs.Any())
@@ -126,10 +129,11 @@ namespace MooldangAPI.Controllers
         [HttpPut("/api/song/{chzzkUid}/{id:int}/edit")]
         public async Task<IActionResult> UpdateSongDetails(string chzzkUid, int id, [FromBody] SongUpdateRequest request)
         {
+            var targetUid = chzzkUid.ToLower();
             // 1. 데이터 조회 (해당 스트리머의 대기열에 속한 곡인지 검증)
             var songItem = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid.ToLower() == targetUid);
 
             if (songItem == null)
             {

@@ -682,6 +682,25 @@ OBS 브라우저 소스 / 대시보드 실시간 업데이트
 
 ---
 
+## 19. 2026-03-25 오버레이 데이터 지속성(Persistence) 및 Safe Casing 패치
+
+오버레이를 새로고침하거나 브라우저를 재시작했을 때 기존 설정(디자인, 오마카세 등)이 초기화되거나 소실되는 문제를 근본적으로 해결한 패치입니다.
+
+### 19-1. 주요 수정 사항
+
+| 대상 | 내용 | 상태 |
+|------|------|------|
+| **Frontend** | `songlist_overlay.html`에 **Safe Casing** 패턴 도입. API 응답의 `PascalCase`와 SignalR의 `camelCase`를 모두 수용하도록 로직 보강. | **✅ 완료** |
+| **Backend** | `SonglistSettingsController`, `SonglistController`, `SongController`에서 `chzzkUid` 조회 시 **대소문자 무관(Case-Insensitive)** 조회 적용. | **✅ 완료** |
+| **Logic** | `GetSonglistSettingsData` 등 초기 데이터 로드 API의 필테링 및 예외 처리 강화. | **✅ 완료** |
+
+### 19-2. 기술적 개선 효과
+- **데이터 복원력 강화**: 백엔드 DTO 규격이 변경되거나 SignalR과 REST API 간의 필드명 대소문자가 다르더라도 프론트엔드에서 누락 없이 데이터를 렌더링할 수 있게 되었습니다.
+- **접속 안정성**: URL의 `chzzkUid`가 대문자가 섞여 있거나 소문자일 때 발생하던 DB 조회 실패 문제를 해결하여 모든 스트리머가 동일한 환경에서 안정적으로 오버레이를 사용할 수 있게 되었습니다.
+- **영속성 보장**: 설정 저장 후 새로고침을 하더라도 DB에 저장된 최신 디자인 설정(`DesignSettingsJson`)을 정확히 불러와 적용합니다.
+
+---
+
 ## 14. 2026-03-24 상업용 라이브러리(LuckyPenny) 제거 및 기술 스택 정비
 
 `MediatR` 13.0 버전부터 도입된 상업용 라이선스(LuckyPenny Software) 모델로 인한 런타임 경고 및 잠재적 비용 이슈를 해결했습니다.
