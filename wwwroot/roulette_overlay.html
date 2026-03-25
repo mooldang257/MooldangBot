@@ -303,14 +303,17 @@
                 await new Promise(r => setTimeout(r, spinDuration * 1000 + 100));
 
                 // 3. 종료 및 결과 팝업 업데이트
-                singleName.innerText = currentResult.ItemName;
-                singleName.style.color = currentResult.Color;
+                const winnerName = currentResult.ItemName || currentResult.itemName || '알 수 없음';
+                const winnerColor = currentResult.Color || currentResult.color || '#ffffff';
+
+                singleName.innerText = winnerName;
+                singleName.style.color = winnerColor;
 
                 if (isMulti) {
                     const div = document.createElement('div');
                     div.className = 'multi-item';
-                    div.style.borderColor = currentResult.Color;
-                    div.innerText = currentResult.ItemName;
+                    div.style.borderColor = winnerColor;
+                    div.innerText = winnerName;
                     multiContainer.appendChild(div);
                 }
 

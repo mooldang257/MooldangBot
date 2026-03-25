@@ -175,7 +175,7 @@
             </div>
         </div>
     </div>
-    <script src="/js/overlay_utils.js"></script>
+    <script src="/js/overlay_utils.js?v=20260325_v2"></script>
     <script>
         const urlParams = new URL(window.location.href).searchParams;
         const chzzkUid = urlParams.get('uid') || '';
@@ -241,25 +241,34 @@
             newData.forEach(R => {
                 const card = document.createElement('div');
                 card.className = 'roulette-card';
+                // 💡 방어적 코드: 필드가 누락되어도 자바스크립트가 중단되지 않도록 조치
+                const name = R.Name || R.name || '무제';
+                const type = R.Type ?? R.type ?? 0;
+                const cost = R.CostPerSpin ?? R.costPerSpin ?? 0;
+                const cmd = R.Command || R.command || '-';
+                const date = R.LstUpdDt || R.lstUpdDt;
+                const id = R.Id ?? R.id;
+                const isActive = R.IsActive ?? R.isActive ?? true;
+
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <div style="flex:1;">
-                            <h3 style="margin:0; color:var(--primary);">${R.Name}</h3>
+                            <h3 style="margin:0; color:var(--primary);">${name}</h3>
                             <span class="prob-badge" style="background:rgba(255,255,255,0.1); margin-top:5px; display:inline-block;">
-                                ${R.Type === 0 ? '🧀 치즈' : '🪙 포인트'} | ${R.CostPerSpin.toLocaleString()} ${R.Type === 0 ? '치즈' : 'P'} | 명령어: ${R.Command}
+                                ${type === 0 ? '🧀 치즈' : '🪙 포인트'} | ${cost.toLocaleString()} ${type === 0 ? '치즈' : 'P'} | 명령어: ${cmd}
                             </span>
-                            <div class="last-update">최종 수정: ${new Date(R.LstUpdDt).toLocaleString()}</div>
+                            <div class="last-update">최종 수정: ${date ? new Date(date).toLocaleString() : '-'}</div>
                         </div>
                         <div style="display:flex; align-items:center; gap:15px;">
                             <label class="switch" title="룰렛 활성/비활성">
-                                <input type="checkbox" onchange="toggleRouletteStatus(${R.Id}, this.checked)" ${R.IsActive ? 'checked' : ''}>
+                                <input type="checkbox" onchange="toggleRouletteStatus(${id}, this.checked)" ${isActive ? 'checked' : ''}>
                                 <span class="slider"></span>
                             </label>
                             <div class="test-btns">
-                                <button class="btn btn-secondary btn-sm" onclick="runTestSpin(${R.Id}, false)">🚀 1회 테스트</button>
-                                <button class="btn btn-danger btn-sm" onclick="runTestSpin(${R.Id}, true)">🔥 10연차 테스트</button>
-                                <button class="btn btn-outline btn-sm" onclick="showEditForm(${R.Id})">✏️ 수정</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteRoulette(${R.Id})">🗑️ 삭제</button>
+                                <button class="btn btn-secondary btn-sm" onclick="runTestSpin(${id}, false)">🚀 1회 테스트</button>
+                                <button class="btn btn-danger btn-sm" onclick="runTestSpin(${id}, true)">🔥 10연차 테스트</button>
+                                <button class="btn btn-outline btn-sm" onclick="showEditForm(${id})">✏️ 수정</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRoulette(${id})">🗑️ 삭제</button>
                             </div>
                         </div>
                     </div>
