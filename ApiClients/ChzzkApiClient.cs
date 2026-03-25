@@ -302,7 +302,7 @@ namespace MooldangAPI.ApiClients
         /// </summary>
         public async Task<bool> SendChatMessageAsync(string accessToken, string message)
         {
-            return await SendChatInternalAsync(accessToken, "/open/v1/chats/send", message);
+            return await SendChatAsync(accessToken, "/open/v1/chats/send", message);
         }
 
         /// <summary>
@@ -310,7 +310,7 @@ namespace MooldangAPI.ApiClients
         /// </summary>
         public async Task<bool> SendChatNoticeAsync(string accessToken, string message)
         {
-            return await SendChatInternalAsync(accessToken, "/open/v1/chats/notice", message);
+            return await SendChatAsync(accessToken, "/open/v1/chats/notice", message);
         }
         // 치지직 최대 글자수 100자 중, 접두어(\u200B) 1자를 제외한 임계값
         private const int MaxMessageLength = 99;
