@@ -24,10 +24,26 @@ namespace MooldangAPI.Controllers
             _db = db;
         }
 
-        [HttpGet("{chzzkUid}")]
+        [HttpGet("/api/songbook/{chzzkUid}")]
         public async Task<IActionResult> GetSongs(string chzzkUid, [FromQuery] int LastId = 0, [FromQuery] int PageSize = 20, [FromQuery] string? Search = null)
         {
-            var query = _db.SongBooks
+            // 🛡️ [자가 복구] 테이블이 없는 경우를 대비하여 생성 시도 (수동 관리 환경 대응)
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS `songbooks` (
+                    `Id` INT NOT NULL AUTO_INCREMENT,
+                    `ChzzkUid` VARCHAR(50) NOT NULL,
+                    `Title` VARCHAR(200) NOT NULL,
+                    `Artist` VARCHAR(100) NULL,
+                    `IsActive` TINYINT(1) NOT NULL DEFAULT 1,
+                    `UsageCount` INT NOT NULL DEFAULT 0,
+                    `CreatedAt` DATETIME(6) NOT NULL,
+                    `UpdatedAt` DATETIME(6) NOT NULL,
+                    PRIMARY KEY (`Id`),
+                    INDEX `IX_songbooks_ChzzkUid_Id` (`ChzzkUid` ASC, `Id` DESC)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            var query = _db.SongBooks.AsQueryable()
                 .IgnoreQueryFilters()
                 .Where(s => s.ChzzkUid == chzzkUid);
 
