@@ -144,9 +144,10 @@
             const res = await fetch(`/api/songlist/data/${chzzkUid}`);
             if (res.ok) {
                 const data = await res.json();
-                document.getElementById('memoInput').value = data.memo;
-                omakases = data.omakases || [];
-                songs = data.songs;
+                console.log("[DEBUG] Dashboard Data:", data); // 🧪 디버깅용 로그 추가
+                document.getElementById('memoInput').value = data.memo || data.Memo || "";
+                omakases = data.omakases || data.Omakases || [];
+                songs = data.songs || data.Songs || [];
                 renderAll();
                 renderOmakasesDash();
             }
@@ -236,11 +237,15 @@
         }
 
         async function updateOmakase(id, delta) {
-            const oma = omakases.find(o => o.id === id);
+            const oma = omakases.find(o => (o.Id || o.id) == id);
             if (!oma) return;
-            let newCount = oma.count + delta;
+            const currentCount = oma.Count !== undefined ? oma.Count : (oma.count || 0);
+            let newCount = currentCount + delta;
             if (newCount < 0) newCount = 0;
-            oma.count = newCount;
+            
+            if (oma.Count !== undefined) oma.Count = newCount;
+            else oma.count = newCount;
+
             renderOmakasesDash();
             await fetch(`/api/songlist/omakase/${chzzkUid}/${id}?delta=${delta}`, { method: 'PUT' });
             broadcastState();
@@ -322,7 +327,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify([id])
             });
-            songs = songs.filter(s => s.id !== id);
+            songs = songs.filter(s => (s.Id || s.id) !== id);
             renderAll(); broadcastState();
         }
 
@@ -337,11 +342,11 @@
             const cList = document.getElementById("completedList");
             pList.innerHTML = ""; cList.innerHTML = "";
 
-            const playingSong = songs.find(s => s.Status === 'Playing');
+            const playingSong = songs.find(s => (s.Status || s.status) === 'Playing');
             if (playingSong) {
-                currentPlayingId = playingSong.Id;
-                document.getElementById("currentTitle").innerText = playingSong.Title;
-                document.getElementById("currentArtist").innerText = playingSong.Artist || "";
+                currentPlayingId = playingSong.Id || playingSong.id;
+                document.getElementById("currentTitle").innerText = playingSong.Title || playingSong.title;
+                document.getElementById("currentArtist").innerText = playingSong.Artist || playingSong.artist || "";
                 document.getElementById("finishCurrentBtn").style.display = "block";
             } else {
                 currentPlayingId = null;
@@ -350,8 +355,8 @@
                 document.getElementById("finishCurrentBtn").style.display = "none";
             }
 
-            songs.filter(s => s.Status === 'Pending').forEach(s => pList.appendChild(createItem(s, 'pending')));
-            songs.filter(s => s.Status === 'Completed').reverse().forEach(s => cList.appendChild(createItem(s, 'completed')));
+            songs.filter(s => (s.Status || s.status) === 'Pending').forEach(s => pList.appendChild(createItem(s, 'pending')));
+            songs.filter(s => (s.Status || s.status) === 'Completed').reverse().forEach(s => cList.appendChild(createItem(s, 'completed')));
         }
 
         function createItem(s, listType) {

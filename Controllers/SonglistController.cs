@@ -34,10 +34,9 @@ namespace MooldangAPI.Controllers
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
             var omakases = await _db.StreamerOmakases
-                .IgnoreQueryFilters() // 💡 [마스터 대응] 필터 우회
+                .IgnoreQueryFilters() 
                 .Where(o => o.ChzzkUid == chzzkUid)
-                .Select(o => new { o.Id, o.Name, o.Count, o.Icon })
-                .ToListAsync();
+                .ToListAsync(); // 💡 [PascalCase 보장] 익명 객체 대신 전체 모델 반환
 
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
