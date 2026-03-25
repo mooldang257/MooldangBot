@@ -11,7 +11,7 @@
             --bg-color: transparent;
             --slot-bg: rgba(20, 20, 20, 0.9);
             --gold-color: #ffd700;
-            --item-h: 60px; /* v6 refinement: 높이 절반으로 축소 */
+            --item-h: 60px;
         }
 
         body {
@@ -28,11 +28,26 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* 최상단 배치 */
+            justify-content: flex-start;
             align-items: center;
             position: relative;
-            padding-top: 50px; /* 상단 여백 */
+            padding-top: 40px;
         }
+
+        /* 룰렛 타이틀 (v6 refinement) */
+        #roulette-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #eee;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.4);
+            padding: 5px 20px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #roulette-title.active { opacity: 1; }
 
         /* 슬롯 머신 컨테이너 */
         #slot-machine {
@@ -45,7 +60,7 @@
             position: relative;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             display: none; 
-            margin-bottom: 20px; /* 결과 바와의 간격 */
+            margin-bottom: 20px;
         }
 
         #slot-machine.active {
@@ -82,7 +97,7 @@
             letter-spacing: -0.5px;
         }
 
-        /* 결과 바 (v6: 슬롯 하단에 위치하며 아래로 확장) */
+        /* 결과 바 */
         #history-bar {
             width: 90%;
             max-height: 400px;
@@ -92,9 +107,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 15px;
             overflow-y: auto;
-            /* 위쪽에서 아래쪽으로 서서히 나타나는 효과 */
             mask-image: linear-gradient(to bottom, black 90%, transparent);
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
+        #history-bar.active { opacity: 1; }
 
         #history-track {
             display: flex;
@@ -127,7 +144,10 @@
 
 <body>
     <div id="overlay-container">
-        <!-- 슬롯 머신 (최상단) -->
+        <!-- 타이틀 문구 (v6 refinement) -->
+        <div id="roulette-title">시청자님의 룰렛 0/0</div>
+
+        <!-- 슬롯 머신 -->
         <div id="slot-machine">
             <div class="win-indicator" style="top: 0;"></div>
             <div id="slot-window"></div>
@@ -135,7 +155,7 @@
             <div class="win-indicator" style="bottom: 0;"></div>
         </div>
 
-        <!-- 결과 목록 (슬롯 하단에 위치) -->
+        <!-- 결과 목록 -->
         <div id="history-bar">
             <div id="history-track"></div>
         </div>
@@ -150,6 +170,7 @@
 
         const reels = document.getElementById('slot-reel');
         const machine = document.getElementById('slot-machine');
+        const titleEl = document.getElementById('roulette-title');
         const historyTrack = document.getElementById('history-track');
         const historyBar = document.getElementById('history-bar');
 
@@ -160,7 +181,7 @@
 
         let queue = [];
         let isRunning = false;
-        const ITEM_HEIGHT = 60; // 120 -> 60 절반 축소
+        const ITEM_HEIGHT = 60;
 
         connection.on("ReceiveRouletteResult", (data) => {
             data = createSafeData(data);
@@ -180,15 +201,24 @@
 
         async function runSlotAnimation(data) {
             const results = data.Results || data.results;
-            const isMulti = results.length > 1;
+            const rouletteName = data.RouletteName || data.rouletteName || "기본";
+            const viewerNickname = data.viewerNickname || data.ViewerNickname || "시청자";
+            const totalCount = results.length;
+            const isMulti = totalCount > 1;
 
             historyTrack.innerHTML = '';
             machine.classList.add('active');
+            titleEl.classList.add('active');
+            historyBar.classList.add('active');
 
-            for (let i = 0; i < results.length; i++) {
+            for (let i = 0; i < totalCount; i++) {
                 const result = results[i];
                 const itemName = result.ItemName || result.itemName;
                 const itemColor = result.Color || result.color || '#ffffff';
+                const currentIdx = i + 1;
+
+                // 타이틀 업데이트: {이름}님의 {룰렛명} 룰렛 {차수}/{총회수}
+                titleEl.innerText = `${viewerNickname}님의 ${rouletteName} 룰렛 ${currentIdx}/${totalCount}`;
 
                 const dummyCount = isFastMode ? 20 : (isMulti ? 30 : 50); 
                 reels.innerHTML = '';
@@ -222,6 +252,14 @@
                 await new Promise(r => setTimeout(r, wait));
             }
 
+            // [v6 Refinement] 룰렛 결과를 채팅창으로 전송하기 전에 초기화해서 빈 화면으로 만든다
+            await new Promise(r => setTimeout(r, 2000)); // 결과 확인 잠시 대기
+            historyBar.classList.remove('active');
+            titleEl.classList.remove('active');
+            setTimeout(() => {
+                historyTrack.innerHTML = '';
+            }, 500);
+
             machine.classList.remove('active');
             if (data.SpinId || data.spinId) notifyComplete(data.SpinId || data.spinId);
         }
@@ -245,8 +283,6 @@
                 `;
                 historyTrack.appendChild(div);
             }
-            
-            // 실시간 스크롤 하단 유지
             historyBar.scrollTop = historyBar.scrollHeight;
         }
 
