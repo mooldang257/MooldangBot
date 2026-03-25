@@ -1,28 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
-    <title>룰렛 오버레이 (V5 Premium)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mooldang Roulette Overlay</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
     <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
         :root {
-            --primary-bg: rgba(15, 15, 15, 0.85);
-            --accent-color: #ff0055;
+            --accent-color: #ff3e3e;
+            --bg-color: transparent;
+            --slot-bg: rgba(20, 20, 20, 0.9);
             --gold-color: #ffd700;
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --border-radius: 20px;
         }
 
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: transparent;
             font-family: 'Pretendard', sans-serif;
+            background: var(--bg-color);
             color: white;
-            user-select: none;
         }
 
         #overlay-container {
@@ -37,16 +34,15 @@
 
         /* 슬롯 머신 컨테이너 */
         #slot-machine {
-            position: relative;
             width: 500px;
             height: 120px;
-            background: var(--primary-bg);
+            background: var(--slot-bg);
             border: 4px solid #333;
-            border-radius: var(--border-radius);
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.1);
-            display: none;
-            backdrop-filter: blur(10px);
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+            display: none; /* 시작 전엔 숨김 */
         }
 
         #slot-machine.active {
@@ -104,7 +100,7 @@
             bottom: 30px;
             width: 90%;
             min-height: 60px;
-            max-height: 180px;
+            max-height: 240px;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(8px);
             border-radius: 15px;
@@ -113,7 +109,7 @@
             align-items: center;
             padding: 10px 20px;
             overflow-y: auto;
-            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
         }
 
         #history-track {
@@ -126,66 +122,25 @@
         }
 
         .history-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--glass-bg);
-            padding: 6px 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            animation: history-enter 0.5s ease backwards;
         }
 
-        @keyframes history-enter {
-            from { transform: translateX(30px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .history-item .viewer { color: #aaa; font-size: 12px; }
         .history-item .reward { font-weight: bold; }
+        .history-item .count { color: var(--gold-color); font-weight: 800; font-size: 20px; }
 
-        /* 결과 알림 팝업 */
-        #result-toast {
-            position: absolute;
-            top: 20%;
-            padding: 20px 40px;
-            background: linear-gradient(135deg, #1a1a1a, #333);
-            border: 2px solid var(--gold-color);
-            border-radius: 50px;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--gold-color);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            transform: translateY(-50px);
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        #result-toast.active {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .mission-badge {
-            background: var(--accent-color);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
     </style>
 </head>
 
 <body>
     <div id="overlay-container">
-        <!-- 결과 팝업 -->
-        <div id="result-toast">
-            🎊 당첨! <span id="toast-item-name">아이템명</span> 🎊
-        </div>
-
         <!-- 슬롯 머신 -->
         <div id="slot-machine">
             <div class="win-indicator" style="top: 0;"></div>
@@ -199,7 +154,7 @@
         <!-- 하단 히스토리 -->
         <div id="history-bar">
             <div id="history-track">
-                <!-- 히스토리 아이템들이 추가됨 -->
+                <!-- 당첨 내역이 여기에 추가됨 -->
             </div>
         </div>
     </div>
@@ -214,7 +169,6 @@
 
         const reels = document.getElementById('slot-reel');
         const machine = document.getElementById('slot-machine');
-        const toast = document.getElementById('result-toast');
         const historyTrack = document.getElementById('history-track');
 
         const connection = new signalR.HubConnectionBuilder()
@@ -245,7 +199,6 @@
 
         async function runSlotAnimation(data) {
             const results = data.Results || data.results;
-            const summary = data.Summary || data.summary;
             const isMulti = results.length > 1;
 
             // [v6 규칙] 새로운 룰렛 시작 시 히스토리 초기화
@@ -285,39 +238,52 @@
 
                 await new Promise(r => setTimeout(r, duration * 1000));
 
-                // 3. 결과 연출
-                showResultToast(itemName, itemColor);
+                // 3. [v6 Refinement] 결과 연출 (실시간 히스토리 누적)
+                updateRealtimeHistory(itemName, itemColor);
                 
-                const wait = isFastMode ? 400 : (isMulti ? 1000 : 2500);
+                const wait = isFastMode ? 300 : (isMulti ? 600 : 1500);
                 await new Promise(r => setTimeout(r, wait));
-                toast.classList.remove('active');
-            }
-
-            // [v6 규칙] 애니메이션 완료 후 그룹화된 결과(Summary)를 하단 바에 출력
-            if (summary && summary.length > 0) {
-                summary.forEach(item => {
-                    const itemName = item.ItemName || item.itemName;
-                    const count = item.Count || item.count;
-                    const color = item.Color || item.color || '#fff';
-                    
-                    const div = document.createElement('div');
-                    div.className = 'history-item';
-                    div.innerHTML = `
-                        <span class="reward" style="color: ${color}">[${itemName}] x${count}</span>
-                    `;
-                    historyTrack.appendChild(div);
-                });
             }
 
             machine.classList.remove('active');
             if (data.SpinId || data.spinId) notifyComplete(data.SpinId || data.spinId);
         }
 
-        function showResultToast(name, color) {
-            const nameEl = document.getElementById('toast-item-name');
-            nameEl.innerText = name;
-            nameEl.style.color = color;
-            toast.classList.add('active');
+        function updateRealtimeHistory(name, color) {
+            // 해당 이름의 아이템이 이미 있는지 확인 (Dataset 사용)
+            const existing = Array.from(historyTrack.children).find(el => el.dataset.itemName === name);
+            
+            if (existing) {
+                const countSpan = existing.querySelector('.count');
+                const currentCount = parseInt(countSpan.innerText.replace('x', '')) || 1;
+                countSpan.innerText = `x${currentCount + 1}`;
+                
+                // 시각적 피드백
+                existing.style.transform = 'scale(1.1)';
+                setTimeout(() => existing.style.transform = 'scale(1)', 200);
+            } else {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.dataset.itemName = name;
+                div.innerHTML = `
+                    <span class="reward" style="color: ${color}">[${name}]</span>
+                    <span class="count">x1</span>
+                `;
+                historyTrack.appendChild(div);
+                
+                // 애니메이션 효과
+                div.style.opacity = '0';
+                div.style.transform = 'translateY(10px)';
+                requestAnimationFrame(() => {
+                    div.style.transition = 'all 0.3s ease';
+                    div.style.opacity = '1';
+                    div.style.transform = 'translateY(0)';
+                });
+            }
+            
+            // 자동 스크롤 하단 유지
+            const bar = document.getElementById('history-bar');
+            bar.scrollTop = bar.scrollHeight;
         }
 
         async function notifyComplete(spinId) {
@@ -335,5 +301,4 @@
         }).catch(e => console.error(e));
     </script>
 </body>
-
 </html>
