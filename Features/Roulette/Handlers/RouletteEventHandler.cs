@@ -48,19 +48,10 @@ namespace MooldangAPI.Features.Roulette.Handlers
                         int tens = totalSpins / 10;
                         int remain = totalSpins % 10;
 
-                        _logger.LogInformation($"🎰 [룰렛 다회차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name} (총 {totalSpins}회: 10연차 {tens}번 + 단일 {remain}번)");
+                        _logger.LogInformation($"🎰 [룰렛 다회차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name} (총 {totalSpins}회 배치 실행)");
 
-                        // 1. 10연차 그룹 실행
-                        for (int i = 0; i < tens; i++)
-                        {
-                            await rouletteService.SpinRoulette10xAsync(chzzkUid, roulette.Id, notification.Username);
-                        }
-
-                        // 2. 남은 단일 회차 루프 실행
-                        for (int i = 0; i < remain; i++)
-                        {
-                            await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, notification.Username);
-                        }
+                        // v6: 루프를 돌지 않고 서비스의 배치 메서드를 1회 호출
+                        await rouletteService.SpinRouletteMultiAsync(chzzkUid, roulette.Id, totalSpins, notification.Username);
                     }
                 }
             }

@@ -154,4 +154,9 @@ namespace MooldangAPI.Models
 
     // 🎵 대기열 곡 정보 수정을 위한 DTO (.NET 10 record 활용)
     public record SongUpdateRequest(string? Title, string? Artist);
+
+    // 🎰 룰렛 결과 전송을 위한 DTO (v6)
+    public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
+    public record RouletteSummaryDto(string ItemName, int Count, bool IsMission, string Color);
+    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
 }
