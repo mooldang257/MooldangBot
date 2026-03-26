@@ -686,7 +686,7 @@ services:
 
 **DB 연결 문자열 형식:**
 ```
-Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;
+Server=db;Database=ChzzkSongBook;Uid=root;Pwd=YOUR_PASSWORD_HERE;
 ```
 
 **EF Core MariaDB 서버 버전 (코드 내 명시적 고정):**

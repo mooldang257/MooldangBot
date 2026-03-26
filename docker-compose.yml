@@ -5,8 +5,8 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_DATABASE: ChzzkSongBook
-      MYSQL_ROOT_PASSWORD: password123!
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -19,7 +19,7 @@ services:
   # ⭐ [자동 마이그레이션] 배포 시 자동으로 DB를 업데이트하는 서비스
   migration:
     build: .
-    entrypoint: ./efbundle --connection "Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;"
+    entrypoint: ./efbundle --connection "Server=db;Database=${DB_NAME};Uid=${DB_USER};Pwd=${DB_PASSWORD};"
     depends_on:
       db:
         condition: service_healthy
@@ -34,7 +34,12 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=db;Database=ChzzkSongBook;Uid=root;Pwd=password123!;
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AUTH_COOKIE_NAME=mooldang_bot_session
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
 
     depends_on:
       db:

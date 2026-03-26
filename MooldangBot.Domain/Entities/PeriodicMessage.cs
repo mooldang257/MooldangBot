@@ -1,8 +1,10 @@
-﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(ChzzkUid))]
     public class PeriodicMessage
     {
         public int Id { get; set; }

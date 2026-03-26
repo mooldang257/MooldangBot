@@ -1,9 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace MooldangBot.Domain.Entities
 {
-    
+    [Index(nameof(StreamerChzzkUid), nameof(ViewerUid), IsUnique = true)]
+    [Index(nameof(StreamerChzzkUid), nameof(Points))]
     public class ViewerProfile
     {
         [Key]

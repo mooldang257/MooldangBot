@@ -1,8 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(ChzzkUid))]
     public class Roulette
     {
         [Key]

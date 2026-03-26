@@ -1,12 +1,11 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 
-namespace MooldangBot.Application.Interfaces
+namespace MooldangBot.Application.Interfaces;
+
+public interface IUserSession
 {
-    public interface IUserSession
-    {
-        string? ChzzkUid { get; }
-        bool IsAuthenticated { get; }
-        string? Role { get; } // "streamer", "manager", "admin", "superadmin", "master"
-        IEnumerable<string> AllowedChannelIds { get; } // 관리 권한이 있는 채널 Uid 목록
-    }
+    bool IsAuthenticated { get; }
+    string? ChzzkUid { get; }
+    string? Role { get; }
+    List<string> AllowedChannelIds { get; }
 }

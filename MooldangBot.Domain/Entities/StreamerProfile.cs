@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(ChzzkUid), IsUnique = true)]
     public class StreamerProfile
     {
         [Key]
@@ -75,7 +77,8 @@ namespace MooldangBot.Domain.Entities
 
         // [추가] 물댕봇 세션 활성화/비활성화 상태
         public bool IsBotEnabled { get; set; } = false;
-
+        
+        
         public bool IsOmakaseEnabled { get; set; } = true;
 
         public int? ActiveOverlayPresetId { get; set; }

@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Infrastructure.Persistence
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : DbContext, IAppDbContext
     {
         private readonly IUserSession _userSession;
 

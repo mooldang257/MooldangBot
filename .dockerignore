@@ -1,0 +1,27 @@
+# Docker 빌드 불필요 파일 제외 (.dockerignore)
+.git/
+.gitignore
+.dockerignore
+README.md
+Dockerfile
+docker-compose.yml
+
+# 개발용 설정 및 로컬 데이터
+.env
+appsettings.Dev.json
+wwwroot/images/avatars/
+db_data/
+
+# 연구 및 빌드 관련 (빌드 시간 단축을 위해 전송 제외)
+md/
+scripts/
+bin/
+obj/
+publish/
+
+# 기타 잡동사니
+*.sql
+*.zip
+*.rar
+*.log
+*.tmp

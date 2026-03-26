@@ -4,7 +4,7 @@ using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Services;
 
-public class SongBookService
+public class SongBookService : ISongBookService
 {
     private readonly ISongBookRepository _repository;
 

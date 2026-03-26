@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(ChzzkUid), nameof(Id))]
+    [Index(nameof(ChzzkUid), nameof(Status), nameof(CreatedAt))]
     public class SongQueue
     {
         [Key]

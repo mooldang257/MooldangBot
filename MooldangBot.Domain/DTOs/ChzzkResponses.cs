@@ -1,4 +1,4 @@
-﻿
+
 using System.Text.Json.Serialization;
 
 
@@ -56,5 +56,71 @@ namespace MooldangBot.Domain.DTOs
 
         [JsonPropertyName("channelName")]
         public string? ChannelName { get; set; } // 스트리머 닉네임
+    }
+
+    public class ChzzkSessionAuthResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkSessionAuthContent? Content { get; set; }
+    }
+
+    public class ChzzkSessionAuthContent
+    {
+        [JsonPropertyName("url")]
+        public string? Url { get; set; }
+    }
+
+    public class ChzzkCategorySearchResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkCategorySearchContent? Content { get; set; }
+    }
+
+    public class ChzzkCategorySearchContent
+    {
+        [JsonPropertyName("data")]
+        public List<ChzzkCategoryData>? Data { get; set; }
+    }
+
+    public class ChzzkCategoryData
+    {
+        [JsonPropertyName("categoryType")]
+        public string CategoryType { get; set; } = string.Empty;
+        [JsonPropertyName("categoryId")]
+        public string CategoryId { get; set; } = string.Empty;
+        [JsonPropertyName("categoryValue")]
+        public string CategoryValue { get; set; } = string.Empty;
+    }
+
+    public class ChzzkUserMeResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkUserMeContent? Content { get; set; }
+    }
+
+    public class ChzzkUserMeContent
+    {
+        [JsonPropertyName("userIdHash")]
+        public string? UserIdHash { get; set; }
+        
+        [JsonPropertyName("nickname")]
+        public string? Nickname { get; set; }
+        
+        [JsonPropertyName("profileImageUrl")]
+        public string? ProfileImageUrl { get; set; }
+
+        // 하위 호환성 또는 편의를 위한 별칭 속성들
+        [JsonIgnore]
+        public string ChannelId => UserIdHash ?? "";
+        [JsonIgnore]
+        public string? ChannelName => Nickname;
+        [JsonIgnore]
+        public string? ChannelImageUrl => ProfileImageUrl;
     }
 }

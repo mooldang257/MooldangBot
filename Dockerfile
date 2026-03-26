@@ -1,29 +1,52 @@
-# 버전을 .NET 10.0에 맞게 설정합니다.
+# ------------------------------------------
+# 🏗️ Build Stage
+# ------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /app
+WORKDIR /src
 
-# EF Core 도구 설치 (Bundle 생성을 위해 필요)
+# EF Core 도구 설치 (마이그레이션 번들 생성용)
 RUN dotnet tool install --global dotnet-ef
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# 소스 복사 및 빌드
-COPY . ./
-RUN dotnet restore -r linux-x64
+# 1. 프로젝트 파일 복사 (캐시 효율화)
+COPY ["MooldangBot.Api/MooldangBot.Api.csproj", "MooldangBot.Api/"]
+COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
+COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
+COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
+COPY ["MooldangBot.Presentation/MooldangBot.Presentation.csproj", "MooldangBot.Presentation/"]
+COPY ["MooldangAPI.sln", "./"]
 
-# 마이그레이션 번들 생성 (서버에서 수동 실행 가능하도록)
-RUN dotnet ef migrations bundle -o efbundle --runtime linux-x64 --self-contained
+# 2. 패키지 복원
+RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj" -r linux-x64
 
+# 3. 소스 코드 전체 복사 및 빌드
+COPY . .
+WORKDIR "/src/MooldangBot.Api"
+RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
 
-RUN dotnet publish -c Release -o out
+# 4. 마이그레이션 번들 생성 (MooldangBot.Api에서 실행)
+RUN dotnet ef migrations bundle -o /app/efbundle \
+    --runtime linux-x64 \
+    --self-contained \
+    -p ../MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj \
+    -s MooldangBot.Api.csproj
 
-# 런타임 이미지 설정
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+# 5. 게시(Publish)
+FROM build AS publish
+RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# ------------------------------------------
+# 🚀 Runtime Stage
+# ------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-COPY --from=build /app/out .
-COPY --from=build /app/efbundle .
+COPY --from=publish /app/publish .
+COPY --from=publish /app/efbundle .
 
-# 업로드된 이미지 보존을 위한 볼륨 폴더 생성
-RUN mkdir -p /app/wwwroot/images/avatars
+# 업로드/데이터 폴더 생성 및 권한 설정
+RUN mkdir -p /app/wwwroot/images/avatars && \
+    mkdir -p /app/db_data && \
+    chmod -R 777 /app/wwwroot/images/avatars
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "MooldangAPI.dll"]
+ENTRYPOINT ["dotnet", "MooldangBot.Api.dll"]

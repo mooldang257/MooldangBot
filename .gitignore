@@ -1,27 +1,41 @@
-# Visual Studio 캐시 및 설정
+# 🔍 [MooldangBot Zero-Git Policy .gitignore]
+
+# 1. Visual Studio 캐시 및 로컬 설정
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 
-# 빌드 결과물 (컴파일된 파일들)
+# 2. 빌드 결과물 (컴파일된 파일들)
 bin/
 obj/
+publish/
 
-# 환경 설정 (비밀번호 포함 시 제외 권장 - Zero-Git Policy)
+# 3. 🔐 보안 및 환경 설정 (GITHUB 업로드 절대 금지)
 appsettings.json
+appsettings.Dev.json
+appsettings.Production.json
 appsettings.Development.json
 .env
 .env.*
 secrets/
 
-
-# 기타 시스템 파일
-.DS_Store
-
-# 빌드 및 배포 폴더
-publish/
-wwwroot/images/avatars/
+# 4. 연구, 로그 및 임시 파일 (서버 빌드 불필요)
+md/
+scripts/archive/
+scripts/logs/
+*.sql
+*.zip
+*.rar
 *.md.tmp
+*.log
 리눅스 반영.md
+
+# 5. 로컬 데이터 폴더 (볼륨 매핑 권장)
+wwwroot/images/avatars/
+db_data/
+
+# 6. 기타 시스템 파일
+.DS_Store
+Thumbs.db

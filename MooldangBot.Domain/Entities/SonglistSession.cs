@@ -1,9 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
     [Table("songlistsessions")]
+    [Index(nameof(ChzzkUid), nameof(IsActive))]
     public class SonglistSession
     {
         [Key]

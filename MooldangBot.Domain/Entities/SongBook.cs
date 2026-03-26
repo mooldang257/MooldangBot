@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(ChzzkUid), nameof(Id))]
     public class SongBook
     {
         [Key]
