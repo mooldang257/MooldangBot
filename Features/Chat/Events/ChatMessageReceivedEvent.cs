@@ -1,5 +1,6 @@
-using MediatR;
-using MooldangAPI.Models;
+﻿using MediatR;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangAPI.Features.Chat.Events;
 

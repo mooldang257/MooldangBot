@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.Services;
 
 namespace MooldangAPI.Controllers

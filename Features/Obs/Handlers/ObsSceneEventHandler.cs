@@ -1,10 +1,11 @@
-using MediatR;
+﻿using MediatR;
 using MooldangAPI.Features.Chat.Events;
 using MooldangAPI.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.Hubs;
 
 namespace MooldangAPI.Features.Obs.Handlers

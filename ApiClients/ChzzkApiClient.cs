@@ -1,5 +1,6 @@
-using System.Net;
-using MooldangAPI.Models;
+﻿using System.Net;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Net.Http.Json;

@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
-using MooldangAPI.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Models;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangAPI.Controllers
 {

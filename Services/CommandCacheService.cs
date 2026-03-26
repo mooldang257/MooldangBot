@@ -1,6 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data;
-using MooldangAPI.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using System.Collections.Concurrent;
 
 namespace MooldangAPI.Services;

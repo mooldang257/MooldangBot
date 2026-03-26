@@ -28,11 +28,32 @@
     <EmbeddedResource Remove="MooldangAPI.Tests\**" />
     <None Remove="MooldangAPI.Tests\**" />
     
+    <Compile Remove="MooldangBot.Domain\**" />
+    <Content Remove="MooldangBot.Domain\**" />
+    <EmbeddedResource Remove="MooldangBot.Domain\**" />
+    <None Remove="MooldangBot.Domain\**" />
+
+    <Compile Remove="MooldangBot.Application\**" />
+    <Content Remove="MooldangBot.Application\**" />
+    <EmbeddedResource Remove="MooldangBot.Application\**" />
+    <None Remove="MooldangBot.Application\**" />
+
+    <Compile Remove="MooldangBot.Infrastructure\**" />
+    <Content Remove="MooldangBot.Infrastructure\**" />
+    <EmbeddedResource Remove="MooldangBot.Infrastructure\**" />
+    <None Remove="MooldangBot.Infrastructure\**" />
+    
     <!-- 구현 완료 파일 저장용 Commit 폴더 제외 -->
     <Compile Remove="Commit\**" />
     <Content Remove="Commit\**" />
     <EmbeddedResource Remove="Commit\**" />
     <None Remove="Commit\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="MooldangBot.Domain\MooldangBot.Domain.csproj" />
+    <ProjectReference Include="MooldangBot.Application\MooldangBot.Application.csproj" />
+    <ProjectReference Include="MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj" />
   </ItemGroup>
   
 </Project>

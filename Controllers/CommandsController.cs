@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MooldangAPI.Data;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Models;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 
 using MooldangAPI.Services;

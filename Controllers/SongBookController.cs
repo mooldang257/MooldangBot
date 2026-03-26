@@ -1,79 +1,37 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data;
-using MooldangAPI.Models;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Services;
+using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Infrastructure.Persistence;
 
 namespace MooldangAPI.Controllers
 {
-    public class SongBookPagedResponse
-    {
-        public List<SongBook> Data { get; set; } = new();
-        public int? NextLastId { get; set; }
-    }
-
     [ApiController]
     [Route("api/songbook")]
-    [Authorize(Policy = "ChannelManager")]
     public class SongBookController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly SongBookService _songService;
 
-        public SongBookController(AppDbContext db)
+        public SongBookController(AppDbContext db, SongBookService songService)
         {
             _db = db;
+            _songService = songService;
         }
 
-        [HttpGet("/api/songbook/{chzzkUid}")]
+        [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetSongs(string chzzkUid, [FromQuery] int LastId = 0, [FromQuery] int PageSize = 20, [FromQuery] string? Search = null)
         {
-            // 🛡️ [자가 복구] 테이블이 없는 경우를 대비하여 생성 시도 (수동 관리 환경 대응)
-            await _db.Database.ExecuteSqlRawAsync(@"
-                CREATE TABLE IF NOT EXISTS `songbooks` (
-                    `Id` INT NOT NULL AUTO_INCREMENT,
-                    `ChzzkUid` VARCHAR(50) NOT NULL,
-                    `Title` VARCHAR(200) NOT NULL,
-                    `Artist` VARCHAR(100) NULL,
-                    `IsActive` TINYINT(1) NOT NULL DEFAULT 1,
-                    `UsageCount` INT NOT NULL DEFAULT 0,
-                    `CreatedAt` DATETIME(6) NOT NULL,
-                    `UpdatedAt` DATETIME(6) NOT NULL,
-                    PRIMARY KEY (`Id`),
-                    INDEX `IX_songbooks_ChzzkUid_Id` (`ChzzkUid` ASC, `Id` DESC)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            ");
-
-            var query = _db.SongBooks.AsQueryable()
-                .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid == chzzkUid);
-
-            if (!string.IsNullOrWhiteSpace(Search))
-            {
-                query = query.Where(s => s.Title.Contains(Search) || (s.Artist != null && s.Artist.Contains(Search)));
-            }
-
-            if (LastId > 0)
-            {
-                query = query.Where(s => s.Id < LastId);
-            }
-
-            var rawData = await query
-                .OrderByDescending(s => s.Id)
-                .Take(PageSize + 1)
-                .AsNoTracking()
-                .ToListAsync();
-
-            var hasNext = rawData.Count > PageSize;
-            var outputData = hasNext ? rawData.Take(PageSize).ToList() : rawData;
-            int? nextLastId = hasNext ? outputData.Last().Id : null;
-
-            return Ok(new SongBookPagedResponse
-            {
-                Data = outputData,
-                NextLastId = nextLastId
-            });
+            var request = new PagedRequest(LastId, PageSize, Search);
+            var result = await _songService.GetPagedSongsAsync(chzzkUid, request);
+            
+            return Ok(result);
         }
 
+        [Authorize(Policy = "ChannelManager")]
         [HttpPost("{chzzkUid}")]
         public async Task<IActionResult> AddSong(string chzzkUid, [FromBody] SongBook song)
         {
@@ -88,6 +46,7 @@ namespace MooldangAPI.Controllers
             return Ok(song);
         }
 
+        [Authorize(Policy = "ChannelManager")]
         [HttpPut("{chzzkUid}/{id}")]
         public async Task<IActionResult> UpdateSong(string chzzkUid, int id, [FromBody] SongBook updated)
         {
@@ -106,6 +65,7 @@ namespace MooldangAPI.Controllers
             return Ok(song);
         }
 
+        [Authorize(Policy = "ChannelManager")]
         [HttpDelete("{chzzkUid}/{id}")]
         public async Task<IActionResult> DeleteSong(string chzzkUid, int id)
         {
@@ -120,6 +80,7 @@ namespace MooldangAPI.Controllers
             return NoContent();
         }
 
+        [Authorize(Policy = "ChannelManager")]
         [HttpPost("{chzzkUid}/add-to-queue/{id}")]
         public async Task<IActionResult> AddToQueue(string chzzkUid, int id)
         {

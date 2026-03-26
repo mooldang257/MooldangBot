@@ -1,9 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using MooldangAPI.Features.Chat.Events;
 using System.Text.Json;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.ApiClients;
 

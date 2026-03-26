@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
-using MooldangAPI.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 

@@ -1,5 +1,6 @@
-using MediatR;
-using MooldangAPI.Data;
+﻿using MediatR;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 
 namespace MooldangAPI.Security;
 

@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.SignalR;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.Features.Chat.Events;
 using MooldangAPI.Hubs;
 using Microsoft.EntityFrameworkCore;

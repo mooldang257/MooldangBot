@@ -1,5 +1,6 @@
-using Xunit;
-using MooldangAPI.Models;
+﻿using Xunit;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangAPI.Tests
 {

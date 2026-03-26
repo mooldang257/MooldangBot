@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.Hubs;
-using MooldangAPI.Models;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 

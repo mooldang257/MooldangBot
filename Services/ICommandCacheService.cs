@@ -1,4 +1,5 @@
-using MooldangAPI.Models;
+﻿using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangAPI.Services;
 

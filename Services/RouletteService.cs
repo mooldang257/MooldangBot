@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.Hubs;
-using MooldangAPI.Models;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using MooldangAPI.ApiClients;
 using Microsoft.Extensions.Caching.Memory;
 

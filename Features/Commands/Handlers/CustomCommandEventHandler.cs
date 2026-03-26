@@ -1,6 +1,8 @@
 using MediatR;
-using MooldangAPI.Data;
-using MooldangAPI.Models;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using MooldangAPI.Features.Chat.Events;
 using System.Text.Json;
 using System.Text;
@@ -297,7 +299,7 @@ public class CustomCommandEventHandler : INotificationHandler<ChatMessageReceive
             }
             // ---------------------------
 
-            var newSong = new MooldangAPI.Models.SongQueue
+            var newSong = new MooldangBot.Domain.Entities.SongQueue
             {
                 ChzzkUid = notification.Profile.ChzzkUid,
                 Title = songInput,

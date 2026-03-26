@@ -1,8 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MooldangAPI.ApiClients;
-using MooldangAPI.Data;
-using MooldangAPI.Models;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs;
 using MooldangAPI.Features.Chat.Events;
 using System.Net.Http.Headers;
 using MooldangAPI.Services;

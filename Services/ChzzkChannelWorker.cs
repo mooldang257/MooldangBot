@@ -1,9 +1,11 @@
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data; // DB 컨텍스트 네임스페이스
-using MooldangAPI.Models; // 모델 네임스페이스
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence; // DB 컨텍스트 네임스페이스
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.DTOs; // 모델 네임스페이스
 using Microsoft.AspNetCore.SignalR;
 using MooldangAPI.Hubs;
 using MooldangAPI.ApiClients;

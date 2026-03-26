@@ -1,11 +1,15 @@
+﻿using MooldangBot.Application.Services;
+using MooldangBot.Infrastructure.Persistence.Repositories;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using MooldangAPI.Data;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Infrastructure.Security;
 using MooldangAPI.Hubs;
-using MooldangAPI.Models;
+using MooldangBot.Domain.Entities;
 using MooldangAPI.Services;
 using System.Security.Claims;
 using System.Text.Json;
@@ -49,6 +53,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserSession, UserSession>();
+builder.Services.AddScoped<ISongBookRepository, SongBookRepository>();
+builder.Services.AddScoped<SongBookService>();
 
 // -- Event-Driven Architecture 의존성 주입 --
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
