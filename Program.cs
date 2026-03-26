@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Services;
+using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.Persistence.Repositories;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication;
@@ -21,29 +21,39 @@ using MooldangAPI.ApiClients;
 using Microsoft.AspNetCore.Authorization;
 using MooldangAPI.Security;
 
-// ✅ .env 파일이 있으면 환경변수로 로드 (없으면 무시)
-if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".env")))
+// 1. [Zero-Git] 실행 인자에서 설정 파일 경로 추출 (--env=.env.prod 등)
+var envPath = args.FirstOrDefault(a => a.StartsWith("--env="))?.Split('=')[1] ?? ".env";
+
+// 2. 서버 로컬에 있는 설정 파일 로드 (Git 관리 대상 제외)
+if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), envPath)))
 {
-    Env.Load();
+    Env.Load(envPath);
 }
 
-
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables(); // 시스템 환경 변수 통합
 
-
-// 💡 리버스 프록시(Nginx 등) 환경에서 HTTPS 프로토콜을 올바르게 인식하도록 설정합니다.
+// 3. [Cloudflare Tunnel] 리버스 프록시 대응 설정 강화
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
+                               ForwardedHeaders.XForwardedProto | 
+                               ForwardedHeaders.XForwardedHost;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
-    options.ForwardLimit = null; // 프록시 제한을 풀어서 모든 홉을 신뢰하게 함
 });
 
 // ==========================================
 // 1. 핵심 인프라 및 DB 설정 수정테스트
 // ==========================================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 4. [DB Isolation] 환경 변수를 통한 동적 연결 문자열 조립
+string dbName = builder.Configuration["DB_NAME"] ?? "mooldang_bot";
+string dbUser = builder.Configuration["DB_USER"] ?? "root";
+string dbPass = builder.Configuration["DB_PASSWORD"] ?? "";
+string dbHost = builder.Configuration["DB_HOST"] ?? "localhost";
+
+string connectionString = $"Server={dbHost};Database={dbName};Uid={dbUser};Pwd={dbPass};Charset=utf8mb4;";
+
 // 💡 빌드 시점(Docker Build 등)에서 DB 연결 없이도 컨텍스트를 구성할 수 있도록 버전을 명시적으로 지정합니다.
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 36)); 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -108,6 +118,9 @@ builder.Services.AddAuthentication(options => {
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS 강제
     
+    // 5. [Multi-Instance] 인스턴스별 고유 쿠키 이름 적용
+    options.Cookie.Name = builder.Configuration["AUTH_COOKIE_NAME"] ?? ".MooldangBot.Session";
+    
     // AJAX 요청인 경우 302 리다이렉트 대신 401 Unauthorized 반환
     options.Events.OnRedirectToLogin = context => {
         if (context.Request.Path.StartsWithSegments("/api")) {
@@ -142,6 +155,10 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 app.UseWebSockets();
+
+// 6. [Cloudflare] Forwarded Headers 미들웨어 (인증/라우팅 전 필수)
+app.UseForwardedHeaders();
+
 app.UseRouting();
 
 // 미들웨어 설정

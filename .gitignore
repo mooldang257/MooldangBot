@@ -9,10 +9,12 @@
 bin/
 obj/
 
-# 환경 설정 (비밀번호 포함 시 제외 권장)
+# 환경 설정 (비밀번호 포함 시 제외 권장 - Zero-Git Policy)
 appsettings.json
 appsettings.Development.json
 .env
+.env.*
+secrets/
 
 
 # 기타 시스템 파일

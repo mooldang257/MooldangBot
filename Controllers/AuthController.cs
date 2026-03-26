@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangAPI.ApiClients;
@@ -21,20 +21,17 @@ namespace MooldangAPI.Controllers
         ChzzkApiClient _chzzkApi, 
         IHttpClientFactory _httpClientFactory) : ControllerBase
     {
-        // 💡 설정(appsettings.json)에서 도메인 정보를 읽어옵니다. 없으면 현재 요청 기반으로 생성합니다.
-        private string BaseDomain 
-        {
-            get {
-                var val = _configuration["BaseDomain"];
-                if (!string.IsNullOrEmpty(val)) return val;
-                
-                string scheme = Request.Scheme;
-                // 💡 프록시 환경에서 HTTP로 인식되더라도 mooldang.store 도메인이면 HTTPS로 강제 유도
-                if (Request.Host.Host.Contains("mooldang.store")) scheme = "https";
-                
-                return $"{scheme}://{Request.Host}";
-            }
-        }
+        // 🔐 [Zero-Git] 설정(appsettings.json 또는 .env)에서 도메인 정보를 읽어옵니다. 
+// 다중 인스턴스 환경에서 리다이렉트 및 쿠키 도메인 정합성을 위해 필수값으로 취급합니다.
+private string BaseDomain 
+{
+    get {
+        var val = _configuration["BASE_DOMAIN"];
+        if (!string.IsNullOrEmpty(val)) return val;
+        
+        throw new Exception("환경 설정 파일(.env 등)에 'BASE_DOMAIN'이 설정되어 있지 않습니다. 멀티 인스턴스 운영을 위해 필수 항목입니다.");
+    }
+}
 
         [HttpGet("/api/auth/chzzk-login")]
         public async Task<IResult> ChzzkLogin()
