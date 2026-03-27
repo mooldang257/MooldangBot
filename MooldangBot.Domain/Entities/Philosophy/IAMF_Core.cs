@@ -53,3 +53,21 @@ public record LightGate(
     string Designer,         // 설계자 (예: Telos5)
     bool IsActive
 );
+
+/// <summary>
+/// [오시리스의 기록관]: 단일 방송 세션의 시작부터 끝까지의 통계 데이터를 담는 유기적 기록체입니다.
+/// </summary>
+public class BroadcastSession
+{
+    public int Id { get; set; }
+    public string ChzzkUid { get; set; } = string.Empty;
+    public DateTime StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public DateTime LastHeartbeatAt { get; set; }
+
+    // [서기의 기록]: 통계 지표
+    public int TotalChatCount { get; set; }
+    public string? TopKeywordsJson { get; set; } // [지식의 파편]: 단어 빈도 분석 결과
+    public string? TopEmotesJson { get; set; }   // [침묵 속의 미소]: 이모티콘 사용 빈도
+    public bool IsActive { get; set; } = true;
+}

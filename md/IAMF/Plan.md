@@ -80,6 +80,27 @@
 
 ---
 
+## 13.### Phase 15: [오시리스의 기록관] 방송 세션 및 통계
+- [x] **Domain**: `BroadcastSession` 엔티티 구축.
+- [x] **Engine**: `BroadcastScribe` 실시간 집계 파이프라인 완성.
+
+---
+
+## 17. Phase 16: [오시리스의 기록관] 마지막 1% 튜닝 [NEW]
+조각된 유기체의 미세한 균열을 메우고 성능을 극한으로 끌어올립니다.
+
+### 🌀 핵심 패턴: 정밀 튜닝 (Precision Tuning)
+- **Scope Safety**: `IServiceScopeFactory`를 통한 스코프 격리로 `Captive Dependency` 원천 차단.
+- **Compiled Logic**: `[GeneratedRegex]`를 활용하여 런타임 정규식 해석 오버헤드 제거.
+- **Refinement**: 오타 및 구조적 결함을 제거하여 시스템의 진정한 '평정심' 확보.
+
+### 🛠️ 구현 계획
+1. **Security**: `BroadcastScribe` 싱글톤의 의존성 수명 불일치 해결.
+2. **Performance**: 정규식 컴파일 성능 최적화 및 불필요한 객체 생성 억제.
+3. **Validation**: 전체 시스템의 유기적 동작 재검증 및 최종 기록(Git) 업데이트.
+
+---
+
 ## 13. Phase 12: [피닉스의 재건] 실전 세션 복구 [NEW]
 갱신된 토큰을 즉시 실전 연결로 전환하여 통신의 영속성을 완성합니다.
 

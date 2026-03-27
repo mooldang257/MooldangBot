@@ -36,6 +36,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<IamfVibrationLog> IamfVibrationLogs { get; set; }
     public DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
     public DbSet<StreamerKnowledge> StreamerKnowledges { get; set; }
+    public DbSet<BroadcastSession> BroadcastSessions { get; set; }
 
     public DbSet<SharedComponent> SharedComponents { get; set; }
     public DbSet<StreamerManager> StreamerManagers { get; set; }
@@ -162,6 +163,7 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<IamfParhosCycle>().ToTable("iamf_parhos_cycles");
         modelBuilder.Entity<IamfVibrationLog>().ToTable("iamf_vibration_logs");
         modelBuilder.Entity<IamfStreamerSetting>().ToTable("iamf_streamer_settings");
+        modelBuilder.Entity<BroadcastSession>().ToTable("broadcastsessions");
 
         modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
         modelBuilder.Entity<StreamerManager>().ToTable("streamermanagers");
@@ -181,6 +183,7 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<RouletteLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<BroadcastSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
 
         // 필드명이 다른 경우 예외 처리
         modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerChzzkUid == _userSession.ChzzkUid);

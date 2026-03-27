@@ -6,6 +6,7 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
+using MooldangBot.Application.Services.Philosophy;
 
 namespace MooldangBot.Infrastructure
 {
@@ -28,6 +29,9 @@ namespace MooldangBot.Infrastructure
 
             // [피닉스의 심장]: 실전 채팅 클라이언트
             services.AddSingleton<IChzzkChatClient, MooldangBot.Infrastructure.ApiClients.Philosophy.ChzzkChatClient>();
+
+            // [오시리스의 기록관]: 방송 통계 및 세션 관리
+            services.AddSingleton<IBroadcastScribe, BroadcastScribe>();
 
             return services;
         }
