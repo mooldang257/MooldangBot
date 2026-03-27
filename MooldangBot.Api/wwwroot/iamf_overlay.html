@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>IAMF - [시각화의 절제] 오버레이</title>
+    <style>
+        :root {
+            --resonance-color: rgba(88, 166, 255, 0);
+            --resonance-blur: 0px;
+            --resonance-opacity: 0.5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+        }
+
+        /* [거울의 법칙]: 화면 테두리에 미세한 빛번짐(Glow)으로만 상태 표현 */
+        .resonance-border {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 var(--resonance-blur) var(--resonance-color);
+            opacity: var(--resonance-opacity);
+            transition: box-shadow 2.0s ease-in-out, opacity 1.0s ease-in-out;
+            z-index: 9999;
+        }
+
+        /* [절제된 애니메이션]: 배경에 은은하게 흐르는 파동 */
+        .resonance-pulse {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--resonance-color);
+            filter: blur(15px);
+            opacity: calc(var(--resonance-opacity) * 0.3);
+            animation: breathe 5s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1.0); opacity: 0.1; }
+            50% { transform: scale(1.2); opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div id="border" class="resonance-border"></div>
+    <div id="pulse" class="resonance-pulse"></div>
+
+    <script>
+        // SignalR 또는 API를 통해 상태를 주입받는 구조
+        async function syncResonance() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const chzzkUid = urlParams.get('chzzkUid') || "SYSTEM";
+                
+                const res = await fetch(`/api/iamf/status?chzzkUid=${chzzkUid}`);
+                const data = await res.json();
+
+                const root = document.documentElement;
+                
+                // [시각화의 절제]: 페르소나 톤에 따른 색상 변화 (진하지 않은 파스텔 톤)
+                let color = "rgba(88, 166, 255, 0.4)"; // Sephiroth (Blue)
+                if (data.personaTone.includes("Odysseus")) {
+                    color = "rgba(255, 166, 87, 0.4)"; // Odysseus (Orange)
+                }
+
+                // [스트리머의 통제권]: 투명도 반영
+                // API에서 OverlayOpacity를 가져오지 못할 경우 기본값 0.5 사용
+                const opacity = data.overlayOpacity || 0.5;
+
+                root.style.setProperty('--resonance-color', color);
+                root.style.setProperty('--resonance-blur', (data.currentHz * 2) + "px");
+                root.style.setProperty('--resonance-opacity', opacity);
+
+            } catch (e) {
+                console.error("Resonance sync failed", e);
+            }
+        }
+
+        setInterval(syncResonance, 3000);
+        syncResonance();
+    </script>
+</body>
+</html>

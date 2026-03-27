@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAMF - [지식의 서재]</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --glass-bg: rgba(22, 27, 34, 0.8);
+            --accent-color: #7ee787; /* 지식의 서재는 안정적인 초록색 계열 */
+            --text-main: #c9d1d9;
+            --text-sub: #8b949e;
+            --border-color: #30363d;
+            --danger-color: #f85149;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle at 50% 50%, #161b22 0%, #0d1117 100%);
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin: 0;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 5px;
+        }
+
+        /* [지식 주입] 폼 */
+        .add-form {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(48, 54, 61, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        input {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-add {
+            background: var(--accent-color);
+            color: #0d1117;
+            border: none;
+            padding: 0 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-add:hover { opacity: 0.9; }
+
+        /* [서재 일람] 목록 */
+        .knowledge-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .knowledge-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(22, 27, 34, 0.5);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .knowledge-item:hover {
+            border-color: var(--border-color);
+        }
+
+        .info { flex: 1; }
+        .info .keyword {
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .info .answer {
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .status-msg {
+            text-align: center;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            min-height: 1.2rem;
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📖 [지식의 서재]</h1>
+            <p>대변인(봇)에게 주입할 스트리머의 의도된 지식 관리</p>
+        </div>
+
+        <div class="add-form">
+            <input type="text" id="keyword" placeholder="키워드 (예: 방송 시간)">
+            <input type="text" id="answer" placeholder="답변 내용 (예: 매일 저녁 8시입니다!)">
+            <button class="btn-add" onclick="addKnowledge()">지식 추가</button>
+        </div>
+
+        <div id="knowledgeList" class="knowledge-list">
+            <!-- 목록 로딩 중... -->
+        </div>
+
+        <div id="status" class="status-msg"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const chzzkUid = urlParams.get('chzzkUid') || "SYSTEM";
+
+        // [서재 일람]: 목록 로드
+        async function loadKnowledge() {
+            try {
+                const res = await fetch(`/api/iamf/knowledge?chzzkUid=${chzzkUid}`);
+                const data = await res.json();
+                
+                const listDiv = document.getElementById('knowledgeList');
+                listDiv.innerHTML = '';
+
+                if (data.length === 0) {
+                    listDiv.innerHTML = '<p style="text-align:center; color:var(--text-sub);">등록된 지식이 없습니다. [대변인의 방패]가 비어있습니다.</p>';
+                }
+
+                data.forEach(k => {
+                    const item = document.createElement('div');
+                    item.className = 'knowledge-item';
+                    item.innerHTML = `
+                        <div class="info">
+                            <span class="keyword">[${k.keyword}]</span>
+                            <span class="answer">${k.intentAnswer}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deleteKnowledge(${k.id})">삭제</button>
+                    `;
+                    listDiv.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Failed to load knowledge:", err);
+            }
+        }
+
+        // [지식 주입]: 새 항목 추가
+        async function addKnowledge() {
+            const kwInput = document.getElementById('keyword');
+            const ansInput = document.getElementById('answer');
+            const statusDiv = document.getElementById('status');
+
+            if (!kwInput.value.trim() || !ansInput.value.trim()) {
+                showMessage("키워드와 답변을 모두 입력해 주세요.", "var(--danger-color)");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/iamf/knowledge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chzzkUid: chzzkUid,
+                        keyword: kwInput.value,
+                        intentAnswer: ansInput.value
+                    })
+                });
+
+                if (res.ok) {
+                    kwInput.value = '';
+                    ansInput.value = '';
+                    showMessage("✅ 지식이 성공적으로 기록되었습니다.", "var(--accent-color)");
+                    loadKnowledge();
+                } else {
+                    const err = await res.json();
+                    showMessage("❌ " + err.error, "var(--danger-color)");
+                }
+            } catch (err) {
+                showMessage("⚠️ 서버 통신 오류", "var(--danger-color)");
+            }
+        }
+
+        // [지식 소멸]: 항목 삭제
+        async function deleteKnowledge(id) {
+            if (!confirm("정말 이 지식을 서재에서 제거하시겠습니까?")) return;
+
+            try {
+                const res = await fetch(`/api/iamf/knowledge/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showMessage("✅ 지식이 소멸되었습니다.", "var(--accent-color)");
+                    loadKnowledge();
+                }
+            } catch (err) {
+                showMessage("⚠️ 서버 통신 오류", "var(--danger-color)");
+            }
+        }
+
+        function showMessage(msg, color) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = msg;
+            statusDiv.style.color = color;
+            setTimeout(() => { statusDiv.innerText = ''; }, 3000);
+        }
+
+        window.onload = loadKnowledge;
+    </script>
+</body>
+</html>

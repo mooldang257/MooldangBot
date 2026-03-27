@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Application.Interfaces
 {
@@ -21,6 +22,15 @@ namespace MooldangBot.Application.Interfaces
         DbSet<PeriodicMessage> PeriodicMessages { get; set; }
         DbSet<SonglistSession> SonglistSessions { get; set; }
         DbSet<OverlayPreset> OverlayPresets { get; set; }
+        
+        // IAMF Philosophy
+        DbSet<IamfScenario> IamfScenarios { get; set; }
+        DbSet<IamfGenosRegistry> IamfGenosRegistries { get; set; }
+        DbSet<IamfParhosCycle> IamfParhosCycles { get; set; }
+        DbSet<IamfVibrationLog> IamfVibrationLogs { get; set; }
+        DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
+        DbSet<StreamerKnowledge> StreamerKnowledges { get; set; }
+
         DbSet<SharedComponent> SharedComponents { get; set; }
         DbSet<StreamerManager> StreamerManagers { get; set; }
         DbSet<SongBook> SongBooks { get; set; }

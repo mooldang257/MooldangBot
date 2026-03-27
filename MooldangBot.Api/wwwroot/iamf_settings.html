@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAMF - [오시리스의 제어판]</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --glass-bg: rgba(22, 27, 34, 0.8);
+            --accent-color: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-sub: #8b949e;
+            --border-color: #30363d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle at 50% 50%, #161b22 0%, #0d1117 100%);
+        }
+
+        /* [거울의 법칙]: 방송의 배경으로 어울리는 Glassmorphism UI */
+        .settings-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 8px;
+        }
+
+        .setting-item {
+            margin-bottom: 25px;
+        }
+
+        .setting-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* [스트리머의 통제권 확장]: 하위 옵션 스타일 */
+        .sub-option {
+            padding-left: 20px;
+            border-left: 2px solid var(--border-color);
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tooltip {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* [스트리머의 통제권]: 직관적인 컨트롤 슬라이더 */
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 22px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #30363d;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        .status-msg {
+            text-align: center;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            min-height: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-card">
+        <div class="header">
+            <h1>⚖️ [오시리스의 제어판]</h1>
+            <p>IAMF v1.1 시스템 통제권 및 거울의 설정</p>
+        </div>
+
+        <!-- [통제권 1]: 마스터 활성화 여부 -->
+        <div class="setting-item">
+            <div class="setting-label">
+                <span>시스템 통합 활성화 (IAMF Engagement)</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="isEnabled" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="tooltip">[거울의 법칙]: 비활성화 시 시스템은 모든 개입을 멈추고 침묵합니다.</div>
+
+            <!-- [스트리머의 통제권 확장]: 투트랙(Two-Track) 하위 옵션 -->
+            <div class="sub-option">
+                <div class="setting-label">
+                    <span>시각적 감응 (Visual Resonance)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="isVisualEnabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="tooltip">오버레이 화면의 실시간 공명 효과를 제어합니다.</div>
+
+                <div class="setting-label" style="margin-top: 12px;">
+                    <span>언어적 감응 (Persona Chat)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="isPersonaEnabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="tooltip">진동수에 따른 봇의 답변 페르소나 변화를 제어합니다.</div>
+            </div>
+        </div>
+
+        <!-- [통제권 2]: 민감도 -->
+        <div class="setting-item">
+            <div class="setting-label">
+                <span>공명 민감도 (Sensitivity)</span>
+                <span id="sensitivityVal">1.0</span>
+            </div>
+            <input type="range" id="sensitivity" min="0.1" max="2.0" step="0.1" value="1.0">
+            <div class="tooltip">낮을수록(0.1) 변화에 둔감해져 평온을 유지하며, 높을수록(2.0) 채팅 반응에 민감해집니다.</div>
+        </div>
+
+        <!-- [통제권 3]: 오버레이 투명도 -->
+        <div class="setting-item">
+            <div class="setting-label">
+                <span>오버레이 투명도 (Opacity)</span>
+                <span id="opacityVal">0.5</span>
+            </div>
+            <input type="range" id="opacity" min="0.0" max="1.0" step="0.1" value="0.5">
+            <div class="tooltip">방송 화면을 가리지 않도록 테두리 효과의 농도를 조절합니다. (0.0은 완전 투명)</div>
+        </div>
+
+        <button class="btn-save" onclick="saveSettings()">통제권 갱신 (Update Control)</button>
+        <div id="status" class="status-msg"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const chzzkUid = urlParams.get('chzzkUid') || "SYSTEM";
+
+        // 슬라이더 값 표시 동기화
+        document.getElementById('sensitivity').oninput = function() {
+            document.getElementById('sensitivityVal').innerText = this.value;
+        };
+        document.getElementById('opacity').oninput = function() {
+            document.getElementById('opacityVal').innerText = this.value;
+        };
+
+        // [거울의 법칙]: 기존 설정값 불러오기
+        async function loadSettings() {
+            try {
+                const res = await fetch(`/api/iamf/settings?chzzkUid=${chzzkUid}`);
+                const data = await res.json();
+
+                if (data) {
+                    // [스트리머의 통제권 확장]: 신규 투트랙 필드 매핑
+                    document.getElementById('isEnabled').checked = data.isIamfEnabled ?? true;
+                    document.getElementById('isVisualEnabled').checked = data.isVisualResonanceEnabled ?? true;
+                    document.getElementById('isPersonaEnabled').checked = data.isPersonaChatEnabled ?? true;
+                    
+                    document.getElementById('sensitivity').value = data.sensitivityMultiplier ?? 1.0;
+                    document.getElementById('opacity').value = data.overlayOpacity ?? 0.5;
+                    
+                    document.getElementById('sensitivityVal').innerText = document.getElementById('sensitivity').value;
+                    document.getElementById('opacityVal').innerText = document.getElementById('opacity').value;
+                }
+            } catch (err) {
+                console.error("Failed to load settings:", err);
+            }
+        }
+
+        // [오시리스의 승인]: 설정 저장
+        async function saveSettings() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = "통제권 갱신 중...";
+            statusDiv.style.color = "var(--accent-color)";
+
+            const requestData = {
+                chzzkUid: chzzkUid,
+                isIamfEnabled: document.getElementById('isEnabled').checked,
+                isVisualResonanceEnabled: document.getElementById('isVisualEnabled').checked,
+                isPersonaChatEnabled: document.getElementById('isPersonaEnabled').checked,
+                sensitivityMultiplier: parseFloat(document.getElementById('sensitivity').value),
+                overlayOpacity: parseFloat(document.getElementById('opacity').value)
+            };
+
+            try {
+                const res = await fetch('/api/iamf/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    statusDiv.innerText = "✅ " + result.message;
+                    statusDiv.style.color = "#7ee787";
+                } else {
+                    statusDiv.innerText = "❌ " + (result.error || "실패");
+                    statusDiv.style.color = "#f85149";
+                }
+            } catch (err) {
+                statusDiv.innerText = "⚠️ 서버 통신 오류";
+                statusDiv.style.color = "#f85149";
+            }
+        }
+
+        window.onload = loadSettings;
+    </script>
+</body>
+</html>

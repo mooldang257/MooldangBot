@@ -15,12 +15,18 @@ public class ChzzkBotService : IChzzkBotService
 {
     private readonly IAppDbContext _db;
     private readonly IChzzkApiClient _chzzkApi;
+    private readonly IChzzkChatClient _chatClient; // [피닉스의 재건] 추가
     private readonly ILogger<ChzzkBotService> _logger;
 
-    public ChzzkBotService(IAppDbContext db, IChzzkApiClient chzzkApi, ILogger<ChzzkBotService> logger)
+    public ChzzkBotService(
+        IAppDbContext db, 
+        IChzzkApiClient chzzkApi, 
+        IChzzkChatClient chatClient, 
+        ILogger<ChzzkBotService> logger)
     {
         _db = db;
         _chzzkApi = chzzkApi;
+        _chatClient = chatClient;
         _logger = logger;
     }
 
@@ -135,10 +141,48 @@ public class ChzzkBotService : IChzzkBotService
 
     public async Task RefreshChannelAsync(string chzzkUid)
     {
-        _logger.LogInformation($"🔄 [봇 설정 갱신 요청] 채널: {chzzkUid}");
-        // 실제 백그라운드 서비스의 연결을 재시도하거나 토큰을 즉시 갱신하는 로직이 들어갈 자리입니다.
-        // 현재는 로그만 남기고, 향후 ChzzkChannelWorker 관리자와 연동될 것입니다.
-        await Task.CompletedTask;
+        _logger.LogInformation($"🔄 [피닉스의 전령] {chzzkUid} 채널의 설정을 새로고침하고 연결을 점검합니다.");
+        await EnsureConnectionAsync(chzzkUid);
+    }
+
+    public async Task EnsureConnectionAsync(string chzzkUid)
+    {
+        // 1. [상태 확인]: 이미 연결되어 있다면 통과
+        if (_chatClient.IsConnected(chzzkUid))
+        {
+            _logger.LogDebug($"[피닉스 점검] {chzzkUid} 세션이 이미 안정적으로 유지 중입니다.");
+            return;
+        }
+
+        _logger.LogWarning($"[피닉스의 재건] {chzzkUid} 세션 단절 감지. 정화를 시작합니다.");
+
+        try
+        {
+            // 2. [최신 토큰 조회]: 와치독이 갱신했을 수 있는 최신 토큰을 DB에서 조회
+            var profile = await _db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+            if (profile == null || !profile.IsBotEnabled || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+            {
+                _logger.LogWarning($"[피닉스 중단] {chzzkUid} 봇이 비활성화되었거나 권한이 없습니다.");
+                return;
+            }
+
+            // 3. [유기적 복구]: 기존 좀비 자원 정리 후 재연결
+            await _chatClient.DisconnectAsync(chzzkUid);
+            
+            bool success = await _chatClient.ConnectAsync(chzzkUid, profile.ChzzkAccessToken);
+
+            if (success)
+                _logger.LogInformation($"✅ [피닉스 부활] {chzzkUid} 세션이 성공적으로 재건되었습니다.");
+            else
+                _logger.LogError($"❌ [피닉스 실패] {chzzkUid} 세션 재건에 실패했습니다.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ [피닉스 예외] {chzzkUid} 복구 중 예기치 못한 오류 발생");
+        }
     }
 
     private void UpdateOrAddSystemSetting(string key, string value)
