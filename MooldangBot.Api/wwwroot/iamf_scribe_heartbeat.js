@@ -43,6 +43,8 @@ function renderEndingCredits(stats) {
         const style = document.createElement('style');
         style.id = styleId;
         style.textContent = `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;800&display=swap');
+
             :root {
                 --deep-bg: #05070a;
                 --tech-blue: #00d4ff;
@@ -53,8 +55,12 @@ function renderEndingCredits(stats) {
             .credits-container {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background: var(--deep-bg); color: white; z-index: 9999;
-                font-family: 'Inter', 'GmarketSansMedium', sans-serif;
+                font-family: 'Inter', sans-serif;
                 overflow: hidden; animation: fadeIn 2s ease;
+                letter-spacing: 0.08em;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: optimizeLegibility;
             }
 
             .credits-mask {
@@ -104,7 +110,8 @@ function renderEndingCredits(stats) {
             }
 
             .ending-title {
-                font-size: 5rem; font-weight: 900; letter-spacing: 12px;
+                font-size: 5rem; font-weight: 900; letter-spacing: 15px;
+                text-transform: uppercase;
                 background: linear-gradient(to right, #fff, var(--tech-blue), #fff);
                 -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                 margin-bottom: 15vh; margin-top: 10vh;

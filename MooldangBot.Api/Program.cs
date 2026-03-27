@@ -84,6 +84,18 @@ builder.Services.AddSignalR()
     });
 
 builder.Services.AddMemoryCache();
+
+// [성벽의 설계]: IAMF 오버레이 전용 CORS 정책
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("IamfOverlayPolicy", policy =>
+    {
+        // 💡 실전 배포 시 .WithOrigins("https://your-domain.com")으로 수정 권장
+        policy.AllowAnyOrigin() 
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -146,6 +158,7 @@ app.UseWebSockets();
 app.UseForwardedHeaders();
 
 app.UseRouting();
+app.UseCors("IamfOverlayPolicy");
 
 // 미들웨어 설정
 app.UseStaticFiles();
