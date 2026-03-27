@@ -22,6 +22,7 @@ namespace MooldangBot.Application.Interfaces
         DbSet<PeriodicMessage> PeriodicMessages { get; set; }
         DbSet<SonglistSession> SonglistSessions { get; set; }
         DbSet<OverlayPreset> OverlayPresets { get; set; }
+    DbSet<BroadcastSession> BroadcastSessions { get; set; }
         
         // IAMF Philosophy
         DbSet<IamfScenario> IamfScenarios { get; set; }

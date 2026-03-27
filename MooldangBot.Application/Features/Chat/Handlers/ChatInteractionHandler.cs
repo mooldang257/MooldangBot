@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Domain.Events;
+using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Application.Features.Chat.Handlers;
 
@@ -15,10 +17,18 @@ public class ChatInteractionHandler(
     IChatIntentRouter intentRouter,
     ILlmService llmService,
     IChzzkChatService chatService,
+    IServiceProvider serviceProvider,
     ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
+        // 0. [오시리스의 기록관]: 실시간 채팅 집계 (통계를 위해 모든 메시지 기록)
+        using (var scope = serviceProvider.CreateScope())
+        {
+            var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
+            scribe.AddChatMessage(notification.Profile.ChzzkUid, notification.Message);
+        }
+
         // 1. [무한 루프 방지]: 봇 자신의 말이나 시스템 메시지에는 반응하지 않음
         // (SenderId가 채널의 ChzzkUid와 같으면 스트리머, 아니면 시청자. 봇은 별도의 ID를 가짐)
         if (notification.Username.Contains("MooldangBot") || string.IsNullOrEmpty(notification.SenderId))

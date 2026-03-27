@@ -43,8 +43,22 @@ public class SystemWatchdogService(
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var renewalService = scope.ServiceProvider.GetRequiredService<ITokenRenewalService>();
         var chatBotService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>(); // 재연결 및 상태 관리용
+        var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
+        var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
 
-        // 1. [활성 파동 추출]: 시스템에 등록되어 가동 중인 모든 스트리머 조회
+        // 1. [오시리스의 기록관]: 방송 종료 감시 (하트비트가 5분 이상 끊기면 자동 종료)
+        var inactiveSessions = db.BroadcastSessions
+            .Where(s => s.IsActive && s.LastHeartbeatAt < DateTime.UtcNow.AddMinutes(-5))
+            .ToList();
+
+        foreach (var session in inactiveSessions)
+        {
+            logger.LogWarning($"[기록관의 붓] {session.ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.");
+            await scribe.FinalizeSessionAsync(session.ChzzkUid);
+            await chatClient.DisconnectAsync(session.ChzzkUid);
+        }
+
+        // 2. [활성 파동 추출]: 시스템에 등록되어 가동 중인 모든 스트리머 조회
         var activeStreamers = db.StreamerProfiles
             .Where(s => s.IsBotEnabled)
             .Select(s => new { s.ChzzkUid })
