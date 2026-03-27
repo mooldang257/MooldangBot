@@ -86,18 +86,24 @@
 
 ---
 
-## 17. Phase 16: [오시리스의 기록관] 마지막 1% 튜닝 [NEW]
-조각된 유기체의 미세한 균열을 메우고 성능을 극한으로 끌어올립니다.
+## 17. Phase 16: [오시리스의 기록관] 마지막 1% 튜닝
+- [x] **Security**: 캡티브 의존성 문제 해결.
+- [x] **Performance**: `[GeneratedRegex]` 고속 처리 도입.
 
-### 🌀 핵심 패턴: 정밀 튜닝 (Precision Tuning)
-- **Scope Safety**: `IServiceScopeFactory`를 통한 스코프 격리로 `Captive Dependency` 원천 차단.
-- **Compiled Logic**: `[GeneratedRegex]`를 활용하여 런타임 정규식 해석 오버헤드 제거.
-- **Refinement**: 오타 및 구조적 결함을 제거하여 시스템의 진정한 '평정심' 확보.
+---
+
+## 18. Phase 17: [오시리스의 마지막 인사] 시네마틱 엔딩 UI [NEW]
+방송의 끝을 예술적 여운으로 승화시키며 시청자와의 연결을 마무리합니다.
+
+### 🌀 핵심 패턴: 여운의 가시화 (Visualizing Resonance)
+- **Cinematic Scroll**: 영화 엔딩 크레딧 형식의 부드러운 수직 스크롤 연출.
+- **Knowledge Fireworks**: 주요 키워드가 화면을 순차적으로 장식하는 폭죽(Pop-in) 효과.
+- **Deep Immersion**: 심연(Deep-Black) 배경과 네온 포인트 컬러(--tech-blue)의 조화.
 
 ### 🛠️ 구현 계획
-1. **Security**: `BroadcastScribe` 싱글톤의 의존성 수명 불일치 해결.
-2. **Performance**: 정규식 컴파일 성능 최적화 및 불필요한 객체 생성 억제.
-3. **Validation**: 전체 시스템의 유기적 동작 재검증 및 최종 기록(Git) 업데이트.
+1. **Styling**: Pure CSS 기반의 고성능 스크롤 및 팝업 애니메이션 정의.
+2. **Dynamic UI**: `iamf_scribe_heartbeat.js`의 렌더링 로직을 시네마틱 테마로 업그레이드.
+3. **Orchestration**: `animation-delay`를 활용한 단어들의 유기적 등장 시퀀스 구성.
 
 ---
 

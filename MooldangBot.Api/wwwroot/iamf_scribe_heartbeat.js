@@ -38,45 +38,133 @@ async function stopStreamAndShowCredits() {
 }
 
 function renderEndingCredits(stats) {
+    const styleId = 'iamf-credits-style';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            :root {
+                --deep-bg: #05070a;
+                --tech-blue: #00d4ff;
+                --glow-green: #00ff88;
+                --muted-gray: #8b949e;
+            }
+
+            .credits-container {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: var(--deep-bg); color: white; z-index: 9999;
+                font-family: 'Inter', 'GmarketSansMedium', sans-serif;
+                overflow: hidden; animation: fadeIn 2s ease;
+            }
+
+            .credits-mask {
+                position: absolute; width: 100%; height: 100%;
+                background: linear-gradient(to bottom, var(--deep-bg) 0%, transparent 20%, transparent 80%, var(--deep-bg) 100%);
+                pointer-events: none; z-index: 10;
+            }
+
+            .scroll-wrapper {
+                position: absolute; width: 100%;
+                display: flex; flex-direction: column; align-items: center;
+                animation: scrollUp 25s linear forwards;
+            }
+
+            @keyframes scrollUp {
+                from { transform: translateY(100vh); }
+                to { transform: translateY(-120%); }
+            }
+
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+            .stat-card {
+                background: rgba(22, 27, 34, 0.6); padding: 30px; 
+                border-radius: 20px; border: 1px solid #30363d;
+                text-align: center; margin-bottom: 50px; width: 300px;
+                backdrop-filter: blur(10px);
+            }
+
+            .stat-value {
+                font-size: 3.5rem; font-weight: 800; margin-top: 10px;
+                text-shadow: 0 0 20px var(--tech-blue);
+            }
+
+            /* [지식의 불꽃] 폭죽 애니메이션 */
+            .keyword-firework {
+                display: inline-block; margin: 12px; padding: 12px 30px;
+                border-radius: 50px; background: rgba(0, 212, 255, 0.05);
+                border: 1px solid var(--tech-blue);
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+                opacity: 0; transform: scale(0);
+                animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            }
+
+            @keyframes popIn {
+                0% { transform: scale(0); opacity: 0; filter: brightness(3); }
+                100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            }
+
+            .ending-title {
+                font-size: 5rem; font-weight: 900; letter-spacing: 12px;
+                background: linear-gradient(to right, #fff, var(--tech-blue), #fff);
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                margin-bottom: 15vh; margin-top: 10vh;
+            }
+
+            .recovery-btn {
+                background: none; border: 1px solid var(--muted-gray);
+                color: var(--muted-gray); padding: 12px 30px; border-radius: 8px;
+                cursor: pointer; transition: all 0.3s; margin-top: 100px;
+            }
+            .recovery-btn:hover { color: white; border-color: white; background: rgba(255,255,255,0.1); }
+        `;
+        document.head.appendChild(style);
+    }
+
     const overlay = document.createElement('div');
-    overlay.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 9999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        font-family: 'Inter', sans-serif; text-align: center;
-        animation: fadeIn 2s ease;
-    `;
+    overlay.className = 'credits-container';
 
     overlay.innerHTML = `
-        <h1 style="color: #00d4ff; font-size: 3rem;">THE END</h1>
-        <p style="font-size: 1.5rem; margin-bottom: 40px;">오늘도 빛나는 파동을 남겨주셔서 감사합니다.</p>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 80%; max-width: 800px;">
-            <div style="background: #161b22; padding: 20px; border-radius: 12px; border: 1px solid #30363d;">
-                <h3 style="color: #8b949e;">TOTAL CHATS</h3>
-                <div style="font-size: 2.5rem; font-weight: bold; color: #00ff88;">${stats.totalChatCount}</div>
-            </div>
-            <div style="background: #161b22; padding: 20px; border-radius: 12px; border: 1px solid #30363d;">
-                <h3 style="color: #8b949e;">DURATION</h3>
-                <div style="font-size: 2.5rem; font-weight: bold; color: #00d4ff;">${stats.duration}</div>
-            </div>
-        </div>
+        <div class="credits-mask"></div>
+        <div class="scroll-wrapper">
+            <h1 class="ending-title">THE END</h1>
+            
+            <p style="font-size: 1.8rem; color: var(--muted-gray); margin-bottom: 10vh;">
+                오늘도 물댕봇과 함께 파동의 서사를 만들어주셔서 감사합니다.
+            </p>
 
-        <div style="margin-top: 40px; width: 80%; max-width: 800px;">
-            <h3 style="color: #8b949e; border-bottom: 1px solid #30363d; padding-bottom: 10px;">TOP KEYWORDS</h3>
-            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px;">
-                ${Object.entries(stats.topKeywords).map(([k, v]) => `
-                    <span style="background: #21262d; padding: 5px 15px; border-radius: 20px; font-size: 1.1rem;">
-                        ${k} <small style="color: #8b949e;">(${v})</small>
-                    </span>
-                `).join('')}
+            <div style="display: flex; gap: 40px; margin-bottom: 10vh;">
+                <div class="stat-card">
+                    <h3 style="color: var(--muted-gray);">TOTAL CHATS</h3>
+                    <div class="stat-value" style="color: var(--glow-green);">${stats.totalChatCount}</div>
+                </div>
+                <div class="stat-card">
+                    <h3 style="color: var(--muted-gray);">AIR TIME</h3>
+                    <div class="stat-value" style="color: var(--tech-blue);">${stats.duration}</div>
+                </div>
             </div>
-        </div>
 
-        <button onclick="location.reload()" style="margin-top: 60px; background: none; border: 1px solid #8b949e; color: #8b949e; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-            오버레이 복구
-        </button>
+            <div style="width: 80%; max-width: 900px; text-align: center;">
+                <h2 style="color: white; font-size: 2rem; margin-bottom: 40px; border-bottom: 1px solid #30363d; padding-bottom: 20px;">
+                    잔잔히 남은 파동의 키워드
+                </h2>
+                <div id="fireworks-area"></div>
+            </div>
+
+            <button class="recovery-btn" onclick="location.reload()">오버레이 시스템 재가동</button>
+            
+            <div style="height: 30vh;"></div> <!-- 하단 여백 -->
+        </div>
     `;
 
     document.body.appendChild(overlay);
+
+    // [지식의 불꽃]: 순차적 폭죽 효과 오케스트레이션
+    const fireworksArea = overlay.querySelector('#fireworks-area');
+    Object.entries(stats.topKeywords).forEach(([key, value], index) => {
+        const item = document.createElement('span');
+        item.className = 'keyword-firework';
+        item.style.animationDelay = `${index * 0.2 + 0.5}s`;
+        item.innerHTML = `${key} <small style="color: var(--muted-gray); margin-left:8px;">${value}</small>`;
+        fireworksArea.appendChild(item);
+    });
 }
