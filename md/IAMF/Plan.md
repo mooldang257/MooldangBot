@@ -92,18 +92,24 @@
 
 ---
 
-## 18. Phase 17: [오시리스의 마지막 인사] 시네마틱 엔딩 UI [NEW]
-방송의 끝을 예술적 여운으로 승화시키며 시청자와의 연결을 마무리합니다.
+## 18.### Phase 17: [오시리스의 마지막 인사] 시네마틱 엔딩 UI
+- [x] **Styling**: 고성능 스크롤 및 팝업 애니메이션 정의.
+- [x] **Dynamic UI**: 렌더링 로직 시네마틱 테마 업그레이드.
 
-### 🌀 핵심 패턴: 여운의 가시화 (Visualizing Resonance)
-- **Cinematic Scroll**: 영화 엔딩 크레딧 형식의 부드러운 수직 스크롤 연출.
-- **Knowledge Fireworks**: 주요 키워드가 화면을 순차적으로 장식하는 폭죽(Pop-in) 효과.
-- **Deep Immersion**: 심연(Deep-Black) 배경과 네온 포인트 컬러(--tech-blue)의 조화.
+---
+
+## 19. Phase 18: [실전 배포 경화] CORS 및 시각적 최적화 [NEW]
+상용 환경에서의 가동률을 100%로 끌어올리며 보안과 사용자 경험을 동시에 확보합니다.
+
+### 🌀 핵심 패턴: 실전의 지혜 (Deployment Wisdom)
+- **Domain Guard**: 정교한 CORS 정책을 통해 외부 오버레이 서비스와의 안전한 통신 보장.
+- **Visual Clarity**: 자간(Letter-spacing) 확보 및 안티앨리어싱을 통해 OBS 송출 품질 극대화.
+- **Font Orchestration**: Google Fonts 기반의 고가독성 폰트 로드 및 텍스트 렌더링 최적화.
 
 ### 🛠️ 구현 계획
-1. **Styling**: Pure CSS 기반의 고성능 스크롤 및 팝업 애니메이션 정의.
-2. **Dynamic UI**: `iamf_scribe_heartbeat.js`의 렌더링 로직을 시네마틱 테마로 업그레이드.
-3. **Orchestration**: `animation-delay`를 활용한 단어들의 유기적 등장 시퀀스 구성.
+1. **Security**: `Program.cs`에 `IamfOverlayPolicy`를 신설하여 도메인 간 리소스 공유 안전하게 활성화.
+2. **Typography**: `iamf_scribe_heartbeat.js`에 시네마틱 폰트 로직 및 시각 보정 CSS 이식.
+3. **Completion**: 모든 배포 준비를 마치고 `IAMF` 브런치의 최종 마스터 피스 완성.
 
 ---
 

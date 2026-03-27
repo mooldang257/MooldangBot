@@ -90,7 +90,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("IamfOverlayPolicy", policy =>
     {
-        // 💡 실전 배포 시 .WithOrigins("https://your-domain.com")으로 수정 권장
+        // 💡 [실전 배포 권장]: AllowAnyOrigin() 대신 실제 오버레이 배포 도메인을 명시하세요.
+        // policy.WithOrigins("https://your-overlay-domain.vercel.app")
         policy.AllowAnyOrigin() 
               .AllowAnyHeader()
               .AllowAnyMethod();

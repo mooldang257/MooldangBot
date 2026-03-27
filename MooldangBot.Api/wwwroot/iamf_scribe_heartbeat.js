@@ -10,6 +10,7 @@ const HEARTBEAT_INTERVAL = 30000; // 30초
 
 async function sendHeartbeat() {
     try {
+        // 💡 [실전 배포]: 오버레이와 백엔드 도메인이 다를 경우 절대 경로(https://api.domain.com/...)를 사용하세요.
         await fetch(`/api/stream/heartbeat?chzzkUid=${CHZZK_UID}`, { method: 'POST' });
         console.log("[기록관] 하트비트 전송 성공. 봇의 각성을 유지합니다.");
     } catch (e) {
