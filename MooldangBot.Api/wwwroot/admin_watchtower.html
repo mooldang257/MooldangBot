@@ -114,8 +114,22 @@
         <div class="chart-container">
             <canvas id="healthChart"></canvas>
         </div>
-        <div class="log-terminal" id="terminal">
-            <div class="log-entry">[시스템] 감시소 프로토콜 초기화 중...</div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="metric-card" style="text-align: left; background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);">
+                <div class="metric-title" style="color: var(--tech-blue); font-weight: bold;">[공명의 지휘소] COMMAND CENTER</div>
+                <div style="margin-top: 15px;">
+                    <input type="text" id="target-uid" placeholder="스트리머 UID 입력" style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; color: white; margin-bottom: 15px;">
+                    <button id="btn-stop-stream" onclick="stopStream()" style="width: 100%; padding: 15px; background: rgba(255, 77, 77, 0.1); border: 1px solid var(--warn-red); color: var(--warn-red); border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+                        장엄한 갈무리 (STOP STREAM)
+                    </button>
+                    <p style="font-size: 0.75rem; color: #8b949e; margin-top: 10px; line-height: 1.4;">
+                        * 종료 시 모든 오버레이에 엔딩 크레딧이 전송되며 세션이 확정됩니다.
+                    </p>
+                </div>
+            </div>
+            <div class="log-terminal" id="terminal" style="flex-grow: 1; height: 250px;">
+                <div class="log-entry">[시스템] 감시소 프로토콜 초기화 중...</div>
+            </div>
         </div>
     </div>
 
@@ -192,6 +206,41 @@
             });
 
             if (terminal.children.length > 50) terminal.lastElementChild.remove();
+        }
+
+        async function stopStream() {
+            const uidInput = document.getElementById('target-uid');
+            const chzzkUid = uidInput.value.trim();
+            
+            if (!chzzkUid) {
+                alert("갈무리할 스트리머 UID를 입력해주세요.");
+                return;
+            }
+
+            if (!confirm(`[${chzzkUid}] 채널의 방송을 갈무리하고 엔딩 크레딧을 송출하시겠습니까?`)) return;
+            
+            try {
+                const btn = document.getElementById('btn-stop-stream');
+                btn.disabled = true;
+                btn.innerText = "지휘 신호 발산 중...";
+
+                const res = await fetch(`/api/stream/stop?chzzkUid=${chzzkUid}`, { method: 'POST' });
+                if (res.ok) {
+                    const stats = await res.json();
+                    alert(`[성공] 방송이 갈무리되었습니다.\n총 채팅: ${stats.totalChatCount}\n방송 시간: ${stats.duration}`);
+                    console.log("[지휘소] 엔딩 크레딧 신호 발사 완료.", stats);
+                } else {
+                    const err = await res.text();
+                    alert(`[실패] ${err}`);
+                }
+            } catch (e) {
+                console.error("Stop stream error", e);
+                alert("신호 전송 중 오류가 발생했습니다.");
+            } finally {
+                const btn = document.getElementById('btn-stop-stream');
+                btn.disabled = false;
+                btn.innerText = "장엄한 갈무리 (STOP STREAM)";
+            }
         }
 
         setInterval(updateStats, 2000);

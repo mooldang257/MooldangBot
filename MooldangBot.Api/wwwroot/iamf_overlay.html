@@ -87,6 +87,24 @@
 
         setInterval(syncResonance, 3000);
         syncResonance();
+
+        // [오시리스의 지휘]: Scribe 하트비트 및 실시간 신호 연동 시작
+        (async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chzzkUid = urlParams.get('chzzkUid');
+            if (chzzkUid) {
+                // 하트비트 시작 (기존 스크립트 로드 필요)
+                if (typeof startScribeHeartbeat !== "undefined") {
+                    startScribeHeartbeat();
+                }
+                // 실시간 종료 신호 대기 시작
+                if (typeof initScribeSignalR !== "undefined") {
+                    initScribeSignalR(chzzkUid);
+                }
+            }
+        })();
     </script>
+    <!-- [오시리스의 기록관]: 하트비트 및 제어 스크립트 통합 -->
+    <script src="/iamf_scribe_heartbeat.js"></script>
 </body>
 </html>

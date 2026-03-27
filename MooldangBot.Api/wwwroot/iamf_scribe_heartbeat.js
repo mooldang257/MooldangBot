@@ -176,3 +176,41 @@ function renderEndingCredits(stats) {
         fireworksArea.appendChild(item);
     });
 }
+
+// [공명의 지휘봉]: SignalR을 통한 실시간 오버레이 제어 연동
+async function initScribeSignalR(uid) {
+    if (!uid) return;
+
+    // SignalR 라이브러리 동적 로드 (이미 로드되어 있지 않은 경우)
+    if (typeof signalR === "undefined") {
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js";
+        await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/overlayHub")
+        .withAutomaticReconnect()
+        .build();
+
+    // [지휘봉 수신]: 서버에서 보내는 종료 신호를 기다립니다.
+    connection.on("ShowEndingCredits", (stats) => {
+        console.log("[기록관] 실시간 종료 명령 수신. 장엄한 마무리를 시작합니다.");
+        renderEndingCredits(stats);
+    });
+
+    try {
+        await connection.start();
+        console.log("[기록관] 지휘 채널(SignalR) 연결 성공.");
+        
+        // 스트리머 그룹에 조인하여 본인에게 오는 신호만 수신
+        await connection.invoke("JoinStreamerGroup", uid);
+        console.log(`[기록관] ${uid} 그룹 가입 완료. 명령을 대기합니다.`);
+    } catch (err) {
+        console.error("[기록관] SignalR 연결 실패:", err);
+    }
+}

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Application.Interfaces;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using MooldangBot.Presentation.Hubs;
 
 namespace MooldangBot.Api.Controllers.Admin;
 
@@ -11,7 +13,8 @@ namespace MooldangBot.Api.Controllers.Admin;
 [Route("api/stream")]
 public class StreamSignalController(
     IBroadcastScribe scribe,
-    IChzzkBotService botService) : ControllerBase
+    IChzzkBotService botService,
+    IHubContext<OverlayHub> hubContext) : ControllerBase
 {
     /// <summary>
     /// [각성의 신호]: 오버레이 하트비트를 수신하여 세션을 유지하고 봇을 활성화합니다.
@@ -35,6 +38,9 @@ public class StreamSignalController(
     {
         var stats = await scribe.FinalizeSessionAsync(chzzkUid);
         if (stats == null) return NotFound("Active session not found.");
+
+        // [지휘봉 발사]: 해당 스트리머의 모든 오버레이에게 실시간으로 엔딩 크레딧 시작 명령 전달
+        await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ShowEndingCredits", stats);
         
         return Ok(stats);
     }

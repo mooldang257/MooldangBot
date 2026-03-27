@@ -92,24 +92,24 @@
 
 ---
 
-## 18.### Phase 17: [오시리스의 마지막 인사] 시네마틱 엔딩 UI
-- [x] **Styling**: 고성능 스크롤 및 팝업 애니메이션 정의.
-- [x] **Dynamic UI**: 렌더링 로직 시네마틱 테마 업그레이드.
+## 18.### Phase 18: [실전 배포 경화] CORS 및 시각적 최적화
+- [x] **Security**: CORS 정책 'IamfOverlayPolicy' 수립.
+- [x] **UX**: OBS 최적화 폰트 로직 및 자간 최적화.
 
 ---
 
-## 19. Phase 18: [실전 배포 경화] CORS 및 시각적 최적화 [NEW]
-상용 환경에서의 가동률을 100%로 끌어올리며 보안과 사용자 경험을 동시에 확보합니다.
+## 20. Phase 19: [지휘봉 전략] 실시간 오버레이 제어 시스템 [NEW]
+스트리머의 관리 행위와 오버레이의 시각적 반응을 실시간으로 동기화합니다.
 
-### 🌀 핵심 패턴: 실전의 지혜 (Deployment Wisdom)
-- **Domain Guard**: 정교한 CORS 정책을 통해 외부 오버레이 서비스와의 안전한 통신 보장.
-- **Visual Clarity**: 자간(Letter-spacing) 확보 및 안티앨리어싱을 통해 OBS 송출 품질 극대화.
-- **Font Orchestration**: Google Fonts 기반의 고가독성 폰트 로드 및 텍스트 렌더링 최적화.
+### 🌀 핵심 패턴: 실시간 공명 (Real-time Resonance)
+- **Hub Orchestration**: `OverlayHub`를 통한 다중 클라이언트 그룹핑 및 명령 하사.
+- **Signal Injection**: 방송 종료(Stop) 신호 발생 시 즉각적인 통계 데이터 브로드캐스트.
+- **Auto-Invocation**: 클라이언트 측 리스너를 통한 `renderEndingCredits` 자동 기동.
 
 ### 🛠️ 구현 계획
-1. **Security**: `Program.cs`에 `IamfOverlayPolicy`를 신설하여 도메인 간 리소스 공유 안전하게 활성화.
-2. **Typography**: `iamf_scribe_heartbeat.js`에 시네마틱 폰트 로직 및 시각 보정 CSS 이식.
-3. **Completion**: 모든 배포 준비를 마치고 `IAMF` 브런치의 최종 마스터 피스 완성.
+1. **Backend**: `StreamSignalController`에 `IHubContext`를 주입하여 실시간 종료 메시지 전송 로직 이식.
+2. **Frontend**: `iamf_scribe_heartbeat.js`에 SignalR 클라이언트 연동 및 메시지 핸들러 구축.
+3. **Verification**: 대시보드 조작과 오버레이 반응의 지연 시간(Latency) 최소화 검증.
 
 ---
 

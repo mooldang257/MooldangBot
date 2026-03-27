@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace MooldangBot.Presentation.Hubs;
 
+/// <summary>
+/// [오시리스의 지휘소]: 서버와 오버레이 간의 실시간 공명 통로입니다.
+/// </summary>
 public class OverlayHub : Hub
 {
     // OBS 브라우저 소스 클라이언트가 연결될 때 호출
@@ -11,9 +14,12 @@ public class OverlayHub : Hub
         await base.OnConnectedAsync();
     }
 
-    // 클라이언트가 특정 스트리머의 채널 알림을 구독하도록 그룹에 추가합니다.
+    /// <summary>
+    /// [그룹의 소속]: 스트리머의 UID를 기준으로 오버레이들을 그룹화합니다.
+    /// </summary>
     public async Task JoinStreamerGroup(string chzzkUid)
     {
+        if (string.IsNullOrEmpty(chzzkUid)) return;
         await Groups.AddToGroupAsync(Context.ConnectionId, chzzkUid.ToLower());
     }
 
