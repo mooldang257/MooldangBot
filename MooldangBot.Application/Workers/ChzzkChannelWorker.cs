@@ -22,8 +22,9 @@ public class ChzzkChannelWorker
     private readonly ICommandCacheService _cacheService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IChzzkBotService _botService;
+    private readonly ITokenRenewalService _renewalService;
 
-    public ChzzkChannelWorker(string uid, IServiceProvider serviceProvider, IChzzkApiClient chzzkApi, IChzzkBotService botService)
+    public ChzzkChannelWorker(string uid, IServiceProvider serviceProvider, IChzzkApiClient chzzkApi, IChzzkBotService botService, ITokenRenewalService renewalService)
     {
         _uid = uid;
         _serviceProvider = serviceProvider;
@@ -32,6 +33,7 @@ public class ChzzkChannelWorker
         _scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
         _chzzkApi = chzzkApi;
         _botService = botService;
+        _renewalService = renewalService;
     }
 
     public async Task ConnectAndListenAsync(CancellationToken stoppingToken)
@@ -56,7 +58,18 @@ public class ChzzkChannelWorker
                     continue;
                 }
 
-                await RefreshTokenIfNeededAsync(profile, dbContext);
+                // [v2.1.5] Polly 기반의 안정적인 토큰 갱신 시스템 연동 (UTC/Local 시간대 문제 해결)
+                await _renewalService.RenewIfNeededAsync(_uid);
+                
+                // 최신 토큰 정보를 다시 불러오기 위해 프로필 재조회
+                profile = await dbContext.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == _uid, stoppingToken);
+                if (profile == null || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+                {
+                    _logger.LogError($"❌ [물댕봇] {_uid} 토큰 갱신 후에도 액세스 토큰이 없습니다. 로그인 상태를 점검하세요.");
+                    await Task.Delay(10000, stoppingToken);
+                    continue;
+                }
+
                 await _cacheService.RefreshAsync(_uid, stoppingToken);
 
                 var sessionAuth = await _chzzkApi.GetSessionAuthAsync(profile.ChzzkAccessToken!);
@@ -169,22 +182,40 @@ public class ChzzkChannelWorker
                     _logger.LogInformation("📦 [Receive] 서버 입장 수락. 방 입장 요청(40)");
                     await SendMessageAsync(ws, "40", ct);
                 }
+                else if (message.StartsWith("40"))
+                {
+                    _logger.LogInformation("✅ [Receive] 채팅방 입장 성공 (Socket.IO Connect)");
+                }
+                else if (message.StartsWith("41"))
+                {
+                    _logger.LogWarning("⚠️ [Receive] 서버에서 퇴장 요청(Disconnect) 수신. 재연결을 시도합니다.");
+                    return; // 루프 종료하여 상위 ConnectAndListenAsync에서 복구 유도
+                }
                 else if (message.StartsWith("2"))
                 {
                     await SendMessageAsync(ws, "3", ct);
                 }
-                else if (message.StartsWith("42"))
+                else if (message.StartsWith("42")) // 42: Event (진짜 데이터)
                 {
+                    string eventPayload = message.Substring(2);
+
+                    // 🚀 [v2.0.0] Task.Run을 통해 백그라운드 스레드로 이벤트를 위임합니다. (Fire-and-Forget)
+                    // 이로 인해 Gemini API 등 외부 LLM 연동 시 지연이 발생해도 소켓 수신 루프는 멈추지 않습니다. [물멍 지침]
                     _ = Task.Run(async () =>
                     {
                         using var scope = _scopeFactory.CreateScope();
-                        try 
+                        try
                         {
-                            await HandleEventAsync(message.Substring(2), profile, scope, ct);
+                            await HandleEventAsync(eventPayload, profile, scope, ct);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            _logger.LogWarning("⚠️ [물댕봇] 작업이 취소되어 이벤트 처리를 중단합니다.");
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, "❌ [HandleEvent] 비동기 처리 중 에러 발생");
+                            // 예외 격리: 백그라운드 태스크 내부의 오류가 전체 소켓 연결을 파괴하지 않도록 방어
+                            _logger.LogError(ex, $"❌ [물댕봇] 백그라운드 이벤트 처리 중 치명적 오류 발생 (신경망 과부하 또는 파싱 실패): {ex.Message}");
                         }
                     }, ct);
                 }
@@ -198,28 +229,7 @@ public class ChzzkChannelWorker
         }
     }
 
-    private async Task RefreshTokenIfNeededAsync(StreamerProfile profile, IAppDbContext db)
-    {
-        if (profile.TokenExpiresAt.HasValue && profile.TokenExpiresAt.Value > DateTime.Now.AddHours(1))
-        {
-            return;
-        }
-
-        _logger.LogWarning($"🔄 [물댕봇] {profile.ChzzkUid}의 액세스 토큰 만료가 임박했습니다. 자동 갱신을 시도합니다...");
-
-        var tokenRes = await _chzzkApi.RefreshTokenAsync(profile.ChzzkRefreshToken ?? "");
-
-        if (tokenRes != null && tokenRes.Code == 200 && tokenRes.Content != null)
-        {
-            var content = tokenRes.Content;
-            profile.ChzzkAccessToken = content.AccessToken ?? "";
-            profile.ChzzkRefreshToken = content.RefreshToken ?? profile.ChzzkRefreshToken;
-            profile.TokenExpiresAt = DateTime.Now.AddSeconds(content.ExpiresIn);
-
-            await db.SaveChangesAsync();
-            _logger.LogInformation($"✅ [물댕봇] {profile.ChzzkUid} 토큰 자동 재발급 및 DB 업데이트 완료!");
-        }
-    }
+    // Removed internal RefreshTokenIfNeededAsync in favor of ITokenRenewalService (v2.1.5)
 
     private async Task HandleEventAsync(string jsonArray, StreamerProfile profile, IServiceScope scope, CancellationToken token)
     {
@@ -286,7 +296,7 @@ public class ChzzkChannelWorker
         await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, token);
     }
 
-    private async Task SendReplyChatAsync(StreamerProfile profile, string message, CancellationToken token)
+    private async Task SendReplyChatAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token)
     {
         try
         {
@@ -295,7 +305,7 @@ public class ChzzkChannelWorker
             var latestProfile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == profile.ChzzkUid, token);
             if (latestProfile == null) return;
 
-            await _botService.SendReplyChatAsync(latestProfile, message, token);
+            await _botService.SendReplyChatAsync(latestProfile, message, viewerUid, token);
         }
         catch (Exception ex)
         {

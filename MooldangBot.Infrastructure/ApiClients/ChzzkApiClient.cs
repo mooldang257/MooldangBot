@@ -29,8 +29,8 @@ namespace MooldangBot.Infrastructure.ApiClients
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
-            _clientId = config["ChzzkApi:ClientId"] ?? "";
-            _clientSecret = config["ChzzkApi:ClientSecret"] ?? "";
+            _clientId = config["CHZZK_API:CLIENT_ID"] ?? config["ChzzkApi:ClientId"] ?? "";
+            _clientSecret = config["CHZZK_API:CLIENT_SECRET"] ?? config["ChzzkApi:ClientSecret"] ?? "";
 
             _httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
             _httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
@@ -250,16 +250,18 @@ namespace MooldangBot.Infrastructure.ApiClients
                 }
 
                 var jsonResp = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"[ChzzkApi] Live Status Response: {jsonResp}");
+
                 using var resDoc = JsonDocument.Parse(jsonResp);
                 if (resDoc.RootElement.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Object)
                 {
                     // "OPEN" 또는 "CLOSE" 상태
-                    var status = content.GetProperty("status").GetString();
-                    bool isLive = string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
-                    
-                    // 만약 live-status가 CLOSE로 나오더라도, 혹시 모를 오판을 대비해 한 번 더 폴백 환경을 타볼 수 있지만
-                    // 일단 OPEN이면 즉시 true를 반환합니다. 
-                    if (isLive) return true;
+                    if (content.TryGetProperty("status", out var statusProp))
+                    {
+                        var status = statusProp.GetString();
+                        bool isLive = string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase);
+                        if (isLive) return true;
+                    }
                 }
 
                 // [최후의 보루]: 첫 번째 시도가 명시적으로 OPEN이 아니거나 실패한 경우, 채널 목록의 openLive 필드를 최종 확인합니다.
@@ -285,6 +287,8 @@ namespace MooldangBot.Infrastructure.ApiClients
                 if (fallbackRes.IsSuccessStatusCode)
                 {
                     var json = await fallbackRes.Content.ReadAsStringAsync();
+                    _logger.LogDebug($"[ChzzkApi] Fallback Response: {json}");
+
                     using var doc = JsonDocument.Parse(json);
                     if (doc.RootElement.TryGetProperty("content", out var ct) && 
                         ct.TryGetProperty("data", out var dt) && dt.ValueKind == JsonValueKind.Array && dt.GetArrayLength() > 0)
@@ -292,13 +296,60 @@ namespace MooldangBot.Infrastructure.ApiClients
                         var first = dt[0];
                         bool isLive = first.TryGetProperty("openLive", out var ol) && ol.GetBoolean();
                         
-                        // 오프라인일 때는 로그를 남기지 않고, 온라인일 때만 정보를 남깁니다. (정숙함 유지)
-                        if (isLive) _logger.LogInformation($"[ChzzkApi] Live Detected via Fallback: {channelId}");
-                        return isLive;
+                        // [v2.3.8] 확실히 라이브인 경우에만 true 반환, 아니면 계속 진행하여 다음 폴백(Service API) 시도
+                        if (isLive)
+                        {
+                            _logger.LogInformation($"[ChzzkApi] Live Detected via Fallback: {channelId}");
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    var err = await fallbackRes.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"[ChzzkApi] Fallback Failed: {fallbackRes.StatusCode}, Content: {err}");
+                }
+
+                // [최후의 보루 2]: 서비스 전용 API (비공식) 폴백 시도
+                return await CheckLiveViaServiceApiFallbackAsync(channelId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[ChzzkApi] IsLiveAsync Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// [시도 3] 치지직 서비스 API (Web API)를 통해 라이브 상태를 최후로 확인합니다. (v2.3.7)
+        /// </summary>
+        private async Task<bool> CheckLiveViaServiceApiFallbackAsync(string channelId)
+        {
+            try
+            {
+                // 서비스 API는 별도의 인증 헤더 없이도 공개된 방송 정보를 제공합니다.
+                var serviceUrl = $"https://api.chzzk.naver.com/service/v2/channels/{channelId}/live-detail";
+                using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
+                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    
+                    if (doc.RootElement.TryGetProperty("content", out var ct) && ct.ValueKind == JsonValueKind.Object)
+                    {
+                        // 서비스 API에서는 "status" 값이 "OPEN"이면 방송 중입니다.
+                        if (ct.TryGetProperty("status", out var st) && st.GetString() == "OPEN")
+                        {
+                            _logger.LogInformation($"✨ [ChzzkApi] Live Detected via Service API (SUCCESS): {channelId}");
+                            return true;
+                        }
                     }
                 }
             }
-            catch { /* Ignored */ }
+            catch { /* Silence is golden */ }
             return false;
         }
 
@@ -311,33 +362,35 @@ namespace MooldangBot.Infrastructure.ApiClients
         }
 
         /// <summary>
-        /// 치지직 공지(Notice)를 전송합니다.
+        /// 치지직 공지(Notice)를 등록합니다. (상단 고정용, 접두어 제외)
         /// </summary>
         public async Task<bool> SendChatNoticeAsync(string accessToken, string channelId, string message)
         {
-            return await SendChatAsync(accessToken, channelId, "/open/v1/chats/notice", message);
+            return await SendChatAsync(accessToken, channelId, "/open/v1/chats/notice", message, addPrefix: false);
         }
-        // 치지직 최대 글자수 100자 중, 접두어(\u200B) 1자를 제외한 임계값
+        // 치지직 최대 글자수 100자 중, 접두어(\u200B) 1자를 제외한 임계값 (일반 채팅)
         private const int MaxMessageLength = 99;
+        // 접두어가 없는 상단 공지용 임계값 [v4.4.5]
+        private const int MaxNoticeLength = 100;
         private const string ZeroWidthSpace = "\u200B";
 
         /// <summary>
-        /// 메시지를 99자 단위로 분할하여 전송합니다.
+        /// 메시지를 99자(채팅) 또는 100자(공지) 단위로 분할하여 전송합니다.
         /// </summary>
-        public async Task<bool> SendChatAsync(string accessToken, string channelId, string endpoint, string message)
+        public async Task<bool> SendChatAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix = true)
         {
             if (string.IsNullOrWhiteSpace(message)) return false;
 
-            // .NET 10 스타일: ReadOnlySpan을 활용한 효율적인 문자열 분할 처리 가능
-            // 여기서는 비동기 전송 순서를 보장하기 위해 순차적으로 처리합니다.
-            var chunks = message.Chunk(MaxMessageLength);
+            // [v4.4.5] 접두어 유무에 따른 동적 임계값 적용
+            int limit = addPrefix ? MaxMessageLength : MaxNoticeLength;
+            var chunks = message.Chunk(limit);
             bool allSuccess = true;
 
             foreach (var chunk in chunks)
             {
                 string part = new string(chunk);
-                // 각 조각마다 접두어를 붙여 전송
-                bool result = await SendChatInternalAsync(accessToken, channelId, endpoint, part);
+                // 각 조각마다 설정에 따라 접두어를 붙여 전송
+                bool result = await SendChatInternalAsync(accessToken, channelId, endpoint, part, addPrefix);
 
                 if (!result) allSuccess = false;
 
@@ -348,15 +401,16 @@ namespace MooldangBot.Infrastructure.ApiClients
             return allSuccess;
         }
 
-        private async Task<bool> SendChatInternalAsync(string accessToken, string channelId, string endpoint, string message)
+        private async Task<bool> SendChatInternalAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                // 무한 루프 방지용 투명 문자 결합 (최종 100자 이하 보장)
-                var payload = new { channelId = channelId, message = ZeroWidthSpace + message };
+                // 상단 공지는 접두어 없이, 일반 채팅은 무한 루프 방지용 투명 문자 결합
+                string finalMessage = addPrefix ? ZeroWidthSpace + message : message;
+                var payload = new { channelId = channelId, message = finalMessage };
                 request.Content = JsonContent.Create(payload);
 
                 var response = await _httpClient.SendAsync(request);
@@ -454,6 +508,33 @@ namespace MooldangBot.Infrastructure.ApiClients
             {
                 _logger.LogError($"[ChzzkApi] UpdateLiveSetting Error: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// [v4.4.0] 현재 방제 및 카테고리 정보 등을 실시간으로 조회합니다.
+        /// </summary>
+        public async Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, "/open/v1/lives/setting");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<ChzzkLiveSettingResponse>();
+                }
+                
+                var errDetail = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"[ChzzkApi] GetLiveSetting Failed: HTTP {response.StatusCode} - {errDetail}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[ChzzkApi] GetLiveSetting Error: {ex.Message}");
+                return null;
             }
         }
 

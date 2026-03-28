@@ -19,6 +19,16 @@ public interface ICommandCacheService
     Task<StreamerCommand?> GetCommandAsync(string chzzkUid, string keyword);
 
     /// <summary>
+    /// [파로스의 자각]: 통합 명령어를 비동기로 반환합니다.
+    /// </summary>
+    Task<UnifiedCommand?> GetUnifiedCommandAsync(string chzzkUid, string keyword);
+
+    /// <summary>
+    /// [파로스의 각성]: 통합 명령어 캐시를 갱신합니다.
+    /// </summary>
+    Task RefreshUnifiedAsync(string chzzkUid, CancellationToken ct);
+
+    /// <summary>
     /// 특정 키워드와 정확히 일치하는 캐시된 명령어를 반환합니다.
     /// </summary>
     StreamerCommand? GetCommand(string chzzkUid, string keyword);

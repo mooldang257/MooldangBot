@@ -16,52 +16,106 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
-using MooldangBot.Infrastructure.Security;
 
 // 1. [Zero-Git] 실행 인자에서 설정 파일 경로 추출 (--env=.env.prod 등)
 var envPath = args.FirstOrDefault(a => a.StartsWith("--env="))?.Split('=')[1] ?? ".env";
 
-// 2. 서버 로컬에 있는 설정 파일 로드 (Git 관리 대상 제외)
-if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), envPath)))
-{
-    Env.Load(envPath);
-    // 💡 .env 파일 내부의 ASPNETCORE_ENVIRONMENT 값을 실제 프로세스 환경 변수에 반영
-    var envName = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-    System.Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", envName);
+// 2. [파로스의 자각]: 서버 로컬에 있는 설정 파일 로드 (Git 관리 대상 제외)
+// [오시리스의 규율]: 다양한 환경에서 .env를 확실히 찾고 강제로 로드합니다.
+string[] potentialPaths = { 
+    envPath, 
+    Path.Combine(Directory.GetCurrentDirectory(), envPath),
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, envPath),
+    Path.Combine(Directory.GetCurrentDirectory(), "MooldangBot.Api", envPath),
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "MooldangBot.Api", envPath),
+    "MooldangBot.Api/.env"
+};
 
-    // 💡 [Smart Mapping] 단일 .env 내에서 환경별 접두사(DEV_, PROD_)가 붙은 변수를 실제 변수로 자동 매핑
+string? foundPath = null;
+foreach (var p in potentialPaths)
+{
+    if (File.Exists(p)) { foundPath = Path.GetFullPath(p); break; }
+}
+
+if (foundPath != null)
+{
+    Console.WriteLine($"[파로스의 자각]: 설정 파일 발견 - {foundPath}");
+    Env.Load(foundPath);
+}
+else
+{
+    Console.WriteLine("[오시리스의 경고]: .env 파일을 찾을 수 없어 시스템 환경 변수만 사용합니다.");
+}
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
+// [텔로스5의 정렬]: .env 파일 수동 파싱 및 Configuration 강제 주입 (가장 확실한 방법)
+if (foundPath != null)
+{
+    var envName = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
     var prefix = envName.ToUpper().Replace("DEVELOPMENT", "DEV") + "_";
-    var allVars = System.Environment.GetEnvironmentVariables();
-    foreach (string key in allVars.Keys)
+    
+    foreach (var line in File.ReadAllLines(foundPath))
     {
+        var trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+        
+        var split = trimmed.Split('=', 2);
+        if (split.Length != 2) continue;
+        
+        var key = split[0].Trim();
+        var val = split[1].Trim();
+        
+        // 1. 공통 설정 주입 (All-Caps 및 PascalCase 통합)
+        var mappedKey = key.Replace("__", ":");
+        builder.Configuration[mappedKey] = val;
+        
+        // 2. 환경별 접두사 설정 주입 (예: DEV_BASE_DOMAIN -> BASE_DOMAIN)
         if (key.StartsWith(prefix))
         {
             var actualKey = key.Substring(prefix.Length);
-            var val = allVars[key]?.ToString();
-            if (!string.IsNullOrEmpty(val))
+            var actualMappedKey = actualKey.Replace("__", ":");
+            builder.Configuration[actualMappedKey] = val;
+            
+            // [오시리스의 규율]: .NET 표준 섹션 이름(ConnectionStrings 등)으로 강제 매핑
+            if (actualMappedKey.StartsWith("CONNECTIONSTRINGS:", StringComparison.OrdinalIgnoreCase))
             {
-                System.Environment.SetEnvironmentVariable(actualKey, val);
+                var pascalKey = "ConnectionStrings:" + actualMappedKey.Substring("CONNECTIONSTRINGS:".Length);
+                builder.Configuration[pascalKey] = val;
             }
+            if (actualMappedKey.StartsWith("CHZZKAPI:", StringComparison.OrdinalIgnoreCase))
+            {
+                var pascalKey = "ChzzkApi:" + actualMappedKey.Substring("CHZZKAPI:".Length);
+                builder.Configuration[pascalKey] = val;
+            }
+
+            System.Environment.SetEnvironmentVariable(actualKey, val);
         }
     }
 }
 
-var builder = WebApplication.CreateBuilder(args);
-builder.Configuration.AddEnvironmentVariables(); // 시스템 환경 변수 통합
-
-// 3. [Cloudflare Tunnel] 리버스 프록시 대응 설정 강화
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
+// 🛡️ [오시리스의 확인]: 필수 연결 문자열 최종 검증 및 강제 할당
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connStr))
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
-                               ForwardedHeaders.XForwardedProto | 
-                               ForwardedHeaders.XForwardedHost;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+    Console.WriteLine("[오시리스의 경고]: DefaultConnection을 로드하지 못했습니다. 폴백 설정을 시도합니다.");
+    var rawConn = builder.Configuration["CONNECTIONSTRINGS:DEFAULT_CONNECTION"] 
+                 ?? builder.Configuration["CONNECTIONSTRINGS__DEFAULT_CONNECTION"]
+                 ?? builder.Configuration["DefaultConnection"];
+    
+    if (!string.IsNullOrEmpty(rawConn)) 
+    {
+        builder.Configuration["ConnectionStrings:DefaultConnection"] = rawConn;
+        connStr = rawConn;
+    }
+}
 
-// ==========================================
-// 1. 5계층 아키텍처 기반 의존성 주입 (Phase 2 & 3)
-// ==========================================
+if (!string.IsNullOrEmpty(connStr))
+{
+    Console.WriteLine($"[파로스의 확인]: 연결 문자열 확보 성공 (길이: {connStr.Length})");
+}
+
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddPresentationServices();
@@ -70,7 +124,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserSession, UserSession>(); // Infrastructure/Security
 
 // -- Event-Driven Architecture (TODO: Move to Application) --
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Application.DependencyInjection).Assembly);
+});
 builder.Services.AddSingleton<SongQueueState>();
 builder.Services.AddSingleton<RouletteState>();
 
@@ -104,9 +161,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-// ==========================================
-// 2. 인증(Authentication) 설정
-// ==========================================
+// [파로스의 장벽]: 인증(Authentication) 설정
 builder.Services.AddAuthentication(options => {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -114,10 +169,10 @@ builder.Services.AddAuthentication(options => {
 .AddCookie(options => { 
     options.LoginPath = "/api/auth/chzzk-login"; 
     options.AccessDeniedPath = "/bot";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // 로스트 테스트 대응 (HTTPS 미필수)
+    options.Cookie.SameSite = SameSiteMode.Unspecified; // [오시리스의 자각]: 로컬 테스트 및 프록시 환경 호환성 극대화
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; 
     
-    // 5. [Multi-Instance] 인스턴스별 고유 쿠키 이름 적용
+    // [텔로스5의 분신]: 인스턴스별 고유 쿠키 이름 적용
     options.Cookie.Name = builder.Configuration["AUTH_COOKIE_NAME"] ?? ".MooldangBot.Session";
     
     // AJAX 요청인 경우 302 리다이렉트 대신 401 Unauthorized 반환
@@ -144,20 +199,7 @@ var app = builder.Build();
 // ==========================================
 // ⭐ [추가] 프록시(Cloudflare, Nginx) 대응 설정
 // ==========================================
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    // 💡 클라우드플레어 터널 등 프록시 환경에서 프로토콜(HTTPS) 정보를 정확히 읽어오도록 신뢰 설정을 추가합니다.
-    KnownIPNetworks = { },
-    KnownProxies = { },
-    ForwardLimit = null // 프록시 제한을 풀어서 모든 홉을 신뢰하게 함
-});
-
-app.UseWebSockets();
-
-// 6. [Cloudflare] Forwarded Headers 미들웨어 (인증/라우팅 전 필수)
-app.UseForwardedHeaders();
-
+app.UseForwardedHeaders(); // [Cloudflare/Nginx 대응] 최상단 배치
 app.UseRouting();
 app.UseCors("IamfOverlayPolicy");
 
@@ -208,7 +250,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     // db.Database.Migrate(); // [수동 관리] 기존 테이블 충돌 방지를 위해 자동 마이그레이션 비활성화DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
-    // 💡 [DB 초기값 세팅] 리눅스 도커 환경에서 DB가 초기화되었을 때 appsettings의 값을 DB에 자동으로 채워줍니다.
+    // [오시리스의 기록]: DB 초기값 세팅 (리눅스 도커 환경 대응)
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     
     void EnsureSetting(string key, string? val)
@@ -226,54 +268,12 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    EnsureSetting("ChzzkClientId", config["ChzzkApi:ClientId"]);
-    EnsureSetting("ChzzkClientSecret", config["ChzzkApi:ClientSecret"]);
+    EnsureSetting("ChzzkClientId", config["CHZZK_API:CLIENT_ID"] ?? config["ChzzkApi:ClientId"]);
+    EnsureSetting("ChzzkClientSecret", config["CHZZK_API:CLIENT_SECRET"] ?? config["ChzzkApi:ClientSecret"]);
     db.SaveChanges();
 
-    // 🏗️ [DB 스키마 유지보수] SongBook 테이블이 없으면 자동 생성 (수동 관리 환경 대응)
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS `songbooks` (
-            `Id` INT NOT NULL AUTO_INCREMENT,
-            `ChzzkUid` VARCHAR(50) NOT NULL,
-            `Title` VARCHAR(200) NOT NULL,
-            `Artist` VARCHAR(100) NULL,
-            `IsActive` TINYINT(1) NOT NULL DEFAULT 1,
-            `UsageCount` INT NOT NULL DEFAULT 0,
-            `CreatedAt` DATETIME(6) NOT NULL,
-            `UpdatedAt` DATETIME(6) NOT NULL,
-            PRIMARY KEY (`Id`),
-            INDEX `IX_songbooks_ChzzkUid_Id` (`ChzzkUid` ASC, `Id` DESC)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ");
-
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS `roulettelogs` (
-            `Id` BIGINT NOT NULL AUTO_INCREMENT,
-            `ChzzkUid` VARCHAR(100) NOT NULL,
-            `ViewerNickname` VARCHAR(100) NOT NULL,
-            `ItemName` VARCHAR(200) NOT NULL,
-            `IsMission` TINYINT(1) NOT NULL,
-            `Status` INT NOT NULL,
-            `CreatedAt` DATETIME(6) NOT NULL,
-            `ProcessedAt` DATETIME(6) NULL,
-            PRIMARY KEY (`Id`),
-            INDEX `IX_roulettelogs_ChzzkUid_Status_Id` (`ChzzkUid` ASC, `Status` ASC, `Id` DESC)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    ");
-
-    // 🏗️ [DB 스키마 유지보수] 기존 rouletteitems 테이블에 IsMission 컬럼 추가 (v5 대응)
-    try
-    {
-        // MySQL/MariaDB 버전에 따라 IF NOT EXISTS 지원 여부가 다를 수 있으므로 try-catch로 안전하게 처리
-        db.Database.ExecuteSqlRaw(@"
-            ALTER TABLE `rouletteitems` ADD COLUMN `IsMission` TINYINT(1) NOT NULL DEFAULT 0;
-        ");
-    }
-    catch (Exception ex)
-    {
-        // 이미 컬럼이 존재하는 경우(Duplicate column error) 무시하고 진행
-        Console.WriteLine($"[DB 체크] IsMission 컬럼 확인 중: {ex.Message}");
-    }
+    // [오시리스의 확인]: DB 초기값 세팅 완료
+    db.SaveChanges();
 }
 
 app.Run();

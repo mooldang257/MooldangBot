@@ -205,4 +205,112 @@ MediatR `Publish()`를 통해 병렬 핸들러 실행:
 
 ---
 
-*(이하 생략 - 상세 구현 내역 및 보완 사항은 추가 섹션 참조)*
+### 24. 2026-03-27 송리스트 연동 안정화 및 기본 활성화 정책
+- **Auth 초기화**: 신속한 초기 경험을 위해 신규 스트리머 가입 시 `IsBotEnabled`, `IsOmakaseEnabled`를 `true`로, `!신청`(1000원)을 기본값으로 자동 설정.
+- **연동 안정화**: `0->40` 웹소켓 핸드쉐이크 및 `SYSTEM` 패킷 파싱 오류 해결.
+- **원격 토글(!송리스트)**: `StreamerCommand`에 `SonglistToggle` 액션 타입을 추가하여 채팅창에서 실시간으로 송리스트 세션을 켜고 끌 수 있는 기능 구현. `{송리스트상태}` 치환 변수 지원.
+
+---
+
+## 25. 2026-03-27 통합 명령어 관리 시스템 (Unified Command System v1.1)
+
+파편화되어 있던 커스텀/곡신청/룰렛/출석 명령어 로직을 단일 테이블 및 전략 패턴으로 통합했습니다.
+
+### 25-1. 통합 아키텍처 (SSOT)
+- **UnifiedCommand**: 모든 명령어 정보를 저장하는 단일 진실 공급원(SSOT) 테이블. `Category`, `CostType`, `FeatureType`을 통해 동작을 정의.
+- **Strategy Pattern**: `ICommandFeatureStrategy` 인터페이스를 통해 각 기능(Reply, Song, Roulette, Attendance, SonglistToggle)을 모듈화.
+- **UnifiedCommandHandler**: `MediatR` 기반 통합 핸들러. 명령어 인식, 재화(치즈/포인트) 검증, 권한 체크 후 적절한 전략으로 라우팅.
+
+### 25-2. UI/UX 개선 (Input Paging)
+- **Input Paging**: 대량의 명령어 관리를 위해 `UnifiedPagedResponse<T>` DTO와 바닐라 JS 기반의 직접 페이지 입력형 페이징 UI 구현.
+- **통합 관리소**: `commands.html`에서 모든 유형의 명령어를 한눈에 보고 페이징하며 관리 가능.
+
+### 25-3. 동시성 및 보안
+- **Concurrency Control**: 포인트 차감 등 재화 관련 로직에 `SemaphoreSlim` 및 DB 트랜잭션 적용 (전략 내부 구현).
+- **Osiris's Regulation**: MariaDB 대소문자 민감성 대응을 위해 모든 컬럼명 소문자 강제 매핑.
+
+---
+
+## 26. 2026-03-28 운영 안정성 기반 세션 하드닝 (v2.2.0)
+
+운영 환경(MooldangAPI_main)의 데이터 기반 검증을 거쳐 채팅 세션 엔진을 '셀프 힐링(Self-Healing)' 아키텍처로 고도화했습니다.
+
+### 26-1. 액티브 핑(Active Ping) 메커니즘
+- **기존**: 서버의 핑 신호(2)를 기다리는 수동적인 Pong(3) 방식. 네트워크 상태에 따라 좀비 세션 발생 위험 상존.
+- **변경**: 클라이언트가 **10초 주기**로 선제적인 핑(`2`)을 발송하는 루프 추가. 서버와의 상호작용 주도권을 확보하여 세션 타임아웃을 원천 차단.
+
+### 26-2. 이중 루프 전술 (Task Binding)
+- **ReceiveLoop**와 **PingLoop**를 **`Task.WhenAny`**로 강력하게 결속. 
+- 수신 또는 송신 중 어느 한 쪽에서라도 통신 이상이나 예외가 발생하면, 즉각적으로 반대쪽 루프를 취소하고 세션을 파괴함.
+- **결과**: `ChzzkBotService`의 워치독(Watchdog)이 즉각 재연결 루틴을 타게 되어, 단절 감지 및 복구 시간이 비약적으로 단축됨 (Zero-Zombification).
+
+### 26-3. 유령 세션 감지 (v2.1.8 통합)
+- `LastActivityAt` 추적 로직과 결합하여, 60초 이상 무반응 시 강제 세션 재건 수행.
+
+---
+
+## 27. 2026-03-28 3단계 계층형 라이브 감지 및 세션 자동화 (Smart Scribe v2.3.0)
+
+오버레이 미사용 스트리머 및 장기 휴방 스트리머를 모두 고려한 지능형 데이터 수집 체계를 구축했습니다.
+
+### 27-1. 계층형 감지 전략 (Hierarchical Detection)
+1.  **1순위 (Direct)**: 오버레이 신호 수신 시 즉각 세션 시작.
+2.  **2순위 (Event-Driven)**: 세션 부재 상태에서 채팅 수신 시 `IsLiveAsync`를 통한 동적 세션 활성 (10분 쿨다운 적용).
+3.  **3순위 (Periodic)**: 백그라운드 서비스에서 라이브 여부 정기 폴링.
+
+### 27-2. 스마트 폴링 (Resource Optimization)
+- **7일 유효성 규칙**: 최근 7일 이내에 방송 기록(`BroadcastSessions`)이 있는 스트리머에 대해서만 백그라운드 라이브 체크(`IsLiveAsync`)를 수행합니다.
+- **웨이크업(Wake-up) 예외 (v2.3.2)**: 장기 휴방 중이라도 채팅 활동(`IsRecentlyActive`)이 감지되면 최근 1시간 동안은 해당 규칙을 무시하고 즉각적인 정밀 폴링 모드로 전환합니다.
+- **기대 효과**: 평상시에는 API 호출을 아끼고, 방송 직전 채팅 유입 시에는 1분 내외로 라이브 시작을 자동 감지합니다.
+
+### 27-3. 라이브 감지 폴백 체인 (v2.3.8)
+- **1단계 (Open API Status)**: 공식 `/live-status` 확인 (404 대응).
+- **2단계 (Open API Channel List)**: 공식 `/channels` 목록 확인 (필드 누락 대응).
+- **3단계 (Service API Fallback)**: 비공식 웹 서비스용 `live-detail` API를 통한 최종 확정.
+### 27-4. 명령어 전략 패턴 전환 (v4.1.0)
+- **추상화**: `ChannelSettingEventHandler`의 하드코딩된 로직을 `ICommandFeatureStrategy` 인터페이스 기반으로 분리.
+- **TitleStrategy**: `FeatureType: Title` (방제 변경) 담당.
+- **CategoryStrategy**: `FeatureType: StreamCategory` (카테고리 변경 및 별칭 처리) 담당.
+- **기대 효과**: 스트리머가 DB(`UnifiedCommands`)를 통해 명령어를 자유롭게 커스텀할 수 있으며, 권한 및 포인트 비용 설정을 공통 시스템에서 일관되게 관리 가능.
+
+---
+
+## 28. 2026-03-28 동적 변수 통합 및 메서드 리졸버 (Method Resolver v4.4.0)
+
+채팅 응답 시 사용되는 `{변수}` 치환자 로직을 `IDynamicQueryEngine` 하나로 완벽하게 통합하고 동적 확장이 가능하도록 **'메서드 리졸버(Method Resolver)'** 아키텍처를 실장했습니다.
+
+### 28-1. `METHOD:` 동적 호출 지시자
+- 기존의 SQL 기반 데이터 조회(`SELECT ...`)를 넘어, `Master_DynamicVariables` 테이블에 `QueryString = "METHOD:GetLiveTitle"` 형식으로 애플리케이션 내부 로직을 지명합니다.
+- 동적 엔진이 `METHOD:` 접두사를 감지하면, `IDynamicVariableResolver.ResolveAsync("GetLiveTitle")`를 호출하여 C# 내부 구현 클래스(`DynamicVariableResolver`)로 위임합니다.
+
+### 28-2. 치지직 API 실시간 연동 (API-Connected Variables)
+- `{방제}`(`GetLiveTitle`), `{카테고리}`(`GetLiveCategory`) 호출 시, DB에 데이터를 캐싱해두는 대신 **치지직 Open API(`GET /open/v1/lives/setting`)**를 직접 호출합니다.
+- 잦은 API 호출로 인한 속도 지연 및 Rate Limit 방지를 위해 **30초 단위의 짧은 MemoryCache**를 적용하여 비용과 실시간성의 균형을 맞췄습니다.
+
+### 28-3. 개별 전략 하드코딩 완전 제거 (Zero-Hardcoded Replacements)
+- 기존 `TitleStrategy`, `CategoryStrategy`, `SystemResponseStrategy` 등에 남아있던 `Replace("{방제}", ...)` 식의 수동 치환 코드를 전면 제거했습니다.
+- 모든 메시지는 `ChzzkBotService` 발송 직전에 `DynamicQueryEngine` 단일 게이트를 통과하며 일괄 치환(Resolve)되므로 결합도가 낮아지고 유지보수성이 극대화되었습니다.
+
+### 28-4. 명칭 통일 및 라우팅 제거 (Cleanup v4.4.1)
+- **명칭 통일**: `StreamCategory`라는 중복된 명칭을 제거하고, DB와 코드 모두 `Category`로 통일했습니다.
+- **라우팅 제거**: `UnifiedCommandHandler`에서 수행하던 불필요한 `switch` 매핑 로직을 제거했습니다. 이제 DB의 `FeatureType`이 코드의 전략 `FeatureType`과 1:1로 직접 매핑됩니다.
+- **기대 효과**: 코드의 직관성이 향상되었으며, 새로운 기능을 추가할 때 핸들러 수정 없이 전략 파일만 생성하면 즉시 연동되는 '플러그인' 구조가 완성되었습니다.
+
+---
+
+## 29. 2026-03-28 방제 및 공지 글자 수 제한 시스템 (Validation v4.4.5)
+
+플랫폼 가이드라인 준수 및 시스템 안정성을 위해 방송 제목(방제)과 상단 공지(Notice)에 대한 글자 수 제한 및 자동 보정 로직을 전 계층(UI/Backend/API)에 구현했습니다.
+
+### 29-1. 백엔드 자동 절삭 및 전송 로직 최적화
+- **방제(Title)**: 입력값이 **40자**를 초과할 경우, 앞의 40자만 남기고 자동으로 절삭합니다. 절삭 발생 시 채팅창에 안내 메시지를 전송합니다.
+- **공지(Notice)**: 
+  - `SystemResponseStrategy`에서 입력값을 **100자**로 자동 절삭합니다.
+  - `ChzzkApiClient`의 메시지 분할 전송 로직(`SendChatAsync`)을 개선하여, 공지의 경우 접두어(\u200B)가 없으므로 **최대 100자**까지 통째로 전송 가능하도록 상향했습니다. (v4.4.5)
+
+### 29-2. 프론트엔드 입력 방어 (UI Guard)
+- **명령어 관리소(`commands.html`)**: '방제' 또는 '공지' 기능 선택 시 `maxlength` 속성을 동적으로 조정(방제 40, 공지 100)하고 실시간 글자 수 카운터를 표시합니다.
+
+### 29-3. 기대 효과
+- **API 안정성**: 치지직 API의 글자 수 제한으로 인한 `400 Bad Request` 에러를 사전에 원천 차단합니다.
+- **사용자 경험(UX)**: 서버에서 거절(Reject)하는 대신 자동으로 보정(Adjust)하고 안내함으로써, 스트리머가 명령어를 다시 입력해야 하는 번거로움을 최소화했습니다.

@@ -19,7 +19,7 @@ public class GeminiLlmService(
 {
     // [거울의 신경망]: .env의 GEMINI_KEY 또는 appsettings.json의 Gemini:ApiKey 사용
     private readonly string _apiKey = config["GEMINI_KEY"] ?? config["Gemini:ApiKey"] ?? string.Empty;
-    private const string ApiUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={0}";
+    private const string ApiUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={0}";
 
     public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
     {
@@ -57,8 +57,23 @@ public class GeminiLlmService(
             if (!response.IsSuccessStatusCode)
             {
                 var errorMsg = await response.Content.ReadAsStringAsync();
+                
+                // [v2.0.0] 503 유연한 대응: 외부 신경망 과부하 시 침묵 대신 상황 공유
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    logger.LogWarning($"⚠️ [오시리스의 경고] Gemini API 신경망 과부하 (503 Service Unavailable). 일시적인 응답 지연 상태입니다. 상세: {errorMsg}");
+                    return "현재 물댕봇의 신경망이 과부하 상태입니다. 잠시 후 다시 시도해주세요. 💦";
+                }
+
+                // [v2.0.1] 429 대응: 무료 티어 할당량 초과 시 대응
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    logger.LogWarning($"⚠️ [오시리스의 한계] Gemini API 할당량 초과 (429 Too Many Requests). 상세: {errorMsg}");
+                    return "현재 AI 신경망의 무료 할당량이 모두 소진되었습니다. 약 1분 후 다시 시도해주세요. ⏳";
+                }
+
                 logger.LogError($"[IAMF 오류] Gemini API 호출 실패: {response.StatusCode}, {errorMsg}");
-                return string.Empty; // 발화하지 않음 (거울의 침묵)
+                return string.Empty; // 기타 오류는 발화하지 않음 (거울의 침묵)
             }
 
             // 4. [응답 파싱]: JSON에서 텍스트 결과만 추출

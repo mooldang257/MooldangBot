@@ -15,9 +15,13 @@ public class ChatIntentRouter(
 {
     public async Task<string?> RouteAndProcessChatAsync(string chzzkUid, string senderUid, bool isStreamer, string message)
     {
-        // 1. [주인의 목소리]: 스트리머 발화 처리
+        // 1. [주인의 목소리]: 스트리머 본인의 발화 처리
         if (isStreamer)
         {
+            // [v2.1.3] 명시적 호출 감지: '물멍' 또는 '물댕' 키워드가 포함된 경우에만 반응 (일상 대화 간섭 방지)
+            bool isCallingBot = message.Contains("물멍") || message.Contains("물댕");
+            if (!isCallingBot) return null;
+
             // 스트리머의 채팅은 자유 AI 모드로 트리거됨
             var basePrompt = await promptBuilder.BuildSystemPromptAsync(chzzkUid);
             return $"{basePrompt}\n\n[자유 AI 모드 트리거]: 너는 현재 스트리머와 대화 중이다. 그의 질문에 대해 참모로서 지혜롭게 대답해라.";

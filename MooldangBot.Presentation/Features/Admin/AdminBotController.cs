@@ -70,7 +70,8 @@ namespace MooldangBot.Presentation.Features.Admin
         [HttpGet("login")]
         public IActionResult BotLogin()
         {
-            string? clientId = _configuration["ChzzkApi:ClientId"];
+            // [텔로스5의 설계]: 대소문자 구분 없는 설정을 위해 All-Caps 키를 우선 조회합니다.
+            string? clientId = _configuration["CHZZK_API:CLIENT_ID"] ?? _configuration["ChzzkApi:ClientId"];
             string redirectUri = $"{Request.Scheme}://{Request.Host}/Auth/callback";
             string state = "bot_setup_" + Guid.NewGuid().ToString();
 

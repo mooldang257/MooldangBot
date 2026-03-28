@@ -49,7 +49,7 @@ public class RouletteEventHandler : INotificationHandler<ChatMessageReceivedEven
                 {
                     int totalSpins = (int)(donationAmount / roulette.CostPerSpin);
                     _logger.LogInformation($"🎰 [룰렛 다회차 실행] {notification.Username}님 {donationAmount}치즈 후원 -> {roulette.Name} (총 {totalSpins}회)");
-                    await rouletteService.SpinRouletteMultiAsync(chzzkUid, roulette.Id, totalSpins, notification.Username);
+                    await rouletteService.SpinRouletteMultiAsync(chzzkUid, roulette.Id, senderId, totalSpins, notification.Username);
                 }
             }
         }
@@ -77,7 +77,7 @@ public class RouletteEventHandler : INotificationHandler<ChatMessageReceivedEven
                 await db.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation($"🎰 [룰렛 실행] {notification.Username}님 포인트 차감 -> {roulette.Name}");
-                await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, notification.Username);
+                await rouletteService.SpinRouletteAsync(chzzkUid, roulette.Id, senderId, notification.Username);
             }
         }
     }

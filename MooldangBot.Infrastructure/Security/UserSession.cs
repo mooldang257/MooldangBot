@@ -18,7 +18,7 @@ public class UserSession : IUserSession
     public string? Role => _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
 
     public List<string> AllowedChannelIds => 
-        _httpContextAccessor.HttpContext?.User.FindAll("AllowedChannel")
+        _httpContextAccessor.HttpContext?.User.FindAll("AllowedChannelId")
         .Select(c => c.Value)
         .ToList() ?? new List<string>();
 }

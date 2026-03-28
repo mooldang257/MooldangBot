@@ -7,6 +7,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
+using MooldangBot.Infrastructure.Services;
 
 namespace MooldangBot.Infrastructure
 {
@@ -32,6 +33,15 @@ namespace MooldangBot.Infrastructure
 
             // [오시리스의 기록관]: 방송 통계 및 세션 관리
             services.AddSingleton<IBroadcastScribe, BroadcastScribe>();
+
+            // [v1.2] 마스터 데이터 캐시 서비스 등록
+            services.AddScoped<ICommandMasterCacheService, CommandMasterCacheService>();
+
+            // [v1.8] Safe Dynamic Query Engine 등록
+            services.AddScoped<IDynamicQueryEngine, MooldangBot.Infrastructure.Services.Engines.DynamicQueryEngine>();
+
+            // [v4.4.0] Dynamic Variable Resolver 등록
+            services.AddScoped<IDynamicVariableResolver, MooldangBot.Infrastructure.Services.Engines.DynamicVariableResolver>();
 
             return services;
         }

@@ -31,6 +31,11 @@ docker-compose up -d --build
 echo -e "${GREEN}🔍 DB Migration: 마이그레이션 상태 확인 중...${NC}"
 docker-compose logs -f migration | grep -m 1 "Done"
 
+# 5. DB 시딩 및 명령어 정문화 (신규)
+echo -e "${GREEN}🌱 DB Seeding: 필수 데이터 및 명령어 보정 중...${NC}"
+# 컨테이너 환경에서 실행하거나 호스트에서 dotnet이 있을 경우 실행
+dotnet run --project MooldangBot.Cli/MooldangBot.Cli.csproj
+
 # 5. 최종 상태 보고
 echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
 echo "현재 가동 중인 컨테이너 목록:"

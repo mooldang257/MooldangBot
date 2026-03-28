@@ -7,212 +7,372 @@
     <style>
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 2fr auto;
             gap: 15px;
             align-items: end;
             margin-bottom: 25px;
         }
+        /* Row 1: 키워드(150px) | 응답(Flexible) | 버튼(Audo) */
+        .row-primary { grid-template-columns: 180px 1fr auto; }
+        /* Row 2: 권한 | 카테고리 | 기능 | 재화 | 비용 (균등 분할 또는 개별 설정) */
+        .row-secondary { grid-template-columns: 150px 150px 150px 110px 100px; }
+
         .keyword { color: var(--primary); font-weight: bold; }
         .badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.05); color: var(--text-dark); border: 1px solid var(--glass-border); font-weight: 700; }
-        @media(max-width: 800px) {
-            .form-row { grid-template-columns: 1fr; gap: 10px; }
-            .form-row button { width: 100%; margin-top: 10px; }
+        
+        @media(max-width: 900px) {
+            .row-primary, .row-secondary { grid-template-columns: 1fr; gap: 8px; }
+            .btn-group-action { width: 100%; margin-top: 5px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <a href="javascript:history.back()" class="btn btn-outline" style="margin-bottom: 25px; display: inline-flex;">← 대시보드로 돌아가기</a>
-        <h1>🛠️ 명령어 관리소</h1>
+        <h1 class="mb-0">🛠️ 명령어 관리소</h1>
 
-        <div class="panel" style="background: rgba(0, 147, 233, 0.05); border-left: 4px solid var(--primary);">
+        <div class="panel" style="background: rgba(0, 147, 233, 0.05); border-left: 4px solid var(--primary); margin-top: 25px;">
             <h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.1em; color: var(--text-dark);">✨ 챗봇 답변용 동적 변수 가이드</h3>
-            <p style="margin-top:0; font-size: 0.9em; color: #555; line-height: 1.8;">
-                내용 중에 아래의 변수표현을 사용하면, 채팅을 친 시청자 본인의 실제 정보로 자동 치환되어 답변됩니다.<br>
-                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{포인트}</span> <b>보유 포인트</b><br>
-                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{출석일수}</span> <b>누적 출석 횟수</b><br>
-                <span class="badge" style="background:var(--primary); color:white; border:none; padding:4px 8px;">{팔로우일수}</span> <b>방송을 팔로우한 일수 (치지직 연동)</b><br>
-                <span style="color:var(--primary); font-weight:bold;">💡 등록 예시 :</span> <code>!내정보</code> (키워드) ➔ <code>현재 {포인트}점 보유, {출석일수}일째 출석 중!</code> (내용)
+            <p id="dynamicVariableGuide" style="margin-top:0; font-size: 0.9em; color: #555; line-height: 1.8;">
+                데이터 로딩 중...
             </p>
         </div>
 
-        <div class="panel">
-            <div class="form-row">
+        <!-- [v1.6-Final_Refine] 명령어 관리 2단 폼 -->
+        <h2 id="formTitle">✨ 명령어 추가</h2>
+        <div class="panel" style="border-top: 3px solid var(--primary);">
+            <input type="hidden" id="editCommandId" value="0">
+            
+            <!-- Row 1: 기본 정보 및 버튼 -->
+            <div class="form-row row-primary">
                 <div class="group"><label>키워드</label><input type="text" id="newKeyword" placeholder="!명령어" style="margin-bottom:0;"></div>
                 <div class="group">
-                    <label>동작</label>
-                    <select id="newAction" style="margin-bottom:0;">
-                        <option value="Notice">📢 상단 공지</option>
-                        <option value="Reply">💬 채팅 답변</option>
+                    <label>응답 내용 <span id="charCount" style="font-size: 0.85em; color: var(--primary); font-weight: bold; margin-left: 5px;">(0)</span></label>
+                    <input type="text" id="newContent" placeholder="시청자에게 답변할 내용" style="margin-bottom:0;" oninput="updateCharCount()">
+                </div>
+                <div class="btn-group-action" style="display:flex; gap:8px;">
+                    <button class="btn btn-primary btn-save" onclick="saveUnifiedCommand()" style="height:44px; margin-bottom:0; min-width:90px; box-shadow: 0 4px 15px rgba(0, 147, 233, 0.3);">저장</button>
+                    <button id="btnCancel" class="btn btn-secondary" onclick="resetForm()" style="height:44px; margin-bottom:0; display:none;">취소</button>
+                </div>
+            </div>
+
+            <!-- Row 2: 상세 기술 옵션 -->
+            <div class="form-row row-secondary" style="margin-bottom:0;">
+                <div class="group"><label>실행 권한</label><select id="newRole" style="margin-bottom:0;"></select></div>
+                <div class="group"><label>카테고리</label><select id="newCategory" onchange="onCategoryChange()" style="margin-bottom:0;"></select></div>
+                <div class="group"><label>세부 기능</label><select id="newFeature" onchange="onFeatureChange()" style="margin-bottom:0;"></select></div>
+                <div class="group">
+                    <label>재화 타입</label>
+                    <select id="newCostType" style="margin-bottom:0;">
+                        <option value="None">무료</option>
+                        <option value="Cheese">치즈 🧀</option>
+                        <option value="Point">포인트 🅿️</option>
                     </select>
                 </div>
-                <div class="group">
-                    <label>권한</label>
-                    <select id="newRole" style="margin-bottom:0;"><option value="manager">스트리머/매니저</option><option value="all">모든 시청자</option></select>
-                </div>
-                <div class="group"><label>내용</label><input type="text" id="newContent" placeholder="실행할 내용" style="margin-bottom:0;"></div>
-                <button class="btn btn-primary" onclick="saveCommand()" style="height:44px; margin-bottom:0;">추가/수정</button>
+                <div class="group"><label>발동 비용</label><input type="number" id="newCost" value="0" style="margin-bottom:0;"></div>
             </div>
         </div>
 
+        <!-- 명령어 리스트 테이블 -->
         <div class="panel">
             <table>
                 <thead>
-                    <tr><th>유형</th><th>키워드</th><th>동작</th><th>권한</th><th>내용</th><th>관리</th></tr>
+                    <tr><th>분류</th><th>키워드</th><th>기능</th><th>비용</th><th>권한</th><th>내용</th><th>관리</th></tr>
                 </thead>
                 <tbody id="commandTableBody"></tbody>
             </table>
+            <!-- 페이징 영역 -->
+            <div id="pagination-container" style="margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
         </div>
 
-        <h1 style="margin-top: 50px;">📢 정기 메세지 배치 (자동 홍보)</h1>
-        <div class="panel" style="background: rgba(255, 147, 0, 0.05); border-left: 4px solid #ffa500;">
-            <p style="margin-top:0; font-size: 0.9em; color: #555; line-height: 1.8;">
-                설정한 시간(분)마다 입력한 메세지가 채팅창에 자동으로 출력됩니다.<br>
-                <b>⚠️ 주의:</b> 이 기능은 스트리머가 <b>방송 중(OPEN 상태)</b>일 때만 동작하며, 봇 투명 문자(\u200B)가 자동으로 포함됩니다.
-            </p>
-        </div>
-
-        <div class="panel">
+        <!-- 정기 메시지 관리 (기존 유지) -->
+        <h1 style="margin-top: 60px;">📢 정기 메세지 배치</h1>
+        <div class="panel" style="border-top: 3px solid #ffa500;">
             <div class="form-row" style="grid-template-columns: 120px 1fr auto;">
                 <div class="group"><label>주기(분)</label><input type="number" id="periodicInterval" value="10" min="1" style="margin-bottom:0;"></div>
-                <div class="group"><label>메세지 내용</label><input type="text" id="periodicMessage" placeholder="자동으로 보낼 메세지" style="margin-bottom:0;"></div>
+                <div class="group"><label>메세지 내용</label><input type="text" id="periodicMessage" placeholder="자동으로 보낼 홍보 메세지" style="margin-bottom:0;"></div>
                 <button class="btn btn-secondary" onclick="savePeriodicMessage()" style="height:44px; margin-bottom:0; background: #ffa500; border-color: #ffa500; color: white;">등록/수정</button>
             </div>
-        </div>
-
-        <div class="panel">
-            <table>
+            <table style="margin-top:20px;">
                 <thead>
-                    <tr><th style="width:100px;">주기(분)</th><th>메세지 내용</th><th style="width:100px;">상태</th><th style="width:100px;">관리</th></tr>
+                    <tr><th style="width:100px;">주기</th><th>메세지 내용</th><th style="width:100px;">상태</th><th style="width:100px;">관리</th></tr>
                 </thead>
                 <tbody id="periodicTableBody"></tbody>
             </table>
         </div>
     </div>
+
     <script src="/js/overlay_utils.js"></script>
     <script>
         const pathParts = window.location.pathname.split('/').filter(p => p);
         const chzzkUid = decodeURIComponent(pathParts[pathParts.length - 1] || '').trim();
-        console.log("Current ChzzkUid:", chzzkUid);
-        console.log("Current Pathname:", window.location.pathname);
+        let currentPage = 1;
+        const pageSize = 10;
+        let masterData = { categories: [], features: [], roles: [] };
+        let allCommands = []; 
+
+        document.addEventListener('DOMContentLoaded', loadAll);
 
         async function loadAll() {
-            await Promise.all([loadCommands(), loadPeriodicMessages()]);
+            await loadMasterData();
+            await Promise.all([loadCommands(1), loadPeriodicMessages()]);
         }
 
-        async function loadCommands() {
+        async function loadMasterData() {
             try {
-                const res = await fetch(`/api/commands/list/${chzzkUid}`);
-                if (!res.ok) throw new Error("HTTP error " + res.status);
+                const res = await fetch('/api/commands/master');
+                masterData = await res.json();
                 
-                let list = await res.json();
-                list = createSafeData(list);
-                console.log("Commands loaded:", list);
-                const body = document.getElementById('commandTableBody');
-                body.innerHTML = '';
+                // 카테고리 로드
+                const catSelect = document.getElementById('newCategory');
+                catSelect.innerHTML = '';
+                masterData.categories.forEach(c => {
+                    const o = document.createElement('option');
+                    o.value = c.name; o.dataset.id = c.id; o.innerText = c.displayName;
+                    catSelect.appendChild(o);
+                });
 
-            list.forEach(c => {
+                // 권한 로드
+                const roleSelect = document.getElementById('newRole');
+                roleSelect.innerHTML = '';
+                masterData.roles.forEach(r => {
+                    const o = document.createElement('option');
+                    o.value = r.name; o.innerText = r.displayName;
+                    roleSelect.appendChild(o);
+                });
+
+                onCategoryChange();
+            } catch (e) { console.error("마스터 데이터 동기화 실패:", e); }
+        }
+
+        function onCategoryChange() {
+            const catSelect = document.getElementById('newCategory');
+            const opt = catSelect.options[catSelect.selectedIndex];
+            if (!opt) return;
+
+            const categoryName = opt.value; // "General", "System", "Feature"
+            const categoryId = parseInt(opt.dataset.id);
+            const featureSelect = document.getElementById('newFeature');
+            featureSelect.innerHTML = '';
+            
+            masterData.features.filter(f => f.categoryId === categoryId).forEach(f => {
+                const o = document.createElement('option');
+                o.value = f.typeName; o.innerText = f.displayName;
+                featureSelect.appendChild(o);
+            });
+            onFeatureChange();
+        }
+
+        function onFeatureChange() {
+            const type = document.getElementById('newFeature').value;
+            const feature = masterData.features.find(f => f.typeName === type);
+            const catSelect = document.getElementById('newCategory');
+            const categoryName = catSelect.value;
+
+            const costInput = document.getElementById('newCost');
+            const costTypeSelect = document.getElementById('newCostType');
+
+            if (feature) {
+                document.getElementById('newCost').value = feature.defaultCost || 0;
+                document.getElementById('newRole').value = feature.requiredRole || 'Viewer';
+                document.getElementById('newCostType').value = (feature.defaultCost > 0) ? 'Cheese' : 'None';
+
+                // [v1.7] UI 방어 로직 (Validation)
+                if (categoryName === 'System' || feature.typeName === 'ChatPoint') {
+                    // 시스템 메시지 또는 채팅포인트는 비용 설정 불가 (무료 고정)
+                    costTypeSelect.value = 'None';
+                    costTypeSelect.disabled = true;
+                    costInput.value = 0;
+                    costInput.disabled = true;
+                    costInput.style.opacity = '0.5';
+                    costTypeSelect.style.opacity = '0.5';
+                } else {
+                    // 일반 또는 기타 기능은 설정 가능
+                    costTypeSelect.disabled = false;
+                    costInput.disabled = false;
+                    costInput.style.opacity = '1';
+                }
+
+                // [v4.4.4] 기능별 글자 수 제한 (maxlength) 설정
+                const contentInput = document.getElementById('newContent');
+                if (feature.typeName === 'Title') {
+                    contentInput.maxLength = 40;
+                } else if (feature.typeName === 'Notice') {
+                    contentInput.maxLength = 100;
+                } else {
+                    contentInput.removeAttribute('maxLength');
+                }
+                updateCharCount();
+            }
+        }
+
+        function updateCharCount() {
+            const contentInput = document.getElementById('newContent');
+            const charCount = document.getElementById('charCount');
+            if (!contentInput || !charCount) return;
+
+            const len = contentInput.value.length;
+            const max = contentInput.maxLength > 0 ? contentInput.maxLength : null;
+            
+            charCount.innerText = max ? `(${len}/${max})` : `(${len})`;
+            
+            if (max && len >= max) charCount.style.color = '#ff4757';
+            else charCount.style.color = 'var(--primary)';
+        }
+
+        async function loadCommands(page = 1) {
+            currentPage = page;
+            const res = await fetch(`/api/commands/unified/${chzzkUid}?page=${page}&pageSize=${pageSize}`);
+            const data = await res.json();
+            allCommands = data.items;
+
+            const body = document.getElementById('commandTableBody');
+            body.innerHTML = '';
+            data.items.forEach(c => {
                 const tr = document.createElement('tr');
-                const isSystem = c.type !== 'Custom';
-                
                 tr.innerHTML = `
-                    <td><span class="badge" style="background:${getTypeColor(c.type)}; color:white; border:none;">${getTypeLabel(c.type)}</span></td>
+                    <td><span class="badge" style="background:${getCategoryColor(c.category)}; color:white; border:none;">${c.category}</span></td>
                     <td class="keyword">${c.keyword}</td>
-                    <td><span class="badge">${isSystem ? '⚙️ 시스템' : getActionLabel(c.actionType)}</span></td>
-                    <td>${c.requiredRole === 'manager' ? '🛡️ 관리자' : '👥 전체'}</td>
-                    <td style="font-size:0.9em; color:#666;">${c.description}</td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteCommand('${c.id}')">삭제</button></td>
+                    <td><span class="badge">${getFeatureLabel(c.featureType)}</span></td>
+                    <td><span style="font-weight:bold; color:${c.cost > 0 ? (c.costType==='Cheese'?'#ffcc00':'#ffa500') : '#999'}">${c.cost > 0 ? c.cost + (c.costType==='Cheese'?'🧀':'P') : 'FREE'}</span></td>
+                    <td style="font-size:0.85em; font-weight:bold; color:#444;">${getRoleLabel(c.requiredRole)}</td>
+                    <td style="font-size:0.9em; color:#666; max-width:260px;" class="text-truncate">${c.responseText || '-'}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="editUnifiedCommand(${c.id})" style="background:#0093e9; border:none; color:white; padding: 4px 10px;">수정</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUnifiedCommand(${c.id})" style="padding: 4px 10px;">삭제</button>
+                    </td>
                 `;
                 body.appendChild(tr);
             });
-            } catch (e) {
-                console.error("명령어 로딩 실패:", e);
-            }
+            renderPagination(data);
         }
 
-        function getTypeLabel(type) {
-            switch(type) {
-                case 'Custom': return '커스텀';
-                case 'Song': return '노래신청';
-                case 'Attendance': return '출석체크';
-                case 'Point': return '포인트';
-                case 'Roulette': return '룰렛';
-                case 'Omakase': return '오마카세';
-                default: return type;
-            }
+        function renderPagination(data) {
+            const container = document.getElementById('pagination-container');
+            if (data.totalPages <= 1) { container.innerHTML = ''; return; }
+            container.innerHTML = `
+                <div class="paging-input-wrapper" style="display:flex; align-items:center; gap:10px;">
+                    <button class="btn btn-sm" onclick="loadCommands(${data.currentPage - 1})" ${data.currentPage <= 1 ? 'disabled' : ''}>이전</button>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" value="${data.currentPage}" min="1" max="${data.totalPages}" 
+                               style="width:55px; text-align:center; margin:0; padding:6px; border:1px solid #ddd; border-radius:8px; font-weight:bold;"
+                               onkeypress="if(event.key === 'Enter') jumpToPage(this.value, ${data.totalPages})">
+                        <span style="font-size:0.9em; color:#888; font-weight:bold;">/ ${data.totalPages}</span>
+                    </div>
+                    <button class="btn btn-sm" onclick="loadCommands(${data.currentPage + 1})" ${data.currentPage >= data.totalPages ? 'disabled' : ''}>다음</button>
+                </div>
+            `;
         }
 
-        function getTypeColor(type) {
-            switch(type) {
-                case 'Custom': return 'var(--primary)';
-                case 'Song': return '#ff4757';
-                case 'Attendance': return '#2ed573';
-                case 'Point': return '#ffa500';
-                case 'Roulette': return '#747d8c';
-                case 'Omakase': return '#5352ed';
+        function jumpToPage(v, m) {
+            let p = parseInt(v) || 1;
+            loadCommands(Math.max(1, Math.min(p, m)));
+        }
+
+        function getCategoryColor(cat) {
+            switch(cat) {
+                case 'General': return '#0093e9'; // 일반 (Blue)
+                case 'System': return '#a55eea';  // 시스템메세지 (Purple)
+                case 'Feature': return '#2ed573'; // 기능 (Green)
                 default: return '#747d8c';
             }
         }
 
-        async function saveCommand() {
-            const action = document.getElementById('newAction').value;
-            const content = document.getElementById('newContent').value;
+        function getFeatureLabel(type) {
+            return masterData.features.find(f => f.typeName === type)?.displayName || type;
+        }
 
+        function getRoleLabel(role) {
+            switch(role) {
+                case 'Streamer': return '👤 스트리머';
+                case 'Manager': return '🛡️ 매니저';
+                default: return '👥 시청자';
+            }
+        }
+
+        function editUnifiedCommand(id) {
+            const cmd = allCommands.find(c => c.id === id);
+            if (!cmd) return;
+
+            document.getElementById('editCommandId').value = cmd.id;
+            document.getElementById('newKeyword').value = cmd.keyword;
+            document.getElementById('newCategory').value = cmd.category;
+            
+            onCategoryChange();
+            setTimeout(() => {
+                document.getElementById('newFeature').value = cmd.featureType;
+                document.getElementById('newCost').value = cmd.cost;
+                document.getElementById('newCostType').value = cmd.costType;
+                document.getElementById('newRole').value = cmd.requiredRole;
+                document.getElementById('newContent').value = cmd.responseText || '';
+                
+                document.getElementById('formTitle').innerText = "⚙️ 명령어 상세 수정";
+                document.querySelector(".btn-save").innerText = "수정 완료";
+                document.getElementById('btnCancel').style.display = 'inline-block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 150);
+        }
+
+        async function saveUnifiedCommand() {
+            const id = parseInt(document.getElementById('editCommandId').value) || 0;
             const cmd = {
-                chzzkUid: chzzkUid,
-                commandKeyword: document.getElementById('newKeyword').value,
-                actionType: action,
+                id: id,
+                keyword: document.getElementById('newKeyword').value.trim(),
+                category: document.getElementById('newCategory').value,
+                featureType: document.getElementById('newFeature').value,
+                cost: parseInt(document.getElementById('newCost').value) || 0,
+                costType: document.getElementById('newCostType').value,
+                responseText: document.getElementById('newContent').value.trim(),
                 requiredRole: document.getElementById('newRole').value,
-                content: content || (action === 'SongRequest' ? 'SongRequest' : '')
+                isActive: true
             };
 
-            if(!cmd.commandKeyword) return alert("키워드를 입력해 주세요!");
-            if(cmd.actionType !== 'SongRequest' && !cmd.content) return alert("내용을 입력해 주세요!");
+            if(!cmd.keyword) return alert("키워드를 입력해 주세요!");
 
-            await fetch(`/api/commands/save/${chzzkUid}`, {
+            const res = await fetch(`/api/commands/unified/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cmd)
             });
-            loadCommands();
-            document.getElementById('newKeyword').value = '';
-            document.getElementById('newContent').value = '';
-        }
 
-        async function deleteCommand(id) {
-            if(!confirm("정말 삭제할까요?")) return;
-            await fetch(`/api/commands/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
-            loadCommands();
-        }
-
-        function getActionLabel(type) {
-            switch(type) {
-                case 'Notice': return '📢 공지';
-                case 'Reply': return '💬 답변';
-                case 'SongRequest': return '🎵 노래 신청';
-                default: return type;
+            if (res.ok) {
+                alert(id > 0 ? "업데이트가 완료되었습니다. ✨" : "새 명령어가 등록되었습니다. ✨");
+                loadCommands(currentPage);
+                resetForm();
+            } else {
+                const err = await res.json();
+                alert(err.message || "오류가 발생했습니다.");
             }
         }
 
-        // --- Periodic Message UI Logic ---
+        function resetForm() {
+            document.getElementById('editCommandId').value = "0";
+            document.getElementById('newKeyword').value = '';
+            document.getElementById('newContent').value = '';
+            document.getElementById('newCost').value = 0;
+            document.getElementById('formTitle').innerText = "✨ 명령어 추가";
+            document.querySelector(".btn-save").innerText = "저장";
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+
+        async function deleteUnifiedCommand(id) {
+            if(!confirm("해당 명령어를 삭제하시겠습니까?")) return;
+            const res = await fetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
+            if (res.ok) loadCommands(currentPage);
+        }
+
+        // --- Periodic Message ---
         async function loadPeriodicMessages() {
             const res = await fetch(`/api/periodicmessage/list/${chzzkUid}`);
             const list = await res.json();
             const body = document.getElementById('periodicTableBody');
             body.innerHTML = '';
-            
-            if (list.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">등록된 정기 메세지가 없습니다.</td></tr>';
-                return;
-            }
-
             list.forEach(m => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="text-align:center; font-weight:bold;">${m.intervalMinutes}분</td>
+                    <td class="text-center" style="font-weight:bold;">${m.intervalMinutes}분</td>
                     <td>${m.message}</td>
-                    <td style="text-align:center;"><span class="badge" style="background:${m.isEnabled ? '#2ed573':'#ff4757'}; color:white; border:none;">${m.isEnabled ? 'ON' : 'OFF'}</span></td>
-                    <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="deletePeriodicMessage(${m.id})">삭제</button></td>
+                    <td class="text-center"><span class="badge" style="background:${m.isEnabled ? '#2ed573' : '#ff4757'}; color:white; border:none;">${m.isEnabled ? 'ON' : 'OFF'}</span></td>
+                    <td class="text-center"><button class="btn btn-danger btn-sm" onclick="deletePeriodicMessage(${m.id})">삭제</button></td>
                 `;
                 body.appendChild(tr);
             });
@@ -221,30 +381,18 @@
         async function savePeriodicMessage() {
             const min = parseInt(document.getElementById('periodicInterval').value);
             const msg = document.getElementById('periodicMessage').value.trim();
-            
-            if (!min || min < 1) return alert("주기를 1분 이상으로 입력해 주세요!");
-            if (!msg) return alert("메세지 내용을 입력해 주세요!");
-
-            const req = {
-                chzzkUid: chzzkUid,
-                intervalMinutes: min,
-                message: msg,
-                isEnabled: true
-            };
-
+            if (!min || !msg) return alert("주기와 내용을 정확히 입력하세요!");
             await fetch(`/api/periodicmessage/save/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(req)
+                body: JSON.stringify({ chzzkUid, intervalMinutes: min, message: msg, isEnabled: true })
             });
-
             document.getElementById('periodicMessage').value = '';
             loadPeriodicMessages();
-            alert("정기 메세지가 등록되었습니다.");
         }
 
         async function deletePeriodicMessage(id) {
-            if(!confirm("해당 정기 메세지를 삭제할까요?")) return;
+            if(!confirm("삭제할까요?")) return;
             await fetch(`/api/periodicmessage/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
             loadPeriodicMessages();
         }

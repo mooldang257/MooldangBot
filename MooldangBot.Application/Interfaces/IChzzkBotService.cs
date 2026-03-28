@@ -12,9 +12,14 @@ public interface IChzzkBotService
     Task<string?> GetBotTokenAsync(StreamerProfile profile);
 
     /// <summary>
-    /// 설정된 계정(봇/스트리머)으로 채팅 메시지를 전송합니다.
+    /// 설정된 계정(봇/스트리머)으로 채팅 메시지를 전송합니다. (v1.9 동적 엔진 연동을 위해 viewerUid 추가)
     /// </summary>
-    Task<bool> SendReplyChatAsync(StreamerProfile profile, string message, CancellationToken token);
+    Task<bool> SendReplyChatAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token);
+    
+    /// <summary>
+    /// 설정된 계정으로 상단 공지(Pinned Notice)를 등록합니다. (v1.9.9)
+    /// </summary>
+    Task<bool> SendReplyNoticeAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token);
 
     /// <summary>
     /// 특정 채널의 봇 설정을 즉시 새로고침합니다.

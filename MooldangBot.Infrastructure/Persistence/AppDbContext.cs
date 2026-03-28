@@ -42,6 +42,10 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<StreamerManager> StreamerManagers { get; set; }
     public DbSet<SongBook> SongBooks { get; set; }
     public DbSet<RouletteLog> RouletteLogs { get; set; }
+    public DbSet<UnifiedCommand> UnifiedCommands { get; set; }
+    public DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
+    public DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
+    public DbSet<Master_DynamicVariable> MasterDynamicVariables { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -141,7 +145,96 @@ public class AppDbContext : DbContext, IAppDbContext
             .HasIndex(l => new { l.ChzzkUid, l.Status, l.Id })
             .IsDescending(false, false, true);
 
-        // 리눅스/도커 환경 등에서의 대소문자 충돌 방지를 위해 소문자로 이름 고정
+        // [파로스의 통합]: UnifiedCommand 설정 (Osiris Regulation)
+        modelBuilder.Entity<UnifiedCommand>(entity => {
+            entity.ToTable("unifiedcommands");
+            entity.Property(e => e.ChzzkUid).HasColumnName("chzzkuid").UseCollation(ciCollation);
+            entity.Property(e => e.Keyword).HasColumnName("keyword").UseCollation(ciCollation);
+            entity.Property(e => e.Category).HasConversion<string>();
+            entity.Property(e => e.CostType).HasConversion<string>();
+            entity.Property(e => e.RequiredRole).HasConversion<string>();
+        });
+        modelBuilder.Entity<UnifiedCommand>().HasIndex(c => new { c.ChzzkUid, c.Keyword }).IsUnique();
+
+        modelBuilder.Entity<Master_CommandCategory>(entity => {
+            entity.ToTable("master_commandcategories");
+            entity.Property(e => e.Name).UseCollation(ciCollation);
+
+            // [v1.7] 마스터 카테고리 재편
+            entity.HasData(
+                new Master_CommandCategory { Id = 1, Name = "General", DisplayName = "일반", SortOrder = 1 },
+                new Master_CommandCategory { Id = 2, Name = "System", DisplayName = "시스템메세지", SortOrder = 2 },
+                new Master_CommandCategory { Id = 3, Name = "Feature", DisplayName = "기능", SortOrder = 3 }
+            );
+        });
+
+        modelBuilder.Entity<Master_CommandFeature>(entity => {
+            entity.ToTable("master_commandfeatures");
+            entity.Property(e => e.TypeName).UseCollation(ciCollation);
+            entity.Property(e => e.RequiredRole).HasConversion<string>();
+
+            // [v1.7] 마스터 기능 재편 (9종)
+            entity.HasData(
+                new Master_CommandFeature { Id = 1, CategoryId = 1, TypeName = "Reply", DisplayName = "텍스트 답변", DefaultCost = 0, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 2, CategoryId = 2, TypeName = "Notice", DisplayName = "공지", DefaultCost = 0, RequiredRole = CommandRole.Manager },
+                new Master_CommandFeature { Id = 3, CategoryId = 2, TypeName = "Title", DisplayName = "방제", DefaultCost = 0, RequiredRole = CommandRole.Manager },
+                new Master_CommandFeature { Id = 4, CategoryId = 2, TypeName = "Category", DisplayName = "카테고리", DefaultCost = 0, RequiredRole = CommandRole.Manager },
+                new Master_CommandFeature { Id = 5, CategoryId = 2, TypeName = "SonglistToggle", DisplayName = "송리스트", DefaultCost = 0, RequiredRole = CommandRole.Manager },
+                new Master_CommandFeature { Id = 6, CategoryId = 3, TypeName = "SongRequest", DisplayName = "노래신청", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 7, CategoryId = 3, TypeName = "Omakase", DisplayName = "오마카세", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 8, CategoryId = 3, TypeName = "Roulette", DisplayName = "룰렛", DefaultCost = 500, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 9, CategoryId = 3, TypeName = "ChatPoint", DisplayName = "채팅포인트", DefaultCost = 0, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 10, CategoryId = 2, TypeName = "SystemResponse", DisplayName = "시스템 응답", DefaultCost = 0, RequiredRole = CommandRole.Manager },
+                new Master_CommandFeature { Id = 11, CategoryId = 3, TypeName = "AI", DisplayName = "AI 답변", DefaultCost = 1000, RequiredRole = CommandRole.Viewer }
+            );
+        });
+
+        modelBuilder.Entity<Master_DynamicVariable>(entity => {
+            entity.ToTable("master_dynamicvariables");
+            entity.Property(e => e.Keyword).UseCollation(ciCollation);
+
+            // [v1.8] 동적 변수 시딩 (Safe Query) & [v4.4.0] 내부 메서드 리졸버 매핑
+            entity.HasData(
+                new Master_DynamicVariable { 
+                    Id = 1, 
+                    Keyword = "{포인트}", 
+                    Description = "보유 포인트", 
+                    BadgeColor = "primary", 
+                    QueryString = "SELECT CAST(Point AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 2, 
+                    Keyword = "{닉네임}", 
+                    Description = "시청자 닉네임", 
+                    BadgeColor = "success", 
+                    QueryString = "SELECT ViewerName FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 3, 
+                    Keyword = "{방제}", 
+                    Description = "현재 방송 제목", 
+                    BadgeColor = "secondary", 
+                    QueryString = "METHOD:GetLiveTitle" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 4, 
+                    Keyword = "{카테고리}", 
+                    Description = "현재 방송 카테고리", 
+                    BadgeColor = "info", 
+                    QueryString = "METHOD:GetLiveCategory" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 5, 
+                    Keyword = "{공지}", 
+                    Description = "현재 방송 공지", 
+                    BadgeColor = "warning", 
+                    QueryString = "METHOD:GetLiveNotice" 
+                }
+            );
+        });
+
+        modelBuilder.Entity<SongBook>().ToTable("songbooks");
+        modelBuilder.Entity<RouletteLog>().ToTable("roulettelogs");
         modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
         modelBuilder.Entity<SongQueue>().ToTable("songqueues");
         modelBuilder.Entity<SystemSetting>().ToTable("systemsettings");
@@ -184,6 +277,7 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<RouletteLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<BroadcastSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<UnifiedCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
 
         // 필드명이 다른 경우 예외 처리
         modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerChzzkUid == _userSession.ChzzkUid);

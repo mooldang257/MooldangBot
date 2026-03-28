@@ -17,11 +17,13 @@ public class ChatInteractionHandler(
     IChatIntentRouter intentRouter,
     ILlmService llmService,
     IChzzkChatService chatService,
+    IPhoenixRecorder phoenix, // [v2.0.2] AI 발화 기록을 위해 추가
     IServiceProvider serviceProvider,
     ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
+        logger.LogDebug($"[채팅 핸들러 수신] Channel: {notification.Profile.ChzzkUid}, User: {notification.Username}, Msg: {notification.Message}");
         // 0. [오시리스의 기록관]: 실시간 채팅 집계 (통계를 위해 모든 메시지 기록)
         using (var scope = serviceProvider.CreateScope())
         {
@@ -29,49 +31,23 @@ public class ChatInteractionHandler(
             scribe.AddChatMessage(notification.Profile.ChzzkUid, notification.Message);
         }
 
-        // 1. [무한 루프 방지]: 봇 자신의 말이나 시스템 메시지에는 반응하지 않음
-        // (SenderId가 채널의 ChzzkUid와 같으면 스트리머, 아니면 시청자. 봇은 별도의 ID를 가짐)
-        if (notification.Username.Contains("MooldangBot") || string.IsNullOrEmpty(notification.SenderId))
+        // 1. [무한 루프 및 명령어 방지]: 봇 자신의 말이거나 시스템 메시지, 혹은 명령어(!)에는 반응하지 않음
+        if (notification.Username.Contains("MooldangBot") || 
+            string.IsNullOrEmpty(notification.SenderId) ||
+            notification.Message.TrimStart().StartsWith('!'))
         {
             return;
         }
 
-        // 2. [발화 주체 확인]: 스트리머 본인 여부 판별
-        // SenderId가 채널 프로필의 ChzzkUid와 일치하면 스트리머입니다. [대변인의 방패]
+        // 1. [거울의 봉인]: 일반 채팅에 대한 자동 AI 응답 기능을 비활성화합니다. (v2.1.4)
+        // 사용자의 요청에 따라 모든 AI 발화는 '통합 명령어(!질문 등)'를 통해서만 수행됩니다.
+        /* 
+        [기존 자동 응답 로직 - 비활성화됨]
         bool isStreamer = notification.SenderId == notification.Profile.ChzzkUid;
+        string? systemPrompt = await intentRouter.RouteAndProcessChatAsync(...);
+        ...
+        */
 
-        // 3. [의도 분석 및 라우팅]: [대변인의 방패] 통과
-        string? systemPrompt = await intentRouter.RouteAndProcessChatAsync(
-            notification.Profile.ChzzkUid, 
-            notification.Username, 
-            isStreamer, 
-            notification.Message
-        );
-
-        // 4. [거울의 침묵]: 라우터가 반응하지 않기로 결정한 경우 (null 반환)
-        if (string.IsNullOrEmpty(systemPrompt))
-        {
-            return;
-        }
-
-        logger.LogInformation($"[IAMF 발화 결정] Sender: {notification.Username}, Mode: {(isStreamer ? "Streamer/FreeAI" : "Viewer/Intent")}");
-
-        try
-        {
-            // 5. [거울의 목소리 생성]: LLM 호출
-            string aiResponse = await llmService.GenerateResponseAsync(systemPrompt, notification.Message);
-
-            if (!string.IsNullOrWhiteSpace(aiResponse))
-            {
-                // 6. [실전 발화]: 치지직 채팅창 전송
-                await chatService.SendMessageAsync(notification.Profile.ChzzkUid, aiResponse);
-                
-                logger.LogInformation($"[IAMF 발화 성공] To: {notification.Profile.ChzzkUid}, Msg: {aiResponse}");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            logger.LogError(ex, "[IAMF 발화 실패] 최종 파이프라인 전송 중 오류 발생");
-        }
+        return; // 현재 핸들러는 메시지 기록(Scribe) 이후 프로세스를 종료합니다.
     }
 }

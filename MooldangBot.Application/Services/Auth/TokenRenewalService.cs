@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -7,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.DTOs;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
@@ -56,8 +56,8 @@ public class TokenRenewalService : ITokenRenewalService
                 });
     }
 
-    // 치지직 인증 서버 엔드포인트
-    private const string TokenUrl = "https://nid.naver.com/oauth2.0/token";
+    // 치지직 Open API 전역 토큰 엔드포인트
+    private const string TokenUrl = "https://openapi.chzzk.naver.com/auth/v1/token";
 
     public async Task<bool> RenewIfNeededAsync(string chzzkUid)
     {
@@ -84,34 +84,35 @@ public class TokenRenewalService : ITokenRenewalService
 
         _logger.LogInformation($"[영겁의 열쇠] {chzzkUid} 스트리머의 토큰 임박 감지. (만료: {streamer.TokenExpiresAt})");
 
-        // 2. [서기의 기록]: 리프레시 토큰으로 새 토큰 요청
+        // 2. [서기의 기록]: 리프레시 토큰으로 새 토큰 요청 (JSON 규격 준수)
         using var client = _httpClientFactory.CreateClient();
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        var payload = new
         {
-            { "grant_type", "refresh_token" },
-            { "refresh_token", streamer.ChzzkRefreshToken },
-            { "client_id", _config["ChzzkApi:ClientId"] ?? "" },
-            { "client_secret", _config["ChzzkApi:ClientSecret"] ?? "" }
-        });
-
-        var response = await client.PostAsync(TokenUrl, content);
+            grantType = "refresh_token",
+            refreshToken = streamer.ChzzkRefreshToken,
+            clientId = _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "",
+            clientSecret = _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? ""
+        };
+        
+        var response = await client.PostAsJsonAsync(TokenUrl, payload);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError($"[영겁의 열쇠] 갱신 실패: {response.StatusCode}");
+            var errorDetail = await response.Content.ReadAsStringAsync();
+            _logger.LogError($"[영겁의 열쇠] 갱신 실패 (HTTP {response.StatusCode}): {errorDetail}");
             return false;
         }
 
-        var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
-        if (result == null || string.IsNullOrEmpty(result.AccessToken)) return false;
+        var result = await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>(); // 공용 DTO 사용
+        if (result == null || result.Content == null || string.IsNullOrEmpty(result.Content.AccessToken)) return false;
 
         // 3. [파동의 부활]
-        streamer.ChzzkAccessToken = result.AccessToken;
-        if (!string.IsNullOrEmpty(result.RefreshToken)) streamer.ChzzkRefreshToken = result.RefreshToken;
-        streamer.TokenExpiresAt = DateTime.UtcNow.AddSeconds(result.ExpiresIn);
+        var content = result.Content;
+        streamer.ChzzkAccessToken = content.AccessToken;
+        if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
+        streamer.TokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
 
         await _db.SaveChangesAsync();
         return true;
     }
 
-    private record TokenResponse(string AccessToken, string RefreshToken, int ExpiresIn, string TokenType);
 }

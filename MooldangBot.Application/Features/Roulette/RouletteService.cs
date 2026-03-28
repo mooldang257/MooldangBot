@@ -15,6 +15,7 @@ public class SpinResultContext
     public int RouletteId { get; set; }
     public string RouletteName { get; set; } = string.Empty;
     public string? ViewerNickname { get; set; }
+    public string? ViewerUid { get; set; } // [v1.9] 추가
     public string ItemName { get; set; } = string.Empty;
     public List<string> WinningItems { get; set; } = new();
 }
@@ -49,18 +50,18 @@ public class RouletteService : IRouletteService
 
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string? viewerNickname = null)
+    public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null)
     {
-        var results = await SpinRouletteMultiAsync(chzzkUid, rouletteId, 1, viewerNickname);
+        var results = await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 1, viewerNickname);
         return results.FirstOrDefault();
     }
 
-    public async Task<List<RouletteItem>> SpinRoulette10xAsync(string chzzkUid, int rouletteId, string? viewerNickname = null)
+    public async Task<List<RouletteItem>> SpinRoulette10xAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null)
     {
-        return await SpinRouletteMultiAsync(chzzkUid, rouletteId, 10, viewerNickname);
+        return await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 10, viewerNickname);
     }
 
-    public async Task<List<RouletteItem>> SpinRouletteMultiAsync(string chzzkUid, int rouletteId, int count, string? viewerNickname = null)
+    public async Task<List<RouletteItem>> SpinRouletteMultiAsync(string chzzkUid, int rouletteId, string viewerUid, int count, string? viewerNickname = null)
     {
         if (count <= 0) return new List<RouletteItem>();
 
@@ -78,7 +79,7 @@ public class RouletteService : IRouletteService
             if (!activeItems.Any())
             {
                 _logger.LogWarning($"🎰 [룰렛 실행 실패] {rouletteId}번에 활성화된 항목이 없습니다.");
-                await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!");
+                await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!", viewerUid);
                 return new List<RouletteItem>();
             }
 
@@ -122,6 +123,7 @@ public class RouletteService : IRouletteService
                 RouletteId = rouletteId,
                 RouletteName = roulette.Name,
                 ViewerNickname = viewerNickname,
+                ViewerUid = viewerUid, // [v1.9] 추가
                 ItemName = results.First().ItemName,
                 WinningItems = results.Select(r => r.ItemName).ToList()
             };
@@ -174,7 +176,7 @@ public class RouletteService : IRouletteService
         return items.Last();
     }
 
-    private async Task SendChatMessageAsync(string chzzkUid, string message)
+    private async Task SendChatMessageAsync(string chzzkUid, string message, string? viewerUid = null)
     {
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -182,10 +184,10 @@ public class RouletteService : IRouletteService
         var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return;
 
-        await _botService.SendReplyChatAsync(streamer, message, CancellationToken.None);
+        await _botService.SendReplyChatAsync(streamer, message, viewerUid ?? "", CancellationToken.None);
     }
 
-    public async Task SendDelayedChatResultAsync(string chzzkUid, int rouletteId, string itemName, string? viewerNickname)
+    public async Task SendDelayedChatResultAsync(string chzzkUid, int rouletteId, string itemName, string viewerUid, string? viewerNickname)
     {
         try
         {
@@ -195,7 +197,7 @@ public class RouletteService : IRouletteService
             string nickPrefix = string.IsNullOrEmpty(viewerNickname) ? "관리자테스트" : viewerNickname;
             string message = $"{nickPrefix}({rouletteName})> [{itemName}]";
 
-            await SendChatMessageAsync(chzzkUid, message);
+            await SendChatMessageAsync(chzzkUid, message, viewerUid);
         }
         catch (Exception ex)
         {

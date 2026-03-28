@@ -59,13 +59,13 @@ namespace MooldangBot.Domain.Entities
         public int PointPerAttendance { get; set; } = 10;
 
         [MaxLength(200)]
-        public string AttendanceCommands { get; set; } = "출석,물하,댕하";
+        public string AttendanceCommands { get; set; } = "출석";
 
         [MaxLength(200)]
         public string AttendanceReply { get; set; } = "{닉네임}님 출석 고마워요!";
 
         [MaxLength(200)]
-        public string PointCheckCommand { get; set; } = "!내정보,!포인트";
+        public string PointCheckCommand { get; set; } = "!포인트";
 
         [MaxLength(200)]
         public string PointCheckReply { get; set; } = "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)";

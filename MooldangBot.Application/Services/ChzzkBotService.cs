@@ -15,18 +15,21 @@ public class ChzzkBotService : IChzzkBotService
 {
     private readonly IAppDbContext _db;
     private readonly IChzzkApiClient _chzzkApi;
-    private readonly IChzzkChatClient _chatClient; // [피닉스의 재건] 추가
+    private readonly IChzzkChatClient _chatClient;
+    private readonly IDynamicQueryEngine _dynamicEngine; // [v1.9]
     private readonly ILogger<ChzzkBotService> _logger;
 
     public ChzzkBotService(
         IAppDbContext db, 
         IChzzkApiClient chzzkApi, 
         IChzzkChatClient chatClient, 
+        IDynamicQueryEngine dynamicEngine, // [v1.9]
         ILogger<ChzzkBotService> logger)
     {
         _db = db;
         _chzzkApi = chzzkApi;
         _chatClient = chatClient;
+        _dynamicEngine = dynamicEngine;
         _logger = logger;
     }
 
@@ -116,10 +119,26 @@ public class ChzzkBotService : IChzzkBotService
         return profile.ChzzkAccessToken;
     }
 
-    public async Task<bool> SendReplyChatAsync(StreamerProfile profile, string message, CancellationToken token)
+    public async Task<bool> SendReplyChatAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token)
+    {
+        return await SendGenericChatAsync(profile, message, viewerUid, false, token);
+    }
+
+    public async Task<bool> SendReplyNoticeAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token)
+    {
+        return await SendGenericChatAsync(profile, message, viewerUid, true, token);
+    }
+
+    private async Task<bool> SendGenericChatAsync(StreamerProfile profile, string message, string viewerUid, bool isNotice, CancellationToken token)
     {
         try
         {
+            // 🏷️ [v1.9.2] 봇의 응답이 시청자 채팅보다 너무 빨라지는 것을 방지하기 위해 0.1초 지연 추가
+            await Task.Delay(100, token);
+
+            // 🏷️ [v1.9] 전역 동적 쿼리 엔진 적용 (Service Layer 필터)
+            string processedMessage = await _dynamicEngine.ProcessMessageAsync(message, profile.ChzzkUid, viewerUid);
+
             // ⭐ 계정 설정에 맞는 적절한 토큰 확보 (필요시 갱신 포함)
             string? tokenToUse = await GetBotTokenAsync(profile);
             if (string.IsNullOrEmpty(tokenToUse))
@@ -128,9 +147,11 @@ public class ChzzkBotService : IChzzkBotService
                 return false;
             }
 
-            _logger.LogInformation($"📡 [봇 채팅 발송] 대상채널: {profile.ChzzkUid}");
+            _logger.LogInformation($"📡 [봇 채팅 발송] 대상채널: {profile.ChzzkUid}, 타입: {(isNotice ? "상단공지" : "일반")}");
 
-            return await _chzzkApi.SendChatMessageAsync(tokenToUse, profile.ChzzkUid, message);
+            return isNotice 
+                ? await _chzzkApi.SendChatNoticeAsync(tokenToUse, profile.ChzzkUid, processedMessage)
+                : await _chzzkApi.SendChatMessageAsync(tokenToUse, profile.ChzzkUid, processedMessage);
         }
         catch (Exception ex)
         {

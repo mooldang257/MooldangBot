@@ -38,6 +38,14 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
+### 4. 데이터베이스 초기화 및 시딩 (필수)
+최초 배포 시 또는 DB 구조 변경 시, 필수 시스템 설정(API 키, 도메인 등)을 정문화하기 위해 시더를 실행합니다. 멱등성이 보장되어 여러 번 실행해도 안전합니다.
+
+```bash
+# .env 파일이 MooldangBot.Api 폴더에 있어야 합니다.
+dotnet run --project MooldangBot.Cli/MooldangBot.Cli.csproj
+```
+
 ---
 
 ## 💻 로컬 개발 환경 (Windows)

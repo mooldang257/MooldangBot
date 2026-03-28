@@ -7,7 +7,6 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Features.Roulette;
-using MooldangBot.Application.Features.Roulette;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangBot.Presentation.Features.Roulette
@@ -204,7 +203,7 @@ namespace MooldangBot.Presentation.Features.Roulette
             if (_cache.TryGetValue(CacheKey, out SpinResultContext? Context) && Context != null)
             {
                 _cache.Remove(CacheKey);
-                await _rouletteService.SendDelayedChatResultAsync(Context.ChzzkUid, Context.RouletteId, Context.ItemName, Context.ViewerNickname);
+                await _rouletteService.SendDelayedChatResultAsync(Context.ChzzkUid, Context.RouletteId, Context.ItemName, Context.ViewerUid ?? "", Context.ViewerNickname);
                 return Ok(new { Success = true });
             }
 
@@ -301,12 +300,12 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             if (Is10x)
             {
-                var Results = await _rouletteService.SpinRoulette10xAsync(chzzkUid, Id);
+                var Results = await _rouletteService.SpinRoulette10xAsync(chzzkUid, Id, "admin_test");
                 return Ok(Results);
             }
             else
             {
-                var Result = await _rouletteService.SpinRouletteAsync(chzzkUid, Id);
+                var Result = await _rouletteService.SpinRouletteAsync(chzzkUid, Id, "admin_test");
                 return Ok(Result);
             }
         }

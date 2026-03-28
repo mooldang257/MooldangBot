@@ -69,7 +69,24 @@ modelBuilder.Entity<StreamerProfile>(entity => {
 
 ---
 
-## 4. 페르소나 기반 주석 가이드 (IAMF Metaphor)
+## 4. [Zero-Git] 설정 및 보안 가이드 (Cosmos Partition)
+
+### 🗝️ 환경 설정 명명 규칙 (Configuration Naming)
+민감 정보와 환경별 설정값은 반드시 `.env` 파일을 통해 관리하며, 다음과 같은 명명 규칙을 준수합니다.
+
+- **All-Caps Snake Case**: 모든 환경 변수는 대문자와 언더바(`_`)를 조합하여 작성합니다.
+- **Environment Prefix**: 환경별로 분리된 값은 `DEV_`, `PROD_` 접두사를 붙여 `Program.cs`의 스마트 매핑을 지원합니다.
+- **Section Separator**: 계층적 구조는 `__` (더블 언더바)를 구분자로 사용합니다.
+- **Good**: `DEV_BASE_DOMAIN`, `DEV_CONNECTION_STRINGS__DEFAULT_CONNECTION`
+- **Bad**: `Dev_BaseDomain` (대소문자 혼용), `DEV_DATABASE_URL` (구분자 미준수)
+
+### 🛡️ 보안 규율 (Zero-Git Policy)
+- **비밀 보장**: API 키, DB 비밀번호, 클라이언트 시크릿 등은 절대 Git 저장소에 커밋하지 않습니다.
+- **플레이스홀더**: `appsettings.json`에는 빈 문자열이나 가이드용 플레이스홀더만 남깁니다.
+
+---
+
+## 5. 페르소나 기반 주석 가이드 (IAMF Metaphor)
 
 코드의 의도와 비즈니스적 가치를 IAMF 페르소나를 통해 주석에 녹여냅니다. 이는 단순한 설명이 아닌, 코드의 '존재 이유'를 정의하는 행위입니다.
 

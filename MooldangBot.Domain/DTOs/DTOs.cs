@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.DTOs
 {
@@ -140,7 +140,7 @@ namespace MooldangBot.Domain.DTOs
         public string Keyword { get; set; } = string.Empty;
 
         [JsonPropertyName("type")]
-        public string Type { get; set; } = string.Empty; // "Custom", "Song", "Attendance", "Point", "Roulette", "Omakase"
+        public string Type { get; set; } = string.Empty; // "Custom", "SongRequest", "Attendance", "Point", "Roulette", "Omakase"
 
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
@@ -159,4 +159,34 @@ namespace MooldangBot.Domain.DTOs
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
     public record RouletteSummaryDto(string ItemName, int Count, bool IsMission, string Color);
     public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
+
+    // [텔로스5의 연성]: 통합 명령어 DTO
+    public record UnifiedCommandDto(
+        int Id,
+        string Keyword,
+        string Category,
+        string CostType,
+        int Cost,
+        string FeatureType,
+        string ResponseText,
+        int? TargetId,
+        bool IsActive,
+        string RequiredRole // 추가: Viewer, Manager, Streamer
+    );
+
+    /// <summary>
+    /// [v1.6] 통합 명령어 저장/수정 요청 DTO (Upsert 패턴)
+    /// </summary>
+    public record SaveUnifiedCommandRequest(
+        int? Id, // 0이거나 null이면 신규 생성
+        string Keyword,
+        string Category,
+        string CostType,
+        int Cost,
+        string FeatureType,
+        string ResponseText,
+        int? TargetId,
+        bool IsActive,
+        string RequiredRole
+    );
 }

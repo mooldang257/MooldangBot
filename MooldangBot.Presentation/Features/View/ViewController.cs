@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;

@@ -106,21 +106,42 @@ namespace MooldangBot.Domain.DTOs
 
     public class ChzzkUserMeContent
     {
+        [JsonPropertyName("channelId")]
+        public string? ChannelId { get; set; }
+        
+        [JsonPropertyName("channelName")]
+        public string? ChannelName { get; set; }
+        
+        [JsonPropertyName("channelImageUrl")]
+        public string? ChannelImageUrl { get; set; }
+
+        // 하위 호환성 및 내부 API 대응을 위한 별칭
         [JsonPropertyName("userIdHash")]
         public string? UserIdHash { get; set; }
         
         [JsonPropertyName("nickname")]
         public string? Nickname { get; set; }
-        
-        [JsonPropertyName("profileImageUrl")]
-        public string? ProfileImageUrl { get; set; }
 
-        // 하위 호환성 또는 편의를 위한 별칭 속성들
         [JsonIgnore]
-        public string ChannelId => UserIdHash ?? "";
+        public string EffectiveChannelId => ChannelId ?? UserIdHash ?? "";
+        
         [JsonIgnore]
-        public string? ChannelName => Nickname;
-        [JsonIgnore]
-        public string? ChannelImageUrl => ProfileImageUrl;
+        public string? EffectiveChannelName => ChannelName ?? Nickname;
+    }
+
+    public class ChzzkLiveSettingResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkLiveSettingContent? Content { get; set; }
+    }
+
+    public class ChzzkLiveSettingContent
+    {
+        [JsonPropertyName("defaultLiveTitle")]
+        public string? DefaultLiveTitle { get; set; }
+        [JsonPropertyName("category")]
+        public ChzzkCategoryData? Category { get; set; }
     }
 }

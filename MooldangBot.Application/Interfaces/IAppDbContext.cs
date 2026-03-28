@@ -22,7 +22,11 @@ namespace MooldangBot.Application.Interfaces
         DbSet<PeriodicMessage> PeriodicMessages { get; set; }
         DbSet<SonglistSession> SonglistSessions { get; set; }
         DbSet<OverlayPreset> OverlayPresets { get; set; }
-    DbSet<BroadcastSession> BroadcastSessions { get; set; }
+        DbSet<BroadcastSession> BroadcastSessions { get; set; }
+        DbSet<UnifiedCommand> UnifiedCommands { get; set; }
+        DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
+        DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
+        DbSet<Master_DynamicVariable> MasterDynamicVariables { get; set; }
         
         // IAMF Philosophy
         DbSet<IamfScenario> IamfScenarios { get; set; }
