@@ -144,4 +144,34 @@ namespace MooldangBot.Domain.DTOs
         [JsonPropertyName("category")]
         public ChzzkCategoryData? Category { get; set; }
     }
+
+    // 🆕 다중 채널 정보 조회 응답 (최대 20개)
+    public class ChzzkChannelsResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkChannelsContent? Content { get; set; }
+    }
+
+    public class ChzzkChannelsContent
+    {
+        [JsonPropertyName("data")]
+        public List<ChzzkChannelData>? Data { get; set; }
+    }
+
+    public class ChzzkChannelData
+    {
+        [JsonPropertyName("channelId")]
+        public string ChannelId { get; set; } = string.Empty;
+        
+        [JsonPropertyName("channelName")]
+        public string? ChannelName { get; set; }
+        
+        [JsonPropertyName("channelImageUrl")]
+        public string? ChannelImageUrl { get; set; }
+        
+        [JsonPropertyName("verifiedMark")]
+        public bool VerifiedMark { get; set; }
+    }
 }

@@ -183,9 +183,19 @@
         let isRunning = false;
         const ITEM_HEIGHT = 60;
 
+        // [v2.1] SignalR 이벤트 핸들러 고도화
         connection.on("ReceiveRouletteResult", (data) => {
-            data = createSafeData(data);
-            if (!data || !data.Results) return;
+            console.log("🎰 [오버레이] 결과 수신:", data);
+            
+            // HarmonyProxy를 통한 데이터 정규화 (casing 대응)
+            data = window.createSafeData ? window.createSafeData(data) : data;
+            
+            // 필수 데이터 확인 (results 또는 Results)
+            if (!data || !(data.results || data.Results)) {
+                console.warn("⚠️ [오버레이] 유효하지 않은 결과 데이터 형식:", data);
+                return;
+            }
+            
             queue.push(data);
             processQueue();
         });
@@ -193,18 +203,25 @@
         async function processQueue() {
             if (isRunning || queue.length === 0) return;
             isRunning = true;
-            const data = queue.shift();
-            await runSlotAnimation(data);
-            isRunning = false;
-            processQueue();
+            try {
+                const data = queue.shift();
+                await runSlotAnimation(data);
+            } catch (e) {
+                console.error("❌ [오버레이] 애니메이션 실행 중 오류:", e);
+            } finally {
+                isRunning = false;
+                processQueue();
+            }
         }
 
         async function runSlotAnimation(data) {
-            const results = data.Results || data.results;
-            const rouletteName = data.RouletteName || data.rouletteName || "기본";
+            const results = data.results || data.Results;
+            const rouletteName = data.rouletteName || data.RouletteName || "기본";
             const viewerNickname = data.viewerNickname || data.ViewerNickname || "시청자";
             const totalCount = results.length;
             const isMulti = totalCount > 1;
+
+            console.log(`🎬 애니메이션 시작: ${rouletteName} (x${totalCount})`);
 
             historyTrack.innerHTML = '';
             machine.classList.add('active');
@@ -213,16 +230,11 @@
 
             for (let i = 0; i < totalCount; i++) {
                 const result = results[i];
-                const itemName = result.ItemName || result.itemName;
-                const itemColor = result.Color || result.color || '#ffffff';
+                const itemName = result.itemName || result.ItemName;
+                const itemColor = result.color || result.Color || '#ffffff';
                 const currentIdx = i + 1;
 
-                // 타이틀 업데이트: {이름}님의 {룰렛명} 룰렛 {차수}/{총회수}
-                let displayRouletteName = rouletteName;
-                if (!displayRouletteName.endsWith("룰렛")) {
-                    displayRouletteName += " 룰렛";
-                }
-                titleEl.innerText = `${viewerNickname}님의 ${displayRouletteName} ${currentIdx}/${totalCount}`;
+                titleEl.innerText = `${viewerNickname}님의 ${rouletteName} ${currentIdx}/${totalCount}`;
 
                 const dummyCount = isFastMode ? 20 : (isMulti ? 30 : 50); 
                 reels.innerHTML = '';
@@ -256,8 +268,7 @@
                 await new Promise(r => setTimeout(r, wait));
             }
 
-            // [v6 Refinement] 룰렛 결과를 채팅창으로 전송하기 전에 초기화해서 빈 화면으로 만든다
-            await new Promise(r => setTimeout(r, 2000)); // 결과 확인 잠시 대기
+            await new Promise(r => setTimeout(r, 500)); // 2.0s에서 0.5s로 단축 (신속한 피드백)
             historyBar.classList.remove('active');
             titleEl.classList.remove('active');
             setTimeout(() => {
@@ -265,12 +276,14 @@
             }, 500);
 
             machine.classList.remove('active');
-            if (data.SpinId || data.spinId) notifyComplete(data.SpinId || data.spinId);
+            
+            // 완료 보고 (spinId 수동 체크 포함)
+            const spinId = data.spinId || data.SpinId;
+            if (spinId) notifyComplete(spinId);
         }
 
         function updateRealtimeHistory(name, color) {
             const existing = Array.from(historyTrack.children).find(el => el.dataset.itemName === name);
-            
             if (existing) {
                 const countSpan = existing.querySelector('.count');
                 const currentCount = parseInt(countSpan.innerText.replace('x', '')) || 1;
@@ -281,10 +294,7 @@
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.dataset.itemName = name;
-                div.innerHTML = `
-                    <span class="reward" style="color: ${color}">[${name}]</span>
-                    <span class="count">x1</span>
-                `;
+                div.innerHTML = `<span class="reward" style="color: ${color}">[${name}]</span><span class="count">x1</span>`;
                 historyTrack.appendChild(div);
             }
             historyBar.scrollTop = historyBar.scrollHeight;
@@ -292,17 +302,33 @@
 
         async function notifyComplete(spinId) {
             try {
-                await fetch('/api/admin/roulette/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ spinId })
-                });
-            } catch (e) { console.error(e); }
+                // [v1.9.9] SignalR 고속 공명: REST API 대신 허브 메서드 호출
+                await connection.invoke("CompleteRouletteAsync", spinId);
+                console.log("✅ [오버레이] 서버에 완료 신호 전송됨:", spinId);
+            } catch (e) { 
+                console.error("❌ 완료 보고 실패:", e); 
+            }
         }
 
-        connection.start().then(() => {
-            connection.invoke("JoinStreamerGroup", chzzkUid);
-        }).catch(e => console.error(e));
+        // [v2.2] 연결 관리 (재연결 시 그룹 자동 재가입)
+        async function startConnection() {
+            try {
+                await connection.start();
+                console.log("✅ SignalR 연결됨 (ID: " + connection.connectionId + ")");
+                await connection.invoke("JoinStreamerGroup", chzzkUid);
+            } catch (err) {
+                console.error("❌ SignalR 초기 연결 실패:", err);
+                setTimeout(startConnection, 5000);
+            }
+        }
+
+        connection.onreconnected(async () => {
+            console.log("📡 SignalR 재연결됨. 그룹 재가입 시도...");
+            await connection.invoke("JoinStreamerGroup", chzzkUid);
+        });
+
+        startConnection();
+    </script>
     </script>
 </body>
 </html>

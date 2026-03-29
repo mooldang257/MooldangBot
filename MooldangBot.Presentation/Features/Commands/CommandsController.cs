@@ -16,17 +16,20 @@ namespace MooldangBot.Presentation.Features.Commands
     {
         private readonly IAppDbContext _db;
         private readonly ICommandCacheService _cacheService;
-        private readonly ICommandMasterCacheService _masterCache; // [v1.2] 마스터 캐시 추가
+        private readonly IUnifiedCommandService _unifiedCommandService; // [v1.8] 통합 서비스 도입
+        private readonly ICommandMasterCacheService _masterCache;
         private readonly ILogger<CommandsController> _logger;
 
         public CommandsController(
             IAppDbContext db, 
             ICommandCacheService cacheService, 
-            ICommandMasterCacheService masterCache, // [v1.2] 주입
+            IUnifiedCommandService unifiedCommandService, // [v1.8] 주입
+            ICommandMasterCacheService masterCache, 
             ILogger<CommandsController> logger)
         {
             _db = db;
             _cacheService = cacheService;
+            _unifiedCommandService = unifiedCommandService;
             _masterCache = masterCache;
             _logger = logger;
         }
@@ -39,7 +42,7 @@ namespace MooldangBot.Presentation.Features.Commands
         public async Task<IResult> GetUnifiedCommands(
             string chzzkUid, 
             [FromQuery] int page = 1, 
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 1000)
         {
             var targetUid = chzzkUid.Trim().ToLower();
             
@@ -66,57 +69,24 @@ namespace MooldangBot.Presentation.Features.Commands
         }
 
         /// <summary>
-        /// [v1.6] 통합 명령어 저장 또는 수정 (Upsert 패턴)
+        /// [v1.8] 통합 명령어 저장 또는 수정 (서비스 레이어 위임)
         /// </summary>
         [HttpPost("/api/commands/unified/{chzzkUid}")]
         public async Task<IResult> UpsertUnifiedCommand(string chzzkUid, [FromBody] SaveUnifiedCommandRequest req)
         {
-            var targetUid = chzzkUid.Trim().ToLower();
-            
-            UnifiedCommand? entity;
-            if (req.Id.HasValue && req.Id.Value > 0)
+            try
             {
-                // 수정: 기존 엔티티 조회
-                entity = await _db.UnifiedCommands
-                    .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(c => c.Id == req.Id.Value && c.ChzzkUid == targetUid);
-                
-                if (entity == null) return Results.NotFound("수정할 명령어를 찾을 수 없습니다.");
+                var entity = await _unifiedCommandService.UpsertCommandAsync(chzzkUid, req);
+                return Results.Ok(new { Message = req.Id > 0 ? "수정 완료" : "생성 완료", Id = entity.Id });
             }
-            else
+            catch (InvalidOperationException ex)
             {
-                // 신규: 엔티티 생성 및 추가
-                entity = new UnifiedCommand { ChzzkUid = targetUid, CreatedAt = DateTime.Now };
-                _db.UnifiedCommands.Add(entity);
+                return Results.BadRequest(new { Message = ex.Message });
             }
-
-            // [v1.6-Refine] 중복 키워드 검사 (Unique Index 충돌 방어)
-            int currentId = req.Id ?? 0;
-            bool isDuplicate = await _db.UnifiedCommands
-                .IgnoreQueryFilters()
-                .AnyAsync(c => c.ChzzkUid == targetUid && c.Keyword == req.Keyword && c.Id != currentId);
-
-            if (isDuplicate) 
-                return Results.BadRequest(new { Message = "이미 존재하는 명령어 키워드입니다. (Osiris's Warning) ⚠️" });
-
-            // 속성 업데이트 (DTO -> Entity)
-            entity.Keyword = req.Keyword;
-            entity.Category = Enum.Parse<CommandCategory>(req.Category, true);
-            entity.CostType = Enum.Parse<CommandCostType>(req.CostType, true);
-            entity.Cost = req.Cost;
-            entity.FeatureType = req.FeatureType;
-            entity.ResponseText = req.ResponseText;
-            entity.TargetId = req.TargetId;
-            entity.IsActive = req.IsActive;
-            entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
-            entity.UpdatedAt = DateTime.Now;
-
-            await _db.SaveChangesAsync();
-            
-            // 캐시 무효화 (실시간 반영)
-            await _cacheService.RefreshUnifiedAsync(targetUid, default);
-
-            return Results.Ok(new { Message = req.Id > 0 ? "수정 완료" : "생성 완료", Id = entity.Id });
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(ex.Message);
+            }
         }
 
         // [레거시 지원] /save/ 경로도 신규 로직으로 연동
@@ -127,16 +97,14 @@ namespace MooldangBot.Presentation.Features.Commands
         [HttpDelete("/api/commands/unified/delete/{chzzkUid}/{id}")]
         public async Task<IResult> DeleteUnifiedCommand(string chzzkUid, int id)
         {
-            var targetUid = chzzkUid.Trim().ToLower();
-            var entity = await _db.UnifiedCommands.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == targetUid);
-            
-            if (entity != null)
-            {
-                _db.UnifiedCommands.Remove(entity);
-                await _db.SaveChangesAsync();
-                await _cacheService.RefreshUnifiedAsync(targetUid, default);
-            }
+            await _unifiedCommandService.DeleteCommandAsync(chzzkUid, id);
+            return Results.Ok();
+        }
 
+        [HttpPatch("/api/commands/unified/toggle/{chzzkUid}/{id}")]
+        public async Task<IResult> ToggleUnifiedCommand(string chzzkUid, int id)
+        {
+            await _unifiedCommandService.ToggleCommandAsync(chzzkUid, id);
             return Results.Ok();
         }
 
@@ -164,12 +132,12 @@ namespace MooldangBot.Presentation.Features.Commands
             return Results.Ok(new { Message = "Master cache refreshed successfully." });
         }
 
-        // --- 레거시 지원 (하위 호환성 위해 유지하되 내부는 비워둠) ---
+        // --- Legacy Support ---
         [HttpGet("/api/commands/list/{chzzkUid}")]
         public async Task<IResult> GetCommands(string chzzkUid) => Results.Ok(new List<CombinedCommandDto>());
 
         [HttpPost("/api/commands/save/{chzzkUid}")]
-        public async Task<IResult> SaveCommand(string chzzkUid, [FromBody] StreamerCommand cmd) => Results.Ok();
+        public async Task<IResult> SaveCommand(string chzzkUid, [FromBody] object cmd) => Results.Ok();
 
         [HttpDelete("/api/commands/delete/{chzzkUid}/{idStr}")]
         public async Task<IResult> DeleteCommand(string chzzkUid, string idStr) => Results.Ok();

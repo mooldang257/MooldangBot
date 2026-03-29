@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
-namespace MooldangBot.Application.Features.Commands.Strategies;
+namespace MooldangBot.Application.Features.Commands.SystemMessage;
 
 /// <summary>
 /// [텔로스5의 반전]: 송리스트 세션 활성/비활성 상태를 반전시키는 전략입니다.
@@ -13,11 +13,17 @@ namespace MooldangBot.Application.Features.Commands.Strategies;
 public class SonglistToggleStrategy(
     IServiceProvider serviceProvider,
     IChzzkBotService botService,
+    IDynamicQueryEngine dynamicEngine,
     ILogger<SonglistToggleStrategy> logger) : ICommandFeatureStrategy
 {
-    public string FeatureType => "SonglistToggle";
+    public string FeatureType => CommandFeatureTypes.SonglistToggle;
 
-    public async Task ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    {
+        return await ExecuteInternalAsync(notification, command.ResponseText, ct);
+    }
+
+    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent notification, string responseTemplate, CancellationToken ct)
     {
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -45,13 +51,19 @@ public class SonglistToggleStrategy(
 
         await db.SaveChangesAsync(ct);
 
-        string reply = command.ResponseText
-            .Replace("{닉네임}", notification.Username)
-            .Replace("{송리스트상태}", statusText);
+        string template = string.IsNullOrWhiteSpace(responseTemplate)
+            ? "{닉네임}님, 곡 신청 기능이 {송리스트상태} 되었습니다. 🎵"
+            : responseTemplate;
 
-        if (!string.IsNullOrWhiteSpace(reply))
-        {
-            await botService.SendReplyChatAsync(notification.Profile, reply, notification.SenderId, ct);
-        }
+        string processedReply = await dynamicEngine.ProcessMessageAsync(
+            template.Replace("{송리스트상태}", statusText, StringComparison.OrdinalIgnoreCase),
+            notification.Profile.ChzzkUid,
+            notification.SenderId,
+            notification.Username
+        );
+
+        await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+
+        return CommandExecutionResult.Success();
     }
 }

@@ -129,6 +129,41 @@ public class ChzzkBotService : IChzzkBotService
         return await SendGenericChatAsync(profile, message, viewerUid, true, token);
     }
 
+    public async Task<string?> GetStreamerTokenAsync(StreamerProfile profile)
+    {
+        // 1. 유효한 리프레시 토큰이 없으면 현재 액세스 토큰 반환 (폴백용)
+        if (string.IsNullOrEmpty(profile.ChzzkRefreshToken)) return profile.ChzzkAccessToken;
+
+        // 2. 토큰 만료 시간이 1시간 이상 남았다면 현재 토큰 그대로 사용
+        if (!string.IsNullOrEmpty(profile.ChzzkAccessToken) &&
+            profile.TokenExpiresAt.HasValue &&
+            profile.TokenExpiresAt.Value > DateTime.Now.AddHours(1))
+        {
+            return profile.ChzzkAccessToken;
+        }
+
+        _logger.LogWarning($"🔄 [피닉스] {profile.ChzzkUid}님의 스트리머 토큰 만료 임박! 자동 갱신 시도...");
+
+        // 3. 리프레시 토큰을 사용하여 새로운 액세스 토큰 획득
+        var tokenRes = await _chzzkApi.RefreshTokenAsync(profile.ChzzkRefreshToken);
+        if (tokenRes != null && tokenRes.Code == 200 && tokenRes.Content != null)
+        {
+            var content = tokenRes.Content;
+            profile.ChzzkAccessToken = content.AccessToken;
+            profile.ChzzkRefreshToken = content.RefreshToken ?? profile.ChzzkRefreshToken;
+            profile.TokenExpiresAt = DateTime.Now.AddSeconds(content.ExpiresIn);
+
+            // 💾 [자가 저장]: 갱신된 토큰 정보를 즉시 DB에 반영
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ [피닉스] {profile.ChzzkUid}님의 스트리머 토큰 갱신 성공!");
+            return profile.ChzzkAccessToken;
+        }
+
+        _logger.LogError($"❌ [피닉스] {profile.ChzzkUid}님의 스트리머 토큰 갱신 실패! 기존 토큰을 시도합니다.");
+        return profile.ChzzkAccessToken;
+    }
+
     private async Task<bool> SendGenericChatAsync(StreamerProfile profile, string message, string viewerUid, bool isNotice, CancellationToken token)
     {
         try
@@ -179,21 +214,29 @@ public class ChzzkBotService : IChzzkBotService
 
         try
         {
-            // 2. [최신 토큰 조회]: 와치독이 갱신했을 수 있는 최신 토큰을 DB에서 조회
+            // 2. [최신 토큰 조회]: 와치독이 갱신했을 수 있는 최신 토큰을 DB에서 조회 (추적 활성화)
             var profile = await _db.StreamerProfiles
-                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-            if (profile == null || !profile.IsBotEnabled || string.IsNullOrEmpty(profile.ChzzkAccessToken))
+            if (profile == null || !profile.IsBotEnabled)
             {
-                _logger.LogWarning($"[피닉스 중단] {chzzkUid} 봇이 비활성화되었거나 권한이 없습니다.");
+                _logger.LogWarning($"[피닉스 중단] {chzzkUid} 봇이 존재하지 않거나 비활성화되었습니다.");
                 return;
             }
 
-            // 3. [유기적 복구]: 기존 좀비 자원 정리 후 재연결
+            // 3. [토큰 상태 확인 및 갱신]: 401 인증 오류 방지를 위해 연결 전 토큰 체크
+            string? validToken = await GetStreamerTokenAsync(profile);
+            
+            if (string.IsNullOrEmpty(validToken))
+            {
+                _logger.LogWarning($"[피닉스 중단] {chzzkUid} 채널의 유효한 인증 토큰을 확보하지 못했습니다.");
+                return;
+            }
+
+            // 4. [유기적 복구]: 기존 좀비 자원 정리 후 재연결
             await _chatClient.DisconnectAsync(chzzkUid);
             
-            bool success = await _chatClient.ConnectAsync(chzzkUid, profile.ChzzkAccessToken);
+            bool success = await _chatClient.ConnectAsync(chzzkUid, validToken);
 
             if (success)
                 _logger.LogInformation($"✅ [피닉스 부활] {chzzkUid} 세션이 성공적으로 재건되었습니다.");

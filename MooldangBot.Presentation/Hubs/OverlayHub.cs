@@ -1,12 +1,21 @@
 using Microsoft.AspNetCore.SignalR;
+using MooldangBot.Application.Interfaces; // [v1.9.9] 추가
 
 namespace MooldangBot.Presentation.Hubs;
 
 /// <summary>
 /// [오시리스의 지휘소]: 서버와 오버레이 간의 실시간 공명 통로입니다.
 /// </summary>
-public class OverlayHub : Hub
+public class OverlayHub(IRouletteService rouletteService) : Hub
 {
+    /// <summary>
+    /// [v1.9.9] 오버레이 애니메이션 완료 시 서버에 결과를 알립니다.
+    /// </summary>
+    public async Task CompleteRouletteAsync(string spinId)
+    {
+        await rouletteService.CompleteRouletteAsync(spinId);
+    }
+
     // OBS 브라우저 소스 클라이언트가 연결될 때 호출
     public override async Task OnConnectedAsync()
     {

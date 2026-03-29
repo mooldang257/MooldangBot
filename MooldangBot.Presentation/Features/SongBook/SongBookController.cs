@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Events;
-using MooldangBot.Domain.Events;
 using MediatR;
 using System.Text.Json;
 using System.Text;
@@ -35,6 +34,57 @@ namespace MooldangBot.Presentation.Features.SongBook
             _chzzkApi = chzzkApi;
         }
 
+        [HttpGet("/api/omakase/list/{chzzkUid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetOmakaseList(
+            string chzzkUid, 
+            [FromQuery] int? targetId,
+            [FromQuery] int? lastId, 
+            [FromQuery] int pageSize = 20)
+        {
+            var targetUid = chzzkUid.ToLower();
+            var query = _db.StreamerOmakases
+                .IgnoreQueryFilters()
+                .Where(o => o.ChzzkUid.ToLower() == targetUid);
+
+            if (targetId.HasValue)
+            {
+                query = query.Where(o => o.Id == targetId.Value);
+            }
+
+            // [Keyset Pagination] lastId보다 작은 항목들을 가져옴 (Id 내림차순 정렬 가정)
+            if (lastId.HasValue && lastId.Value > 0)
+            {
+                query = query.Where(o => o.Id < lastId.Value);
+            }
+
+            var items = await query
+                .OrderByDescending(o => o.Id)
+                .Take(pageSize + 1)
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters().Where(c => c.ChzzkUid == chzzkUid && c.FeatureType == CommandFeatureTypes.Omakase),
+                    o => o.Id,
+                    c => c.TargetId,
+                    (o, c) => new OmakaseDto
+                    {
+                        Id = o.Id,
+                        Name = c.ResponseText,
+                        Icon = o.Icon,
+                        Price = (int)c.Cost,
+                        Count = o.Count
+                    })
+                .ToListAsync();
+
+            bool hasNext = items.Count > pageSize;
+            if (hasNext) items.RemoveAt(pageSize);
+
+            return Ok(new
+            {
+                items,
+                hasNext,
+                lastId = items.LastOrDefault()?.Id
+            });
+        }
+
         [HttpGet("/api/songlist/data/{chzzkUid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
@@ -57,8 +107,20 @@ namespace MooldangBot.Presentation.Features.SongBook
                 .Select(s => s.KeyValue)
                 .FirstOrDefaultAsync() ?? "";
 
-            var omakaseDtos = omakases.Select(o => new OmakaseDto { 
-                Id = o.Id, Name = o.Name, Count = o.Count, Icon = o.Icon 
+            var omakaseCommands = await _db.UnifiedCommands
+                .IgnoreQueryFilters()
+                .Where(c => c.ChzzkUid == chzzkUid && c.FeatureType == CommandFeatureTypes.Omakase)
+                .ToListAsync();
+
+            var omakaseDtos = omakases.Select(o => {
+                var cmd = omakaseCommands.FirstOrDefault(c => c.TargetId == o.Id);
+                return new OmakaseDto { 
+                    Id = o.Id, 
+                    Name = cmd?.ResponseText ?? "새 오마카세", 
+                    Count = o.Count, 
+                    Icon = o.Icon, 
+                    Price = cmd?.Cost ?? 0
+                };
             }).ToList();
 
             var songDtos = songs.Select(s => new SongQueueDto { 

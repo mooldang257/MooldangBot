@@ -44,41 +44,9 @@ namespace MooldangBot.Presentation.Features.Admin
             _chzzkBotService = chzzkBotService; // Assigned injected service
         }
 
-        // 0. 등록된 전체 스트리머 목록 조회 (어드민용)
-        [HttpGet("streamers")]
-        public async Task<IActionResult> GetStreamers()
-        {
-            // 💡 [최적화] 읽기 전용 쿼리이므로 AsNoTracking 적용 (홈 서버 메모리 효율)
-            // 전역 쿼리 필터 무시 (어드민 뷰)
-            var streamers = await _db.StreamerProfiles
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .OrderByDescending(p => p.Id)
-                .Select(p => new {
-                    chzzkUid = p.ChzzkUid,
-                    channelName = p.ChannelName,
-                    profileImageUrl = p.ProfileImageUrl,
-                    isBotEnabled = !string.IsNullOrEmpty(p.ChzzkAccessToken),
-                    lastActiveAt = p.TokenExpiresAt // 대략적인 활동 지표로 활용
-                })
-                .ToListAsync();
+        // [이관됨]: AuthController의 /api/admin/bot/streamers로 이동
 
-            return Ok(streamers);
-        }
-
-        // 1. 봇 연동 시작 (브라우저에서 이 주소로 접속)
-        [HttpGet("login")]
-        public IActionResult BotLogin()
-        {
-            // [텔로스5의 설계]: 대소문자 구분 없는 설정을 위해 All-Caps 키를 우선 조회합니다.
-            string? clientId = _configuration["CHZZK_API:CLIENT_ID"] ?? _configuration["ChzzkApi:ClientId"];
-            string redirectUri = $"{Request.Scheme}://{Request.Host}/Auth/callback";
-            string state = "bot_setup_" + Guid.NewGuid().ToString();
-
-            string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
-            string chzzkAuthUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}";
-            return Redirect(chzzkAuthUrl);
-        }
+        // ... BotLogin 삭제됨 (AuthController로 통합)
 
         // 2. 카테고리 동기화 상태 조회
         [HttpGet("sync-status")]

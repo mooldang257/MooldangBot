@@ -46,6 +46,25 @@ namespace MooldangBot.Presentation.Features.Roulette
 
     public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, DateTime CreatedAt, int Status);
 
+    // [v1.9] 룰렛 업데이트용 통합 DTO
+    public class RouletteUpdateRequest
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("type")]
+        public RouletteType Type { get; set; } = RouletteType.Cheese;
+        [JsonPropertyName("command")]
+        public string? Command { get; set; }
+        [JsonPropertyName("costPerSpin")]
+        public int CostPerSpin { get; set; }
+        [JsonPropertyName("isActive")]
+        public bool IsActive { get; set; }
+        [JsonPropertyName("items")]
+        public List<MooldangBot.Domain.Entities.RouletteItem> Items { get; set; } = new();
+    }
+
     [ApiController]
     [Route("api/admin/roulette")]
     [Authorize(Policy = "ChannelManager")]
@@ -70,23 +89,26 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] int LastId = 0, [FromQuery] int PageSize = 10)
         {
-            var query = _db.Roulettes
-                 .IgnoreQueryFilters()
-                 .Where(R => R.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId));
-
-            var RawData = await query
-                .OrderByDescending(R => R.Id)
+            var RawData = await _db.Roulettes
+                .IgnoreQueryFilters()
+                .Where(R => R.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId))
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters(),
+                    r => r.Id,
+                    c => c.TargetId,
+                    (r, c) => new { Roulette = r, Command = c })
+                .Where(x => x.Command.FeatureType == "Roulette")
+                .OrderByDescending(x => x.Roulette.Id)
                 .Take(PageSize + 1)
-                .Select(R => new RouletteSummaryDto
+                .Select(x => new RouletteSummaryDto
                 {
-                    Id = R.Id,
-                    Name = R.Name,
-                    Type = R.Type,
-                    Command = R.Command,
-                    CostPerSpin = R.CostPerSpin,
-                    IsActive = R.IsActive,
-                    ActiveItemCount = R.Items.Count(I => I.IsActive),
-                    LstUpdDt = R.UpdatedAt
+                    Id = x.Roulette.Id,
+                    Name = x.Roulette.Name,
+                    Type = x.Command.CostType == CommandCostType.Cheese ? RouletteType.Cheese : RouletteType.ChatPoint,
+                    Command = x.Command.Keyword,
+                    CostPerSpin = x.Command.Cost,
+                    IsActive = x.Command.IsActive,
+                    ActiveItemCount = x.Roulette.Items.Count(I => I.IsActive),
+                    LstUpdDt = x.Roulette.UpdatedAt
                 })
                 .AsNoTracking()
                 .ToListAsync();
@@ -101,16 +123,35 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpGet("{chzzkUid}/{Id}")]
         public async Task<IActionResult> GetRoulette(string chzzkUid, int Id)
         {
-            var RouletteObj = await _db.Roulettes
+            var consolidated = await _db.Roulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.Items)
+                .Where(r => r.Id == Id && r.ChzzkUid == chzzkUid)
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters(),
+                    r => r.Id,
+                    c => c.TargetId,
+                    (r, c) => new { Roulette = r, Command = c })
+                .Where(x => x.Command.FeatureType == "Roulette")
+                .Select(x => new 
+                {
+                    Id = x.Roulette.Id,
+                    ChzzkUid = x.Roulette.ChzzkUid,
+                    Name = x.Roulette.Name,
+                    UpdatedAt = x.Roulette.UpdatedAt,
+                    Items = x.Roulette.Items,
+                    // UnifiedCommand 정보 병합
+                    Type = x.Command.CostType == CommandCostType.Cheese ? RouletteType.Cheese : RouletteType.ChatPoint,
+                    Command = x.Command.Keyword,
+                    CostPerSpin = x.Command.Cost,
+                    IsActive = x.Command.IsActive
+                })
                 .AsNoTracking()
-                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync();
 
-            if (RouletteObj == null) return NotFound();
+            if (consolidated == null) return NotFound();
 
-            foreach (var I in RouletteObj.Items) I.Roulette = null;
-            return Ok(RouletteObj);
+            foreach (var I in consolidated.Items) I.Roulette = null;
+            return Ok(consolidated);
         }
 
         [HttpPost("{chzzkUid}")]
@@ -141,7 +182,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         }
 
         [HttpPost("{chzzkUid}/{Id}")]
-        public async Task<IActionResult> UpdateRoulette(string chzzkUid, int Id, [FromBody] MooldangBot.Domain.Entities.Roulette Updated)
+        public async Task<IActionResult> UpdateRoulette(string chzzkUid, int Id, [FromBody] RouletteUpdateRequest req)
         {
             try
             {
@@ -154,20 +195,31 @@ namespace MooldangBot.Presentation.Features.Roulette
 
                 if (RouletteObj == null) return NotFound();
 
-                RouletteObj.Name = Updated.Name;
-                RouletteObj.Type = Updated.Type;
-                RouletteObj.Command = Updated.Command;
-                RouletteObj.CostPerSpin = Updated.CostPerSpin;
-                RouletteObj.IsActive = Updated.IsActive;
+                // 1. 룰렛 기본 정보 업데이트
+                RouletteObj.Name = req.Name;
                 RouletteObj.UpdatedAt = DateTime.UtcNow;
 
                 _db.RouletteItems.RemoveRange(RouletteObj.Items);
-                foreach (var Item in Updated.Items)
+                foreach (var Item in req.Items)
                 {
                     Item.Id = 0;
                     Item.RouletteId = Id;
                 }
-                RouletteObj.Items = Updated.Items;
+                RouletteObj.Items = req.Items;
+
+                // 2. [추가] UnifiedCommand 정보 역동기화 (관리 페이지 편집 대응)
+                var UnifiedCmd = await _db.UnifiedCommands
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(c => c.TargetId == Id && c.ChzzkUid == chzzkUid && c.FeatureType == "Roulette");
+
+                if (UnifiedCmd != null)
+                {
+                    UnifiedCmd.Keyword = req.Command ?? UnifiedCmd.Keyword;
+                    UnifiedCmd.Cost = req.CostPerSpin;
+                    UnifiedCmd.CostType = req.Type == RouletteType.Cheese ? CommandCostType.Cheese : CommandCostType.Point;
+                    UnifiedCmd.IsActive = req.IsActive;
+                    UnifiedCmd.UpdatedAt = DateTime.Now;
+                }
 
                 await _db.SaveChangesAsync();
                 foreach (var I in RouletteObj.Items) I.Roulette = null;
@@ -183,12 +235,11 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpPatch("{chzzkUid}/{Id}/status")]
         public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool IsActive)
         {
-            var AffectedRows = await _db.Roulettes
+            var AffectedRows = await _db.UnifiedCommands
                 .IgnoreQueryFilters()
-                .Where(R => R.Id == Id && R.ChzzkUid == chzzkUid)
+                .Where(C => C.TargetId == Id && C.ChzzkUid == chzzkUid && C.FeatureType == "Roulette")
                 .ExecuteUpdateAsync(S => S
-                    .SetProperty(R => R.IsActive, IsActive)
-                    .SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
+                    .SetProperty(C => C.IsActive, IsActive));
 
             return AffectedRows == 0 ? NotFound() : Ok();
         }
@@ -215,7 +266,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             var AffectedRows = await _db.RouletteItems
                 .IgnoreQueryFilters()
-                .Where(I => I.Id == ItemId && I.Roulette.ChzzkUid == chzzkUid)
+                .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.ChzzkUid == chzzkUid)
                 .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, IsActive));
 
             if (AffectedRows > 0)

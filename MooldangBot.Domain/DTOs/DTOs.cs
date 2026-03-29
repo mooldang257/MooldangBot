@@ -41,10 +41,7 @@ namespace MooldangBot.Domain.DTOs
         public int Id { get; set; }
 
         [JsonPropertyName("name")]
-        public string Name { get; set; } = "오마카세";
-
-        [JsonPropertyName("command")]
-        public string Command { get; set; } = "!물마카세";
+        public string Name { get; set; } = "새 오마카세";
 
         [JsonPropertyName("icon")]
         public string Icon { get; set; } = "🍣";
@@ -54,6 +51,9 @@ namespace MooldangBot.Domain.DTOs
 
         [JsonPropertyName("count")]
         public int Count { get; set; }
+
+        [JsonPropertyName("command")]
+        public string Command { get; set; } = "";
     }
 
     public class SongQueueDto
@@ -160,6 +160,35 @@ namespace MooldangBot.Domain.DTOs
     public record RouletteSummaryDto(string ItemName, int Count, bool IsMission, string Color);
     public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
 
+    // 🎰 룰렛 저장용 DTO (통합 저장 지원)
+    public class RouletteSaveDto
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("items")]
+        public List<RouletteItemSaveDto>? Items { get; set; }
+    }
+
+    public class RouletteItemSaveDto
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("itemName")]
+        public string ItemName { get; set; } = string.Empty;
+        [JsonPropertyName("probability")]
+        public double Probability { get; set; }
+        [JsonPropertyName("probability10x")]
+        public double Probability10x { get; set; }
+        [JsonPropertyName("color")]
+        public string Color { get; set; } = "#3498db";
+        [JsonPropertyName("isMission")]
+        public bool IsMission { get; set; }
+        [JsonPropertyName("isActive")]
+        public bool IsActive { get; set; } = true;
+    }
+
     // [텔로스5의 연성]: 통합 명령어 DTO
     public record UnifiedCommandDto(
         int Id,
@@ -187,6 +216,7 @@ namespace MooldangBot.Domain.DTOs
         string ResponseText,
         int? TargetId,
         bool IsActive,
-        string RequiredRole
+        string RequiredRole,
+        RouletteSaveDto? RouletteData = null // 🎰 룰렛 데이터 포함 가능
     );
 }

@@ -59,80 +59,205 @@ namespace MooldangBot.Presentation.Features.Auth
         }
 
         [HttpGet("/api/proxy/image")]
-    public async Task<IResult> ProxyImage([FromQuery] string url)
-    {
-        if (string.IsNullOrEmpty(url)) return Results.NotFound();
+        public async Task<IResult> ProxyImage([FromQuery] string url)
+        {
+            if (string.IsNullOrEmpty(url)) return Results.NotFound();
+
+            // 💡 [핵심]: 네이버 이미지인 경우 고화질 타입으로 강제 변환
+            if (url.Contains("pstatic.net"))
+            {
+                if (url.Contains("type="))
+                    url = System.Text.RegularExpressions.Regex.Replace(url, "type=[^&]+", "type=f120_120");
+                else
+                    url += (url.Contains("?") ? "&" : "?") + "type=f120_120";
+            }
         
         try 
         {
             var client = _httpClientFactory.CreateClient();
-            // 💡 네이버/치지직 서버가 로봇으로 오해하지 않도록 User-Agent를 추가합니다.
+            // 💡 네이버/치지직 서버가 로봇으로 오해하지 않도록 헤더를 보강합니다.
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Add("Referer", "https://chzzk.naver.com/");
             
             var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return Results.NotFound();
+            if (!response.IsSuccessStatusCode) 
+            {
+                Console.WriteLine($"[ImageProxy] Failed to fetch: {url}, Status: {response.StatusCode}");
+                return Results.NotFound();
+            }
             
             var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
             var stream = await response.Content.ReadAsStreamAsync();
             
             return Results.Stream(stream, contentType);
         }
-        catch 
+        catch (Exception ex)
         {
+            Console.WriteLine($"[ImageProxy] Error fetching {url}: {ex.Message}");
             return Results.NotFound();
         }
     }
 
         [HttpGet("/api/auth/me")]
-        public async Task<IResult> GetMyProfile()
+        public async Task<IResult> GetMyProfile([FromQuery] string? uid, [FromServices] IChzzkApiClient chzzkApi)
         {
             if (User.Identity?.IsAuthenticated != true)
             {
                 return Results.Json(new { isAuthenticated = false });
             }
 
-            var chzzkUid = User.FindFirstValue("StreamerId");
-            Console.WriteLine($"[오시리스의 확인]: /api/auth/me 호출 (Claim UID: {chzzkUid ?? "NULL"})");
-            
-            // [파로스의 확인]: 전역 쿼리 필터의 간섭을 방지하기 위해 IgnoreQueryFilters()를 명시적으로 사용합니다.
-            var profile = await _db.StreamerProfiles.AsNoTracking()
-                             .IgnoreQueryFilters() 
-                             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-
-            if (profile != null && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
+            // [핵심]: uid 파라미터가 있으면 해당 UID를, 없으면 본인 UID를 사용
+            var chzzkUid = uid ?? User.FindFirstValue("StreamerId");
+            if (string.IsNullOrEmpty(chzzkUid))
             {
-                Console.WriteLine($"[파로스의 확인]: 연동된 프로필 발견 - {profile.ChannelName} ({chzzkUid})");
-                return Results.Json(new {
-                    isAuthenticated = true,
-                    isChzzkLinked = true,
-                    channelName = profile.ChannelName ?? "스트리머",
-                    profileImageUrl = profile.ProfileImageUrl ?? "",
-                    chzzkUid = profile.ChzzkUid
-                });
+                return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
             }
 
-            Console.WriteLine($"[오시리스의 경고]: 프로필을 찾을 수 없거나 토큰이 없습니다. (UID: {chzzkUid})");
-            // 치지직 토큰이 없으면 연동이 안 된 것으로 간주
+            // [파로스의 확인]: 실시간 정보 갱신 (API 실패가 로그인을 방해하지 않도록 try-catch 적용)
+            try 
+            {
+                var channelRes = await chzzkApi.GetChannelsAsync(new[] { chzzkUid });
+                
+                var profile = await _db.StreamerProfiles
+                                 .IgnoreQueryFilters() 
+                                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+                if (profile != null)
+                {
+                    // 치지직 API 응답이 성공적이었다면 DB 업데이트
+                    if (channelRes?.Content?.Data?.FirstOrDefault() is { } channelData)
+                    {
+                        if (!string.IsNullOrEmpty(channelData.ChannelName)) profile.ChannelName = channelData.ChannelName;
+                        if (!string.IsNullOrEmpty(channelData.ChannelImageUrl)) profile.ProfileImageUrl = channelData.ChannelImageUrl;
+                        await _db.SaveChangesAsync();
+                    }
+
+                    return Results.Json(new {
+                        isAuthenticated = true,
+                        isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
+                        channelName = profile.ChannelName ?? "스트리머",
+                        profileImageUrl = profile.ProfileImageUrl ?? "",
+                        chzzkUid = profile.ChzzkUid
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AuthMe] Profile refresh failed for {chzzkUid}: {ex.Message}");
+                
+                // API 실패 시에도 DB에 있는 기존 정보로 로그인 진행
+                var profileFallback = await _db.StreamerProfiles
+                                .IgnoreQueryFilters() 
+                                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                
+                if (profileFallback != null)
+                {
+                    return Results.Json(new {
+                        isAuthenticated = true,
+                        isChzzkLinked = !string.IsNullOrEmpty(profileFallback.ChzzkAccessToken),
+                        channelName = profileFallback.ChannelName ?? "스트리머",
+                        profileImageUrl = profileFallback.ProfileImageUrl ?? "",
+                        chzzkUid = profileFallback.ChzzkUid
+                    });
+                }
+            }
+
             return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
         }
 
-        [HttpGet("/api/admin/bot/login")]
-        public async Task<IResult> BotLogin()
+        [HttpGet("/api/auth/logout")]
+        public async Task<IResult> Logout()
         {
-            // [텔로스5의 순환]: 봇 연동 시에도 환경 변수를 폴백으로 활용
-            var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
-            string clientId = clientIdConf?.KeyValue 
-                             ?? _configuration["CHZZK_API:CLIENT_ID"] 
-                             ?? _configuration["ChzzkApi:ClientId"] 
-                             ?? "";
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Results.Redirect("/");
+        }
+
+        [HttpGet("/api/admin/bot/streamers")]
+        [Authorize] // 🔐 인증된 사용자라면 일단 목록 조회 허용 (추후 master로 강화 가능)
+        public async Task<IResult> GetStreamers([FromServices] IChzzkApiClient chzzkApi)
+        {
+            // 1. DB에서 모든 스트리머 프로필 조회
+            var streamersInDb = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .ToListAsync();
+
+            if (streamersInDb.Any())
+            {
+                // 2. 20개씩 끊어서 최신 정보 업데이트 (Batch Processing)
+                var uids = streamersInDb.Select(s => s.ChzzkUid).ToList();
+                for (int i = 0; i < uids.Count; i += 20)
+                {
+                    var chunk = uids.Skip(i).Take(20).ToList();
+                    var channelRes = await chzzkApi.GetChannelsAsync(chunk);
+
+                    if (channelRes?.Content?.Data != null)
+                    {
+                        foreach (var channelData in channelRes.Content.Data)
+                        {
+                            var target = streamersInDb.FirstOrDefault(s => s.ChzzkUid == channelData.ChannelId);
+                            if (target != null)
+                            {
+                                // 닉네임과 프로필 이미지 갱신
+                                if (!string.IsNullOrEmpty(channelData.ChannelName)) target.ChannelName = channelData.ChannelName;
+                                if (!string.IsNullOrEmpty(channelData.ChannelImageUrl)) target.ProfileImageUrl = channelData.ChannelImageUrl;
+                            }
+                        }
+                    }
+                }
+
+                // 3. 변경 사항 저장 (하나라도 바뀌었으면 저장)
+                await _db.SaveChangesAsync();
+            }
+
+            // 4. 최종 결과 반환 (클라이언트로 전달)
+            var result = streamersInDb
+                .OrderByDescending(p => p.Id)
+                .Select(p => new {
+                    chzzkUid = p.ChzzkUid,
+                    channelName = p.ChannelName,
+                    profileImageUrl = p.ProfileImageUrl,
+                    isBotEnabled = p.IsBotEnabled, // Entity 필드 사용
+                    lastActiveAt = p.TokenExpiresAt
+                })
+                .ToList();
+
+            return Results.Json(result);
+        }
+
+        [HttpGet("/api/admin/bot/login")]
+        public async Task<IResult> BotLogin([FromQuery] string? uid)
+        {
+            string? clientId = null;
+            string redirectUri = $"{BaseDomain}/Auth/callback";
+
+            if (!string.IsNullOrEmpty(uid))
+            {
+                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+                if (streamer != null && !string.IsNullOrEmpty(streamer.ApiClientId))
+                {
+                    clientId = streamer.ApiClientId;
+                    if (!string.IsNullOrEmpty(streamer.ApiRedirectUrl))
+                    {
+                        redirectUri = streamer.ApiRedirectUrl;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(clientId))
+            {
+                var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
+                clientId = clientIdConf?.KeyValue 
+                                 ?? _configuration["CHZZK_API:CLIENT_ID"] 
+                                 ?? _configuration["ChzzkApi:ClientId"] 
+                                 ?? "";
+            }
 
             if (string.IsNullOrEmpty(clientId))
             {
                 return Results.Text("[오시리스의 거절]: Chzzk Client ID가 설정되어 있지 않습니다.");
             }
 
-            string redirectUri = $"{BaseDomain}/Auth/callback";
-            string state = "bot_setup_" + Guid.NewGuid().ToString();
+            string state = (string.IsNullOrEmpty(uid) ? "bot_setup_" : $"bot_setup_{uid}_") + Guid.NewGuid().ToString();
 
             string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
             string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}";
@@ -148,44 +273,86 @@ namespace MooldangBot.Presentation.Features.Auth
 
             try
             {
-                // 1단계: 토큰 교환 시도
-                var tokenRes = await _chzzkApi.ExchangeTokenAsync(code, state);
+                string? targetUid = null;
+                // [롤백]: 개별 앱 정보를 사용하지 않고 시스템 전역 앱 정보만 사용하여 토큰 교환
+                string? customClientId = null;
+                string? customClientSecret = null;
+                string? customRedirectUrl = null;
+
+                // UID는 여전히 추출하되, 앱 정보는 시스템 것을 사용함
+                if (state != null && state.StartsWith("bot_setup_"))
+                {
+                    var parts = state.Split('_');
+                    if (parts.Length >= 3)
+                    {
+                        targetUid = parts[2];
+                    }
+                }
+
+                // 1단계: 토큰 교환 (시스템 전용 앱 정보 사용 - null 전달 시 기본값)
+                var tokenRes = await _chzzkApi.ExchangeTokenAsync(code, customClientId, customClientSecret, state, customRedirectUrl);
                 if (tokenRes == null || tokenRes.Code != 200 || tokenRes.Content == null) 
                 {
                     Console.WriteLine($"[오시리스의 거절]: 토큰 교환 실패 (Result: {tokenRes?.Code ?? 0})");
                     return Results.Text($"[인증 오류] 토큰 발급 실패 (ChzzkApi 반환값 확인 필요)");
                 }
 
-                string accessToken = tokenRes.Content.AccessToken;
-                string refreshToken = tokenRes.Content.RefreshToken;
+                string accessToken = tokenRes.Content.AccessToken ?? "";
+                string refreshToken = tokenRes.Content.RefreshToken ?? "";
                 int expiresIn = tokenRes.Content.ExpiresIn;
-                Console.WriteLine("[파로스의 확인]: 토큰 교환 성공");
+                DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
 
+                // 2단계: 봇 설정 흐름인 경우 여기서 처리 후 종료
                 if (state != null && state.StartsWith("bot_setup_"))
                 {
-                    DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
+                    // [추가] 봇 계정 정보 조회 (누가 봇인지 확인)
+                    var botMeRes = await _chzzkApi.GetUserMeAsync(accessToken);
+                    string setupBotUid = botMeRes?.Content?.EffectiveChannelId ?? "";
+                    string setupBotNick = botMeRes?.Content?.EffectiveChannelName ?? "알 수 없음";
 
-                    void UpdateOrAddSetting(string key, string value)
+                    if (string.IsNullOrEmpty(targetUid))
                     {
-                        var setting = _db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
-                        if (setting == null) _db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
-                        else setting.KeyValue = value;
-                    }
+                        // 시스템 공용 봇 설정
+                        void UpdateOrAddSetting(string key, string value)
+                        {
+                            var setting = _db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
+                            if (setting == null) _db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
+                            else setting.KeyValue = value;
+                        }
 
-                    UpdateOrAddSetting("BotAccessToken", accessToken);
-                    UpdateOrAddSetting("BotRefreshToken", refreshToken);
-                    UpdateOrAddSetting("BotTokenExpiresAt", expireDate.ToString("O"));
+                        UpdateOrAddSetting("BotAccessToken", accessToken);
+                        UpdateOrAddSetting("BotRefreshToken", refreshToken);
+                        UpdateOrAddSetting("BotTokenExpiresAt", expireDate.ToString("O"));
+                        UpdateOrAddSetting("BotUid", setupBotUid);
+                        UpdateOrAddSetting("BotNickname", setupBotNick);
+                    }
+                    else
+                    {
+                        // 특정 스트리머 전용 봇 설정
+                        var botProfile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == targetUid);
+                        if (botProfile != null)
+                        {
+                            botProfile.BotChzzkUid = setupBotUid;
+                            botProfile.BotNickname = setupBotNick;
+                            botProfile.BotAccessToken = accessToken;
+                            botProfile.BotRefreshToken = refreshToken;
+                            botProfile.BotTokenExpiresAt = expireDate;
+                            botProfile.IsBotEnabled = true;
+
+                            Console.WriteLine($"[오시리스의 확인]: 전용 봇 연동 완료 (스트리머: {targetUid}, 봇: {setupBotNick})");
+                        }
+                    }
 
                     await _db.SaveChangesAsync();
 
-                    string htmlResponse = @"
+                    string htmlResponse = $@"
                         <!DOCTYPE html>
                         <html lang='ko'>
                         <head><meta charset='UTF-8'><title>봇 연동 성공</title></head>
                         <body style='background-color:#121212; color:#00e676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center;'>
                             <div>
-                                <h1>🎉 시스템 봇 연동 완료!</h1>
-                                <p style='color:#fff;'>물댕봇 전용 토큰이 DB(SystemSettings)에 안전하게 저장되었습니다.<br>이제 창을 닫아주세요.</p>
+                                <h1 style='color:#0093E9;'>🤖 봇 계정 연동 완료!</h1>
+                                <p style='color:#fff;'>[{setupBotNick}] 계정이 물댕봇 전용 봇으로 등록되었습니다.<br>이제 창을 닫아주세요.</p>
                             </div>
                         </body>
                         </html>";
@@ -193,20 +360,20 @@ namespace MooldangBot.Presentation.Features.Auth
                     return Results.Content(htmlResponse, "text/html; charset=utf-8");
                 }
 
-                // 2단계: 사용자 정보 조회 (ChzzkApiClient 사용)
+                // 3단계: 일반 사용자(스트리머) 로그인 흐름
                 var userMeRes = await _chzzkApi.GetUserMeAsync(accessToken);
                 if (userMeRes == null || userMeRes.Code != 200 || userMeRes.Content == null)
                 {
                     return Results.Text($"[인증 오류] 사용자 정보 조회 실패");
                 }
-                
+
                 string chzzkUid = userMeRes.Content.EffectiveChannelId;
                 string? channelName = userMeRes.Content.EffectiveChannelName;
                 string? profileImageUrl = userMeRes.Content.ChannelImageUrl;
 
                 if (string.IsNullOrEmpty(chzzkUid))
                 {
-                    Console.WriteLine("[오시리스의 거절]: Chzzk UID를 추출하지 못했습니다. (JSON 매핑 오류 또는 API 응답 이상)");
+                    Console.WriteLine("[오시리스의 거절]: Chzzk UID를 추출하지 못했습니다.");
                     return Results.Text("[인증 오류] 사용자 식별자를 가져올 수 없습니다.");
                 }
 
@@ -226,51 +393,13 @@ namespace MooldangBot.Presentation.Features.Auth
                     };
                     _db.StreamerProfiles.Add(streamer);
 
-                    // [추가] 신규 가입 시 노래 신청 세션 자동 시작 (기본 활성화)
+                    // 신규 가입 시 노래 신청 세션 자동 시작
                     _db.SonglistSessions.Add(new SonglistSession 
                     { 
                         ChzzkUid = chzzkUid, 
                         StartedAt = DateTime.Now, 
                         IsActive = true 
                     });
-
-                    // [오시리스의 정렬]: 신규 가입 시 필수 통합 명령어(UnifiedCommands) 5종 자동 탑재
-                    _db.UnifiedCommands.AddRange(
-                        new UnifiedCommand 
-                        { 
-                            ChzzkUid = chzzkUid, Keyword = "!신청", Category = CommandCategory.Feature, 
-                            CostType = CommandCostType.Cheese, Cost = 1000, FeatureType = "SongRequest", 
-                            RequiredRole = CommandRole.Viewer, IsActive = true, UpdatedAt = DateTime.Now 
-                        },
-                        new UnifiedCommand 
-                        { 
-                            ChzzkUid = chzzkUid, Keyword = "!송리스트", Category = CommandCategory.System, 
-                            CostType = CommandCostType.None, Cost = 0, FeatureType = "SonglistToggle", 
-                            ResponseText = "송리스트가 {송리스트상태}되었습니다. ✨", 
-                            RequiredRole = CommandRole.Manager, IsActive = true, UpdatedAt = DateTime.Now 
-                        },
-                        new UnifiedCommand
-                        {
-                            ChzzkUid = chzzkUid, Keyword = "!공지", Category = CommandCategory.System,
-                            CostType = CommandCostType.None, Cost = 0, FeatureType = "Notice", 
-                            ResponseText = "공지사항: {내용}", 
-                            RequiredRole = CommandRole.Manager, IsActive = true, UpdatedAt = DateTime.Now
-                        },
-                        new UnifiedCommand
-                        {
-                            ChzzkUid = chzzkUid, Keyword = "!방제", Category = CommandCategory.System,
-                            CostType = CommandCostType.None, Cost = 0, FeatureType = "Title", 
-                            ResponseText = "방송 제목이 변경되었습니다: {내용}", 
-                            RequiredRole = CommandRole.Manager, IsActive = true, UpdatedAt = DateTime.Now
-                        },
-                        new UnifiedCommand
-                        {
-                            ChzzkUid = chzzkUid, Keyword = "!카테고리", Category = CommandCategory.System,
-                            CostType = CommandCostType.None, Cost = 0, FeatureType = "StreamCategory", 
-                            ResponseText = "카테고리가 변경되었습니다: {내용}", 
-                            RequiredRole = CommandRole.Manager, IsActive = true, UpdatedAt = DateTime.Now
-                        }
-                    );
                 }
                 
                 if (!string.IsNullOrEmpty(channelName)) streamer.ChannelName = channelName;
@@ -278,11 +407,10 @@ namespace MooldangBot.Presentation.Features.Auth
 
                 streamer.ChzzkAccessToken = accessToken;
                 streamer.ChzzkRefreshToken = refreshToken;
-                streamer.TokenExpiresAt = DateTime.Now.AddSeconds(expiresIn);
+                streamer.TokenExpiresAt = expireDate;
 
-                Console.WriteLine($"[파로스의 확인]: 프로필 정보 업데이트 중 (UID: {chzzkUid})");
                 await _db.SaveChangesAsync();
-                Console.WriteLine("[파로스의 확인]: DB 저장 완료");
+                Console.WriteLine($"[파로스의 확인]: DB 저장 완료 (UID: {chzzkUid})");
 
                 // 3단계: 역할 및 권한 조회 (RBAC)
                 var userRole = "viewer";

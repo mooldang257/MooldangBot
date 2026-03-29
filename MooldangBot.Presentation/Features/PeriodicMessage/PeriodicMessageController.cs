@@ -83,6 +83,21 @@ namespace MooldangAPI.Controllers
             }
             return Ok();
         }
+
+        [HttpPatch("toggle/{chzzkUid}/{id}")]
+        public async Task<IActionResult> Toggle(string chzzkUid, int id)
+        {
+            var item = await _db.PeriodicMessages
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(m => m.Id == id && m.ChzzkUid == chzzkUid);
+                
+            if (item != null)
+            {
+                item.IsEnabled = !item.IsEnabled;
+                await _db.SaveChangesAsync();
+            }
+            return Ok();
+        }
     }
 
     public class PeriodicMessageSaveRequest

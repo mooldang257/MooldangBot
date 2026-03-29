@@ -7,6 +7,6 @@ namespace MooldangBot.Application.Interfaces
     /// </summary>
     public interface IDynamicVariableResolver
     {
-        Task<string?> ResolveAsync(string methodName, string streamerUid, string viewerUid);
+        Task<string?> ResolveAsync(string methodName, string streamerUid, string viewerUid, string? viewerName = null);
     }
 }

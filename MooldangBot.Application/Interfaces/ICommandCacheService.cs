@@ -9,16 +9,6 @@ namespace MooldangBot.Application.Interfaces;
 public interface ICommandCacheService
 {
     /// <summary>
-    /// DB에서 특정 스트리머의 명령어를 불러와 메모리 캐시를 갱신합니다.
-    /// </summary>
-    Task RefreshAsync(string chzzkUid, CancellationToken ct);
-
-    /// <summary>
-    /// 특정 키워드와 정확히 일치하는 캐시된 명령어를 비동기로 반환합니다.
-    /// </summary>
-    Task<StreamerCommand?> GetCommandAsync(string chzzkUid, string keyword);
-
-    /// <summary>
     /// [파로스의 자각]: 통합 명령어를 비동기로 반환합니다.
     /// </summary>
     Task<UnifiedCommand?> GetUnifiedCommandAsync(string chzzkUid, string keyword);
@@ -29,12 +19,7 @@ public interface ICommandCacheService
     Task RefreshUnifiedAsync(string chzzkUid, CancellationToken ct);
 
     /// <summary>
-    /// 특정 키워드와 정확히 일치하는 캐시된 명령어를 반환합니다.
+    /// [오시리스의 자각]: 키워드가 없을 때 후원 금액에 맞춰 자동 실행할 명령어를 조회합니다. (v1.9.7)
     /// </summary>
-    StreamerCommand? GetCommand(string chzzkUid, string keyword);
-
-    /// <summary>
-    /// 특정 스트리머의 모든 캐시된 명령어 목록을 반환합니다. (순회 또는 복잡한 매칭용)
-    /// </summary>
-    IReadOnlyList<StreamerCommand> GetAllCommands(string chzzkUid);
+    Task<UnifiedCommand?> GetAutoMatchDonationCommandAsync(string chzzkUid, string featureType);
 }

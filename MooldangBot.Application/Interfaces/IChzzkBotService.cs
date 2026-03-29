@@ -27,6 +27,11 @@ public interface IChzzkBotService
     Task RefreshChannelAsync(string chzzkUid);
 
     /// <summary>
+    /// [피닉스의 눈]: 스트리머 본인 계정의 토큰을 반환하고 필요시 갱신합니다.
+    /// </summary>
+    Task<string?> GetStreamerTokenAsync(StreamerProfile profile);
+
+    /// <summary>
     /// [피닉스의 재건]: 현재 소켓 상태를 점검하고 필요시 최신 토큰으로 재연결을 수행합니다.
     /// </summary>
     Task EnsureConnectionAsync(string chzzkUid);

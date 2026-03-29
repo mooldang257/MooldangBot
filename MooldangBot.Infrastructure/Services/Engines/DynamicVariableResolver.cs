@@ -30,13 +30,14 @@ namespace MooldangBot.Infrastructure.Services.Engines
         /// <summary>
         /// 메서드 이름을 기반으로 적절한 내부 로직을 수행하고 결과값을 반환합니다.
         /// </summary>
-        public async Task<string?> ResolveAsync(string methodName, string streamerUid, string viewerUid)
+        public async Task<string?> ResolveAsync(string methodName, string streamerUid, string viewerUid, string? viewerName = null)
         {
             return methodName switch
             {
                 "GetLiveTitle" => await GetLiveTitleAsync(streamerUid),
                 "GetLiveCategory" => await GetLiveCategoryAsync(streamerUid),
                 "GetLiveNotice" => await GetLiveNoticeAsync(streamerUid),
+                "GetSonglistStatus" => await GetSonglistStatusAsync(streamerUid),
                 _ => null
             };
         }
@@ -103,6 +104,27 @@ namespace MooldangBot.Infrastructure.Services.Engines
             {
                 _cache.Set(cacheKey, result, TimeSpan.FromMinutes(1)); // 공지는 덜 자주 바뀌므로 1분 캐싱
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// [v4.4.1] DB에서 현재 채널의 송리스트 활성화 여부를 가져옵니다. (10초 캐싱)
+        /// </summary>
+        private async Task<string?> GetSonglistStatusAsync(string streamerUid)
+        {
+            var cacheKey = $"Resolved_SonglistStatus_{streamerUid}";
+            if (_cache.TryGetValue(cacheKey, out string? cachedStatus)) return cachedStatus;
+
+            var isActive = await _db.SonglistSessions
+                .AsNoTracking()
+                .Where(s => s.ChzzkUid == streamerUid)
+                .OrderByDescending(s => s.StartedAt)
+                .Select(s => s.IsActive)
+                .FirstOrDefaultAsync();
+
+            var result = isActive ? "ON 🟢" : "OFF 🔴";
+            _cache.Set(cacheKey, result, TimeSpan.FromSeconds(10));
 
             return result;
         }

@@ -5,6 +5,9 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Application.Features.Commands.SystemMessage;
+using MooldangBot.Application.Features.Commands.Feature;
+using MooldangBot.Application.Features.Commands.General;
 
 namespace MooldangBot.Application.Features.Commands.Handlers;
 
@@ -20,12 +23,27 @@ public class UnifiedCommandHandler(
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken ct)
     {
+        // 0. [피닉스의 눈]: 명령어 처리 전 스트리머 토큰 유효성 확보 (전략 레벨 신뢰 보장)
+        await botService.GetStreamerTokenAsync(notification.Profile);
+
         // 1. [파로스의 자각]: 키워드 추출 및 통합 캐시 조회
         string msg = notification.Message.Trim();
-        if (string.IsNullOrEmpty(msg)) return;
+        
+        // [v1.9.7] 메세지가 없어도 후원 금액이 있으면 시스템 진행 허용 (후원 룰렛 등 대응)
+        if (string.IsNullOrEmpty(msg) && notification.DonationAmount <= 0) return;
 
-        string keyword = msg.Split(' ')[0];
+        string keyword = string.IsNullOrEmpty(msg) ? "" : msg.Split(' ')[0];
         var command = await cache.GetUnifiedCommandAsync(notification.Profile.ChzzkUid, keyword);
+
+        // [v1.9.7] 매칭된 명령어가 없는데 후원 금액이 있는 경우, 해당 채널의 후원 전용 룰렛 검색 (Auto-Match)
+        if (command == null && notification.DonationAmount > 0)
+        {
+            command = await cache.GetAutoMatchDonationCommandAsync(notification.Profile.ChzzkUid, "Roulette");
+            if (command != null)
+            {
+                logger.LogInformation($"🎰 [후원 자동 매칭] 키워드 '{keyword}' 대신 후원 전용 룰렛 '{command.Keyword}' 매칭됨");
+            }
+        }
 
         if (command is not { IsActive: true }) return;
 

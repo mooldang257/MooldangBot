@@ -1,29 +1,33 @@
-using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
-using MooldangBot.Domain.Entities;
-using MooldangBot.Domain.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.DTOs;
+using MooldangBot.Domain.Entities;
+using System.Text.Json.Serialization;
 
 namespace MooldangBot.Presentation.Features.SongBook
 {
     [ApiController]
-    [Authorize(Policy = "ChannelManager")] // 🛡️ 노래방 설정 관리에 채널 매니저 정책 적용
+    [Route("api/settings")]
     public class SonglistSettingsController : ControllerBase
     {
         private readonly IAppDbContext _db;
+        private readonly IUserSession _userSession;
+        private readonly IUnifiedCommandService _unifiedCommandService; // [v1.8] 주입
 
-        public SonglistSettingsController(IAppDbContext db)
+        public SonglistSettingsController(IAppDbContext db, IUserSession userSession, IUnifiedCommandService unifiedCommandService)
         {
             _db = db;
+            _userSession = userSession;
+            _unifiedCommandService = unifiedCommandService;
         }
 
         [HttpGet("/api/settings/data/{chzzkUid}")]
-        [AllowAnonymous] // 🛡️ 오버레이 디자인/라벨 로딩 대응
+        [AllowAnonymous] 
         public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
         {
-            // [Safe Lookup] UID 대소문자 무관성 보장
             var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
@@ -33,11 +37,17 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             var omakaseItems = await _db.StreamerOmakases
                 .IgnoreQueryFilters()
-                .Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
-            var songCommands = await _db.StreamerCommands
+                .Where(o => o.ChzzkUid.ToLower() == targetUid).ToListAsync();
+
+            var omakaseCommands = await _db.UnifiedCommands
                 .IgnoreQueryFilters()
-                .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
-                .Select(c => new { Keyword = c.CommandKeyword, Price = c.Price })
+                .Where(c => c.ChzzkUid.ToLower() == targetUid && c.FeatureType == CommandFeatureTypes.Omakase)
+                .ToListAsync();
+
+            var songCommands = await _db.UnifiedCommands
+                .IgnoreQueryFilters()
+                .Where(c => c.ChzzkUid.ToLower() == targetUid && c.FeatureType == CommandFeatureTypes.SongRequest)
+                .Select(c => new { Keyword = c.Keyword, Price = c.Cost })
                 .ToListAsync();
 
             return Results.Ok(new
@@ -46,28 +56,21 @@ namespace MooldangBot.Presentation.Features.SongBook
                 songRequestCommands = songCommands,
                 songPrice = profile.SongPrice,
                 designSettingsJson = profile.DesignSettingsJson,
-                omakases = omakaseItems.Select(o => new {
-                    id = o.Id,
-                    name = o.Name,
-                    command = o.Command,
-                    icon = o.Icon,
-                    price = o.Price
-                }),
-                // 하위 호환 및 대시보드 직접 참조용 라벨 파싱
+                // 🛡️ [Osiris's Simplification]: MenuId 그룹화 제거 및 PK(Id)-TargetId 기반 1:1 매핑
+                omakases = omakaseItems
+                    .Select(o => {
+                        var cmd = omakaseCommands.FirstOrDefault(c => c.TargetId == o.Id);
+                        return new {
+                            id = o.Id,
+                            name = cmd?.ResponseText ?? "새 오마카세",
+                            command = cmd?.Keyword ?? "", 
+                            icon = o.Icon,
+                            price = cmd?.Cost ?? 0,
+                            targetId = o.Id // 이제 PK가 곧 TargetId
+                        };
+                    }),
                 labels = TryGetLabels(profile.DesignSettingsJson)
             });
-        }
-
-        private object TryGetLabels(string? json)
-        {
-            if (string.IsNullOrEmpty(json)) return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
-            try {
-                var doc = System.Text.Json.JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("Labels", out var labels)) {
-                    return labels;
-                }
-            } catch {}
-            return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
         }
 
         [HttpPost("/api/settings/labels/{chzzkUid}")]
@@ -98,75 +101,142 @@ namespace MooldangBot.Presentation.Features.SongBook
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                
             if (profile != null)
             {
                 profile.SongCommand = req.SongCommand;
                 profile.SongPrice = req.SongPrice;
                 profile.DesignSettingsJson = req.DesignSettingsJson;
 
-                // Sync Omakases
-                var existing = await _db.StreamerOmakases
+                // 1. Omakase Items Sync (1:1 PK-TargetId Policy)
+                var existingItems = await _db.StreamerOmakases
                     .IgnoreQueryFilters()
-                    .Where(o => o.ChzzkUid == chzzkUid).ToListAsync();
-                var incomingIds = req.Omakases.Select(o => o.Id).ToList();
-                
-                var toDelete = existing.Where(e => !incomingIds.Contains(e.Id));
-                _db.StreamerOmakases.RemoveRange(toDelete);
+                    .Where(o => o.ChzzkUid == targetUid).ToListAsync();
 
-                foreach (var dto in req.Omakases)
+                if (req.Omakases != null)
                 {
-                    if (dto.Id <= 0)
+                    var processedIds = new HashSet<int>();
+
+                    foreach (var dto in req.Omakases)
                     {
-                        _db.StreamerOmakases.Add(new StreamerOmakaseItem
+                        var item = existingItems.FirstOrDefault(x => x.Id == dto.Id && dto.Id > 0);
+                        if (item == null)
                         {
-                            ChzzkUid = chzzkUid,
-                            Name = dto.Name,
-                            Command = dto.Command,
-                            Icon = dto.Icon,
-                            Price = dto.Price,
-                            Count = 0
-                        });
-                    }
-                    else
-                    {
-                        var e = existing.FirstOrDefault(x => x.Id == dto.Id);
-                        if (e != null)
-                        {
-                            e.Name = dto.Name;
-                            e.Command = dto.Command;
-                            e.Icon = dto.Icon;
-                            e.Price = dto.Price;
+                            item = new StreamerOmakaseItem
+                            {
+                                ChzzkUid = targetUid,
+                                Icon = dto.Icon,
+                                Count = 0
+                            };
+                            _db.StreamerOmakases.Add(item);
                         }
+                        else
+                        {
+                            item.Icon = dto.Icon;
+                        }
+
+                        // Save to get ID if it's new
+                        await _db.SaveChangesAsync();
+                        processedIds.Add(item.Id);
+                        
+                        // 명시적으로 DTO의 ID를 업데이트 (나중에 Command와 연결할 때 사용)
+                        dto.Id = item.Id;
                     }
+
+                    // 🧹 [Cleaning]: 이번에 처리되지 않은 Omakase 아이템들 제거
+                    var toDelete = existingItems.Where(e => !processedIds.Contains(e.Id));
+                    _db.StreamerOmakases.RemoveRange(toDelete);
                 }
 
-                // Sync SongRequest Commands
-                var existingSongCmds = await _db.StreamerCommands
+                // Sync Commands (Upsert Policy via Service)
+                var existingCmds = await _db.UnifiedCommands
                     .IgnoreQueryFilters()
-                    .Where(c => c.ChzzkUid == chzzkUid && c.ActionType == "SongRequest")
+                    .Where(c => c.ChzzkUid == targetUid && (c.FeatureType == CommandFeatureTypes.SongRequest || c.FeatureType == CommandFeatureTypes.Omakase))
                     .ToListAsync();
-                _db.StreamerCommands.RemoveRange(existingSongCmds);
 
+                // 🔍 [마스터 데이터 기반 동기화]: 기능 정의 로드
+                var features = await _db.MasterCommandFeatures.Include(f => f.Category).ToListAsync();
+                var songMaster = features.FirstOrDefault(f => f.TypeName == CommandFeatureTypes.SongRequest);
+                var omakaseMaster = features.FirstOrDefault(f => f.TypeName == CommandFeatureTypes.Omakase);
+
+                // 1. SongRequest Upsert
                 if (req.SongRequestCommands != null)
                 {
                     foreach (var sc in req.SongRequestCommands)
                     {
                         if (string.IsNullOrWhiteSpace(sc.Keyword)) continue;
-                        _db.StreamerCommands.Add(new StreamerCommand
-                        {
-                            ChzzkUid = chzzkUid,
-                            CommandKeyword = sc.Keyword.Trim(),
-                            ActionType = "SongRequest",
-                            RequiredRole = "all",
-                            Content = "SongRequest",
-                            Price = sc.Price
-                        });
+                        
+                        var existing = existingCmds.FirstOrDefault(c => c.Keyword == sc.Keyword && c.FeatureType == CommandFeatureTypes.SongRequest);
+                        
+                        await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
+                            Id: existing?.Id,
+                            Keyword: sc.Keyword.Trim(),
+                            Category: songMaster?.Category?.Name ?? "Feature",
+                            CostType: CommandCostType.Cheese.ToString(),
+                            Cost: sc.Price,
+                            FeatureType: CommandFeatureTypes.SongRequest,
+                            ResponseText: "노래 신청",
+                            TargetId: null,
+                            IsActive: true,
+                            RequiredRole: (songMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
+                        ));
                     }
                 }
 
-                await _db.SaveChangesAsync();
+                // 2. Omakase Upsert
+                if (req.Omakases != null && req.Omakases.Any())
+                {
+                    var uniqueKeywords = req.Omakases
+                        .Where(o => !string.IsNullOrWhiteSpace(o.Command))
+                        .GroupBy(o => o.Command.Trim())
+                        .Select(g => new { Keyword = g.Key, First = g.First() })
+                        .ToList();
+
+                    foreach (var uk in uniqueKeywords)
+                    {
+                        var existing = existingCmds.FirstOrDefault(c => string.Equals(c.Keyword, uk.Keyword, StringComparison.OrdinalIgnoreCase) && c.FeatureType == CommandFeatureTypes.Omakase);
+
+                        await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
+                            Id: existing?.Id,
+                            Keyword: uk.Keyword.Trim(),
+                            Category: omakaseMaster?.Category?.Name ?? "Feature",
+                            CostType: CommandCostType.Cheese.ToString(),
+                            Cost: uk.First.Price,
+                            FeatureType: CommandFeatureTypes.Omakase,
+                            ResponseText: uk.First.Name.Trim(),
+                            TargetId: uk.First.Id,
+                            IsActive: true,
+                            RequiredRole: (omakaseMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
+                        ));
+                    }
+                }
+
+                // Cleanup deleted commands
+                var incomingKeywords = (req.SongRequestCommands?.Select(s => s.Keyword.Trim()) ?? Enumerable.Empty<string>())
+                    .Concat(req.Omakases?.Select(o => o.Command?.Trim()).Where(k => !string.IsNullOrEmpty(k)) ?? Enumerable.Empty<string>())
+                    .ToList();
+
+                var toRemove = existingCmds.Where(e => !incomingKeywords.Any(k => string.Equals(k, e.Keyword, StringComparison.OrdinalIgnoreCase)));
+                foreach (var tr in toRemove)
+                {
+                    await _unifiedCommandService.DeleteCommandAsync(targetUid, tr.Id);
+                }
             }
+
+            await _db.SaveChangesAsync();
             return Results.Ok();
+        }
+
+        private object TryGetLabels(string? json)
+        {
+            if (string.IsNullOrEmpty(json)) return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
+            try {
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("Labels", out var labels)) {
+                    return labels;
+                }
+            } catch {}
+            return new { nowPlaying = "▶ NOW PLAYING", upNext = "⏳ UP NEXT", completed = "✔ COMPLETED" };
         }
     }
 }

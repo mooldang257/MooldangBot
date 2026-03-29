@@ -11,7 +11,6 @@ namespace MooldangBot.Application.Interfaces
         DbSet<StreamerProfile> StreamerProfiles { get; set; }
         DbSet<SystemSetting> SystemSettings { get; set; }
         DbSet<SongQueue> SongQueues { get; set; }
-        DbSet<StreamerCommand> StreamerCommands { get; set; }
         DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
         DbSet<AvatarSetting> AvatarSettings { get; set; }
         DbSet<ChzzkCategory> ChzzkCategories { get; set; }
@@ -40,6 +39,7 @@ namespace MooldangBot.Application.Interfaces
         DbSet<StreamerManager> StreamerManagers { get; set; }
         DbSet<SongBook> SongBooks { get; set; }
         DbSet<RouletteLog> RouletteLogs { get; set; }
+        DbSet<RouletteSpin> RouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성 레이어 추가
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

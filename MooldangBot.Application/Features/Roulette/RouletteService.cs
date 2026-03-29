@@ -5,6 +5,8 @@ using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json; // [v1.9.9] 추가
+using MooldangBot.Application.State;
 
 namespace MooldangBot.Application.Features.Roulette;
 
@@ -17,6 +19,7 @@ public class SpinResultContext
     public string? ViewerNickname { get; set; }
     public string? ViewerUid { get; set; } // [v1.9] 추가
     public string ItemName { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty; // [v1.9] 전체 당첨 요약 (10연차 등)
     public List<string> WinningItems { get; set; } = new();
 }
 
@@ -24,27 +27,27 @@ public class RouletteService : IRouletteService
 {
     private readonly IAppDbContext _db;
     private readonly IOverlayNotificationService _overlayService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly RouletteState _rouletteState;
     private readonly IChzzkApiClient _chzzkApi;
     private readonly ILogger<RouletteService> _logger;
-    private readonly IMemoryCache _cache;
-    private readonly IChzzkBotService _botService;
+    private readonly IChzzkBotService _botService; // [v1.9.9] IMemoryCache 제거
 
     public RouletteService(
         IAppDbContext db, 
         IOverlayNotificationService overlayService, 
-        IServiceProvider serviceProvider, 
+        IServiceScopeFactory scopeFactory, 
+        RouletteState rouletteState,
         IChzzkApiClient chzzkApi, 
         ILogger<RouletteService> logger, 
-        IMemoryCache cache, 
         IChzzkBotService botService)
     {
         _db = db;
         _overlayService = overlayService;
-        _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory;
+        _rouletteState = rouletteState;
         _chzzkApi = chzzkApi;
         _logger = logger;
-        _cache = cache;
         _botService = botService;
     }
 
@@ -71,7 +74,7 @@ public class RouletteService : IRouletteService
         {
             var roulette = await _db.Roulettes
                 .Include(r => r.Items)
-                .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid && r.IsActive);
+                .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid);
 
             if (roulette == null) return new List<RouletteItem>();
 
@@ -101,8 +104,8 @@ public class RouletteService : IRouletteService
                     ItemName = result.ItemName,
                     IsMission = result.IsMission,
                     Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
-                    CreatedAt = DateTime.UtcNow,
-                    ProcessedAt = result.IsMission ? null : DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    ProcessedAt = result.IsMission ? null : DateTime.Now
                 });
             }
 
@@ -116,27 +119,44 @@ public class RouletteService : IRouletteService
                     return new RouletteSummaryDto(g.Key, g.Count(), first.IsMission, first.Color);
                 }).ToList();
 
-            string SpinId = Guid.NewGuid().ToString();
-            var context = new SpinResultContext
+            // [v1.9] 당첨 내역 요약 문자열 생성
+            var summaryList = results.GroupBy(r => r.ItemName)
+                .Select(g => $"{g.Key} x{g.Count()}")
+                .ToList();
+            string summaryStr = string.Join(", ", summaryList);
+
+            string spinId = Guid.NewGuid().ToString();
+            
+            // [v1.9.9] 오시리스의 영속성: 메모리 캐시 대신 DB에 실행 정보 저장 (11시간 세션 대응)
+            var spin = new RouletteSpin
             {
+                Id = spinId,
                 ChzzkUid = chzzkUid,
                 RouletteId = rouletteId,
-                RouletteName = roulette.Name,
-                ViewerNickname = viewerNickname,
-                ViewerUid = viewerUid, // [v1.9] 추가
-                ItemName = results.First().ItemName,
-                WinningItems = results.Select(r => r.ItemName).ToList()
+                ViewerUid = viewerUid ?? "",
+                ViewerNickname = viewerNickname ?? "비회원",
+                ResultsJson = JsonSerializer.Serialize(results.Select(r => r.ItemName).ToList()),
+                Summary = summaryStr,
+                IsCompleted = false,
+                ScheduledTime = _rouletteState.GetAndSetNextEndTime(chzzkUid, count).AddSeconds(3), // 3초 마진
+                CreatedAt = DateTime.Now
             };
-            _cache.Set($"Spin:{SpinId}", context, TimeSpan.FromMinutes(1));
+            _db.RouletteSpins.Add(spin);
+            await _db.SaveChangesAsync();
 
             var response = new SpinRouletteResponse(
-                SpinId,
+                spinId,
                 rouletteId,
                 roulette.Name,
                 viewerNickname,
                 results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
                 summary
             );
+
+            // [v1.9.8] 즉시 시작 메세지 전송 (동적 횟수 표기)
+            string startInfo = count > 1 ? $"{count}연차를" : "룰렛을";
+            string startMsg = $"🎰 [{viewerNickname ?? "비회원"}]님이 {roulette.Name} {startInfo} 돌립니다! 결과는 잠시 후...";
+            await SendChatMessageAsync(chzzkUid, startMsg, viewerUid);
 
             await _overlayService.NotifyRouletteResultAsync(chzzkUid, response);
 
@@ -176,12 +196,36 @@ public class RouletteService : IRouletteService
         return items.Last();
     }
 
+    public async Task<bool> CompleteRouletteAsync(string spinId)
+    {
+        try
+        {
+            // [v1.9.9] 오시리스의 보존: DB에서 실행 정보를 조회하여 즉시 완료 처리 (오버레이 콜백용)
+            var spin = await _db.RouletteSpins
+                .FirstOrDefaultAsync(s => s.Id == spinId && !s.IsCompleted);
+
+            if (spin == null) return false;
+
+            // 결과 전송
+            await SendDelayedChatResultAsync(spin.ChzzkUid, spin.RouletteId, spin.Summary, spin.ViewerUid, spin.ViewerNickname);
+
+            spin.IsCompleted = true;
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ [영속성 체크포인트] 룰렛 {spinId} 오버레이 시그널에 의해 완료되었습니다.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"룰렛 완료 처리 중 오류 (SpinId: {spinId})");
+            return false;
+        }
+    }
+
     private async Task SendChatMessageAsync(string chzzkUid, string message, string? viewerUid = null)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-        var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        // 상위 호출자(SpinRouletteMultiAsync)의 _db가 살아있는 동안만 유효함
+        var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return;
 
         await _botService.SendReplyChatAsync(streamer, message, viewerUid ?? "", CancellationToken.None);
@@ -191,13 +235,21 @@ public class RouletteService : IRouletteService
     {
         try
         {
-            var roulette = await _db.Roulettes.FindAsync(rouletteId);
-            string rouletteName = roulette?.Name ?? "룰렛";
-            
-            string nickPrefix = string.IsNullOrEmpty(viewerNickname) ? "관리자테스트" : viewerNickname;
-            string message = $"{nickPrefix}({rouletteName})> [{itemName}]";
+            // [v1.9.5] 비동기 안전성: 독립된 스코프에서 DB 작업 수행
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
 
-            await SendChatMessageAsync(chzzkUid, message, viewerUid);
+            var roulette = await db.Roulettes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rouletteId);
+            string rouletteName = roulette?.Name ?? "룰렛";
+            string nickPrefix = string.IsNullOrEmpty(viewerNickname) ? "관리자" : viewerNickname;
+            string message = $"{nickPrefix}({rouletteName})> 당첨 결과: [{itemName}]";
+
+            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            if (streamer != null && !string.IsNullOrEmpty(streamer.ChzzkAccessToken))
+            {
+                await botService.SendReplyChatAsync(streamer, message, viewerUid, CancellationToken.None);
+            }
         }
         catch (Exception ex)
         {

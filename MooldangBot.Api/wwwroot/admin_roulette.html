@@ -134,48 +134,8 @@
         </div>
     </div>
 
-    <!-- 룰렛 편집 모달 -->
-    <div id="editModal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; padding: 40px 0;">
-        <div class="panel" style="max-width:800px; margin:auto; background: #1a1a1a;">
-            <h2 id="modalTitle">룰렛 설정</h2>
-            <div class="config-grid">
-                <div>
-                    <span class="sub-title">룰렛 이름</span>
-                    <input type="text" id="rName" placeholder="예: 치즈 룰렛">
-                    <span class="sub-title">유형</span>
-                    <select id="rType"
-                        style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; margin-bottom:15px;">
-                        <option value="0" style="background:#2a2a2a; color:white;">치즈 (후원금)</option>
-                        <option value="1" style="background:#2a2a2a; color:white;">채팅 포인트</option>
-                    </select>
-                    <span class="sub-title">실행 명령어 (채팅 포인트용)</span>
-                    <input type="text" id="rCommand" value="!룰렛">
-                    <span class="sub-title">1회 실행 비용</span>
-                    <input type="number" id="rCost" value="1000">
-                    <div style="display:flex; align-items:center; gap:10px; margin-top:15px;">
-                        <span class="sub-title" style="margin-bottom:0;">활성화 여부</span>
-                        <label class="switch">
-                            <input type="checkbox" id="rIsActive" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div>
-                    <span class="sub-title">아이템 목록 (확률/가중치 설정)</span>
-                    <div id="itemListContainer"></div>
-                    <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="addItemRow()">➕ 아이템
-                        추가</button>
-                    <div class="total-prob" id="totalProbDisplay">총 가중치: 0</div>
-                </div>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-primary" style="flex:1;" onclick="saveRoulette()">💾 저장하기</button>
-                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal()">취소</button>
-            </div>
-        </div>
-    </div>
     <script src="/js/overlay_utils.js?v=20260325_v2"></script>
+    <script src="/js/roulette_modal.js?v=20260329_v1"></script>
     <script>
         const urlParams = new URL(window.location.href).searchParams;
         const chzzkUid = urlParams.get('uid') || '';
@@ -297,91 +257,7 @@
         }
 
         async function showEditForm(Id) {
-            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
-            const res = await fetch(`/api/admin/roulette/${chzzkUid}/${Id}`, { credentials: 'same-origin' });
-            if (!res.ok) return;
-            let R = await res.json();
-            R = createSafeData(R);
-
-            editingId = Id;
-            document.getElementById('modalTitle').innerText = '룰렛 수정';
-            document.getElementById('rName').value = R.Name;
-            document.getElementById('rType').value = R.Type.toString();
-            document.getElementById('rCommand').value = R.Command;
-            document.getElementById('rCost').value = R.CostPerSpin;
-            document.getElementById('rIsActive').checked = R.IsActive;
-
-            const itemContainer = document.getElementById('itemListContainer');
-            itemContainer.innerHTML = '';
-            R.Items.forEach(I => addItemRow(I));
-
-            updateTotalProb();
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        function addItemRow(Item = null) {
-            const container = document.getElementById('itemListContainer');
-            const row = document.createElement('div');
-            row.className = 'item-row';
-            // 💡 PascalCase 대응 (Item.IsActive 또는 Item.isActive 처리)
-            const isActive = Item ? (Item.IsActive ?? Item.isActive ?? true) : true;
-            row.innerHTML = `
-                <label class="switch" title="활성/비활성">
-                    <input type="checkbox" class="item-active" ${isActive ? 'checked' : ''}>
-                    <span class="slider"></span>
-                </label>
-                <input type="text" class="item-name" placeholder="항목명" value="${Item ? Item.ItemName : ''}" style="flex:2;">
-                <input type="number" class="item-prob" placeholder="가중치" value="${Item ? Item.Probability : 10}" style="flex:1;" onchange="updateTotalProb()">
-                <input type="color" class="item-color" value="${Item ? Item.Color : '#ff0055'}" style="width:40px; padding:2px; height:38px; border:none; background:none; cursor:pointer;">
-                <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); updateTotalProb();">✖</button>
-            `;
-            container.appendChild(row);
-            updateTotalProb();
-        }
-
-        async function saveRoulette() {
-            const name = document.getElementById('rName').value.trim();
-            if (!name) {
-                alert("⚠️ 룰렛 이름을 입력해주세요.");
-                return;
-            }
-
-            const Data = {
-                Id: editingId || 0,
-                Name: name,
-                Type: parseInt(document.getElementById('rType').value),
-                Command: document.getElementById('rCommand').value,
-                CostPerSpin: parseInt(document.getElementById('rCost').value),
-                IsActive: document.getElementById('rIsActive').checked,
-                Items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
-                    ItemName: row.querySelector('.item-name').value,
-                    Probability: parseFloat(row.querySelector('.item-prob').value) || 0,
-                    Probability10x: parseFloat(row.querySelector('.item-prob').value) || 0,
-                    Color: row.querySelector('.item-color').value,
-                    IsActive: row.querySelector('.item-active').checked
-                }))
-            };
-
-            // 💡 방어 로직: 적어도 하나 이상의 항목 활성화 확인
-            if (!Data.Items.some(I => I.IsActive)) {
-                alert("⚠️ 적어도 하나 이상의 항목은 활성화되어야 합니다.");
-                return;
-            }
-
-            const chzzkUid = new URLSearchParams(window.location.search).get('uid') || "";
-            const res = await fetch(editingId ? `/api/admin/roulette/${chzzkUid}/${editingId}` : `/api/admin/roulette/${chzzkUid}`, {
-                method: editingId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(Data)
-            });
-
-            if (res.ok) {
-                closeModal();
-                loadRoulettes();
-            } else {
-                alert("저장 실패");
-            }
+            RouletteModal.open(chzzkUid, Id);
         }
 
         function showCreateForm() {

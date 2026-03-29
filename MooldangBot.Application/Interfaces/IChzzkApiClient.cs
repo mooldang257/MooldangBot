@@ -9,7 +9,7 @@ public interface IChzzkApiClient
 {
     Task<string> GetChannelInfoAsync(string channelId);
     Task<string?> ExchangeCodeForTokenAsync(string code, string? state);
-    Task<ChzzkTokenResponse?> RefreshTokenAsync(string refreshToken);
+    Task<ChzzkTokenResponse?> RefreshTokenAsync(string refreshToken, string? clientId = null, string? clientSecret = null);
     Task<ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken);
     Task<string?> GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId);
     Task<bool> IsLiveAsync(string channelId, string? accessToken = null);
@@ -21,6 +21,7 @@ public interface IChzzkApiClient
     Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData);
     Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken);
     Task<ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword);
-    Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? state = null);
+    Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null);
     Task<ChzzkUserMeResponse?> GetUserMeAsync(string accessToken);
+    Task<ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds);
 }

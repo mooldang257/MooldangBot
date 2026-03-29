@@ -70,7 +70,7 @@ public class ChzzkChannelWorker
                     continue;
                 }
 
-                await _cacheService.RefreshAsync(_uid, stoppingToken);
+                await _cacheService.RefreshUnifiedAsync(_uid, stoppingToken);
 
                 var sessionAuth = await _chzzkApi.GetSessionAuthAsync(profile.ChzzkAccessToken!);
                 if (sessionAuth == null)
@@ -273,6 +273,22 @@ public class ChzzkChannelWorker
                 string userRole = profileDoc.RootElement.TryGetProperty("userRoleCode", out var roleProp) ? roleProp.GetString() ?? "common_user" : "common_user";
                 string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
 
+                // [v1.9.7] 후원 금액 추출 (extras JSON 파싱)
+                int donationAmount = 0;
+                if (payload.TryGetProperty("extras", out var extrasProp))
+                {
+                    try
+                    {
+                        var extrasJson = extrasProp.GetString() ?? "{}";
+                        using var extrasDoc = JsonDocument.Parse(extrasJson);
+                        if (extrasDoc.RootElement.TryGetProperty("payAmount", out var payProp))
+                        {
+                            donationAmount = payProp.GetInt32();
+                        }
+                    }
+                    catch { /* 파싱 실패 시 0원 유지 */ }
+                }
+
                 bool hasBotPrefix = msg.StartsWith("\u200B", StringComparison.Ordinal);
                 bool isBotUid = !string.IsNullOrEmpty(_botUid) && string.Equals(senderId, _botUid, StringComparison.OrdinalIgnoreCase);
 
@@ -280,7 +296,7 @@ public class ChzzkChannelWorker
                 {
                     var mediator = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
                     await mediator.Publish(new MooldangBot.Domain.Events.ChatMessageReceivedEvent(
-                        profile, nickname, msg, userRole, senderId, null, 0), token);
+                        profile, nickname, msg, userRole, senderId, null, donationAmount), token);
                 }
             }
         }

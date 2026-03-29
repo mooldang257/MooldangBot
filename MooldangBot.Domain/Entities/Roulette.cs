@@ -19,21 +19,6 @@ namespace MooldangBot.Domain.Entities
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [JsonPropertyName("type")]
-        public RouletteType Type { get; set; }
-
-        [Required]
-        [MaxLength(50)]
-        [JsonPropertyName("command")]
-        public string Command { get; set; } = "!룰렛";
-
-        [JsonPropertyName("costPerSpin")]
-        public int CostPerSpin { get; set; } = 1000;
-
-        [JsonPropertyName("isActive")]
-        public bool IsActive { get; set; } = true;
-
         [JsonPropertyName("updatedAt")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

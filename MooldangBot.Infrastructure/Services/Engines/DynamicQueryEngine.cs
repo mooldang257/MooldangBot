@@ -29,18 +29,26 @@ namespace MooldangBot.Infrastructure.Services.Engines
             _logger = logger;
         }
 
-        public async Task<string> ProcessMessageAsync(string message, string streamerChzzkUid, string viewerUid)
+        public async Task<string> ProcessMessageAsync(string message, string streamerChzzkUid, string viewerUid, string? viewerName = null)
         {
             if (string.IsNullOrWhiteSpace(message)) return message;
-            if (!message.Contains('{') || !message.Contains('}')) return message;
+
+            // [v4.5.1] {닉네임} 변수 통합 처리
+            string resultMessage = message;
+            if (!string.IsNullOrEmpty(viewerName))
+            {
+                resultMessage = resultMessage.Replace("{닉네임}", viewerName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!resultMessage.Contains('{') || !resultMessage.Contains('}')) return resultMessage;
 
             var variables = await _cache.GetFullVariablesAsync();
             if (variables == null || variables.Count == 0) return message;
 
             // 정규식: {내용} 형태의 모든 패턴 추출
-            var matches = Regex.Matches(message, @"\{[^{}]+\}");
+            var matches = Regex.Matches(resultMessage, @"\{[^{}]+\}");
             
-            string resultMessage = message;
+            // string resultMessage = message; // 제거 (상단에서 이미 정의됨)
 
             foreach (Match match in matches)
             {
@@ -58,7 +66,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
                         if (queryString.StartsWith("METHOD:", StringComparison.OrdinalIgnoreCase))
                         {
                             string methodName = queryString.Substring(7).Trim(); // "METHOD:" 이후 문자열
-                            queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, viewerUid);
+                            queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, viewerUid, viewerName);
                         }
                         else if (queryString.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                         {

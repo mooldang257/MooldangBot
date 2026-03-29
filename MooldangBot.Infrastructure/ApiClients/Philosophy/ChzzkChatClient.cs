@@ -14,6 +14,8 @@ using MooldangBot.Domain.Events;
 using Polly;
 using Polly.Retry;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Infrastructure.ApiClients.Philosophy;
 

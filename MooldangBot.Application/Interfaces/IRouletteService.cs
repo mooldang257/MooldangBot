@@ -14,4 +14,9 @@ public interface IRouletteService
     /// 룰렛 결과를 지연 시간 후 채팅으로 전송합니다.
     /// </summary>
     Task SendDelayedChatResultAsync(string chzzkUid, int rouletteId, string itemName, string viewerUid, string? viewerNickname);
+
+    /// <summary>
+    /// [v1.9.9] 오버레이로부터 완료 신호를 받아 결과를 즉시 전송하고 상태를 업데이트합니다.
+    /// </summary>
+    Task<bool> CompleteRouletteAsync(string spinId);
 }

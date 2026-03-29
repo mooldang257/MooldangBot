@@ -218,7 +218,11 @@ MediatR `Publish()`를 통해 병렬 핸들러 실행:
 
 ### 25-1. 통합 아키텍처 (SSOT)
 - **UnifiedCommand**: 모든 명령어 정보를 저장하는 단일 진실 공급원(SSOT) 테이블. `Category`, `CostType`, `FeatureType`을 통해 동작을 정의.
-- **Strategy Pattern**: `ICommandFeatureStrategy` 인터페이스를 통해 각 기능(Reply, Song, Roulette, Attendance, SonglistToggle)을 모듈화.
+- **Category-Based Organization (v4.5.0)**: 명령어 전략들을 도메인 성격에 따라 폴더별로 관리.
+    - **General (일반)**: `Reply` 관련 전략 (`CustomReply`, `SimpleReply`)
+    - **SystemMessage (시스템메세지)**: `Notice`, `Title`, `Category`, `SonglistToggle` 관련 전략
+    - **Feature (기능)**: `SongRequest`, `Roulette`, `ChatPoint`(Attendance), `Omakase`(`AiResponse`) 관련 전략
+- **Strategy Pattern**: `ICommandFeatureStrategy` 인터페이스를 통해 각 기능을 모듈화.
 - **UnifiedCommandHandler**: `MediatR` 기반 통합 핸들러. 명령어 인식, 재화(치즈/포인트) 검증, 권한 체크 후 적절한 전략으로 라우팅.
 
 ### 25-2. UI/UX 개선 (Input Paging)

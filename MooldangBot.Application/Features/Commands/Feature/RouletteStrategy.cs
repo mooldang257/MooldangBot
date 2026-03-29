@@ -4,7 +4,7 @@ using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MooldangBot.Application.Features.Commands.Strategies;
+namespace MooldangBot.Application.Features.Commands.Feature;
 
 /// <summary>
 /// [하모니의 회전]: 룰렛(Roulette) 명령어를 처리하는 전략입니다.
@@ -15,12 +15,12 @@ public class RouletteStrategy(
 {
     public string FeatureType => "Roulette";
 
-    public async Task ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         if (command.TargetId == null)
         {
             logger.LogWarning($"⚠️ [룰렛 실행 실패] UnifiedCommand {command.Id}에 TargetId(RouletteId)가 없습니다.");
-            return;
+            return CommandExecutionResult.Failure("룰렛 ID가 설정되지 않았습니다.");
         }
 
         using var scope = serviceProvider.CreateScope();
@@ -39,5 +39,7 @@ public class RouletteStrategy(
             logger.LogInformation($"🎰 [포인트 룰렛] {notification.Username} -> 1회 실행");
             await rouletteService.SpinRouletteAsync(notification.Profile.ChzzkUid, command.TargetId.Value, notification.SenderId, notification.Username);
         }
+
+        return CommandExecutionResult.Success();
     }
 }

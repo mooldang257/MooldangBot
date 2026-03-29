@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
+using MooldangBot.Domain.Entities;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
@@ -71,45 +72,73 @@ public class TokenRenewalService : ITokenRenewalService
     private async Task<bool> ProcessRenewalAsync(string chzzkUid)
     {
         var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
-        if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkRefreshToken))
+        if (streamer == null) return false;
+
+        bool success = true;
+
+        // 1. 스트리머 본인 토큰 갱신
+        if (!string.IsNullOrEmpty(streamer.ChzzkRefreshToken))
         {
-            return false;
+            success &= await RenewTokenInternalAsync(streamer, isBot: false);
         }
 
-        // 1. [만료의 예감]: 만료 1시간 전(또는 이미 만료됨)인지 확인
-        var isExpiringSoon = streamer.TokenExpiresAt == null || 
-                             streamer.TokenExpiresAt <= DateTime.UtcNow.AddHours(1);
+        // 2. 봇 계정 토큰 갱신
+        if (!string.IsNullOrEmpty(streamer.BotRefreshToken))
+        {
+            success &= await RenewTokenInternalAsync(streamer, isBot: true);
+        }
 
+        return success;
+    }
+
+    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool isBot)
+    {
+        var expiresAt = isBot ? streamer.BotTokenExpiresAt : streamer.TokenExpiresAt;
+        var refreshToken = isBot ? streamer.BotRefreshToken : streamer.ChzzkRefreshToken;
+
+        // 만료 1시간 전인지 확인
+        var isExpiringSoon = expiresAt == null || expiresAt <= DateTime.UtcNow.AddHours(1);
         if (!isExpiringSoon) return true;
 
-        _logger.LogInformation($"[영겁의 열쇠] {chzzkUid} 스트리머의 토큰 임박 감지. (만료: {streamer.TokenExpiresAt})");
+        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 토큰 갱신 시도. (만료: {expiresAt})");
 
-        // 2. [서기의 기록]: 리프레시 토큰으로 새 토큰 요청 (JSON 규격 준수)
+        // 스트리머 전용 앱 정보 또는 시스템 기본값 사용
+        string clientId = streamer.ApiClientId ?? _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
+        string clientSecret = streamer.ApiClientSecret ?? _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
+
         using var client = _httpClientFactory.CreateClient();
         var payload = new
         {
             grantType = "refresh_token",
-            refreshToken = streamer.ChzzkRefreshToken,
-            clientId = _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "",
-            clientSecret = _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? ""
+            refreshToken = refreshToken,
+            clientId = clientId,
+            clientSecret = clientSecret
         };
-        
+
         var response = await client.PostAsJsonAsync(TokenUrl, payload);
         if (!response.IsSuccessStatusCode)
         {
             var errorDetail = await response.Content.ReadAsStringAsync();
-            _logger.LogError($"[영겁의 열쇠] 갱신 실패 (HTTP {response.StatusCode}): {errorDetail}");
+            _logger.LogError($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 갱신 실패 (HTTP {response.StatusCode}): {errorDetail}");
             return false;
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>(); // 공용 DTO 사용
+        var result = await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>();
         if (result == null || result.Content == null || string.IsNullOrEmpty(result.Content.AccessToken)) return false;
 
-        // 3. [파동의 부활]
         var content = result.Content;
-        streamer.ChzzkAccessToken = content.AccessToken;
-        if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
-        streamer.TokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
+        if (isBot)
+        {
+            streamer.BotAccessToken = content.AccessToken;
+            if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.BotRefreshToken = content.RefreshToken;
+            streamer.BotTokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
+        }
+        else
+        {
+            streamer.ChzzkAccessToken = content.AccessToken;
+            if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
+            streamer.TokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
+        }
 
         await _db.SaveChangesAsync();
         return true;

@@ -11,7 +11,11 @@ using MooldangBot.Application.Features.Overlay;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Application.Services.Auth;
-using MooldangBot.Application.Features.Commands.Strategies;
+using MooldangBot.Application.Features.Commands.Cache;
+using MooldangBot.Application.Features.Commands.General;
+using MooldangBot.Application.Features.Commands.SystemMessage;
+using MooldangBot.Application.Features.Commands.Feature;
+using MooldangBot.Application.Features.Commands.Handlers;
 
 namespace MooldangBot.Application
 {
@@ -27,17 +31,18 @@ namespace MooldangBot.Application
             services.AddScoped<ChzzkCategorySyncService>();
             services.AddSingleton<IObsWebSocketService, ObsWebSocketService>();
             services.AddScoped<ITokenRenewalService, TokenRenewalService>(); // [영겁의 열쇠] 추가
+            services.AddScoped<IUnifiedCommandService, UnifiedCommandService>(); // [파로스의 통합] 추가
 
             // Command Strategies
-            services.AddScoped<ICommandFeatureStrategy, SimpleReplyStrategy>();
+            services.AddScoped<ICommandFeatureStrategy, ReplyStrategy>();
+            services.AddScoped<ICommandFeatureStrategy, NoticeStrategy>();
+            services.AddScoped<ICommandFeatureStrategy, SonglistToggleStrategy>();
+            services.AddScoped<ICommandFeatureStrategy, TitleStrategy>();
+            services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
             services.AddScoped<ICommandFeatureStrategy, SongRequestStrategy>();
             services.AddScoped<ICommandFeatureStrategy, RouletteStrategy>();
             services.AddScoped<ICommandFeatureStrategy, AttendanceStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, SonglistToggleStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, SystemResponseStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, AiResponseStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, TitleStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
+            //services.AddScoped<ICommandFeatureStrategy, AiResponseStrategy>();
             
             // Background Workers
             services.AddSingleton<ChzzkBackgroundService>();
@@ -58,7 +63,6 @@ namespace MooldangBot.Application
             
             // [통합의 완성]: 실전 서비스 등록 (LlmService는 Infrastructure에서 HttpClient로 등록됨)
             services.AddScoped<IChzzkChatService, ChzzkChatService>();
-
             return services;
         }
     }

@@ -17,7 +17,6 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<StreamerProfile> StreamerProfiles { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<SongQueue> SongQueues { get; set; }
-    public DbSet<StreamerCommand> StreamerCommands { get; set; }
     public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
     public DbSet<AvatarSetting> AvatarSettings { get; set; }
     public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
@@ -42,6 +41,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<StreamerManager> StreamerManagers { get; set; }
     public DbSet<SongBook> SongBooks { get; set; }
     public DbSet<RouletteLog> RouletteLogs { get; set; }
+    public DbSet<RouletteSpin> RouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성
     public DbSet<UnifiedCommand> UnifiedCommands { get; set; }
     public DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
     public DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
@@ -74,19 +74,13 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
         });
 
-        modelBuilder.Entity<StreamerCommand>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
-            entity.Property(e => e.CommandKeyword).UseCollation(ciCollation);
-        });
 
         modelBuilder.Entity<StreamerOmakaseItem>(entity => {
             entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
-            entity.Property(e => e.Command).UseCollation(ciCollation);
         });
 
         modelBuilder.Entity<Roulette>(entity => {
             entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
-            entity.Property(e => e.Command).UseCollation(ciCollation);
         });
 
         modelBuilder.Entity<PeriodicMessage>(entity => {
@@ -111,8 +105,9 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<StreamerProfile>()
             .HasIndex(p => p.ChzzkUid).IsUnique();
 
-        modelBuilder.Entity<StreamerCommand>()
-            .HasIndex(c => c.ChzzkUid);
+
+        modelBuilder.Entity<SongQueue>()
+            .HasIndex(s => s.ChzzkUid);
 
         modelBuilder.Entity<SongQueue>()
             .HasIndex(s => s.ChzzkUid);
@@ -155,6 +150,7 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.Property(e => e.RequiredRole).HasConversion<string>();
         });
         modelBuilder.Entity<UnifiedCommand>().HasIndex(c => new { c.ChzzkUid, c.Keyword }).IsUnique();
+        modelBuilder.Entity<UnifiedCommand>().HasIndex(c => new { c.ChzzkUid, c.TargetId });
 
         modelBuilder.Entity<Master_CommandCategory>(entity => {
             entity.ToTable("master_commandcategories");
@@ -229,6 +225,34 @@ public class AppDbContext : DbContext, IAppDbContext
                     Description = "현재 방송 공지", 
                     BadgeColor = "warning", 
                     QueryString = "METHOD:GetLiveNotice" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 6, 
+                    Keyword = "{연속출석일수}", 
+                    Description = "연속 출석한 일수", 
+                    BadgeColor = "success", 
+                    QueryString = "SELECT CAST(ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 7, 
+                    Keyword = "{누적출석일수}", 
+                    Description = "누적 출석한 횟수", 
+                    BadgeColor = "info", 
+                    QueryString = "SELECT CAST(AttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 8, 
+                    Keyword = "{마지막출석일}", 
+                    Description = "최근 출석 날짜", 
+                    BadgeColor = "secondary", 
+                    QueryString = "SELECT DATE_FORMAT(LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                },
+                new Master_DynamicVariable { 
+                    Id = 9, 
+                    Keyword = "{송리스트}", 
+                    Description = "현재 송리스트 활성화 여부", 
+                    BadgeColor = "warning", 
+                    QueryString = "METHOD:GetSonglistStatus" 
                 }
             );
         });
@@ -238,7 +262,6 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<StreamerProfile>().ToTable("streamerprofiles");
         modelBuilder.Entity<SongQueue>().ToTable("songqueues");
         modelBuilder.Entity<SystemSetting>().ToTable("systemsettings");
-        modelBuilder.Entity<StreamerCommand>().ToTable("streamercommands");
         modelBuilder.Entity<StreamerOmakaseItem>().ToTable("streameromakases");
         modelBuilder.Entity<AvatarSetting>().ToTable("avatarsettings");
         modelBuilder.Entity<ChzzkCategory>().ToTable("chzzkcategories");
@@ -262,11 +285,15 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<StreamerManager>().ToTable("streamermanagers");
         modelBuilder.Entity<SongBook>().ToTable("songbooks");
         modelBuilder.Entity<RouletteLog>().ToTable("roulettelogs");
+        modelBuilder.Entity<RouletteSpin>(entity => {
+            entity.ToTable("roulettespins");
+            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
+            entity.HasIndex(e => new { e.IsCompleted, e.ScheduledTime });
+        });
 
         // 🔐 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 자동 적용
         modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<SongQueue>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<StreamerCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<StreamerOmakaseItem>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<Roulette>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<PeriodicMessage>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
@@ -276,6 +303,7 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<RouletteLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<RouletteSpin>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<BroadcastSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
         modelBuilder.Entity<UnifiedCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
 

@@ -130,9 +130,9 @@ builder.Services.AddMediatR(cfg => {
 });
 builder.Services.AddSingleton<SongQueueState>();
 builder.Services.AddSingleton<RouletteState>();
+builder.Services.AddHostedService<MooldangBot.Application.Workers.RouletteResultWorker>(); // [v1.9.9] 룰렛 결과 전송 파수꾼 가동
 
-// 🛡️ 보안 및 권한 설정 등록
-builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
+// 🛡️ 보안 및 권한 설정 등록 (레거시 매니저 정책 제거됨)
 
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
@@ -186,14 +186,15 @@ builder.Services.AddAuthentication(options => {
     };
 });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("ChannelManager", policy =>
-    {
-        policy.RequireAuthenticatedUser(); // 🛡️ 익명 사용자는 정책 검사 전 401 Unauthorized 유도
-        policy.Requirements.Add(new ChannelManagerRequirement());
-    });
-});
+// 레거시 ChannelManager 정책 제거됨
+// builder.Services.AddAuthorization(options =>
+// {
+//     options.AddPolicy("ChannelManager", policy =>
+//     {
+//         policy.RequireAuthenticatedUser(); // 🛡️ 익명 사용자는 정책 검사 전 401 Unauthorized 유도
+//         policy.Requirements.Add(new ChannelManagerRequirement());
+//     });
+// });
 var app = builder.Build();
 
 // ==========================================

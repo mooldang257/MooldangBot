@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
-namespace MooldangBot.Application.Features.Commands.Strategies;
+namespace MooldangBot.Application.Features.Commands.Feature;
 
 /// <summary>
 /// [파로스의 선율]: 곡 신청(Song) 명령어를 처리하는 전략입니다.
@@ -18,7 +18,7 @@ public class SongRequestStrategy(
 {
     public string FeatureType => "SongRequest";
 
-    public async Task ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         // 1. [정수 추출]: 명령어 키워드 이후의 텍스트를 신청곡 명칭으로 인식
         string msg = notification.Message.Trim();
@@ -26,7 +26,7 @@ public class SongRequestStrategy(
         if (parts.Length < 2)
         {
             await botService.SendReplyChatAsync(notification.Profile, "신청곡 제목을 함께 입력해 주세요! (예: !신청 제목) 🎵", notification.SenderId, ct);
-            return;
+            return CommandExecutionResult.Failure("신청곡 제목 누락", shouldRefund: true);
         }
 
         string songTitle = parts[1];
@@ -44,7 +44,7 @@ public class SongRequestStrategy(
             if (activeSession == null)
             {
                 await botService.SendReplyChatAsync(notification.Profile, "현재 송리스트가 비활성화 상태입니다. 🔒", notification.SenderId, ct);
-                return;
+                return CommandExecutionResult.Failure("송리스트 비활성화 상태", shouldRefund: true);
             }
 
             // 2.2 곡 신청 큐에 저장
@@ -67,17 +67,20 @@ public class SongRequestStrategy(
 
             // {곡제목}은 수동 치환 후 나머지는 엔진에게 위임
             string processedReply = await dynamicEngine.ProcessMessageAsync(
-                responseTemplate.Replace("{곡제목}", songTitle),
+                responseTemplate.Replace("{곡제목}", songTitle, StringComparison.OrdinalIgnoreCase),
                 notification.Profile.ChzzkUid,
-                notification.SenderId
+                notification.SenderId,
+                notification.Username
             );
 
             await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            return CommandExecutionResult.Success();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, $"🔥 [SongRequestStrategy] 오류: {ex.Message}");
             await botService.SendReplyChatAsync(notification.Profile, "⚠️ 곡 신청 처리 중 서버 오류가 발생했습니다. 🌪️", notification.SenderId, ct);
+            return CommandExecutionResult.Failure("곡 신청 서버 오류", shouldRefund: true);
         }
     }
 }

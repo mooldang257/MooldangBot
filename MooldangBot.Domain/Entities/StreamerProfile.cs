@@ -33,6 +33,9 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(200)]
         public string? ApiClientSecret { get; set; }
 
+        [MaxLength(500)]
+        public string? ApiRedirectUrl { get; set; } // ⭐ 스트리머별 전용 앱 리다이렉트 URL
+
         // [추가] 2. 공지 메모
         public string? NoticeMemo { get; set; }
 
@@ -70,7 +73,9 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(200)]
         public string PointCheckReply { get; set; } = "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)";
 
-        // [추가] 스트리머 전용 커스텀 봇 계정 토큰 정보
+        // [추가] 스트리머 전용 커스텀 봇 계정 정보
+        public string? BotChzzkUid { get; set; }
+        public string? BotNickname { get; set; }
         public string? BotAccessToken { get; set; }
         public string? BotRefreshToken { get; set; }
         public DateTime? BotTokenExpiresAt { get; set; }

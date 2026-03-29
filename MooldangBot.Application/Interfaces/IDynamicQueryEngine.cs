@@ -13,7 +13,8 @@ namespace MooldangBot.Application.Interfaces
         /// <param name="message">원본 메시지 (예: "현재 포인트는 {포인트}입니다.")</param>
         /// <param name="streamerChzzkUid">현재 채널의 스트리머 ID</param>
         /// <param name="viewerUid">메시지를 보낸 시청자의 ID</param>
+        /// <param name="viewerName">메시지를 보낸 시청자의 닉네임 (선택 사항)</param>
         /// <returns>치환된 메시지</returns>
-        Task<string> ProcessMessageAsync(string message, string streamerChzzkUid, string viewerUid);
+        Task<string> ProcessMessageAsync(string message, string streamerChzzkUid, string viewerUid, string? viewerName = null);
     }
 }

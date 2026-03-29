@@ -106,6 +106,10 @@
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid white;
+            /* 💡 고해상도 모니터에서도 선명하게 보이도록 보정 */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .profile-name {
@@ -307,6 +311,7 @@
                 <img id="profile-img" src="" alt="Profile" class="profile-img" style="display: none;"
                     referrerpolicy="no-referrer">
                 <span id="profile-name" class="profile-name"></span>
+                <a href="/api/auth/logout" class="btn-logout" style="margin-left: 12px; font-size: 0.8rem; color: #ff4757; text-decoration: none; font-weight: 700; border: 1.5px solid #ff4757; padding: 2px 8px; border-radius: 12px; transition: all 0.2s;">로그아웃</a>
             </div>
         </div>
     </nav>
@@ -369,6 +374,15 @@
                 <div class="login-overlay">로그인이 필요합니다</div>
             </a>
 
+            <!-- 
+            <a href="#" class="menu-card" id="btn-bot-config">
+                <div class="menu-icon">🤖</div>
+                <h2 class="menu-title">봇 및 API 설정</h2>
+                <p class="menu-desc">스트리머 전용 치지직 API 앱 정보를 설정하고 전용 봇 계정을 연동합니다.</p>
+                <div class="login-overlay">로그인이 필요합니다</div>
+            </a> 
+            -->
+
         </section>
     </main>
 
@@ -388,8 +402,8 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const targetUid = urlParams.get('uid');
 
-                // 내 정보 불러오기 API 호출
-                const response = await fetch('/api/auth/me');
+                // 내 정보 불러오기 API 호출 (관리 모드 대응)
+                const response = await fetch(`/api/auth/me${targetUid ? `?uid=${targetUid}` : ''}`);
 
                 if (!response.ok) {
                     throw new Error("API 연동 오류");
@@ -411,18 +425,19 @@
                             profileName.innerHTML = `${data.channelName} <span style="font-size: 0.7em; opacity: 0.7; margin-left: 5px;">(관리 모드)</span>`;
                         }
 
-                        // 💡 이미지 태그가 있을 때만 처리하여 JS 오류 방지
+                        // 💡 프로필 이미지 표시 활성화
                         if (profileImg) {
                             profileImg.onerror = () => {
                                 profileImg.onerror = null;
-                                profileImg.style.display = 'none'; // 실패 시 숨김
+                                profileImg.style.display = 'none'; // 실패 시에만 숨김
                             };
 
-                            // 프로필 이미지가 있더라도 현재는 숨김 모드이므로 src만 설정하고 보이지 않게 유지
                             if (data.profileImageUrl) {
                                 profileImg.src = `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}`;
+                                profileImg.style.display = 'block'; // 이미지 로드 시 표시
+                            } else {
+                                profileImg.style.display = 'none';
                             }
-                            profileImg.style.display = 'none';
                         }
 
                         // 💡 [추가] 로고 링크에도 UID 파라미터 유지 (메인으로 돌아와도 관리 모드 유지)
@@ -444,6 +459,8 @@
                         if (btnSongbook) btnSongbook.href = `/admin_songbook.html?uid=${effectiveUid}`;
                         const btnOverlay = document.getElementById('btn-overlay');
                         if (btnOverlay) btnOverlay.href = `/overlay_manager/${effectiveUid}`;
+                        // const btnBotConfig = document.getElementById('btn-bot-config');
+                        // if (btnBotConfig) btnBotConfig.href = `/bot_settings.html?uid=${effectiveUid}`;
 
                         // 물댕봇 토글 연동 시작
                         fetchBotStatus();
@@ -451,12 +468,15 @@
                         // 로그인 오버레이 제거 (클릭 가능해짐)
                         overlays.forEach(overlay => overlay.style.display = 'none');
                     } else {
-                        // 로그인만 되고 치지직 연동이 안 된 경우, 자동으로 치지직 연동으로 이동
-                        window.location.href = '/api/auth/chzzk-login';
+                        // 로그인만 되고 치지직 연동이 안 된 경우, 수동으로 버튼 노출
+                        loginBtn.textContent = '치지직 연동하기';
+                        loginBtn.style.display = 'block';
+                        loadingIndicator.style.display = 'none';
                     }
                 } else {
-                    // 비로그인 상태
+                    // 비로그인 상태 (최초 방문자 포함)
                     loginBtn.style.display = 'block';
+                    loadingIndicator.style.display = 'none';
                 }
             } catch (error) {
                 console.error("인증 정보를 불러오는데 실패했습니다.", error);
