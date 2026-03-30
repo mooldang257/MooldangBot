@@ -12,8 +12,8 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260327153738_AddMasterCommandTables_v12")]
-    partial class AddMasterCommandTables_v12
+    [Migration("20260330125439_InitialCreate_v1_0")]
+    partial class InitialCreate_v1_0
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -159,23 +159,16 @@ namespace MooldangBot.Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            DisplayName = "시스템 고정",
-                            Name = "Fixed",
+                            DisplayName = "시스템메세지",
+                            Name = "System",
                             SortOrder = 2
                         },
                         new
                         {
                             Id = 3,
-                            DisplayName = "후원 연동",
-                            Name = "Donation",
+                            DisplayName = "기능",
+                            Name = "Feature",
                             SortOrder = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            DisplayName = "포인트 소모",
-                            Name = "Point",
-                            SortOrder = 4
                         });
                 });
 
@@ -233,60 +226,205 @@ namespace MooldangBot.Infrastructure.Migrations
                             Id = 2,
                             CategoryId = 2,
                             DefaultCost = 0,
-                            DisplayName = "출석 체크",
+                            DisplayName = "공지",
                             IsEnabled = true,
-                            RequiredRole = "Viewer",
-                            TypeName = "Attendance"
+                            RequiredRole = "Manager",
+                            TypeName = "Notice"
                         },
                         new
                         {
                             Id = 3,
                             CategoryId = 2,
                             DefaultCost = 0,
-                            DisplayName = "포인트 확인",
+                            DisplayName = "방제",
                             IsEnabled = true,
-                            RequiredRole = "Viewer",
-                            TypeName = "PointCheck"
+                            RequiredRole = "Manager",
+                            TypeName = "Title"
                         },
                         new
                         {
                             Id = 4,
-                            CategoryId = 3,
-                            DefaultCost = 1000,
-                            DisplayName = "노래 신청",
+                            CategoryId = 2,
+                            DefaultCost = 0,
+                            DisplayName = "카테고리",
                             IsEnabled = true,
-                            RequiredRole = "Viewer",
-                            TypeName = "Song"
+                            RequiredRole = "Manager",
+                            TypeName = "Category"
                         },
                         new
                         {
                             Id = 5,
+                            CategoryId = 2,
+                            DefaultCost = 0,
+                            DisplayName = "송리스트",
+                            IsEnabled = true,
+                            RequiredRole = "Manager",
+                            TypeName = "SonglistToggle"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CategoryId = 3,
+                            DefaultCost = 1000,
+                            DisplayName = "노래신청",
+                            IsEnabled = true,
+                            RequiredRole = "Viewer",
+                            TypeName = "SongRequest"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CategoryId = 3,
+                            DefaultCost = 1000,
+                            DisplayName = "오마카세",
+                            IsEnabled = true,
+                            RequiredRole = "Viewer",
+                            TypeName = "Omakase"
+                        },
+                        new
+                        {
+                            Id = 8,
                             CategoryId = 3,
                             DefaultCost = 500,
-                            DisplayName = "치즈 룰렛",
+                            DisplayName = "룰렛",
                             IsEnabled = true,
                             RequiredRole = "Viewer",
                             TypeName = "Roulette"
                         },
                         new
                         {
-                            Id = 6,
-                            CategoryId = 4,
-                            DefaultCost = 100,
-                            DisplayName = "포인트 룰렛",
+                            Id = 9,
+                            CategoryId = 3,
+                            DefaultCost = 0,
+                            DisplayName = "채팅포인트",
                             IsEnabled = true,
                             RequiredRole = "Viewer",
-                            TypeName = "PointRoulette"
+                            TypeName = "ChatPoint"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CategoryId = 2,
+                            DefaultCost = 0,
+                            DisplayName = "시스템 응답",
+                            IsEnabled = true,
+                            RequiredRole = "Manager",
+                            TypeName = "SystemResponse"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CategoryId = 3,
+                            DefaultCost = 1000,
+                            DisplayName = "AI 답변",
+                            IsEnabled = true,
+                            RequiredRole = "Viewer",
+                            TypeName = "AI"
+                        });
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Master_DynamicVariable", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BadgeColor")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Keyword")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .UseCollation("utf8mb4_unicode_ci");
+
+                    b.Property<string>("QueryString")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("master_dynamicvariables", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BadgeColor = "primary",
+                            Description = "보유 포인트",
+                            Keyword = "{포인트}",
+                            QueryString = "SELECT CAST(Point AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BadgeColor = "success",
+                            Description = "시청자 닉네임",
+                            Keyword = "{닉네임}",
+                            QueryString = "SELECT ViewerName FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BadgeColor = "secondary",
+                            Description = "현재 방송 제목",
+                            Keyword = "{방제}",
+                            QueryString = "METHOD:GetLiveTitle"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BadgeColor = "info",
+                            Description = "현재 방송 카테고리",
+                            Keyword = "{카테고리}",
+                            QueryString = "METHOD:GetLiveCategory"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            BadgeColor = "warning",
+                            Description = "현재 방송 공지",
+                            Keyword = "{공지}",
+                            QueryString = "METHOD:GetLiveNotice"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            BadgeColor = "success",
+                            Description = "연속 출석한 일수",
+                            Keyword = "{연속출석일수}",
+                            QueryString = "SELECT CAST(ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
                         },
                         new
                         {
                             Id = 7,
-                            CategoryId = 1,
-                            DefaultCost = 0,
-                            DisplayName = "송리스트 활성/비활성",
-                            IsEnabled = true,
-                            RequiredRole = "Manager",
-                            TypeName = "SonglistToggle"
+                            BadgeColor = "info",
+                            Description = "누적 출석한 횟수",
+                            Keyword = "{누적출석일수}",
+                            QueryString = "SELECT CAST(AttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            BadgeColor = "secondary",
+                            Description = "최근 출석 날짜",
+                            Keyword = "{마지막출석일}",
+                            QueryString = "SELECT DATE_FORMAT(LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            BadgeColor = "warning",
+                            Description = "현재 송리스트 활성화 여부",
+                            Keyword = "{송리스트}",
+                            QueryString = "METHOD:GetSonglistStatus"
                         });
                 });
 
@@ -586,30 +724,11 @@ namespace MooldangBot.Infrastructure.Migrations
                         .UseCollation("utf8mb4_unicode_ci")
                         .HasAnnotation("Relational:JsonPropertyName", "chzzkUid");
 
-                    b.Property<string>("Command")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci")
-                        .HasAnnotation("Relational:JsonPropertyName", "command");
-
-                    b.Property<int>("CostPerSpin")
-                        .HasColumnType("int")
-                        .HasAnnotation("Relational:JsonPropertyName", "costPerSpin");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)")
-                        .HasAnnotation("Relational:JsonPropertyName", "isActive");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "name");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int")
-                        .HasAnnotation("Relational:JsonPropertyName", "type");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -728,6 +847,54 @@ namespace MooldangBot.Infrastructure.Migrations
                         .IsDescending(false, false, true);
 
                     b.ToTable("roulettelogs", (string)null);
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ChzzkUid")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .UseCollation("utf8mb4_unicode_ci");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("ResultsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("RouletteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ViewerNickname")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ViewerUid")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsCompleted", "ScheduledTime");
+
+                    b.ToTable("roulettespins", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
@@ -889,54 +1056,6 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("songlistsessions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerCommand", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ActionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
-                    b.Property<string>("CommandKeyword")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RequiredRole")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChzzkUid");
-
-                    b.HasIndex("ChzzkUid", "CommandKeyword")
-                        .IsUnique();
-
-                    b.ToTable("streamercommands", (string)null);
-                });
-
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
                 {
                     b.Property<int>("Id")
@@ -986,12 +1105,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("varchar(50)")
                         .UseCollation("utf8mb4_unicode_ci");
 
-                    b.Property<string>("Command")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<int>("Count")
                         .IsConcurrencyToken()
                         .HasColumnType("int");
@@ -1000,14 +1113,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1035,6 +1140,10 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<string>("ApiRedirectUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
                     b.Property<string>("AttendanceCommands")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1046,6 +1155,12 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.Property<string>("BotAccessToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BotChzzkUid")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BotNickname")
                         .HasColumnType("longtext");
 
                     b.Property<string>("BotRefreshToken")
@@ -1220,6 +1335,8 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("ChzzkUid", "Keyword")
                         .IsUnique();
+
+                    b.HasIndex("ChzzkUid", "TargetId");
 
                     b.ToTable("unifiedcommands", (string)null);
                 });
