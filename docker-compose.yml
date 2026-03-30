@@ -45,8 +45,10 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=db
+      - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
+      - DB_HOST=db
+      - REDIS_URL=redis:6379
     entrypoint: ./efbundle
     depends_on:
       db:

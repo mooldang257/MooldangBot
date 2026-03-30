@@ -14,9 +14,10 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        // 1. .env 파일 로드 (공용 경로 탐색)
+        // 1. [파로스의 자각]: .env 파일 탐색 (루트 폴더 포함)
         string[] potentialPaths = { 
             ".env", 
+            "../.env", // ⬅️ 루트 탐색 추가
             Path.Combine(Directory.GetCurrentDirectory(), ".env"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env"),
             Path.Combine(Directory.GetCurrentDirectory(), "MooldangBot.Api", ".env"),
@@ -31,46 +32,63 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         if (foundPath != null)
         {
+            // .env 파일을 직접 파싱하거나 Env.Load를 사용합니다.
             Env.Load(foundPath);
         }
 
-        // 2. 환경 변수 기반 설정 구성
-        var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Dev";
-        var prefix = envName.ToUpper().Replace("DEVELOPMENT", "DEV") + "_";
+        // 2. [오시리스의 저울]: 유연한 연결 문자열 추출 (환경 변수 우선)
+        var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        var prefix = envName.ToUpper().Replace("DEVELOPMENT", "DEV").Replace("PRODUCTION", "PROD") + "_";
         
-        // [파로스의 자각]: 연결 문자열 추출 (대소문자 무시 검색을 위해 전체 환경변수 순회)
-        var allEnv = Environment.GetEnvironmentVariables();
         string? connectionString = null;
+        var allEnv = Environment.GetEnvironmentVariables();
 
-        foreach (string key in allEnv.Keys)
+        // 탐색 우선순위 정의
+        string[] connectionKeys = {
+            $"{prefix}ConnectionStrings__DefaultConnection",
+            $"{prefix}CONNECTIONSTRINGS__DEFAULT_CONNECTION",
+            "ConnectionStrings__DefaultConnection",
+            "CONNECTIONSTRINGS__DEFAULT_CONNECTION",
+            "DefaultConnection",
+            "DEFAULT_CONNECTION"
+        };
+
+        foreach (var key in connectionKeys)
         {
-            if (key.Equals($"{prefix}CONNECTIONSTRINGS__DEFAULT_CONNECTION", StringComparison.OrdinalIgnoreCase) ||
-                key.Equals("CONNECTIONSTRINGS__DEFAULT_CONNECTION", StringComparison.OrdinalIgnoreCase) ||
-                key.Equals("DefaultConnection", StringComparison.OrdinalIgnoreCase))
+            foreach (string envKey in allEnv.Keys)
             {
-                connectionString = allEnv[key]?.ToString();
-                break;
+                if (envKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    connectionString = allEnv[envKey]?.ToString();
+                    break;
+                }
+            }
+            if (!string.IsNullOrEmpty(connectionString)) break;
+        }
+
+        // 3. [방어적 프로그래밍]: 따옴표(") 제거 및 DB_HOST 치환
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            // .env에서 읽어올 때 포함될 수 있는 중복 따옴표 제거
+            connectionString = connectionString.Trim('\"');
+            
+            var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+            if (!string.IsNullOrEmpty(dbHost) && (connectionString.Contains("Server=localhost") || connectionString.Contains("Server=127.0.0.1")))
+            {
+                connectionString = connectionString
+                    .Replace("Server=localhost", $"Server={dbHost}", StringComparison.OrdinalIgnoreCase)
+                    .Replace("Server=127.0.0.1", $"Server={dbHost}", StringComparison.OrdinalIgnoreCase);
             }
         }
-
-        if (string.IsNullOrEmpty(connectionString))
+        else
         {
-            // 폴백 (하드코딩 방지: .env 파일이 없으면 최후의 수단으로만 사용)
-            connectionString = "Server=127.0.0.1;Database=MooldangBot;User=root;Password=@enjoy1004;";
-        }
-
-        // 3. [오시리스의 중재]: Docker 환경(DB_HOST) 감지 시 서버 주소 자동 치환
-        var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
-        if (!string.IsNullOrEmpty(dbHost) && connectionString.Contains("Server=127.0.0.1", StringComparison.OrdinalIgnoreCase))
-        {
-            connectionString = connectionString.Replace("Server=127.0.0.1", $"Server={dbHost}", StringComparison.OrdinalIgnoreCase);
+            // 폴백 (하드코딩 방지: 가급적 .env를 참조하게 유도)
+            connectionString = "Server=db;Database=MooldangBot;User=root;Password=@enjoy1004;";
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        // Design-Time(빌드 시점)에는 실제 DB에 연결할 수 없으므로 AutoDetect 대신 명시적인 버전을 사용합니다.
         optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));
 
-        // Design-time에는 인증 정보가 필요 없으므로 더미 세션 제공
         return new AppDbContext(optionsBuilder.Options, new DesignTimeUserSession());
     }
 
