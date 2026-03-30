@@ -59,6 +59,13 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             connectionString = "Server=127.0.0.1;Database=MooldangBot;User=root;Password=@enjoy1004;";
         }
 
+        // 3. [오시리스의 중재]: Docker 환경(DB_HOST) 감지 시 서버 주소 자동 치환
+        var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+        if (!string.IsNullOrEmpty(dbHost) && connectionString.Contains("Server=127.0.0.1", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = connectionString.Replace("Server=127.0.0.1", $"Server={dbHost}", StringComparison.OrdinalIgnoreCase);
+        }
+
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         // Design-Time(빌드 시점)에는 실제 DB에 연결할 수 없으므로 AutoDetect 대신 명시적인 버전을 사용합니다.
         optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));

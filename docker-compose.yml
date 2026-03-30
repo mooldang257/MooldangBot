@@ -44,6 +44,9 @@ services:
       disable: true
     env_file:
       - .env
+    environment:
+      - DB_HOST=db
+      - ASPNETCORE_ENVIRONMENT=Production
     entrypoint: ./efbundle
     depends_on:
       db:
