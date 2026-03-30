@@ -33,13 +33,14 @@ services:
       timeout: 5s
       retries: 5
 
-  # ⭐ [자동 마이그레이션] 배포 시 자동으로 DB를 업데이트하는 서비스
   migration:
     build: 
       context: .
       dockerfile: Dockerfile
     container_name: mooldang-migration
-    entrypoint: ./efbundle --connection "Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};"
+    env_file:
+      - .env
+    entrypoint: ./efbundle
     depends_on:
       db:
         condition: service_healthy
