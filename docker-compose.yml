@@ -50,6 +50,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DB_HOST=db
       - REDIS_URL=redis:6379
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
     entrypoint: ./efbundle
     depends_on:
       db:
@@ -70,6 +73,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DB_HOST=db
       - REDIS_URL=redis:6379
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
