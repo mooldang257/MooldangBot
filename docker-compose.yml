@@ -67,6 +67,4 @@ services:
         condition: service_started
     volumes:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
-
-volumes:
-  # 바인드 마운트를 사용하므로 명시적인 볼륨 선언은 최소화합니다.
+
