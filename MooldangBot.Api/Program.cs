@@ -28,6 +28,7 @@ var envPath = args.FirstOrDefault(a => a.StartsWith("--env="))?.Split('=')[1] ??
 // [오시리스의 규율]: 다양한 환경에서 .env를 확실히 찾고 강제로 로드합니다.
 string[] potentialPaths = { 
     envPath, 
+    "../" + envPath,
     Path.Combine(Directory.GetCurrentDirectory(), envPath),
     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, envPath),
     Path.Combine(Directory.GetCurrentDirectory(), "MooldangBot.Api", envPath),

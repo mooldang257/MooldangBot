@@ -17,6 +17,7 @@ string Mask(string s) => s.Length > 4 ? s[..4] + "****" : "****";
 // 1. [파로스의 자각]: .env 파일 탐색
 string[] potentialPaths = { 
     ".env", 
+    "../.env",
     Path.Combine(Directory.GetCurrentDirectory(), ".env"),
     Path.Combine(Directory.GetCurrentDirectory(), "MooldangBot.Api", ".env"),
     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "MooldangBot.Api", ".env"),
