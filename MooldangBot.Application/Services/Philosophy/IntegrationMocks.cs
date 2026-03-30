@@ -22,12 +22,12 @@ public class LlmServiceMock(ILogger<LlmServiceMock> logger) : ILlmService
 /// </summary>
 public class ChzzkChatServiceMock(IDynamicQueryEngine dynamicEngine, ILogger<ChzzkChatServiceMock> logger) : IChzzkChatService
 {
-    public async Task SendMessageAsync(string chzzkUid, string message, string viewerUid)
+    public async Task SendMessageAsync(string chzzkUid, string message, string viewerUid, System.Threading.CancellationToken ct = default)
     {
         // 🏷️ [v1.9.2] 실제 환경과 동일한 응답 속도 시뮬레이션을 위해 0.1초 지연 추가
-        await Task.Delay(100);
+        await Task.Delay(100, ct);
 
-        // 🏷️ [v1.9] 동적 쿼리 엔진 적용
+        // 🏷️ [v4.0.0] 동적 쿼리 엔진 적용 및 CancellationToken 전파
         string processedMessage = await dynamicEngine.ProcessMessageAsync(message, chzzkUid, viewerUid);
         
         logger.LogInformation($"[치지직 전송 Mock] To: {chzzkUid}, Message: {processedMessage}");

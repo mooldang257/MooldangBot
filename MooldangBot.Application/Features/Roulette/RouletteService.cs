@@ -53,28 +53,28 @@ public class RouletteService : IRouletteService
 
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null)
+    public async Task<RouletteItem?> SpinRouletteAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null, CancellationToken ct = default)
     {
-        var results = await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 1, viewerNickname);
+        var results = await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 1, viewerNickname, ct);
         return results.FirstOrDefault();
     }
 
-    public async Task<List<RouletteItem>> SpinRoulette10xAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null)
+    public async Task<List<RouletteItem>> SpinRoulette10xAsync(string chzzkUid, int rouletteId, string viewerUid, string? viewerNickname = null, CancellationToken ct = default)
     {
-        return await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 10, viewerNickname);
+        return await SpinRouletteMultiAsync(chzzkUid, rouletteId, viewerUid, 10, viewerNickname, ct);
     }
 
-    public async Task<List<RouletteItem>> SpinRouletteMultiAsync(string chzzkUid, int rouletteId, string viewerUid, int count, string? viewerNickname = null)
+    public async Task<List<RouletteItem>> SpinRouletteMultiAsync(string chzzkUid, int rouletteId, string viewerUid, int count, string? viewerNickname = null, CancellationToken ct = default)
     {
         if (count <= 0) return new List<RouletteItem>();
 
-        await _semaphore.WaitAsync();
-        using var transaction = await _db.Database.BeginTransactionAsync();
+        await _semaphore.WaitAsync(ct);
+        using var transaction = await _db.Database.BeginTransactionAsync(ct);
         try
         {
             var roulette = await _db.Roulettes
                 .Include(r => r.Items)
-                .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid);
+                .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid, ct);
 
             if (roulette == null) return new List<RouletteItem>();
 
@@ -82,7 +82,7 @@ public class RouletteService : IRouletteService
             if (!activeItems.Any())
             {
                 _logger.LogWarning($"🎰 [룰렛 실행 실패] {rouletteId}번에 활성화된 항목이 없습니다.");
-                await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!", viewerUid);
+                await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!", viewerUid, ct);
                 return new List<RouletteItem>();
             }
 
@@ -110,8 +110,8 @@ public class RouletteService : IRouletteService
             }
 
             _db.RouletteLogs.AddRange(logs);
-            await _db.SaveChangesAsync();
-            await transaction.CommitAsync();
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
 
             var summary = results.GroupBy(r => r.ItemName)
                 .Select(g => {
@@ -142,7 +142,7 @@ public class RouletteService : IRouletteService
                 CreatedAt = DateTime.Now
             };
             _db.RouletteSpins.Add(spin);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
 
             var response = new SpinRouletteResponse(
                 spinId,
@@ -156,7 +156,7 @@ public class RouletteService : IRouletteService
             // [v1.9.8] 즉시 시작 메세지 전송 (동적 횟수 표기)
             string startInfo = count > 1 ? $"{count}연차를" : "룰렛을";
             string startMsg = $"🎰 [{viewerNickname ?? "비회원"}]님이 {roulette.Name} {startInfo} 돌립니다! 결과는 잠시 후...";
-            await SendChatMessageAsync(chzzkUid, startMsg, viewerUid);
+            await SendChatMessageAsync(chzzkUid, startMsg, viewerUid, ct);
 
             await _overlayService.NotifyRouletteResultAsync(chzzkUid, response);
 
@@ -169,7 +169,7 @@ public class RouletteService : IRouletteService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(ct);
             _logger.LogError(ex, $"🎰 [룰렛 {count}회 실행 중 오류 발생] 트랜잭션 롤백됨.");
             throw;
         }
@@ -196,21 +196,21 @@ public class RouletteService : IRouletteService
         return items.Last();
     }
 
-    public async Task<bool> CompleteRouletteAsync(string spinId)
+    public async Task<bool> CompleteRouletteAsync(string spinId, CancellationToken ct = default)
     {
         try
         {
             // [v1.9.9] 오시리스의 보존: DB에서 실행 정보를 조회하여 즉시 완료 처리 (오버레이 콜백용)
             var spin = await _db.RouletteSpins
-                .FirstOrDefaultAsync(s => s.Id == spinId && !s.IsCompleted);
+                .FirstOrDefaultAsync(s => s.Id == spinId && !s.IsCompleted, ct);
 
             if (spin == null) return false;
 
             // 결과 전송
-            await SendDelayedChatResultAsync(spin.ChzzkUid, spin.RouletteId, spin.Summary, spin.ViewerUid, spin.ViewerNickname);
+            await SendDelayedChatResultAsync(spin.ChzzkUid, spin.RouletteId, spin.Summary, spin.ViewerUid, spin.ViewerNickname, ct);
 
             spin.IsCompleted = true;
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
 
             _logger.LogInformation($"✅ [영속성 체크포인트] 룰렛 {spinId} 오버레이 시그널에 의해 완료되었습니다.");
             return true;
@@ -222,16 +222,17 @@ public class RouletteService : IRouletteService
         }
     }
 
-    private async Task SendChatMessageAsync(string chzzkUid, string message, string? viewerUid = null)
+    private async Task SendChatMessageAsync(string chzzkUid, string message, string? viewerUid = null, CancellationToken ct = default)
     {
         // 상위 호출자(SpinRouletteMultiAsync)의 _db가 살아있는 동안만 유효함
-        var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
         if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return;
 
-        await _botService.SendReplyChatAsync(streamer, message, viewerUid ?? "", CancellationToken.None);
+        // [v4.0.0] CancellationToken.None 제거 및 전달받은 토큰 전파
+        await _botService.SendReplyChatAsync(streamer, message, viewerUid ?? "", ct);
     }
 
-    public async Task SendDelayedChatResultAsync(string chzzkUid, int rouletteId, string itemName, string viewerUid, string? viewerNickname)
+    public async Task SendDelayedChatResultAsync(string chzzkUid, int rouletteId, string itemName, string viewerUid, string? viewerNickname, CancellationToken ct = default)
     {
         try
         {
@@ -240,15 +241,16 @@ public class RouletteService : IRouletteService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
 
-            var roulette = await db.Roulettes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rouletteId);
+            var roulette = await db.Roulettes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rouletteId, ct);
             string rouletteName = roulette?.Name ?? "룰렛";
             string nickPrefix = string.IsNullOrEmpty(viewerNickname) ? "관리자" : viewerNickname;
             string message = $"{nickPrefix}({rouletteName})> 당첨 결과: [{itemName}]";
 
-            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
             if (streamer != null && !string.IsNullOrEmpty(streamer.ChzzkAccessToken))
             {
-                await botService.SendReplyChatAsync(streamer, message, viewerUid, CancellationToken.None);
+                // [v4.0.0] CancellationToken.None 제거 및 전달받은 토큰 전파
+                await botService.SendReplyChatAsync(streamer, message, viewerUid, ct);
             }
         }
         catch (Exception ex)

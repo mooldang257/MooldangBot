@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -6,7 +7,7 @@ namespace MooldangBot.Application.Interfaces;
 /// <summary>
 /// [끊기지 않는 소통]: 치지직 WebSocket 채팅 서버와의 실제 통신을 담당하는 저수준 인터페이스입니다.
 /// </summary>
-public interface IChzzkChatClient
+public interface IChzzkChatClient : IAsyncDisposable
 {
     /// <summary>
     /// [파동의 정렬]: 분산 환경에서 인스턴스 인덱스를 자동으로 할당받고 시스템을 초기화합니다.

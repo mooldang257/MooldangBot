@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
@@ -16,8 +17,39 @@ namespace MooldangBot.Application.Services.Philosophy;
 /// <summary>
 /// [오시리스의 기록관]: 실시간 채팅 데이터를 고속 집계하고 세션을 관리하는 실전 구현체입니다.
 /// </summary>
-public partial class BroadcastScribe(IServiceScopeFactory scopeFactory) : IBroadcastScribe
+public partial class BroadcastScribe : IBroadcastScribe
 {
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<BroadcastScribe> _logger;
+
+    public BroadcastScribe(IServiceScopeFactory scopeFactory, IHostApplicationLifetime appLifetime, ILogger<BroadcastScribe> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+        
+        // [v4.0.0] Graceful Shutdown: 서버 종료 신호 감지 시 메모리 데이터 플러시 등록
+        appLifetime.ApplicationStopping.Register(OnShutdown);
+    }
+
+    private void OnShutdown()
+    {
+        _logger.LogInformation("⚠️ [오시리스의 종언] 서버 종료 신호를 감지했습니다. 활성 세션 데이터를 플러시합니다...");
+        
+        var activeChannels = _activeStats.Keys.ToList();
+        foreach (var chzzkUid in activeChannels)
+        {
+            try
+            {
+                // 종료 시점이므로 동기적으로 대기하여 완료를 보장함
+                FinalizeSessionAsync(chzzkUid).GetAwaiter().GetResult();
+                _logger.LogInformation($"✅ [세션 보존] {chzzkUid} 채널의 데이터가 안전하게 기록되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ [세션 보존 실패] {chzzkUid} 채널 플러시 중 오류 발생");
+            }
+        }
+    }
     // [기록관의 책상]: 메모리 내 실시간 집계 공간 (ChzzkUid -> Statistics)
     private static readonly ConcurrentDictionary<string, SessionStats> _activeStats = new();
 
@@ -67,7 +99,7 @@ public partial class BroadcastScribe(IServiceScopeFactory scopeFactory) : IBroad
     public async Task<int> HeartbeatAsync(string chzzkUid)
     {
         // [캡티브 의존성 해결]: 싱글톤에서 Scoped DB 컨텍스트 안전하게 사용
-        using var scope = scopeFactory.CreateScope();
+        using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var session = await db.BroadcastSessions
@@ -100,7 +132,7 @@ public partial class BroadcastScribe(IServiceScopeFactory scopeFactory) : IBroad
 
     public async Task<object?> FinalizeSessionAsync(string chzzkUid)
     {
-        using var scope = scopeFactory.CreateScope();
+        using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var session = await db.BroadcastSessions
@@ -141,7 +173,7 @@ public partial class BroadcastScribe(IServiceScopeFactory scopeFactory) : IBroad
 
         try
         {
-            using var scope = scopeFactory.CreateScope();
+            using var scope = _scopeFactory.CreateScope();
             var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
             
             bool isLive = await chzzkApi.IsLiveAsync(chzzkUid);
@@ -151,7 +183,7 @@ public partial class BroadcastScribe(IServiceScopeFactory scopeFactory) : IBroad
                 int sessionId = await HeartbeatAsync(chzzkUid);
                 
                 // [v2.3.4] 로그 강화: 임시 스코프를 통해 로거 확보
-                using var logScope = scopeFactory.CreateScope();
+                using var logScope = _scopeFactory.CreateScope();
                 var logger = logScope.ServiceProvider.GetRequiredService<ILogger<BroadcastScribe>>();
                 logger.LogInformation($"✅ [채팅 트리거 성공] {chzzkUid} 채널 라이브 확인. 새 세션(ID: {sessionId})이 생성되었습니다.");
 

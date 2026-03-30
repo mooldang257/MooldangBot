@@ -13,7 +13,7 @@ public class ChzzkChatService(
     IChzzkBotService botService,
     IServiceScopeFactory scopeFactory) : IChzzkChatService
 {
-    public async Task SendMessageAsync(string chzzkUid, string message, string viewerUid)
+    public async Task SendMessageAsync(string chzzkUid, string message, string viewerUid, System.Threading.CancellationToken ct = default)
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -21,12 +21,12 @@ public class ChzzkChatService(
         // 최신 스트리머 프로필 로드 (영속성 보장 및 격리된 상태 유지)
         var profile = await db.StreamerProfiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
 
         if (profile != null)
         {
-            // [v2.1.2] IChzzkBotService를 통해 실제 채팅 전송 (접두어 및 글자수 제한 자동 처리)
-            await botService.SendReplyChatAsync(profile, message, viewerUid, System.Threading.CancellationToken.None);
+            // [v4.0.0] CancellationToken.None 제거 및 전달받은 토큰 전파
+            await botService.SendReplyChatAsync(profile, message, viewerUid, ct);
         }
     }
 }

@@ -2,37 +2,27 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:8.0
+    image: mariadb:10.11
+    container_name: mooldang-db
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - ${DB_DATA_PATH}:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
+    container_name: mooldang-redis
     restart: always
     ports:
       - "6379:6379"
@@ -44,14 +34,20 @@ services:
 
   # ⭐ [자동 마이그레이션] 배포 시 자동으로 DB를 업데이트하는 서비스
   migration:
-    build: .
-    entrypoint: ./efbundle --connection "Server=db;Database=${DB_NAME};Uid=${DB_USER};Pwd=${DB_PASSWORD};"
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: mooldang-migration
+    entrypoint: ./efbundle --connection "Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};"
     depends_on:
       db:
         condition: service_healthy
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mooldang-app
     restart: always
     ports:
       - "8080:8080"
@@ -61,30 +57,16 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Production
       - DB_HOST=db
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_URL=redis:6379
-      - RABBITMQ_HOST=rabbitmq
-      - AUTH_COOKIE_NAME=mooldang_bot_session
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - SHARD_INDEX=${SHARD_INDEX:-0}
-      - SHARD_COUNT=${SHARD_COUNT:-4}
-    deploy:
-      replicas: 4
-
     depends_on:
       db:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
       redis:
         condition: service_healthy
       migration:
         condition: service_started
     volumes:
-      - avatar_data:/app/wwwroot/images/avatars
+      - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
 
 volumes:
-  db_data:
-  avatar_data:
+  # 바인드 마운트를 사용하므로 명시적인 볼륨 선언은 최소화합니다.

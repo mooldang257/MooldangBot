@@ -1,42 +1,44 @@
 #!/bin/bash
 
 # ---------------------------------------------------------
-# 🌊 [물댕봇] 리눅스 자동 배포 스크립트 (deploy.sh)
+# 🌊 [물댕봇] 서버 배포 고도화 스크립트 (deploy.sh)
 # ---------------------------------------------------------
 
-# 색상 정의
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${GREEN}🚀 물댕봇 서버 배포를 시작합니다...${NC}"
+echo -e "${GREEN}🚀 물댕봇 서버 배포 및 최적화를 시작합니다...${NC}"
 
-# 1. 최신 소스 코드 다운로드
-echo -e "${GREEN}📥 Git Pull: 최신 소스를 가져오는 중...${NC}"
-git pull origin main
-
-# 2. .env 파일 존재 여부 확인 (보안 체크)
+# 1. 환경 변수 체크
 if [ ! -f .env ]; then
-    echo -e "${RED}❌ 오류: .env 파일이 존재하지 않습니다.${NC}"
-    echo "appsettings.json을 참고하여 .env 파일을 먼저 생성해주세요."
+    echo -e "${RED}❌ 오류: .env 파일이 없습니다. .env.sample을 복사하여 먼저 생성해주세요.${NC}"
     exit 1
 fi
 
-# 3. 기존 컨테이너 중지 및 최신 이미지 빌드/실행
-echo -e "${GREEN}🛠️ Docker: 빌드 및 컨테이너 재가동 중...${NC}"
+# 2. 소스 코드 동기화
+echo -e "${GREEN}📥 Git: 최신 소스 코드를 동기화 중...${NC}"
+git pull
+
+# 3. 사전 빌드 검사 (로컬 dotnet 설치 시)
+if command -v dotnet &> /dev/null; then
+    echo -e "${GREEN}🛠️ Build Check: 컴파일 오류 여부를 사전에 확인합니다...${NC}"
+    dotnet build -c Release
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ 빌드 오류가 발생하여 배포를 중단합니다.${NC}"
+        exit 1
+    fi
+fi
+
+# 4. 컨테이너 재가동
+echo -e "${GREEN}🐳 Docker: 컨테이너 빌드 및 백그라운드 실행 중...${NC}"
 docker-compose down
 docker-compose up -d --build
 
-# 4. DB 마이그레이션 결과 확인
-echo -e "${GREEN}🔍 DB Migration: 마이그레이션 상태 확인 중...${NC}"
-docker-compose logs -f migration | grep -m 1 "Done"
-
-# 5. DB 시딩 및 명령어 정문화 (신규)
-echo -e "${GREEN}🌱 DB Seeding: 필수 데이터 및 명령어 보정 중...${NC}"
-# 컨테이너 환경에서 실행하거나 호스트에서 dotnet이 있을 경우 실행
-dotnet run --project MooldangBot.Cli/MooldangBot.Cli.csproj
-
-# 5. 최종 상태 보고
-echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
-echo "현재 가동 중인 컨테이너 목록:"
+# 5. 상태 모니터링
+echo -e "${GREEN}🔍 Health Check: 서비스 가동 상태를 확인합니다...${NC}"
+sleep 5
 docker-compose ps
+
+echo -e "${GREEN}✅ 배포가 성공적으로 완료되었습니다!${NC}"
+echo "로그 확인: docker-compose logs -f app"

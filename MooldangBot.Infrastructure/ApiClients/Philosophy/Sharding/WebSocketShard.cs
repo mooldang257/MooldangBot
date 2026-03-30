@@ -11,14 +11,14 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 using Websocket.Client;
+using System.Linq;
 
 namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
 
 /// <summary>
 /// [파동의 분할]: 전체 WebSocket 연결 중 일부(Shard)를 책임지고 관리하는 심장 조각입니다.
-/// Websocket.Client 라이브러리를 통해 자동 재연결 및 루프 관리를 수행합니다.
 /// </summary>
-public class WebSocketShard : IWebSocketShard, IDisposable
+public class WebSocketShard : IWebSocketShard
 {
     private readonly ILogger _logger;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -26,6 +26,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, DateTime> _lastActivityList = new();
+    private bool _isDisposed;
 
     public int ShardId => _shardId;
     public int ConnectionCount => _clients.Count;
@@ -45,7 +46,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
         if (_lastActivityList.TryGetValue(chzzkUid, out var lastActivity))
         {
-            if (DateTime.UtcNow - lastActivity > TimeSpan.FromMinutes(2)) // Websocket.Client 재연결 주기를 고려하여 상향
+            if (DateTime.UtcNow - lastActivity > TimeSpan.FromMinutes(2))
             {
                 _logger.LogWarning("[파동의 거부] {ChzzkUid} 채널 연결에 실패했습니다. (응답 없음)", chzzkUid);
                 return false;
@@ -96,7 +97,6 @@ public class WebSocketShard : IWebSocketShard, IDisposable
                 ErrorReconnectTimeout = TimeSpan.FromSeconds(5)
             };
 
-            // 메시지 수신 처리
             client.MessageReceived.Subscribe(msg => 
             {
                 _lastActivityList[chzzkUid] = DateTime.UtcNow;
@@ -132,9 +132,8 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     private async Task HandleSocketPacketAsync(string chzzkUid, WebsocketClient client, string message)
     {
-        // Socket.io 통신 규약 (치지직 커스텀)
-        if (message == "2") { client.Send("3"); return; } // Ping -> Pong
-        if (message.StartsWith("0")) { client.Send("40"); return; } // Open -> Handshake
+        if (message == "2") { client.Send("3"); return; }
+        if (message.StartsWith("0")) { client.Send("40"); return; }
         if (message.StartsWith("42"))
         {
             string json = message.Substring(2);
@@ -150,7 +149,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         {
             try
             {
-                client.Dispose(); // Dispose internally calls Stop
+                client.Dispose();
             }
             catch { }
         }
@@ -160,23 +159,25 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     public ShardStatus GetStatus()
     {
-        // [v4.3.0] 샤드 헬스 체크: 모든 클라이언트가 정상 동작 중인지 확인
         bool isAllRunning = _clients.Values.All(c => c.IsRunning);
         return new ShardStatus(_shardId, ConnectionCount, isAllRunning);
     }
 
     public async ValueTask DisposeAsync()
     {
-        // [오시리스의 회귀]: 비동기 자원 해제 실장 (Wait() 제거)
-        foreach (var uid in _clients.Keys)
+        if (_isDisposed) return;
+
+        _logger.LogInformation($"📉 [파동의 정지] 샤드 {ShardId}의 자원을 해제합니다...");
+
+        foreach (var uid in _clients.Keys.ToList())
         {
             await DisconnectAsync(uid);
         }
-        GC.SuppressFinalize(this);
-    }
 
-    public void Dispose()
-    {
-        DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _clients.Clear();
+        _lastActivityList.Clear();
+        
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 }

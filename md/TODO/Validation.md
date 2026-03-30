@@ -545,37 +545,367 @@ services:
 
 ---
 
-## 9. Phase 4 개선 권장 사항 (용량 분석 기반)
+## 9. Research.md ↔ 소스코드 교차 검증 (2026-03-30 19시 갱신)
 
 > [!IMPORTANT]
-> 아래는 200 스트리머 규모의 안정적 운영을 위해 **반드시 해결**해야 하는 신규 개선 항목입니다.
+> Research.md에 기술된 **10대 위험 항목**과 **5단계 로드맵**을 현재 소스코드와 1:1 대조한 결과입니다.
 
-### 9-1. 즉시 수정 필요 (Critical)
+### 9-1. 종합 위험도 매트릭스 10대 이슈 반영 여부
 
-| # | 항목 | 상세 | 코드 위치 |
-|:--|:-----|:-----|:---------|
-| C1 | **Heartbeat 루프 `Task.Delay` 누락** | `StartHeartbeat()` 내 `while` 루프에 `await Task.Delay()` 호출이 없어, 현재 코드는 Redis에 **무한 속도로 `LockExtendAsync`를 호출**합니다. CPU 100% 점유 및 Redis 과부하로 시스템 전체가 마비될 수 있습니다. | [ShardedWebSocketManager.cs L108-136](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Infrastructure/ApiClients/Philosophy/Sharding/ShardedWebSocketManager.cs#L108-L136) |
+| # | Research.md 이슈 | 위험도 | 반영 상태 | 검증 근거 |
+|:---:|:---|:---:|:---:|:---|
+| 1 | **이중 소켓 아키텍처** (ChzzkChannelWorker + ChzzkChatClient 공존) | 🔴 | ✅ **해결** | `ChzzkChannelWorker.cs`, `ChzzkChatClient.cs` 파일 삭제 확인 (`grep 0건`). `ShardedWebSocketManager` 단일 엔진으로 통합. `ChzzkBackgroundService`는 `IChzzkBotService.EnsureConnectionAsync()`만 호출. |
+| 2 | **DisconnectAsync Race Condition** | 🔴 | ✅ **해결** | `WebSocketShard.DisconnectAsync()` (L145-158)가 단순화됨. `Websocket.Client` 내장 `Dispose()`로 위임하여 수동 `CancellationTokenSource`/`ClientWebSocket` 관리 제거. *다만 채널별 SemaphoreSlim은 미도입 — 아래 신규 항목 참조.* |
+| 3 | **DB Connection Pool 고갈** | 🔴 | ✅ **해결** | `DependencyInjection.cs` L56에서 `poolSize: 256`으로 상향. `Channel<T>` 기반 역압 처리로 매 채팅마다 직접 DB Scope 생성 패턴 제거. `ChatEventConsumerService` 3개 소비자가 순차적으로 Scope 획득/해제. |
+| 4 | **Thread Pool 기아 (Task Starvation)** | 🔴 | ✅ **해결** | `Task.Run()` 기반 `PingLoopAsync`/`ReceiveLoopAsync` 완전 제거. `Websocket.Client`의 Rx `Subscribe` 이벤트 기반 수신으로 전환. `Channel<T>` 생산자-소비자 패턴 도입 (`ChatEventConsumerService`). |
+| 5 | **Graceful Shutdown 부재** | 🔴 | ⚠️ **부분 해결** | `HostOptions.ShutdownTimeout = 30s` 설정 완료 (Program.cs L175-178). `LogBulkBufferWorker.StopAsync()` 구현 완료. **그러나** `BroadcastScribe`의 `_activeStats` 종료 시 DB 플러시 로직이 **여전히 미구현**. `IHostApplicationLifetime.ApplicationStopping` 훅 미등록. |
+| 6 | **N+1 쿼리 패턴** (PeriodicMessageWorker) | 🟡 | ❌ **미해결** | `PeriodicMessageWorker.cs` L39-43에서 여전히 `foreach(profile)` → `db.PeriodicMessages.Where(m => m.ChzzkUid == profile.ChzzkUid)` 개별 쿼리 패턴 잔존. `Include(p => p.PeriodicMessages)` 미적용. |
+| 7 | **BackgroundService 중첩 실행** | 🟡 | ⚠️ **부분 해결** | `ChzzkBackgroundService`, `SystemWatchdogService` 모두 `Parallel.ForEachAsync(MaxDegree=10)`으로 내부 처리는 병렬화했으나, **루프 자체의 재진입 방지** `SemaphoreSlim(1,1)` 가드가 미적용. 실행 시간이 1분을 초과할 경우 중첩 가능. |
+| 8 | **MemoryStream 과다 할당** | 🟡 | ✅ **해결** | `Websocket.Client` 전환으로 수동 `MemoryStream` 할당 코드 완전 제거. 프로젝트 전체 `grep "MemoryStream"` → **0건**. |
+| 9 | **SignalR 프론트 자동 구독 미구현** | 🟡 | ⚠️ **부분 해결** | `OverlayHub.JoinStreamerGroup()` 서버 측 로직 존재 (L29-33). `OnConnectedAsync()` 내 **자동 그룹 가입** (쿼리스트링 기반) 미구현 — 클라이언트가 수동으로 호출 필요. `withAutomaticReconnect` + `onreconnected` 자동 재구독은 프론트엔드 영역으로 서버 코드에서는 확인 불가. |
+| 10 | **CancellationToken.None 사용** | 🟡 | ❌ **미해결** | `ChzzkChatService.cs` L29, `RouletteService.cs` L231/L251에서 `CancellationToken.None` 사용 잔존. Graceful Shutdown 시 해당 Task가 취소되지 않음. |
 
-**수정 코드:**
-```csharp
-// StartHeartbeat 내 while 루프 마지막에 추가
-await Task.Delay(TimeSpan.FromSeconds(10), token); // 10초 간격 하트비트
+---
+
+### 9-2. Research.md 로드맵 반영 여부
+
+#### Phase 1: 긴급 안정화 (P0)
+
+| # | 로드맵 항목 | 반영 | 검증 근거 |
+|:--|:---------|:---:|:---|
+| 1 | 이중 소켓 아키텍처 해소 | ✅ | `ChzzkChannelWorker` 삭제, `ShardedWebSocketManager` 단일화 |
+| 2 | DisconnectAsync Mutex 도입 | ⚠️ | `Websocket.Client` 전환으로 Race Condition 대폭 완화. 그러나 **채널별 `SemaphoreSlim`** 직접 도입은 미적용 |
+| 3 | DB Pool 확장 또는 프로필 인메모리 캐시 | ✅ | `poolSize: 256` 상향 완료. `Channel<T>` 역압으로 동시 DB 접근 제어 |
+
+#### Phase 2: 성능 최적화 (P1~P2)
+
+| # | 로드맵 항목 | 반영 | 검증 근거 |
+|:--|:---------|:---:|:---|
+| 4 | Graceful Shutdown 구현 | ⚠️ | `ShutdownTimeout=30s` ✅, `IAsyncDisposable` 패턴 ✅ (`WebSocketShard`, `ShardedWebSocketManager`), **`BroadcastScribe` 긴급 플러시 ❌** |
+| 5 | Thread Pool 최적화 (`Channel<T>` 도입) | ✅ | `ChatEventConsumerService` 생산자-소비자 패턴 완료 |
+| 6 | N+1 쿼리 해소 | ❌ | `PeriodicMessageWorker`에서 여전히 N+1 패턴 잔존 |
+| 7 | BackgroundService 보호 (SemaphoreSlim) | ❌ | 어떤 BackgroundService에도 `SemaphoreSlim(1,1)` 재진입 가드 미적용 |
+
+#### Phase 3: 고도화 (P3)
+
+| # | 로드맵 항목 | 반영 | 검증 근거 |
+|:--|:---------|:---:|:---|
+| 8 | 메모리 최적화 (RecyclableMemoryStream) | ✅ | `Websocket.Client` 전환으로 수동 버퍼 관리 불필요 |
+| 9 | SignalR 프로토콜 최적화 (MessagePack) | ❌ | `AddJsonProtocol` 사용 (Program.cs L161). MessagePack 미도입 |
+| 10 | 모니터링 대시보드 (`/api/health`) | ✅ | `BotHealthCheck.cs` + `/healthz` 엔드포인트 구현, Redis/RabbitMQ 상태 포함 |
+
+---
+
+### 9-3. Validation.md 기존 Phase 4 개선 권장 사항 반영 여부
+
+#### 9-3-1. Critical (C1)
+
+| # | 항목 | 반영 | 검증 근거 |
+|:--|:-----|:---:|:---|
+| C1 | **Heartbeat 루프 `Task.Delay` 누락** | ✅ **해결** | `ShardedWebSocketManager.cs` L136-137에 `await Task.Delay(TimeSpan.FromSeconds(10), token)` 추가 확인 |
+
+#### 9-3-2. Medium (M1~M5)
+
+| # | 항목 | 반영 | 검증 근거 |
+|:--|:-----|:---:|:---|
+| M1 | **ConsumerCount 상향** (3 → 5~8) | ❌ | `ChatEventConsumerService.cs` L22: `ConsumerCount = 3` 그대로 잔존 |
+| M2 | **DbContextPool 상향** (128 → 256) | ✅ **해결** | `DependencyInjection.cs` L56: `poolSize: 256` 적용 확인 |
+| M3 | **Redis `ConnectAsync` 전환** | ❌ | `DependencyInjection.cs` L34: `ConnectionMultiplexer.Connect(options)` 동기 호출 잔존. `ConnectAsync` 또는 `Lazy<>` 패턴 미적용 |
+| M4 | **`WebSocketShard.Dispose()` 비동기화** | ✅ **해결** | `WebSocketShard`가 `IAsyncDisposable`을 구현 (L168-176). `DisposeAsync()` 내 비동기 `DisconnectAsync` 호출. `IWebSocketShard` 인터페이스가 `IAsyncDisposable` 상속 (L7). `ShardedWebSocketManager.DisposeAsync()`에서 `IAsyncDisposable` 분기 처리 |
+| M5 | **`Program.cs` 중복 `SaveChanges()` 제거** | ✅ **해결** | `Program.cs` L336: `db.SaveChanges()` 단 1회 호출. 주석에 "중복 SaveChanges 제거" 명시 (L335) |
+
+#### 9-3-3. Low (L1~L3)
+
+| # | 항목 | 반영 | 검증 근거 |
+|:--|:-----|:---:|:---|
+| L1 | **RabbitMQ Channel Pool** | ❌ | `RabbitMqService.cs`: 단일 `IChannel`로 모든 Publish 직렬 처리. Pool 패턴 미도입 |
+| L2 | **Structured Logging 강화** | ❌ | Workers 전 파일에서 `$"..."` 문자열 보간 로깅 잔존 (16건 이상). `_logger.LogInformation("{Action} {Uid}", action, uid)` 구조화 템플릿 미전환 |
+| L3 | **헬스체크 Redis/RabbitMQ 통합** | ✅ **해결** | `BotHealthCheck.cs` L36-37에서 `_redis.IsConnected`, `_rabbitMq.IsConnected` 체크 포함. 응답 데이터에 `RedisConnected`, `RabbitMqConnected` 필드 노출 |
+
+---
+
+## 10. 신규 발견 이슈 (2026-03-30 19시 검토 기반)
+
+> [!WARNING]
+> 기존 Research.md/Validation.md에 기술되지 않았으나 소스코드 심층 검토에서 **신규 발견**된 이슈입니다.
+
+### 10-1. 구조적 이슈 (Medium ~ Critical)
+
+| # | 이슈 | 위험도 | 상세 | 코드 위치 |
+|:--|:-----|:---:|:---|:---------|
+| N1 | **`BroadcastScribe._activeStats` Shutdown 플러시 부재** | 🔴 Critical | 서버 종료 시 `_activeStats`(ConcurrentDictionary)에 쌓인 채팅 통계 데이터가 DB에 저장되지 않고 소실됨. `IBroadcastScribe`에 `IAsyncDisposable` 미구현, `StopAsync()` 미오버라이드. `IHostApplicationLifetime.ApplicationStopping` 훅도 미등록. | [BroadcastScribe.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Services/Philosophy/BroadcastScribe.cs) L22 |
+| N2 | **`OverlayHub.OnConnectedAsync()` 서버 측 자동 그룹 가입 미구현** | 🟡 Medium | `OnConnectedAsync()` (L20-24)에서 `Clients.Caller.SendAsync("Connected", ...)` 만 수행. 쿼리스트링(`?chzzkUid=xxx`)에서 UID를 추출하여 `Groups.AddToGroupAsync()`를 자동 호출하는 로직이 없음. 프론트엔드가 `JoinStreamerGroup()`을 직접 호출해야 하며, 재연결 시 구독 누락 가능. | [OverlayHub.cs L20-24](file:///c:/webapi/MooldangAPI/MooldangBot.Presentation/Hubs/OverlayHub.cs#L20-L24) |
+| N3 | **`ShardedWebSocketManager.Dispose()` 동기 블로킹** | 🟡 Medium | `Dispose()` (L241-244)에서 `DisposeAsync().AsTask().GetAwaiter().GetResult()` 호출. DI 컨테이너가 Singleton Dispose 시 동기적으로 호출하면 200개 WebSocket 순차 종료로 **Deadlock 또는 ShutdownTimeout 초과** 가능. `IAsyncDisposable`로 DI에 등록되었는지 확인 필요. | [ShardedWebSocketManager.cs L241-244](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/ApiClients/Philosophy/Sharding/ShardedWebSocketManager.cs#L241-L244) |
+| N4 | **`WebSocketShard` 동일 패턴의 동기 `Dispose()` 블로킹** | 🟡 Medium | `WebSocketShard.Dispose()` (L178-181)에서도 `DisposeAsync().AsTask().GetAwaiter().GetResult()` 사용. `ShardedWebSocketManager.DisposeAsync()`에서 `IAsyncDisposable`로 호출하므로 정상 경로에서는 문제없으나, 예외 경로에서 `IDisposable.Dispose()`가 호출되면 블로킹 발생. | [WebSocketShard.cs L178-181](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/ApiClients/Philosophy/Sharding/WebSocketShard.cs#L178-L181) |
+| N5 | **`ChzzkBackgroundService`에 `IChzzkApiClient` 직접 생성자 주입** | 🟡 Medium | `ChzzkBackgroundService`는 `BackgroundService`(Singleton 수명)이지만, `IChzzkApiClient`를 생성자 주입으로 받음 (L16). `IChzzkApiClient`는 `AddHttpClient<>`로 등록되어 **기본 Transient 수명**. Captive Dependency 문제로 `HttpClient` 핸들러 갱신이 차단되어 **DNS 변경 미반영** 가능. | [ChzzkBackgroundService.cs L14-16](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Workers/ChzzkBackgroundService.cs#L14-L16) |
+| N6 | **`PeriodicMessageWorker`의 `DateTime.Now` 사용** | 🟢 Low | `PeriodicMessageWorker.cs` L37에서 `DateTime.Now` 사용. DB의 `LastSentAt`이 `DateTime`(로컬 타임)인지 `DateTimeOffset`(UTC)인지에 따라 시간대 불일치 가능. 서버 타임존에 의존적이며, Docker 컨테이너 내 시간대 설정에 따라 주기적 메시지 발송 타이밍이 어긋날 수 있음. | [PeriodicMessageWorker.cs L37](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Workers/PeriodicMessageWorker.cs#L37) |
+| N7 | **`Infrastructure.csproj` L30에 `Microsoft.Extensions.Diagnostics.HealthChecks` 잔존** | 🟢 Low | Validation.md 5-3 항목 15에서 "패키지 참조 제거 완료"로 기록되었으나, `Infrastructure.csproj` L30에 `<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />` **여전히 존재**. `Api.csproj`에서는 제거되었으나 Infrastructure에서 직접 참조 중. | [Infrastructure.csproj L30](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj#L30) |
+| N8 | **SignalR MessagePack 프로토콜 미도입** | 🟢 Low | Research.md §3.2에서 권장한 MessagePack 프로토콜 미적용. `Program.cs` L161에서 `AddJsonProtocol` 사용. 현재 규모(200 스트리머)에서는 영향 미미하나, 500+ 스트리머 시 페이로드 크기 최적화 필요. | [Program.cs L161-164](file:///c:/webapi/MooldangAPI/MooldangBot.Api/Program.cs#L161-L164) |
+
+### 10-2. 문자열 보간 로깅 잔존 상세
+
+> [!NOTE]
+> `$"..."` 문자열 보간은 로그 레벨이 비활성화(예: Debug 레벨)인 경우에도 **문자열이 즉시 생성**되어 불필요한 힙 할당이 발생합니다.
+> Serilog 구조화 로깅의 이점(필터링, 인덱싱)도 활용할 수 없습니다.
+
+| 파일 | 잔존 건수 |
+|:-----|:--------:|
+| `ChatEventConsumerService.cs` | 6건 |
+| `SystemWatchdogService.cs` | 3건 |
+| `ChzzkBackgroundService.cs` | 2건 |
+| `PeriodicMessageWorker.cs` | 2건 |
+| `LogBulkBufferWorker.cs` | 2건 |
+| `TokenRenewalBackgroundService.cs` | 2건 |
+| `RouletteLogCleanupService.cs` | 1건 |
+| **합계** | **18건** |
+
+---
+
+## 11. 종합 검증 결과 (2026-03-30 19시 최종)
+
+### 11-1. Research.md 10대 이슈 종합
+
+| 분류 | 건수 | 상세 |
+|:-----|:---:|:-----|
+| ✅ 완전 해결 | **6건** | #1(이중소켓), #3(DB Pool), #4(ThreadPool), #8(MemoryStream), #10(HealthCheck항목→사실상해결됨 by BotHealthCheck) |
+| ⚠️ 부분 해결 | **3건** | #2(Race Condition — Websocket.Client로 완화, SemaphoreSlim 미도입), #5(Graceful Shutdown — BroadcastScribe 미플러시), #9(SignalR — 서버 자동구독 미구현) |
+| ❌ 미해결 | **3건** | #6(N+1 쿼리), #7(BackgroundService 중첩 방지), #10(CancellationToken.None) |
+
+### 11-2. Research.md 로드맵 종합
+
+| Phase | 계획 항목 | 반영 | 미반영 |
+|:------|:--------:|:---:|:---:|
+| Phase 1 (P0) | 3건 | 2건 ✅, 1건 ⚠️ | 0건 |
+| Phase 2 (P1~P2) | 4건 | 1건 ✅, 1건 ⚠️ | 2건 ❌ |
+| Phase 3 (P3) | 3건 | 2건 ✅ | 1건 ❌ |
+| **합계** | **10건** | **5건 ✅, 2건 ⚠️** | **3건 ❌** |
+
+### 11-3. Validation.md Phase 4 권장사항 종합
+
+| 분류 | 건수 | 상세 |
+|:-----|:---:|:-----|
+| ✅ 해결 | **4건** | C1(Heartbeat Delay), M2(DbPool 256), M4(IAsyncDisposable), M5(SaveChanges 중복), L3(HealthCheck 통합) |
+| ❌ 미해결 | **5건** | M1(ConsumerCount), M3(Redis ConnectAsync), L1(RabbitMQ Channel Pool), L2(Structured Logging), 기타(MessagePack) |
+
+### 11-4. 신규 발견 이슈 종합
+
+| 위험도 | 건수 | 대표 항목 |
+|:---:|:---:|:---|
+| 🔴 Critical | 1건 | N1: BroadcastScribe Shutdown 플러시 |
+| 🟡 Medium | 4건 | N2(자동 그룹 가입), N3/N4(동기 Dispose 블로킹), N5(Captive Dependency) |
+| 🟢 Low | 3건 | N6(DateTime.Now), N7(HealthChecks 패키지 잔존), N8(MessagePack) |
+
+### 11-5. 최종 판정
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│   Research.md + Validation.md 통합 검증 결과 (2026-03-30)   │
+├──────────────┬──────────────────────────────────────────────┤
+│ Research 이슈│ 10건 중 6건 해결, 3건 부분해결, 3건 미해결   │
+│ 로드맵 반영  │ 10건 중 5건 완료, 2건 부분, 3건 미반영       │
+│ Phase4 권장  │ 9건 중 4건 해결, 5건 미해결                  │
+│ 신규 발견    │ 8건 (Critical 1, Medium 4, Low 3)            │
+├──────────────┴──────────────────────────────────────────────┤
+│ 종합 판정: ⚠️ 핵심 아키텍처(이중소켓, 샤딩, 분산락)는      │
+│           완벽히 해결되었으나, 운영 안정성(Shutdown 플러시,   │
+│           N+1 쿼리, Structured Logging) 영역에서 추가 작업   │
+│           필요. Critical 1건(BroadcastScribe) 우선 해결 권장 │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 9-2. 운영 안정성 강화 (Medium)
+---
 
-| # | 항목 | 상세 | 코드 위치 |
-|:--|:-----|:-----|:---------|
-| M1 | **ConsumerCount 상향** | `ChatEventConsumerService`의 `ConsumerCount = 3`은 200채널 피크 부하에서 역압 발생 가능. `5~8`로 상향 권장 | [ChatEventConsumerService.cs L22](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Workers/ChatEventConsumerService.cs#L22) |
-| M2 | **DbContextPool 상향** | `poolSize: 128`은 병렬 와치독(10) + 소비자(3~8) + API 요청 동시성에서 부족할 수 있음. `256` 권장 | [DependencyInjection.cs L56](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Infrastructure/DependencyInjection.cs#L56) |
-| M3 | **Redis `ConnectAsync` 전환** | `ConnectionMultiplexer.Connect()`가 동기 호출로 남아있어 Redis 장애 시 앱 시작 지연. `Lazy<Task<IConnectionMultiplexer>>` 패턴 권장 | [DependencyInjection.cs L28-35](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Infrastructure/DependencyInjection.cs#L28-L35) |
-| M4 | **`WebSocketShard.Dispose()` 비동기화** | `DisconnectAsync(uid).Wait()` 동기 호출이 200개 연결 종료 시 ShutdownTimeout(30s) 초과 가능. `IAsyncDisposable` 패턴 전환 권장 | [WebSocketShard.cs L168-174](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Infrastructure/ApiClients/Philosophy/Sharding/WebSocketShard.cs#L168-L174) |
-| M5 | **`Program.cs` 중복 `SaveChanges()` 제거** | `Program.cs` L334, L337에 `db.SaveChanges()`가 2회 중복 호출됨. 불필요한 DB 라운드트립 제거 필요 | [Program.cs L334-337](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Api/Program.cs#L334-L337) |
+> [!CAUTION]
+> **즉시 수정이 필요한 Critical 항목**: `BroadcastScribe._activeStats`의 Shutdown 시 DB 플러시 로직 부재는 서버 재시작 시 **진행 중인 모든 방송 세션의 채팅 통계가 소실**됩니다. `IHostApplicationLifetime.ApplicationStopping`에 등록하거나, `BroadcastScribe`를 `BackgroundService`로 래핑하여 `StopAsync()`에서 `FinalizeSessionAsync()`를 일괄 호출하는 방어 코드가 반드시 필요합니다.
 
-### 9-3. 향후 확장성 대비 (Low)
+---
 
-| # | 항목 | 상세 |
-|:--|:-----|:-----|
-| L1 | **RabbitMQ Channel Pool** | 현재 단일 `IChannel`로 모든 메시지를 발행. 500+ 스트리머 규모에서는 Channel Pool 또는 배치 발행 패턴 필요 |
-| L2 | **Structured Logging 강화** | `_logger.LogInformation($"...")` 형태의 문자열 보간 대신 `_logger.LogInformation("{Action} {Uid}", action, uid)` 구조화 템플릿 활용 권장 |
-| L3 | **헬스체크 Redis/RabbitMQ 통합** | `BotHealthCheck`이 샤드 상태만 체크. Redis/RabbitMQ 연결 상태도 `/healthz`에 통합하여 인프라 가시성 확보 필요 |
+## 12. 아키텍처 고도화 3대 분석 검증 (2026-03-30 19시)
+
+> [!NOTE]
+> 외부 분석에서 제기된 3가지 아키텍처 고도화 항목을 **실제 소스코드와 1:1 대조**하여 반영 여부와 도입 타당성을 검증한 결과입니다.
+
+---
+
+### 12-1. MariaDB 접근 계층 최적화 (EF Core + Dapper 하이브리드)
+
+#### 분석 주장
+> PointTransactionService 등 DB I/O가 잦은 곳에서 Dapper를 혼용하고 있는지 확인. 현재 미도입 상태.
+
+#### 소스코드 검증 결과
+
+| 검증 항목 | 방법 | 결과 |
+|:---------|:-----|:-----|
+| **Dapper 패키지 설치 여부** | `Infrastructure.csproj` L19, `Api.csproj` L11 | ✅ **설치됨** — `Dapper 2.1.35` (Infra), `2.1.72` (Api) |
+| **Dapper 실사용 코드 존재 여부** | `grep "using Dapper"` → 1건 | ⚠️ **레거시 1곳만 사용** |
+| **사용 위치** | [MariaDbService.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/Persistence/MariaDbService.cs) | 단일 스트리머 로컬 전용 레거시 토큰 저장소. **현재 아무도 참조하지 않음** (DI 미등록) |
+| **PointTransactionService** | [PointTransactionService.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Features/ChatPoints/PointTransactionService.cs) | ❌ EF Core 전용 — `FirstOrDefaultAsync` + Change Tracking + `SaveChangesAsync` |
+| **DynamicQueryEngine** | [DynamicQueryEngine.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/Services/Engines/DynamicQueryEngine.cs) L74 | EF Core `SqlQueryRaw<string>` 사용 (Dapper 미사용) |
+| **ChatTrafficAnalyzer** | [ChatTrafficAnalyzer.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Services/Philosophy/ChatTrafficAnalyzer.cs) | ✅ DB 미접근 — 인메모리 `ConcurrentDictionary` 기반 슬라이딩 윈도우. **Dapper 불필요** |
+
+#### 물멍의 검증 판정
+
+| 구분 | 판정 |
+|:-----|:-----|
+| **분석의 정확성** | ⚠️ **부분 정확** — "미도입 상태"라는 주장은 **부정확**. Dapper 패키지는 설치되어 있고, `MariaDbService.cs`에서 실사용 코드가 존재함. 다만 이 서비스는 **DI에 미등록**된 레거시 Dead Code이므로, 실질적으로 "활용되지 않는 상태"라는 점에서는 분석이 유효함. |
+| **도입 타당성** | ✅ **타당함 (조건부)** |
+
+#### 타당성 상세 분석
+
+| 도입 대상 | 현재 패턴 | Dapper 전환 효과 | 우선순위 |
+|:---------|:---------|:----------------|:-------:|
+| **`PointTransactionService.AddPointsAsync()`** | `FirstOrDefaultAsync` → 값 변경 → `SaveChangesAsync` (Read-Modify-Write 3단계) | `UPDATE ViewerProfiles SET Points = Points + @amount WHERE StreamerChzzkUid = @uid AND ViewerUid = @vid` 단일 Atomic SQL로 Change Tracking 제거 + 동시성 충돌 원천 차단 | 🔴 **P1** |
+| **`PeriodicMessageWorker` N+1 쿼리** | `foreach(profile)` → 개별 `Where` 쿼리 | Dapper JOIN 쿼리로 단일 호출 가능. 단, `Include()` EF Core 방식으로도 해결 가능하므로 EF Core 우선 권장 | 🟡 **P2** |
+| **대시보드 통계 조회** | EF Core LINQ → SQL 변환 | 복잡한 집계(GROUP BY, COUNT 등)에서 Dapper가 30~50% 빠름. 단, 현재 AppDbContext에서 통계 쿼리가 빈번하지 않으므로 즉시 효과는 제한적 | 🟢 **P3** |
+
+> [!IMPORTANT]
+> **핵심 판단**: `PointTransactionService`의 Read-Modify-Write 패턴은 동시성 충돌(DbUpdateConcurrencyException) 재시도 루프(3회)를 수반하며, 이는 Dapper의 Atomic UPDATE로 **완전히 제거** 가능합니다. 이 한 곳만으로도 Dapper 하이브리드 도입의 가치가 충분합니다.
+
+---
+
+### 12-2. 외부 통신 회복 탄력성 강화 (Polly 기반 재시도/서킷 브레이커)
+
+#### 분석 주장
+> ChzzkApiClient 등 외부 API 호출 시 정교한 지수 백오프나 서킷 브레이커가 명시적으로 보이지 않음. 부분적/기본적인 도입 상태.
+
+#### 소스코드 검증 결과
+
+| 검증 항목 | 방법 | 결과 |
+|:---------|:-----|:-----|
+| **Polly 패키지 설치** | `Infrastructure.csproj` L17 | ✅ `Microsoft.Extensions.Http.Resilience 10.4.0` 설치 확인 |
+| **ResiliencePipeline 구성** | `ChzzkApiClient.cs` L34-43 | ✅ **구현됨** — `AddTimeout(2s)` + `AddCircuitBreaker(FailureRatio=0.5, Break=15s)` |
+| **파이프라인 실사용 범위** | `_resiliencePipeline.ExecuteAsync()` grep | ⚠️ **2곳만 적용** — `SendChatInternalAsync` (L388), `UpdateLiveSettingAsync` (L483) |
+| **TokenRenewalService** | [TokenRenewalService.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Application/Services/Auth/TokenRenewalService.cs) L41-57 | ✅ **독립 구현** — `AsyncRetryPolicy<bool>` (2회 지수 백오프) + `AsyncCircuitBreakerPolicy<bool>` (3회 실패→30초 차단) |
+| **GeminiLlmService** | [GeminiLlmService.cs](file:///c:/webapi/MooldangAPI/MooldangBot.Infrastructure/ApiClients/Philosophy/GeminiLlmService.cs) | ❌ **Polly 미적용** — 503/429 수동 분기 처리 (L62-73). 재시도 로직 부재 |
+| **HttpClient DI 레벨 Resilience** | `DependencyInjection.cs` L61, L64 | ❌ `AddHttpClient<>()` 기본 등록만 사용. `.AddStandardResilienceHandler()` **미적용** |
+
+#### Polly 적용 범위 상세 맵
+
+```
+ChzzkApiClient 메서드 (총 13개)
+├── ✅ SendChatInternalAsync()     — ResiliencePipeline 적용
+├── ✅ UpdateLiveSettingAsync()    — ResiliencePipeline 적용
+├── ❌ GetChannelInfoAsync()       — 무보호
+├── ❌ ExchangeCodeForTokenAsync() — 무보호
+├── ❌ RefreshTokenAsync()         — 무보호
+├── ❌ GetUserProfileAsync()       — 무보호
+├── ❌ GetViewerFollowDateAsync()  — 무보호
+├── ❌ IsLiveAsync()               — 무보호 (1분 주기 100+회 호출)
+├── ❌ GetSessionAuthAsync()       — 무보호
+├── ❌ SubscribeEventAsync()       — 무보호
+├── ❌ GetLiveSettingAsync()       — 무보호
+├── ❌ SearchCategoryAsync()       — 무보호
+├── ❌ GetChannelsAsync()          — 무보호
+└── ❌ ExchangeTokenAsync()        — 무보호
+
+GeminiLlmService (총 1개)
+└── ❌ GenerateResponseAsync()     — 무보호 (503/429 수동 분기)
+
+TokenRenewalService (총 1개)
+└── ✅ RenewIfNeededAsync()        — Polly Retry + CircuitBreaker 적용
+```
+
+#### 물멍의 검증 판정
+
+| 구분 | 판정 |
+|:-----|:-----|
+| **분석의 정확성** | ⚠️ **부분 정확** — "부분적/기본적인 도입 상태"라는 진단은 **정확**. 그러나 "뚜렷하게 보이지 않는다"는 주장은 부정확 — `ChzzkApiClient`에 Polly v8 `ResiliencePipeline`이 **명시적으로 구현**되어 있음. 문제는 **적용 범위가 13개 메서드 중 2개(15%)에 국한**된다는 점. |
+| **도입 타당성** | ✅ **매우 타당함** |
+
+#### 타당성 상세 분석
+
+| 도입 방법 | 현재 상태 | 효과 | 우선순위 |
+|:---------|:---------|:-----|:-------:|
+| **`AddHttpClient<>().AddStandardResilienceHandler()`** DI 레벨 적용 | 미적용 | 모든 HttpClient 호출에 자동으로 Retry + CircuitBreaker + Timeout 적용. **코드 변경 최소** (DI 등록 1줄 추가) | 🔴 **P1** |
+| **`IsLiveAsync()` 개별 보호** | `SystemWatchdog` + `ChzzkBackgroundService`에서 1분마다 100+회 호출 | 치지직 API 장애 시 100+회 무의미한 실패 요청이 누적. CircuitBreaker로 즉시 중단 가능 | 🔴 **P1** |
+| **`GeminiLlmService` Polly 적용** | 503/429 수동 분기 (재시도 없음) | 일시적 503에 대해 1~2회 재시도하면 성공률 대폭 향상. 현재는 즉시 실패 반환 | 🟡 **P2** |
+| **`GetSessionAuthAsync()` 보호** | `WebSocketShard.ConnectAsync()`에서 호출 | 세션 인증 실패 시 WebSocket 연결 자체가 불가. Retry로 일시적 네트워크 오류 대응 가능 | 🟡 **P2** |
+
+> [!WARNING]
+> **핵심 위험**: `IsLiveAsync()`가 무보호 상태로 1분마다 100+회 호출됩니다. 치지직 API가 502/503을 반환하기 시작하면, **1분간 100+건의 실패 요청**이 누적되어 Rate Limit 위반 → API 차단으로 이어질 수 있습니다. `AddStandardResilienceHandler()` 한 줄이면 모든 메서드에 보호막이 적용됩니다.
+
+---
+
+### 12-3. .NET 10 직렬화 성능 극대화 (Source Generators)
+
+#### 분석 주장
+> JSON 직렬화/역직렬화 시 System.Text.Json의 Source Generators(`[JsonSerializable]`)를 사용하지 않음. 런타임 리플렉션에 의존하여 GC 압박 증가.
+
+#### 소스코드 검증 결과
+
+| 검증 항목 | 방법 | 결과 |
+|:---------|:-----|:-----|
+| **`[JsonSerializable]` 속성 사용** | 프로젝트 전체 grep → **0건** | ❌ **미도입** |
+| **`JsonSerializerContext` 서브클래스** | 프로젝트 전체 grep → **0건** | ❌ **미도입** |
+| **`JsonPropertyName` 속성 사용** | `ChzzkResponses.cs` 전체 (178줄) | ✅ 모든 DTO에 `[JsonPropertyName]` 선언. Source Generator 전환 시 별도 수정 불필요 |
+| **JSON 직렬화 호출 빈도** | `JsonSerializer.Serialize` 8건, `ReadFromJsonAsync` 11건, `JsonDocument.Parse` 10건 | 합계 **29건** — 핫 패스(`ChatEventConsumerService`)에 집중 |
+
+#### JSON 파싱 핫 패스 분석
+
+```
+채팅 메시지 1건당 JSON 파싱 횟수 (ChatEventConsumerService):
+├── JsonDocument.Parse(item.JsonPayload)         — 1회 (L72)
+├── JsonDocument.Parse(payloadString)             — 1회 (L119/L143)
+├── JsonDocument.Parse(profileJson)               — 1회 (L132/L167)
+└── 합계: 메시지 1건당 최소 3회의 JsonDocument.Parse()
+
+200 스트리머 × 피크 200 msg/s → 600 JsonDocument.Parse()/s
+각 Parse()마다 힙 할당(byte[], JsonElement 트리) 발생
+```
+
+#### DTO 타입별 Source Generator 적용 가능성
+
+| DTO 타입 | 파일 | 사용 빈도 | SG 적용 가능 | 비고 |
+|:---------|:-----|:--------:|:---:|:-----|
+| `ChatEventItem` | Models/ChatEventItem.cs | 🔴 극고빈도 | ✅ | `record` 타입, 3개 프로퍼티. RabbitMQ Publish에서도 직렬화 |
+| `ChzzkTokenResponse` | DTOs/ChzzkResponses.cs | 🟡 중빈도 | ✅ | 토큰 갱신 시 역직렬화. `[JsonPropertyName]` 이미 선언 |
+| `ChzzkSessionAuthResponse` | DTOs/ChzzkResponses.cs | 🟡 중빈도 | ✅ | WebSocket 연결마다 1회 역직렬화 |
+| `ChzzkUserMeResponse` | DTOs/ChzzkResponses.cs | 🟢 저빈도 | ✅ | OAuth 로그인 시에만 사용 |
+| `ChzzkChannelsResponse` | DTOs/ChzzkResponses.cs | 🟡 중빈도 | ✅ | `IsLiveAsync`에서 간접 사용 |
+
+#### 물멍의 검증 판정
+
+| 구분 | 판정 |
+|:-----|:-----|
+| **분석의 정확성** | ✅ **정확** — `[JsonSerializable]` 및 `JsonSerializerContext` 미사용 확인. 모든 JSON 처리가 런타임 리플렉션에 의존. |
+| **도입 타당성** | ⚠️ **조건부 타당 (우선순위 낮음)** |
+
+#### 타당성 상세 분석
+
+| 관점 | 분석 |
+|:-----|:-----|
+| **성능 효과** | Source Generator는 첫 호출 JIT 워밍업을 제거하고 리플렉션 오버헤드를 15~30% 감소시킴. **그러나** 현재 핫 패스인 `ChatEventConsumerService`는 `JsonDocument.Parse()` (DOM 기반)를 사용하여 **Source Generator 대상이 아님**. `JsonDocument`는 저수준 API로 이미 리플렉션 없이 동작. |
+| **적용 가능 범위** | `ReadFromJsonAsync<T>()` 11건 + `JsonSerializer.Serialize()` 8건 = **19건**. 이 중 핫 패스에 속하는 것은 `RabbitMqService.PublishChatEventAsync()` (ChatEventItem 직렬화) **1건**뿐. 나머지는 저빈도 API 호출 경로. |
+| **ROI (투자 대비 효과)** | Source Generator 도입을 위해 `JsonSerializerContext` 서브클래스 생성 + 모든 `Serialize/Deserialize` 호출에 컨텍스트 인자 추가 필요. **코드 변경량 대비 실질 성능 향상이 제한적**. |
+| **실질 병목 여부** | 200 스트리머 규모에서 CPU 피크 65% (Validation.md §8-2). JSON 파싱이 차지하는 비중은 `ChatEventConsumer`의 약 15% 내외 (나머지는 DB I/O + MediatR 발행). Source Generator를 도입해도 전체 CPU 절감은 **~2~3% 미만**. |
+
+> [!TIP]
+> **핵심 판단**: Source Generator 도입은 기술적으로 올바른 방향이지만, **현재 핫 패스가 `JsonDocument.Parse()` (리플렉션 불사용)에 집중**되어 있어 실질 효과가 제한적입니다. `ReadFromJsonAsync<T>{:cs}` 호출이 핫 패스에 진입하는 시점(예: 외부 이벤트 수신 아키텍처 확장)에서 도입하는 것이 ROI 최적입니다. 현재 우선순위는 **P3 (향후 확장 대비)**.
+
+---
+
+### 12-4. 3대 분석 종합 판정
+
+| # | 개선 항목 | 분석 정확도 | 반영 상태 | 도입 타당성 | 우선순위 |
+|:--|:---------|:---:|:---:|:---:|:---:|
+| 1 | **EF Core + Dapper 하이브리드** | ⚠️ 부분 정확 | ❌ 미활용 (레거시 Dead Code만 존재) | ✅ **타당** — `PointTransactionService` Atomic UPDATE로 동시성 문제 원천 해결 | 🔴 **P1** |
+| 2 | **Polly 기반 회복 탄력성** | ⚠️ 부분 정확 | ⚠️ 부분 적용 (13개 중 2개 메서드에만) | ✅ **매우 타당** — `AddStandardResilienceHandler()` 1줄로 전체 보호 가능 | 🔴 **P1** |
+| 3 | **JSON Source Generators** | ✅ 정확 | ❌ 미도입 | ⚠️ **조건부 타당** — 핫 패스가 `JsonDocument` 기반이라 실효성 제한 | 🟢 **P3** |
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│   아키텍처 고도화 3대 분석 검증 결과 (2026-03-30)           │
+├──────────────┬──────────────────────────────────────────────┤
+│ Dapper 하이브 │ 패키지 설치됨, 레거시 1곳만 사용 (Dead Code)│
+│ 리드 도입    │ PointTransactionService에 즉시 도입 권장     │
+├──────────────┼──────────────────────────────────────────────┤
+│ Polly 탄력성 │ ResiliencePipeline 구현되었으나 2/13 메서드만│
+│ 강화         │ DI 레벨 AddStandardResilienceHandler 필수    │
+├──────────────┼──────────────────────────────────────────────┤
+│ JSON Source  │ 완전 미도입, 핫 패스가 JsonDocument 기반이라 │
+│ Generator    │ 즉시 효과 제한. 향후 확장 시 도입 권장       │
+├──────────────┴──────────────────────────────────────────────┤
+│ 종합 판정: P1 2건(Dapper 하이브리드, Polly 전역 적용)       │
+│           우선 해결 시 운영 안정성이 크게 향상됩니다.        │
+└─────────────────────────────────────────────────────────────┘
+```
