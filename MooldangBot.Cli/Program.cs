@@ -129,38 +129,38 @@ try
 
     // 4. [NEW] 마스터 데이터 시딩
     Console.WriteLine("\n📋 [3/4] 명령어 마스터 데이터(Categories/Features) 동기화 중...");
-    async Task SyncCategory(string name, string display, int order) {
-        var existing = await db.UnifiedCommandCategories.FindAsync(name);
+    async Task SyncCategory(int id, string name, string display, int order) {
+        var existing = await db.MasterCommandCategories.FindAsync(id);
         if (existing == null) {
-            db.UnifiedCommandCategories.Add(new UnifiedCommandCategory { CategoryName = name, DisplayName = display, SortOrder = order });
+            db.MasterCommandCategories.Add(new Master_CommandCategory { Id = id, Name = name, DisplayName = display, SortOrder = order });
             Console.WriteLine($"   + [Category] {name} 생성됨");
         }
     }
-    await SyncCategory("General", "일반 (채팅/공지)", 1);
-    await SyncCategory("Fixed", "시스템 고정 (출석 등)", 2);
-    await SyncCategory("Donation", "후원 연동 (곡/룰렛)", 3);
-    await SyncCategory("Point", "포인트 소모 (룰렛 등)", 4);
+    await SyncCategory(1, "General", "일반", 1);
+    await SyncCategory(2, "System", "시스템메세지", 2);
+    await SyncCategory(3, "Feature", "기능", 3);
 
-    async Task SyncFeature(string cat, string name, string display, string? resp, int cost, string costType, CommandRole role) {
-        var existing = await db.UnifiedCommandFeatures.FirstOrDefaultAsync(f => f.CategoryName == cat && f.FeatureName == name);
+    async Task SyncFeature(int id, int catId, string type, string display, int cost, CommandRole role) {
+        var existing = await db.MasterCommandFeatures.FindAsync(id);
         if (existing == null) {
-            db.UnifiedCommandFeatures.Add(new UnifiedCommandFeature { 
-                CategoryName = cat, FeatureName = name, DisplayName = display, 
-                DefaultResponse = resp, DefaultCost = cost, DefaultCostType = costType, DefaultRequiredRole = role 
+            db.MasterCommandFeatures.Add(new Master_CommandFeature { 
+                Id = id, CategoryId = catId, TypeName = type, DisplayName = display, 
+                DefaultCost = cost, RequiredRole = role 
             });
-            Console.WriteLine($"   + [Feature] {cat}/{name} 생성됨");
+            Console.WriteLine($"   + [Feature] {type} 생성됨");
         }
     }
-    await SyncFeature("General", "Reply", "💬 채팅 답변", null, 0, "None", CommandRole.Viewer);
-    await SyncFeature("General", "Notice", "📢 상단 공지", "공지사항: {내용}", 0, "None", CommandRole.Manager);
-    await SyncFeature("General", "SonglistToggle", "🔒 송리스트 ON/OFF", "송리스트가 {송리스트상태}되었습니다. ✨", 0, "None", CommandRole.Manager);
-    await SyncFeature("General", "Title", "📝 방송 제목 변경", "방송 제목이 변경되었습니다: {내용}", 0, "None", CommandRole.Manager);
-    await SyncFeature("General", "Category", "🎮 카테고리 변경", "카테고리가 변경되었습니다: {내용}", 0, "None", CommandRole.Manager);
-    await SyncFeature("Fixed", "Attendance", "✅ 출석체크", "{닉네임}님 출석 고마워요!", 0, "None", CommandRole.Viewer);
-    await SyncFeature("Fixed", "PointCheck", "💰 포인트 조회", "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다!", 0, "None", CommandRole.Viewer);
-    await SyncFeature("Donation", "SongRequest", "🎵 노래 신청", null, 1000, "Cheese", CommandRole.Viewer);
-    await SyncFeature("Donation", "Roulette", "🎰 후원 룰렛", null, 0, "Cheese", CommandRole.Viewer);
-    await SyncFeature("Point", "Roulette", "🎰 포인트 룰렛", null, 0, "Point", CommandRole.Viewer);
+    await SyncFeature(1, 1, "Reply", "텍스트 답변", 0, CommandRole.Viewer);
+    await SyncFeature(2, 2, "Notice", "공지", 0, CommandRole.Manager);
+    await SyncFeature(3, 2, "Title", "방제", 0, CommandRole.Manager);
+    await SyncFeature(4, 2, "Category", "카테고리", 0, CommandRole.Manager);
+    await SyncFeature(5, 2, "SonglistToggle", "송리스트", 0, CommandRole.Manager);
+    await SyncFeature(6, 3, "SongRequest", "노래신청", 1000, CommandRole.Viewer);
+    await SyncFeature(7, 3, "Omakase", "오마카세", 1000, CommandRole.Viewer);
+    await SyncFeature(8, 3, "Roulette", "룰렛", 500, CommandRole.Viewer);
+    await SyncFeature(9, 3, "ChatPoint", "채팅포인트", 0, CommandRole.Viewer);
+    await SyncFeature(10, 2, "SystemResponse", "시스템 응답", 0, CommandRole.Manager);
+    await SyncFeature(11, 3, "AI", "AI 답변", 1000, CommandRole.Viewer);
     await db.SaveChangesAsync();
 
     // 5. 통합 명령어 보정
@@ -168,13 +168,13 @@ try
     var profiles = await db.StreamerProfiles.IgnoreQueryFilters().ToListAsync();
     int provisionCount = 0;
     foreach (var p in profiles) {
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, p.SongCommand ?? "!신청", "Donation", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!송리스트", "General", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p.ChzzkUid, p.SongCommand ?? "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
+        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
         
         // [매니저 전용 명령어 추가]
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!공지", "General", "None", 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!방제", "General", "None", 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!카테고리", "General", "None", 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!공지", "System", "None", 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!방제", "System", "None", 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!카테고리", "System", "None", 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
     }
 
     if (provisionCount > 0) {
