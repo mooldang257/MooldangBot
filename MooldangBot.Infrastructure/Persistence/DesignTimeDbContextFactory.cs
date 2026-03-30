@@ -23,10 +23,15 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var dbName = Environment.GetEnvironmentVariable("MARIADB_DATABASE") ?? "MooldangBot";
         var dbUser = Environment.GetEnvironmentVariable("MARIADB_USER") ?? "root";
         
-        // 비밀번호는 ROOT_PASSWORD를 최우선으로, 그 다음 MARIADB_PASSWORD를 확인합니다.
-        var dbPass = Environment.GetEnvironmentVariable("MARIADB_ROOT_PASSWORD") 
-                    ?? Environment.GetEnvironmentVariable("MARIADB_PASSWORD") 
-                    ?? "@enjoy1004";
+        // 유저에 맞는 비밀번호를 선택합니다.
+        var dbPass = (dbUser == "root")
+                    ? Environment.GetEnvironmentVariable("MARIADB_ROOT_PASSWORD")
+                    : Environment.GetEnvironmentVariable("MARIADB_PASSWORD");
+        
+        // 위에서 찾지 못했다면 상호 보완적으로 확인합니다.
+        dbPass ??= Environment.GetEnvironmentVariable("MARIADB_PASSWORD") 
+                    ?? Environment.GetEnvironmentVariable("MARIADB_ROOT_PASSWORD")
+                    ?? "enjoy1004";
 
         // 따옴표(") 제거 (방어적 코드)
         dbHost = dbHost.Trim('\"');
