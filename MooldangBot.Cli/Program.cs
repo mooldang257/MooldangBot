@@ -81,7 +81,7 @@ services.AddLogging(builder => builder.AddConsole());
 services.AddSingleton<IUserSession, SystemUserSession>();
 
 services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb")));
 
 var serviceProvider = services.BuildServiceProvider();
 var db = serviceProvider.GetRequiredService<AppDbContext>();
