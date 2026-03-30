@@ -60,7 +60,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        // Design-Time(빌드 시점)에는 실제 DB에 연결할 수 없으므로 AutoDetect 대신 명시적인 버전을 사용합니다.
+        optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));
 
         // Design-time에는 인증 정보가 필요 없으므로 더미 세션 제공
         return new AppDbContext(optionsBuilder.Options, new DesignTimeUserSession());
