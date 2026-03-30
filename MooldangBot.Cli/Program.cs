@@ -75,6 +75,13 @@ if (string.IsNullOrEmpty(connectionString))
     return;
 }
 
+// 🌐 [네트워크 오버라이드]: 호스트 OS에서 실행 시 'db'를 'localhost'로 전환
+if (connectionString.Contains("Server=db") && !File.Exists("/.dockerenv"))
+{
+    connectionString = connectionString.Replace("Server=db", "Server=localhost");
+    Console.WriteLine("🌐 [네트워크]: 호스트 실행 감지 - DB 포인터를 localhost로 전환합니다.");
+}
+
 var services = new ServiceCollection();
 services.AddLogging(builder => builder.AddConsole());
 
@@ -82,7 +89,8 @@ services.AddLogging(builder => builder.AddConsole());
 services.AddSingleton<IUserSession, SystemUserSession>();
 
 services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb")));
+    options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"), 
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure()));
 
 var serviceProvider = services.BuildServiceProvider();
 var db = serviceProvider.GetRequiredService<AppDbContext>();
