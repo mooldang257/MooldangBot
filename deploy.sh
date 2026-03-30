@@ -30,11 +30,13 @@ if command -v dotnet &> /dev/null; then
     fi
 fi
 
-# 4. 컨테이너 재가동
-echo -e "${GREEN}🐳 Docker: 컨테이너 빌드 및 백그라운드 실행 중...${NC}"
+# 4. 컨테이너 재가동 및 강제 재빌드
+echo -e "${GREEN}🐳 Docker: 컨테이너 강제 재빌드 및 실행 중 (캐시 무효화)...${NC}"
 # --remove-orphans를 추가하여 설정에서 제거된 이전 컨테이너들을 확실히 청소합니다.
 docker-compose down --remove-orphans
-docker-compose up -d --build
+# --no-cache를 추가하여 efbundle 등 수정 사항이 빌드 시점에 완벽히 반영되도록 합니다.
+docker-compose build --no-cache
+docker-compose up -d
 
 # 5. 상태 모니터링
 echo -e "${GREEN}🔍 Health Check: 서비스 가동 상태를 확인합니다...${NC}"
