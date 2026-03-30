@@ -9,6 +9,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using Polly;
+using MooldangBot.Infrastructure.Services.Serialization;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -105,7 +106,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", requestData);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkTokenResponse);
                 }
 
                 string error = await response.Content.ReadAsStringAsync();
@@ -143,7 +144,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                     return null;
                 }
 
-                var tokenResponse = await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>();
+                var tokenResponse = await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkTokenResponse);
                 return tokenResponse?.Content?.AccessToken;
             }
             catch (Exception ex)
@@ -169,7 +170,7 @@ namespace MooldangBot.Infrastructure.ApiClients
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var profileResponse = await response.Content.ReadFromJsonAsync<ChzzkUserProfileResponse>();
+                    var profileResponse = await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkUserProfileResponse);
                     return profileResponse?.Content;
                 }
 
@@ -439,7 +440,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkSessionAuthResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkSessionAuthResponse);
                 }
                 return null;
             }
@@ -513,7 +514,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkLiveSettingResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkLiveSettingResponse);
                 }
                 
                 var errDetail = await response.Content.ReadAsStringAsync();
@@ -545,7 +546,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkCategorySearchResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkCategorySearchResponse);
                 }
                 return null;
             }
@@ -574,7 +575,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", payload);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkTokenResponse);
                 }
 
                 string errorDetail = await response.Content.ReadAsStringAsync();
@@ -604,7 +605,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkUserMeResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkUserMeResponse);
                 }
                 return null;
             }
@@ -630,7 +631,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<ChzzkChannelsResponse>();
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkChannelsResponse);
                 }
 
                 _logger.LogWarning($"[ChzzkApi] GetChannels Failed: {response.StatusCode}");

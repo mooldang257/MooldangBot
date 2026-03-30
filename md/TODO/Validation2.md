@@ -37,8 +37,11 @@
     - `DependencyInjection.cs:65`에서 `AddStandardResilienceHandler()`를 통한 전역 정책 병행 사용 중.
 
 ### 2-3. JSON Source Generator (High Performance)
-- **적용 상태**: **미도입**
-- **증명**: `ChzzkResponses.cs` 등 DTO 클래스들이 여전히 리플렉션 기반의 `JsonPropertyName`만 사용 중. 대규모 트래픽 발생 시 CPU 오버헤드 발생 가능성 잔존.
+- **적용 상태**: **완료**
+- **증명**: 
+    - `ChzzkJsonContext.cs` 소스 생성기 컨텍스트 구축 완료.
+    - `ChzzkApiClient.cs`에서 리플렉션 없이 `JsonTypeInfo`를 통한 직접 역직렬화 수행.
+    - `Program.cs`에서 `TypeInfoResolverChain`에 등록하여 전역 API 성능 최적화 완료.
 
 ---
 

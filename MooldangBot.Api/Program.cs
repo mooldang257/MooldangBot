@@ -21,6 +21,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Api.Health;
 using Serilog;
+using MooldangBot.Infrastructure.Services.Serialization;
 
 // 1. [Zero-Git] 실행 인자에서 설정 파일 경로 추출 (--env=.env.prod 등)
 var envPath = args.FirstOrDefault(a => a.StartsWith("--env="))?.Split('=')[1] ?? ".env";
@@ -163,6 +164,7 @@ builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
         options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
     });
 
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -182,6 +184,12 @@ builder.Services.Configure<HostOptions>(options =>
 builder.Services.AddHealthChecks()
     .AddCheck<BotHealthCheck>("MooldangBot_Shards");
 
+// [텔로스5의 정렬]: Minimal API 전역 JSON 최적화
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
+});
+
 // [성벽의 설계]: IAMF 오버레이 전용 CORS 정책
 builder.Services.AddCors(options =>
 {
@@ -199,6 +207,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
     });
 
 // [파로스의 장벽]: 인증(Authentication) 설정
