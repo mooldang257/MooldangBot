@@ -14,7 +14,7 @@ using StackExchange.Redis;
 using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+
 
 namespace MooldangBot.Infrastructure
 {
@@ -88,9 +88,7 @@ namespace MooldangBot.Infrastructure
             // [v4.5.1] RabbitMQ POC 소비자 워커 등록
             services.AddHostedService<RabbitMqConsumerService>();
 
-            // [v4.3.0] 분산 헬스 체크 시스템 등록
-            services.AddHealthChecks()
-                .AddCheck<BotHealthCheck>("MooldangBot_Shards");
+
 
             return services;
         }

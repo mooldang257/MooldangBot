@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 #pragma warning disable CS0105 // 중복 using 제거 완료
 using Microsoft.AspNetCore.Authorization;
+using MooldangBot.Api.Health;
 using Serilog;
 
 // 1. [Zero-Git] 실행 인자에서 설정 파일 경로 추출 (--env=.env.prod 등)
@@ -178,7 +179,8 @@ builder.Services.Configure<HostOptions>(options =>
     // 대량의 채널(100+) 연결을 안전하게 닫기 위해 종료 타임아웃을 30초로 연장
     options.ShutdownTimeout = TimeSpan.FromSeconds(30);
 });
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<BotHealthCheck>("MooldangBot_Shards");
 
 // [성벽의 설계]: IAMF 오버레이 전용 CORS 정책
 builder.Services.AddCors(options =>

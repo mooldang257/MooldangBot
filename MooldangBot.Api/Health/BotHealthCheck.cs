@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Infrastructure.Services;
+namespace MooldangBot.Api.Health;
 
 /// <summary>
 /// [오시리스의 감시]: WebSocketShard 메트릭 및 인프라(Redis, RabbitMQ) 상태를 포함한 통합 헬스 체크입니다.
