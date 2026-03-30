@@ -27,14 +27,14 @@ public class BotHealthCheck : IHealthCheck
         _rabbitMq = rabbitMq;
     }
 
-    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var shardStatuses = _chatClient.GetShardStatuses().ToList();
         var totalConnections = shardStatuses.Sum(s => s.ConnectionCount);
         var unhealthyShards = shardStatuses.Count(s => !s.IsHealthy);
         
         var isRedisConnected = _redis.IsConnected;
-        var isRabbitMqConnected = _rabbitMq.IsConnected;
+        var isRabbitMqConnected = await _rabbitMq.CheckConnectionAsync();
 
         var data = new Dictionary<string, object>
         {
@@ -48,9 +48,9 @@ public class BotHealthCheck : IHealthCheck
 
         if (unhealthyShards > 0 || !isRedisConnected || !isRabbitMqConnected)
         {
-            return Task.FromResult(HealthCheckResult.Degraded("[오시리스의 경고] 일부 인프라 또는 샤드가 비정상 상태입니다.", data: data));
+            return HealthCheckResult.Degraded("[오시리스의 경고] 일부 인프라 또는 샤드가 비정상 상태입니다.", data: data);
         }
 
-        return Task.FromResult(HealthCheckResult.Healthy("[오시리스의 안녕] 모든 인프라 및 샤드가 정상 가동 중입니다.", data: data));
+        return HealthCheckResult.Healthy("[오시리스의 안녕] 모든 인프라 및 샤드가 정상 가동 중입니다.", data: data);
     }
 }

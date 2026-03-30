@@ -13,6 +13,11 @@ public interface IRabbitMqService
     bool IsConnected { get; }
 
     /// <summary>
+    /// RabbitMQ 서버와의 연결 상태를 확인하고, 필요 시 접속을 시도합니다.
+    /// </summary>
+    Task<bool> CheckConnectionAsync();
+
+    /// <summary>
     /// 채팅 이벤트를 RabbitMQ 익스체인지로 발행합니다.
     /// </summary>
     /// <param name="eventItem">발행할 채팅 이벤트 항목</param>

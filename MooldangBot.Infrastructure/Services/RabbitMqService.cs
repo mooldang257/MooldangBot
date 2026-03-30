@@ -23,6 +23,12 @@ public class RabbitMqService : IRabbitMqService, IDisposable
 
     public bool IsConnected => _connection != null && _connection.IsOpen;
 
+    public async Task<bool> CheckConnectionAsync()
+    {
+        await EnsureInitializedAsync();
+        return IsConnected;
+    }
+
     public RabbitMqService(IConfiguration config, ILogger<RabbitMqService> logger)
     {
         _logger = logger;
