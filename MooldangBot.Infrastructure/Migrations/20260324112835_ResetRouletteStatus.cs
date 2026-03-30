@@ -1,4 +1,4 @@
-﻿using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,8 +11,8 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("UPDATE Roulettes SET IsActive = 1;");
-            migrationBuilder.Sql("UPDATE RouletteItems SET IsActive = 1;");
+            migrationBuilder.Sql("UPDATE roulettes SET IsActive = 1;");
+            migrationBuilder.Sql("UPDATE rouletteitems SET IsActive = 1;");
         }
 
         /// <inheritdoc />
