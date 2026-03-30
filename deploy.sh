@@ -32,7 +32,8 @@ fi
 
 # 4. 컨테이너 재가동
 echo -e "${GREEN}🐳 Docker: 컨테이너 빌드 및 백그라운드 실행 중...${NC}"
-docker-compose down
+# --remove-orphans를 추가하여 설정에서 제거된 이전 컨테이너들을 확실히 청소합니다.
+docker-compose down --remove-orphans
 docker-compose up -d --build
 
 # 5. 상태 모니터링

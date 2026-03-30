@@ -15,11 +15,11 @@ services:
     volumes:
       - ${DB_DATA_PATH}:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root --password=$$MARIADB_ROOT_PASSWORD || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=$$MARIADB_ROOT_PASSWORD || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 15
-      start_period: 30s
+      start_period: 40s
 
   redis:
     image: redis:7-alpine
@@ -32,12 +32,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   migration:
     build: 
       context: .
       dockerfile: Dockerfile
     container_name: mooldang-migration
+    restart: "no"
+    healthcheck:
+      disable: true
     env_file:
       - .env
     entrypoint: ./efbundle
@@ -66,7 +70,7 @@ services:
       redis:
         condition: service_started
       migration:
-        condition: service_started
+        condition: service_completed_successfully
     volumes:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
 
