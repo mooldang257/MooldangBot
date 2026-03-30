@@ -21,5 +21,8 @@
 
 - [x] **Step 6: Docker 배포 환경 고도화 및 MariaDB 전환**
     - [x] [.env.sample] 명시적 저장 경로를 포함한 환경 변수 템플릿 작성
-    - [x] [docker-compose.yml] MariaDB 전환 및 Bind Mount 경로 최적화
+    - [x] [docker-compose.yml] MariaDB 전환 및 Bind Mount 경로 최적화 (헬스체크 및 비밀번호 파싱 교정)
     - [x] [deploy.sh] 빌드 체크 및 헬스 체크 로직 강화
+    - [x] [Dockerfile/csproj] EF Bundle 빌드 오류 및 패키지 충돌(NU1605) 해결
+    - [x] [.dockerignore] data/ 권한 거부(Permission Denied) 이슈 해결
+    - [x] [backup.sh] 자동 DB 백업 스크립트 작성 및 Cron 가이드 추가
