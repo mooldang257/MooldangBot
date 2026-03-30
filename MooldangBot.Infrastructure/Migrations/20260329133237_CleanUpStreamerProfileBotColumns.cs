@@ -12,10 +12,13 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+/*
             migrationBuilder.DropIndex(
                 name: "IX_streameromakases_ChzzkUid_MenuId",
                 table: "streameromakases");
+*/
 
+/*
             migrationBuilder.DropColumn(
                 name: "ApiClientId",
                 table: "streamerprofiles");
@@ -27,7 +30,9 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "ApiRedirectUrl",
                 table: "streamerprofiles");
+*/
 
+/*
             migrationBuilder.DropColumn(
                 name: "BotAccessToken",
                 table: "streamerprofiles");
@@ -47,11 +52,14 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "BotTokenExpiresAt",
                 table: "streamerprofiles");
+*/
 
+/*
             migrationBuilder.DropColumn(
                 name: "MenuId",
                 table: "streameromakases");
-
+*/
+/*
             migrationBuilder.DropColumn(
                 name: "Command",
                 table: "roulettes");
@@ -67,11 +75,14 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "Type",
                 table: "roulettes");
+*/
 
+/*
             migrationBuilder.AddPrimaryKey(
                 name: "PK_streameromakases",
                 table: "streameromakases",
                 column: "Id");
+*/
 
             migrationBuilder.CreateTable(
                 name: "plainchatmessages",
@@ -150,9 +161,11 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "roulettespins");
 
+/*
             migrationBuilder.DropPrimaryKey(
                 name: "PK_streameromakases",
                 table: "streameromakases");
+*/
 
             migrationBuilder.DropIndex(
                 name: "IX_streameromakases_ChzzkUid",
@@ -254,10 +267,12 @@ namespace MooldangBot.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: 0);
 
+/*
             migrationBuilder.CreateIndex(
                 name: "IX_streameromakases_ChzzkUid_MenuId",
                 table: "streameromakases",
                 columns: new[] { "ChzzkUid", "MenuId" });
+*/
         }
     }
 }

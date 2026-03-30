@@ -20,8 +20,15 @@ public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceive
 
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
-        // 채팅 브로드캐스트 로직 (필요 시)
-        // 예: Overlay에 채팅 내용 전송 등 (현재는 IOverlayNotificationService에 기능 추가 필요할 수 있음)
-        await Task.CompletedTask;
+        // [오버레이의 메아리]: 수신된 채팅을 해당 스트리머의 오버레이 그룹으로 즉시 전송합니다.
+        if (notification.Profile != null && !string.IsNullOrEmpty(notification.Profile.ChzzkUid))
+        {
+            await _overlayService.NotifyChatReceivedAsync(
+                notification.Profile.ChzzkUid,
+                notification.Username,
+                notification.Message,
+                notification.UserRole,
+                cancellationToken);
+        }
     }
 }

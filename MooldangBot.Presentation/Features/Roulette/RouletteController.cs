@@ -235,11 +235,10 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpPatch("{chzzkUid}/{Id}/status")]
         public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool IsActive)
         {
-            var AffectedRows = await _db.UnifiedCommands
-                .IgnoreQueryFilters()
-                .Where(C => C.TargetId == Id && C.ChzzkUid == chzzkUid && C.FeatureType == "Roulette")
-                .ExecuteUpdateAsync(S => S
-                    .SetProperty(C => C.IsActive, IsActive));
+            var AffectedRows = await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
+                _db.UnifiedCommands.IgnoreQueryFilters()
+                    .Where(C => C.TargetId == Id && C.ChzzkUid == chzzkUid && C.FeatureType == "Roulette"),
+                S => S.SetProperty(C => C.IsActive, IsActive));
 
             return AffectedRows == 0 ? NotFound() : Ok();
         }
@@ -264,17 +263,17 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpPatch("{chzzkUid}/items/{ItemId}/status")]
         public async Task<IActionResult> ToggleItemStatus(string chzzkUid, int ItemId, [FromBody] bool IsActive)
         {
-            var AffectedRows = await _db.RouletteItems
-                .IgnoreQueryFilters()
-                .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.ChzzkUid == chzzkUid)
-                .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, IsActive));
+            var AffectedRows = await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
+                _db.RouletteItems.IgnoreQueryFilters()
+                    .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.ChzzkUid == chzzkUid),
+                S => S.SetProperty(I => I.IsActive, IsActive));
 
             if (AffectedRows > 0)
             {
-                await _db.Roulettes
-                    .IgnoreQueryFilters()
-                    .Where(R => R.Items.Any(I => I.Id == ItemId))
-                    .ExecuteUpdateAsync(S => S.SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
+                await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
+                    _db.Roulettes.IgnoreQueryFilters()
+                        .Where(R => R.Items.Any(I => I.Id == ItemId)),
+                    S => S.SetProperty(R => R.UpdatedAt, DateTime.UtcNow));
                     
                 return Ok();
             }

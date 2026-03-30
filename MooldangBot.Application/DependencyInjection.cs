@@ -51,7 +51,12 @@ namespace MooldangBot.Application
             services.AddHostedService<PeriodicMessageWorker>();
             services.AddHostedService<CategorySyncBackgroundService>();
             services.AddHostedService<RouletteLogCleanupService>();
+            services.AddHostedService<TokenRenewalBackgroundService>(); // [영겁의 파수꾼] 추가
             services.AddHostedService<SystemWatchdogService>(); // [오시리스의 감시자] 추가
+            
+            // [Phase1: 역압 처리] Channel 기반 이벤트 큐 및 소비자
+            services.AddSingleton<IChatEventChannel, ChatEventChannel>();
+            services.AddHostedService<ChatEventConsumerService>();
             
             // IAMF Philosophy Services
             services.AddScoped<IRegulationService, RegulationService>();
@@ -61,8 +66,12 @@ namespace MooldangBot.Application
             services.AddScoped<IPersonaPromptBuilder, PersonaPromptBuilder>(); // [언어적 감응]
             services.AddScoped<IChatIntentRouter, ChatIntentRouter>();         // [대변인의 방패]
             
-            // [통합의 완성]: 실전 서비스 등록 (LlmService는 Infrastructure에서 HttpClient로 등록됨)
             services.AddScoped<IChzzkChatService, ChzzkChatService>();
+
+            // [v3.6.3] 벌크 로그 시스템 등록 (고성능 로깅)
+            services.AddSingleton<ILogBulkBuffer, LogBulkBuffer>();
+            services.AddHostedService<LogBulkBufferWorker>();
+
             return services;
         }
     }

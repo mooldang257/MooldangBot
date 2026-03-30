@@ -38,15 +38,25 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Dev";
         var prefix = envName.ToUpper().Replace("DEVELOPMENT", "DEV") + "_";
         
-        // [파로스의 자각]: 연결 문자열 추출
-        var connectionString = Environment.GetEnvironmentVariable($"{prefix}CONNECTIONSTRINGS__DEFAULT_CONNECTION") 
-                             ?? Environment.GetEnvironmentVariable("CONNECTIONSTRINGS__DEFAULT_CONNECTION")
-                             ?? Environment.GetEnvironmentVariable("DefaultConnection");
+        // [파로스의 자각]: 연결 문자열 추출 (대소문자 무시 검색을 위해 전체 환경변수 순회)
+        var allEnv = Environment.GetEnvironmentVariables();
+        string? connectionString = null;
+
+        foreach (string key in allEnv.Keys)
+        {
+            if (key.Equals($"{prefix}CONNECTIONSTRINGS__DEFAULT_CONNECTION", StringComparison.OrdinalIgnoreCase) ||
+                key.Equals("CONNECTIONSTRINGS__DEFAULT_CONNECTION", StringComparison.OrdinalIgnoreCase) ||
+                key.Equals("DefaultConnection", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString = allEnv[key]?.ToString();
+                break;
+            }
+        }
 
         if (string.IsNullOrEmpty(connectionString))
         {
             // 폴백 (하드코딩 방지: .env 파일이 없으면 최후의 수단으로만 사용)
-            connectionString = "Server=127.0.0.1;Database=ChzzkSongBook_Dev;User=root;Password=@enjoy1004;";
+            connectionString = "Server=127.0.0.1;Database=MooldangBot;User=root;Password=@enjoy1004;";
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();

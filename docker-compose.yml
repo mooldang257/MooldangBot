@@ -16,6 +16,32 @@ services:
       timeout: 20s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ⭐ [자동 마이그레이션] 배포 시 자동으로 DB를 업데이트하는 서비스
   migration:
     build: .
@@ -38,11 +64,21 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_URL=redis:6379
+      - RABBITMQ_HOST=rabbitmq
       - AUTH_COOKIE_NAME=mooldang_bot_session
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - SHARD_INDEX=${SHARD_INDEX:-0}
+      - SHARD_COUNT=${SHARD_COUNT:-4}
+    deploy:
+      replicas: 4
 
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migration:
         condition: service_started

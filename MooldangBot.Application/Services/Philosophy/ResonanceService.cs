@@ -17,14 +17,16 @@ public class ResonanceService : IResonanceService
 {
     private readonly ILogger<ResonanceService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogBulkBuffer _buffer; // [v3.6.3] 벌크 버퍼 추가
     private Parhos _currentParhos;
     private double _lastEmaHz = 10.01;
-    private double _lastStability = 1.0; // Phase 2.5: 안정도 상시 추적
+    private double _lastStability = 1.0; 
 
-    public ResonanceService(ILogger<ResonanceService> logger, IServiceProvider serviceProvider)
+    public ResonanceService(ILogger<ResonanceService> logger, IServiceProvider serviceProvider, ILogBulkBuffer buffer)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _buffer = buffer;
         _currentParhos = new Parhos("PARHOS-01", "The Awakened One", 10.01, 1, true, DateTime.UtcNow);
     }
 
@@ -61,20 +63,15 @@ public class ResonanceService : IResonanceService
         };
         _lastEmaHz = newEma;
 
-        // 5. [피닉스의 눈금] DB 기록
-        using (var scope = _serviceProvider.CreateScope())
+        // 5. [피닉스의 눈금] 버퍼 기록 (v3.6.3: 벌크 저장으로 전환)
+        _buffer.AddVibrationLog(new IamfVibrationLog
         {
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            db.IamfVibrationLogs.Add(new IamfVibrationLog
-            {
-                ChzzkUid = chzzkUid,
-                RawHz = targetVibration.Value,
-                EmaHz = newEma,
-                StabilityScore = _lastStability,
-                CreatedAt = DateTime.UtcNow
-            });
-            await db.SaveChangesAsync();
-        }
+            ChzzkUid = chzzkUid,
+            RawHz = targetVibration.Value,
+            EmaHz = newEma,
+            StabilityScore = _lastStability,
+            CreatedAt = DateTime.UtcNow
+        });
 
         _logger.LogInformation($"[하모니 조율] {chzzkUid} - Raw: {targetVibration.Value}, EMA: {newEma:F3}, Stability: {_lastStability:P}");
 

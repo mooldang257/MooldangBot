@@ -9,4 +9,5 @@ public interface IOverlayNotificationService
     Task NotifyRouletteResultAsync(string chzzkUid, SpinRouletteResponse response, CancellationToken token = default);
     Task NotifyMissionReceivedAsync(string chzzkUid, RouletteLog missionLog, CancellationToken token = default);
     Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default);
+    Task NotifyChatReceivedAsync(string chzzkUid, string nickname, string message, string userRole, CancellationToken token = default);
 }

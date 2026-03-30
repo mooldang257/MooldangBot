@@ -27,9 +27,9 @@ public class RouletteLogCleanupService : BackgroundService
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
                 var thresholdDate = DateTime.UtcNow.AddDays(-7);
-                var oldLogs = await db.RouletteLogs
-                    .Where(l => l.CreatedAt < thresholdDate)
-                    .ExecuteDeleteAsync(stoppingToken);
+                var oldLogs = await EntityFrameworkQueryableExtensions.ExecuteDeleteAsync(
+                    db.RouletteLogs.Where(l => l.CreatedAt < thresholdDate), 
+                    stoppingToken);
 
                 if (oldLogs > 0)
                 {

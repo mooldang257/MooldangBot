@@ -13,8 +13,7 @@ namespace MooldangBot.Api.Controllers.Admin;
 [Route("api/admin/system-health")]
 public class AdminStatusController(
     IChzzkChatClient chatClient,
-    ITokenRenewalService renewalService,
-    IAppDbContext db) : ControllerBase
+    ITokenRenewalService renewalService) : ControllerBase
 {
     [HttpGet]
     public IActionResult GetSystemHealth()

@@ -11,8 +11,8 @@ namespace MooldangBot.Infrastructure.ApiClients
         private static readonly byte[] FragmentA = new byte[] { 0x63, 0x68, 0x7A }; // "chz"
         private static readonly byte[] FragmentB = new byte[] { 0x7A, 0x6B, 0x5F }; // "zk_"
 
-        // 복호화를 위한 임시 마스킹 키 (메모리 덤프 방해용)
-        private static readonly byte Mask = 0x07;
+        // [오시리스의 영호]: 마스킹 키 (현재 미사용)
+        // private static readonly byte Mask = 0x07;
 
         /// <summary>
         /// [텔로스5의 해독]: 호출되는 즉시 파편을 모아 인증키를 복원하고, 사용 후 가비지 컬렉터에 맡깁니다.

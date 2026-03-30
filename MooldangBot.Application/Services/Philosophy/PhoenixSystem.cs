@@ -14,12 +14,14 @@ namespace MooldangBot.Application.Services.Philosophy;
 public class PhoenixSystem : IPhoenixRecorder
 {
     private readonly IAppDbContext _db;
+    private readonly ILogBulkBuffer _buffer; // [v3.6.3] 벌크 버퍼 추가
     private readonly ILogger<PhoenixSystem> _logger;
 
-    public PhoenixSystem(IAppDbContext db, ILogger<PhoenixSystem> logger)
+    public PhoenixSystem(IAppDbContext db, ILogger<PhoenixSystem> logger, ILogBulkBuffer buffer)
     {
         _db = db;
         _logger = logger;
+        _buffer = buffer;
     }
 
     public async Task RecordScenarioAsync(string scenarioId, string content, int level)
@@ -36,10 +38,9 @@ public class PhoenixSystem : IPhoenixRecorder
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.IamfScenarios.Add(scenario);
-        await _db.SaveChangesAsync();
+        _buffer.AddScenario(scenario); // [v3.6.3] 직접 저장 대신 버퍼 투입
 
-        _logger.LogInformation($"[피닉스 기록 완료] ID: {scenario.Id}");
+        _logger.LogInformation($"[피닉스 기록 수신] {scenarioId} (버퍼에 적재됨)");
     }
 
     /// <summary>

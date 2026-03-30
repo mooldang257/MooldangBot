@@ -2,6 +2,9 @@ using MooldangBot.Infrastructure;
 using MooldangBot.Application;
 using MooldangBot.Presentation;
 using MooldangBot.Presentation.Hubs;
+using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Security;
 using MooldangBot.Presentation.Security;
@@ -14,8 +17,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Text.Json;
+#pragma warning disable CS0105 // 중복 using 제거 완료
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
 
 // 1. [Zero-Git] 실행 인자에서 설정 파일 경로 추출 (--env=.env.prod 등)
 var envPath = args.FirstOrDefault(a => a.StartsWith("--env="))?.Split('=')[1] ?? ".env";
@@ -111,6 +115,17 @@ if (string.IsNullOrEmpty(connStr))
     }
 }
 
+// 🛡️ [오시리스의 지혜]: Serilog 구조화 로깅 활성화
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("logs/mooldangbot-.log", 
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+
 if (!string.IsNullOrEmpty(connStr))
 {
     Console.WriteLine($"[파로스의 확인]: 연결 문자열 확보 성공 (길이: {connStr.Length})");
@@ -132,15 +147,37 @@ builder.Services.AddSingleton<SongQueueState>();
 builder.Services.AddSingleton<RouletteState>();
 builder.Services.AddHostedService<MooldangBot.Application.Workers.RouletteResultWorker>(); // [v1.9.9] 룰렛 결과 전송 파수꾼 가동
 
-// 🛡️ 보안 및 권한 설정 등록 (레거시 매니저 정책 제거됨)
+// 🛡️ 보안 및 권한 설정 등록
+builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>(); // [보안의 파수꾼] 추가
+
+// 🛡️ [오시리스의 영속]: Redis 기반 분산 상태 관리 (SignalR Backplane & Distributed Cache)
+var redisUrl = builder.Configuration["REDIS_URL"] ?? "localhost:6379";
 
 builder.Services.AddSignalR()
+    .AddStackExchangeRedis(redisUrl, options => {
+        // [v4.5.2] 명시적 Literal 채널 사용으로 빌드 경고 제거
+        options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("MooldangBot");
+    })
     .AddJsonProtocol(options =>
     {
         options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisUrl;
+    options.InstanceName = "MooldangBot_";
+});
+
 builder.Services.AddMemoryCache();
+
+// [Phase1: 즉시 안정화] Graceful Shutdown 및 Health Check 설정
+builder.Services.Configure<HostOptions>(options =>
+{
+    // 대량의 채널(100+) 연결을 안전하게 닫기 위해 종료 타임아웃을 30초로 연장
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHealthChecks();
 
 // [성벽의 설계]: IAMF 오버레이 전용 CORS 정책
 builder.Services.AddCors(options =>
@@ -186,21 +223,21 @@ builder.Services.AddAuthentication(options => {
     };
 });
 
-// 레거시 ChannelManager 정책 제거됨
-// builder.Services.AddAuthorization(options =>
-// {
-//     options.AddPolicy("ChannelManager", policy =>
-//     {
-//         policy.RequireAuthenticatedUser(); // 🛡️ 익명 사용자는 정책 검사 전 401 Unauthorized 유도
-//         policy.Requirements.Add(new ChannelManagerRequirement());
-//     });
-// });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ChannelManager", policy =>
+    {
+        policy.RequireAuthenticatedUser(); // 🛡️ 익명 사용자는 정책 검사 전 401 Unauthorized 유도
+        policy.Requirements.Add(new ChannelManagerRequirement());
+    });
+});
 var app = builder.Build();
 
 // ==========================================
 // ⭐ [추가] 프록시(Cloudflare, Nginx) 대응 설정
 // ==========================================
 app.UseForwardedHeaders(); // [Cloudflare/Nginx 대응] 최상단 배치
+app.UseSerilogRequestLogging(); // [v3.6.2] HTTP 요청 로깅 활성화
 app.UseRouting();
 app.UseCors("IamfOverlayPolicy");
 
@@ -241,6 +278,29 @@ app.MapGet("/", () => Results.Redirect("/bot"));
 
 app.MapControllers();
 
+// [Phase1: 즉시 안정화] 헬스체크 엔드포인트 맵핑 (상세 JSON 메트릭 포함)
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var result = JsonSerializer.Serialize(new
+        {
+            Status = report.Status.ToString(),
+            Timestamp = DateTime.UtcNow,
+            Details = report.Entries.Select(entry => new
+            {
+                Name = entry.Key,
+                Status = entry.Value.Status.ToString(),
+                Description = entry.Value.Description,
+                Data = entry.Value.Data
+            })
+        }, options);
+        await context.Response.WriteAsync(result);
+    }
+});
+
 
 
 
@@ -271,10 +331,16 @@ using (var scope = app.Services.CreateScope())
 
     EnsureSetting("ChzzkClientId", config["CHZZK_API:CLIENT_ID"] ?? config["ChzzkApi:ClientId"]);
     EnsureSetting("ChzzkClientSecret", config["CHZZK_API:CLIENT_SECRET"] ?? config["ChzzkApi:ClientSecret"]);
+    
+    // [오시리스의 확인]: DB 초기값 세팅 완료 (중복 SaveChanges 제거)
     db.SaveChanges();
+}
 
-    // [오시리스의 확인]: DB 초기값 세팅 완료
-    db.SaveChanges();
+// [v4.5.0] 분산 인스턴스 자가 등록 시스템 가동
+using (var scope = app.Services.CreateScope())
+{
+    var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
+    await chatClient.InitializeAsync();
 }
 
 app.Run();

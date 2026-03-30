@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -12,6 +12,7 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+/*
             migrationBuilder.CreateTable(
                 name: "broadcastsessions",
                 columns: table => new
@@ -35,7 +36,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_broadcastsessions", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "iamf_genos_registry",
                 columns: table => new
@@ -54,7 +57,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_iamf_genos_registry", x => x.Name);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "iamf_parhos_cycles",
                 columns: table => new
@@ -72,7 +77,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_iamf_parhos_cycles", x => x.CycleId);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "iamf_scenarios",
                 columns: table => new
@@ -92,7 +99,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_iamf_scenarios", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "iamf_streamer_settings",
                 columns: table => new
@@ -111,7 +120,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_iamf_streamer_settings", x => x.ChzzkUid);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "iamf_vibration_logs",
                 columns: table => new
@@ -130,7 +141,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_iamf_vibration_logs", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "roulettelogs",
                 columns: table => new
@@ -156,7 +169,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_roulettelogs", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
+/*
             migrationBuilder.CreateTable(
                 name: "songbooks",
                 columns: table => new
@@ -179,6 +194,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     table.PrimaryKey("PK_songbooks", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+*/
 
             migrationBuilder.CreateTable(
                 name: "StreamerKnowledges",
@@ -201,6 +217,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+/*
             migrationBuilder.CreateIndex(
                 name: "IX_roulettelogs_ChzzkUid_Status_Id",
                 table: "roulettelogs",
@@ -217,11 +234,13 @@ namespace MooldangBot.Infrastructure.Migrations
                 table: "songbooks",
                 columns: new[] { "ChzzkUid", "Id" },
                 descending: new[] { false, true });
+*/
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+/*
             migrationBuilder.DropTable(
                 name: "broadcastsessions");
 
@@ -239,12 +258,15 @@ namespace MooldangBot.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "iamf_vibration_logs");
+*/
 
+/*
             migrationBuilder.DropTable(
                 name: "roulettelogs");
 
             migrationBuilder.DropTable(
                 name: "songbooks");
+*/
 
             migrationBuilder.DropTable(
                 name: "StreamerKnowledges");

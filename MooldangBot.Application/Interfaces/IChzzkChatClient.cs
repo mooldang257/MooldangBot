@@ -9,6 +9,11 @@ namespace MooldangBot.Application.Interfaces;
 public interface IChzzkChatClient
 {
     /// <summary>
+    /// [파동의 정렬]: 분산 환경에서 인스턴스 인덱스를 자동으로 할당받고 시스템을 초기화합니다.
+    /// </summary>
+    Task InitializeAsync();
+
+    /// <summary>
     /// [연결 상태 확인]: 특정 채널의 소켓이 현재 정상 연결(Open) 상태인지 확인합니다.
     /// </summary>
     bool IsConnected(string chzzkUid);
@@ -27,4 +32,9 @@ public interface IChzzkChatClient
     /// [맥박의 집계]: 현재 연결된 활성 소켓의 총 개수를 반환합니다.
     /// </summary>
     int GetActiveConnectionCount();
+
+    /// <summary>
+    /// [파동의 전수조사]: 모든 샤드의 상세 상태 정보를 반환합니다.
+    /// </summary>
+    IEnumerable<ShardStatus> GetShardStatuses();
 }

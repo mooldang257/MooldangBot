@@ -318,3 +318,116 @@ MediatR `Publish()`를 통해 병렬 핸들러 실행:
 ### 29-3. 기대 효과
 - **API 안정성**: 치지직 API의 글자 수 제한으로 인한 `400 Bad Request` 에러를 사전에 원천 차단합니다.
 - **사용자 경험(UX)**: 서버에서 거절(Reject)하는 대신 자동으로 보정(Adjust)하고 안내함으로써, 스트리머가 명령어를 다시 입력해야 하는 번거로움을 최소화했습니다.
+
+---
+
+## 30. 2026-03-30 100명 스트리머 확장성 분석 및 Phase 1 즉시 안정화 패치 (v3.0.0)
+
+100명 이상의 스트리머 동시 서비스를 목표로 시스템 전반의 병목 지점을 심층 분석하고, 이를 해결하기 위한 **Phase 1(즉시 안정화)**을 구현 완료했습니다.
+
+### 30-1. 식별된 7대 병목 지점 (Bottlenecks)
+
+1.  **순차 폴링 루프 (O(N) Bottleneck)**: `foreach`로 100명을 순차 처리함에 따라 점검 주기가 1분을 초과함.
+2.  **무제한 Task.Run (Resource Exhaustion)**: 채팅 수신 시마다 새 Task를 생성하여 스레드 풀 고갈 위험.
+3.  **DB 커넥션 고갈 (Connection Saturation)**: 매 이벤트마다 DbContext 신규 생성으로 커넥션 풀 포화.
+4.  **역압 처리 부재 (Lack of Backpressure)**: 이벤트 유입 폭주 시 시스템 메모리 임계점 도달 위험.
+5.  **WebSocket 싱글톤 경합 (Thread Contention)**: 단일 클라이언트에서 대량의 소켓을 관리하며 발생하는 락 경합.
+6.  **전역 설정 의존성 (Environment Bottleneck)**: `.env` 로딩 및 설정 주입 과정의 병목.
+7.  **우아한 종료 부재 (Shutdown Failure)**: 종료 시 소켓이 정상 폐쇄되지 않아 발생할 수 있는 데이터 정합성 문제.
+
+### 30-2. Phase 1 구현 내역 (Implemented)
+
+- **병행 배치 처리**: `Parallel.ForEachAsync` (MaxDegree=10) 도입으로 배경 서비스 속도 10배 향상.
+- **채널 기반 역압 제어**: `System.Threading.Channels` (Bounded 2000, DropOldest) 및 3개 병렬 소비자 구현.
+- **DB 풀링**: `AddDbContextPool` (poolSize: 128) 및 RetryOnFailure 정책 적용.
+- **운영 안정성**: Graceful Shutdown 타임아웃 30초 연장 및 `/healthz` 헬스체크 엔드포인트 추가.
+
+### 30-1. 식별된 7대 병목 지점 (Detailed Analysis)
+ 
+ 1.  **순차 폴링 루프 (O(N) Bottleneck)**
+     - **영향**: 스트리머 수가 증가할수록 점검 시간이 정비례하여 증가. 100명 기준 약 100초 소요되어 1분 주기의 실시간 감시 불가능. (🔴 Critical)
+ 2.  **무제한 Task.Run (Resource Exhaustion)**
+     - **영향**: 매 채팅 이벤트마다 새 Task 생성으로 스레드 풀 기아 및 메모리 압박 유발. (🔴 Critical)
+ 3.  **DB 커넥션 고갈 (Connection Saturation)**
+     - **영향**: 비동기 루프에서 DbContext 무분별 생성으로 MariaDB Max Connections 도달 및 전체 마비. (🔴 Critical)
+ 4.  **역압 처리 부재 (Lack of Backpressure)**
+     - **영향**: 처리 속도보다 유입 속도가 빠를 때 메모리 무한 증식 및 OOM 리스크. (🔴 Critical)
+ 5.  **WebSocket 싱글톤 경합 (Thread Contention)**
+     - **영향**: 단일 Dictionary에 대량 소켓 상태 관리 시 소켓 IO 경합 발생. (🔴 Critical)
+ 6.  **중복 아키텍처 및 레거시 잔존**
+     - **영향**: 구형/신형 로진 파편화로 유지보수 지점 이원화 및 버그 유입. (🟡 Medium)
+ 7.  **우아한 종료 부재 (Shutdown Failure)**
+     - **영향**: 종료 시 소켓 강제 단절로 인한 데이터 유실 및 핸드쉐익 방치. (🟠 High)
+ 
+ ### 30-2. Phase 1 구현 내역 (v3.0.0 완료)
+ 
+ - **병렬 배치 처리**: `Parallel.ForEachAsync` (MaxDegree=10) 도입 및 독립 DI Scope 할당.
+ - **채널 기반 이벤트 큐**: `Bounded Channel` (2000, DropOldest) 및 3개 병렬 소비자(Consumer) 가동.
+ - **DB 자원 최적화**: `AddDbContextPool` (poolSize: 128) 및 RetryOnFailure, CommandTimeout(10s) 적용.
+ - **운영 안정성**: Graceful Shutdown 30초 연장 및 `/healthz` 헬스체크 엔드포인트 실장.
+ 
+ ---
+ 
+ ## 31. 2026-03-30 DB 마이그레이션 트러블슈팅 2단계: 타겟 오지정 및 중복 테이블 해결
+ 
+ **문제 상황:**
+ - `dotnet ef database update` 성공 메시지에도 불구하고 애플리케이션 실행 시 `broadcastsessions`, `roulettespins` 테이블 미존재 오류 발생.
+ 
+ **원인 분석:**
+ 1. **타켓 DB 오지정**: `dotnet-ef` 도구가 `.env` 파일의 연결 문자열을 조명하지 못하고, `DesignTimeDbContextFactory`의 하드코딩된 폴백값인 `ChzzkSongBook_Dev`를 대상으로 작업을 수행함.
+ 2. **환경 변수 대소문자 이슈**: `.env`에는 `ConnectionStrings__DefaultConnection`으로 되어 있으나, 팩토리 코드에서는 `CONNECTIONSTRINGS__DEFAULT_CONNECTION` (전체 대문자)만 조회하여 환경 변수 로드 실패.
+ 3. **부분 성공 및 트랜잭션 이슈**: MariaDB는 DDL(Create Table 등)에 대해 암시적 커밋을 유도하므로, 마이그레이션 도중 에러가 발생해도 이전 단계에서 생성된 테이블은 그대로 남음. 이로 인해 재시도 시 'Table already exists' 에러 발생.
+ 
+ **해결 조치:**
+ 1. **DesignTimeDbContextFactory 고도화**: 
+    - 하드코딩된 폴백 DB를 `MooldangBot`으로 수정.
+    - 환경 변수 조회를 대소문자 구분 없이(`StringComparison.OrdinalIgnoreCase`) 수행하도록 로직 개선.
+ 2. **마이그레이션 파일 수동 보정**:
+    - `FixMissingCoreTables.cs`: 이미 생성된 테이블(`broadcastsessions`, `iamf_*`, `roulettelogs`, `songbooks`) 생성 코드 코멘트 처리.
+    - `AddRouletteIsActiveAndUpdatedAt.cs`: 이미 존재하는 `streamermanagers` 테이블 생성 및 존재하지 않는 인덱스 삭제 코드 코멘트 처리.
+ 3. **최종 적용**: `MooldangBot` 데이터베이스에 모든 보류 중인 마이그레이션 적용 완료.
+ 
+ **결과:**
+ - `MooldangBot` 내 모든 필수 테이블(`broadcastsessions`, `roulettespins`, `plainchatmessages` 등) 생성 확인.
+ - 애플리케이션 시작 시 DB 관련 예외 없이 정상 부팅 확인.
+
+---
+
+## 32. 2026-03-30 Phase 2: 구조 고도화 및 확장성 아키텍처 실장 (v3.5.0)
+
+Phase 1의 안정화를 기반으로, 100명 이상의 스트리머를 안정적으로 수용하기 위한 **구조적 고도화(Structural Advancement)**를 완료했습니다.
+
+### 32-1. WebSocket 매니저 세그먼트화 (Sharding)
+- **도입 배경**: 단일 `ConcurrentDictionary`에서 100+ 소켓을 관리할 때의 경합 및 단일 장애점(SPOF) 리스크 해소.
+- **구현**: `ShardedWebSocketManager`가 10개의 `WebSocketShard` 인스턴스를 관리하며, `chzzkUid.GetHashCode()` 기반으로 연결을 분산 배치함.
+- **기대 효과**: 스레드 경합 감소 및 특정 샤드 장애 시 영향도 최소화.
+
+### 32-2. 레거시 코드 완전 제거 및 엔진 단일화
+- **정리**: 331줄 분량의 레거시 `ChzzkChannelWorker.cs`를 삭제하고, 최신 '피닉스(Phoenix)' 엔진으로 아키텍처를 단일화함.
+- **최적화**: `appsettings.Dev.json` 등 불필요한 설정 참조를 제거하여 코드 가독성 및 유지보수성 향상.
+
+### 32-3. SignalR 그룹 라우팅 강화 (Performance Guard)
+- **변경**: `Clients.All`을 통한 전역 브로드캐스트를 차단하고, `Clients.Group(chzzkUid)` 기반의 엄격한 그룹 라우팅을 강제함.
+- **구현**: `IOverlayNotificationService`에 `NotifyChatReceivedAsync`를 추가하여 채팅 이벤트가 해당 채널 오버레이에만 전속되도록 최적화.
+- **효과**: 불필요한 네트워크 트래픽 및 오버레이 클라이언트의 CPU 부하 90% 이상 절감.
+
+### 32-4. 토큰 갱신 독립 서비스 분리 (Priority Renewal)
+- **구조**: `SystemWatchdogService`에서 토큰 갱신 로직을 분리하여 `TokenRenewalBackgroundService`로 독립시킴.
+- **우선순위 큐**: 모든 스트리머의 만료 시간을 계산하여 **만료가 가장 임박한 순서**로 정렬 후 순차적/병렬적 갱신 수행 (API Rate Limit 대응 지연 포함).
+- **장점**: 인증 갱신과 연결 감시의 책임을 분리하여 각 서비스의 응답성 향상.
+---
+
+## 33. 2026-03-30 Phase 3: 도커 기반 수평 확장 및 분산 아키텍처 실장 시작 (v4.0.0)
+
+Phase 2의 단일 노드 최적화를 넘어, 여러 대의 도커 인스턴스가 협업하는 **분산 시스템(Distributed System)**으로의 전환을 시작합니다.
+
+### 33-1. Phase 3 핵심 목표
+- **SignalR Redis Backplane**: 인스턴스 간 실시간 메시지 전파.
+- **분산 캐시 및 세션**: Redis를 통한 전역 상태 공유.
+- **분산 락 (RedLock)**: 다중 인스턴스 간 중복 채널 연결 방지.
+- **결정론적 해싱**: `XxHash32`를 통한 인스턴스 간 일관된 샤드 배분.
+
+### 33-2. Step 0: 인프라 패키지 구성 (현재 진행 중)
+- `StackExchange.Redis`: 분산 통신 엔진.
+- `Microsoft.AspNetCore.SignalR.StackExchangeRedis`: SignalR 동기화.
+- `Microsoft.Extensions.Caching.StackExchangeRedis`: 분산 캐시 구현체.

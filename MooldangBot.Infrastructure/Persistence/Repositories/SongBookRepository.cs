@@ -1,4 +1,4 @@
-﻿using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Extensions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
@@ -18,13 +18,15 @@ public class SongBookRepository : ISongBookRepository
 
     public async Task<PagedResponse<SongBook>> GetPagedSongsAsync(string streamerChzzkUid, PagedRequest request)
     {
+        // [오시리스의 영호]: 마스킹 키 (현재 미사용으로 주석 처리)
+        // private static readonly byte Mask = 0x07;
         var query = _context.SongBooks
             .AsNoTracking()
             .Where(s => s.ChzzkUid == streamerChzzkUid);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            query = query.Where(s => s.Title.Contains(request.Search) || s.Artist.Contains(request.Search));
+            query = query.Where(s => s.Title.Contains(request.Search) || (s.Artist != null && s.Artist.Contains(request.Search)));
         }
 
         // Keyset Pagination: LastId 보다 작은 데이터만 조회 (ID DESC 정렬 기준)
