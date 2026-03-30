@@ -15,10 +15,11 @@ services:
     volumes:
       - ${DB_DATA_PATH}:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root --password=$$MARIADB_ROOT_PASSWORD || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 15
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
