@@ -41,7 +41,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         Console.WriteLine($"   👤 User: {dbUser} / Pwd: {Mask(dbPass)}");
 
         // 4. [접속 문자열 완성]: 개별 변수를 조합하여 파싱 오류 차단
-        var connectionString = $"Server={dbHost};Database={dbName};User={dbUser};Password={dbPass};CharSet=utf8mb4;";
+        var connectionString = $"Server={dbHost};Database={dbName};Uid={dbUser};Pwd={dbPass};CharSet=utf8mb4;";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));
