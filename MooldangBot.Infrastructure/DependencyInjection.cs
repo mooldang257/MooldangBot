@@ -43,7 +43,8 @@ namespace MooldangBot.Infrastructure
 
             // Database — [Phase4] AddDbContextPool 상향 (poolSize: 256)
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            var serverVersion = ServerVersion.AutoDetect(connectionString);
+            // [파로스]: 실 서비스 기동 시에도 DB 응답 대기 없이 즉시 설정을 완료하도록 버전을 고정합니다.
+            var serverVersion = ServerVersion.Parse("10.11-mariadb");
             
             services.AddDbContextPool<AppDbContext>(options =>
                 options.UseMySql(connectionString, serverVersion, mysqlOptions =>
