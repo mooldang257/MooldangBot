@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.SignalR;
-using MooldangBot.Application.Interfaces; // [v1.9.9] 추가
+using Microsoft.Extensions.Logging;
+using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Presentation.Hubs;
 
 /// <summary>
 /// [오시리스의 지휘소]: 서버와 오버레이 간의 실시간 공명 통로입니다.
 /// </summary>
-public class OverlayHub(IRouletteService rouletteService) : Hub
+public class OverlayHub(IRouletteService rouletteService, ILogger<OverlayHub> logger) : Hub
 {
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 시 서버에 결과를 알립니다.
@@ -16,10 +17,26 @@ public class OverlayHub(IRouletteService rouletteService) : Hub
         await rouletteService.CompleteRouletteAsync(spinId);
     }
 
-    // OBS 브라우저 소스 클라이언트가 연결될 때 호출
+    // [v2.1.0] OBS 브라우저 소스 클라이언트가 연결될 때 호출
     public override async Task OnConnectedAsync()
     {
-        await Clients.Caller.SendAsync("Connected", "Overlay successfully connected.");
+        var httpContext = Context.GetHttpContext();
+        var chzzkUid = httpContext?.Request.Query["chzzkUid"].ToString();
+
+        if (!string.IsNullOrWhiteSpace(chzzkUid))
+        {
+            // 1. 소문자로 정규화하여 그룹 가입 (대소문자 불일치 방지)
+            var normalizedUid = chzzkUid.ToLower();
+            await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
+            
+            // 2. [10-2] 구조화된 로깅으로 접속 및 자동 가입 기록
+            logger.LogInformation("Overlay connected and auto-joined group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
+        }
+        else
+        {
+            logger.LogWarning("Overlay connected without chzzkUid. ConnectionId: {ConnectionId}", Context.ConnectionId);
+        }
+        
         await base.OnConnectedAsync();
     }
 

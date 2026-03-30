@@ -30,36 +30,50 @@ public class PeriodicMessageWorker : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-                var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
                 var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
 
-                var profiles = await db.StreamerProfiles.Where(p => p.IsBotEnabled).ToListAsync(stoppingToken);
-                var now = DateTime.Now;
+                // 1. 활성화된 모든 스트리머 프로필 조회 (N+1 방지 시작)
+                var profiles = await db.StreamerProfiles
+                    .AsNoTracking()
+                    .Where(p => p.IsBotEnabled)
+                    .ToListAsync(stoppingToken);
 
-                foreach (var profile in profiles)
+                if (profiles.Count > 0)
                 {
-                    var periodicMessages = await db.PeriodicMessages
-                        .Where(m => m.ChzzkUid == profile.ChzzkUid && m.IsEnabled)
+                    var profileUids = profiles.Select(p => p.ChzzkUid).ToList();
+
+                    // 2. 활성화된 모든 정기 메시지 일괄 조회 (N+1 해결)
+                    var allMessages = await db.PeriodicMessages
+                        .Where(m => profileUids.Contains(m.ChzzkUid) && m.IsEnabled)
                         .ToListAsync(stoppingToken);
 
-                    foreach (var msg in periodicMessages)
+                    var messagesLookup = allMessages.ToLookup(m => m.ChzzkUid);
+                    var now = DateTimeOffset.UtcNow;
+
+                    foreach (var profile in profiles)
                     {
-                        var lastSent = msg.LastSentAt ?? DateTime.MinValue;
-                        
-                        // 설정된 주기가 지났는지 확인
-                        if (now >= lastSent.AddMinutes(msg.IntervalMinutes))
+                        var periodicMessages = messagesLookup[profile.ChzzkUid];
+
+                        foreach (var msg in periodicMessages)
                         {
-                            _logger.LogInformation($"📢 [주기적 메시지] {profile.ChzzkUid} 채널 송출 시작: {msg.Message.Substring(0, Math.Min(msg.Message.Length, 20))}...");
+                            var lastSent = msg.LastSentAt != null 
+                                ? new DateTimeOffset(msg.LastSentAt.Value, TimeSpan.Zero) 
+                                : DateTimeOffset.MinValue;
                             
-                            // 정기 메시지는 특정 시청자 대응이 아니므로 viewerUid를 빈값으로 전송
-                            var success = await botService.SendReplyChatAsync(profile, msg.Message, "", stoppingToken);
-                            
-                            if (success)
+                            // 설정된 주기가 지났는지 확인 (타임존 독립적 비교)
+                            if (now >= lastSent.AddMinutes(msg.IntervalMinutes))
                             {
-                                msg.LastSentAt = now;
-                                // 즉시 저장하여 워커 재시작 시 중복 발송 방지
-                                await db.SaveChangesAsync(stoppingToken);
-                                _logger.LogInformation($"✅ [주기적 메시지] {profile.ChzzkUid} 송출 완료 및 시간 갱신");
+                                _logger.LogInformation($"📢 [주기적 메시지] {profile.ChzzkUid} 채널 송출 시작: {msg.Message.Substring(0, Math.Min(msg.Message.Length, 20))}...");
+                                
+                                var success = await botService.SendReplyChatAsync(profile, msg.Message, "", stoppingToken);
+                                
+                                if (success)
+                                {
+                                    msg.LastSentAt = now.UtcDateTime;
+                                    // 즉시 저장하여 워커 재시작 시 중복 발송 방지
+                                    await db.SaveChangesAsync(stoppingToken);
+                                    _logger.LogInformation($"✅ [주기적 메시지] {profile.ChzzkUid} 송출 완료 및 시간 갱신");
+                                }
                             }
                         }
                     }
@@ -70,7 +84,7 @@ public class PeriodicMessageWorker : BackgroundService
                 _logger.LogError(ex, "❌ [주기적 메시지 워커] 실행 중 오류 발생");
             }
 
-            // 1분 단위로 체크하여 정밀도 향상
+            // 1분 단위로 체크
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }

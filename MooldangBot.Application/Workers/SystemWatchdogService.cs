@@ -19,6 +19,7 @@ public class SystemWatchdogService(
     ILogger<SystemWatchdogService> logger) : BackgroundService
 {
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -26,13 +27,25 @@ public class SystemWatchdogService(
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            try
+            // [N7 해결]: 이전 작업이 진행 중이면 이번 주기를 건너뜁니다. (WaitAsync(0) 사용)
+            if (!await _semaphore.WaitAsync(0, stoppingToken))
             {
-                await MonitorAndRenewPulseAsync(stoppingToken);
+                logger.LogWarning("[오시리스의 감시자] 이전 감시 작업이 아직 완료되지 않았습니다. 이번 주기를 건너뜁니다.");
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogError(ex, "[오시리스의 감시자] 감시 루프 중 예상치 못한 오류 발생");
+                try
+                {
+                    await MonitorAndRenewPulseAsync(stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "[오시리스의 감시자] 감시 루프 중 예상치 못한 오류 발생");
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
             }
 
             await Task.Delay(_checkInterval, stoppingToken);
@@ -54,7 +67,7 @@ public class SystemWatchdogService(
 
             foreach (var session in inactiveSessions)
             {
-                logger.LogWarning($"[기록관의 붓] {session.ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.");
+                logger.LogWarning("[기록관의 붓] {ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.", session.ChzzkUid);
                 await scribe.FinalizeSessionAsync(session.ChzzkUid);
                 await chatClient.DisconnectAsync(session.ChzzkUid);
             }
@@ -71,7 +84,7 @@ public class SystemWatchdogService(
                 .ToList();
         }
 
-        logger.LogInformation($"🔍 [오시리스의 감시자] {activeUids.Count}명의 파동을 병렬로 점검합니다. (MaxParallelism=10)");
+        logger.LogInformation("🔍 [오시리스의 감시자] {Count}명의 파동을 병렬로 점검합니다. (MaxParallelism=10)", activeUids.Count);
 
         // 3. [병렬 배치 처리]: 토큰 갱신 및 재연결을 병렬로 수행 (채널당 독립 Scope)
         await Parallel.ForEachAsync(activeUids,
@@ -102,12 +115,12 @@ public class SystemWatchdogService(
                     }
                     else
                     {
-                        logger.LogWarning($"[오시리스의 감시자] {chzzkUid} 스트리머의 토큰 파동이 끊겼습니다. 수동 조치가 필요할 수 있습니다.");
+                        logger.LogWarning("[오시리스의 감시자] {ChzzkUid} 스트리머의 토큰 파동이 끊겼습니다. 수동 조치가 필요할 수 있습니다.", chzzkUid);
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, $"⚠️ [오시리스의 감시자] {chzzkUid} 개별 점검 중 오류 발생 (다른 채널에 영향 없음)");
+                    logger.LogWarning(ex, "⚠️ [오시리스의 감시자] {ChzzkUid} 개별 점검 중 오류 발생 (다른 채널에 영향 없음)", chzzkUid);
                 }
             });
     }

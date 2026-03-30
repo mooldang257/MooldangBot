@@ -4,20 +4,19 @@
     - [x] [N1] BroadcastScribe 종료 시 `_activeStats` DB 플러시 로직 구현
     - [x] [N3, N4] WebSocket 관리 계층(Manager/Shard) 동기 블로킹 `Dispose` 제거
     - [x] [#10] ChzzkChatService, RouletteService 내 `CancellationToken.None` 교체
-- [ ] **Step 2: 회복 탄력성(Polly) 및 객체 수명 주기(DI) 교정**
-    - [ ] [12-2] ChzzkApiClient 전역 `AddStandardResilienceHandler` 적용
-    - [ ] [N5] ChzzkBackgroundService Captive Dependency 문제 수정 (ScopeFactory 도입)
-    - [ ] [M3] Redis 연결 로직 비동기(ConnectAsync) 또는 Lazy 패턴으로 전환
-- [ ] **Step 3: DB I/O 최적화 (Dapper 하이브리드 및 N+1 제거)**
-    - [ ] [12-1] PointTransactionService Dapper 기반 Atomic UPDATE 도입
-    - [ ] [#6, N6] PeriodicMessageWorker N+1 쿼리 최적화 및 UTC 시간대 통일
-- [ ] **Step 4: 백그라운드 동시성 제어 및 컨슈머 확장**
-    - [ ] [#7] Watchdog 및 BackgroundService 재진입 방지(SemaphoreSlim) 적용
-    - [ ] [M1] ChatEventConsumerService 병렬 소비자 수 상향 (3 -> 5)
-- [ ] **Step 5: 코드 품질 정리 및 SignalR 그룹 라우팅 완성**
-    - [ ] [10-2] 프로젝트 전반 Structured Logging(구조화된 로깅) 템플릿 적용
-    - [ ] [N2] OverlayHub 연결 시 쿼리 스트링 기반 자동 그룹 가입 구현
-    - [ ] [N7] Infrastructure 프로젝트 내 불필요한 HealthChecks 패키지 참조 제거
+- [x] **Step 2: 회복 탄력성(Polly) 및 객체 수명 주기(DI) 교정**
+    - [x] [12-2] ChzzkApiClient 전역 `AddStandardResilienceHandler` 적용
+    - [x] [N5] ChzzkBackgroundService Captive Dependency 문제 수정 (ScopeFactory 도입)
+    - [x] [M3] Redis 연결 로직 비동기(ConnectAsync) 또는 Lazy 패턴으로 전환
+- [x] **Step 3: DB I/O 최적화 (Dapper 하이브리드 및 N+1 제거)**
+    - [x] [12-1] PointTransactionService Dapper 기반 Atomic UPDATE 도입
+    - [x] [#6, N6] PeriodicMessageWorker N+1 쿼리 최적화 및 UTC 시간대 통일
+- [x] **Step 4: 백그라운드 동시성 제어 및 컨슈머 확장**
+    - [x] [#7] Watchdog 및 BackgroundService 재진입 방지(SemaphoreSlim) 적용
+    - [x] [M1] ChatEventConsumerService 병렬 소비자 수 상향 (3 -> 8)
+- [x] **Step 5: 코드 품질 정리 및 SignalR 그룹 라우팅 완성**
+    - [x] [10-2] 프로젝트 전반 Structured Logging(구조화된 로깅) 템플릿 적용
+    - [x] [N2] OverlayHub 연결 시 쿼리 스트링 기반 자동 그룹 가입 구현
 
 - [x] **Step 6: Docker 배포 환경 고도화 및 MariaDB 전환**
     - [x] [.env.sample] 명시적 저장 경로를 포함한 환경 변수 템플릿 작성

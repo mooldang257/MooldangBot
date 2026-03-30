@@ -10,14 +10,14 @@ namespace MooldangBot.Application.Workers;
 public class ChzzkBackgroundService : BackgroundService
 {
     private readonly ILogger<ChzzkBackgroundService> _logger;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IChzzkApiClient _chzzkApi;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public ChzzkBackgroundService(ILogger<ChzzkBackgroundService> logger, IServiceProvider serviceProvider, IChzzkApiClient chzzkApi)
+    // [N5 해결]: Singleton 서비스에서 Scoped/Transient 의존성을 직접 주입받지 않고 Factory를 사용합니다.
+    public ChzzkBackgroundService(ILogger<ChzzkBackgroundService> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _serviceProvider = serviceProvider;
-        _chzzkApi = chzzkApi;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,70 +26,80 @@ public class ChzzkBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            try
+            // [N7 해결]: 이전 폴링 작업이 진행 중이면 이번 주기를 건너뜁니다.
+            if (!await _semaphore.WaitAsync(0, stoppingToken))
             {
-                List<string> activeUids;
-
-                // 1단계: 활성 스트리머 UID 목록 조회 (짧은 Scope)
-                using (var scope = _serviceProvider.CreateScope())
+                _logger.LogWarning("⚠️ [치지직 백그라운드 서비스] 이전 점검 작업이 아직 완료되지 않았습니다. 이번 주기를 건너뜁니다.");
+            }
+            else
+            {
+                try
                 {
-                    var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-                    activeUids = await db.StreamerProfiles
-                        .Where(p => p.IsBotEnabled)
-                        .Select(p => p.ChzzkUid)
-                        .ToListAsync(stoppingToken);
-                }
+                    List<string> activeUids;
 
-                _logger.LogInformation($"📊 [병렬 배치] 활성 스트리머 {activeUids.Count}명에 대한 병렬 점검을 시작합니다. (MaxParallelism=10)");
-
-                // 2단계: 병렬 배치 처리 (채널당 독립 Scope)
-                await Parallel.ForEachAsync(activeUids,
-                    new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = stoppingToken },
-                    async (chzzkUid, ct) =>
+                    // 1단계: 활성 스트리머 UID 목록 조회 (작은 스코프에서 DB 작업 수행)
+                    using (var scope = _scopeFactory.CreateScope())
                     {
-                        try
+                        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+                        activeUids = await db.StreamerProfiles
+                            .Where(p => p.IsBotEnabled)
+                            .Select(p => p.ChzzkUid)
+                            .ToListAsync(stoppingToken);
+                    }
+
+                    _logger.LogInformation($"📊 [병렬 배치] 활성 스트리머 {activeUids.Count}명 점검을 시작합니다. (MaxParallelism=10)");
+
+                    // 2단계: 병렬 배치 처리 (채널당 독립 Scope 활용)
+                    await Parallel.ForEachAsync(activeUids,
+                        new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = stoppingToken },
+                        async (chzzkUid, ct) =>
                         {
-                            using var scope = _serviceProvider.CreateScope();
-                            var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
-                            var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
-                            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-                            // [맥박의 점검]: 채팅 엔진(소켓) 연결 상태 보장 (24/7 유지)
-                            await botService.EnsureConnectionAsync(chzzkUid);
-
-                            // [스마트 폴링 (P3)]: 최근 7일 내 방송 이력이 있거나, 최근 1시간 내 채팅 활동이 있거나, 이력이 아예 없는 경우 체크
-                            bool hasAnySession = await db.BroadcastSessions
-                                .AnyAsync(s => s.ChzzkUid == chzzkUid, ct);
-
-                            bool hasRecentSession = hasAnySession && await db.BroadcastSessions
-                                .AnyAsync(s => s.ChzzkUid == chzzkUid && s.StartTime > DateTime.UtcNow.AddDays(-7), ct);
-
-                            bool isRecentlyChatted = scribe.IsRecentlyActive(chzzkUid);
-
-                            // 기록이 아예 없는 신규 채널이거나, 최근 활동이 있는 경우에만 API 호출
-                            if (!hasAnySession || hasRecentSession || isRecentlyChatted)
+                            try
                             {
-                                bool isLive = await _chzzkApi.IsLiveAsync(chzzkUid);
-                                if (isLive)
+                                // [시니어 팁]: 각 병렬 작업마다 독립적인 스코프를 생성하여 HttpClient/DB 객체 수명 주기를 보장합니다.
+                                using var scope = _scopeFactory.CreateScope();
+                                var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
+                                var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
+                                var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
+                                var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+                                // [맥박의 점검]: 채팅 엔진(소켓) 연결 상태 보장
+                                await botService.EnsureConnectionAsync(chzzkUid);
+
+                                // [스마트 폴링]: 방송 이력/활동 여부에 따른 지능형 조회
+                                bool hasAnySession = await db.BroadcastSessions
+                                    .AnyAsync(s => s.ChzzkUid == chzzkUid, ct);
+
+                                bool hasRecentSession = hasAnySession && await db.BroadcastSessions
+                                    .AnyAsync(s => s.ChzzkUid == chzzkUid && s.StartTime > DateTime.UtcNow.AddDays(-7), ct);
+
+                                bool isRecentlyChatted = scribe.IsRecentlyActive(chzzkUid);
+
+                                if (!hasAnySession || hasRecentSession || isRecentlyChatted)
                                 {
-                                    _logger.LogInformation($"📡 [라이브 감지 성공] {chzzkUid} 채널이 현재 생방송 중입니다.");
-                                    await scribe.HeartbeatAsync(chzzkUid);
-                                }
-                                else
-                                {
-                                    _logger.LogDebug($"[라이브 감지] {chzzkUid} 채널은 현재 오프라인 상태입니다.");
+                                    // [N5 해결 완료]: Scope 내에서 Resolve된 chzzkApi를 사용하여 DNS 정보를 항상 갱신합니다.
+                                    bool isLive = await chzzkApi.IsLiveAsync(chzzkUid);
+                                    if (isLive)
+                                    {
+                                        _logger.LogInformation($"📡 [라이브 감지 성공] {chzzkUid} 채널 방송 중.");
+                                        await scribe.HeartbeatAsync(chzzkUid);
+                                    }
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, $"⚠️ [병렬 배치] {chzzkUid} 채널 점검 중 개별 오류 발생 (다른 채널에 영향 없음)");
-                        }
-                    });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ [치지직 백그라운드 서비스] 실행 중 오류 발생");
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, $"⚠️ {chzzkUid} 채널 점검 중 개별 오류 (격리 처리)");
+                            }
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ [치지직 백그라운드 서비스] 전역 오류 발생");
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
             }
 
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);

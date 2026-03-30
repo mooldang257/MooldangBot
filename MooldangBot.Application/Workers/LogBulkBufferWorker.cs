@@ -62,13 +62,13 @@ public class LogBulkBufferWorker(
 
             if (vibrationLogs.Count > 0)
             {
-                logger.LogInformation($"[기록관의 수레] {vibrationLogs.Count}개의 진동 로그를 벌크 저장합니다.");
+                logger.LogInformation("[기록관의 수레] {Count}개의 진동 로그를 벌크 저장합니다.", vibrationLogs.Count);
                 await dbContext.BulkInsertAsync(vibrationLogs);
             }
 
             if (scenarios.Count > 0)
             {
-                logger.LogInformation($"[기록관의 수레] {scenarios.Count}개의 시나리오 로그를 벌크 저장합니다.");
+                logger.LogInformation("[기록관의 수레] {Count}개의 시나리오 로그를 벌크 저장합니다.", scenarios.Count);
                 await dbContext.BulkInsertAsync(scenarios);
             }
         }

@@ -2,7 +2,8 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore; // Added for FirstOrDefaultAsync and DbUpdateConcurrencyException
+using Microsoft.EntityFrameworkCore;
+using Dapper;
 
 namespace MooldangBot.Application.Features.ChatPoints;
 
@@ -20,60 +21,47 @@ public class PointTransactionService : IPointTransactionService
     public async Task<int> GetBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default)
     {
         var viewer = await _db.ViewerProfiles
+            .AsNoTracking()
             .FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUid == viewerUid, ct);
         return viewer?.Points ?? 0;
     }
 
     public async Task<(bool Success, int CurrentPoints)> AddPointsAsync(string streamerUid, string viewerUid, string nickname, int amount, CancellationToken ct = default)
     {
-        int retryCount = 0;
-        while (retryCount < 3)
+        try
         {
-            try
-            {
-                var viewer = await _db.ViewerProfiles
-                    .FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUid == viewerUid, ct);
+            var connection = _db.Database.GetDbConnection();
 
-                if (viewer == null)
-                {
-                    viewer = new ViewerProfile
-                    {
-                        StreamerChzzkUid = streamerUid,
-                        ViewerUid = viewerUid,
-                        Nickname = nickname,
-                        Points = 0
-                    };
-                    _db.ViewerProfiles.Add(viewer);
-                }
-                else if (viewer.Nickname != nickname && !string.IsNullOrEmpty(nickname))
-                {
-                    viewer.Nickname = nickname;
-                }
+            // MariaDB Atomic Upsert: 포인트 증감 및 닉네임 동기화
+            // GREATEST(0, Points + @Amount)를 통해 포인트가 음수가 되는 것을 방지
+            var sql = @"
+                INSERT INTO ViewerProfiles (StreamerChzzkUid, ViewerUid, Nickname, Points, AttendanceCount, ConsecutiveAttendanceCount)
+                VALUES (@StreamerUid, @ViewerUid, @Nickname, @Amount, 0, 0)
+                ON DUPLICATE KEY UPDATE 
+                    Points = GREATEST(0, Points + @Amount),
+                    Nickname = CASE WHEN @Nickname != '' THEN @Nickname ELSE Nickname END;";
 
-                viewer.Points += amount;
-                
-                // 포인트가 음수가 되지 않도록 방어 (필요 시)
-                if (viewer.Points < 0) viewer.Points = 0;
+            await connection.ExecuteAsync(new CommandDefinition(sql, new
+            {
+                StreamerUid = streamerUid,
+                ViewerUid = viewerUid,
+                Nickname = nickname ?? "",
+                Amount = amount
+            }, cancellationToken: ct));
 
-                await _db.SaveChangesAsync(ct);
-                return (true, viewer.Points);
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                retryCount++;
-                _logger.LogWarning($"⚠️ [포인트 트랜잭션 충돌] {nickname}님 재시도 중... ({retryCount}/3)");
-                foreach (var entry in ex.Entries)
-                {
-                    await entry.ReloadAsync(ct);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"❌ [포인트 트랜잭션 오류] {ex.Message}");
-                return (false, 0);
-            }
+            // 최종 포인트 조회
+            var currentPoints = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
+                "SELECT Points FROM ViewerProfiles WHERE StreamerChzzkUid = @StreamerUid AND ViewerUid = @ViewerUid",
+                new { StreamerUid = streamerUid, ViewerUid = viewerUid },
+                cancellationToken: ct
+            ));
+
+            return (true, currentPoints);
         }
-
-        return (false, 0);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ [Dapper 포인트 트랜잭션 오류] {viewerUid} ({nickname}): {ex.Message}");
+            return (false, 0);
+        }
     }
 }

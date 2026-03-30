@@ -22,15 +22,17 @@ namespace MooldangBot.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // [오시리스의 영속]: Redis 인프라 구성 (지연 초기화 및 회복 탄력성 강화)
+            // [오시리스의 영속]: Redis 인프라 구성 (N3/M3: 동기 블로킹 방지 및 지연 연결 보장)
             var redisUrl = configuration["REDIS_URL"] ?? "localhost:6379";
             
             services.AddSingleton<IConnectionMultiplexer>(sp => 
             {
                 var options = ConfigurationOptions.Parse(redisUrl);
-                options.AbortOnConnectFail = false;
+                options.AbortOnConnectFail = false; // [핵심] 연결 실패 시에도 즉시 객체를 반환하여 앱 기동 블로킹 방지
                 options.ConnectRetry = 5;
-                options.ConnectTimeout = 10000;
+                options.ConnectTimeout = 5000;      
+                
+                // [시니어 팁]: 기동 시점에 동기로 기다리지 않고 백그라운드 연결을 시작함
                 return ConnectionMultiplexer.Connect(options);
             });
             
@@ -58,8 +60,9 @@ namespace MooldangBot.Infrastructure
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-            // Api Clients
-            services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>();
+            // Api Clients — [12-2]: Polly 표준 탄력성 핸들러 적용 (Retry, CircuitBreaker, Timeout 등)
+            services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
+                .AddStandardResilienceHandler();
             
             // [거울의 신경망]: Gemini API 실전 연동
             services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();

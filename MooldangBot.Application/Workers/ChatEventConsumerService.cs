@@ -19,11 +19,11 @@ public sealed class ChatEventConsumerService(
     IRabbitMqService rabbitMqService,
     ILogger<ChatEventConsumerService> logger) : BackgroundService
 {
-    private const int ConsumerCount = 3; // 동시 소비자 수
+    private const int ConsumerCount = 8; // 동시 소비자 수 (처리량 극대화)
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation($"🔄 [이벤트 소비자] {ConsumerCount}개의 병렬 소비자가 가동되었습니다.");
+        logger.LogInformation("🔄 [이벤트 소비자] {ConsumerCount}개의 병렬 소비자가 가동되었습니다.", ConsumerCount);
 
         // 다중 소비자 패턴: N개의 소비자가 동시에 Channel에서 이벤트를 소비합니다.
         var consumers = Enumerable.Range(0, ConsumerCount)
@@ -41,7 +41,7 @@ public sealed class ChatEventConsumerService(
         {
             // [병목 모니터링]: 채널에 쌓인 이벤트가 많을 경우 경고 출력 (역압 감지)
             // Note: Channel<T>의 Count는 BoundedChannel에서만 의미가 있으나, 모니터링 용도로 로그만 남김
-            logger.LogDebug($"[소비자 #{consumerId}] 이벤트 처리 시작 (채널: {item.ChzzkUid})");
+            logger.LogDebug("[소비자 #{ConsumerId}] 이벤트 처리 시작 (채널: {ChzzkUid})", consumerId, item.ChzzkUid);
 
             try
             {
@@ -56,7 +56,7 @@ public sealed class ChatEventConsumerService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"❌ [소비자 #{consumerId}] 이벤트 처리 중 오류 (채널: {item.ChzzkUid})");
+                logger.LogError(ex, "❌ [소비자 #{ConsumerId}] 이벤트 처리 중 오류 (채널: {ChzzkUid})", consumerId, item.ChzzkUid);
             }
         }
 
@@ -108,7 +108,7 @@ public sealed class ChatEventConsumerService(
                 if (chatSub && donationSub)
                     logger.LogInformation($"✨ [유기적 구독] {chzzkUid} 채널의 이벤트 구독이 완료되었습니다.");
                 else
-                    logger.LogWarning($"⚠️ [구독 실패] {chzzkUid} 채널 구독 중 일부 실패 (Chat: {chatSub}, Donation: {donationSub})");
+                    logger.LogWarning("⚠️ [구독 실패] {ChzzkUid} 채널 구독 중 일부 실패 (Chat: {ChatSub}, Donation: {DonationSub})", chzzkUid, chatSub, donationSub);
             }
         }
     }
@@ -155,7 +155,7 @@ public sealed class ChatEventConsumerService(
         string msg = payload.TryGetProperty("content", out var c) ? c.GetString() ?? "" : "";
         string senderId = payload.TryGetProperty("senderChannelId", out var sid) ? sid.GetString() ?? "" : "";
 
-        logger.LogInformation($"💰 [후원 감지] {chzzkUid} 채널에서 {cheeseAmount}치즈 후원 발생: {msg}");
+        logger.LogInformation("💰 [후원 감지] {ChzzkUid} 채널에서 {CheeseAmount}치즈 후원 발생: {Message}", chzzkUid, cheeseAmount, msg);
 
         var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(pr => pr.ChzzkUid == chzzkUid, ct);
         if (profile != null)
