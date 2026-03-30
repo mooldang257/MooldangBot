@@ -18,6 +18,7 @@ COPY ["MooldangAPI.sln", "./"]
 
 # 2. 패키지 복원
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj" -r linux-x64
+RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj" -r linux-x64
 
 # 3. 소스 코드 전체 복사 및 빌드
 COPY . .
