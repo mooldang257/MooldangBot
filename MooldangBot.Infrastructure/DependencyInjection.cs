@@ -100,7 +100,8 @@ namespace MooldangBot.Infrastructure
                     UserName = user,
                     Password = pass,
                     AutomaticRecoveryEnabled = true,
-                    NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+                    NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
+                    RequestedHeartbeat = TimeSpan.FromSeconds(10)
                 };
             });
 

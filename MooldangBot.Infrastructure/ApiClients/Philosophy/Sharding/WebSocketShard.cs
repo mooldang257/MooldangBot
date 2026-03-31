@@ -26,6 +26,7 @@ public class WebSocketShard : IWebSocketShard
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, DateTime> _lastActivityList = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
     private bool _isDisposed;
 
     public int ShardId => _shardId;
@@ -46,9 +47,9 @@ public class WebSocketShard : IWebSocketShard
 
         if (_lastActivityList.TryGetValue(chzzkUid, out var lastActivity))
         {
-            if (DateTime.UtcNow - lastActivity > TimeSpan.FromMinutes(2))
+            if (DateTime.UtcNow - lastActivity > TimeSpan.FromMinutes(1))
             {
-                _logger.LogWarning("[파동의 거부] {ChzzkUid} 채널 연결에 실패했습니다. (응답 없음)", chzzkUid);
+                _logger.LogWarning("[파동의 거부] {ChzzkUid} 채널 활동이 1분간 없습니다. (좀비 상태 의심)", chzzkUid);
                 return false;
             }
         }
@@ -93,7 +94,7 @@ public class WebSocketShard : IWebSocketShard
             var client = new WebsocketClient(new Uri(socketUrl), factory)
             {
                 Name = $"Chzzk-{chzzkUid}",
-                ReconnectTimeout = TimeSpan.FromSeconds(30),
+                ReconnectTimeout = TimeSpan.FromSeconds(10),
                 ErrorReconnectTimeout = TimeSpan.FromSeconds(5)
             };
 
@@ -121,12 +122,40 @@ public class WebSocketShard : IWebSocketShard
             _clients[chzzkUid] = client;
             _lastActivityList[chzzkUid] = DateTime.UtcNow;
 
+            // [오시리스의 각성]: 적극적 핑 루프 가동 (10초 주기로 "2" 전송)
+            var cts = new CancellationTokenSource();
+            _pingCtsList[chzzkUid] = cts;
+            _ = StartActivePingLoopAsync(chzzkUid, client, cts.Token);
+
             return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[파동의 굴절] {ChzzkUid} 채널 연결 중 예외 발생", chzzkUid);
             return false;
+        }
+    }
+
+    private async Task StartActivePingLoopAsync(string chzzkUid, WebsocketClient client, CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested && client.IsRunning)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
+                
+                if (client.IsRunning)
+                {
+                    // Engine.IO 표준 핑 메시지 "2" 전송
+                    client.Send("2");
+                    _logger.LogDebug("[파동의 선제] {ChzzkUid} 채널에 적극적 핑(2) 전송 완료", chzzkUid);
+                }
+            }
+        }
+        catch (OperationCanceledException) { /* 정상 종료 */ }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("[파동의 균열] {ChzzkUid} 핑 루프 중 오류 발생: {Message}", chzzkUid, ex.Message);
         }
     }
 
@@ -144,6 +173,13 @@ public class WebSocketShard : IWebSocketShard
     public Task DisconnectAsync(string chzzkUid)
     {
         _lastActivityList.TryRemove(chzzkUid, out _);
+
+        // [오시리스의 침묵]: 핑 루프 중단
+        if (_pingCtsList.TryRemove(chzzkUid, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
 
         if (_clients.TryRemove(chzzkUid, out var client))
         {

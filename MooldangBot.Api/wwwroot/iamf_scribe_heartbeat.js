@@ -6,7 +6,7 @@
  */
 
 const CHZZK_UID = new URLSearchParams(window.location.search).get('chzzkUid') || 'YOUR_CHANNEL_ID';
-const HEARTBEAT_INTERVAL = 30000; // 30초
+const HEARTBEAT_INTERVAL = 10000; // [공명의 전령] 10초 주기로 단축하여 서버와 동기화
 
 async function sendHeartbeat() {
     try {
@@ -197,10 +197,19 @@ async function initScribeSignalR(uid) {
         .withAutomaticReconnect()
         .build();
 
-    // [지휘봉 수신]: 서버에서 보내는 종료 신호를 기다립니다.
-    connection.on("ShowEndingCredits", (stats) => {
-        console.log("[기록관] 실시간 종료 명령 수신. 장엄한 마무리를 시작합니다.");
-        renderEndingCredits(stats);
+    // [재연결의 지혜]: 서버 재시작으로 끊겼다 다시 붙을 때, 그룹 가입 정보를 복구합니다.
+    connection.onreconnecting(error => {
+        console.warn("[기록관] 연결이 끊겼습니다. 재연결을 시도합니다...", error);
+    });
+
+    connection.onreconnected(async (connectionId) => {
+        console.log(`[기록관] 재연결 성공 (ID: ${connectionId}). 그룹 정보를 복구합니다.`);
+        try {
+            await connection.invoke("JoinStreamerGroup", uid);
+            console.log(`[기록관] ${uid} 그룹 재가입 완료. 명령 대기를 재개합니다.`);
+        } catch (err) {
+            console.error("[기록관] 그룹 재가입 실패:", err);
+        }
     });
 
     try {

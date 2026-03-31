@@ -127,7 +127,10 @@ try
     builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
 
     var redisUrl = builder.Configuration["REDIS_URL"] ?? "localhost:6379";
-    builder.Services.AddSignalR()
+    builder.Services.AddSignalR(options => {
+        options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(20);
+    })
         .AddStackExchangeRedis(redisUrl, options => {
             options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("MooldangBot");
         })
