@@ -4,6 +4,7 @@ services:
   db:
     image: mariadb:10.11
     container_name: mooldang-db
+    command: --local-infile=1
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
