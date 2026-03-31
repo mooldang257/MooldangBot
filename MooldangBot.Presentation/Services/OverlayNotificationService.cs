@@ -5,6 +5,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,16 +36,18 @@ namespace MooldangBot.Presentation.Services
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
         }
 
-        public async Task NotifyChatReceivedAsync(string chzzkUid, string nickname, string message, string userRole, CancellationToken token = default)
+        public async Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, System.Text.Json.JsonElement? emojis = null, CancellationToken token = default)
         {
-            // [오버레이의 메아리]: 익명 객체 대신 명시적 DTO(ChatOverlayMessage)를 사용하여 직렬화 안정성 확보
-            var chatMessage = new ChatOverlayMessage(nickname, message, userRole, System.DateTime.UtcNow);
+            // [오버레이의 메아리]: 실측 데이터(senderId, emojis)를 포함한 100% 정합성 DTO 생성
+            var chatDto = new ChatOverlayDto(senderId, nickname, userRole, message, emojis);
             
-            // [데이터 현장검증]: 추출하기 편하게 JSON 형태로 상세 로그 출력
-            var jsonLog = JsonSerializer.Serialize(chatMessage, new JsonSerializerOptions { WriteIndented = true });
-            logger.LogInformation("📤 [오버레이 송신 데이터 포맷]\n{Json}", jsonLog);
+            // [데이터 전송 규격]: 오버레이(avatar_overlay.html)의 JSON.parse() 요구사항에 맞춰 문자열로 직렬화
+            var jsonRaw = JsonSerializer.Serialize(chatDto, ChzzkJsonContext.Default.ChatOverlayDto);
             
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChatMessage", chatMessage, token);
+            // [데이터 현장검증]: 추출하기 편하게 가공된 JSON 형태로 상세 로그 출력
+            logger.LogInformation("📤 [오버레이 송신 데이터 포맷]\n{Json}", jsonRaw);
+            
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChat", jsonRaw, token);
         }
     }
 }

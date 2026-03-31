@@ -25,9 +25,11 @@ public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceive
         {
             await _overlayService.NotifyChatReceivedAsync(
                 notification.Profile.ChzzkUid,
+                notification.SenderId,
                 notification.Username,
                 notification.Message,
                 notification.UserRole,
+                notification.Emojis,
                 cancellationToken);
         }
     }

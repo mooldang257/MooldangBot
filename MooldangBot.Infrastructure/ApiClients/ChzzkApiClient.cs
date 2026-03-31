@@ -9,7 +9,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using Polly;
-using MooldangBot.Infrastructure.Services.Serialization;
+using MooldangBot.Domain.Serialization;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {

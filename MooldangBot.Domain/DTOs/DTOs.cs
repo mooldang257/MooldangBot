@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.DTOs
@@ -220,11 +221,12 @@ namespace MooldangBot.Domain.DTOs
         RouletteSaveDto? RouletteData = null // 🎰 룰렛 데이터 포함 가능
     );
 
-    // [v4.5.2] 오버레이 채팅 전송을 위한 명시적 DTO (익명 타입 직렬화 오류 해결)
-    public record ChatOverlayMessage(
+    // [v4.5.3] 팩트 체크 완료: 오버레이 채팅 전송을 위한 100% 정합성 DTO
+    public record ChatOverlayDto(
+        string SenderId,     // senderChannelId 대응
         string Nickname,
-        string Message,
-        string UserRole,
-        DateTime Timestamp
+        string UserRole,     // streamer, manager 등
+        string Message,      // content 대응
+        JsonElement? Emojis  // 이모티콘 지원
     );
 }

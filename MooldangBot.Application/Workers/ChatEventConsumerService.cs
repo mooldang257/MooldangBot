@@ -137,7 +137,10 @@ public sealed class ChatEventConsumerService(
             string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var n) ? n.GetString() ?? "시청자" : "시청자";
             string userRole = profileDoc.RootElement.TryGetProperty("userRoleCode", out var r) ? r.GetString() ?? "common_user" : "common_user";
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, null, 0), ct);
+            // [데이터 정합성 보존]: 원본 emojis 데이터를 그대로 추출하여 전달
+            JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
+
+            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, emojis, 0), ct);
         }
     }
 
@@ -147,6 +150,7 @@ public sealed class ChatEventConsumerService(
         using var payloadDoc = JsonDocument.Parse(payloadString);
         var payload = payloadDoc.RootElement;
 
+        // [v4.5.5] 팩트 기반 후원 금액 추출
         int cheeseAmount = 0;
         if (payload.TryGetProperty("payAmount", out var p))
         {
@@ -156,23 +160,32 @@ public sealed class ChatEventConsumerService(
                 cheeseAmount = parsed;
         }
 
-        string msg = payload.TryGetProperty("content", out var c) ? c.GetString() ?? "" : "";
-        string senderId = payload.TryGetProperty("senderChannelId", out var sid) ? sid.GetString() ?? "" : "";
+        // [v4.5.5] 실측 데이터 교정: 후원은 'donationText', 'donatorChannelId', 'donatorNickname' 필드 사용
+        string msg = payload.TryGetProperty("donationText", out var dt) ? dt.GetString() ?? "" 
+                   : (payload.TryGetProperty("content", out var c) ? c.GetString() ?? "" : "");
+        
+        string senderId = payload.TryGetProperty("donatorChannelId", out var dcid) ? dcid.GetString() ?? "" 
+                        : (payload.TryGetProperty("senderChannelId", out var sid) ? sid.GetString() ?? "" : "");
 
-        logger.LogInformation("💰 [후원 감지] {ChzzkUid} 채널에서 {CheeseAmount}치즈 후원 발생: {Message}", chzzkUid, cheeseAmount, msg);
+        string nickname = payload.TryGetProperty("donatorNickname", out var dnick) ? dnick.GetString() ?? "후원자" : "후원자";
+
+        logger.LogInformation("💰 [후원 감지] {ChzzkUid} 채널에서 {CheeseAmount}치즈 후원 발생 ({Nickname}): {Message}", chzzkUid, cheeseAmount, nickname, msg);
 
         var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(pr => pr.ChzzkUid == chzzkUid, ct);
         if (profile != null)
         {
-            var profileJson = payload.TryGetProperty("profile", out var prof)
-                                ? (prof.ValueKind == JsonValueKind.String ? prof.GetString() ?? "{}" : prof.GetRawText())
-                                : "{}";
+            // [v4.5.5] 후원 시 닉네임 결정 로직 고도화
+            if (nickname == "후원자" && payload.TryGetProperty("profile", out var prof))
+            {
+                var profileJson = prof.ValueKind == JsonValueKind.String ? prof.GetString() ?? "{}" : prof.GetRawText();
+                using var profileDoc = JsonDocument.Parse(profileJson);
+                nickname = profileDoc.RootElement.TryGetProperty("nickname", out var n) ? n.GetString() ?? "후원자" : "후원자";
+            }
 
-            using var profileDoc = JsonDocument.Parse(profileJson);
-            string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var n) ? n.GetString() ?? "후원자" : "후원자";
             string userRole = "donation_user";
+            JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, null, cheeseAmount), ct);
+            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, emojis, cheeseAmount), ct);
         }
     }
 }

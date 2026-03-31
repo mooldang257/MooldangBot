@@ -69,109 +69,116 @@ public class RouletteService : IRouletteService
         if (count <= 0) return new List<RouletteItem>();
 
         await _semaphore.WaitAsync(ct);
-        using var transaction = await _db.Database.BeginTransactionAsync(ct);
         try
         {
-            var roulette = await _db.Roulettes
-                .Include(r => r.Items)
-                .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid, ct);
-
-            if (roulette == null) return new List<RouletteItem>();
-
-            var activeItems = roulette.Items.Where(i => i.IsActive).ToList();
-            if (!activeItems.Any())
-            {
-                _logger.LogWarning($"🎰 [룰렛 실행 실패] {rouletteId}번에 활성화된 항목이 없습니다.");
-                await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!", viewerUid, ct);
-                return new List<RouletteItem>();
-            }
-
-            var results = new List<RouletteItem>();
-            var logs = new List<RouletteLog>();
-            bool is10x = count >= 10; 
-
-            for (int i = 0; i < count; i++)
-            {
-                var result = DrawItem(activeItems, is10x);
-                results.Add(result);
-
-                logs.Add(new RouletteLog
-                {
-                    ChzzkUid = chzzkUid,
-                    RouletteId = rouletteId,
-                    RouletteName = roulette.Name,
-                    ViewerNickname = viewerNickname ?? "비회원",
-                    ItemName = result.ItemName,
-                    IsMission = result.IsMission,
-                    Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
-                    CreatedAt = DateTime.Now,
-                    ProcessedAt = result.IsMission ? null : DateTime.Now
-                });
-            }
-
-            _db.RouletteLogs.AddRange(logs);
-            await _db.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-
-            var summary = results.GroupBy(r => r.ItemName)
-                .Select(g => {
-                    var first = g.First();
-                    return new RouletteSummaryDto(g.Key, g.Count(), first.IsMission, first.Color);
-                }).ToList();
-
-            // [v1.9] 당첨 내역 요약 문자열 생성
-            var summaryList = results.GroupBy(r => r.ItemName)
-                .Select(g => $"{g.Key} x{g.Count()}")
-                .ToList();
-            string summaryStr = string.Join(", ", summaryList);
-
-            string spinId = Guid.NewGuid().ToString();
+            // [오시리스의 재시도]: EF Core 재시도 전략(MySqlRetryingExecutionStrategy) 환경에서는 
+            // 수동 트랜잭션 시 ExecutionStrategy를 반드시 사용해야 합니다.
+            var strategy = _db.Database.CreateExecutionStrategy();
             
-            // [v1.9.9] 오시리스의 영속성: 메모리 캐시 대신 DB에 실행 정보 저장 (11시간 세션 대응)
-            var spin = new RouletteSpin
+            return await strategy.ExecuteAsync(async () =>
             {
-                Id = spinId,
-                ChzzkUid = chzzkUid,
-                RouletteId = rouletteId,
-                ViewerUid = viewerUid ?? "",
-                ViewerNickname = viewerNickname ?? "비회원",
-                ResultsJson = JsonSerializer.Serialize(results.Select(r => r.ItemName).ToList()),
-                Summary = summaryStr,
-                IsCompleted = false,
-                ScheduledTime = _rouletteState.GetAndSetNextEndTime(chzzkUid, count).AddSeconds(3), // 3초 마진
-                CreatedAt = DateTime.Now
-            };
-            _db.RouletteSpins.Add(spin);
-            await _db.SaveChangesAsync(ct);
+                using var transaction = await _db.Database.BeginTransactionAsync(ct);
+                try
+                {
+                    var roulette = await _db.Roulettes
+                        .Include(r => r.Items)
+                        .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid, ct);
 
-            var response = new SpinRouletteResponse(
-                spinId,
-                rouletteId,
-                roulette.Name,
-                viewerNickname,
-                results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
-                summary
-            );
+                    if (roulette == null) return new List<RouletteItem>();
 
-            // [v1.9.8] 즉시 시작 메세지 전송 (동적 횟수 표기)
-            string startInfo = count > 1 ? $"{count}연차를" : "룰렛을";
-            string startMsg = $"🎰 [{viewerNickname ?? "비회원"}]님이 {roulette.Name} {startInfo} 돌립니다! 결과는 잠시 후...";
-            await SendChatMessageAsync(chzzkUid, startMsg, viewerUid, ct);
+                    var activeItems = roulette.Items.Where(i => i.IsActive).ToList();
+                    if (!activeItems.Any())
+                    {
+                        _logger.LogWarning($"🎰 [룰렛 실행 실패] {rouletteId}번에 활성화된 항목이 없습니다.");
+                        await SendChatMessageAsync(chzzkUid, "⚠️ 현재 활성화된 항목이 없어 룰렛을 돌릴 수 없습니다. 관리 페이지에서 항목을 활성화해 주세요!", viewerUid, ct);
+                        return new List<RouletteItem>();
+                    }
 
-            await _overlayService.NotifyRouletteResultAsync(chzzkUid, response);
+                    var results = new List<RouletteItem>();
+                    var logs = new List<RouletteLog>();
+                    bool is10x = count >= 10; 
 
-            foreach(var log in logs.Where(l => l.IsMission))
-            {
-                await _overlayService.NotifyMissionReceivedAsync(chzzkUid, log);
-            }
+                    for (int i = 0; i < count; i++)
+                    {
+                        var result = DrawItem(activeItems, is10x);
+                        results.Add(result);
 
-            return results;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, $"🎰 [룰렛 {count}회 실행 중 오류 발생] 트랜잭션 롤백됨.");
-            throw;
+                        logs.Add(new RouletteLog
+                        {
+                            ChzzkUid = chzzkUid,
+                            RouletteId = rouletteId,
+                            RouletteName = roulette.Name,
+                            ViewerNickname = viewerNickname ?? "비회원",
+                            ItemName = result.ItemName,
+                            IsMission = result.IsMission,
+                            Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
+                            CreatedAt = DateTime.Now,
+                            ProcessedAt = result.IsMission ? null : DateTime.Now
+                        });
+                    }
+
+                    _db.RouletteLogs.AddRange(logs);
+                    await _db.SaveChangesAsync(ct);
+                    await transaction.CommitAsync(ct);
+
+                    var summary = results.GroupBy(r => r.ItemName)
+                        .Select(g => {
+                            var first = g.First();
+                            return new RouletteSummaryDto(g.Key, g.Count(), first.IsMission, first.Color);
+                        }).ToList();
+
+                    var summaryList = results.GroupBy(r => r.ItemName)
+                        .Select(g => $"{g.Key} x{g.Count()}")
+                        .ToList();
+                    string summaryStr = string.Join(", ", summaryList);
+
+                    string spinId = Guid.NewGuid().ToString();
+                    
+                    var spin = new RouletteSpin
+                    {
+                        Id = spinId,
+                        ChzzkUid = chzzkUid,
+                        RouletteId = rouletteId,
+                        ViewerUid = viewerUid ?? "",
+                        ViewerNickname = viewerNickname ?? "비회원",
+                        ResultsJson = JsonSerializer.Serialize(results.Select(r => r.ItemName).ToList()),
+                        Summary = summaryStr,
+                        IsCompleted = false,
+                        ScheduledTime = _rouletteState.GetAndSetNextEndTime(chzzkUid, count).AddSeconds(3),
+                        CreatedAt = DateTime.Now
+                    };
+                    _db.RouletteSpins.Add(spin);
+                    await _db.SaveChangesAsync(ct);
+
+                    var response = new SpinRouletteResponse(
+                        spinId,
+                        rouletteId,
+                        roulette.Name,
+                        viewerNickname,
+                        results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
+                        summary
+                    );
+
+                    string startInfo = count > 1 ? $"{count}연차를" : "룰렛을";
+                    string startMsg = $"🎰 [{viewerNickname ?? "비회원"}]님이 {roulette.Name} {startInfo} 돌립니다! 결과는 잠시 후...";
+                    await SendChatMessageAsync(chzzkUid, startMsg, viewerUid, ct);
+
+                    await _overlayService.NotifyRouletteResultAsync(chzzkUid, response);
+
+                    foreach(var log in logs.Where(l => l.IsMission))
+                    {
+                        await _overlayService.NotifyMissionReceivedAsync(chzzkUid, log);
+                    }
+
+                    return results;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync(ct);
+                    _logger.LogError(ex, $"🎰 [룰렛 {count}회 실행 중 오류 발생] 트랜잭션 롤백됨.");
+                    throw;
+                }
+            });
         }
         finally
         {

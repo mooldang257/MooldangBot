@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 using MooldangBot.Domain.DTOs;
 
-namespace MooldangBot.Infrastructure.Services.Serialization;
+namespace MooldangBot.Domain.Serialization;
 
 /// <summary>
-/// [텔로스5의 설계]: 치지직 API 및 주요 도메인 DTO들을 위한 고성능 JSON Source Generator 컨텍스트입니다.
-/// 리플렉션 오버헤드를 제거하여 시스템의 진동수(성능)를 극대화합니다.
+/// [도메인 동기화]: 모든 계층에서 접근 가능한 중심(Domain)에 위치한 고성능 JSON Source Generator 컨텍스트입니다.
+/// 치지직 API 및 주요 도메인 DTO들의 직렬화 설계도를 관리합니다.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, 
@@ -39,7 +39,7 @@ namespace MooldangBot.Infrastructure.Services.Serialization;
 [JsonSerializable(typeof(RouletteItemSaveDto))]
 [JsonSerializable(typeof(UnifiedCommandDto))]
 [JsonSerializable(typeof(SaveUnifiedCommandRequest))]
-[JsonSerializable(typeof(ChatOverlayMessage))]
+[JsonSerializable(typeof(ChatOverlayDto))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {
 }

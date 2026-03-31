@@ -20,7 +20,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Api.Health;
 using Serilog;
-using MooldangBot.Infrastructure.Services.Serialization;
+using MooldangBot.Domain.Serialization;
 
 try 
 {

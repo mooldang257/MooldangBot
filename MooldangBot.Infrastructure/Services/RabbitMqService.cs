@@ -75,7 +75,7 @@ public class RabbitMqService : IRabbitMqService, IDisposable
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = false 
             };
-            options.TypeInfoResolverChain.Insert(0, MooldangBot.Infrastructure.Services.Serialization.ChzzkJsonContext.Default);
+            options.TypeInfoResolverChain.Insert(0, MooldangBot.Domain.Serialization.ChzzkJsonContext.Default);
             options.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
 
             var json = JsonSerializer.Serialize(eventData, options);

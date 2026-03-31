@@ -10,6 +10,6 @@ public record ChatMessageReceivedEvent(
     string Message,
     string UserRole,
     string SenderId,
-    Dictionary<string, string>? Emojis = null,
+    System.Text.Json.JsonElement? Emojis = null,
     int DonationAmount = 0
 ) : INotification;
