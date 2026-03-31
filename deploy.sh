@@ -30,12 +30,12 @@ if command -v dotnet &> /dev/null; then
     fi
 fi
 
-# 4. 컨테이너 재가동 및 강제 재빌드
-echo -e "${GREEN}🐳 Docker: 컨테이너 강제 재빌드 및 실행 중 (캐시 무효화)...${NC}"
+# 4. 컨테이너 재가동 및 최적화 빌드
+echo -e "${GREEN}🐳 Docker: 컨테이너 최적화 빌드 및 실행 중...${NC}"
 # --remove-orphans를 추가하여 설정에서 제거된 이전 컨테이너들을 확실히 청소합니다.
 docker-compose down --remove-orphans
-# --no-cache를 추가하여 efbundle 등 수정 사항이 빌드 시점에 완벽히 반영되도록 합니다.
-docker-compose build --no-cache
+# --no-cache를 제거하여 변경된 레이어만 빌드하도록 속도를 극대화합니다.
+docker-compose build
 docker-compose up -d
 
 # 5. 상태 모니터링
