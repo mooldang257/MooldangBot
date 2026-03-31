@@ -19,7 +19,8 @@ namespace MooldangBot.Presentation.Features.Auth
         IAppDbContext _db, 
         IConfiguration _configuration, 
         IChzzkApiClient _chzzkApi, 
-        IHttpClientFactory _httpClientFactory) : ControllerBase
+        IHttpClientFactory _httpClientFactory,
+        IUnifiedCommandService _commandService) : ControllerBase
     {
         /// <summary>
         /// [파로스의 자각]: 설정(appsettings.json 또는 .env)에서 도메인 정보를 읽어옵니다. 
@@ -393,13 +394,15 @@ namespace MooldangBot.Presentation.Features.Auth
                     };
                     _db.StreamerProfiles.Add(streamer);
 
-                    // 신규 가입 시 노래 신청 세션 자동 시작
                     _db.SonglistSessions.Add(new SonglistSession 
                     { 
                         ChzzkUid = chzzkUid, 
                         StartedAt = DateTime.Now, 
                         IsActive = true 
                     });
+
+                    // [파로스의 시작]: 기본 명령어 자동 생성 (신청곡, 룰렛, 매니저 명령어 등)
+                    await _commandService.InitializeDefaultCommandsAsync(chzzkUid);
                 }
                 
                 if (!string.IsNullOrEmpty(channelName)) streamer.ChannelName = channelName;

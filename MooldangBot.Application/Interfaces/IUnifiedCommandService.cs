@@ -22,4 +22,9 @@ public interface IUnifiedCommandService
     /// 명령어의 활성화 상태(ON/OFF)를 토글합니다.
     /// </summary>
     Task ToggleCommandAsync(string chzzkUid, int id);
+
+    /// <summary>
+    /// [파로스의 시작]: 신규 스트리머 가입 시 필요한 기본 명령어 세트(신청, 룰렛, 관리 명령어 등)를 자동 생성합니다.
+    /// </summary>
+    Task InitializeDefaultCommandsAsync(string chzzkUid);
 }

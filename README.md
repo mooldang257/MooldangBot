@@ -75,4 +75,21 @@ dotnet run --project MooldangBot.Cli/MooldangBot.Cli.csproj
 
 ---
 
+
+ash
+# 도커 컨테이너 내부의 MySQL CLI 접속
+docker exec -it mooldang-db mysql -u mooldang -p MooldangBot
+접속 후에는 아래 쿼리들을 입력하여 명령어가 있는지 확인하실 수 있습니다.
+
+sql
+-- 1. 명령어 테이블 목록 확인
+SHOW TABLES;
+-- 2. 등록된 모든 명령어 조회
+SELECT * FROM StaticCommands;
+-- 3. 종료
+EXIT;
+
 **개발 파트너 물멍**이 정성을 담아 구축했습니다. 물댕봇과 함께 즐거운 방송 되세요! 🦾✨
+
+docker exec -it mooldang-db mysql -u mooldang -p@%enjoy1004 -e "SET FOREIGN_KEY_CHECKS = 0; TRUNCATE TABLE unifiedcommands; TRUNCATE TABLE streamerprofiles; TRUNCATE TABLE streamermanagers; TRUNCATE TABLE songqueues; TRUNCATE TABLE songlistsessions; TRUNCATE TABLE streameromakases; SET FOREIGN_KEY_CHECKS = 1;" MooldangBot
+
