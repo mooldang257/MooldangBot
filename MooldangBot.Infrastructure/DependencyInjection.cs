@@ -105,7 +105,7 @@ namespace MooldangBot.Infrastructure
             });
 
             services.AddSingleton<RabbitMQPersistentConnection>();
-            services.AddScoped<IRabbitMqService, RabbitMqService>();
+            services.AddSingleton<IRabbitMqService, RabbitMqService>();
 
             // [v4.5.1] RabbitMQ POC 소비자 워커 등록 (기본 호환 유지)
             // services.AddHostedService<RabbitMqConsumerService>();

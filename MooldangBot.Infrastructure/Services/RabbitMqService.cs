@@ -104,6 +104,6 @@ public class RabbitMqService : IRabbitMqService, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        _connection.Dispose();
+        // [세피로스의 지혜]: 싱글톤인 _connection은 직접 Dispose하지 않고 DI 컨테이너의 관리에 맡깁니다.
     }
 }

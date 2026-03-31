@@ -50,6 +50,7 @@ public class RabbitMQPersistentConnection : IDisposable
 
     public async Task<bool> TryConnectAsync()
     {
+        if (_disposed) return false; // [세피로스의 방패]: 이미 파괴된 객체이므로 연결 시도를 전행하지 않습니다.
         if (IsConnected) return true;
 
         await _connectionLock.WaitAsync();
