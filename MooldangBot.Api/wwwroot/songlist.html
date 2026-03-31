@@ -24,42 +24,48 @@
 
         <!-- Dashboard Setup Panel -->
         <div class="panel">
-            <h2 style="display:flex; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap: 10px;">
-                    <a id="btn-home" href="/main.html" class="btn btn-outline" style="text-decoration:none; font-size: 0.8rem; padding: 4px 10px;">🏠 홈</a>
-                    물댕봇 대시보드
-                    <button id="songlist-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleSonglistStatus()">조회 중...</button>
-                    <button id="omakase-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; border: none;" onclick="toggleOmakaseStatus()">조회 중...</button>
+            <h2 style="display:flex; flex-wrap:wrap; gap:15px; align-items: center; border-bottom: none; padding-bottom: 0; margin-bottom: 5px;">
+                <div style="display:flex; align-items:center; gap: 12px;">
+                    <a id="btn-home" href="/main.html" class="btn btn-outline" style="text-decoration:none; font-size: 0.85rem; padding: 5px 12px; border-radius: 8px;">🏠 홈</a>
+                    <span style="font-weight: 900; font-size: 1.6rem; color: var(--primary); letter-spacing: -1px;">🖥️ 물댕봇 대시보드</span>
                 </div>
-                <div style="margin-left:auto; display:flex; gap:10px;">
-                    <button onclick="window.location.href='/overlay_manager/' + chzzkUid" class="btn btn-outline">🖥️ 마스터 오버레이 설정</button>
-                    <button onclick="goToSettings()" class="btn btn-outline">🎨 화면 스타일 설정</button>
-                    <button onclick="window.location.href='/admin_roulette.html?uid=' + chzzkUid" class="btn btn-primary" style="background-color:#ff0055;">🎡 룰렛 설정</button>
-                    <button onclick="window.location.href='/commands-manager/' + chzzkUid" class="btn btn-primary">🤖 명령어 설정</button>
+                
+                <div style="display:flex; gap:8px; align-items: center;">
+                    <button id="songlist-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.8rem; border: none;" onclick="toggleSonglistStatus()">조회 중...</button>
+                    <button id="omakase-toggle-btn" class="btn" style="padding: 4px 12px; border-radius: 20px; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s ease; font-size: 0.8rem; border: none;" onclick="toggleOmakaseStatus()">조회 중...</button>
+                </div>
+
+                <!-- ⭐ 최상단 우측으로 이동된 직관적인 오버레이 주소 관리창 -->
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; background: rgba(0, 147, 233, 0.1); padding: 6px 16px; border-radius: 40px; border: 1.5px solid rgba(0, 147, 233, 0.3); box-shadow: 0 2px 10px rgba(0, 147, 233, 0.1);">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2;">
+                        <span style="font-size: 10px; color: var(--primary); font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2px;">OBS 오버레이 URL</span>
+                        <span id="overlayUrlDisplay" style="font-size: 13px; color: #fff; font-family: 'Consolas', monospace; font-weight: bold; max-width: 200px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; opacity: 0.9;" onclick="copyOverlayUrl()" title="클릭하여 주소 복사">주소 생성 중...</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; border-radius: 20px; font-weight: bold; background: linear-gradient(135deg, #0093E9 0%, #80D0C7 100%); border: none; box-shadow: 0 2px 5px rgba(0,147,233,0.3);" onclick="copyOverlayUrl()">📋 복사</button>
+                        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;" onclick="forceRefreshOverlay()" title="오버레이 데이터 강제 새로고침">🔄</button>
+                    </div>
                 </div>
             </h2>
 
-            <div class="top-controls">
-                <div class="copy-panel">
-                    <div style="overflow: hidden; padding-right: 15px;">
-                        <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: bold;">📺 노래책 오버레이 주소 (OBS 브라우저 소스용)</span>
-                        <span id="overlayUrlDisplay" style="font-size: 14px; color: var(--primary); font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">주소 생성 중...</span>
-                    </div>
-                    <button class="btn btn-outline" onclick="copyOverlayUrl()">📋 복사하기</button>
+            <div style="display:flex; gap:10px; margin-top: 15px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                <button onclick="window.location.href='/overlay_manager/' + chzzkUid" class="btn btn-outline" style="font-size: 13px; flex: 1;">🖥️ 마스터 오버레이 설정</button>
+                <button onclick="goToSettings()" class="btn btn-outline" style="font-size: 13px; flex: 1;">🎨 화면 스타일 설정</button>
+                <button onclick="window.location.href='/admin_roulette.html?uid=' + chzzkUid" class="btn btn-primary" style="background-color:#ff0055; font-size: 13px; flex: 1;">🎡 룰렛 설정</button>
+                <button onclick="window.location.href='/commands-manager/' + chzzkUid" class="btn btn-primary" style="font-size: 13px; flex: 1;">🤖 명령어 설정</button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <span class="sub-title">📡 곡 현황판 & 안내</span>
+                <div style="background: rgba(108, 92, 231, 0.05); border: 1px dashed rgba(108, 92, 231, 0.3); border-radius: 8px; padding: 15px; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                    💡 <b>라벨 및 디자인 안내:</b> '현재 연주 중', '대기열' 등의 라벨 문구와 레이아웃은 우측 상단의 <b>[🎨 화면 스타일 설정]</b>에서 자유롭게 수정하실 수 있습니다.
                 </div>
-                <button class="btn btn-secondary btn-refresh" onclick="forceRefreshOverlay()">🔄 새로고침</button>
             </div>
 
             <span class="sub-title">📢 공지 메모 (오버레이 상단 표시)</span>
             <textarea id="memoInput" placeholder="공지를 입력하세요... (여러 줄 가능)&#10;엔터를 치면 줄바꿈이 적용됩니다." onchange="saveMemo()"></textarea>
 
-            <div class="config-grid">
-                <div>
-                    <span class="sub-title">🏷️ 라벨 텍스트 설정</span>
-                    <input type="text" id="nowPlayingLabel" value="▶ NOW PLAYING" onchange="saveLabels()">
-                    <input type="text" id="upNextLabel" value="⏳ UP NEXT" onchange="saveLabels()">
-                    <input type="text" id="completedLabel" value="✔ COMPLETED" onchange="saveLabels()">
-                </div>
+            <div class="config-grid" style="grid-template-columns: 1fr;">
                 <div>
                     <div id="omakaseListDash" style="display:flex; flex-direction:column; gap:8px;">
                         <!-- JS Rendered -->
@@ -169,15 +175,6 @@
                 renderOmakasesDash();
             }
 
-            const setRes = await fetch(`/api/settings/data/${chzzkUid}`);
-            if (setRes.ok) {
-                const sData = await setRes.json();
-                if (sData.labels) {
-                    document.getElementById('nowPlayingLabel').value = sData.labels.nowPlaying || "▶ NOW PLAYING";
-                    document.getElementById('upNextLabel').value = sData.labels.upNext || "⏳ UP NEXT";
-                    document.getElementById('completedLabel').value = sData.labels.completed || "✔ COMPLETED";
-                }
-            }
         }
 
         let selectedOmakaseId = null;
@@ -239,19 +236,6 @@
             broadcastState();
         }
 
-        async function saveLabels() {
-            const labels = {
-                nowPlaying: document.getElementById("nowPlayingLabel").value,
-                upNext: document.getElementById("upNextLabel").value,
-                completed: document.getElementById("completedLabel").value
-            };
-            await fetch(`/api/settings/labels?chzzkUid=${chzzkUid}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(labels)
-            });
-            broadcastState();
-        }
 
         async function updateOmakase(id, delta) {
             const oma = omakases.find(o => (o.Id || o.id) == id);
@@ -415,11 +399,7 @@
                 currentArtist: document.getElementById("currentArtist").innerText,
                 pendingSongs: songs.filter(s => s.Status === "Pending"),
                 completedSongs: songs.filter(s => s.Status === "Completed"),
-                labels: {
-                    nowPlaying: document.getElementById("nowPlayingLabel").value,
-                    upNext: document.getElementById("upNextLabel").value,
-                    completed: document.getElementById("completedLabel").value
-                }
+                labels: {}
             };
             if (connection.state === "Connected") {
                 connection.invoke("UpdateOverlayState", chzzkUid, JSON.stringify(state));

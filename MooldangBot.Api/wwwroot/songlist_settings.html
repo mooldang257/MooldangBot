@@ -5,15 +5,31 @@
     <title>물댕봇 설정 및 디자인 통제실</title>
     <link rel="stylesheet" href="/css/glass-theme.css">
     <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 20px;
+        }
         .settings-layout {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 450px;
+            grid-template-columns: 1fr 480px;
             gap: 25px;
             align-items: start;
         }
-        @media (max-width: 900px) {
+
+        #previewIframe {
+            background-color: transparent;
+            position: relative;
+            transform-origin: center;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease-out;
+        }
+
+        @media (max-width: 1000px) {
             .settings-layout { grid-template-columns: 1fr; }
             .settings-right { position: relative !important; top: 0 !important; margin-bottom: 20px; order: -1; }
         }
@@ -29,13 +45,36 @@
                 <a href="/main.html" class="btn btn-outline" style="flex: 1; padding: 10px; text-align: center; box-sizing: border-box; font-weight: bold;">🏠 메인 메뉴</a>
             </div>
             <div class="card" style="border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,147,233,0.2);">
-                <h1 style="border-bottom:none; margin-bottom:15px; font-size:18px;">✨ 추천 테마 (원클릭 자동 완성)</h1>
-                <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:15px;">테마를 클릭하면 추천 디자인 값과 고급 CSS가 자동으로 적용됩니다.</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="applyPreset('default')">🧊 둥근 유리 (기본)</button>
-                    <button class="btn btn-outline" style="border-color:#333; color:#333;" onclick="applyPreset('flat')">⬛ 스퀘어 (단정)</button>
-                    <button class="btn btn-outline" style="border-color:#f0f; color:#f0f; background: #000;" onclick="applyPreset('neon')">⚡ 네온 사이버펑크</button>
-                    <button class="btn btn-secondary" onclick="applyPreset('bubble')">🎈 둥둥 마시멜로</button>
+                <h1 style="border-bottom:none; margin-bottom:15px; font-size:18px;">📏 오버레이 규격 및 배경 설정</h1>
+                <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:15px;">방송에 송출될 오버레이의 전체 크기와 배경을 설정하세요.</p>
+                <div class="grid-2">
+                    <div class="group"><label>가로 너비 (px)</label><input type="number" id="canvasW" value="400" oninput="updatePreview()"></div>
+                    <div class="group"><label>세로 높이 (px)</label><input type="number" id="canvasH" value="700" oninput="updatePreview()"></div>
+                    <div class="group"><label>캔버스 배경색</label><input type="color" id="canvasBg" value="#2c3e50" oninput="updatePreview()"></div>
+                    <div class="group"><label>배경 투명도 <span class="val-display" id="valCanvasAlpha">0%</span></label><input type="range" id="canvasAlpha" min="0" max="100" value="0" oninput="updateVal(this, 'valCanvasAlpha'); updatePreview();"></div>
+                    
+                    <div class="row" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 5px;">
+                        <div class="group" style="margin:0;"><label>테두리 두께 <span class="val-display" id="valBorderWidth">0px</span></label><input type="range" id="borderWidth" min="0" max="20" value="0" oninput="updateVal(this, 'valBorderWidth'); updatePreview();"></div>
+                        <div class="group" style="margin:0;"><label>테두리 색상</label><input type="color" id="borderColor" value="#ffffff" oninput="updatePreview()"></div>
+                        <div class="group" style="margin:0;"><label>테두리 투명도 <span class="val-display" id="valBorderAlpha">100%</span></label><input type="range" id="borderAlpha" min="0" max="100" value="100" oninput="updateVal(this, 'valBorderAlpha'); updatePreview();"></div>
+                        <div class="group" style="margin:0;"><label>테두리 라운딩 <span class="val-display" id="valBorderRadius">10px</span></label><input type="range" id="borderRadius" min="0" max="50" value="0" oninput="updateVal(this, 'valBorderRadius'); updatePreview();"></div>
+                        <div class="group" style="margin:0; grid-column: span 2; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;"><label>전체 크기 배율 <span class="val-display" id="valCanvasScale">100%</span></label><input type="range" id="canvasScale" min="50" max="150" value="100" oninput="updateVal(this, 'valCanvasScale'); updatePreview();"></div>
+                    </div>
+                </div>
+                <div style="margin-top:10px; padding:10px; background:rgba(0,147,233,0.1); border-radius:8px; font-size:12px; color:var(--primary); line-height:1.4;">
+                    💡 <strong>OBS 권장 설정:</strong><br>
+                    브라우저 소스 추가 시 너비를 <span id="guideW">400</span>, 높이를 <span id="guideH">700</span>으로 설정하세요.
+                </div>
+            </div>
+
+            <div class="card" style="border: 2px solid #6c5ce7; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);">
+                <h1 style="border-bottom:none; margin-bottom:15px; font-size:18px;">✨ 디자인 테마</h1>
+                <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:15px;">테마를 클릭하면 추천 디자인 값이 적용됩니다.</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="applyPreset('default')">🧊 유리</button>
+                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; border-color:#333; color:#333;" onclick="applyPreset('flat')">⬛ 스퀘어</button>
+                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; border-color:#f0f; color:#f0f;" onclick="applyPreset('neon')">⚡ 네온</button>
+                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="applyPreset('bubble')">🎈 버블</button>
                 </div>
             </div>
 
@@ -99,64 +138,79 @@
                 <div class="component-box" id="compStats">
                     <div class="component-header"><strong>📊 곡 통계 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>글자색</label><input type="color" id="textStats" value="#00ffa3"></div>
-                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeStats">14px</span></label><input type="range" id="sizeStats" min="10" max="30" value="14" oninput="updateVal(this, 'valSizeStats')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgStats" value="#2c3e50" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaStats">0%</span></label><input type="range" id="alphaStats" min="0" max="100" value="0" oninput="updateVal(this, 'valAlphaStats'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textStats" value="#00ffa3" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeStats">14px</span></label><input type="range" id="sizeStats" min="10" max="30" value="14" oninput="updateVal(this, 'valSizeStats'); updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>좌우 위치 (%) <span class="val-display" id="valPosXStats">100%</span></label><input type="range" id="posXStats" min="0" max="100" value="100" oninput="updateVal(this, 'valPosXStats'); updatePreview();"></div>
                     </div>
                 </div>
 
                 <div class="component-box" id="compNotice">
                     <div class="component-header"><strong>📢 공지 메모 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>배경색</label><input type="color" id="bgNotice" value="#1a1a1a"></div>
-                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaNotice">80%</span></label><input type="range" id="alphaNotice" min="0" max="100" value="80" oninput="updateVal(this, 'valAlphaNotice')"></div>
-                        <div class="group"><label>글자색</label><input type="color" id="textNotice" value="#ffffff"></div>
-                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeNotice">16px</span></label><input type="range" id="sizeNotice" min="10" max="40" value="16" oninput="updateVal(this, 'valSizeNotice')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgNotice" value="#1a1a1a" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaNotice">80%</span></label><input type="range" id="alphaNotice" min="0" max="100" value="80" oninput="updateVal(this, 'valAlphaNotice'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textNotice" value="#ffffff" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeNotice">16px</span></label><input type="range" id="sizeNotice" min="10" max="40" value="16" oninput="updateVal(this, 'valSizeNotice'); updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>상단 여백 <span class="val-display" id="valMarginTopNotice">10px</span></label><input type="range" id="marginTopNotice" min="0" max="100" value="10" oninput="updateVal(this, 'valMarginTopNotice'); updatePreview();"></div>
                     </div>
                 </div>
 
                 <div class="component-box" id="compOmakase">
                     <div class="component-header"><strong>🍣 오마카세 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>배경색</label><input type="color" id="bgOmakase" value="#00aaff"></div>
-                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaOmakase">85%</span></label><input type="range" id="alphaOmakase" min="0" max="100" value="85" oninput="updateVal(this, 'valAlphaOmakase')"></div>
-                        <div class="group"><label>글자색</label><input type="color" id="textOmakase" value="#ffffff"></div>
-                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeOmakase">20px</span></label><input type="range" id="sizeOmakase" min="10" max="40" value="20" oninput="updateVal(this, 'valSizeOmakase')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgOmakase" value="#00aaff" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaOmakase">85%</span></label><input type="range" id="alphaOmakase" min="0" max="100" value="85" oninput="updateVal(this, 'valAlphaOmakase'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textOmakase" value="#ffffff" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeOmakase">20px</span></label><input type="range" id="sizeOmakase" min="10" max="40" value="20" oninput="updateVal(this, 'valSizeOmakase'); updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>상단 여백 <span class="val-display" id="valMarginTopOmakase">10px</span></label><input type="range" id="marginTopOmakase" min="0" max="100" value="10" oninput="updateVal(this, 'valMarginTopOmakase'); updatePreview();"></div>
                     </div>
                 </div>
 
                 <div class="component-box" id="compPlaying">
                     <div class="component-header"><strong>🎧 재생 중인 노래 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>배경색</label><input type="color" id="bgPlaying" value="#004422"></div>
-                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPlaying">90%</span></label><input type="range" id="alphaPlaying" min="0" max="100" value="90" oninput="updateVal(this, 'valAlphaPlaying')"></div>
-                        <div class="group"><label>글자색</label><input type="color" id="textPlaying" value="#00ffa3"></div>
-                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePlaying">24px</span></label><input type="range" id="sizePlaying" min="12" max="60" value="24" oninput="updateVal(this, 'valSizePlaying')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgPlaying" value="#004422" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPlaying">90%</span></label><input type="range" id="alphaPlaying" min="0" max="100" value="90" oninput="updateVal(this, 'valAlphaPlaying'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textPlaying" value="#00ffa3" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePlaying">24px</span></label><input type="range" id="sizePlaying" min="12" max="60" value="24" oninput="updateVal(this, 'valSizePlaying'); updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>라벨 텍스트</label><input type="text" id="labelNowPlaying" placeholder="▶ NOW PLAYING" oninput="updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>상단 여백 <span class="val-display" id="valMarginTopPlaying">10px</span></label><input type="range" id="marginTopPlaying" min="0" max="100" value="10" oninput="updateVal(this, 'valMarginTopPlaying'); updatePreview();"></div>
                     </div>
                 </div>
 
                 <div class="component-box" id="compPending">
                     <div class="component-header"><strong>⏳ 대기열 목록 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitPending" value="5" min="1" max="20"></div>
-                        <div class="group"><label>글자색</label><input type="color" id="textPending" value="#dddddd"></div>
-                        <div class="group"><label>배경색</label><input type="color" id="bgPending" value="#000000"></div>
-                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPending">70%</span></label><input type="range" id="alphaPending" min="0" max="100" value="70" oninput="updateVal(this, 'valAlphaPending')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgPending" value="#000000" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaPending">70%</span></label><input type="range" id="alphaPending" min="0" max="100" value="70" oninput="updateVal(this, 'valAlphaPending'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textPending" value="#dddddd" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizePending">12px</span></label><input type="range" id="sizePending" min="10" max="40" value="12" oninput="updateVal(this, 'valSizePending'); updatePreview()"></div>
+                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitPending" value="5" min="1" max="20" oninput="updatePreview()"></div>
+                        <div class="group"><label>라벨 텍스트</label><input type="text" id="labelUpNext" placeholder="⏳ UP NEXT" oninput="updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>상단 여백 <span class="val-display" id="valMarginTopPending">10px</span></label><input type="range" id="marginTopPending" min="0" max="100" value="10" oninput="updateVal(this, 'valMarginTopPending'); updatePreview();"></div>
                     </div>
                 </div>
 
                 <div class="component-box" id="compCompleted">
                     <div class="component-header"><strong>✔ 완료 목록 세부 설정</strong></div>
                     <div class="grid-2">
-                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitCompleted" value="3" min="0" max="10"></div>
-                        <div class="group"><label>글자색</label><input type="color" id="textCompleted" value="#888888"></div>
-                        <div class="group"><label>배경색</label><input type="color" id="bgCompleted" value="#000000"></div>
-                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaCompleted">50%</span></label><input type="range" id="alphaCompleted" min="0" max="100" value="50" oninput="updateVal(this, 'valAlphaCompleted')"></div>
+                        <div class="group"><label>배경색</label><input type="color" id="bgCompleted" value="#000000" oninput="updatePreview()"></div>
+                        <div class="group"><label>배경 투명도 <span class="val-display" id="valAlphaCompleted">50%</span></label><input type="range" id="alphaCompleted" min="0" max="100" value="50" oninput="updateVal(this, 'valAlphaCompleted'); updatePreview()"></div>
+                        <div class="group"><label>글자색</label><input type="color" id="textCompleted" value="#888888" oninput="updatePreview()"></div>
+                        <div class="group"><label>폰트 크기 <span class="val-display" id="valSizeCompleted">12px</span></label><input type="range" id="sizeCompleted" min="10" max="40" value="12" oninput="updateVal(this, 'valSizeCompleted'); updatePreview()"></div>
+                        <div class="group"><label>표시 개수 제한</label><input type="number" id="limitCompleted" value="3" min="0" max="10" oninput="updatePreview()"></div>
+                        <div class="group"><label>라벨 텍스트</label><input type="text" id="labelCompleted" placeholder="✔ COMPLETED" oninput="updatePreview()"></div>
+                        <div class="group" style="grid-column: span 2;"><label>상단 여백 <span class="val-display" id="valMarginTopCompleted">10px</span></label><input type="range" id="marginTopCompleted" min="0" max="100" value="10" oninput="updateVal(this, 'valMarginTopCompleted'); updatePreview();"></div>
                     </div>
                 </div>
 
+                <!-- 라벨 텍스트 설정 박스 제거 (각 컴포넌트 내부로 이동됨) -->
+
                 <div class="group">
                     <label>전체 커스텀 CSS (고급 사용자용)</label>
-                    <textarea id="customCss" rows="4" placeholder="예: .song-card { border-radius: 10px; }"></textarea>
+                    <textarea id="customCss" rows="4" placeholder="예: .song-card { border-radius: 10px; }" oninput="updatePreview()"></textarea>
                 </div>
 
                 <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; margin-top:20px;" onclick="saveAllSettings(true)">💾 저장 및 대시보드로 이동</button>
@@ -172,46 +226,9 @@
                     <button class="btn btn-primary" style="padding: 8px 16px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 10px rgba(0, 255, 163, 0.3);" onclick="saveAllSettings(false)">✅ 적용</button>
                 </div>
                 
-                <div class="preview-screen" id="previewScreen" style="aspect-ratio: 16/13.5; background: #2c3e50 url('https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacityx2.png') center/cover; border-radius: 12px; position: relative; overflow: hidden; border: 4px solid var(--text-dark); display: flex; flex-direction: column; overflow-y: auto;">
-                    
-                    <div id="prevNotice" style="width: 100%; text-align: center; padding: 5px; font-weight: bold; box-sizing: border-box; z-index: 10; transition: all 0.2s;">
-                        📢 공지: 물댕봇 테스트 중입니다!
-                    </div>
-                    
-                    <div style="flex: 1; display: flex; padding: 15px; gap: 15px; z-index: 10; position: relative; pointer-events: none;">
-                        
-                        <div id="prevLeftCol" style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
-                            <div id="prevStats" style="font-weight: bold; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">▶ 완료 3 / 대기 5</div>
-                            
-                            <div id="prevPlaying" class="box" style="padding: 12px; border-radius: 10px; font-weight: bold; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                                <div class="now-label" style="font-size:13px; opacity:0.8;">▶ NOW PLAYING</div>
-                                <div class="now-title" style="font-size:1.2em; display:flex; align-items:center; gap:8px;">🎵 테스트 곡 제목</div>
-                                <div class="now-artist" style="font-size:0.8em; text-align:right;">- 테스트 가수</div>
-                            </div>
-
-                            <div id="prevPending" class="box" style="padding: 10px; border-radius: 8px; transition: all 0.2s; font-size: 12px; font-weight: bold;">
-                                <div class="list-title" style="border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-bottom:5px;">⏳ UP NEXT</div>
-                                <div class="list-item" style="display:flex; justify-content:space-between; margin-bottom:5px;"><span class="item-title">1. 다음 곡 - 신청자</span><span class="item-artist"></span></div>
-                                <div class="list-item" style="display:flex; justify-content:space-between;"><span class="item-title">2. 다다음 곡 - 신청자</span><span class="item-artist"></span></div>
-                            </div>
-                            
-                            <div id="prevCompleted" class="box" style="padding: 10px; border-radius: 8px; transition: all 0.2s; font-size: 12px; font-weight: bold;">
-                                <div class="list-title" style="border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px; margin-bottom:5px;">✔ COMPLETED</div>
-                                <div class="list-item" style="display:flex; justify-content:space-between; opacity:0.7;"><span class="item-title" style="text-decoration:line-through;">1. 어제 부른 곡</span><span class="item-artist"></span></div>
-                            </div>
-                        </div>
-
-                        <div id="prevRightCol" style="width: 120px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
-                            <div id="prevOmakase" style="padding: 12px; border-radius: 10px; font-weight: bold; text-align: center; transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                                🍣 <span id="prevOmakaseName">물마카세</span><br><span style="font-size: 1.8em;">3</span>
-                            </div>
-                        </div>
-
-                    </div>
+                <div class="preview-screen-wrapper" style="background:#111; padding:20px; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; min-height:650px; position:relative; box-shadow: inset 0 0 40px rgba(0,0,0,0.8); background-image: radial-gradient(circle, #222 1px, transparent 1px); background-size: 20px 20px;">
+                    <iframe id="previewIframe" src="" style="width: 400px; height: 700px;"></iframe>
                 </div>
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px; text-align: center; line-height: 1.5;">
-                    좌측의 입력란을 조작하면 이곳에 실시간으로 표시되며, 위치를 위아래로 드래그하면 컴포넌트 순서가 연동됩니다. (디자인 시안용으로, 실제 오버레이 출력 크기와 약간의 차이가 있을 수 있습니다.)
-                </p>
             </div>
         </div>
     </div>
@@ -221,33 +238,91 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <script>
-        const pathParts = window.location.pathname.split('/');
-        const chzzkUid = pathParts[pathParts.length - 1];
-        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+        // UID 추출 로직 개선 (쿼리 파라미터 또는 경로에서 추출)
+        const urlParams = new URL(window.location.href).searchParams;
+        let chzzkUid = urlParams.get('chzzkUid');
+        if (!chzzkUid || chzzkUid.includes('.')) {
+            const pathParts = window.location.pathname.split('/');
+            chzzkUid = pathParts[pathParts.length - 1];
+        }
 
-        Sortable.create(document.getElementById('orderList'), {
-            animation: 150,
-            handle: '.order-item',
-            onEnd: updatePreview // Update right away on drag end
-        });
+        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+        let currentOrder = ['Notice', 'Stats', 'Omakase', 'Playing', 'Pending', 'Completed'];
+        let dashState = null;
+
+        // 샘플 데이터 (프리뷰용)
+        const SAMPLE_DATA = {
+            memo: "📢 공지: 물댕봇 테스트 중입니다! \n디자인을 자유롭게 수정해 보세요.",
+            omakases: [
+                { name: "물마카세", count: 3, icon: "🍣" },
+                { name: "🎤 노래방", count: 1, icon: "🎤" }
+            ],
+            currentTitle: "테스트 곡 제목",
+            currentArtist: "테스트 가수",
+            pendingSongs: [
+                { title: "대기 중인 곡 1", artist: "시청자A" },
+                { title: "대기 중인 곡 2", artist: "시청자B" },
+                { title: "대기 중인 곡 3", artist: "시청자C" }
+            ],
+            completedSongs: [
+                { title: "어제 부른 노래", artist: "시청자D" },
+                { title: "방금 부른 노래", artist: "시청자E" }
+            ],
+            labels: { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" }
+        };
+
+        function renderOrderList() {
+            const list = document.getElementById('orderList');
+            list.innerHTML = '';
+            currentOrder.forEach(id => {
+                const li = document.createElement('li');
+                li.className = 'order-item';
+                li.dataset.id = id;
+                li.innerHTML = `<div><span class="order-icon">☰</span> ${getLabel(id)}</div>
+                                <label class="toggle-label"><input type="checkbox" id="show${id}" checked onchange="updatePreview()"> 표시</label>`;
+                list.appendChild(li);
+            });
+            Sortable.create(list, {
+                animation: 150,
+                onEnd: () => {
+                    currentOrder = Array.from(list.children).map(li => li.dataset.id);
+                    updatePreview();
+                }
+            });
+        }
+
+        function getLabel(id) {
+            const labels = { 'Stats': '📊 곡 통계', 'Notice': '📢 공지 메모', 'Omakase': '🍣 오마카세', 'Playing': '🎧 재생 중', 'Pending': '⏳ 대기열', 'Completed': '✔ 완료 목록' };
+            return labels[id];
+        }
+
+        function updatePreview() {
+            const screen = document.getElementById('previewScreen');
+            const gap = document.getElementById('componentGap').value;
+            screen.style.gap = gap + 'px';
+            screen.style.width = document.getElementById('canvasW').value + 'px';
+            screen.style.height = document.getElementById('canvasH').value + 'px';
+            screen.style.backgroundColor = document.getElementById('canvasBg').value;
+            
+            currentOrder.forEach(id => {
+                const el = document.getElementById(`prev${id}`);
+                const show = document.getElementById(`show${id}`).checked;
+                el.style.display = show ? 'block' : 'none';
+            });
+        }
 
         let omakaseItems = [];
         let songRequestCommands = [];
-        let savedLabels = { nowPlaying: "▶ NOW PLAYING", upNext: "⏳ UP NEXT", completed: "✔ COMPLETED" };
 
         function renderSongCommandList() {
             const container = document.getElementById('songCommandListContainer');
             container.innerHTML = '';
-            if (songRequestCommands.length === 0) {
-                container.innerHTML = '<div style="padding:15px; text-align:center; color:#888; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px;">등록된 전용 신청 명령어가 없습니다. (기본 신청 사용)</div>';
-                return;
-            }
             songRequestCommands.forEach((cmd, index) => {
                 const div = document.createElement('div');
                 div.style.cssText = "display:grid; grid-template-columns: 1fr 120px auto; gap:10px; align-items:end; background:rgba(0,0,0,0.1); padding:8px; border-radius:8px;";
                 div.innerHTML = `
-                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">키워드</label><input type="text" value="${cmd.keyword}" onchange="updateSongCommandValue(${index}, 'keyword', this.value)" placeholder="!신청"></div>
-                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">개별 금액(치즈)</label><input type="number" value="${cmd.price}" onchange="updateSongCommandValue(${index}, 'price', this.value)" placeholder="0"></div>
+                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">키워드</label><input type="text" value="${cmd.keyword}" onchange="updateSongCommandValue(${index}, 'keyword', this.value)"></div>
+                    <div class="group" style="margin:0;"><label style="font-size:11px; opacity:0.7;">금액</label><input type="number" value="${cmd.price}" onchange="updateSongCommandValue(${index}, 'price', this.value)"></div>
                     <button type="button" class="btn" style="background:#ff4757; color:white; padding:8px 12px; font-size:12px;" onclick="removeSongCommandItem(${index})">삭제</button>
                 `;
                 container.appendChild(div);
@@ -255,11 +330,7 @@
         }
 
         function updateSongCommandValue(index, field, value) {
-            if (field === 'price') {
-                songRequestCommands[index].price = parseInt(value) || 0;
-            } else {
-                songRequestCommands[index].keyword = value.trim();
-            }
+            songRequestCommands[index][field] = field === 'price' ? parseInt(value) || 0 : value;
         }
 
         function addSongCommandItem() {
@@ -275,125 +346,114 @@
         function renderOmakaseList() {
             const container = document.getElementById('omakaseListContainer');
             container.innerHTML = '';
-            if (omakaseItems.length === 0) {
-                container.innerHTML = '<div style="padding:20px; text-align:center; color:#888; background:rgba(0,0,0,0.2); border-radius:8px;">등록된 오마카세 메뉴가 없습니다.</div>';
-                updatePreview();
-                return;
-            }
             omakaseItems.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.style.cssText = "display:grid; grid-template-columns: auto 1fr 1fr 1fr auto; gap:10px; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; align-items:end;";
                 div.innerHTML = `
-                    <div class="group" style="margin:0;">
-                        <label>아이콘</label>
-                        <select onchange="updateOmakaseValue(${index}, 'icon', this.value)" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.5); color: white;">
-                            <option value="🍣" ${item.icon === '🍣' ? 'selected' : ''}>🍣</option>
-                            <option value="🎤" ${item.icon === '🎤' ? 'selected' : ''}>🎤</option>
-                            <option value="🎵" ${item.icon === '🎵' ? 'selected' : ''}>🎵</option>
-                            <option value="🎁" ${item.icon === '🎁' ? 'selected' : ''}>🎁</option>
-                            <option value="🔥" ${item.icon === '🔥' ? 'selected' : ''}>🔥</option>
-                            <option value="⭐" ${item.icon === '⭐' ? 'selected' : ''}>⭐</option>
-                            <option value="💖" ${item.icon === '💖' ? 'selected' : ''}>💖</option>
-                            <option value="🍡" ${item.icon === '🍡' ? 'selected' : ''}>🍡</option>
-                            <option value="🍺" ${item.icon === '🍺' ? 'selected' : ''}>🍺</option>
-                            <option value="" ${item.icon === '' ? 'selected' : ''}>❌</option>
-                        </select>
-                    </div>
-                    <div class="group" style="margin:0;"><label>화면 표시 이름</label><input type="text" value="${item.name}" onchange="updateOmakaseValue(${index}, 'name', this.value)"></div>
+                    <div class="group" style="margin:0;"><label>아이콘</label><input type="text" value="${item.icon}" onchange="updateOmakaseValue(${index}, 'icon', this.value)" style="width:40px;"></div>
+                    <div class="group" style="margin:0;"><label>이름</label><input type="text" value="${item.name}" onchange="updateOmakaseValue(${index}, 'name', this.value)"></div>
                     <div class="group" style="margin:0;"><label>명령어</label><input type="text" value="${item.command}" onchange="updateOmakaseValue(${index}, 'command', this.value)"></div>
                     <div class="group" style="margin:0;"><label>치즈</label><input type="number" value="${item.price}" onchange="updateOmakaseValue(${index}, 'price', this.value)"></div>
                     <button type="button" class="btn" style="background:#ff4757; color:white; padding:10px 15px;" onclick="removeOmakaseItem(${index})">삭제</button>
                 `;
                 container.appendChild(div);
             });
-            updatePreview();
         }
 
         function updateOmakaseValue(index, field, value) {
             omakaseItems[index][field] = field === 'price' ? parseInt(value) || 0 : value;
-            updatePreview();
         }
 
         function addOmakaseItem() {
-            omakaseItems.push({ id: 0, name: '새 오마카세', command: '!물마카세', price: 10000, icon: '🍣' });
+            omakaseItems.push({ name: '새 메뉴', command: '!메뉴', price: 1000, icon: '🍣' });
             renderOmakaseList();
         }
 
         function removeOmakaseItem(index) {
-            if(confirm('해당 메뉴를 삭제하시겠습니까?')) {
-                omakaseItems.splice(index, 1);
-                renderOmakaseList();
-            }
+            omakaseItems.splice(index, 1);
+            renderOmakaseList();
         }
 
         async function loadSettings() {
             const res = await fetch(`/api/settings/data/${chzzkUid}`);
             if (res.ok) {
                 const data = await res.json();
-                
-                // 1. 명령어 목록 로드 (대소문자 구분 없이 매핑)
-                songRequestCommands = (data.songRequestCommands || []).map(c => {
-                    if (typeof c === 'string') return { keyword: c, price: 0 };
-                    return {
-                        keyword: c.keyword || c.Keyword || "",
-                        price: c.price !== undefined ? c.price : (c.Price !== undefined ? c.Price : 0)
-                    };
-                });
-                
-                if (songRequestCommands.length === 0 && data.songCommand) {
-                    songRequestCommands = [{ 
-                        keyword: data.songCommand, 
-                        price: data.songPrice !== undefined ? data.songPrice : (data.SongPrice || 0) 
-                    }];
-                }
-                renderSongCommandList();
-
-                // 2. 오마카세 목록 로드 (대소문자 및 필드명 차이 대응)
-                omakaseItems = (data.omakases || []).map(o => ({
-                    id: o.id !== undefined ? o.id : (o.Id || 0),
-                    name: o.name || o.Name || "",
-                    command: o.command || o.Command || "",
-                    icon: o.icon !== undefined ? o.icon : (o.Icon || "🍣"),
-                    price: o.cheesePrice !== undefined ? o.cheesePrice : (o.CheesePrice !== undefined ? o.CheesePrice : (o.price || o.Price || 0))
-                }));
-                renderOmakaseList();
-
-                if (data.designSettingsJson && data.designSettingsJson !== "{}") {
+                if (data.designSettingsJson) {
                     const ds = JSON.parse(data.designSettingsJson);
+                    
+                    // Canvas 설정
+                    if (ds.Canvas) {
+                        const c = ds.Canvas;
+                        document.getElementById('canvasW').value = c.w || 400;
+                        document.getElementById('canvasH').value = c.h || 700;
+                        document.getElementById('canvasBg').value = c.bg || "#2c3e50";
+                        document.getElementById('canvasAlpha').value = c.alpha || 0;
+                        document.getElementById('valCanvasAlpha').innerText = (c.alpha || 0) + "%";
+                        
+                        document.getElementById('borderWidth').value = c.borderWidth || 0;
+                        document.getElementById('valBorderWidth').innerText = (c.borderWidth || 0) + "px";
+                        document.getElementById('borderColor').value = c.borderColor || "#ffffff";
+                        document.getElementById('borderAlpha').value = c.borderAlpha !== undefined ? c.borderAlpha : 100;
+                        document.getElementById('valBorderAlpha').innerText = (c.borderAlpha !== undefined ? c.borderAlpha : 100) + "%";
+                        if (c.scale !== undefined) {
+                            document.getElementById('canvasScale').value = c.scale;
+                            document.getElementById('valCanvasScale').innerText = c.scale + "%";
+                        }
+                    }
 
+                    // 컴포넌트 순서 로드
                     if (ds.componentOrder) {
+                        currentOrder = ds.componentOrder;
                         const list = document.getElementById('orderList');
-                        ds.componentOrder.forEach(id => {
+                        currentOrder.forEach(id => {
                             const item = list.querySelector(`[data-id="${id}"]`);
                             if (item) list.appendChild(item);
                         });
                     }
 
+                    // 개별 컴포넌트 설정 로드
                     const comps = ['Stats', 'Notice', 'Omakase', 'Playing', 'Pending', 'Completed'];
                     comps.forEach(c => {
-                        if (ds[c]) {
-                            if (document.getElementById(`show${c}`)) document.getElementById(`show${c}`).checked = ds[c].show;
-                            if (document.getElementById(`text${c}`) && ds[c].text) document.getElementById(`text${c}`).value = ds[c].text;
-
-                            if (document.getElementById(`bg${c}`) && ds[c].bg) document.getElementById(`bg${c}`).value = ds[c].bg;
-                            if (document.getElementById(`alpha${c}`) && ds[c].alpha !== undefined) {
-                                document.getElementById(`alpha${c}`).value = ds[c].alpha;
-                                document.getElementById(`valAlpha${c}`).innerText = ds[c].alpha + "%";
+                        const config = ds[c] || ds[c.toLowerCase()];
+                        if (config) {
+                            if (document.getElementById(`show${c}`)) document.getElementById(`show${c}`).checked = config.show !== false;
+                            if (document.getElementById(`text${c}`) && config.text) document.getElementById(`text${c}`).value = config.text;
+                            if (document.getElementById(`bg${c}`) && config.bg) document.getElementById(`bg${c}`).value = config.bg;
+                            if (document.getElementById(`alpha${c}`) && config.alpha !== undefined) {
+                                document.getElementById(`alpha${c}`).value = config.alpha;
+                                document.getElementById( `valAlpha${c}`).innerText = config.alpha + "%";
                             }
-                            if (document.getElementById(`size${c}`) && ds[c].size) {
-                                document.getElementById(`size${c}`).value = ds[c].size;
-                                document.getElementById(`valSize${c}`).innerText = ds[c].size + "px";
+                            if (document.getElementById(`size${c}`) && config.size) {
+                                document.getElementById(`size${c}`).value = config.size;
+                                document.getElementById(`valSize${c}`).innerText = config.size + "px";
                             }
-                            if (document.getElementById(`limit${c}`) && ds[c].limit) {
-                                document.getElementById(`limit${c}`).value = ds[c].limit;
+                            if (document.getElementById(`limit${c}`) && (config.limit || config.Limit)) {
+                                document.getElementById(`limit${c}`).value = config.limit || config.Limit;
+                            }
+                            if (document.getElementById(`marginTop${c}`)) {
+                                const mt = (config.marginTop !== undefined) ? config.marginTop : 10;
+                                document.getElementById(`marginTop${c}`).value = mt;
+                                document.getElementById(`valMarginTop${c}`).innerText = mt + "px";
+                            }
+                            if (document.getElementById(`marginRight${c}`) && config.marginRight) {
+                                document.getElementById(`marginRight${c}`).value = config.marginRight;
+                                document.getElementById(`valMarginRight${c}`).innerText = config.marginRight + "px";
+                            }
+                            if (document.getElementById(`posX${c}`) && config.posX !== undefined) {
+                                document.getElementById(`posX${c}`).value = config.posX;
+                                document.getElementById(`valPosX${c}`).innerText = config.posX + "%";
                             }
                         }
                     });
-                    if (ds.Labels) savedLabels = ds.Labels;
+
+                    if (ds.Labels) {
+                        document.getElementById('labelNowPlaying').value = ds.Labels.nowPlaying || "";
+                        document.getElementById('labelUpNext').value = ds.Labels.upNext || "";
+                        document.getElementById('labelCompleted').value = ds.Labels.completed || "";
+                    }
                     document.getElementById('customCss').value = ds.customCss || "";
                 }
             }
-            // Trigger preview initial view
             updatePreview();
         }
 
@@ -413,17 +473,35 @@
                 designSettingsJson: ""
             };
 
+            const labels = {
+                nowPlaying: document.getElementById('labelNowPlaying').value.trim(),
+                upNext: document.getElementById('labelUpNext').value.trim(),
+                completed: document.getElementById('labelCompleted').value.trim()
+            };
+
             const ds = {
                 componentOrder: currentOrder,
+                Canvas: {
+                    w: parseInt(document.getElementById('canvasW').value),
+                    h: parseInt(document.getElementById('canvasH').value),
+                    bg: document.getElementById('canvasBg').value,
+                    alpha: parseInt(document.getElementById('canvasAlpha').value),
+                    borderWidth: parseInt(document.getElementById('borderWidth').value),
+                    borderColor: document.getElementById('borderColor').value,
+                    borderAlpha: parseInt(document.getElementById('borderAlpha').value),
+                    borderRadius: parseInt(document.getElementById('borderRadius').value),
+                    scale: parseInt(document.getElementById('canvasScale').value)
+                },
                 Stats: getCompData('Stats'),
                 Notice: getCompData('Notice'),
                 Omakase: getCompData('Omakase'),
                 Playing: getCompData('Playing'),
                 Pending: getCompData('Pending'),
                 Completed: getCompData('Completed'),
-                Labels: savedLabels,
+                Labels: labels,
                 customCss: document.getElementById('customCss').value
             };
+            savedLabels = labels; // Update local state
             reqData.designSettingsJson = JSON.stringify(ds);
 
             const res = await fetch(`/api/settings/update/${chzzkUid}`, {
@@ -448,6 +526,9 @@
             if (document.getElementById(`text${c}`)) data.text = document.getElementById(`text${c}`).value;
             if (document.getElementById(`size${c}`)) data.size = document.getElementById(`size${c}`).value;
             if (document.getElementById(`limit${c}`)) data.limit = document.getElementById(`limit${c}`).value;
+            if (document.getElementById(`marginTop${c}`)) data.marginTop = document.getElementById(`marginTop${c}`).value;
+            if (document.getElementById(`marginRight${c}`)) data.marginRight = document.getElementById(`marginRight${c}`).value;
+            if (document.getElementById(`posX${c}`)) data.posX = document.getElementById(`posX${c}`).value;
 
             const bgEl = document.getElementById(`bg${c}`);
             const alphaEl = document.getElementById(`alpha${c}`);
@@ -463,39 +544,39 @@
         const presets = {
             'default': {
                 css: `.box {\n  border-radius: 12px;\n  backdrop-filter: blur(10px);\n  -webkit-backdrop-filter: blur(10px);\n  border: 1px solid rgba(255,255,255,0.3);\n  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);\n}\n#omakase-container {\n  border-radius: 8px;\n  backdrop-filter: blur(10px);\n}`,
-                stats: { c: '#00ffa3', s: 14 },
+                stats: { bg: '#2c3e50', a: 0, c: '#00ffa3', s: 14 },
                 notice: { bg: '#1a1a1a', a: 80, c: '#ffffff', s: 16 },
                 omakase: { bg: '#00aaff', a: 85, c: '#ffffff', s: 20 },
                 playing: { bg: '#004422', a: 90, c: '#00ffa3', s: 24 },
-                pending: { bg: '#000000', a: 70, c: '#dddddd' },
-                completed: { bg: '#000000', a: 50, c: '#888888' }
+                pending: { bg: '#000000', a: 70, c: '#dddddd', s: 12 },
+                completed: { bg: '#000000', a: 50, c: '#888888', s: 12 }
             },
             'flat': {
                 css: `.box {\n  border-radius: 0px !important;\n  border: none;\n  border-left: 6px solid #fff;\n  box-shadow: none;\n  backdrop-filter: none;\n}\n#omakase-container {\n  border-radius: 0px !important;\n}`,
-                stats: { c: '#000000', s: 14 },
+                stats: { bg: '#ffffff', a: 0, c: '#000000', s: 14 },
                 notice: { bg: '#eeeeee', a: 100, c: '#000000', s: 16 },
                 omakase: { bg: '#ff5555', a: 100, c: '#ffffff', s: 22 },
                 playing: { bg: '#ffffff', a: 100, c: '#000000', s: 24 },
-                pending: { bg: '#ffffff', a: 100, c: '#333333' },
-                completed: { bg: '#dddddd', a: 100, c: '#aaaaaa' }
+                pending: { bg: '#ffffff', a: 100, c: '#333333', s: 14 },
+                completed: { bg: '#dddddd', a: 100, c: '#aaaaaa', s: 12 }
             },
             'neon': {
                 css: `.box {\n  border: 1px solid #0ff;\n  border-radius: 0;\n  box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;\n}\n.list-title, .now-label {\n  color: #f0f;\n  text-shadow: 0 0 5px #f0f;\n}\n.now-title {\n  color: #fff;\n  text-shadow: 0 0 8px #0ff;\n}\n.item-title {\n  text-shadow: 0 0 5px #0ff;\n}`,
-                stats: { c: '#ff00ff', s: 14 },
+                stats: { bg: '#000000', a: 0, c: '#ff00ff', s: 14 },
                 notice: { bg: '#000000', a: 80, c: '#00ffff', s: 16 },
                 omakase: { bg: '#000000', a: 80, c: '#ff00ff', s: 22 },
                 playing: { bg: '#000000', a: 80, c: '#ffffff', s: 24 },
-                pending: { bg: '#000000', a: 80, c: '#00ffff' },
-                completed: { bg: '#000000', a: 60, c: '#ff00ff' }
+                pending: { bg: '#000000', a: 80, c: '#00ffff', s: 12 },
+                completed: { bg: '#000000', a: 60, c: '#ff00ff', s: 12 }
             },
             'bubble': {
                 css: `.box {\n  border-radius: 50px !important;\n  padding: 15px 25px;\n  border: 4px solid rgba(255,255,255,0.8);\n  box-shadow: 0 4px 15px rgba(0,0,0,0.1);\n}\n#omakase-container {\n  border-radius: 50px !important;\n}`,
-                stats: { c: '#ffb3ba', s: 16 },
+                stats: { bg: '#ffffff', a: 0, c: '#ffb3ba', s: 16 },
                 notice: { bg: '#ffdfba', a: 95, c: '#555555', s: 18 },
                 omakase: { bg: '#ffffba', a: 95, c: '#555555', s: 24 },
                 playing: { bg: '#baffc9', a: 95, c: '#333333', s: 26 },
-                pending: { bg: '#bae1ff', a: 90, c: '#444444' },
-                completed: { bg: '#e0c9ff', a: 80, c: '#666666' }
+                pending: { bg: '#bae1ff', a: 90, c: '#444444', s: 16 },
+                completed: { bg: '#e0c9ff', a: 80, c: '#666666', s: 14 }
             }
         };
 
@@ -507,12 +588,12 @@
             if (p.css !== undefined) document.getElementById('customCss').value = p.css;
             
             const mapping = {
-                'Stats': [null, null, p.stats.c, p.stats.s],
+                'Stats': [p.stats.bg || null, p.stats.a !== undefined ? p.stats.a : null, p.stats.c, p.stats.s],
                 'Notice': [p.notice.bg, p.notice.a, p.notice.c, p.notice.s],
                 'Omakase': [p.omakase.bg, p.omakase.a, p.omakase.c, p.omakase.s],
                 'Playing': [p.playing.bg, p.playing.a, p.playing.c, p.playing.s],
-                'Pending': [p.pending.bg, p.pending.a, p.pending.c, null],
-                'Completed': [p.completed.bg, p.completed.a, p.completed.c, null]
+                'Pending': [p.pending.bg, p.pending.a, p.pending.c, p.pending.s || 12],
+                'Completed': [p.completed.bg, p.completed.a, p.completed.c, p.completed.s || 12]
             };
             
             for (const [comp, vals] of Object.entries(mapping)) {
@@ -532,107 +613,64 @@
             updatePreview();
         }
 
-        // Live Preview Logic
+        // Iframe 기반 실시간 미리보기 로직
         function updatePreview() {
             try {
-                const hexToRgba = (hex, alphaPercent) => {
-                    const r = parseInt(hex.slice(1, 3), 16);
-                    const g = parseInt(hex.slice(3, 5), 16);
-                    const b = parseInt(hex.slice(5, 7), 16);
-                    return `rgba(${r}, ${g}, ${b}, ${alphaPercent / 100})`;
-                };
+                const canvasW = parseInt(document.getElementById('canvasW').value) || 400;
+                const canvasH = parseInt(document.getElementById('canvasH').value) || 700;
+                document.getElementById('guideW').innerText = canvasW;
+                document.getElementById('guideH').innerText = canvasH;
 
-                // Notice
-                const notice = document.getElementById('prevNotice');
-                notice.style.display = document.getElementById('showNotice').checked ? 'block' : 'none';
-                if (notice.style.display !== 'none') {
-                    notice.style.backgroundColor = hexToRgba(document.getElementById('bgNotice').value, document.getElementById('alphaNotice').value);
-                    notice.style.color = document.getElementById('textNotice').value;
-                    notice.style.fontSize = (document.getElementById('sizeNotice').value * 0.7) + 'px'; // 70% scale
+                const iframe = document.getElementById('previewIframe');
+                const wrapper = iframe.parentElement;
+                
+                // Iframe 내부 크기 조절
+                iframe.style.width = canvasW + 'px';
+                iframe.style.height = canvasH + 'px';
+
+                // 스케일링 계산
+                const wrapW = wrapper.clientWidth - 40;
+                const wrapH = wrapper.clientHeight - 40;
+                const scale = Math.min(wrapW / canvasW, wrapH / canvasH, 1);
+                iframe.style.transform = `scale(${scale})`;
+
+                // Iframe으로 데이터 전송
+                if (iframe.contentWindow) {
+                    const currentOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
+                    const settings = {
+                        componentOrder: currentOrder,
+                        Canvas: {
+                            w: canvasW,
+                            h: canvasH,
+                            bg: document.getElementById('canvasBg').value,
+                            alpha: parseInt(document.getElementById('canvasAlpha').value),
+                            borderWidth: parseInt(document.getElementById('borderWidth').value),
+                            borderColor: document.getElementById('borderColor').value,
+                            borderAlpha: parseInt(document.getElementById('borderAlpha').value),
+                            borderRadius: parseInt(document.getElementById('borderRadius').value),
+                            scale: parseInt(document.getElementById('canvasScale').value)
+                        },
+                        Stats: getCompData('Stats'),
+                        Notice: getCompData('Notice'),
+                        Omakase: getCompData('Omakase'),
+                        Playing: getCompData('Playing'),
+                        Pending: getCompData('Pending'),
+                        Completed: getCompData('Completed'),
+                        Labels: {
+                            nowPlaying: document.getElementById('labelNowPlaying').value.trim(),
+                            upNext: document.getElementById('labelUpNext').value.trim(),
+                            completed: document.getElementById('labelCompleted').value.trim()
+                        },
+                        customCss: document.getElementById('customCss').value
+                    };
+
+                    iframe.contentWindow.postMessage({
+                        type: "DEMO_DESIGN_UPDATE",
+                        settings: settings,
+                        dashState: dashState || SAMPLE_DATA
+                    }, '*');
                 }
-
-                // Stats
-                const stats = document.getElementById('prevStats');
-                stats.style.display = document.getElementById('showStats').checked ? 'block' : 'none';
-                if (stats.style.display !== 'none') {
-                    stats.style.color = document.getElementById('textStats').value;
-                    stats.style.fontSize = (document.getElementById('sizeStats').value * 0.7) + 'px';
-                }
-
-                // Playing
-                const playing = document.getElementById('prevPlaying');
-                playing.style.display = document.getElementById('showPlaying').checked ? 'block' : 'none';
-                if (playing.style.display !== 'none') {
-                    playing.style.backgroundColor = hexToRgba(document.getElementById('bgPlaying').value, document.getElementById('alphaPlaying').value);
-                    playing.style.color = document.getElementById('textPlaying').value;
-                    playing.style.fontSize = (document.getElementById('sizePlaying').value * 0.6) + 'px'; // 60% scale
-                }
-
-                // Pending
-                const pending = document.getElementById('prevPending');
-                pending.style.display = document.getElementById('showPending').checked ? 'block' : 'none';
-                if (pending.style.display !== 'none') {
-                    pending.style.backgroundColor = hexToRgba(document.getElementById('bgPending').value, document.getElementById('alphaPending').value);
-                    pending.style.color = document.getElementById('textPending').value;
-                }
-
-                // Completed
-                const completed = document.getElementById('prevCompleted');
-                completed.style.display = document.getElementById('showCompleted').checked ? 'block' : 'none';
-                if (completed.style.display !== 'none') {
-                    completed.style.backgroundColor = hexToRgba(document.getElementById('bgCompleted').value, document.getElementById('alphaCompleted').value);
-                    completed.style.color = document.getElementById('textCompleted').value;
-                }
-
-                const omakase = document.getElementById('prevOmakase');
-                omakase.style.display = document.getElementById('showOmakase').checked ? 'block' : 'none';
-                if (omakase.style.display !== 'none') {
-                    omakase.style.backgroundColor = hexToRgba(document.getElementById('bgOmakase').value, document.getElementById('alphaOmakase').value);
-                    omakase.style.color = document.getElementById('textOmakase').value;
-                    omakase.style.fontSize = (document.getElementById('sizeOmakase').value * 0.6) + 'px';
-                    
-                    let html = '';
-                    if (omakaseItems.length === 0) {
-                        html = `<span>🍣 오마카세</span><br><span style="font-size: 1.8em;">0</span>`;
-                    } else {
-                        html = omakaseItems.map(o => {
-                            const iconVal = o.icon !== undefined ? o.icon : '🍣';
-                            const iconStr = iconVal ? `${iconVal} ` : '';
-                            return `<span>${iconStr}${o.name}</span><br><span style="font-size: 1.8em;">0</span>`;
-                        }).join('<hr style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;">');
-                    }
-                    omakase.innerHTML = html;
-                }
-
-                // Component Ordering
-                const leftOrder = Array.from(document.getElementById('orderList').children).map(li => li.dataset.id);
-                const leftCol = document.getElementById('prevLeftCol');
-                leftOrder.forEach(id => {
-                    const el = document.getElementById('prev' + id);
-                    if (el && id !== 'Notice' && id !== 'Omakase') {
-                        leftCol.appendChild(el);
-                    }
-                });
-
-                // Custom CSS Injection (Scoped for Preview)
-                let userCss = document.getElementById('customCss').value || '';
-                let scopedCss = userCss.replace(/(^|\})([^{]+)(\{)/g, function(match, brace, selectorsStr, openBrace) {
-                    let selectors = selectorsStr.split(',').map(s => {
-                        let trimmed = s.trim();
-                        if (trimmed.startsWith('@') || trimmed === '') return trimmed;
-                        let mapped = trimmed.replace(/#notice-container/g, '#prevNotice')
-                                            .replace(/#stats-container/g, '#prevStats')
-                                            .replace(/#playing-container/g, '#prevPlaying')
-                                            .replace(/#pending-container/g, '#prevPending')
-                                            .replace(/#completed-container/g, '#prevCompleted')
-                                            .replace(/#omakase-container/g, '#prevOmakase');
-                        return '#previewScreen ' + mapped;
-                    });
-                    return brace + selectors.join(', ') + openBrace;
-                });
-                document.getElementById('liveCustomCss').innerHTML = scopedCss;
-
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("미리보기 업데이트 실패:", e); }
         }
 
         // Attach dynamic listeners
@@ -653,7 +691,22 @@
             // Fetch initial data
             connection.start().then(() => {
                 connection.invoke("JoinStreamerGroup", chzzkUid);
-                loadSettings();
+                // Iframe 경로 동적으로 설정 (실제 파일 경로 + UID 명시)
+                const iframe = document.getElementById('previewIframe');
+                iframe.src = `/songlist_overlay.html?chzzkUid=${chzzkUid}&sample=true`;
+                
+                // Iframe 로드 후 첫 전송
+                iframe.onload = () => {
+                   loadSettings();
+                };
+            });
+
+            connection.on("ReceiveOverlayState", (json) => {
+                try {
+                    console.log("실시간 데이터 수신:", json);
+                    dashState = JSON.parse(json);
+                    updatePreview();
+                } catch (e) { console.error("데이터 파싱 실패", e); }
             });
 
             connection.onreconnected((connectionId) => {
