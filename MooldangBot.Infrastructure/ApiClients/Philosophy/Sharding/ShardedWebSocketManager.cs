@@ -153,6 +153,11 @@ public class ShardedWebSocketManager : IChzzkChatClient
         return GetShard(chzzkUid).IsConnected(chzzkUid);
     }
 
+    public bool HasAuthError(string chzzkUid)
+    {
+        return GetShard(chzzkUid).HasAuthError(chzzkUid);
+    }
+
     public async Task<bool> ConnectAsync(string chzzkUid, string accessToken)
     {
         if (!IsMyResponsibility(chzzkUid)) return false;

@@ -20,6 +20,11 @@ public interface IChzzkChatClient : IAsyncDisposable
     bool IsConnected(string chzzkUid);
 
     /// <summary>
+    /// [인증 에러 확인]: 마지막 연결 시도가 401(토큰 오류)로 실패했는지 확인합니다.
+    /// </summary>
+    bool HasAuthError(string chzzkUid);
+
+    /// <summary>
     /// [파동의 시작]: 최신 토큰을 사용하여 특정 채널의 채팅 소켓 연결을 시도합니다.
     /// </summary>
     Task<bool> ConnectAsync(string chzzkUid, string accessToken);

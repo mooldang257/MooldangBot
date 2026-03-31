@@ -9,6 +9,7 @@ public interface IWebSocketShard : IAsyncDisposable
     int ShardId { get; }
     int ConnectionCount { get; }
     bool IsConnected(string chzzkUid);
+    bool HasAuthError(string chzzkUid);
     Task<bool> ConnectAsync(string chzzkUid, string accessToken);
     Task DisconnectAsync(string chzzkUid);
     ShardStatus GetStatus();

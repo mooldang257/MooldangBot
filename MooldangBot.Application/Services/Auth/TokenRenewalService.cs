@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
@@ -64,49 +65,74 @@ public class TokenRenewalService : ITokenRenewalService
     {
         // Polly 정책 결합 실행
         return await _retryPolicy.ExecuteAsync(async () => 
-            await _circuitBreaker!.ExecuteAsync(async () => await ProcessRenewalAsync(chzzkUid)));
+            await _circuitBreaker!.ExecuteAsync(async () => await ProcessRenewalAsync(chzzkUid, force: false)));
+    }
+
+    public async Task<bool> RenewNowAsync(string chzzkUid)
+    {
+        // [영겁의 열쇠]: 강제 갱신 프로토콜 가동 (시간 체크 우회)
+        return await _retryPolicy.ExecuteAsync(async () => 
+            await _circuitBreaker!.ExecuteAsync(async () => await ProcessRenewalAsync(chzzkUid, force: true)));
     }
 
     public bool IsCircuitOpen() => _circuitBreaker is { CircuitState: CircuitState.Open or CircuitState.Isolated };
 
-    private async Task<bool> ProcessRenewalAsync(string chzzkUid)
+    private async Task<bool> ProcessRenewalAsync(string chzzkUid, bool force)
     {
-        var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+        // [v10.0] AsNoTracking을 제거하여 갱신된 토큰이 DB에 실제 저장되도록 복구
+        var streamer = await _db.StreamerProfiles
+            .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+            
         if (streamer == null) return false;
 
-        bool success = true;
-
-        // 1. 스트리머 본인 토큰 갱신
-        if (!string.IsNullOrEmpty(streamer.ChzzkRefreshToken))
+        // 리프레시 토큰이 아예 없는 경우 자가 치유 불능
+        if (string.IsNullOrEmpty(streamer.ChzzkRefreshToken))
         {
-            success &= await RenewTokenInternalAsync(streamer, isBot: false);
+            _logger.LogWarning("❌ [영겁의 열쇠] {ChzzkUid} 채널의 리프레시 토큰이 누락되어 복구가 불가능합니다.", chzzkUid);
+            return false;
         }
 
-        // 2. 봇 계정 토큰 갱신
+        // 1. 스트리머 본인 토큰 갱신 (채팅 연결 핵심 - 실패 시 즉시 중단)
+        bool streamerSuccess = await RenewTokenInternalAsync(streamer, isBot: false, force: force);
+        if (!streamerSuccess)
+        {
+            _logger.LogError("❌ [영겁의 열쇠] {ChzzkUid} 스트리머 본인 토큰 갱신 실패로 자가 치유를 중단합니다.", chzzkUid);
+            return false;
+        }
+
+        // 2. 봇 계정 토큰 갱신 (선택 사항)
         if (!string.IsNullOrEmpty(streamer.BotRefreshToken))
         {
-            success &= await RenewTokenInternalAsync(streamer, isBot: true);
+             await RenewTokenInternalAsync(streamer, isBot: true, force: force);
         }
 
-        return success;
+        return true;
     }
 
-    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool isBot)
+    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool isBot, bool force)
     {
         var expiresAt = isBot ? streamer.BotTokenExpiresAt : streamer.TokenExpiresAt;
         var refreshToken = isBot ? streamer.BotRefreshToken : streamer.ChzzkRefreshToken;
 
-        // 만료 1시간 전인지 확인
-        var isExpiringSoon = expiresAt == null || expiresAt <= DateTime.UtcNow.AddHours(1);
-        if (!isExpiringSoon) return true;
+        // [v13.1] 모든 비교를 KST 강제 (UTC+9)
+        var kstNow = DateTime.UtcNow.AddHours(9);
+        var isExpiringSoon = expiresAt == null || expiresAt <= kstNow.AddHours(1);
+        if (!isExpiringSoon && !force) return true;
 
-        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 토큰 갱신 시도. (만료: {expiresAt})");
+        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 토큰 갱신 시도. (강제: {force}, 만료: {expiresAt})");
 
         // 스트리머 전용 앱 정보 또는 시스템 기본값 사용
         string clientId = streamer.ApiClientId ?? _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
         string clientSecret = streamer.ApiClientSecret ?? _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
 
         using var client = _httpClientFactory.CreateClient();
+        
+        // [v16.3.1] 치지직 API는 본문뿐만 아니라 HTTP 헤더에도 인증 정보를 강력하게 요구합니다.
+        client.DefaultRequestHeaders.Clear();
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+        client.DefaultRequestHeaders.Add("Client-Id", clientId);
+        client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+
         var payload = new
         {
             grantType = "refresh_token",
@@ -116,9 +142,19 @@ public class TokenRenewalService : ITokenRenewalService
         };
 
         var response = await client.PostAsJsonAsync(TokenUrl, payload);
+        var errorDetail = await response.Content.ReadAsStringAsync();
+
         if (!response.IsSuccessStatusCode)
         {
-            var errorDetail = await response.Content.ReadAsStringAsync();
+            // [v16.3.1] INVALID_TOKEN (401)은 리프레시 토큰이 영구적으로 죽었음을 의미합니다.
+            // 무의미한 재시도를 즉각 중단하고 시스템에 알리는 Fatal 에러를 발생시킵니다.
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && 
+                errorDetail.Contains("INVALID_TOKEN"))
+            {
+                _logger.LogCritical($"❌ [영겁의 열쇠] {streamer.ChzzkUid} 채널의 리프레시 토큰이 영구 무효화되었습니다.");
+                throw new FatalTokenException("INVALID_TOKEN detected");
+            }
+
             _logger.LogError($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 갱신 실패 (HTTP {response.StatusCode}): {errorDetail}");
             return false;
         }
@@ -131,17 +167,47 @@ public class TokenRenewalService : ITokenRenewalService
         {
             streamer.BotAccessToken = content.AccessToken;
             if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.BotRefreshToken = content.RefreshToken;
-            streamer.BotTokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
+            streamer.BotTokenExpiresAt = DateTime.UtcNow.AddHours(9).AddSeconds(content.ExpiresIn);
         }
         else
         {
             streamer.ChzzkAccessToken = content.AccessToken;
             if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
-            streamer.TokenExpiresAt = DateTime.UtcNow.AddSeconds(content.ExpiresIn);
+            streamer.TokenExpiresAt = DateTime.UtcNow.AddHours(9).AddSeconds(content.ExpiresIn);
         }
 
         await _db.SaveChangesAsync();
         return true;
     }
 
+    public async Task<string?> GetSessionAuthAsync(string chzzkUid)
+    {
+        var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+        if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return null;
+
+        string clientId = streamer.ApiClientId ?? _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
+        string clientSecret = streamer.ApiClientSecret ?? _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
+
+        using var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Clear();
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", streamer.ChzzkAccessToken);
+        
+        // [v16.6] 채팅 세션 인증 단계에서도 클라이언트 신분 증명을 확실히 요구합니다. 🛡️
+        if (!string.IsNullOrEmpty(clientId)) client.DefaultRequestHeaders.Add("Client-Id", clientId);
+        if (!string.IsNullOrEmpty(clientSecret)) client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
+
+        var authUrl = $"https://openapi.chzzk.naver.com/open/v1/chats/access-token?channelId={chzzkUid}";
+        try
+        {
+            var response = await client.GetAsync(authUrl);
+            var content = await response.Content.ReadFromJsonAsync<ChzzkChatAuthResponse>();
+            return content?.Content?.AccessToken;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"[영겁의 열쇠] {chzzkUid} 채팅 세션 인증 키 획득 중 오류 발생");
+            return null;
+        }
+    }
 }

@@ -72,6 +72,24 @@ namespace MooldangBot.Domain.DTOs
         public string? Url { get; set; }
     }
 
+    // 🆕 치지직 채팅 전용 액세스 토큰 응답 구조 (V16.6)
+    public class ChzzkChatAuthResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkChatAuthContent? Content { get; set; }
+    }
+
+    public class ChzzkChatAuthContent
+    {
+        [JsonPropertyName("accessToken")]
+        public string? AccessToken { get; set; }
+        
+        [JsonPropertyName("extraToken")]
+        public string? ExtraToken { get; set; }
+    }
+
     public class ChzzkCategorySearchResponse
     {
         [JsonPropertyName("code")]

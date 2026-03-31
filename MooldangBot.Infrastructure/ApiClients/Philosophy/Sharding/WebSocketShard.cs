@@ -27,6 +27,7 @@ public class WebSocketShard : IWebSocketShard
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, DateTime> _lastActivityList = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
+    private readonly ConcurrentDictionary<string, bool> _authErrors = new(); // [v16.3.2.4] 인증 에러 상태 추적
     private bool _isDisposed;
 
     public int ShardId => _shardId;
@@ -57,6 +58,8 @@ public class WebSocketShard : IWebSocketShard
         return true;
     }
 
+    public bool HasAuthError(string chzzkUid) => _authErrors.TryGetValue(chzzkUid, out var err) && err;
+
     public async Task<bool> ConnectAsync(string chzzkUid, string accessToken)
     {
         try
@@ -69,9 +72,13 @@ public class WebSocketShard : IWebSocketShard
             var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken);
             if (sessionAuth == null || string.IsNullOrEmpty(sessionAuth.Content?.Url))
             {
-                _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패", chzzkUid);
+                _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심)", chzzkUid);
+                _authErrors[chzzkUid] = true; // [v16.3.2.4] 인증 에러 기록
                 return false;
             }
+            
+            // 성공 시 에러 상태 클리어
+            _authErrors.TryRemove(chzzkUid, out _);
 
             string socketUrl = sessionAuth.Content.Url;
             if (!socketUrl.Contains("transport=websocket"))
@@ -94,8 +101,8 @@ public class WebSocketShard : IWebSocketShard
             var client = new WebsocketClient(new Uri(socketUrl), factory)
             {
                 Name = $"Chzzk-{chzzkUid}",
-                ReconnectTimeout = TimeSpan.FromSeconds(10),
-                ErrorReconnectTimeout = TimeSpan.FromSeconds(5)
+                ReconnectTimeout = TimeSpan.FromSeconds(60), // [v16.5] 오직 이 값만 60초로 상향하여 인내심 확보
+                ErrorReconnectTimeout = TimeSpan.FromSeconds(5) // 원복
             };
 
             client.MessageReceived.Subscribe(msg => 
@@ -162,7 +169,17 @@ public class WebSocketShard : IWebSocketShard
     private async Task HandleSocketPacketAsync(string chzzkUid, WebsocketClient client, string message)
     {
         if (message == "2") { client.Send("3"); return; }
+        if (message == "3") return;
         if (message.StartsWith("0")) { client.Send("40"); return; }
+        
+        // [v16.4] 소켓 연결 후 실제 인증 거절 메시지를 감지합니다.
+        if (message.Contains("\"error\",\"auth fail\"") || message.Contains("auth fail"))
+        {
+            _logger.LogCritical("🛑 [파동의 붕괴] {ChzzkUid} 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.", chzzkUid);
+            _authErrors[chzzkUid] = true;
+            return;
+        }
+
         if (message.StartsWith("42"))
         {
             string json = message.Substring(2);
@@ -173,6 +190,7 @@ public class WebSocketShard : IWebSocketShard
     public Task DisconnectAsync(string chzzkUid)
     {
         _lastActivityList.TryRemove(chzzkUid, out _);
+        _authErrors.TryRemove(chzzkUid, out _); // 연결 종료 시 에러 상태 초기화
 
         // [오시리스의 침묵]: 핑 루프 중단
         if (_pingCtsList.TryRemove(chzzkUid, out var cts))

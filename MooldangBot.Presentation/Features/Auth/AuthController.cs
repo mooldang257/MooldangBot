@@ -19,6 +19,7 @@ namespace MooldangBot.Presentation.Features.Auth
         IAppDbContext _db, 
         IConfiguration _configuration, 
         IChzzkApiClient _chzzkApi, 
+        IChzzkBotService _botService,
         IHttpClientFactory _httpClientFactory,
         IUnifiedCommandService _commandService) : ControllerBase
     {
@@ -419,7 +420,12 @@ namespace MooldangBot.Presentation.Features.Auth
                 }
 
                 await _db.SaveChangesAsync();
-                Console.WriteLine($"[파로스의 확인]: DB 저장 완료 (UID: {chzzkUid})");
+                
+                // [v16.3.3] 🔐 [봉인 해제]: 수동 로그인을 성공했다는 것은 이미 모든 인증 정보가 신선하다는 증거입니다.
+                // 봇 서비스에 박혀있는 '영구 실패 낙인'을 즉시 지우고 즉시 재부팅 가능한 상태로 만듭니다.
+                _botService.CleanupRecoveryLock(chzzkUid);
+                
+                Console.WriteLine($"[파로스의 확인]: DB 저장 완료 및 봇 복구 락 해제 (UID: {chzzkUid})");
 
                 // 3단계: 역할 및 권한 조회 (RBAC)
                 var userRole = "viewer";

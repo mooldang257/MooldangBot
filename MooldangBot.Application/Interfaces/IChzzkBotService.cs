@@ -34,5 +34,10 @@ public interface IChzzkBotService
     /// <summary>
     /// [피닉스의 재건]: 현재 소켓 상태를 점검하고 필요시 최신 토큰으로 재연결을 수행합니다.
     /// </summary>
-    Task EnsureConnectionAsync(string chzzkUid);
+    Task EnsureConnectionAsync(string chzzkUid, bool forceFresh = false);
+
+    /// <summary>
+    /// [수동 정화]: 특정 채널에 걸린 모든 복구 잠금 및 실패 카운터를 즉시 초기화합니다.
+    /// </summary>
+    void CleanupRecoveryLock(string chzzkUid);
 }
