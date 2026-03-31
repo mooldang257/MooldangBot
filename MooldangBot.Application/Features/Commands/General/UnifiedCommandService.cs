@@ -246,10 +246,10 @@ public class UnifiedCommandService : IUnifiedCommandService
         // 1. [기능] 노래 신청 (치즈 1000)
         addedCount += await EnsureCommandAsync(targetUid, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.SongRequest, "신청곡 룰렛", CommandRole.Viewer);
         
-        // 2. [기능] 룰렛 (치즈 1000) - [v2.2.0] 실제 후원 연동 테스트를 위해 기본 비용을 Cheese로 설정합니다.
+        // 2. [기능] 룰렛 (치즈 1000)
         addedCount += await EnsureCommandAsync(targetUid, "!룰렛", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.Roulette, "행운의 룰렛", CommandRole.Viewer);
 
-        // 3. [기능] 출석 (무료) - [v2.2.0] 기존 ChatPoint 전략에서 전문화된 Attendance 전략으로 명칭을 교정했습니다.
+        // 3. [기능] 출석 (무료)
         addedCount += await EnsureCommandAsync(targetUid, "!출석", CommandCategory.Feature, CommandCostType.None, 0, CommandFeatureTypes.Attendance, "물댕봇 출석 완료!", CommandRole.Viewer);
 
         // 4. [시스템] 송리스트 토글 (매니저)

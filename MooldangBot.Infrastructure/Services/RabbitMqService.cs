@@ -69,11 +69,16 @@ public class RabbitMqService : IRabbitMqService, IDisposable
                 durable: true,
                 autoDelete: false);
 
-            var json = JsonSerializer.Serialize(eventData, new JsonSerializerOptions 
+            // [세피로스의 하이브리드 직렬화]: Source Gen과 Reflection을 병행하여 익명 타입도 안전하게 수용합니다. 🛡️🦾
+            var options = new JsonSerializerOptions 
             { 
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = false 
-            });
+            };
+            options.TypeInfoResolverChain.Insert(0, MooldangBot.Infrastructure.Services.Serialization.ChzzkJsonContext.Default);
+            options.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
+
+            var json = JsonSerializer.Serialize(eventData, options);
             
             var body = Encoding.UTF8.GetBytes(json);
             
