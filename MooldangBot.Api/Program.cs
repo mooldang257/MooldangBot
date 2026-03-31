@@ -57,12 +57,9 @@ else
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-// [텔로스5의 정렬]: .env 파일 수동 파싱 및 Configuration 강제 주입 (가장 확실한 방법)
+// [텔로스5의 정렬]: .env 파일 수동 파싱 및 Configuration 주입
 if (foundPath != null)
 {
-    var envName = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-    var prefix = envName.ToUpper().Replace("DEVELOPMENT", "DEV") + "_";
-    
     foreach (var line in File.ReadAllLines(foundPath))
     {
         var trimmed = line.Trim();
@@ -74,31 +71,23 @@ if (foundPath != null)
         var key = split[0].Trim();
         var val = split[1].Trim();
         
-        // 1. 공통 설정 주입 (All-Caps 및 PascalCase 통합)
+        // 1. [표준 정문화]: __를 :로 변환
         var mappedKey = key.Replace("__", ":");
         builder.Configuration[mappedKey] = val;
         
-        // 2. 환경별 접두사 설정 주입 (예: DEV_BASE_DOMAIN -> BASE_DOMAIN)
-        if (key.StartsWith(prefix))
+        // 2. [PascalCase 통합]: ALL_CAPS_SNAKE를 PascalCase로 변환하여 추가 주입
+        // 예: CHZZK_API:CLIENT_ID -> ChzzkApi:ClientId
+        var pascalKey = string.Join(":", mappedKey.Split(':').Select(section => 
+            string.Join("", section.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Length > 0 ? char.ToUpper(p[0]) + p.Substring(1).ToLower() : p))));
+        
+        if (pascalKey != mappedKey)
         {
-            var actualKey = key.Substring(prefix.Length);
-            var actualMappedKey = actualKey.Replace("__", ":");
-            builder.Configuration[actualMappedKey] = val;
-            
-            // [오시리스의 규율]: .NET 표준 섹션 이름(ConnectionStrings 등)으로 강제 매핑
-            if (actualMappedKey.StartsWith("CONNECTIONSTRINGS:", StringComparison.OrdinalIgnoreCase))
-            {
-                var pascalKey = "ConnectionStrings:" + actualMappedKey.Substring("CONNECTIONSTRINGS:".Length);
-                builder.Configuration[pascalKey] = val;
-            }
-            if (actualMappedKey.StartsWith("CHZZKAPI:", StringComparison.OrdinalIgnoreCase))
-            {
-                var pascalKey = "ChzzkApi:" + actualMappedKey.Substring("CHZZKAPI:".Length);
-                builder.Configuration[pascalKey] = val;
-            }
-
-            System.Environment.SetEnvironmentVariable(actualKey, val);
+            builder.Configuration[pascalKey] = val;
         }
+        
+        // 시스템 환경 변수로도 가용하게 노출
+        System.Environment.SetEnvironmentVariable(key, val);
     }
 }
 

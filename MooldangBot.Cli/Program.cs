@@ -38,9 +38,6 @@ if (foundPath != null)
     Console.WriteLine($"[파로스의 자각]: 설정 파일 로드 완료 - {foundPath}");
     Env.Load(foundPath);
     
-    var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-    var prefix = (envName.ToUpper().Replace("DEVELOPMENT", "DEV").Replace("PRODUCTION", "PROD")) + "_";
-    
     foreach (var line in File.ReadAllLines(foundPath))
     {
         var trimmed = line.Trim();
@@ -50,14 +47,23 @@ if (foundPath != null)
         var key = split[0].Trim();
         var val = split[1].Trim();
         
-        overrides[key.Replace("__", ":")] = val;
-        if (key.StartsWith(prefix))
+        // 1. [표준 정문화]: __를 :로 변환하여 Configuration에 주입
+        var mappedKey = key.Replace("__", ":");
+        overrides[mappedKey] = val;
+
+        // 2. [PascalCase 통합]: ALL_CAPS_SNAKE를 PascalCase로 변환하여 추가 주입
+        // 예: CHZZK_API:CLIENT_ID -> ChzzkApi:ClientId
+        var pascalKey = string.Join(":", mappedKey.Split(':').Select(section => 
+            string.Join("", section.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Length > 0 ? char.ToUpper(p[0]) + p.Substring(1).ToLower() : p))));
+        
+        if (pascalKey != mappedKey)
         {
-            var actualKey = key.Substring(prefix.Length).Replace("__", ":");
-            overrides[actualKey] = val;
-            if (actualKey.StartsWith("CONNECTIONSTRINGS:", StringComparison.OrdinalIgnoreCase))
-                overrides["ConnectionStrings:" + actualKey.Substring(18)] = val;
+            overrides[pascalKey] = val;
         }
+
+        // 시스템 환경 변수로도 가용하게 노출
+        System.Environment.SetEnvironmentVariable(key, val);
     }
 }
 
