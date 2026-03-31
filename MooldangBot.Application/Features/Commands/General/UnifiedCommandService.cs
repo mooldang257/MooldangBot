@@ -303,17 +303,19 @@ public class UnifiedCommandService : IUnifiedCommandService
         _db.UnifiedCommands.Add(entity);
 
         // 라이프사이클 처리 (오마카세/룰렛 등 연관 엔티티 생성)
-        var req = new SaveUnifiedCommandRequest
-        {
-            Keyword = keyword,
-            Category = cat.ToString(),
-            CostType = costType.ToString(),
-            Cost = cost,
-            FeatureType = feature,
-            ResponseText = response,
-            RequiredRole = role.ToString(),
-            IsActive = true
-        };
+        var req = new SaveUnifiedCommandRequest(
+            null, 
+            keyword, 
+            cat.ToString(), 
+            costType.ToString(), 
+            cost, 
+            feature, 
+            response, 
+            null, 
+            true, 
+            role.ToString(), 
+            null
+        );
 
         await OnAfterSaveAsync(entity, req, uid, true);
         

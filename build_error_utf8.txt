@@ -1,0 +1,24 @@
+﻿  복원할 프로젝트를 확인하는 중...
+  복원할 모든 프로젝트가 최신 상태입니다.
+  MooldangBot.Domain -> C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Domain\bin\Debug\net10.0\MooldangBot.Domain.dll
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\SystemMessage\SonglistToggleStrategy.cs(17,37): warning CS9113: ‘logger’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\General\UnifiedCommandService.cs(306,23): error CS7036: 'SaveUnifiedCommandRequest.SaveUnifiedCommandRequest(int?, string, string, string, int, string, string, int?, bool, string, RouletteSaveDto?)'의 필수 매개 변수 'Id'에 해당하는 인수가 없습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\Feature\AttendanceStrategy.cs(17,33): warning CS9113: ‘logger’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(17,23): warning CS9113: ‘intentRouter’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(18,17): warning CS9113: ‘llmService’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(19,23): warning CS9113: ‘chatService’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(20,22): warning CS9113: ‘phoenix’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+
+빌드하지 못했습니다.
+
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\SystemMessage\SonglistToggleStrategy.cs(17,37): warning CS9113: ‘logger’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\Feature\AttendanceStrategy.cs(17,33): warning CS9113: ‘logger’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(17,23): warning CS9113: ‘intentRouter’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(18,17): warning CS9113: ‘llmService’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(19,23): warning CS9113: ‘chatService’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(20,22): warning CS9113: ‘phoenix’ 매개 변수를 읽지 않았습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\Features\Commands\General\UnifiedCommandService.cs(306,23): error CS7036: 'SaveUnifiedCommandRequest.SaveUnifiedCommandRequest(int?, string, string, string, int, string, string, int?, bool, string, RouletteSaveDto?)'의 필수 매개 변수 'Id'에 해당하는 인수가 없습니다. [C:\webapi\MooldangAPI\MooldangBot\MooldangBot.Application\MooldangBot.Application.csproj]
+    경고 6개
+    오류 1개
+
+경과 시간: 00:00:04.66
