@@ -71,6 +71,12 @@ if (foundPath != null)
         var key = split[0].Trim();
         var val = split[1].Trim();
         
+        // [방어적 고도화]: 값 양 끝의 따옴표(" 또는 ') 제거
+        if (val.Length >= 2 && ((val.StartsWith("\"") && val.EndsWith("\"")) || (val.StartsWith("'") && val.EndsWith("'"))))
+        {
+            val = val.Substring(1, val.Length - 2);
+        }
+        
         // 1. [표준 정문화]: __를 :로 변환
         var mappedKey = key.Replace("__", ":");
         builder.Configuration[mappedKey] = val;
