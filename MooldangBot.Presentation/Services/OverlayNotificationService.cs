@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 namespace MooldangBot.Presentation.Services
 {
-    public class OverlayNotificationService(IHubContext<OverlayHub> hubContext) : IOverlayNotificationService
+    public class OverlayNotificationService(
+        IHubContext<OverlayHub> hubContext,
+        ILogger<OverlayNotificationService> logger) : IOverlayNotificationService
     {
         public async Task NotifyRefreshAsync(string? chzzkUid, CancellationToken token = default)
         {
@@ -33,13 +35,14 @@ namespace MooldangBot.Presentation.Services
 
         public async Task NotifyChatReceivedAsync(string chzzkUid, string nickname, string message, string userRole, CancellationToken token = default)
         {
-            // [오버레이의 메아리]: 실시간 채팅 데이터를 해당 채널 오버레이 그룹에만 전송
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChatMessage", new {
-                nickname,
-                message,
-                userRole,
-                timestamp = System.DateTime.UtcNow
-            }, token);
+            // [오버레이의 메아리]: 익명 객체 대신 명시적 DTO(ChatOverlayMessage)를 사용하여 직렬화 안정성 확보
+            var chatMessage = new ChatOverlayMessage(nickname, message, userRole, System.DateTime.UtcNow);
+            
+            // [데이터 현장검증]: 추출하기 편하게 JSON 형태로 상세 로그 출력
+            var jsonLog = JsonSerializer.Serialize(chatMessage, new JsonSerializerOptions { WriteIndented = true });
+            logger.LogInformation("📤 [오버레이 송신 데이터 포맷]\n{Json}", jsonLog);
+            
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChatMessage", chatMessage, token);
         }
     }
 }

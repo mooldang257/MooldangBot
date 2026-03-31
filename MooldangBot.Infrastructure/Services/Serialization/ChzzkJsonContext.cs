@@ -39,6 +39,7 @@ namespace MooldangBot.Infrastructure.Services.Serialization;
 [JsonSerializable(typeof(RouletteItemSaveDto))]
 [JsonSerializable(typeof(UnifiedCommandDto))]
 [JsonSerializable(typeof(SaveUnifiedCommandRequest))]
+[JsonSerializable(typeof(ChatOverlayMessage))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {
 }

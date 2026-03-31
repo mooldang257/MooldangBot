@@ -71,6 +71,10 @@ public sealed class ChatEventConsumerService(
 
         using var doc = JsonDocument.Parse(item.JsonPayload);
         var root = doc.RootElement;
+        
+        // [데이터 현장검증]: 치지직으로부터 받은 원본 JSON 페이로드 로깅
+        logger.LogInformation("📥 [치지직 원본 수신] 채널: {ChzzkUid}, Payload: {Payload}", item.ChzzkUid, item.JsonPayload);
+
         string eventName = root[0].GetString() ?? "";
 
         if (eventName == "SYSTEM")

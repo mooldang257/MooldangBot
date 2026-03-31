@@ -219,4 +219,12 @@ namespace MooldangBot.Domain.DTOs
         string RequiredRole,
         RouletteSaveDto? RouletteData = null // 🎰 룰렛 데이터 포함 가능
     );
+
+    // [v4.5.2] 오버레이 채팅 전송을 위한 명시적 DTO (익명 타입 직렬화 오류 해결)
+    public record ChatOverlayMessage(
+        string Nickname,
+        string Message,
+        string UserRole,
+        DateTime Timestamp
+    );
 }
