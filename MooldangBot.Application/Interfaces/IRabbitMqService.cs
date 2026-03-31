@@ -3,7 +3,8 @@ using MooldangBot.Application.Models;
 namespace MooldangBot.Application.Interfaces;
 
 /// <summary>
-/// [오시리스의 전령]: RabbitMQ를 통한 비동기 메시지 발행 및 관리를 담당합니다.
+/// [오시리스의 전령]: RabbitMQ를 통한 비동기 메시지 발행 및 관측을 담당하는 통합 인터페이스입니다.
+/// 모든 시스템 로그 및 실행 이벤트는 이 전령을 통해 외부 관제소로 송출됩니다.
 /// </summary>
 public interface IRabbitMqService
 {
@@ -18,8 +19,27 @@ public interface IRabbitMqService
     Task<bool> CheckConnectionAsync();
 
     /// <summary>
-    /// 채팅 이벤트를 RabbitMQ 익스체인지로 발행합니다.
+    /// [Legacy] 채팅 이벤트를 RabbitMQ 익스체인지로 발행합니다. (하위 호환 유지)
     /// </summary>
-    /// <param name="eventItem">발행할 채팅 이벤트 항목</param>
     Task PublishChatEventAsync(ChatEventItem eventItem);
+
+    /// <summary>
+    /// [New] 제네릭 이벤트를 발행합니다. (Topic 기반 고도의 관제 지원)
+    /// </summary>
+    Task PublishAsync<T>(T eventData, string? routingKey = null) where T : class;
 }
+
+/// <summary>
+/// [세피로스의 기록]: 명령어 실행 결과를 담는 데이터 모델입니다.
+/// 채팅창을 방해하지 않고 이 정보를 통해 실시간 관제가 이루어집니다.
+/// </summary>
+public record CommandExecutionEvent(
+    string ChzzkUid,
+    string Keyword,
+    string? SenderId,
+    string? SenderName,
+    bool IsSuccess,
+    string? ErrorMessage,
+    int? DonationAmount,
+    DateTime OccurredAt
+);

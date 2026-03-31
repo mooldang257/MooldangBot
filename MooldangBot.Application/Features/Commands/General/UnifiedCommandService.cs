@@ -27,7 +27,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
     public async Task<UnifiedCommand> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req)
     {
-        var targetUid = chzzkUid.Trim().ToLower();
+        var targetUid = (chzzkUid ?? "").Trim().ToLower();
 
         UnifiedCommand? entity;
         if (req.Id.HasValue && req.Id.Value > 0)
@@ -72,8 +72,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         // 라이프사이클 사후 처리
         bool isNew = (!req.Id.HasValue || req.Id <= 0);
         
-        // [v1.9] 통합 룰렛 데이터 처리
-        if (req.FeatureType == "Roulette" && req.RouletteData != null)
+        if (req.FeatureType == CommandFeatureTypes.Roulette && req.RouletteData != null)
         {
             await HandleUnifiedRouletteSave(entity, req.RouletteData, targetUid);
             await _db.SaveChangesAsync(); 
@@ -91,14 +90,13 @@ public class UnifiedCommandService : IUnifiedCommandService
 
     public async Task DeleteCommandAsync(string chzzkUid, int id)
     {
-        var targetUid = chzzkUid.Trim().ToLower();
+        var targetUid = (chzzkUid ?? "").Trim().ToLower();
         var entity = await _db.UnifiedCommands
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == targetUid);
 
         if (entity != null)
         {
-            // 기능별 삭제 연동 로직 (현재는 오마카세 연동만 존재)
             if (entity.FeatureType == CommandFeatureTypes.Omakase && entity.TargetId.HasValue)
             {
                 var itemsToDelete = await _db.StreamerOmakases
@@ -117,8 +115,6 @@ public class UnifiedCommandService : IUnifiedCommandService
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
     }
-
-    // --- Private Lifecycle Handlers ---
 
     private async Task OnBeforeSaveAsync(UnifiedCommand entity, SaveUnifiedCommandRequest req, string targetUid)
     {
@@ -164,7 +160,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         var newRoulette = new MooldangBot.Domain.Entities.Roulette
         {
             ChzzkUid = targetUid,
-            Name = entity.ResponseText.Length > 0 ? entity.ResponseText : "새 룰렛",
+            Name = entity.ResponseText.Length > 0 ? entity.ResponseText : "행운의 룰렛",
             UpdatedAt = DateTime.UtcNow
         };
         newRoulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
@@ -181,7 +177,6 @@ public class UnifiedCommandService : IUnifiedCommandService
     private async Task HandleUnifiedRouletteSave(UnifiedCommand entity, RouletteSaveDto rouletteData, string targetUid)
     {
         MooldangBot.Domain.Entities.Roulette? roulette = null;
-        
         if (entity.TargetId.HasValue && entity.TargetId > 0)
         {
             roulette = await _db.Roulettes.Include(r => r.Items)
@@ -199,13 +194,12 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (rouletteData.Items != null && rouletteData.Items.Any())
         {
-            // 기존 아이템 제거 후 새로 추가
             _db.RouletteItems.RemoveRange(roulette.Items);
             roulette.Items = rouletteData.Items.Select(i => new RouletteItem
             {
                 ItemName = i.ItemName,
                 Probability = i.Probability,
-                Probability10x = i.Probability, // 10연차 확률은 일단 동일하게 복사
+                Probability10x = i.Probability,
                 Color = i.Color,
                 IsMission = i.IsMission,
                 IsActive = i.IsActive
@@ -218,14 +212,13 @@ public class UnifiedCommandService : IUnifiedCommandService
             roulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
             roulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
         }
-
         await _db.SaveChangesAsync();
         entity.TargetId = roulette.Id;
     }
 
     public async Task ToggleCommandAsync(string chzzkUid, int id)
     {
-        var targetUid = chzzkUid.Trim().ToLower();
+        var targetUid = (chzzkUid ?? "").Trim().ToLower();
         var entity = await _db.UnifiedCommands
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == targetUid);
@@ -234,7 +227,6 @@ public class UnifiedCommandService : IUnifiedCommandService
         {
             entity.IsActive = !entity.IsActive;
             entity.UpdatedAt = DateTime.Now;
-            
             await _db.SaveChangesAsync();
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
@@ -245,27 +237,28 @@ public class UnifiedCommandService : IUnifiedCommandService
     /// </summary>
     public async Task InitializeDefaultCommandsAsync(string chzzkUid)
     {
-        var targetUid = chzzkUid.Trim().ToLower();
+        // [물멍의 지리]: UID는 캐시 및 조회 일관성을 위해 항상 소문자로 정규화하여 처리합니다.
+        var targetUid = (chzzkUid ?? "").Trim().ToLower();
         _logger.LogInformation("🌱 [CommandSeeder]: 스트리머({Uid})를 위한 기본 명령어 생성을 시작합니다.", targetUid);
 
         int addedCount = 0;
 
         // 1. [기능] 노래 신청 (치즈 1000)
-        addedCount += await EnsureCommandAsync(targetUid, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, "SongRequest", "", CommandRole.Viewer);
+        addedCount += await EnsureCommandAsync(targetUid, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.SongRequest, "신청곡 룰렛", CommandRole.Viewer);
         
-        // 2. [기능] 룰렛 (포인트 1000)
-        addedCount += await EnsureCommandAsync(targetUid, "!룰렛", CommandCategory.Feature, CommandCostType.Point, 1000, "Roulette", "행운의 룰렛을 돌려보세요!", CommandRole.Viewer);
+        // 2. [기능] 룰렛 (치즈 1000) - [v2.2.0] 실제 후원 연동 테스트를 위해 기본 비용을 Cheese로 설정합니다.
+        addedCount += await EnsureCommandAsync(targetUid, "!룰렛", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.Roulette, "행운의 룰렛", CommandRole.Viewer);
 
-        // 3. [기능] 출석 (무료)
-        addedCount += await EnsureCommandAsync(targetUid, "!출석", CommandCategory.Feature, CommandCostType.None, 0, "ChatPoint", "오늘도 물댕봇과 함께해주셔서 감사합니다! {포인트}포인트가 적립되었습니다.", CommandRole.Viewer);
+        // 3. [기능] 출석 (무료) - [v2.2.0] 기존 ChatPoint 전략에서 전문화된 Attendance 전략으로 명칭을 교정했습니다.
+        addedCount += await EnsureCommandAsync(targetUid, "!출석", CommandCategory.Feature, CommandCostType.None, 0, CommandFeatureTypes.Attendance, "물댕봇 출석 완료!", CommandRole.Viewer);
 
         // 4. [시스템] 송리스트 토글 (매니저)
-        addedCount += await EnsureCommandAsync(targetUid, "!송리스트", CommandCategory.System, CommandCostType.None, 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
+        addedCount += await EnsureCommandAsync(targetUid, "!송리스트", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.SonglistToggle, "송리스트 상태 변경", CommandRole.Manager);
 
         // 5. [시스템] 방송 관리 3종 (매니저)
-        addedCount += await EnsureCommandAsync(targetUid, "!공지", CommandCategory.System, CommandCostType.None, 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(targetUid, "!방제", CommandCategory.System, CommandCostType.None, 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(targetUid, "!카테고리", CommandCategory.System, CommandCostType.None, 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
+        addedCount += await EnsureCommandAsync(targetUid, "!공지", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Notice, "공지사항", CommandRole.Manager);
+        addedCount += await EnsureCommandAsync(targetUid, "!방제", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Title, "제목 변경", CommandRole.Manager);
+        addedCount += await EnsureCommandAsync(targetUid, "!카테고리", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Category, "카테고리 변경", CommandRole.Manager);
 
         if (addedCount > 0)
         {
@@ -302,7 +295,6 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         _db.UnifiedCommands.Add(entity);
 
-        // 라이프사이클 처리 (오마카세/룰렛 등 연관 엔티티 생성)
         var req = new SaveUnifiedCommandRequest(
             null, 
             keyword, 
@@ -316,7 +308,6 @@ public class UnifiedCommandService : IUnifiedCommandService
             role.ToString(), 
             null
         );
-
         await OnAfterSaveAsync(entity, req, uid, true);
         
         return 1;

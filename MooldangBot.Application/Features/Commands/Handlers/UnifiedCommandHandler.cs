@@ -19,36 +19,64 @@ public class UnifiedCommandHandler(
     IChzzkBotService botService,
     IEnumerable<ICommandFeatureStrategy> strategies,
     IServiceProvider serviceProvider,
+    IRabbitMqService rabbitMq, // [세피로스의 전령] 주입
     ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken ct)
     {
-        // 0. [피닉스의 눈]: 명령어 처리 전 스트리머 토큰 유효성 확보 (전략 레벨 신뢰 보장)
+        // 0. [피닉스의 눈]: 명령어 처리 전 스트리머 토커 유효성 확보
         await botService.GetStreamerTokenAsync(notification.Profile);
 
         // 1. [파로스의 자각]: 키워드 추출 및 통합 캐시 조회
-        string msg = notification.Message.Trim();
+        string msg = (notification.Message ?? "").Trim();
+        string targetUid = (notification.Profile.ChzzkUid ?? "").ToLower(); 
         
-        // [v1.9.7] 메세지가 없어도 후원 금액이 있으면 시스템 진행 허용 (후원 룰렛 등 대응)
         if (string.IsNullOrEmpty(msg) && notification.DonationAmount <= 0) return;
 
         string keyword = string.IsNullOrEmpty(msg) ? "" : msg.Split(' ')[0];
-        var command = await cache.GetUnifiedCommandAsync(notification.Profile.ChzzkUid, keyword);
+        var command = await cache.GetUnifiedCommandAsync(targetUid, keyword);
 
-        // [v1.9.7] 매칭된 명령어가 없는데 후원 금액이 있는 경우, 해당 채널의 후원 전용 룰렛 검색 (Auto-Match)
+        // [v1.9.7] 후원 자동 매칭
         if (command == null && notification.DonationAmount > 0)
         {
-            command = await cache.GetAutoMatchDonationCommandAsync(notification.Profile.ChzzkUid, "Roulette");
+            command = await cache.GetAutoMatchDonationCommandAsync(targetUid, "Roulette");
             if (command != null)
             {
-                logger.LogInformation($"🎰 [후원 자동 매칭] 키워드 '{keyword}' 대신 후원 전용 룰렛 '{command.Keyword}' 매칭됨");
+                logger.LogInformation($"🎰 [{targetUid}] 후원 자동 매칭: '{keyword}' -> 룰렛 '{command.Keyword}'");
             }
         }
 
-        if (command is not { IsActive: true }) return;
+        // [오시리스의 거절]: 명령어 부재 시 관제소(RabbitMQ)로 조용히 보고합니다. (채팅창 오염 방지)
+        if (command == null)
+        {
+            if (!string.IsNullOrEmpty(keyword) && keyword.StartsWith("!"))
+            {
+                await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                    targetUid, keyword, notification.SenderId, notification.Username,
+                    false, "명령어를 찾을 수 없음 (DB/캐시 확인 필요)", notification.DonationAmount, DateTime.Now));
+                
+                logger.LogWarning($"⚠️ [{targetUid}] 명령어를 찾을 수 없음: {keyword}");
+            }
+            return;
+        }
+
+        if (!command.IsActive)
+        {
+            logger.LogInformation($"🚫 [{targetUid}] 비활성화된 명령어 호출: {keyword}");
+            return;
+        }
+
+        logger.LogInformation($"🚀 [{targetUid}] 명령어 매칭 성공: {keyword} ({command.FeatureType})");
 
         // 2. [오시리스의 검증]: 재화 및 권한 체크
-        if (!await ValidateRequirementAsync(notification, command, ct)) return;
+        if (!await ValidateRequirementAsync(notification, command, ct)) 
+        {
+            // 검증 실패 시 이미 사용자 피드백이 나갔으므로 로그만 발행
+            await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                targetUid, keyword, notification.SenderId, notification.Username,
+                false, "권한 또는 재화 부족", notification.DonationAmount, DateTime.Now));
+            return;
+        }
 
         // 3. [하모니의 조율]: FeatureType에 따른 전략 실행
         var strategy = strategies.FirstOrDefault(s => s.FeatureType == command.FeatureType);
@@ -57,12 +85,21 @@ public class UnifiedCommandHandler(
         {
             try
             {
+                // [세피로스의 기록]: 실행 성공 보고
                 await strategy.ExecuteAsync(notification, command, ct);
+                
+                await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                    targetUid, keyword, notification.SenderId, notification.Username,
+                    true, null, notification.DonationAmount, DateTime.Now));
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, $"❌ [UnifiedCommandHandler] 전략 실행 중 오류: {command.FeatureType}");
-                await botService.SendReplyChatAsync(notification.Profile, "명령어 처리 중 오류가 발생했습니다. (Osiris's Gaze) 👁️", notification.SenderId, ct);
+                
+                // [시스템 내부 오류]: 채팅창 대신 관제소로 상세 에러 보고 ✨
+                await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                    targetUid, keyword, notification.SenderId, notification.Username,
+                    false, $"서버 내부 오류: {ex.Message}", notification.DonationAmount, DateTime.Now));
             }
         }
     }
@@ -74,7 +111,7 @@ public class UnifiedCommandHandler(
         {
             if (n.DonationAmount < c.Cost)
             {
-                // 후원 금액 부족 시 무시 (명령어로 발동되지 않음)
+                // 후원 금액 부족 시 무시
                 return false;
             }
         }
@@ -83,7 +120,7 @@ public class UnifiedCommandHandler(
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var viewer = await db.ViewerProfiles
-                .FirstOrDefaultAsync(v => v.StreamerChzzkUid == n.Profile.ChzzkUid && v.ViewerUid == n.SenderId, ct);
+                .FirstOrDefaultAsync(v => v.StreamerChzzkUid == n.Profile.ChzzkUid.ToLower() && v.ViewerUid == n.SenderId, ct);
 
             if (viewer == null || viewer.Points < c.Cost)
             {
@@ -91,12 +128,11 @@ public class UnifiedCommandHandler(
                 return false;
             }
 
-            // 포인트 차감
             viewer.Points -= c.Cost;
             await db.SaveChangesAsync(ct);
         }
 
-        // 2.2 [권한 검증]: RequiredRole (v1.2)
+        // 2.2 [권한 검증]
         var userRole = MapToCommandRole(n.UserRole);
         if (userRole < c.RequiredRole)
         {
@@ -110,7 +146,7 @@ public class UnifiedCommandHandler(
 
     private CommandRole MapToCommandRole(string roleCode)
     {
-        return roleCode.ToLower() switch
+        return (roleCode ?? "").ToLower() switch
         {
             "streamer" => CommandRole.Streamer,
             "manager" => CommandRole.Manager,

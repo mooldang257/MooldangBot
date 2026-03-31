@@ -14,6 +14,8 @@ using StackExchange.Redis;
 using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
+using RabbitMQ.Client;
+using MooldangBot.Infrastructure.Messaging;
 
 
 namespace MooldangBot.Infrastructure
@@ -81,12 +83,32 @@ namespace MooldangBot.Infrastructure
 
             // [v4.4.0] Dynamic Variable Resolver 등록
             services.AddScoped<IDynamicVariableResolver, MooldangBot.Infrastructure.Services.Engines.DynamicVariableResolver>();
-            
-            // [v4.5.1] RabbitMQ 비동기 전령 서비스 등록
-            services.AddSingleton<IRabbitMqService, RabbitMqService>();
 
-            // [v4.5.1] RabbitMQ POC 소비자 워커 등록
-            services.AddHostedService<RabbitMqConsumerService>();
+            // [v1.9.9] 전문 로그 모니터링을 위한 RabbitMQ 인프라 구성
+            services.AddSingleton<IConnectionFactory>(sp => 
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var host = configuration["RABBITMQ_HOST"] ?? "localhost";
+                var port = int.TryParse(configuration["RABBITMQ_PORT"], out var p) ? p : 5672;
+                var user = configuration["RABBITMQ_USER"] ?? "guest";
+                var pass = configuration["RABBITMQ_PASS"] ?? "guest";
+
+                return new ConnectionFactory
+                {
+                    HostName = host,
+                    Port = port,
+                    UserName = user,
+                    Password = pass,
+                    AutomaticRecoveryEnabled = true,
+                    NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+                };
+            });
+
+            services.AddSingleton<RabbitMQPersistentConnection>();
+            services.AddScoped<IRabbitMqService, RabbitMqService>();
+
+            // [v4.5.1] RabbitMQ POC 소비자 워커 등록 (기본 호환 유지)
+            // services.AddHostedService<RabbitMqConsumerService>();
 
 
 

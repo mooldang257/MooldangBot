@@ -47,8 +47,10 @@ public class CommandCacheService : ICommandCacheService
                 StringComparer.OrdinalIgnoreCase
             );
 
-            _unifiedCache[chzzkUid] = commandDict;
-            _logger.LogInformation($"🧠 [UnifiedCache] {chzzkUid}의 명령어 {commandDict.Count}개를 메모리에 로드했습니다.");
+            // [물멍의 지리]: 대소문자가 혼용된 UID가 들어오더라도 일관되게 매칭될 수 있도록 모든 캐시 키를 소문자로 강제 정규화합니다.
+            string normalizedUid = (chzzkUid ?? "").ToLower();
+            _unifiedCache[normalizedUid] = commandDict;
+            _logger.LogInformation($"🧠 [UnifiedCache] {normalizedUid}의 명령어 {commandDict.Count}개를 메모리에 로드했습니다.");
         }
         catch (Exception ex)
         {
@@ -58,7 +60,9 @@ public class CommandCacheService : ICommandCacheService
 
     public async Task<UnifiedCommand?> GetUnifiedCommandAsync(string chzzkUid, string keyword)
     {
-        if (_unifiedCache.TryGetValue(chzzkUid, out var commands))
+        // [파로스의 눈]: 조회 시에도 호출 단위를 소문자로 정규화하여 대소문자 미스매치를 근본적으로 차단합니다.
+        string normalizedUid = (chzzkUid ?? "").ToLower();
+        if (_unifiedCache.TryGetValue(normalizedUid, out var commands))
         {
             if (commands.TryGetValue(keyword, out var command))
             {
@@ -66,10 +70,10 @@ public class CommandCacheService : ICommandCacheService
             }
         }
         
-        // 캐시에 없으면 한 번 갱신 시도 (최초 1회)
-        await RefreshUnifiedAsync(chzzkUid, default);
+        // 캐시에 없으편 한 번 갱신 시도 (최초 1회)
+        await RefreshUnifiedAsync(normalizedUid, default);
         
-        if (_unifiedCache.TryGetValue(chzzkUid, out var commandsRefreshed))
+        if (_unifiedCache.TryGetValue(normalizedUid, out var commandsRefreshed))
         {
             if (commandsRefreshed.TryGetValue(keyword, out var command))
             {
@@ -82,10 +86,11 @@ public class CommandCacheService : ICommandCacheService
 
     public async Task<UnifiedCommand?> GetAutoMatchDonationCommandAsync(string chzzkUid, string featureType)
     {
-        if (!_unifiedCache.TryGetValue(chzzkUid, out var commands))
+        string normalizedUid = (chzzkUid ?? "").ToLower();
+        if (!_unifiedCache.TryGetValue(normalizedUid, out var commands))
         {
-            await RefreshUnifiedAsync(chzzkUid, default);
-            if (!_unifiedCache.TryGetValue(chzzkUid, out commands)) return null;
+            await RefreshUnifiedAsync(normalizedUid, default);
+            if (!_unifiedCache.TryGetValue(normalizedUid, out commands)) return null;
         }
 
         // [v1.9.7] 후원 룰렛 자동 매칭: 해당 기능 타입이면서 Cheese(후원) 비용 타입인 첫 번째 활성 명령어를 찾음

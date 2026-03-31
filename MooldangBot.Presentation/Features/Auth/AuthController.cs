@@ -368,7 +368,8 @@ namespace MooldangBot.Presentation.Features.Auth
                     return Results.Text($"[인증 오류] 사용자 정보 조회 실패");
                 }
 
-                string chzzkUid = userMeRes.Content.EffectiveChannelId;
+                // [물멍의 지리]: 시스템 전체의 일관성을 위해 추출된 UID를 소문자로 즉시 정규화하여 대소문자 매칭 오류를 원천 차단합니다.
+                string chzzkUid = userMeRes.Content.EffectiveChannelId.ToLower(); 
                 string? channelName = userMeRes.Content.EffectiveChannelName;
                 string? profileImageUrl = userMeRes.Content.ChannelImageUrl;
 
@@ -378,10 +379,12 @@ namespace MooldangBot.Presentation.Features.Auth
                     return Results.Text("[인증 오류] 사용자 식별자를 가져올 수 없습니다.");
                 }
 
-                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                var streamer = await _db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                bool isNewStreamer = false;
 
                 if (streamer == null)
                 {
+                    isNewStreamer = true;
                     streamer = new StreamerProfile 
                     { 
                         ChzzkUid = chzzkUid,
@@ -400,17 +403,20 @@ namespace MooldangBot.Presentation.Features.Auth
                         StartedAt = DateTime.Now, 
                         IsActive = true 
                     });
-
-                    // [파로스의 시작]: 기본 명령어 자동 생성 (신청곡, 룰렛, 매니저 명령어 등)
-                    await _commandService.InitializeDefaultCommandsAsync(chzzkUid);
                 }
                 
                 if (!string.IsNullOrEmpty(channelName)) streamer.ChannelName = channelName;
                 if (!string.IsNullOrEmpty(profileImageUrl)) streamer.ProfileImageUrl = profileImageUrl;
 
+                // [물멍의 지혜]: 토큰을 먼저 심어줘야 시딩(InitializeDefaultCommandsAsync) 과정에서 봇이 정상적으로 초기화되고 명령어를 생성할 수 있습니다.
                 streamer.ChzzkAccessToken = accessToken;
                 streamer.ChzzkRefreshToken = refreshToken;
                 streamer.TokenExpiresAt = expireDate;
+
+                if (isNewStreamer)
+                {
+                    await _commandService.InitializeDefaultCommandsAsync(chzzkUid);
+                }
 
                 await _db.SaveChangesAsync();
                 Console.WriteLine($"[파로스의 확인]: DB 저장 완료 (UID: {chzzkUid})");
