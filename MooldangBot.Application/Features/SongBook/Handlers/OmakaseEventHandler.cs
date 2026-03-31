@@ -31,11 +31,6 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         // 1. [영적 정합성]: 봇 활성화 확인
         if (!notification.Profile.IsBotEnabled) return;
 
-        bool isSongRequest = msg.StartsWith(notification.Profile.SongCommand, StringComparison.OrdinalIgnoreCase);
-        // [v1.5] 오마카세 명령어는 UnifiedCommand에서 직접 조회하므로 여기서 선언하지 않음
-
-        _logger.LogInformation($"[노래 신청 감지] {notification.Username}: {msg}");
-
         // 2. [오시리스의 저울]: 가격 정책 및 세션 상태 확인
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -54,6 +49,9 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         bool isOmakaseFeature = triggerCmd.FeatureType == CommandFeatureTypes.Omakase;
 
         if (!isSongRequestFeature && !isOmakaseFeature) return;
+
+        // [v4.5.7] 정교한 로깅: 실제로 노래 신청/오마카세 관련 명령어가 확인된 시점에만 기록함
+        _logger.LogInformation($"[노래 신청 감지] {notification.Username}: {msg} (Type: {triggerCmd.FeatureType})");
 
         if (isSongRequestFeature)
         {
