@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.DTOs;
