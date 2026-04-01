@@ -302,7 +302,8 @@ namespace MooldangBot.Presentation.Features.Auth
                 string accessToken = tokenRes.Content.AccessToken ?? "";
                 string refreshToken = tokenRes.Content.RefreshToken ?? "";
                 int expiresIn = tokenRes.Content.ExpiresIn;
-                DateTime expireDate = DateTime.Now.AddSeconds(expiresIn);
+                // [v17.0] 시간대 통일: TokenRenewalService와 동일하게 KST(UTC+9) 기준으로 만료 시각 계산
+                DateTime expireDate = DateTime.UtcNow.AddHours(9).AddSeconds(expiresIn);
 
                 // 2단계: 봇 설정 흐름인 경우 여기서 처리 후 종료
                 if (state != null && state.StartsWith("bot_setup_"))
@@ -401,7 +402,7 @@ namespace MooldangBot.Presentation.Features.Auth
                     _db.SonglistSessions.Add(new SonglistSession 
                     { 
                         ChzzkUid = chzzkUid, 
-                        StartedAt = DateTime.Now, 
+                        StartedAt = DateTime.UtcNow.AddHours(9), // KST
                         IsActive = true 
                     });
                 }

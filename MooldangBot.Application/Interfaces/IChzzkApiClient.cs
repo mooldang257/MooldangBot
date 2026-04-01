@@ -9,7 +9,6 @@ public interface IChzzkApiClient
 {
     Task<string> GetChannelInfoAsync(string channelId);
     Task<string?> ExchangeCodeForTokenAsync(string code, string? state);
-    Task<ChzzkTokenResponse?> RefreshTokenAsync(string refreshToken, string? clientId = null, string? clientSecret = null);
     Task<ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken);
     Task<string?> GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId);
     Task<bool> IsLiveAsync(string channelId, string? accessToken = null);

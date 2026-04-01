@@ -40,7 +40,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
         else
         {
-            entity = new UnifiedCommand { ChzzkUid = targetUid, CreatedAt = DateTime.Now };
+            entity = new UnifiedCommand { ChzzkUid = targetUid, CreatedAt = DateTime.UtcNow.AddHours(9) };
             _db.UnifiedCommands.Add(entity);
         }
 
@@ -65,7 +65,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         entity.IsActive = req.IsActive;
         entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
-        entity.UpdatedAt = DateTime.Now;
+        entity.UpdatedAt = DateTime.UtcNow.AddHours(9);
 
         await _db.SaveChangesAsync();
 
@@ -161,7 +161,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         {
             ChzzkUid = targetUid,
             Name = entity.ResponseText.Length > 0 ? entity.ResponseText : "행운의 룰렛",
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow.AddHours(9)
         };
         newRoulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
         newRoulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
@@ -190,7 +190,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
 
         roulette.Name = string.IsNullOrWhiteSpace(rouletteData.Name) ? entity.ResponseText : rouletteData.Name;
-        roulette.UpdatedAt = DateTime.UtcNow;
+        roulette.UpdatedAt = DateTime.UtcNow.AddHours(9);
 
         if (rouletteData.Items != null && rouletteData.Items.Any())
         {
@@ -226,7 +226,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         if (entity != null)
         {
             entity.IsActive = !entity.IsActive;
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = DateTime.UtcNow.AddHours(9);
             await _db.SaveChangesAsync();
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
@@ -290,7 +290,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             ResponseText = response,
             RequiredRole = role,
             IsActive = true,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow.AddHours(9)
         };
 
         _db.UnifiedCommands.Add(entity);

@@ -53,7 +53,7 @@ public class SongRequestStrategy(
                 ChzzkUid = notification.Profile.ChzzkUid,
                 Title = songTitle,
                 Status = "Pending",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow.AddHours(9)
             };
             db.SongQueues.Add(song);
             await db.SaveChangesAsync(ct);

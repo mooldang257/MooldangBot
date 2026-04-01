@@ -35,7 +35,7 @@ public class SonglistToggleStrategy(
         if (activeSession != null)
         {
             activeSession.IsActive = false;
-            activeSession.EndedAt = DateTime.Now;
+            activeSession.EndedAt = DateTime.UtcNow.AddHours(9);
             statusText = "비활성화";
         }
         else
@@ -43,7 +43,7 @@ public class SonglistToggleStrategy(
             db.SonglistSessions.Add(new SonglistSession
             {
                 ChzzkUid = notification.Profile.ChzzkUid,
-                StartedAt = DateTime.Now,
+                StartedAt = DateTime.UtcNow.AddHours(9),
                 IsActive = true
             });
             statusText = "활성화";

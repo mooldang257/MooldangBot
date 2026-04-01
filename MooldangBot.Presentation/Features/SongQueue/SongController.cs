@@ -26,7 +26,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
         {
             newSong.Id = 0;
             newSong.ChzzkUid = chzzkUid;
-            newSong.CreatedAt = DateTime.Now;
+            newSong.CreatedAt = DateTime.UtcNow.AddHours(9); // KST
             _db.SongQueues.Add(newSong);
 
             if (omakaseId.HasValue)

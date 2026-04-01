@@ -41,7 +41,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
             // 동기화 로직...
-            LastRunTime = DateTime.Now;
+            LastRunTime = DateTime.UtcNow.AddHours(9);
             LastResult = "성공";
             await Task.CompletedTask;
         }

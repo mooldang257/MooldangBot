@@ -53,7 +53,7 @@ public class UnifiedCommandHandler(
             {
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
                     targetUid, keyword, notification.SenderId, notification.Username,
-                    false, "명령어를 찾을 수 없음 (DB/캐시 확인 필요)", notification.DonationAmount, DateTime.Now));
+                    false, "명령어를 찾을 수 없음 (DB/캐시 확인 필요)", notification.DonationAmount, DateTime.UtcNow.AddHours(9)));
                 
                 logger.LogWarning($"⚠️ [{targetUid}] 명령어를 찾을 수 없음: {keyword}");
             }
@@ -74,7 +74,7 @@ public class UnifiedCommandHandler(
             // 검증 실패 시 이미 사용자 피드백이 나갔으므로 로그만 발행
             await rabbitMq.PublishAsync(new CommandExecutionEvent(
                 targetUid, keyword, notification.SenderId, notification.Username,
-                false, "권한 또는 재화 부족", notification.DonationAmount, DateTime.Now));
+                false, "권한 또는 재화 부족", notification.DonationAmount, DateTime.UtcNow.AddHours(9)));
             return;
         }
 
@@ -90,7 +90,7 @@ public class UnifiedCommandHandler(
                 
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
                     targetUid, keyword, notification.SenderId, notification.Username,
-                    true, null, notification.DonationAmount, DateTime.Now));
+                    true, null, notification.DonationAmount, DateTime.UtcNow.AddHours(9)));
             }
             catch (Exception ex)
             {
@@ -99,7 +99,7 @@ public class UnifiedCommandHandler(
                 // [시스템 내부 오류]: 채팅창 대신 관제소로 상세 에러 보고 ✨
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
                     targetUid, keyword, notification.SenderId, notification.Username,
-                    false, $"서버 내부 오류: {ex.Message}", notification.DonationAmount, DateTime.Now));
+                    false, $"서버 내부 오류: {ex.Message}", notification.DonationAmount, DateTime.UtcNow.AddHours(9)));
             }
         }
     }

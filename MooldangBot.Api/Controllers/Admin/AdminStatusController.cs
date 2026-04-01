@@ -30,9 +30,9 @@ public class AdminStatusController(
             TotalActiveBots = chatClient.GetActiveConnectionCount(),
             MemoryUsage = $"{memoryMb} MB",
             IsCircuitOpen = renewalService.IsCircuitOpen(),
-            Uptime = (DateTime.Now - process.StartTime).ToString(@"dd\.hh\:mm\:ss"),
+            Uptime = (DateTime.UtcNow.AddHours(9) - process.StartTime).ToString(@"dd\.hh\:mm\:ss"),
             AvgVibration = $"{avgVibration:F2} Hz",
-            Timestamp = DateTime.Now.ToString("O")
+            Timestamp = DateTime.UtcNow.AddHours(9).ToString("O")
         });
     }
 
@@ -41,8 +41,8 @@ public class AdminStatusController(
     {
         // [서기의 최종 기록]: 최신 로그 샘플 반환 (실전에서는 DB의 Logs 테이블 조회)
         return Ok(new[] {
-            new { Time = DateTime.Now.AddSeconds(-10).ToString("HH:mm:ss"), Level = "INFO", Msg = "[피닉스] 세션 상태 양호" },
-            new { Time = DateTime.Now.AddSeconds(-30).ToString("HH:mm:ss"), Level = "WARN", Msg = "[와치독] 토큰 임박 감지됨" }
+            new { Time = DateTime.UtcNow.AddHours(9).AddSeconds(-10).ToString("HH:mm:ss"), Level = "INFO", Msg = "[피닉스] 세션 상태 양호" },
+            new { Time = DateTime.UtcNow.AddHours(9).AddSeconds(-30).ToString("HH:mm:ss"), Level = "WARN", Msg = "[와치독] 토큰 임박 감지됨" }
         });
     }
 }

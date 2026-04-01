@@ -112,8 +112,8 @@ public class RouletteService : IRouletteService
                             ItemName = result.ItemName,
                             IsMission = result.IsMission,
                             Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
-                            CreatedAt = DateTime.Now,
-                            ProcessedAt = result.IsMission ? null : DateTime.Now
+                            CreatedAt = DateTime.UtcNow.AddHours(9),
+                            ProcessedAt = result.IsMission ? null : DateTime.UtcNow.AddHours(9)
                         });
                     }
 
@@ -145,7 +145,7 @@ public class RouletteService : IRouletteService
                         Summary = summaryStr,
                         IsCompleted = false,
                         ScheduledTime = _rouletteState.GetAndSetNextEndTime(chzzkUid, count).AddSeconds(3),
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.UtcNow.AddHours(9)
                     };
                     _db.RouletteSpins.Add(spin);
                     await _db.SaveChangesAsync(ct);

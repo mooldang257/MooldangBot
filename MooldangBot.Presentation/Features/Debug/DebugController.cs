@@ -32,7 +32,7 @@ namespace MooldangBot.Presentation.Features.Debug
                 .ToListAsync();
 
             return Ok(new { 
-                time = DateTime.Now,
+                time = DateTime.UtcNow.AddHours(9), // KST
                 streamerCount = streamers.Count,
                 streamers = streamers
             });

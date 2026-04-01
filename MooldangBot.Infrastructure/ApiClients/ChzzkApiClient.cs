@@ -87,38 +87,7 @@ namespace MooldangBot.Infrastructure.ApiClients
             return await CallTokenApiAsync("authorization_code", code, state);
         }
 
-        /// <summary>
-        /// [텔로스5의 순환]: 리프레시 토큰을 사용하여 인가 정보를 갱신합니다.
-        /// </summary>
-        public async Task<ChzzkTokenResponse?> RefreshTokenAsync(string refreshToken, string? clientId = null, string? clientSecret = null)
-        {
-            try
-            {
-                // [롤백]: 개별 앱 정보를 무시하고 시스템 앱 정보로만 동작하게 합니다.
-                var requestData = new
-                {
-                    grantType = "refresh_token",
-                    clientId = _clientId,
-                    clientSecret = _clientSecret,
-                    refreshToken = refreshToken
-                };
 
-                var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", requestData);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkTokenResponse);
-                }
-
-                string error = await response.Content.ReadAsStringAsync();
-                _logger.LogError($"[오시리스의 거절] 토큰 갱신 실패: {response.StatusCode} - {error}");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"[하모니 경고] 토큰 갱신 파동 오류: {ex.Message}");
-                return null;
-            }
-        }
 
         private async Task<string?> CallTokenApiAsync(string grantType, string codeOrRefresh, string? state = null)
         {

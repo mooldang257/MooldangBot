@@ -241,7 +241,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             if (activeSession != null)
             {
                 activeSession.IsActive = false;
-                activeSession.EndedAt = DateTime.Now;
+                activeSession.EndedAt = DateTime.UtcNow.AddHours(9); // KST
                 nowActive = false;
             }
             else
@@ -249,7 +249,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 _db.SonglistSessions.Add(new SonglistSession
                 {
                     ChzzkUid = chzzkUid,
-                    StartedAt = DateTime.Now,
+                    StartedAt = DateTime.UtcNow.AddHours(9), // KST
                     IsActive = true,
                     RequestCount = 0,
                     CompleteCount = 0

@@ -39,8 +39,9 @@ public class TokenRenewalService : ITokenRenewalService
         _logger = logger;
 
         // [서킷 브레이커의 지혜]: 3번 연속 실패 시 30초간 회로 차단
+        // [v17.0] FatalTokenException(리프레시 토큰 영구 무효화)은 재시도 불가 → 즉시 전파
         _circuitBreaker ??= Policy
-            .Handle<Exception>()
+            .Handle<Exception>(ex => ex is not FatalTokenException)
             .OrResult<bool>(r => r == false) // 제너릭 핸들링
             .CircuitBreakerAsync(3, TimeSpan.FromSeconds(30),
                 onBreak: (ex, breakDelay) => _logger.LogWarning($"[서킷 브레이커] 회로 차단됨! ({breakDelay.TotalSeconds}초 동안 휴식)"),
@@ -48,8 +49,9 @@ public class TokenRenewalService : ITokenRenewalService
                 onHalfOpen: () => _logger.LogInformation("[서킷 브레이커] 회로 반개방 상태."));
 
         // [재시도의 인내]: 2회 재시도 (Exponential Backoff)
+        // [v17.0] FatalTokenException은 재시도 제외 — 영구 무효화된 토큰에 대한 무의미한 재시도 차단
         _retryPolicy = Policy<bool>
-            .Handle<Exception>()
+            .Handle<Exception>(ex => ex is not FatalTokenException)
             .OrResult(result => result == false)
             .WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 (result, timeSpan, retryCount, context) =>

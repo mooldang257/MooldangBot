@@ -34,5 +34,5 @@ public class RouletteSpin
     [Required]
     public DateTime ScheduledTime { get; set; } // 결과 채팅이 전송되어야 할 예정 시각
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
 }

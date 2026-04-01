@@ -11,7 +11,7 @@ public class RouletteState
     /// </summary>
     public DateTime GetAndSetNextEndTime(string chzzkUid, int count)
     {
-        var now = DateTime.Now; // [v1.9.9.1] UTC+9 기준 (사용자 요청)
+        var now = DateTime.UtcNow.AddHours(9); // [v1.9.9.1] KST(UTC+9) 기준
         // 기존 대기열 종료 시각을 가져오되, 이미 지났다면 현재 시각을 기준으로 함
         var lastEnd = _lastExpectedEndTimes.GetOrAdd(chzzkUid, now);
         if (lastEnd < now) lastEnd = now;

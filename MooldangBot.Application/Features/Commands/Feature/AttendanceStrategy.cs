@@ -39,10 +39,10 @@ public class AttendanceStrategy(
             db.ViewerProfiles.Add(viewer);
         }
 
-        bool isFirstToday = viewer.LastAttendanceAt?.Date != DateTime.Today;
+        bool isFirstToday = viewer.LastAttendanceAt?.Date != DateTime.UtcNow.AddHours(9).Date;
         if (isFirstToday)
         {
-            viewer.LastAttendanceAt = DateTime.Now;
+            viewer.LastAttendanceAt = DateTime.UtcNow.AddHours(9);
             viewer.AttendanceCount++;
             viewer.Points += streamer.PointPerAttendance;
             await db.SaveChangesAsync(ct);

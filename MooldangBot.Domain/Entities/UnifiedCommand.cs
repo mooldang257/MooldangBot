@@ -42,6 +42,6 @@ public class UnifiedCommand
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
     public DateTime? UpdatedAt { get; set; }
 }

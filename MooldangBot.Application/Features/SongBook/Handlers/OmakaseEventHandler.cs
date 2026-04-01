@@ -109,7 +109,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
                 ChzzkUid = notification.Profile.ChzzkUid,
                 Title = songTitle,
                 Status = "Pending",
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow.AddHours(9),
                 SortOrder = await db.SongQueues.Where(q => q.ChzzkUid == notification.Profile.ChzzkUid).CountAsync(cancellationToken) + 1
             };
 

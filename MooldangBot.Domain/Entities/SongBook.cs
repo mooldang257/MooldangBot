@@ -24,8 +24,8 @@ namespace MooldangBot.Domain.Entities
 
         public int UsageCount { get; set; } = 0;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
 
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
     }
 }

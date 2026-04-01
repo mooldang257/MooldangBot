@@ -42,7 +42,7 @@ public class RouletteResultWorker : BackgroundService
                 {
                     // 활성 상태: 2초 단위 정밀 감시
                     var overdueSpins = await db.RouletteSpins
-                        .Where(s => !s.IsCompleted && s.ScheduledTime <= DateTime.Now)
+                        .Where(s => !s.IsCompleted && s.ScheduledTime <= DateTime.UtcNow.AddHours(9))
                         .OrderBy(s => s.ScheduledTime)
                         .Take(10)
                         .ToListAsync(stoppingToken);
