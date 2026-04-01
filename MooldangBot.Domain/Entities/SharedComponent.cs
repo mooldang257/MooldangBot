@@ -5,15 +5,17 @@ using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(ChzzkUid))]
+    [Index(nameof(StreamerProfileId))]
     public class SharedComponent
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public int StreamerProfileId { get; set; }
+
+        [ForeignKey(nameof(StreamerProfileId))]
+        public virtual StreamerProfile? StreamerProfile { get; set; }
 
         [Required]
         [MaxLength(100)]

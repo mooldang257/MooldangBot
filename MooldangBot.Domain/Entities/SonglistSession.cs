@@ -5,16 +5,18 @@ using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Table("songlistsessions")]
-    [Index(nameof(ChzzkUid), nameof(IsActive))]
-    public class SonglistSession
-    {
-        [Key]
-        public int Id { get; set; }
+[Table("songlistsessions")]
+[Index(nameof(StreamerProfileId), nameof(IsActive))]
+public class SonglistSession
+{
+    [Key]
+    public int Id { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+    [Required]
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
 
         public KstClock StartedAt { get; set; }
         

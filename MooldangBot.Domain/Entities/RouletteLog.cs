@@ -11,11 +11,11 @@ namespace MooldangBot.Domain.Entities
         [Key]
         public long Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public int StreamerProfileId { get; set; } // [v4.4] ChzzkUid 제거 및 FK 도입
 
         public int RouletteId { get; set; }
+
+        public int? RouletteItemId { get; set; } // [v4.4] 아이템 추적용 FK 추가 (SetNull 대응)
 
         [MaxLength(100)]
         public string RouletteName { get; set; } = string.Empty;
@@ -24,11 +24,7 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(100)]
         public string ViewerNickname { get; set; } = string.Empty;
 
-        // [v4.0] 수호자의 암호: 개인정보 보호를 위한 식별자 암호화 및 해싱
-        public string? ViewerUid { get; set; }
-        
-        [MaxLength(64)]
-        public string? ViewerUidHash { get; set; }
+        public int GlobalViewerId { get; set; } // [v4.4] ViewerUid/Hash 제거 및 FK 도입
 
         [Required]
         [MaxLength(200)]
@@ -41,5 +37,15 @@ namespace MooldangBot.Domain.Entities
         public KstClock CreatedAt { get; set; } = KstClock.Now;
 
         public KstClock? ProcessedAt { get; set; }
+
+        // Navigation Properties
+        [JsonIgnore]
+        public StreamerProfile? StreamerProfile { get; set; }
+
+        [JsonIgnore]
+        public GlobalViewer? GlobalViewer { get; set; }
+
+        [JsonIgnore]
+        public RouletteItem? RouletteItem { get; set; }
     }
 }

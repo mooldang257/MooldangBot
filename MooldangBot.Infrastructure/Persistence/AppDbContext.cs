@@ -38,6 +38,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     public DbSet<AvatarSetting> AvatarSettings { get; set; }
     public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
     public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
+    public DbSet<GlobalViewer> GlobalViewers { get; set; }
     public DbSet<ViewerProfile> ViewerProfiles { get; set; }
     public DbSet<Roulette> Roulettes { get; set; }
     public DbSet<RouletteItem> RouletteItems { get; set; }
@@ -89,35 +90,105 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
         });
 
-        modelBuilder.Entity<SongQueue>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
-        });
 
 
         modelBuilder.Entity<StreamerOmakaseItem>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
+            entity.ToTable("streameromakases");
+            entity.HasOne(o => o.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(o => o.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Roulette>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
+            entity.ToTable("roulettes");
+            
+            entity.HasOne(r => r.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(r => r.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(r => r.StreamerProfileId);
+            entity.HasIndex(r => new { r.StreamerProfileId, r.Id }).IsDescending(false, true);
+        });
+
+        modelBuilder.Entity<AvatarSetting>(entity => {
+            entity.ToTable("avatarsettings");
+            entity.HasOne(a => a.StreamerProfile)
+                  .WithOne()
+                  .HasForeignKey<AvatarSetting>(a => a.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(a => a.StreamerProfileId).IsUnique();
+        });
+
+        modelBuilder.Entity<OverlayPreset>(entity => {
+            entity.ToTable("overlaypresets");
+            entity.HasOne(o => o.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(o => o.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(o => o.StreamerProfileId);
         });
 
         modelBuilder.Entity<PeriodicMessage>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
+            entity.ToTable("periodicmessages");
+            entity.HasOne(m => m.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(m => m.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(m => m.StreamerProfileId);
+        });
+
+        modelBuilder.Entity<SharedComponent>(entity => {
+            entity.ToTable("sharedcomponents");
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(s => s.StreamerProfileId);
         });
 
         modelBuilder.Entity<ViewerProfile>(entity => {
-            entity.Property(e => e.StreamerChzzkUid).UseCollation(ciCollation);
+            entity.Property(e => e.Nickname).UseCollation(ciCollation);
         });
 
         modelBuilder.Entity<RouletteLog>(entity => {
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
+            entity.ToTable("roulettelogs");
             entity.Property(e => e.ViewerNickname).UseCollation(ciCollation);
+
+            entity.HasOne(l => l.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(l => l.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(l => l.GlobalViewer)
+                  .WithMany()
+                  .HasForeignKey(l => l.GlobalViewerId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(l => l.RouletteItem)
+                  .WithMany()
+                  .HasForeignKey(l => l.RouletteItemId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.RouletteId);
+            entity.HasIndex(e => new { e.StreamerProfileId, e.GlobalViewerId });
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.Id })
+                .IsDescending(false, false, true);
         });
 
         modelBuilder.Entity<StreamerManager>(entity => {
-            entity.Property(e => e.StreamerChzzkUid).UseCollation(ciCollation);
-            entity.Property(e => e.ManagerChzzkUid).UseCollation(ciCollation);
+            entity.ToTable("streamermanagers");
+            
+            entity.HasOne(m => m.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(m => m.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.GlobalViewer)
+                  .WithMany()
+                  .HasForeignKey(m => m.GlobalViewerId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ⭐ 검색 성능 최적화를 위한 인덱스 추가
@@ -134,72 +205,115 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.Property(e => e.BotRefreshToken).HasConversion(converter);
         });
  
-        modelBuilder.Entity<ViewerProfile>(entity => {
-            // [Search Hash 전략]: 원본 Uid는 암호화, 검색은 Hash 필드 이용
+        // [v4.2] 글로벌 시청자 암호화 설정
+        modelBuilder.Entity<GlobalViewer>(entity => {
+            entity.ToTable("globalviewers");
             entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
+        });
+
+        modelBuilder.Entity<ViewerProfile>(entity => {
+            entity.ToTable("viewerprofiles");
             
-            entity.HasIndex(e => new { e.StreamerChzzkUid, e.ViewerUidHash }).IsUnique();
+            // 스트리머가 탈퇴/삭제되면 해당 방의 시청자 기록도 연쇄 삭제 (DB 용량 확보)
+            entity.HasOne(v => v.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(v => v.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(v => v.GlobalViewer)
+                  .WithMany()
+                  .HasForeignKey(v => v.GlobalViewerId)
+                  .OnDelete(DeleteBehavior.Restrict); // 글로벌 정보는 수동 관리 권장
         });
 
         modelBuilder.Entity<RouletteSpin>(entity => {
-            entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
+            entity.ToTable("roulettespins");
+            
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.GlobalViewer)
+                  .WithMany()
+                  .HasForeignKey(s => s.GlobalViewerId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.IsCompleted, e.ScheduledTime });
         });
 
         modelBuilder.Entity<SystemSetting>(entity => {
-            entity.Property(e => e.BotAccessToken).HasConversion(converter);
-            entity.Property(e => e.BotRefreshToken).HasConversion(converter);
-            entity.Property(e => e.KeyValue).HasConversion(converter);
+            entity.Property(e => e.BotAccessToken).HasColumnType("longtext").HasConversion(converter);
+            entity.Property(e => e.BotRefreshToken).HasColumnType("longtext").HasConversion(converter);
+            entity.Property(e => e.KeyValue).HasColumnType("longtext").HasConversion(converter);
         });
 
 
-        modelBuilder.Entity<SongQueue>()
-            .HasIndex(s => s.ChzzkUid);
+        modelBuilder.Entity<SongQueue>(entity => {
+            entity.ToTable("songqueues");
 
-        modelBuilder.Entity<SongQueue>()
-            .HasIndex(s => s.ChzzkUid);
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Roulette>()
-            .HasIndex(r => new { r.ChzzkUid, r.Id }).IsDescending(false, true);
+            entity.HasOne(s => s.GlobalViewer)
+                  .WithMany()
+                  .HasForeignKey(s => s.GlobalViewerId)
+                  .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<PeriodicMessage>()
-            .HasIndex(p => p.ChzzkUid);
-
-        modelBuilder.Entity<SonglistSession>()
-            .HasIndex(s => new { s.ChzzkUid, s.IsActive });
-
-        modelBuilder.Entity<OverlayPreset>()
-            .HasIndex(p => p.ChzzkUid);
-
-        modelBuilder.Entity<SharedComponent>()
-            .HasIndex(c => c.ChzzkUid);
-
-        modelBuilder.Entity<StreamerManager>()
-            .HasIndex(m => m.ManagerChzzkUid);
-
-        modelBuilder.Entity<SongBook>()
-            .HasIndex(s => new { s.ChzzkUid, s.Id }).IsDescending(false, true);
-
-        modelBuilder.Entity<RouletteLog>(entity => {
-            entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
-            entity.Property(e => e.ViewerUidHash).HasMaxLength(64);
-            entity.HasIndex(e => e.RouletteId);
-            entity.HasIndex(e => new { e.ChzzkUid, e.ViewerUidHash });
-            entity.HasIndex(e => new { e.ChzzkUid, e.Status, e.Id })
-                .IsDescending(false, false, true);
+            entity.HasIndex(e => e.StreamerProfileId);
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.CreatedAt });
         });
 
-        // [파로스의 통합]: UnifiedCommand 설정 (Osiris Regulation)
+        modelBuilder.Entity<SongBook>(entity => {
+            entity.ToTable("songbooks");
+
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(s => new { s.StreamerProfileId, s.Id }).IsDescending(false, true);
+        });
+
+        modelBuilder.Entity<SonglistSession>(entity => {
+            entity.ToTable("songlistsessions");
+
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(s => new { s.StreamerProfileId, s.IsActive });
+        });
+
+        // Legacy indices for RouletteLog removed (redefined above)
+
+        // [파로스의 통합]: UnifiedCommand 설정 (v4.3 정문화 적용)
         modelBuilder.Entity<UnifiedCommand>(entity => {
             entity.ToTable("unifiedcommands");
-            entity.Property(e => e.ChzzkUid).HasColumnName("chzzkuid").UseCollation(ciCollation);
             entity.Property(e => e.Keyword).HasColumnName("keyword").UseCollation(ciCollation);
-            entity.Property(e => e.Category).HasConversion<string>();
             entity.Property(e => e.CostType).HasConversion<string>();
             entity.Property(e => e.RequiredRole).HasConversion<string>();
+
+            // 1. 스트리머 삭제 시 해당 채널의 명령어도 연쇄 삭제 (Cascade)
+            entity.HasOne(c => c.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(c => c.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // 2. 마스터 데이터(기능) 삭제 시 명령어 데이터 보호 (Restrict)
+            entity.HasOne(c => c.MasterFeature)
+                  .WithMany()
+                  .HasForeignKey(c => c.MasterCommandFeatureId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // [Index] 복합 인덱스: (StreamerProfileId, Keyword) 유니크 조합
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword }).IsUnique();
+            entity.HasIndex(e => new { e.StreamerProfileId, e.TargetId });
         });
-        modelBuilder.Entity<UnifiedCommand>().HasIndex(c => new { c.ChzzkUid, c.Keyword }).IsUnique();
-        modelBuilder.Entity<UnifiedCommand>().HasIndex(c => new { c.ChzzkUid, c.TargetId });
 
         modelBuilder.Entity<Master_CommandCategory>(entity => {
             entity.ToTable("master_commandcategories");
@@ -245,14 +359,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{포인트}", 
                     Description = "보유 포인트", 
                     BadgeColor = "primary", 
-                    QueryString = "SELECT CAST(Point AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 2, 
                     Keyword = "{닉네임}", 
                     Description = "시청자 닉네임", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT ViewerName FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                    QueryString = "SELECT vp.Nickname FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 3, 
@@ -280,21 +394,21 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{연속출석일수}", 
                     Description = "연속 출석한 일수", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT CAST(ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 7, 
                     Keyword = "{누적출석일수}", 
                     Description = "누적 출석한 횟수", 
                     BadgeColor = "info", 
-                    QueryString = "SELECT CAST(AttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 8, 
                     Keyword = "{마지막출석일}", 
                     Description = "최근 출석 날짜", 
                     BadgeColor = "secondary", 
-                    QueryString = "SELECT DATE_FORMAT(LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid" 
+                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 9, 
@@ -317,7 +431,13 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("chzzkcategoryaliases");
         modelBuilder.Entity<ViewerProfile>().ToTable("viewerprofiles");
         modelBuilder.Entity<Roulette>().ToTable("roulettes");
-        modelBuilder.Entity<RouletteItem>().ToTable("rouletteitems");
+        modelBuilder.Entity<RouletteItem>(entity => {
+            entity.ToTable("rouletteitems");
+            entity.HasOne(i => i.Roulette)
+                  .WithMany(r => r.Items)
+                  .HasForeignKey(i => i.RouletteId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<PeriodicMessage>().ToTable("periodicmessages");
         modelBuilder.Entity<SonglistSession>().ToTable("songlistsessions");
         modelBuilder.Entity<OverlayPreset>().ToTable("overlaypresets");
@@ -326,37 +446,70 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<IamfScenario>().ToTable("iamf_scenarios");
         modelBuilder.Entity<IamfGenosRegistry>().ToTable("iamf_genos_registry");
         modelBuilder.Entity<IamfParhosCycle>().ToTable("iamf_parhos_cycles");
-        modelBuilder.Entity<IamfVibrationLog>().ToTable("iamf_vibration_logs");
-        modelBuilder.Entity<IamfStreamerSetting>().ToTable("iamf_streamer_settings");
-        modelBuilder.Entity<BroadcastSession>().ToTable("broadcastsessions");
+
+        modelBuilder.Entity<IamfVibrationLog>(entity => {
+            entity.ToTable("iamf_vibration_logs");
+            entity.HasOne(v => v.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(v => v.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IamfStreamerSetting>(entity => {
+            entity.ToTable("iamf_streamer_settings");
+            entity.HasOne(s => s.StreamerProfile)
+                  .WithOne()
+                  .HasForeignKey<IamfStreamerSetting>(s => s.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StreamerKnowledge>(entity => {
+            entity.ToTable("streamerknowledges");
+            entity.HasOne(k => k.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(k => k.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BroadcastSession>(entity => {
+            entity.ToTable("broadcastsessions");
+            entity.HasOne(b => b.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(b => b.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<SharedComponent>().ToTable("sharedcomponents");
-        modelBuilder.Entity<StreamerManager>().ToTable("streamermanagers");
+        // StreamerManager/StreamerOmakase configured above
         modelBuilder.Entity<SongBook>().ToTable("songbooks");
         modelBuilder.Entity<RouletteLog>().ToTable("roulettelogs");
         modelBuilder.Entity<RouletteSpin>(entity => {
-            entity.ToTable("roulettespins");
-            entity.Property(e => e.ChzzkUid).UseCollation(ciCollation);
-            entity.HasIndex(e => new { e.IsCompleted, e.ScheduledTime });
+            // Configured above
         });
 
         // 🔐 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 자동 적용
         modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<SongQueue>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<StreamerOmakaseItem>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<Roulette>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<PeriodicMessage>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<SonglistSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<OverlayPreset>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<SharedComponent>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<RouletteLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<RouletteSpin>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<BroadcastSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
-        modelBuilder.Entity<UnifiedCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<SongQueue>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<SonglistSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<SongBook>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<StreamerOmakaseItem>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<StreamerManager>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<Roulette>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<PeriodicMessage>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<OverlayPreset>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<SharedComponent>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<AvatarSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<RouletteLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<RouletteSpin>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<BroadcastSession>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<IamfStreamerSetting>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<IamfVibrationLog>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<StreamerKnowledge>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+        modelBuilder.Entity<UnifiedCommand>().HasQueryFilter(e => !_userSession.IsAuthenticated || 
+                                                                   e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
 
-        // 필드명이 다른 경우 예외 처리
-        modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || e.StreamerChzzkUid == _userSession.ChzzkUid);
+        // [v4.2] 필터 변경: 네비게이션 프로퍼티를 타고 스트리머 UID를 검사합니다.
+        modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || 
+                                                                   e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
     }
 }

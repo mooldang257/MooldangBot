@@ -41,19 +41,19 @@ public class PeriodicMessageWorker : BackgroundService
 
                 if (profiles.Count > 0)
                 {
-                    var profileUids = profiles.Select(p => p.ChzzkUid).ToList();
+                    var profileIds = profiles.Select(p => p.Id).ToList();
 
                     // 2. 활성화된 모든 정기 메시지 일괄 조회 (N+1 해결)
                     var allMessages = await db.PeriodicMessages
-                        .Where(m => profileUids.Contains(m.ChzzkUid) && m.IsEnabled)
+                        .Where(m => profileIds.Contains(m.StreamerProfileId) && m.IsEnabled)
                         .ToListAsync(stoppingToken);
 
-                    var messagesLookup = allMessages.ToLookup(m => m.ChzzkUid);
+                    var messagesLookup = allMessages.ToLookup(m => m.StreamerProfileId);
                     var now = KstClock.Now;
 
                     foreach (var profile in profiles)
                     {
-                        var periodicMessages = messagesLookup[profile.ChzzkUid];
+                        var periodicMessages = messagesLookup[profile.Id];
 
                         foreach (var msg in periodicMessages)
                         {

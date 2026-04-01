@@ -1,17 +1,20 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(ChzzkUid), IsUnique = true)]
+    [Index(nameof(StreamerProfileId), IsUnique = true)]
     public class AvatarSetting
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public int StreamerProfileId { get; set; }
+
+        [ForeignKey(nameof(StreamerProfileId))]
+        public virtual StreamerProfile? StreamerProfile { get; set; }
 
         public bool IsEnabled { get; set; } = true;
         

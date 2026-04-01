@@ -1,19 +1,28 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(ChzzkUid), nameof(Id))]
-    [Index(nameof(ChzzkUid), nameof(Status), nameof(CreatedAt))]
+    [Index(nameof(StreamerProfileId), nameof(Id))]
+    [Index(nameof(StreamerProfileId), nameof(Status), nameof(CreatedAt))]
     public class SongQueue
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty; // 이 곡이 어떤 스트리머의 대기열인지 식별
+        public int StreamerProfileId { get; set; }
+
+        [ForeignKey(nameof(StreamerProfileId))]
+        public virtual StreamerProfile? StreamerProfile { get; set; }
+
+        // [v4.5 확장] 시청자 추적을 위한 글로벌 시청자 ID
+        public int? GlobalViewerId { get; set; }
+
+        [ForeignKey(nameof(GlobalViewerId))]
+        public virtual GlobalViewer? GlobalViewer { get; set; }
 
         [Required]
         [MaxLength(200)]

@@ -26,10 +26,13 @@ namespace MooldangBot.Presentation.Features.Avatar
             var p = await _db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) return Results.NotFound();
 
-            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var setting = await _db.AvatarSettings
+                .Include(s => s.StreamerProfile)
+                .FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
+                
             if (setting == null)
             {
-                setting = new AvatarSetting { ChzzkUid = chzzkUid };
+                setting = new AvatarSetting { StreamerProfileId = p.Id };
                 _db.AvatarSettings.Add(setting);
                 await _db.SaveChangesAsync();
             }
@@ -43,10 +46,10 @@ namespace MooldangBot.Presentation.Features.Avatar
             var p = await _db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) return Results.Unauthorized();
 
-            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
             if (setting == null)
             {
-                setting = new AvatarSetting { ChzzkUid = chzzkUid };
+                setting = new AvatarSetting { StreamerProfileId = p.Id };
                 _db.AvatarSettings.Add(setting);
             }
 
@@ -96,10 +99,10 @@ namespace MooldangBot.Presentation.Features.Avatar
             string fileUrl = $"/images/avatars/{fileName}";
 
             // DB 업데이트
-            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
             if (setting == null)
             {
-                setting = new AvatarSetting { ChzzkUid = chzzkUid };
+                setting = new AvatarSetting { StreamerProfileId = p.Id };
                 _db.AvatarSettings.Add(setting);
             }
 

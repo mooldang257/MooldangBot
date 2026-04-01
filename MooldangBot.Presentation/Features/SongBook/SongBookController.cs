@@ -43,10 +43,14 @@ namespace MooldangBot.Presentation.Features.SongBook
             [FromQuery] int? lastId, 
             [FromQuery] int pageSize = 20)
         {
-            var targetUid = chzzkUid.ToLower();
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+            if (profile == null) return NotFound();
+
             var query = _db.StreamerOmakases
                 .IgnoreQueryFilters()
-                .Where(o => o.ChzzkUid.ToLower() == targetUid);
+                .Where(o => o.StreamerProfileId == profile.Id);
 
             if (targetId.HasValue)
             {
@@ -62,7 +66,10 @@ namespace MooldangBot.Presentation.Features.SongBook
             var items = await query
                 .OrderByDescending(o => o.Id)
                 .Take(pageSize + 1)
-                .Join(_db.UnifiedCommands.IgnoreQueryFilters().Where(c => c.ChzzkUid == chzzkUid && c.FeatureType == CommandFeatureTypes.Omakase),
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters()
+                    .Include(c => c.StreamerProfile)
+                    .Include(c => c.MasterFeature)
+                    .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase),
                     o => o.Id,
                     c => c.TargetId,
                     (o, c) => new OmakaseDto
@@ -90,27 +97,33 @@ namespace MooldangBot.Presentation.Features.SongBook
         [AllowAnonymous]
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
-            var targetUid = chzzkUid.ToLower();
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+            if (profile == null) return NotFound();
+
             var omakases = await _db.StreamerOmakases
                 .IgnoreQueryFilters() 
-                .Where(o => o.ChzzkUid.ToLower() == targetUid)
+                .Where(o => o.StreamerProfileId == profile.Id)
                 .ToListAsync();
 
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid.ToLower() == targetUid)
+                .Where(s => s.StreamerProfileId == profile.Id)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
             var memo = await _db.SystemSettings
                 .IgnoreQueryFilters()
-                .Where(s => s.KeyName == $"Memo_{targetUid}")
+                .Where(s => s.KeyName == $"Memo_{chzzkUid}")
                 .Select(s => s.KeyValue)
                 .FirstOrDefaultAsync() ?? "";
 
             var omakaseCommands = await _db.UnifiedCommands
                 .IgnoreQueryFilters()
-                .Where(c => c.ChzzkUid == chzzkUid && c.FeatureType == CommandFeatureTypes.Omakase)
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
                 .ToListAsync();
 
             var omakaseDtos = omakases.Select(o => {
@@ -141,10 +154,14 @@ namespace MooldangBot.Presentation.Features.SongBook
         [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]
         public async Task<IResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
-            var targetUid = chzzkUid.ToLower();
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+            if (profile == null) return Results.NotFound();
+
             var item = await _db.StreamerOmakases
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(o => o.Id == id && o.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(o => o.Id == id && o.StreamerProfileId == profile.Id);
 
             if (item != null)
             {
@@ -182,10 +199,9 @@ namespace MooldangBot.Presentation.Features.SongBook
         [HttpPost("/api/test/chat")]
         public async Task<IResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
         {
-            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
                 
             if (profile == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
 
@@ -211,15 +227,14 @@ namespace MooldangBot.Presentation.Features.SongBook
         [AllowAnonymous]
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
-            var targetUid = chzzkUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) return NotFound();
 
             var activeSession = await _db.SonglistSessions
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
 
             return Ok(new { 
@@ -232,10 +247,14 @@ namespace MooldangBot.Presentation.Features.SongBook
         [HttpPost("/api/songlist/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
         {
-            var targetUid = chzzkUid.ToLower();
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+            if (profile == null) return NotFound();
+
             var activeSession = await _db.SonglistSessions
                 .IgnoreQueryFilters()
-                .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
 
             bool nowActive;
@@ -247,9 +266,13 @@ namespace MooldangBot.Presentation.Features.SongBook
             }
             else
             {
+                // profile is already loaded above
+                
+                if (profile == null) return NotFound();
+
                 _db.SonglistSessions.Add(new SonglistSession
                 {
-                    ChzzkUid = chzzkUid,
+                    StreamerProfileId = profile.Id,
                     StartedAt = KstClock.Now,
                     IsActive = true,
                     RequestCount = 0,

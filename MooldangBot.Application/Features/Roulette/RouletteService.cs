@@ -83,9 +83,25 @@ public class RouletteService : IRouletteService
                 using var transaction = await _db.Database.BeginTransactionAsync(ct);
                 try
                 {
+                    // 1. 스트리머 프로필 조회 (v4.4)
+                    var streamer = await _db.StreamerProfiles
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
+                    if (streamer == null) return new List<RouletteItem>();
+
+                    // 2. 글로벌 시청자 조회 및 생성 (v4.4)
+                    var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
+                    var globalViewer = await _db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
+                    if (globalViewer == null)
+                    {
+                        globalViewer = new GlobalViewer { ViewerUid = viewerUid, ViewerUidHash = viewerHash };
+                        _db.GlobalViewers.Add(globalViewer);
+                        await _db.SaveChangesAsync(ct);
+                    }
+
                     var roulette = await _db.Roulettes
                         .Include(r => r.Items)
-                        .FirstOrDefaultAsync(r => r.Id == rouletteId && r.ChzzkUid == chzzkUid, ct);
+                        .FirstOrDefaultAsync(r => r.Id == rouletteId && r.StreamerProfileId == streamer.Id, ct);
 
                     if (roulette == null) return new List<RouletteItem>();
 
@@ -108,12 +124,12 @@ public class RouletteService : IRouletteService
 
                         logs.Add(new RouletteLog
                         {
-                            ChzzkUid = chzzkUid,
+                            StreamerProfileId = streamer.Id,
                             RouletteId = rouletteId,
+                            RouletteItemId = result.Id, // [v4.4] 아이템 ID 연동
                             RouletteName = roulette.Name,
                             ViewerNickname = viewerNickname ?? "비회원",
-                            ViewerUid = viewerUid, // [v4.0] 추가
-                            ViewerUidHash = Sha256Hasher.ComputeHash(viewerUid), // [v4.0] 추가
+                            GlobalViewerId = globalViewer.Id,
                             ItemName = result.ItemName,
                             IsMission = result.IsMission,
                             Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
@@ -124,7 +140,7 @@ public class RouletteService : IRouletteService
 
                     _db.RouletteLogs.AddRange(logs);
                     await _db.SaveChangesAsync(ct);
-                    await transaction.CommitAsync(ct);
+                    // [v4.1] 트랜잭션 커밋은 RouletteSpin 저장 이후로 이동
 
                     var summary = results.GroupBy(r => r.ItemName)
                         .Select(g => {
@@ -142,9 +158,9 @@ public class RouletteService : IRouletteService
                     var spin = new RouletteSpin
                     {
                         Id = spinId,
-                        ChzzkUid = chzzkUid,
+                        StreamerProfileId = streamer.Id,
                         RouletteId = rouletteId,
-                        ViewerUid = viewerUid ?? "",
+                        GlobalViewerId = globalViewer.Id,
                         ViewerNickname = viewerNickname ?? "비회원",
                         ResultsJson = JsonSerializer.Serialize(results.Select(r => r.ItemName).ToList()),
                         Summary = summaryStr,
@@ -154,6 +170,9 @@ public class RouletteService : IRouletteService
                     };
                     _db.RouletteSpins.Add(spin);
                     await _db.SaveChangesAsync(ct);
+                    
+                    // [v4.1] 룰렛 실행 기록과 스핀 예약이 모두 저장된 후 최종 커밋
+                    await transaction.CommitAsync(ct);
 
                     var response = new SpinRouletteResponse(
                         spinId,
@@ -214,12 +233,14 @@ public class RouletteService : IRouletteService
         {
             // [v1.9.9] 오시리스의 보존: DB에서 실행 정보를 조회하여 즉시 완료 처리 (오버레이 콜백용)
             var spin = await _db.RouletteSpins
+                .Include(s => s.StreamerProfile)
+                .Include(s => s.GlobalViewer)
                 .FirstOrDefaultAsync(s => s.Id == spinId && !s.IsCompleted, ct);
 
             if (spin == null) return false;
 
             // 결과 전송
-            await SendDelayedChatResultAsync(spin.ChzzkUid, spin.RouletteId, spin.Summary, spin.ViewerUid, spin.ViewerNickname, ct);
+            await SendDelayedChatResultAsync(spin.StreamerProfile!.ChzzkUid, spin.RouletteId, spin.Summary, spin.GlobalViewer!.ViewerUid ?? "", spin.ViewerNickname, ct);
 
             spin.IsCompleted = true;
             await _db.SaveChangesAsync(ct);

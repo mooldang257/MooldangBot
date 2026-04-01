@@ -68,7 +68,8 @@ public class UnifiedCommandHandler(
             return;
         }
 
-        logger.LogInformation($"🚀 [{targetUid}] 명령어 매칭 성공: {keyword} ({command.FeatureType})");
+        var featureType = command.MasterFeature?.TypeName ?? "";
+        logger.LogInformation($"🚀 [{targetUid}] 명령어 매칭 성공: {keyword} ({featureType})");
 
         // 2. [오시리스의 검증]: 재화 및 권한 체크
         if (!await ValidateRequirementAsync(notification, command, ct)) 
@@ -81,7 +82,7 @@ public class UnifiedCommandHandler(
         }
 
         // 3. [하모니의 조율]: FeatureType에 따른 전략 실행
-        var strategy = strategies.FirstOrDefault(s => s.FeatureType == command.FeatureType);
+        var strategy = strategies.FirstOrDefault(s => s.FeatureType == featureType);
 
         if (strategy != null)
         {
@@ -96,7 +97,7 @@ public class UnifiedCommandHandler(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"❌ [UnifiedCommandHandler] 전략 실행 중 오류: {command.FeatureType}");
+                logger.LogError(ex, $"❌ [UnifiedCommandHandler] 전략 실행 중 오류: {featureType}");
                 
                 // [시스템 내부 오류]: 채팅창 대신 관제소로 상세 에러 보고 ✨
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
@@ -122,8 +123,14 @@ public class UnifiedCommandHandler(
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var viewerHash = Sha256Hasher.ComputeHash(n.SenderId);
+
+            // 1. 스트리머 프로필 확보
+            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == n.Profile.ChzzkUid, ct);
+            if (streamer == null) return false;
+
+            // 2. 글로벌 시청자 및 채널별 프로필 확보 (존재 시에만 진행되어야 함)
             var viewer = await db.ViewerProfiles
-                .FirstOrDefaultAsync(v => v.StreamerChzzkUid == n.Profile.ChzzkUid.ToLower() && v.ViewerUidHash == viewerHash, ct);
+                .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewer!.ViewerUidHash == viewerHash, ct);
 
             if (viewer == null || viewer.Points < c.Cost)
             {

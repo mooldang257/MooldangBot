@@ -1,17 +1,22 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(ChzzkUid))]
+    // [v4.7 정규화] ChzzkUid -> StreamerProfileId
+    [Index(nameof(StreamerProfileId))]
     public class StreamerOmakaseItem
     {
         [Key]
         public int Id { get; set; }
 
+        // [v4.7 정규화] ChzzkUid -> StreamerProfileId
         [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public int StreamerProfileId { get; set; }
+
+        [ForeignKey(nameof(StreamerProfileId))]
+        public virtual StreamerProfile? StreamerProfile { get; set; }
 
         [Required]
         [MaxLength(20)]
@@ -19,6 +24,5 @@ namespace MooldangBot.Domain.Entities
 
         [ConcurrencyCheck]
         public int Count { get; set; } = 0;
-
     }
 }

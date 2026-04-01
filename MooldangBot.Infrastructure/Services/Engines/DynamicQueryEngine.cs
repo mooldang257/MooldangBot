@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MySqlConnector;
+using MooldangBot.Application.Common.Security;
 
 namespace MooldangBot.Infrastructure.Services.Engines
 {
@@ -70,12 +71,15 @@ namespace MooldangBot.Infrastructure.Services.Engines
                         }
                         else if (queryString.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                         {
+                            var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
+
                             // 🛡️ [보안 강화 2]: SQL Injection 방지를 위한 파라미터화 쿼리 실행
                             queryResult = await _db.Database.SqlQueryRaw<string>(
                                 queryString,
                                 new MySqlParameter("@streamerUid", streamerChzzkUid),
                                 new MySqlParameter("@viewerUid", viewerUid),
-                                new MySqlParameter("@uid", viewerUid) // 레거시/아키텍트 요청 호환용
+                                new MySqlParameter("@viewerHash", viewerHash),
+                                new MySqlParameter("@uid", viewerUid) // 레거시 호환용
                             ).FirstOrDefaultAsync();
                         }
                         else

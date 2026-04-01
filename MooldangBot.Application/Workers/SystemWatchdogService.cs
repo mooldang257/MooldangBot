@@ -63,15 +63,18 @@ public class SystemWatchdogService(
             var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
 
             var inactiveSessions = db.BroadcastSessions
+                .Include(s => s.StreamerProfile)
                 .Where(s => s.IsActive && s.LastHeartbeatAt < KstClock.Now.AddMinutes(-5))
                 .ToList();
 
             foreach (var session in inactiveSessions)
             {
-                logger.LogWarning("[기록관의 붓] {ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.", session.ChzzkUid);
-                await scribe.FinalizeSessionAsync(session.ChzzkUid);
-                await chatClient.DisconnectAsync(session.ChzzkUid);
+                var chzzkUid = session.StreamerProfile?.ChzzkUid ?? "Unknown";
+                logger.LogWarning("[기록관의 붓] {ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.", chzzkUid);
+                await scribe.FinalizeSessionAsync(chzzkUid);
+                await chatClient.DisconnectAsync(chzzkUid);
             }
+
         }
 
         // 2. [활성 파동 추출]: 활성 스트리머 UID 목록 조회 (짧은 Scope)

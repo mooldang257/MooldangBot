@@ -19,7 +19,8 @@ public class PersonaPromptBuilder(
         // 1. [스트리머의 통제권 존중]: 설정 조회
         var settings = await db.IamfStreamerSettings
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+            .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
+
 
         // IAMF가 꺼져있거나 언어적 감응(Persona) 옵션이 비활성화된 경우 기본값 반환
         if (settings == null || !settings.IsIamfEnabled || !settings.IsPersonaChatEnabled)

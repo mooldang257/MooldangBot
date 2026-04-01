@@ -31,8 +31,9 @@ public class ChatIntentRouter(
         // 키워드 매칭을 통한 지식 검색 [AsNoTracking]
         var knowledge = await db.StreamerKnowledges
             .AsNoTracking()
-            .Where(k => k.ChzzkUid == chzzkUid && k.IsActive)
+            .Where(k => k.StreamerProfile!.ChzzkUid == chzzkUid && k.IsActive)
             .ToListAsync();
+
 
         // 메시지 내에 포함된 키워드 검색
         var matchedKnowledge = knowledge.FirstOrDefault(k => message.Contains(k.Keyword, System.StringComparison.OrdinalIgnoreCase));

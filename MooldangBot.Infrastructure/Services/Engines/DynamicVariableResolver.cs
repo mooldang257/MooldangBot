@@ -96,7 +96,9 @@ namespace MooldangBot.Infrastructure.Services.Engines
 
             var command = await _db.UnifiedCommands
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.ChzzkUid == streamerUid && c.FeatureType == "Notice");
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .FirstOrDefaultAsync(c => c.StreamerProfile!.ChzzkUid == streamerUid && c.MasterFeature!.TypeName == "Notice");
             
             var result = command?.ResponseText;
 
@@ -118,7 +120,8 @@ namespace MooldangBot.Infrastructure.Services.Engines
 
             var isActive = await _db.SonglistSessions
                 .AsNoTracking()
-                .Where(s => s.ChzzkUid == streamerUid)
+                .Include(s => s.StreamerProfile)
+                .Where(s => s.StreamerProfile!.ChzzkUid == streamerUid)
                 .OrderByDescending(s => s.StartedAt)
                 .Select(s => s.IsActive)
                 .FirstOrDefaultAsync();

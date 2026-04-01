@@ -69,10 +69,11 @@ public class ChzzkBackgroundService : BackgroundService
 
                                 // [스마트 폴링]: 방송 이력/활동 여부에 따른 지능형 조회
                                 bool hasAnySession = await db.BroadcastSessions
-                                    .AnyAsync(s => s.ChzzkUid == chzzkUid, ct);
+                                    .AnyAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid, ct);
 
                                 bool hasRecentSession = hasAnySession && await db.BroadcastSessions
-                                    .AnyAsync(s => s.ChzzkUid == chzzkUid && s.StartTime > KstClock.Now.AddDays(-7), ct);
+                                    .AnyAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid && s.StartTime > KstClock.Now.AddDays(-7), ct);
+
 
                                 bool isRecentlyChatted = scribe.IsRecentlyActive(chzzkUid);
 

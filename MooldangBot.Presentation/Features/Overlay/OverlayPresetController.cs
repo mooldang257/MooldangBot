@@ -64,15 +64,19 @@ namespace MooldangAPI.Controllers
             {
                 var presets = await _db.OverlayPresets
                     .IgnoreQueryFilters() // 🛡️ 마스터 계정 대응
-                    .Where(p => p.ChzzkUid == chzzkUid)
+                    .Include(p => p.StreamerProfile)
+                    .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid)
                     .ToListAsync();
 
                 if (presets.Count == 0)
                 {
+                    var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                    if (profile == null) return NotFound("Profile not found");
+
                     // 기본 프리셋 생성
                     var defaultPreset = new OverlayPreset
                     {
-                        ChzzkUid = chzzkUid,
+                        StreamerProfileId = profile.Id,
                         Name = "기본 프리셋",
                         ConfigJson = JsonSerializer.Serialize(new
                         {
@@ -113,7 +117,8 @@ namespace MooldangAPI.Controllers
             var preset = await _db.OverlayPresets
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+                .Include(p => p.StreamerProfile)
+                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (preset == null) return NotFound();
 
@@ -170,7 +175,8 @@ namespace MooldangAPI.Controllers
             {
                 preset = await _db.OverlayPresets
                     .IgnoreQueryFilters()
-                    .Where(p => p.ChzzkUid == chzzkUid)
+                    .Include(p => p.StreamerProfile)
+                    .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid)
                     .OrderBy(p => p.Id)
                     .FirstOrDefaultAsync();
             }
@@ -191,9 +197,12 @@ namespace MooldangAPI.Controllers
         {
             try
             {
+                var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                if (profile == null) return NotFound("Profile not found");
+
                 var preset = new OverlayPreset
                 {
-                    ChzzkUid = chzzkUid,
+                    StreamerProfileId = profile.Id,
                     Name = dto.Name ?? "새 프리셋",
                     ConfigJson = dto.ConfigJson ?? "{}",
                     CreatedAt = KstClock.Now,
@@ -222,7 +231,8 @@ namespace MooldangAPI.Controllers
         {
             var preset = await _db.OverlayPresets
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+                .Include(p => p.StreamerProfile)
+                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
             
             if (preset == null) return NotFound();
 
@@ -239,7 +249,8 @@ namespace MooldangAPI.Controllers
         {
             var preset = await _db.OverlayPresets
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+                .Include(p => p.StreamerProfile)
+                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
             
             if (preset == null) return NotFound();
 
@@ -255,7 +266,8 @@ namespace MooldangAPI.Controllers
             var preset = await _db.OverlayPresets
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id && p.ChzzkUid == chzzkUid);
+                .Include(p => p.StreamerProfile)
+                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (preset == null) return NotFound("Preset not found");
 

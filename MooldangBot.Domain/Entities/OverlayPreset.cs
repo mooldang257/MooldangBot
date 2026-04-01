@@ -1,17 +1,21 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
+    [Index(nameof(StreamerProfileId))]
     public class OverlayPreset
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+        public int StreamerProfileId { get; set; }
+
+        [ForeignKey(nameof(StreamerProfileId))]
+        public virtual StreamerProfile? StreamerProfile { get; set; }
 
         [Required]
         [MaxLength(100)]

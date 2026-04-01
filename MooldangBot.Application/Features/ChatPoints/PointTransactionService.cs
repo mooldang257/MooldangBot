@@ -24,7 +24,7 @@ public class PointTransactionService : IPointTransactionService
         var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
         var viewer = await _db.ViewerProfiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUidHash == viewerHash, ct);
+            .FirstOrDefaultAsync(v => v.StreamerProfile!.ChzzkUid == streamerUid && v.GlobalViewer!.ViewerUidHash == viewerHash, ct);
         return viewer?.Points ?? 0;
     }
 
@@ -33,30 +33,52 @@ public class PointTransactionService : IPointTransactionService
         try
         {
             var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
+            
+            // 1. 스트리머 ID 조회 (성능을 위해 캐시 고려 가능하나 현재는 DB 조회)
+            var streamer = await _db.StreamerProfiles
+                .AsNoTracking()
+                .Select(s => new { s.Id, s.ChzzkUid })
+                .FirstOrDefaultAsync(s => s.ChzzkUid == streamerUid, ct);
+            
+            if (streamer == null) return (false, 0);
+
+            // 2. 글로벌 시청자 ID 확보 (없으면 생성)
+            var globalViewer = await _db.GlobalViewers
+                .FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
+
+            if (globalViewer == null)
+            {
+                globalViewer = new GlobalViewer
+                {
+                    ViewerUid = viewerUid,
+                    ViewerUidHash = viewerHash
+                };
+                _db.GlobalViewers.Add(globalViewer);
+                await _db.SaveChangesAsync(ct);
+            }
+
             var connection = _db.Database.GetDbConnection();
 
-            // MariaDB Atomic Upsert: 포인트 증감 및 닉네임 동기화
-            // [v4.0] Search Hash 전략: Index(StreamerChzzkUid, ViewerUidHash) 기반 UPSERT
+            // 3. MariaDB Atomic Upsert: 정규화된 FK 기반 UPSERT
             var sql = @"
-                INSERT INTO ViewerProfiles (StreamerChzzkUid, ViewerUid, ViewerUidHash, Nickname, Points, AttendanceCount, ConsecutiveAttendanceCount)
-                VALUES (@StreamerUid, @ViewerUid, @ViewerUidHash, @Nickname, @Amount, 0, 0)
+                INSERT INTO viewerprofiles (StreamerProfileId, GlobalViewerId, Nickname, Points, AttendanceCount, ConsecutiveAttendanceCount)
+                VALUES (@StreamerId, @GlobalId, @Nickname, @Amount, 0, 0)
                 ON DUPLICATE KEY UPDATE 
                     Points = GREATEST(0, Points + @Amount),
                     Nickname = CASE WHEN @Nickname != '' THEN @Nickname ELSE Nickname END;";
 
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
-                StreamerUid = streamerUid,
-                ViewerUid = viewerUid, // AppDbContext의 Converter가 암호화 처리함
-                ViewerUidHash = viewerHash,
+                StreamerId = streamer.Id,
+                GlobalId = globalViewer.Id,
                 Nickname = nickname ?? "",
                 Amount = amount
             }, cancellationToken: ct));
 
             // 최종 포인트 조회
             var currentPoints = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
-                "SELECT Points FROM ViewerProfiles WHERE StreamerChzzkUid = @StreamerUid AND ViewerUidHash = @ViewerUidHash",
-                new { StreamerUid = streamerUid, ViewerUidHash = viewerHash },
+                "SELECT Points FROM viewerprofiles WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
+                new { StreamerId = streamer.Id, GlobalId = globalViewer.Id },
                 cancellationToken: ct
             ));
 

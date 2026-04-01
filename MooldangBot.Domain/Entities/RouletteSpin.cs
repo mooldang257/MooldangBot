@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities;
@@ -14,14 +15,11 @@ public class RouletteSpin
     [Key]
     public string Id { get; set; } = string.Empty; // GUID
 
-    [Required]
-    [MaxLength(50)]
-    public string ChzzkUid { get; set; } = string.Empty;
+    public int StreamerProfileId { get; set; } // [v4.4] ChzzkUid 제거 및 FK 도입
 
     public int RouletteId { get; set; }
 
-    [MaxLength(50)]
-    public string ViewerUid { get; set; } = string.Empty;
+    public int GlobalViewerId { get; set; } // [v4.4] ViewerUid 제거 및 FK 도입
 
     [MaxLength(100)]
     public string ViewerNickname { get; set; } = string.Empty;
@@ -37,4 +35,11 @@ public class RouletteSpin
     public KstClock ScheduledTime { get; set; } // 결과 채팅이 전송되어야 할 예정 시각
 
     public KstClock CreatedAt { get; set; } = KstClock.Now; // KST
+
+    // Navigation Properties
+    [JsonIgnore]
+    public StreamerProfile? StreamerProfile { get; set; }
+
+    [JsonIgnore]
+    public GlobalViewer? GlobalViewer { get; set; }
 }

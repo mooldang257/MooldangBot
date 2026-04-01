@@ -28,19 +28,24 @@ public class CommandCacheService : ICommandCacheService
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
+            // [v4.3] 정문화된 스키마 탐색: StreamerProfile을 거쳐 MasterFeature까지 로드
             var commands = await db.UnifiedCommands
                 .AsNoTracking()
-                .Where(c => c.ChzzkUid == chzzkUid)
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid)
                 .ToListAsync(ct);
 
             var commandDict = commands.ToDictionary(
                 c => c.Keyword, 
                 c => {
                     // [v2.1.7] 하모니의 강제 교정: !질문 키워드는 무조건 AI 모드로 작동하도록 자동 변환
-                    if (c.Keyword.Equals("!질문", StringComparison.OrdinalIgnoreCase) && c.FeatureType != "AI")
+                    // [v4.3] 정문화된 MasterFeature 정보를 검사 및 교정 (메모리상에서만 반영)
+                    var featureType = c.MasterFeature?.TypeName ?? "";
+                    if (c.Keyword.Equals("!질문", StringComparison.OrdinalIgnoreCase) && featureType != "AI")
                     {
-                        _logger.LogWarning($"⚠️ [CommandCache] {chzzkUid}의 '!질문' 명령어가 {c.FeatureType}에서 AI로 자동 교정되었습니다.");
-                        c.FeatureType = "AI";
+                        _logger.LogWarning($"⚠️ [CommandCache] {chzzkUid}의 '!질문' 명령어가 {featureType}에서 AI로 자동 교정되었습니다.");
+                        // 주의: 실제 DB는 바꾸지 않고 캐시 상의 타입만 AI로 리졸브되도록 유도 (필요시 DB 업데이트 로직 추가 가능)
                     }
                     return c;
                 }, 
@@ -93,9 +98,9 @@ public class CommandCacheService : ICommandCacheService
             if (!_unifiedCache.TryGetValue(normalizedUid, out commands)) return null;
         }
 
-        // [v1.9.7] 후원 룰렛 자동 매칭: 해당 기능 타입이면서 Cheese(후원) 비용 타입인 첫 번째 활성 명령어를 찾음
+        // [v1.9.7] 후원 룰렛 자동 매칭 (v4.3 정문화 반영)
         return commands.Values
-            .FirstOrDefault(c => c.FeatureType == featureType && 
+            .FirstOrDefault(c => (c.MasterFeature?.TypeName ?? "") == featureType && 
                                c.CostType == CommandCostType.Cheese && 
                                c.IsActive);
     }

@@ -46,22 +46,31 @@ namespace MooldangBot.Presentation.Features.Commands
         {
             var targetUid = chzzkUid.Trim().ToLower();
             
-            // 🔍 기본 쿼리 빌드 (Id 내림차순 정렬)
+            // 🔍 기본 쿼리 빌드 (Id 내림차순 정렬) [v4.3 정문화 반영]
             var query = _db.UnifiedCommands
                 .IgnoreQueryFilters()
-                .Where(c => c.ChzzkUid == targetUid)
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid)
                 .OrderByDescending(c => c.Id);
 
             // 전체 카운트는 인풋 페이징의 totalPages 계산을 위해 필수적임
             int totalCount = await query.CountAsync();
 
-            // 🚀 오프셋 페이징 (성능을 위해 인덱스 컬럼만 우선 조회하는 등의 고도화 가능하나 현재는 표준 Skip/Take 사용)
+            // 🚀 오프셋 페이징 (v4.3 정문화 매핑)
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(c => new UnifiedCommandDto(
-                    c.Id, c.Keyword, c.Category.ToString(), c.CostType.ToString(), 
-                    c.Cost, c.FeatureType, c.ResponseText, c.TargetId, c.IsActive,
+                    c.Id, 
+                    c.Keyword, 
+                    c.MasterFeature!.Category!.Name, 
+                    c.CostType.ToString(), 
+                    c.Cost, 
+                    c.MasterFeature!.TypeName, 
+                    c.ResponseText, 
+                    c.TargetId, 
+                    c.IsActive,
                     c.RequiredRole.ToString()))
                 .ToListAsync();
 

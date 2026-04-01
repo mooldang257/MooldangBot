@@ -15,6 +15,7 @@ namespace MooldangBot.Application.Interfaces
         DbSet<AvatarSetting> AvatarSettings { get; set; }
         DbSet<ChzzkCategory> ChzzkCategories { get; set; }
         DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
+        DbSet<GlobalViewer> GlobalViewers { get; set; }
         DbSet<ViewerProfile> ViewerProfiles { get; set; }
         DbSet<Roulette> Roulettes { get; set; }
         DbSet<RouletteItem> RouletteItems { get; set; }

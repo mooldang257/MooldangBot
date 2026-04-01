@@ -37,16 +37,22 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             var omakaseItems = await _db.StreamerOmakases
                 .IgnoreQueryFilters()
-                .Where(o => o.ChzzkUid.ToLower() == targetUid).ToListAsync();
+                .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
 
             var omakaseCommands = await _db.UnifiedCommands
+                .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Where(c => c.ChzzkUid.ToLower() == targetUid && c.FeatureType == CommandFeatureTypes.Omakase)
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
                 .ToListAsync();
 
             var songCommands = await _db.UnifiedCommands
+                .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Where(c => c.ChzzkUid.ToLower() == targetUid && c.FeatureType == CommandFeatureTypes.SongRequest)
+                .Include(c => c.StreamerProfile)
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest)
                 .Select(c => new { Keyword = c.Keyword, Price = c.Cost })
                 .ToListAsync();
 
@@ -111,7 +117,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 // 1. Omakase Items Sync (1:1 PK-TargetId Policy)
                 var existingItems = await _db.StreamerOmakases
                     .IgnoreQueryFilters()
-                    .Where(o => o.ChzzkUid == targetUid).ToListAsync();
+                    .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
 
                 if (req.Omakases != null)
                 {
@@ -124,7 +130,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                         {
                             item = new StreamerOmakaseItem
                             {
-                                ChzzkUid = targetUid,
+                                StreamerProfileId = profile.Id,
                                 Icon = dto.Icon,
                                 Count = 0
                             };
@@ -148,10 +154,12 @@ namespace MooldangBot.Presentation.Features.SongBook
                     _db.StreamerOmakases.RemoveRange(toDelete);
                 }
 
-                // Sync Commands (Upsert Policy via Service)
+                // Sync Commands (v4.3 정문화 반영)
                 var existingCmds = await _db.UnifiedCommands
                     .IgnoreQueryFilters()
-                    .Where(c => c.ChzzkUid == targetUid && (c.FeatureType == CommandFeatureTypes.SongRequest || c.FeatureType == CommandFeatureTypes.Omakase))
+                    .Include(c => c.StreamerProfile)
+                    .Include(c => c.MasterFeature)
+                    .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && (c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest || c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase))
                     .ToListAsync();
 
                 // 🔍 [마스터 데이터 기반 동기화]: 기능 정의 로드
@@ -166,7 +174,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                     {
                         if (string.IsNullOrWhiteSpace(sc.Keyword)) continue;
                         
-                        var existing = existingCmds.FirstOrDefault(c => c.Keyword == sc.Keyword && c.FeatureType == CommandFeatureTypes.SongRequest);
+                        var existing = existingCmds.FirstOrDefault(c => c.Keyword == sc.Keyword && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest);
                         
                         await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
                             Id: existing?.Id,
@@ -194,7 +202,7 @@ namespace MooldangBot.Presentation.Features.SongBook
 
                     foreach (var uk in uniqueKeywords)
                     {
-                        var existing = existingCmds.FirstOrDefault(c => string.Equals(c.Keyword, uk.Keyword, StringComparison.OrdinalIgnoreCase) && c.FeatureType == CommandFeatureTypes.Omakase);
+                        var existing = existingCmds.FirstOrDefault(c => string.Equals(c.Keyword, uk.Keyword, StringComparison.OrdinalIgnoreCase) && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase);
 
                         await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
                             Id: existing?.Id,

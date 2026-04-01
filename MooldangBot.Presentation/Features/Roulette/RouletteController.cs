@@ -91,12 +91,14 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             var RawData = await _db.Roulettes
                 .IgnoreQueryFilters()
-                .Where(R => R.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId))
-                .Join(_db.UnifiedCommands.IgnoreQueryFilters(),
+                .Include(R => R.StreamerProfile)
+                .Where(R => R.StreamerProfile!.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId))
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters()
+                    .Include(c => c.MasterFeature),
                     r => r.Id,
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
-                .Where(x => x.Command.FeatureType == "Roulette")
+                .Where(x => x.Command.MasterFeature!.TypeName == "Roulette")
                 .OrderByDescending(x => x.Roulette.Id)
                 .Take(PageSize + 1)
                 .Select(x => new RouletteSummaryDto
@@ -126,16 +128,18 @@ namespace MooldangBot.Presentation.Features.Roulette
             var consolidated = await _db.Roulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.Items)
-                .Where(r => r.Id == Id && r.ChzzkUid == chzzkUid)
-                .Join(_db.UnifiedCommands.IgnoreQueryFilters(),
+                .Include(R => R.StreamerProfile)
+                .Where(r => r.Id == Id && r.StreamerProfile!.ChzzkUid == chzzkUid)
+                .Join(_db.UnifiedCommands.IgnoreQueryFilters()
+                    .Include(c => c.MasterFeature),
                     r => r.Id,
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
-                .Where(x => x.Command.FeatureType == "Roulette")
+                .Where(x => x.Command.MasterFeature!.TypeName == "Roulette")
                 .Select(x => new 
                 {
                     Id = x.Roulette.Id,
-                    ChzzkUid = x.Roulette.ChzzkUid,
+                    ChzzkUid = x.Roulette.StreamerProfile!.ChzzkUid,
                     Name = x.Roulette.Name,
                     UpdatedAt = x.Roulette.UpdatedAt,
                     Items = x.Roulette.Items,
@@ -160,7 +164,12 @@ namespace MooldangBot.Presentation.Features.Roulette
             try
             {
                 RouletteObj.Id = 0;
-                RouletteObj.ChzzkUid = chzzkUid;
+                
+                var streamer = await _db.StreamerProfiles.IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+                if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
+
+                RouletteObj.StreamerProfileId = streamer.Id;
                 RouletteObj.UpdatedAt = KstClock.Now;
                 
                 if (!RouletteObj.Items.Any() || RouletteObj.Items.Sum(I => I.Probability) <= 0)
@@ -191,7 +200,8 @@ namespace MooldangBot.Presentation.Features.Roulette
                 var RouletteObj = await _db.Roulettes
                     .IgnoreQueryFilters()
                     .Include(R => R.Items)
-                    .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
+                    .Include(R => R.StreamerProfile)
+                    .FirstOrDefaultAsync(R => R.Id == Id && R.StreamerProfile!.ChzzkUid == chzzkUid);
 
                 if (RouletteObj == null) return NotFound();
 
@@ -207,10 +217,14 @@ namespace MooldangBot.Presentation.Features.Roulette
                 }
                 RouletteObj.Items = req.Items;
 
-                // 2. [추가] UnifiedCommand 정보 역동기화 (관리 페이지 편집 대응)
+                // 2. [추가] UnifiedCommand 정보 역동기화 (v4.3 정문화 반영)
                 var UnifiedCmd = await _db.UnifiedCommands
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(c => c.TargetId == Id && c.ChzzkUid == chzzkUid && c.FeatureType == "Roulette");
+                    .Include(c => c.StreamerProfile)
+                    .Include(c => c.MasterFeature)
+                    .FirstOrDefaultAsync(c => c.TargetId == Id 
+                                           && c.StreamerProfile!.ChzzkUid == chzzkUid 
+                                           && c.MasterFeature!.TypeName == "Roulette");
 
                 if (UnifiedCmd != null)
                 {
@@ -235,9 +249,17 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpPatch("{chzzkUid}/{Id}/status")]
         public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool IsActive)
         {
-            var AffectedRows = await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
+            // [v4.3] 정문화된 필터링: StreamerProfileId와 MasterFeature를 활용한 벌크 업데이트
+            var streamer = await _db.StreamerProfiles.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+
+            if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
+
+            var AffectedRows = await RelationalQueryableExtensions.ExecuteUpdateAsync(
                 _db.UnifiedCommands.IgnoreQueryFilters()
-                    .Where(C => C.TargetId == Id && C.ChzzkUid == chzzkUid && C.FeatureType == "Roulette"),
+                    .Where(C => C.TargetId == Id 
+                             && C.StreamerProfileId == streamer.Id 
+                             && C.MasterFeature!.TypeName == "Roulette"),
                 S => S.SetProperty(C => C.IsActive, IsActive));
 
             return AffectedRows == 0 ? NotFound() : Ok();
@@ -265,7 +287,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             var AffectedRows = await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
                 _db.RouletteItems.IgnoreQueryFilters()
-                    .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.ChzzkUid == chzzkUid),
+                    .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.StreamerProfile!.ChzzkUid == chzzkUid),
                 S => S.SetProperty(I => I.IsActive, IsActive));
 
             if (AffectedRows > 0)
@@ -286,7 +308,8 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             var RouletteObj = await _db.Roulettes
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(R => R.Id == Id && R.ChzzkUid == chzzkUid);
+                .Include(R => R.StreamerProfile)
+                .FirstOrDefaultAsync(R => R.Id == Id && R.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (RouletteObj == null) return NotFound();
 
@@ -302,7 +325,8 @@ namespace MooldangBot.Presentation.Features.Roulette
             var query = _db.RouletteLogs
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .Where(l => l.ChzzkUid == chzzkUid);
+                .Include(l => l.StreamerProfile)
+                .Where(l => l.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (status.HasValue) query = query.Where(l => l.Status == status.Value);
             if (lastId > 0) query = query.Where(l => l.Id < lastId);
@@ -334,7 +358,8 @@ namespace MooldangBot.Presentation.Features.Roulette
             var streamerUid = User.FindFirst("StreamerId")?.Value ?? "None";
             var log = await _db.RouletteLogs
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(l => l.Id == id && l.ChzzkUid == streamerUid);
+                .Include(l => l.StreamerProfile)
+                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == streamerUid);
 
             if (log == null) return NotFound("로그를 찾을 수 없거나 접근 권한이 없습니다.");
 

@@ -22,7 +22,8 @@ public class SongBookRepository : ISongBookRepository
         // private static readonly byte Mask = 0x07;
         var query = _context.SongBooks
             .AsNoTracking()
-            .Where(s => s.ChzzkUid == streamerChzzkUid);
+            .Include(s => s.StreamerProfile)
+            .Where(s => s.StreamerProfile!.ChzzkUid == streamerChzzkUid);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

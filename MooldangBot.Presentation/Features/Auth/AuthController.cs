@@ -402,7 +402,7 @@ namespace MooldangBot.Presentation.Features.Auth
 
                     _db.SonglistSessions.Add(new SonglistSession 
                     { 
-                        ChzzkUid = chzzkUid, 
+                        StreamerProfile = streamer, 
                         StartedAt = KstClock.Now,
                         IsActive = true 
                     });
@@ -444,10 +444,13 @@ namespace MooldangBot.Presentation.Features.Auth
                 }
                 else
                 {
-                    // 매니저 권한 조회
+                    // [v4.7 정규화] 매니저 권한 조회: 전역 시청자 해시 매핑 및 스트리머 프로필 조인
+                    var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
                     var managedChannels = await _db.StreamerManagers
-                        .Where(m => m.ManagerChzzkUid == chzzkUid)
-                        .Select(m => m.StreamerChzzkUid)
+                        .Include(m => m.StreamerProfile)
+                        .Include(m => m.GlobalViewer)
+                        .Where(m => m.GlobalViewer!.ViewerUidHash == viewerHash)
+                        .Select(m => m.StreamerProfile!.ChzzkUid)
                         .ToListAsync();
 
                     if (managedChannels.Any())

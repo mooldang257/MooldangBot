@@ -38,33 +38,41 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        // 1. [검색 엔진]: 메시지 시작 부분과 일치하는 통합 명령어 조회
-        var triggerCmd = await db.UnifiedCommands
+        // 1. [검색 엔진]: 메시지 시작 부분과 일치하는 통합 명령어 조회 (v4.3 정문화 반영)
+        // [물멍의 지리]: 복합 인덱스 효율을 위해 DB에서는 스트리머 필터링만 수행하고, 
+        // 키워드 매칭은 긴 단어 우선순위 및 대소문자 구분을 위해 애플리케이션 레이어에서 처리합니다.
+        var allActiveCommands = await db.UnifiedCommands
             .AsNoTracking()
-            .Where(c => c.ChzzkUid == notification.Profile.ChzzkUid && c.IsActive)
-            .OrderByDescending(c => c.Keyword.Length) // 긴 키워드 우선 (예: !신청곡 vs !신청)
-            .FirstOrDefaultAsync(c => msg.StartsWith(c.Keyword), cancellationToken);
+            .Include(c => c.MasterFeature)
+            .Where(c => c.StreamerProfile!.ChzzkUid == notification.Profile.ChzzkUid && c.IsActive)
+            .ToListAsync(cancellationToken);
 
-        if (triggerCmd == null) return; // 등록된 명령어가 아님
+        var triggerCmd = allActiveCommands
+            .OrderByDescending(c => c.Keyword.Length)
+            .FirstOrDefault(c => msg.StartsWith(c.Keyword, StringComparison.OrdinalIgnoreCase));
 
-        // 기능 타입 확인 (노래 신청이거나 오마카세인 경우만 처리)
-        bool isSongRequestFeature = triggerCmd.FeatureType == CommandFeatureTypes.SongRequest;
-        bool isOmakaseFeature = triggerCmd.FeatureType == CommandFeatureTypes.Omakase;
+        if (triggerCmd == null) return; 
+
+        var featureType = triggerCmd.MasterFeature?.TypeName ?? "";
+        bool isSongRequestFeature = featureType == CommandFeatureTypes.SongRequest;
+        bool isOmakaseFeature = featureType == CommandFeatureTypes.Omakase;
 
         if (!isSongRequestFeature && !isOmakaseFeature) return;
 
-        // [v4.5.7] 정교한 로깅: 실제로 노래 신청/오마카세 관련 명령어가 확인된 시점에만 기록함
-        _logger.LogInformation($"[노래 신청 감지] {notification.Username}: {msg} (Type: {triggerCmd.FeatureType})");
+        _logger.LogInformation($"[노래 신청 감지] {notification.Username}: {msg} (Type: {featureType})");
 
         if (isSongRequestFeature)
         {
             var activeSession = await db.SonglistSessions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.ChzzkUid == notification.Profile.ChzzkUid && s.IsActive, cancellationToken);
+                .Include(s => s.StreamerProfile)
+                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, cancellationToken);
                 
             if (activeSession == null)
             {
-                var hasAnySession = await db.SonglistSessions.AnyAsync(s => s.ChzzkUid == notification.Profile.ChzzkUid, cancellationToken);
+                var hasAnySession = await db.SonglistSessions
+                    .Include(s => s.StreamerProfile)
+                    .AnyAsync(s => s.StreamerProfileId == notification.Profile.Id, cancellationToken);
                 if (hasAnySession) return;
             }
         }
@@ -92,7 +100,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
             // [v1.5-Refine] MenuId 대신 PK(Id) 기반 1:1 매핑으로 단순화
             int targetId = triggerCmd.TargetId ?? 0;
             var selected = await db.StreamerOmakases
-                .FirstOrDefaultAsync(o => o.ChzzkUid == notification.Profile.ChzzkUid && o.Id == targetId, cancellationToken);
+                .FirstOrDefaultAsync(o => o.StreamerProfileId == notification.Profile.Id && o.Id == targetId, cancellationToken);
 
             if (selected == null)
             {
@@ -109,11 +117,13 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         {
             var newRequest = new MooldangBot.Domain.Entities.SongQueue
             {
-                ChzzkUid = notification.Profile.ChzzkUid,
+                StreamerProfileId = notification.Profile.Id,
                 Title = songTitle,
                 Status = "Pending",
                 CreatedAt = KstClock.Now,
-                SortOrder = await db.SongQueues.Where(q => q.ChzzkUid == notification.Profile.ChzzkUid).CountAsync(cancellationToken) + 1
+                SortOrder = await db.SongQueues
+                    .Include(q => q.StreamerProfile)
+                    .Where(q => q.StreamerProfileId == notification.Profile.Id).CountAsync(cancellationToken) + 1
             };
 
             db.SongQueues.Add(newRequest);

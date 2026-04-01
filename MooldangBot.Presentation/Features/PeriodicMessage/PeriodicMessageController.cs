@@ -23,8 +23,8 @@ namespace MooldangAPI.Controllers
         public async Task<IActionResult> GetList(string chzzkUid)
         {
             var list = await _db.PeriodicMessages
-                .IgnoreQueryFilters() // 💡 [마스터 대응] 필터 우회
-                .Where(m => m.ChzzkUid == chzzkUid)
+                .Include(m => m.StreamerProfile)
+                .Where(m => m.StreamerProfile!.ChzzkUid == chzzkUid)
                 .OrderBy(m => m.Id)
                 .Select(m => new PeriodicMessageDto
                 {
@@ -45,7 +45,8 @@ namespace MooldangAPI.Controllers
             {
                 var existing = await _db.PeriodicMessages
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(m => m.Id == req.Id && m.ChzzkUid == chzzkUid);
+                    .Include(m => m.StreamerProfile)
+                    .FirstOrDefaultAsync(m => m.Id == req.Id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                     
                 if (existing != null)
                 {
@@ -56,9 +57,12 @@ namespace MooldangAPI.Controllers
             }
             else
             {
+                var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                if (profile == null) return NotFound("Profile not found");
+
                 _db.PeriodicMessages.Add(new PeriodicMessage
                 {
-                    ChzzkUid = chzzkUid, // 🛡️ 경로상의 UID로 강제 고정
+                    StreamerProfileId = profile.Id,
                     IntervalMinutes = req.IntervalMinutes,
                     Message = req.Message,
                     IsEnabled = req.IsEnabled
@@ -74,7 +78,8 @@ namespace MooldangAPI.Controllers
         {
             var item = await _db.PeriodicMessages
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(m => m.Id == id && m.ChzzkUid == chzzkUid);
+                .Include(m => m.StreamerProfile)
+                .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
             if (item != null)
             {
@@ -89,7 +94,8 @@ namespace MooldangAPI.Controllers
         {
             var item = await _db.PeriodicMessages
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(m => m.Id == id && m.ChzzkUid == chzzkUid);
+                .Include(m => m.StreamerProfile)
+                .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
             if (item != null)
             {

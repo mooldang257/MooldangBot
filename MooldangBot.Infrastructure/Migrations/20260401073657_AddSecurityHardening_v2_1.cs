@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,9 +10,6 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_viewerprofiles_StreamerChzzkUid_ViewerUid",
-                table: "viewerprofiles");
 
             migrationBuilder.AlterColumn<string>(
                 name: "ViewerUid",
@@ -74,11 +71,6 @@ namespace MooldangBot.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_viewerprofiles_StreamerChzzkUid_ViewerUid",
-                table: "viewerprofiles",
-                columns: new[] { "StreamerChzzkUid", "ViewerUid" },
-                unique: true);
         }
     }
 }

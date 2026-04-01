@@ -103,8 +103,15 @@ public partial class BroadcastScribe : IBroadcastScribe
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
+        // [정규화] ChzzkUid 문자열로 실시간 프로필 ID 조회
+        var profile = await db.StreamerProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+        if (profile == null) return 0; // 프로필이 없으면 세션 생성 불가
+
         var session = await db.BroadcastSessions
-            .Where(s => s.ChzzkUid == chzzkUid && s.IsActive)
+            .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
             .OrderByDescending(s => s.StartTime)
             .FirstOrDefaultAsync();
 
@@ -112,7 +119,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         {
             session = new BroadcastSession
             {
-                ChzzkUid = chzzkUid,
+                StreamerProfileId = profile.Id,
                 StartTime = KstClock.Now,
                 LastHeartbeatAt = KstClock.Now,
                 IsActive = true
@@ -137,7 +144,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var session = await db.BroadcastSessions
-            .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid && s.IsActive);
+            .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid && s.IsActive);
 
         if (session == null) return null;
 

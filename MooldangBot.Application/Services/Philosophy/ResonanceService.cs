@@ -35,10 +35,20 @@ public class ResonanceService : IResonanceService
     {
         // 0. [스트리머의 통제권]: 설정 로드
         double sensitivity = 1.0;
+        int profileId = 0;
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var setting = await db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+            
+            // [정규화] ChzzkUid 문자열로 실시간 프로필 ID 조회
+            var profile = await db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+            if (profile == null) return false;
+            profileId = profile.Id;
+
+            var setting = await db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfileId == profileId);
             if (setting != null)
             {
                 if (!setting.IsIamfEnabled) return false; // [거울의 법칙]: 비활성화 시 침묵
@@ -67,12 +77,13 @@ public class ResonanceService : IResonanceService
         // 5. [피닉스의 눈금] 버퍼 기록 (v3.6.3: 벌크 저장으로 전환)
         _buffer.AddVibrationLog(new IamfVibrationLog
         {
-            ChzzkUid = chzzkUid,
+            StreamerProfileId = profileId,
             RawHz = targetVibration.Value,
             EmaHz = newEma,
             StabilityScore = _lastStability,
             CreatedAt = KstClock.Now
         });
+
 
         _logger.LogInformation($"[하모니 조율] {chzzkUid} - Raw: {targetVibration.Value}, EMA: {newEma:F3}, Stability: {_lastStability:P}");
 

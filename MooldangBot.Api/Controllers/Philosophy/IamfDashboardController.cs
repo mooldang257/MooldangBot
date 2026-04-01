@@ -32,7 +32,7 @@ public class IamfDashboardController : ControllerBase
         var parhos = await _resonance.GetCurrentParhosStateAsync();
         
         // [거울의 법칙]: 설정 로드
-        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
         double opacity = setting?.OverlayOpacity ?? 0.5;
 
         return Ok(new IamfDashboardStatus(
@@ -81,7 +81,7 @@ public class IamfDashboardController : ControllerBase
     public async Task<IActionResult> GetTrends([FromQuery] string chzzkUid, [FromQuery] int limit = 50)
     {
         var trends = await _db.IamfVibrationLogs
-            .Where(v => v.ChzzkUid == chzzkUid)
+            .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
             .OrderByDescending(v => v.CreatedAt)
             .Take(limit)
             .Select(v => new {
@@ -101,7 +101,7 @@ public class IamfDashboardController : ControllerBase
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings([FromQuery] string chzzkUid = "SYSTEM")
     {
-        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
         
         // 설정이 없으면 기본값 반환
         if (setting == null) 
@@ -135,13 +135,21 @@ public class IamfDashboardController : ControllerBase
             return BadRequest(new { Error = "[오시리스의 거절] 투명도는 0.0에서 1.0 사이의 값이어야 합니다." });
 
         // 2. [기록 검색 및 생성]
+        // [정규화] ChzzkUid 문자열로 실시간 프로필 조회
+        var profile = await _db.StreamerProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid);
+
+        if (profile == null)
+            return BadRequest(new { Error = "[오시리스의 거절] 해당 스트리머 프로필을 찾을 수 없습니다." });
+
         var setting = await _db.IamfStreamerSettings
-                               .FirstOrDefaultAsync(s => s.ChzzkUid == request.ChzzkUid);
+                               .FirstOrDefaultAsync(s => s.StreamerProfileId == profile.Id);
         
         if (setting == null)
         {
             // 최초 설정 시 새로운 레코드 생성
-            setting = new IamfStreamerSetting { ChzzkUid = request.ChzzkUid };
+            setting = new IamfStreamerSetting { StreamerProfileId = profile.Id };
             _db.IamfStreamerSettings.Add(setting);
         }
 

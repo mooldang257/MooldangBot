@@ -76,7 +76,7 @@ namespace MooldangBot.Presentation.Features.ChatPoints
             // ⭐ [권한 대응] 채널 매니저 권한이 확인된 경우 전역 쿼리 필터를 무시하고 해당 채널의 시청자 목록을 가져옵니다.
             var viewers = await _context.ViewerProfiles
                 .IgnoreQueryFilters()
-                .Where(v => v.StreamerChzzkUid == chzzkUid)
+                .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
                 .OrderByDescending(v => v.Points) // 포인트 높은 순 정렬
                 .Select(v => new {
                     nickname = v.Nickname,

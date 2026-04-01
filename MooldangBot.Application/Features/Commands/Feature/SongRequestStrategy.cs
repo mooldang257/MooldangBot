@@ -41,7 +41,7 @@ public class SongRequestStrategy(
 
             // 2.1 송리스트 세션 활성화 여부 확인
             var activeSession = await db.SonglistSessions
-                .FirstOrDefaultAsync(s => s.ChzzkUid == notification.Profile.ChzzkUid && s.IsActive, ct);
+                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, ct);
 
             if (activeSession == null)
             {
@@ -49,10 +49,16 @@ public class SongRequestStrategy(
                 return CommandExecutionResult.Failure("송리스트 비활성화 상태", shouldRefund: true);
             }
 
-            // 2.2 곡 신청 큐에 저장
+            // 2.2 [v4.5] 신청자(GlobalViewer) 전조 확인
+            var viewer = await db.GlobalViewers
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(g => g.ViewerUidHash == notification.SenderId, ct);
+
+            // 2.3 곡 신청 큐에 저장
             var song = new SongQueue
             {
-                ChzzkUid = notification.Profile.ChzzkUid,
+                StreamerProfileId = notification.Profile.Id,
+                GlobalViewerId = viewer?.Id,
                 Title = songTitle,
                 Status = "Pending",
                 CreatedAt = KstClock.Now

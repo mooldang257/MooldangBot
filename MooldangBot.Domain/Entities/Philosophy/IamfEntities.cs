@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities.Philosophy;
@@ -70,14 +71,17 @@ public class IamfParhosCycle
 /// <summary>
 /// [피닉스의 눈금]: 시스템 진동수의 미세한 변화와 안정도를 기록하는 시계열 엔티티입니다.
 /// </summary>
+[Index(nameof(StreamerProfileId), nameof(CreatedAt))]
 public class IamfVibrationLog
 {
     [Key]
     public long Id { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string ChzzkUid { get; set; } = string.Empty; // [오시리스의 격리]
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
 
     public double RawHz { get; set; }                    // 실제 계산된 진동수
 
@@ -90,9 +94,13 @@ public class IamfVibrationLog
 
 public class IamfStreamerSetting
 {
+    // [정규화] PK이자 FK로 활용하여 완벽한 1:1 관계 구성
     [Key]
-    [MaxLength(50)]
-    public string ChzzkUid { get; set; } = string.Empty;
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
 
     public bool IsIamfEnabled { get; set; } = true;
 
@@ -116,14 +124,17 @@ public class IamfStreamerSetting
 /// <summary>
 /// [주인의 목소리]: 스트리머가 봇에게 주입한 특정 상황에 대한 '의도된 지식'을 저장합니다.
 /// </summary>
+[Index(nameof(StreamerProfileId), nameof(Keyword))]
 public class StreamerKnowledge
 {
     [Key]
     public int Id { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string ChzzkUid { get; set; } = string.Empty;
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
 
     [Required]
     [MaxLength(100)]

@@ -49,11 +49,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<int>("DisappearTimeSeconds")
                         .HasColumnType("int");
 
@@ -74,13 +69,16 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("WalkingImageUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid")
+                    b.HasIndex("StreamerProfileId")
                         .IsUnique();
 
                     b.ToTable("avatarsettings", (string)null);
@@ -139,6 +137,31 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("chzzkcategoryaliases", (string)null);
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.GlobalViewer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ViewerUid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ViewerUidHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ViewerUidHash")
+                        .IsUnique();
+
+                    b.ToTable("globalviewers", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Master_CommandCategory", b =>
@@ -376,7 +399,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "primary",
                             Description = "보유 포인트",
                             Keyword = "{포인트}",
-                            QueryString = "SELECT CAST(Point AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                            QueryString = "SELECT CAST(vp.Points AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -384,7 +407,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "success",
                             Description = "시청자 닉네임",
                             Keyword = "{닉네임}",
-                            QueryString = "SELECT ViewerName FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                            QueryString = "SELECT vp.Nickname FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -416,7 +439,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "success",
                             Description = "연속 출석한 일수",
                             Keyword = "{연속출석일수}",
-                            QueryString = "SELECT CAST(ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                            QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -424,7 +447,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "info",
                             Description = "누적 출석한 횟수",
                             Keyword = "{누적출석일수}",
-                            QueryString = "SELECT CAST(AttendanceCount AS CHAR) FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                            QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -432,7 +455,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "secondary",
                             Description = "최근 출석 날짜",
                             Keyword = "{마지막출석일}",
-                            QueryString = "SELECT DATE_FORMAT(LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles WHERE StreamerChzzkUid = @streamerUid AND ViewerUid = @viewerUid"
+                            QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -452,11 +475,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<string>("ConfigJson")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -469,12 +487,15 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("StreamerProfileId");
 
                     b.ToTable("overlaypresets", (string)null);
                 });
@@ -486,11 +507,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .UseCollation("utf8mb4_unicode_ci");
 
                     b.Property<int>("IntervalMinutes")
                         .HasColumnType("int");
@@ -505,9 +521,12 @@ namespace MooldangBot.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("StreamerProfileId");
 
                     b.ToTable("periodicmessages", (string)null);
                 });
@@ -519,10 +538,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("datetime(6)");
@@ -536,6 +551,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("TopEmotesJson")
                         .HasColumnType("longtext");
 
@@ -546,6 +564,8 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("StreamerProfileId", "IsActive");
 
                     b.ToTable("broadcastsessions", (string)null);
                 });
@@ -636,9 +656,8 @@ namespace MooldangBot.Infrastructure.Migrations
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", b =>
                 {
-                    b.Property<string>("ChzzkUid")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsIamfEnabled")
                         .HasColumnType("tinyint(1)");
@@ -658,7 +677,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<double>("SensitivityMultiplier")
                         .HasColumnType("double");
 
-                    b.HasKey("ChzzkUid");
+                    b.HasKey("StreamerProfileId");
 
                     b.ToTable("iamf_streamer_settings", (string)null);
                 });
@@ -670,11 +689,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -688,7 +702,12 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<double>("StabilityScore")
                         .HasColumnType("double");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StreamerProfileId", "CreatedAt");
 
                     b.ToTable("iamf_vibration_logs", (string)null);
                 });
@@ -700,11 +719,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -721,9 +735,14 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("StreamerKnowledges");
+                    b.HasIndex("StreamerProfileId", "Keyword");
+
+                    b.ToTable("streamerknowledges", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
@@ -735,16 +754,15 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .HasColumnType("varchar(255)")
-                        .UseCollation("utf8mb4_unicode_ci")
-                        .HasAnnotation("Relational:JsonPropertyName", "chzzkUid");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "name");
+
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int")
+                        .HasAnnotation("Relational:JsonPropertyName", "streamerProfileId");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -752,9 +770,9 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("StreamerProfileId");
 
-                    b.HasIndex("ChzzkUid", "Id")
+                    b.HasIndex("StreamerProfileId", "Id")
                         .IsDescending(false, true);
 
                     b.ToTable("roulettes", (string)null);
@@ -818,14 +836,11 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("GlobalViewerId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsMission")
                         .HasColumnType("tinyint(1)");
@@ -841,6 +856,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("RouletteId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("RouletteItemId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RouletteName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -849,26 +867,26 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ViewerNickname")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .UseCollation("utf8mb4_unicode_ci");
 
-                    b.Property<string>("ViewerUid")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ViewerUidHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("GlobalViewerId");
 
                     b.HasIndex("RouletteId");
 
-                    b.HasIndex("ChzzkUid", "ViewerUidHash");
+                    b.HasIndex("RouletteItemId");
 
-                    b.HasIndex("ChzzkUid", "Status", "Id")
+                    b.HasIndex("StreamerProfileId", "GlobalViewerId");
+
+                    b.HasIndex("StreamerProfileId", "Status", "Id")
                         .IsDescending(false, false, true);
 
                     b.ToTable("roulettelogs", (string)null);
@@ -879,14 +897,11 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("GlobalViewerId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("tinyint(1)");
@@ -901,6 +916,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("ScheduledTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -910,12 +928,11 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("ViewerUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("GlobalViewerId");
+
+                    b.HasIndex("StreamerProfileId");
 
                     b.HasIndex("IsCompleted", "ScheduledTime");
 
@@ -930,11 +947,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<string>("ConfigJson")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -947,6 +959,9 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -954,7 +969,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("StreamerProfileId");
 
                     b.ToTable("sharedcomponents", (string)null);
                 });
@@ -971,16 +986,14 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -995,7 +1008,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid", "Id")
+                    b.HasIndex("StreamerProfileId", "Id")
                         .IsDescending(false, true);
 
                     b.ToTable("songbooks", (string)null);
@@ -1013,14 +1026,11 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("GlobalViewerId")
+                        .HasColumnType("int");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
@@ -1030,6 +1040,9 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1037,11 +1050,13 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("GlobalViewerId");
 
-                    b.HasIndex("ChzzkUid", "Id");
+                    b.HasIndex("StreamerProfileId");
 
-                    b.HasIndex("ChzzkUid", "Status", "CreatedAt");
+                    b.HasIndex("StreamerProfileId", "Id");
+
+                    b.HasIndex("StreamerProfileId", "Status", "CreatedAt");
 
                     b.ToTable("songqueues", (string)null);
                 });
@@ -1053,11 +1068,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("CompleteCount")
                         .HasColumnType("int");
@@ -1074,9 +1084,12 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid", "IsActive");
+                    b.HasIndex("StreamerProfileId", "IsActive");
 
                     b.ToTable("songlistsessions", (string)null);
                 });
@@ -1092,26 +1105,23 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("ManagerChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
+                    b.Property<int>("GlobalViewerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
-                    b.Property<string>("StreamerChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ManagerChzzkUid");
+                    b.HasIndex("GlobalViewerId");
+
+                    b.HasIndex("StreamerProfileId", "GlobalViewerId")
+                        .IsUnique();
 
                     b.ToTable("streamermanagers", (string)null);
                 });
@@ -1124,12 +1134,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<int>("Count")
                         .IsConcurrencyToken()
                         .HasColumnType("int");
@@ -1139,9 +1143,12 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid");
+                    b.HasIndex("StreamerProfileId");
 
                     b.ToTable("streameromakases", (string)null);
                 });
@@ -1161,7 +1168,6 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("ApiClientSecret")
-                        .HasMaxLength(200)
                         .HasColumnType("longtext");
 
                     b.Property<string>("ApiRedirectUrl")
@@ -1304,17 +1310,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("chzzkuid")
-                        .UseCollation("utf8mb4_unicode_ci");
-
                     b.Property<int>("Cost")
                         .HasColumnType("int");
 
@@ -1324,11 +1319,6 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("FeatureType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
@@ -1340,6 +1330,9 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnName("keyword")
                         .UseCollation("utf8mb4_unicode_ci");
 
+                    b.Property<int>("MasterCommandFeatureId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RequiredRole")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -1349,6 +1342,9 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("TargetId")
                         .HasColumnType("int");
 
@@ -1357,10 +1353,12 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChzzkUid", "Keyword")
+                    b.HasIndex("MasterCommandFeatureId");
+
+                    b.HasIndex("StreamerProfileId", "Keyword")
                         .IsUnique();
 
-                    b.HasIndex("ChzzkUid", "TargetId");
+                    b.HasIndex("StreamerProfileId", "TargetId");
 
                     b.ToTable("unifiedcommands", (string)null);
                 });
@@ -1380,42 +1378,46 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("ConsecutiveAttendanceCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("GlobalViewerId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("LastAttendanceAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Nickname")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("varchar(100)")
+                        .UseCollation("utf8mb4_unicode_ci");
 
                     b.Property<int>("Points")
                         .IsConcurrencyToken()
                         .HasColumnType("int");
 
-                    b.Property<string>("StreamerChzzkUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .UseCollation("utf8mb4_unicode_ci");
-
-                    b.Property<string>("ViewerUid")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ViewerUidHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StreamerChzzkUid", "Points");
+                    b.HasIndex("GlobalViewerId");
 
-                    b.HasIndex("StreamerChzzkUid", "ViewerUidHash")
+                    b.HasIndex("StreamerProfileId", "GlobalViewerId")
                         .IsUnique();
 
+                    b.HasIndex("StreamerProfileId", "Points");
+
                     b.ToTable("viewerprofiles", (string)null);
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.AvatarSetting", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithOne()
+                        .HasForeignKey("MooldangBot.Domain.Entities.AvatarSetting", "StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategoryAlias", b =>
@@ -1440,6 +1442,83 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("MooldangBot.Domain.Entities.OverlayPreset", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.PeriodicMessage", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithOne()
+                        .HasForeignKey("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", "StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfVibrationLog", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.StreamerKnowledge", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
             modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteItem", b =>
                 {
                     b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
@@ -1449,6 +1528,170 @@ namespace MooldangBot.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Roulette");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteLog", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                        .WithMany()
+                        .HasForeignKey("GlobalViewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MooldangBot.Domain.Entities.RouletteItem", "RouletteItem")
+                        .WithMany()
+                        .HasForeignKey("RouletteItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GlobalViewer");
+
+                    b.Navigation("RouletteItem");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                        .WithMany()
+                        .HasForeignKey("GlobalViewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GlobalViewer");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SongQueue", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                        .WithMany()
+                        .HasForeignKey("GlobalViewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GlobalViewer");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SonglistSession", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                        .WithMany()
+                        .HasForeignKey("GlobalViewerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GlobalViewer");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerOmakaseItem", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.UnifiedCommand", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.Master_CommandFeature", "MasterFeature")
+                        .WithMany()
+                        .HasForeignKey("MasterCommandFeatureId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MasterFeature");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerProfile", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                        .WithMany()
+                        .HasForeignKey("GlobalViewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GlobalViewer");
+
+                    b.Navigation("StreamerProfile");
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategory", b =>

@@ -2,10 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using MooldangBot.Domain.Common;
 
-namespace MooldangBot.Domain.Entities
-{
-    [Index(nameof(ChzzkUid), IsUnique = true)]
-    public class StreamerProfile
+namespace MooldangBot.Domain.Entities;
+
+[Index(nameof(ChzzkUid), IsUnique = true)]
+public class StreamerProfile
     {
         [Key]
         public int Id { get; set; }
@@ -30,7 +30,6 @@ namespace MooldangBot.Domain.Entities
         // [추가] 1. API 키 보관 (명세서: 보안 관리를 위해 DB에 저장)
         public string? ApiClientId { get; set; }
 
-        [MaxLength(200)]
         public string? ApiClientSecret { get; set; }
 
         [MaxLength(500)]
@@ -87,5 +86,4 @@ namespace MooldangBot.Domain.Entities
         public bool IsOmakaseEnabled { get; set; } = true;
 
         public int? ActiveOverlayPresetId { get; set; }
-    }
-}
+}

@@ -1,4 +1,7 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities.Philosophy;
@@ -58,10 +61,19 @@ public record LightGate(
 /// <summary>
 /// [오시리스의 기록관]: 단일 방송 세션의 시작부터 끝까지의 통계 데이터를 담는 유기적 기록체입니다.
 /// </summary>
+[Index(nameof(StreamerProfileId), nameof(IsActive))]
 public class BroadcastSession
 {
+    [Key]
     public int Id { get; set; }
-    public string ChzzkUid { get; set; } = string.Empty;
+
+    // [정규화] ChzzkUid -> StreamerProfileId
+    [Required]
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
+
     public KstClock StartTime { get; set; }
     public KstClock? EndTime { get; set; }
     public KstClock LastHeartbeatAt { get; set; }
@@ -72,3 +84,4 @@ public class BroadcastSession
     public string? TopEmotesJson { get; set; }   // [침묵 속의 미소]: 이모티콘 사용 빈도
     public bool IsActive { get; set; } = true;
 }
+

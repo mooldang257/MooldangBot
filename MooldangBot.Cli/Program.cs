@@ -12,6 +12,7 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Interfaces;
 using DotNetEnv;
+using Microsoft.AspNetCore.DataProtection;
 
 string Mask(string s) => s.Length > 4 ? s[..4] + "****" : "****";
 
@@ -105,6 +106,11 @@ services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"), 
         mySqlOptions => mySqlOptions.EnableRetryOnFailure()));
 
+// 🔐 [보안 강화]: API 서버와 동일한 방식으로 데이터 보호 키 저장소 및 서비스 등록
+services.AddDataProtection()
+    .SetApplicationName("MooldangBot")
+    .PersistKeysToDbContext<AppDbContext>();
+
 var serviceProvider = services.BuildServiceProvider();
 var db = serviceProvider.GetRequiredService<AppDbContext>();
 
@@ -188,14 +194,18 @@ try
     Console.WriteLine("\n🧩 [4/4] 통합 명령어(UnifiedCommands) 정합성 전수 보정 중...");
     var profiles = await db.StreamerProfiles.IgnoreQueryFilters().ToListAsync();
     int provisionCount = 0;
+
+    // [v4.3] 정문화된 기능을 캐싱하여 반복 쿼리 방지
+    var allFeatures = await db.MasterCommandFeatures.AsNoTracking().ToListAsync();
+
     foreach (var p in profiles) {
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, p.SongCommand ?? "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, p.SongCommand ?? "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
         
         // [매니저 전용 명령어 추가]
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!공지", "System", "None", 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!방제", "System", "None", 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p.ChzzkUid, "!카테고리", "System", "None", 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!공지", "System", "None", 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!방제", "System", "None", 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!카테고리", "System", "None", 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
     }
 
     if (provisionCount > 0) {
@@ -212,17 +222,29 @@ catch (Exception ex) {
     if (ex.InnerException != null) Console.WriteLine($"   내부: {ex.InnerException.Message}");
 }
 
-async Task<int> EnsureCommand(AppDbContext db, string uid, string kw, string cat, string ct, int cost, string feature, string? response, CommandRole role)
+async Task<int> EnsureCommand(AppDbContext db, StreamerProfile streamer, List<Master_CommandFeature> features, string kw, string cat, string ct, int cost, string feature, string? response, CommandRole role)
 {
     if (string.IsNullOrEmpty(kw)) return 0;
     var keywords = kw.Split(',').Select(k => k.Trim()).Where(k => !string.IsNullOrEmpty(k));
+    
+    // [v4.3] 마스터 기능 ID 매핑
+    var categoryValue = (int)Enum.Parse<CommandCategory>(cat);
+    var masterFeature = features.FirstOrDefault(f => f.CategoryId == (categoryValue + 1) && f.TypeName == feature);
+    if (masterFeature == null) return 0;
+
     int added = 0;
     foreach (var k in keywords) {
-        if (!await db.UnifiedCommands.IgnoreQueryFilters().AnyAsync(u => u.ChzzkUid == uid && u.Keyword == k)) {
+        if (!await db.UnifiedCommands.IgnoreQueryFilters().AnyAsync(u => u.StreamerProfileId == streamer.Id && u.Keyword == k)) {
             db.UnifiedCommands.Add(new UnifiedCommand {
-                ChzzkUid = uid, Keyword = k, Category = Enum.Parse<CommandCategory>(cat),
-                CostType = Enum.Parse<CommandCostType>(ct), Cost = cost, FeatureType = feature,
-                ResponseText = response ?? "", IsActive = true, RequiredRole = role, CreatedAt = KstClock.Now
+                StreamerProfileId = streamer.Id, 
+                Keyword = k, 
+                MasterCommandFeatureId = masterFeature.Id,
+                CostType = Enum.Parse<CommandCostType>(ct), 
+                Cost = cost, 
+                ResponseText = response ?? "", 
+                IsActive = true, 
+                RequiredRole = role, 
+                CreatedAt = KstClock.Now
             });
             added++;
         }

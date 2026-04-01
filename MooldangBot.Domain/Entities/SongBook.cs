@@ -1,19 +1,22 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(ChzzkUid), nameof(Id))]
-    public class SongBook
-    {
-        [Key]
-        public int Id { get; set; }
+[Index(nameof(StreamerProfileId), nameof(Id))]
+public class SongBook
+{
+    [Key]
+    public int Id { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string ChzzkUid { get; set; } = string.Empty;
+    [Required]
+    public int StreamerProfileId { get; set; }
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
 
         [Required]
         [MaxLength(200)]

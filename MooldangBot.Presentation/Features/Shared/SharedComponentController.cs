@@ -34,7 +34,8 @@ namespace MooldangAPI.Controllers
 
             var components = await _db.SharedComponents
                 .AsNoTracking()
-                .Where(c => c.ChzzkUid == chzzkUid)
+                .Include(c => c.StreamerProfile)
+                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid)
                 .Select(c => new SharedComponentDto
                 {
                     Id = c.Id,
@@ -55,7 +56,8 @@ namespace MooldangAPI.Controllers
 
             var component = await _db.SharedComponents
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == chzzkUid);
+                .Include(c => c.StreamerProfile)
+                .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (component == null) return NotFound();
 
@@ -74,9 +76,12 @@ namespace MooldangAPI.Controllers
             var chzzkUid = await GetCurrentChzzkUidAsync();
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
+            var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            if (profile == null) return NotFound("Profile not found");
+
             var component = new SharedComponent
             {
-                ChzzkUid = chzzkUid,
+                StreamerProfileId = profile.Id,
                 Name = dto.Name,
                 Type = dto.Type,
                 ConfigJson = dto.ConfigJson,
@@ -101,7 +106,9 @@ namespace MooldangAPI.Controllers
             var chzzkUid = await GetCurrentChzzkUidAsync();
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-            var component = await _db.SharedComponents.FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == chzzkUid);
+            var component = await _db.SharedComponents
+                .Include(c => c.StreamerProfile)
+                .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             if (component == null) return NotFound();
 
             component.Name = dto.Name;
@@ -119,7 +126,9 @@ namespace MooldangAPI.Controllers
             var chzzkUid = await GetCurrentChzzkUidAsync();
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-            var component = await _db.SharedComponents.FirstOrDefaultAsync(c => c.Id == id && c.ChzzkUid == chzzkUid);
+            var component = await _db.SharedComponents
+                .Include(c => c.StreamerProfile)
+                .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             if (component == null) return NotFound();
 
             _db.SharedComponents.Remove(component);

@@ -25,17 +25,23 @@ namespace MooldangBot.Presentation.Features.SongQueue
         [HttpPost("/api/song/add/{chzzkUid}")]
         public async Task<Microsoft.AspNetCore.Http.IResult> AddSong(string chzzkUid, [FromBody] MooldangBot.Domain.Entities.SongQueue newSong, [FromQuery] int? omakaseId = null)
         {
+            var targetUid = chzzkUid.ToLower();
+            var profile = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                
+            if (profile == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
+
             newSong.Id = 0;
-            newSong.ChzzkUid = chzzkUid;
+            newSong.StreamerProfileId = profile.Id;
             newSong.CreatedAt = KstClock.Now;
             _db.SongQueues.Add(newSong);
 
             if (omakaseId.HasValue)
             {
-                var targetUid = chzzkUid.ToLower();
                 var omakase = await _db.StreamerOmakases
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.ChzzkUid.ToLower() == targetUid);
+                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id);
                     
                 if (omakase != null)
                 {
@@ -44,7 +50,8 @@ namespace MooldangBot.Presentation.Features.SongQueue
 
                     var activeSession = await _db.SonglistSessions
                         .IgnoreQueryFilters()
-                        .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                        .Include(s => s.StreamerProfile)
+                        .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
                         .FirstOrDefaultAsync();
                     if (activeSession != null)
                     {
@@ -64,13 +71,14 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var song = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid.ToLower() == targetUid);
-                
+                .Include(s => s.StreamerProfile)
+                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid);
             if (song != null)
             {
                 var activeSession = await _db.SonglistSessions
                     .IgnoreQueryFilters()
-                    .Where(s => s.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                    .Include(s => s.StreamerProfile)
+                    .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
                     .FirstOrDefaultAsync();
 
                 if (activeSession != null)
@@ -90,7 +98,8 @@ namespace MooldangBot.Presentation.Features.SongQueue
                 {
                     var current = await _db.SongQueues
                         .IgnoreQueryFilters()
-                        .FirstOrDefaultAsync(s => s.ChzzkUid.ToLower() == targetUid && s.Status == "Playing");
+                        .Include(s => s.StreamerProfile)
+                        .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == "Playing");
                     if (current != null)
                     {
                         current.Status = "Completed";
@@ -111,7 +120,8 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var songs = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .Where(s => ids.Contains(s.Id) && s.ChzzkUid.ToLower() == targetUid)
+                .Include(s => s.StreamerProfile)
+                .Where(s => ids.Contains(s.Id) && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid)
                 .ToListAsync();
                 
             if (songs.Any())
@@ -130,7 +140,8 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var songItem = await _db.SongQueues
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.Id == id && s.ChzzkUid.ToLower() == targetUid);
+                .Include(s => s.StreamerProfile)
+                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid);
 
             if (songItem == null)
             {

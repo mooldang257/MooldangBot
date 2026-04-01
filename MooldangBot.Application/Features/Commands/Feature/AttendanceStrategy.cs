@@ -29,16 +29,26 @@ public class AttendanceStrategy(
         if (streamer == null) return CommandExecutionResult.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
         var viewerHash = Sha256Hasher.ComputeHash(notification.SenderId);
+        
+        // 1. 글로벌 시청자 확보
+        var globalViewer = await db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
+        if (globalViewer == null)
+        {
+            globalViewer = new GlobalViewer { ViewerUid = notification.SenderId, ViewerUidHash = viewerHash };
+            db.GlobalViewers.Add(globalViewer);
+            await db.SaveChangesAsync(ct);
+        }
+
+        // 2. 채널별 프로필 확보
         var viewer = await db.ViewerProfiles
-            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUidHash == viewerHash, ct);
+            .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewer.Id, ct);
 
         if (viewer == null)
         {
             viewer = new ViewerProfile 
             { 
-                StreamerChzzkUid = notification.Profile.ChzzkUid, 
-                ViewerUid = notification.SenderId,
-                ViewerUidHash = viewerHash,
+                StreamerProfileId = streamer.Id,
+                GlobalViewerId = globalViewer.Id,
                 Nickname = notification.Username
             };
             db.ViewerProfiles.Add(viewer);
