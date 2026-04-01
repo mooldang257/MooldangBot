@@ -26,6 +26,7 @@ public class TokenRenewalService : ITokenRenewalService
     private readonly ILogger<TokenRenewalService> _logger;
     private readonly AsyncRetryPolicy<bool> _retryPolicy;
     private static AsyncCircuitBreakerPolicy<bool>? _circuitBreaker; // [제너릭 전환]
+    private static readonly object _initLock = new(); // [v17.0] 초기화 경합 방지용 락 객체
 
     public TokenRenewalService(
         IAppDbContext db,
@@ -39,14 +40,20 @@ public class TokenRenewalService : ITokenRenewalService
         _logger = logger;
 
         // [서킷 브레이커의 지혜]: 3번 연속 실패 시 30초간 회로 차단
-        // [v17.0] FatalTokenException(리프레시 토큰 영구 무효화)은 재시도 불가 → 즉시 전파
-        _circuitBreaker ??= Policy
-            .Handle<Exception>(ex => ex is not FatalTokenException)
-            .OrResult<bool>(r => r == false) // 제너릭 핸들링
-            .CircuitBreakerAsync(3, TimeSpan.FromSeconds(30),
-                onBreak: (ex, breakDelay) => _logger.LogWarning($"[서킷 브레이커] 회로 차단됨! ({breakDelay.TotalSeconds}초 동안 휴식)"),
-                onReset: () => _logger.LogInformation("[서킷 브레이커] 회로 복구됨."),
-                onHalfOpen: () => _logger.LogInformation("[서킷 브레이커] 회로 반개방 상태."));
+        // [v17.0] 널 병합 대입 시 발생할 수 있는 정적 초기화 경합(Race Condition)을 원천 차단하기 위해 Double-check locking 패턴을 사용합니다.
+        if (_circuitBreaker == null)
+        {
+            lock (_initLock)
+            {
+                _circuitBreaker ??= Policy
+                    .Handle<Exception>(ex => ex is not FatalTokenException)
+                    .OrResult<bool>(r => r == false)
+                    .CircuitBreakerAsync(3, TimeSpan.FromSeconds(30),
+                        onBreak: (ex, breakDelay) => _logger.LogWarning($"[서킷 브레이커] 회로 차단됨! ({breakDelay.TotalSeconds}초 동안 휴식)"),
+                        onReset: () => _logger.LogInformation("[서킷 브레이커] 회로 복구됨."),
+                        onHalfOpen: () => _logger.LogInformation("[서킷 브레이커] 회로 반개방 상태."));
+            }
+        }
 
         // [재시도의 인내]: 2회 재시도 (Exponential Backoff)
         // [v17.0] FatalTokenException은 재시도 제외 — 영구 무효화된 토큰에 대한 무의미한 재시도 차단
@@ -208,34 +215,4 @@ public class TokenRenewalService : ITokenRenewalService
         return true;
     }
 
-    public async Task<string?> GetSessionAuthAsync(string chzzkUid)
-    {
-        var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
-        if (streamer == null || string.IsNullOrEmpty(streamer.ChzzkAccessToken)) return null;
-
-        string clientId = streamer.ApiClientId ?? _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
-        string clientSecret = streamer.ApiClientSecret ?? _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
-
-        using var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", streamer.ChzzkAccessToken);
-        
-        // [v16.6] 채팅 세션 인증 단계에서도 클라이언트 신분 증명을 확실히 요구합니다. 🛡️
-        if (!string.IsNullOrEmpty(clientId)) client.DefaultRequestHeaders.Add("Client-Id", clientId);
-        if (!string.IsNullOrEmpty(clientSecret)) client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-
-        var authUrl = $"https://openapi.chzzk.naver.com/open/v1/chats/access-token?channelId={chzzkUid}";
-        try
-        {
-            var response = await client.GetAsync(authUrl);
-            var content = await response.Content.ReadFromJsonAsync<ChzzkChatAuthResponse>();
-            return content?.Content?.AccessToken;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"[영겁의 열쇠] {chzzkUid} 채팅 세션 인증 키 획득 중 오류 발생");
-            return null;
-        }
-    }
 }
