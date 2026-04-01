@@ -1,0 +1,1001 @@
+Attaching to mooldang-app
+[36mmooldang-app |[0m [05:13:45 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:13:45 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:13:45 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:13:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 40.4597ms
+[36mmooldang-app |[0m [05:13:45 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:13:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:13:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"c743296d-6aa2-4526-8478-e49bde6bcd8b\"}}"]
+[36mmooldang-app |[0m [05:13:45 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:13:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.2432ms
+[36mmooldang-app |[0m [05:13:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:13:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:13:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 111.8264ms
+[36mmooldang-app |[0m [05:13:45 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:13:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:13:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.0279ms
+[36mmooldang-app |[0m [05:13:45 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:13:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:13:52 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:13:52 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:14:45 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:14:45 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:14:45 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:13:43)
+[36mmooldang-app |[0m [05:14:45 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:14:47 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 110.6032ms
+[36mmooldang-app |[0m [05:14:47 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:14:47 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:14:47 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:14:47 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 40.1083ms
+[36mmooldang-app |[0m [05:14:48 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:14:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:14:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"33c1fcaa-0550-42d0-833b-c15c8fc0c889\"}}"]
+[36mmooldang-app |[0m [05:14:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 133.7888ms
+[36mmooldang-app |[0m [05:14:48 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:14:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:14:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:14:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 64.7649ms
+[36mmooldang-app |[0m [05:14:48 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:14:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:14:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 61.9433ms
+[36mmooldang-app |[0m [05:14:48 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:14:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:14:52 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:14:53 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:15:48 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:15:48 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:15:48 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:14:45)
+[36mmooldang-app |[0m [05:15:48 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:15:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 116.4311ms
+[36mmooldang-app |[0m [05:15:50 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:15:50 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:15:50 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:15:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 37.2682ms
+[36mmooldang-app |[0m [05:15:50 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:15:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:15:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"375699b3-97d0-485d-a78c-0a13a950f149\"}}"]
+[36mmooldang-app |[0m [05:15:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 102.5626ms
+[36mmooldang-app |[0m [05:15:50 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:15:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 58.3837ms
+[36mmooldang-app |[0m [05:15:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:15:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:15:50 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:15:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:15:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 58.8214ms
+[36mmooldang-app |[0m [05:15:50 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:15:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:15:53 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:15:53 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:16:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:16:50 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:16:50 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:15:48)
+[36mmooldang-app |[0m [05:16:50 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:16:52 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 88.8464ms
+[36mmooldang-app |[0m [05:16:52 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:16:52 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:16:52 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 16.0249ms
+[36mmooldang-app |[0m [05:16:52 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:16:52 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:16:52 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:16:52 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e250b978-fcd7-41af-be14-7e6edcff3277\"}}"]
+[36mmooldang-app |[0m [05:16:52 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 121.1833ms
+[36mmooldang-app |[0m [05:16:52 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:16:52 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.8426ms
+[36mmooldang-app |[0m [05:16:52 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:16:52 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:16:52 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:16:52 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.8536ms
+[36mmooldang-app |[0m [05:16:52 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:16:52 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:16:52 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:16:53 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:16:53 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:17:44 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:17:52 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:17:52 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:17:52 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:16:50)
+[36mmooldang-app |[0m [05:17:52 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:17:53 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:17:53 WRN] [피닉스의 재건] c74931e68d4d90ce9f11d6f343c1d54c 세션 단절 감지. 정화를 시작합니다.
+[36mmooldang-app |[0m [05:17:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 117.3961ms
+[36mmooldang-app |[0m [05:17:53 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:17:53 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:17:53 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:17:53 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:53 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:53 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"4cdad494-90fc-4c1e-9a30-01c0bd3bc622\"}}"]
+[36mmooldang-app |[0m [05:17:53 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:54 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:54 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 68.9952ms
+[36mmooldang-app |[0m [05:17:54 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:17:54 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:54 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:54 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 60.1756ms
+[36mmooldang-app |[0m [05:17:54 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:17:54 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:17:54 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 72.0928ms
+[36mmooldang-app |[0m [05:17:54 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:17:54 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:17:54 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:17:54 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 39.8901ms
+[36mmooldang-app |[0m [05:17:54 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"5f0405a0-b480-4936-a1de-242509cc464b\"}}"]
+[36mmooldang-app |[0m [05:17:55 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 60.2711ms
+[36mmooldang-app |[0m [05:17:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:17:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 139.7163ms
+[36mmooldang-app |[0m [05:17:55 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:17:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:17:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:17:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 59.0777ms
+[36mmooldang-app |[0m [05:17:55 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:18:53 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:18:54 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:18:55 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:18:55 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:18:55 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:17:52)
+[36mmooldang-app |[0m [05:18:55 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:18:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 118.7041ms
+[36mmooldang-app |[0m [05:18:57 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:18:57 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:18:57 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:18:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 37.4465ms
+[36mmooldang-app |[0m [05:18:57 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:18:57 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:18:57 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e3dfc084-08e5-46ce-832e-307f01fe01c4\"}}"]
+[36mmooldang-app |[0m [05:18:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 112.3675ms
+[36mmooldang-app |[0m [05:18:57 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:18:57 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:18:57 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:18:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 67.8868ms
+[36mmooldang-app |[0m [05:18:57 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:18:57 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:18:57 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:18:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 66.6424ms
+[36mmooldang-app |[0m [05:18:57 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:19:54 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:19:54 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:19:57 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:19:57 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:19:57 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:18:55)
+[36mmooldang-app |[0m [05:19:57 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:19:59 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 99.4708ms
+[36mmooldang-app |[0m [05:19:59 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:19:59 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:19:59 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:19:59 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 18.3326ms
+[36mmooldang-app |[0m [05:19:59 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:19:59 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:19:59 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"aa65adb5-99ab-42c1-b4ca-2c02cfe1fe89\"}}"]
+[36mmooldang-app |[0m [05:19:59 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:19:59 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.0053ms
+[36mmooldang-app |[0m [05:19:59 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:19:59 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:19:59 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 135.9677ms
+[36mmooldang-app |[0m [05:19:59 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:19:59 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.0397ms
+[36mmooldang-app |[0m [05:19:59 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:19:59 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:19:59 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:20:54 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:20:54 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:20:59 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:20:59 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:20:59 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:19:57)
+[36mmooldang-app |[0m [05:20:59 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:21:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 162.3717ms
+[36mmooldang-app |[0m [05:21:02 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:21:02 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:21:02 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:21:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 17.7786ms
+[36mmooldang-app |[0m [05:21:02 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:21:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:21:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e0592035-e187-40ea-bc22-cb41e2ab262c\"}}"]
+[36mmooldang-app |[0m [05:21:02 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:21:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.2074ms
+[36mmooldang-app |[0m [05:21:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:21:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:21:02 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:21:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.8464ms
+[36mmooldang-app |[0m [05:21:02 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:21:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:21:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:21:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 202.7672ms
+[36mmooldang-app |[0m [05:21:54 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:21:54 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:22:02 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:22:02 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:22:02 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:20:59)
+[36mmooldang-app |[0m [05:22:02 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:22:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.9144ms
+[36mmooldang-app |[0m [05:22:04 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:22:04 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:22:04 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:22:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.0993ms
+[36mmooldang-app |[0m [05:22:04 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:22:04 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:22:04 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"1d92d294-5c70-4f6a-9467-9d1bbffb5cfe\"}}"]
+[36mmooldang-app |[0m [05:22:04 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:22:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.3858ms
+[36mmooldang-app |[0m [05:22:04 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:22:04 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:22:04 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:22:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.5479ms
+[36mmooldang-app |[0m [05:22:04 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:22:04 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:22:04 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:22:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 134.966ms
+[36mmooldang-app |[0m [05:22:44 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:22:54 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:22:55 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:23:04 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:23:04 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:23:04 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:22:02)
+[36mmooldang-app |[0m [05:23:04 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:23:06 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 92.4606ms
+[36mmooldang-app |[0m [05:23:06 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:23:06 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:23:06 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:23:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 16.4772ms
+[36mmooldang-app |[0m [05:23:07 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:23:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:23:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"b59de161-81d5-4283-850c-adbc52ba5a57\"}}"]
+[36mmooldang-app |[0m [05:23:07 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:23:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.3399ms
+[36mmooldang-app |[0m [05:23:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:23:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:23:07 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:23:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.7555ms
+[36mmooldang-app |[0m [05:23:07 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:23:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:23:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:23:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 153.2384ms
+[36mmooldang-app |[0m [05:23:55 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:23:55 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:24:07 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:24:07 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:24:07 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:23:04)
+[36mmooldang-app |[0m [05:24:07 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:24:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 114.9025ms
+[36mmooldang-app |[0m [05:24:09 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:24:09 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:24:09 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:24:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 34.4203ms
+[36mmooldang-app |[0m [05:24:09 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:24:09 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:24:09 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"9f5555f5-dc0a-4cc2-b690-8e2cff48a91a\"}}"]
+[36mmooldang-app |[0m [05:24:09 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:24:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 61.8884ms
+[36mmooldang-app |[0m [05:24:09 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:24:09 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:24:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 161.4277ms
+[36mmooldang-app |[0m [05:24:09 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:24:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 59.4509ms
+[36mmooldang-app |[0m [05:24:09 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:24:09 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:24:09 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:24:55 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:24:55 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:25:09 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:25:09 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:25:09 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:24:07)
+[36mmooldang-app |[0m [05:25:09 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:25:11 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 101.3623ms
+[36mmooldang-app |[0m [05:25:11 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:25:11 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:25:11 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:25:11 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 19.1784ms
+[36mmooldang-app |[0m [05:25:11 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:25:11 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:25:11 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"686393db-e8c6-497e-a866-5bf93832156c\"}}"]
+[36mmooldang-app |[0m [05:25:11 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:25:11 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.5637ms
+[36mmooldang-app |[0m [05:25:11 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:25:11 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:25:11 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 127.2072ms
+[36mmooldang-app |[0m [05:25:11 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:25:11 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.2695ms
+[36mmooldang-app |[0m [05:25:11 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:25:11 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:25:11 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:25:55 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:25:55 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:26:11 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:26:11 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:26:11 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:25:09)
+[36mmooldang-app |[0m [05:26:12 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:26:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 94.5599ms
+[36mmooldang-app |[0m [05:26:14 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:26:14 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:26:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 16.337ms
+[36mmooldang-app |[0m [05:26:14 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:26:14 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:26:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:26:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"7ad13d7b-e63e-458e-bb7d-17908456a835\"}}"]
+[36mmooldang-app |[0m [05:26:14 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:26:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.0005ms
+[36mmooldang-app |[0m [05:26:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:26:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:26:14 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:26:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.0745ms
+[36mmooldang-app |[0m [05:26:14 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:26:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:26:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:26:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 167.7412ms
+[36mmooldang-app |[0m [05:26:55 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:26:56 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:27:14 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:27:14 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:27:14 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:26:12)
+[36mmooldang-app |[0m [05:27:14 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:27:16 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.2659ms
+[36mmooldang-app |[0m [05:27:16 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:27:16 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:27:16 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:27:16 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 16.782ms
+[36mmooldang-app |[0m [05:27:16 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:27:16 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:27:16 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e596a6d5-3818-4091-98b0-1a4fc4ac7788\"}}"]
+[36mmooldang-app |[0m [05:27:16 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:27:16 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.2672ms
+[36mmooldang-app |[0m [05:27:16 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:27:16 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:27:16 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:27:16 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.3534ms
+[36mmooldang-app |[0m [05:27:16 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:27:16 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:27:16 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:27:16 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 317.0539ms
+[36mmooldang-app |[0m [05:27:44 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:27:56 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:27:56 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:28:16 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:28:16 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:28:16 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:27:14)
+[36mmooldang-app |[0m [05:28:16 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:28:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.7303ms
+[36mmooldang-app |[0m [05:28:19 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:28:19 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:28:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 14.6971ms
+[36mmooldang-app |[0m [05:28:19 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:28:19 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:28:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:28:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"225af696-9c84-4212-bfd5-0938c6534745\"}}"]
+[36mmooldang-app |[0m [05:28:19 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:28:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.2365ms
+[36mmooldang-app |[0m [05:28:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 111.1136ms
+[36mmooldang-app |[0m [05:28:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:28:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:28:19 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:28:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.1076ms
+[36mmooldang-app |[0m [05:28:19 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:28:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:28:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:28:56 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:28:56 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:29:19 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:29:19 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:29:19 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:28:16)
+[36mmooldang-app |[0m [05:29:19 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:29:21 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 97.1903ms
+[36mmooldang-app |[0m [05:29:21 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:29:21 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:29:21 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 16.7166ms
+[36mmooldang-app |[0m [05:29:21 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:29:21 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:29:21 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:29:21 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"b9f3ea2d-f1e2-4bad-90d3-4f8b2572ebb1\"}}"]
+[36mmooldang-app |[0m [05:29:21 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:29:21 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.3624ms
+[36mmooldang-app |[0m [05:29:21 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:29:21 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:29:21 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:29:21 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.4702ms
+[36mmooldang-app |[0m [05:29:21 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:29:21 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:29:21 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:29:21 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 142.0048ms
+[36mmooldang-app |[0m [05:29:56 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:29:56 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:30:21 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:30:21 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:30:21 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:29:19)
+[36mmooldang-app |[0m [05:30:21 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:30:23 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 101.465ms
+[36mmooldang-app |[0m [05:30:23 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:30:23 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:30:23 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 19.6908ms
+[36mmooldang-app |[0m [05:30:24 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:30:24 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:30:24 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:30:24 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"69000b88-4e85-423b-bbd6-f4735733b43f\"}}"]
+[36mmooldang-app |[0m [05:30:24 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:30:24 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.2727ms
+[36mmooldang-app |[0m [05:30:24 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:30:24 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:30:24 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:30:24 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.3255ms
+[36mmooldang-app |[0m [05:30:24 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:30:24 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:30:24 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:30:24 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 187.3153ms
+[36mmooldang-app |[0m [05:30:56 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:30:57 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:31:24 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:31:24 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:31:24 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:30:21)
+[36mmooldang-app |[0m [05:31:24 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:31:26 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 101.6317ms
+[36mmooldang-app |[0m [05:31:26 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:31:26 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:31:26 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:31:26 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 19.5289ms
+[36mmooldang-app |[0m [05:31:26 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:31:26 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:31:26 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"6a62f43f-8e82-470d-ab04-145dc8ca5e5a\"}}"]
+[36mmooldang-app |[0m [05:31:26 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:31:26 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:31:26 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 26.2034ms
+[36mmooldang-app |[0m [05:31:26 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:31:26 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 105.1914ms
+[36mmooldang-app |[0m [05:31:26 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:31:26 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:31:26 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 25.0882ms
+[36mmooldang-app |[0m [05:31:26 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:31:26 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:31:57 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:31:57 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:32:26 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:32:26 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:32:26 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:31:24)
+[36mmooldang-app |[0m [05:32:26 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:32:28 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 100.0453ms
+[36mmooldang-app |[0m [05:32:28 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:32:28 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:32:28 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.2186ms
+[36mmooldang-app |[0m [05:32:28 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:32:28 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:32:28 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:32:28 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e945f8e2-dc22-4b1f-a27b-8de9ec15c48f\"}}"]
+[36mmooldang-app |[0m [05:32:28 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:32:28 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.0599ms
+[36mmooldang-app |[0m [05:32:28 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:32:28 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:32:28 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 149.8637ms
+[36mmooldang-app |[0m [05:32:28 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:32:28 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.3038ms
+[36mmooldang-app |[0m [05:32:28 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:32:28 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:32:28 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:32:44 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:32:57 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:32:58 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:33:28 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:33:28 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:33:28 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:32:26)
+[36mmooldang-app |[0m [05:33:29 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:33:31 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 106.8499ms
+[36mmooldang-app |[0m [05:33:31 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:33:31 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:33:31 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:33:31 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 40.5261ms
+[36mmooldang-app |[0m [05:33:31 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:33:31 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:33:31 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"c8952511-3bcb-4f64-a484-245e37cf6fac\"}}"]
+[36mmooldang-app |[0m [05:33:31 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 104.7095ms
+[36mmooldang-app |[0m [05:33:31 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:33:31 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:33:31 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 61.3227ms
+[36mmooldang-app |[0m [05:33:31 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:33:31 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:33:31 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:33:31 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:33:31 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 59.5256ms
+[36mmooldang-app |[0m [05:33:31 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:33:58 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:33:58 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:34:31 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:34:31 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:34:31 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:33:29)
+[36mmooldang-app |[0m [05:34:31 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:34:33 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 94.5265ms
+[36mmooldang-app |[0m [05:34:33 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:34:33 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:34:33 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 17.4101ms
+[36mmooldang-app |[0m [05:34:33 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:34:33 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:34:33 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:34:33 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"a6a65731-6b86-4b9c-a5da-4540b0853953\"}}"]
+[36mmooldang-app |[0m [05:34:33 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:34:33 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 19.6125ms
+[36mmooldang-app |[0m [05:34:33 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:34:33 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:34:33 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 144.7526ms
+[36mmooldang-app |[0m [05:34:33 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:34:33 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 19.281ms
+[36mmooldang-app |[0m [05:34:33 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:34:33 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:34:33 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:34:58 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:34:58 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:35:33 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:35:33 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:35:33 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:34:31)
+[36mmooldang-app |[0m [05:35:33 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:35:35 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 95.0938ms
+[36mmooldang-app |[0m [05:35:35 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:35:35 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:35:35 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 17.0017ms
+[36mmooldang-app |[0m [05:35:35 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:35:36 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:35:36 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:35:36 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"0971a19a-b445-4bdb-a934-adeb22b41d9d\"}}"]
+[36mmooldang-app |[0m [05:35:36 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:35:36 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.7243ms
+[36mmooldang-app |[0m [05:35:36 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:35:36 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:35:36 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:35:36 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.4302ms
+[36mmooldang-app |[0m [05:35:36 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:35:36 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:35:36 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:35:36 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 153.8712ms
+[36mmooldang-app |[0m [05:35:58 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:35:58 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:36:36 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:36:36 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:36:36 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:35:33)
+[36mmooldang-app |[0m [05:36:36 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:36:38 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 115.5789ms
+[36mmooldang-app |[0m [05:36:38 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:36:38 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:36:38 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:36:38 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 41.8161ms
+[36mmooldang-app |[0m [05:36:38 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:36:38 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:36:38 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"efc873fe-16a6-4cc5-9c6d-b0a4ffd7d9e5\"}}"]
+[36mmooldang-app |[0m [05:36:38 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:36:38 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:36:38 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:36:38 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 65.4356ms
+[36mmooldang-app |[0m [05:36:38 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 169.0541ms
+[36mmooldang-app |[0m [05:36:38 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:36:38 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:36:38 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:36:38 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 60.7781ms
+[36mmooldang-app |[0m [05:36:38 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:36:58 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:36:59 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:37:38 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:37:38 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:37:38 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:36:36)
+[36mmooldang-app |[0m [05:37:38 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:37:40 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 113.5545ms
+[36mmooldang-app |[0m [05:37:40 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:37:40 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:37:40 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:37:40 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 39.4371ms
+[36mmooldang-app |[0m [05:37:40 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:37:40 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:37:40 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"0c2518c3-db09-46d6-bc5e-b3ffa585152c\"}}"]
+[36mmooldang-app |[0m [05:37:40 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:37:40 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 66.4427ms
+[36mmooldang-app |[0m [05:37:40 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:37:40 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:37:40 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 136.7064ms
+[36mmooldang-app |[0m [05:37:40 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:37:40 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 62.694ms
+[36mmooldang-app |[0m [05:37:40 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:37:40 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:37:40 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:37:44 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:37:59 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:37:59 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:38:40 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:38:40 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:38:40 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:37:38)
+[36mmooldang-app |[0m [05:38:41 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:38:43 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 113.9315ms
+[36mmooldang-app |[0m [05:38:43 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:38:43 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:38:43 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:38:43 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 45.8224ms
+[36mmooldang-app |[0m [05:38:43 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:38:43 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:38:43 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"4df52904-ac09-4be1-bf4b-87a1870df67f\"}}"]
+[36mmooldang-app |[0m [05:38:43 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:38:43 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 67.0855ms
+[36mmooldang-app |[0m [05:38:43 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:38:43 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:38:43 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:38:43 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 61.3612ms
+[36mmooldang-app |[0m [05:38:43 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:38:43 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:38:43 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:38:43 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 195.1444ms
+[36mmooldang-app |[0m [05:38:59 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:38:59 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:39:43 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:39:43 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:39:43 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:38:41)
+[36mmooldang-app |[0m [05:39:43 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:39:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 95.0531ms
+[36mmooldang-app |[0m [05:39:45 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:39:45 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:39:45 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:39:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 64.9278ms
+[36mmooldang-app |[0m [05:39:45 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:39:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:39:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"80266a7b-fc37-4f28-ad03-30723f1c0002\"}}"]
+[36mmooldang-app |[0m [05:39:45 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:39:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.7804ms
+[36mmooldang-app |[0m [05:39:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:39:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:39:45 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:39:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.6161ms
+[36mmooldang-app |[0m [05:39:45 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:39:45 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:39:45 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:39:45 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 148.2691ms
+[36mmooldang-app |[0m [05:39:59 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:40:00 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:40:45 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:40:45 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:40:45 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:39:43)
+[36mmooldang-app |[0m [05:40:45 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:40:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.0717ms
+[36mmooldang-app |[0m [05:40:48 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:40:48 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:40:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 18.3328ms
+[36mmooldang-app |[0m [05:40:48 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:40:48 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:40:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:40:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"f7429565-b3e4-48b4-bed5-e33574ce5ba5\"}}"]
+[36mmooldang-app |[0m [05:40:48 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:40:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.5311ms
+[36mmooldang-app |[0m [05:40:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:40:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:40:48 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:40:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.4514ms
+[36mmooldang-app |[0m [05:40:48 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:40:48 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:40:48 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:40:48 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 216.1671ms
+[36mmooldang-app |[0m [05:41:00 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:41:00 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:41:48 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:41:48 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:41:48 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:40:45)
+[36mmooldang-app |[0m [05:41:48 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:41:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.771ms
+[36mmooldang-app |[0m [05:41:50 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:41:50 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:41:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 15.7201ms
+[36mmooldang-app |[0m [05:41:50 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:41:50 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:41:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:41:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"443c5b04-6ced-44ab-a41a-935117f83ae3\"}}"]
+[36mmooldang-app |[0m [05:41:50 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:41:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:41:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.9438ms
+[36mmooldang-app |[0m [05:41:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:41:50 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:41:50 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:41:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.6838ms
+[36mmooldang-app |[0m [05:41:50 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:41:50 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:41:50 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 213.4503ms
+[36mmooldang-app |[0m [05:42:00 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:42:00 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:42:45 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:42:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:42:50 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:42:50 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:41:48)
+[36mmooldang-app |[0m [05:42:50 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:42:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 111.0622ms
+[36mmooldang-app |[0m [05:42:53 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:42:53 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:42:53 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:42:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 42.5651ms
+[36mmooldang-app |[0m [05:42:53 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:42:53 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:42:53 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"a43e2e9e-1fea-41fb-bc41-6c7563c38f44\"}}"]
+[36mmooldang-app |[0m [05:42:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 105.6947ms
+[36mmooldang-app |[0m [05:42:53 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:42:53 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:42:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 62.2882ms
+[36mmooldang-app |[0m [05:42:53 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:42:53 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:42:53 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:42:53 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 60.5186ms
+[36mmooldang-app |[0m [05:42:53 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:42:53 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:43:00 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:43:00 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:43:53 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:43:53 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:43:53 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:42:50)
+[36mmooldang-app |[0m [05:43:53 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:43:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 99.7736ms
+[36mmooldang-app |[0m [05:43:55 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:43:55 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:43:55 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:43:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 17.8902ms
+[36mmooldang-app |[0m [05:43:55 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:43:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:43:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"66e2cf9c-d852-4dec-971b-d625347ffa81\"}}"]
+[36mmooldang-app |[0m [05:43:55 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:43:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.6168ms
+[36mmooldang-app |[0m [05:43:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:43:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:43:55 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:43:55 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:43:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.8655ms
+[36mmooldang-app |[0m [05:43:55 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:43:55 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:43:55 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 201.8052ms
+[36mmooldang-app |[0m [05:44:00 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:44:01 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:44:55 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:44:55 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:44:55 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:43:53)
+[36mmooldang-app |[0m [05:44:55 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:44:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 95.9688ms
+[36mmooldang-app |[0m [05:44:57 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:44:57 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:44:57 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:44:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 17.2112ms
+[36mmooldang-app |[0m [05:44:57 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:44:57 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:44:57 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"b15f9af0-9244-4822-9aab-934384401167\"}}"]
+[36mmooldang-app |[0m [05:44:57 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:44:57 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 22.8223ms
+[36mmooldang-app |[0m [05:44:57 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:44:57 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:44:58 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:44:58 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 20.7972ms
+[36mmooldang-app |[0m [05:44:58 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:44:58 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:44:58 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:44:58 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 156.2156ms
+[36mmooldang-app |[0m [05:45:01 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:45:01 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:45:58 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:45:58 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:45:58 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:44:55)
+[36mmooldang-app |[0m [05:45:58 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:46:00 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.8494ms
+[36mmooldang-app |[0m [05:46:00 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:46:00 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:46:00 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 18.5228ms
+[36mmooldang-app |[0m [05:46:00 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:46:00 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:46:00 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:46:00 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"6cb55529-40c0-4bb1-abe9-64dc2a9a78fc\"}}"]
+[36mmooldang-app |[0m [05:46:00 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 101.0491ms
+[36mmooldang-app |[0m [05:46:00 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:46:00 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.4604ms
+[36mmooldang-app |[0m [05:46:00 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:46:00 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:46:00 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.5512ms
+[36mmooldang-app |[0m [05:46:00 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:46:00 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:46:00 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:46:00 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:46:01 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:46:01 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:47:00 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:47:00 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:47:00 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:45:58)
+[36mmooldang-app |[0m [05:47:00 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:47:01 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:47:01 WRN] [피닉스의 재건] c74931e68d4d90ce9f11d6f343c1d54c 세션 단절 감지. 정화를 시작합니다.
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 110.5884ms
+[36mmooldang-app |[0m [05:47:02 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:47:02 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:47:02 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"97a4bcd9-d41b-4875-87d9-8b1cbc745e65\"}}"]
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 65.0558ms
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 63.2451ms
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:47:02 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 69.4395ms
+[36mmooldang-app |[0m [05:47:02 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:47:02 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:47:02 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 39.4927ms
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"c7bc50c7-9425-485b-87c9-dd40afe7d979\"}}"]
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 101.3139ms
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 58.6155ms
+[36mmooldang-app |[0m [05:47:02 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:47:02 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:47:02 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 60.3135ms
+[36mmooldang-app |[0m [05:47:02 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:47:02 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:47:43 INF] 🔄 [배치] 치지직 카테고리 동기화 시작...
+[36mmooldang-app |[0m [05:47:45 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:48:02 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:48:02 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:48:02 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:48:02 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:48:02 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:47:00)
+[36mmooldang-app |[0m [05:48:02 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:48:04 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 113.3264ms
+[36mmooldang-app |[0m [05:48:04 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:48:04 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:48:04 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:48:05 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 40.8485ms
+[36mmooldang-app |[0m [05:48:05 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:48:05 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:48:05 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"18eaf4e2-bd98-4217-b945-18e0954953ad\"}}"]
+[36mmooldang-app |[0m [05:48:05 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:48:05 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:48:05 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 65.4664ms
+[36mmooldang-app |[0m [05:48:05 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:48:05 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 183.3494ms
+[36mmooldang-app |[0m [05:48:05 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:48:05 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:48:05 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 63.8896ms
+[36mmooldang-app |[0m [05:48:05 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:48:05 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:49:02 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:49:02 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:49:05 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:49:05 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:49:05 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:48:02)
+[36mmooldang-app |[0m [05:49:05 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:49:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 98.6158ms
+[36mmooldang-app |[0m [05:49:07 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:49:07 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:49:07 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:49:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 18.4409ms
+[36mmooldang-app |[0m [05:49:07 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:49:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:49:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"354db3fa-b4c9-4e4a-98f3-d659e5114682\"}}"]
+[36mmooldang-app |[0m [05:49:07 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:49:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 25.0931ms
+[36mmooldang-app |[0m [05:49:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:49:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:49:07 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:49:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.5314ms
+[36mmooldang-app |[0m [05:49:07 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:49:07 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:49:07 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:49:07 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 201.3961ms
+[36mmooldang-app |[0m [05:50:02 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:50:02 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:50:07 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:50:07 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:50:07 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:49:05)
+[36mmooldang-app |[0m [05:50:07 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:50:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 94.4932ms
+[36mmooldang-app |[0m [05:50:09 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:50:09 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:50:09 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:50:09 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 18.0845ms
+[36mmooldang-app |[0m [05:50:09 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:50:09 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:50:09 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"a7a61293-5eb8-4b96-abac-6d2df4f25f96\"}}"]
+[36mmooldang-app |[0m [05:50:10 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 111.5287ms
+[36mmooldang-app |[0m [05:50:10 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:50:10 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.7237ms
+[36mmooldang-app |[0m [05:50:10 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:50:10 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:50:10 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:50:10 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 21.2534ms
+[36mmooldang-app |[0m [05:50:10 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:50:10 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:50:10 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:51:02 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:51:03 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:51:10 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:51:10 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:51:10 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:50:07)
+[36mmooldang-app |[0m [05:51:10 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:51:12 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 132.4895ms
+[36mmooldang-app |[0m [05:51:12 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:51:12 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:51:12 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:51:12 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 40.0442ms
+[36mmooldang-app |[0m [05:51:12 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:51:12 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:51:12 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"f67f7b88-4d66-4a17-9ed8-3d1ec19052a1\"}}"]
+[36mmooldang-app |[0m [05:51:12 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:51:12 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 65.7458ms
+[36mmooldang-app |[0m [05:51:12 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 150.5847ms
+[36mmooldang-app |[0m [05:51:12 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:51:12 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:51:12 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:51:12 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:51:12 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 64.3598ms
+[36mmooldang-app |[0m [05:51:12 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:51:12 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:52:03 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:52:03 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:52:12 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:52:12 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:52:12 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:51:10)
+[36mmooldang-app |[0m [05:52:12 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:52:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 96.8008ms
+[36mmooldang-app |[0m [05:52:14 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:52:14 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:52:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 15.3517ms
+[36mmooldang-app |[0m [05:52:14 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:52:14 DBG] [소비자 #0] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:52:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:52:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"55e56104-5f7e-4f8f-b5b8-36ba606870b7\"}}"]
+[36mmooldang-app |[0m [05:52:14 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:52:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:52:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 24.4256ms
+[36mmooldang-app |[0m [05:52:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:52:14 DBG] [소비자 #7] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:52:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 142.3631ms
+[36mmooldang-app |[0m [05:52:14 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:52:14 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 25.5798ms
+[36mmooldang-app |[0m [05:52:14 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:52:14 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:52:45 INF] [영겁의 파수꾼] 1명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.
+[36mmooldang-app |[0m [05:53:03 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:53:04 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:53:14 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:53:14 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:53:14 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:52:12)
+[36mmooldang-app |[0m [05:53:14 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:53:17 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 99.9764ms
+[36mmooldang-app |[0m [05:53:17 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:53:17 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:53:17 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 15.8519ms
+[36mmooldang-app |[0m [05:53:17 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:53:17 DBG] [소비자 #4] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:53:17 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:53:17 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"1c89e9d0-84c7-45a6-8a76-7eef53ce5839\"}}"]
+[36mmooldang-app |[0m [05:53:17 DBG] [소비자 #1] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:53:17 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 23.6675ms
+[36mmooldang-app |[0m [05:53:17 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:53:17 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:53:17 DBG] [소비자 #6] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:53:17 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 24.1628ms
+[36mmooldang-app |[0m [05:53:17 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:53:17 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:53:17 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:53:17 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 330.5423ms
+[36mmooldang-app |[0m [05:54:04 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:54:04 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)
+[36mmooldang-app |[0m [05:54:17 INF] 📊 [병렬 배치] 활성 스트리머 1명 점검을 시작합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:54:17 FTL] 🚨 [오시리스의 자가 치유] c74931e68d4d90ce9f11d6f343c1d54c 채널 시스템 재구축 가동. (시도 1/3)
+[36mmooldang-app |[0m [05:54:17 INF] [영겁의 열쇠] c74931e68d4d90ce9f11d6f343c1d54c 스트리머 토큰 갱신 시도. (강제: True, 만료: 04/02/2026 14:53:14)
+[36mmooldang-app |[0m [05:54:17 INF] ✨ [자가 치유 성공] c74931e68d4d90ce9f11d6f343c1d54c 채널의 토큰 파동이 정상화되었습니다. 2초 대기 후 피닉스의 재건을 가동합니다...
+[36mmooldang-app |[0m [05:54:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 105.7405ms
+[36mmooldang-app |[0m [05:54:19 INF] [파동의 공명] c74931e68d4d90ce9f11d6f343c1d54c 채널 연결 상태 변경: Initial
+[36mmooldang-app |[0m [05:54:19 INF] ✅ [피닉스 부활] c74931e68d4d90ce9f11d6f343c1d54c 세션이 성공적으로 재건되었습니다.
+[36mmooldang-app |[0m [05:54:19 FTL] 🛑 [파동의 붕괴] c74931e68d4d90ce9f11d6f343c1d54c 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.
+[36mmooldang-app |[0m [05:54:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 44.172ms
+[36mmooldang-app |[0m [05:54:19 DBG] [소비자 #5] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:54:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:54:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"connected\",\"data\":{\"sessionKey\":\"e30e61f5-e027-4a06-b75f-f3a925e6a5e4\"}}"]
+[36mmooldang-app |[0m [05:54:19 DBG] [소비자 #3] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:54:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:54:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"CHAT\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:54:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 61.3809ms
+[36mmooldang-app |[0m [05:54:19 DBG] [소비자 #2] 이벤트 처리 시작 (채널: c74931e68d4d90ce9f11d6f343c1d54c)
+[36mmooldang-app |[0m [05:54:19 DBG] 📡 [전령] 이벤트 발행 완료 : chat.event (Ex: mooldang.chat.events)
+[36mmooldang-app |[0m [05:54:19 INF] 📥 [치지직 원본 수신] 채널: c74931e68d4d90ce9f11d6f343c1d54c, Payload: ["SYSTEM","{\"type\":\"subscribed\",\"data\":{\"eventType\":\"DONATION\",\"channelId\":\"c74931e68d4d90ce9f11d6f343c1d54c\"}}"]
+[36mmooldang-app |[0m [05:54:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 58.3364ms
+[36mmooldang-app |[0m [05:54:19 INF] ✨ [유기적 구독] c74931e68d4d90ce9f11d6f343c1d54c 채널의 이벤트 구독이 완료되었습니다.
+[36mmooldang-app |[0m [05:54:19 INF] Execution attempt. Source: 'IChzzkApiClient-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 288.7263ms
+[36mmooldang-app |[0m [05:55:04 INF] 🔍 [오시리스의 감시자] 1명의 파동을 병렬로 점검합니다. (MaxParallelism=10)
+[36mmooldang-app |[0m [05:55:04 WRN] [피닉스의 제약] c74931e68d4d90ce9f11d6f343c1d54c 채널은 현재 복구 쿨다운 대기 중입니다. (폭주 방지)

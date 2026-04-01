@@ -4,7 +4,6 @@ using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
-    [Index(nameof(StreamerChzzkUid), nameof(ViewerUid), IsUnique = true)]
     [Index(nameof(StreamerChzzkUid), nameof(Points))]
     public class ViewerProfile
     {
@@ -18,6 +17,12 @@ namespace MooldangBot.Domain.Entities
         [Required]
         [MaxLength(50)]
         public string ViewerUid { get; set; } = string.Empty;
+
+        /// <summary>
+        /// [v4.0] 수호자의 각인: 암호화된 ViewerUid 검색을 위한 SHA-256 해시 필드입니다.
+        /// </summary>
+        [MaxLength(64)]
+        public string ViewerUidHash { get; set; } = string.Empty;
 
         [MaxLength(100)]
         public string Nickname { get; set; } = string.Empty;

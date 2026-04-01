@@ -4,6 +4,7 @@ using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Dapper;
+using MooldangBot.Application.Common.Security;
 
 namespace MooldangBot.Application.Features.ChatPoints;
 
@@ -20,9 +21,10 @@ public class PointTransactionService : IPointTransactionService
 
     public async Task<int> GetBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default)
     {
+        var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
         var viewer = await _db.ViewerProfiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUid == viewerUid, ct);
+            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == streamerUid && v.ViewerUidHash == viewerHash, ct);
         return viewer?.Points ?? 0;
     }
 
@@ -30,13 +32,14 @@ public class PointTransactionService : IPointTransactionService
     {
         try
         {
+            var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
             var connection = _db.Database.GetDbConnection();
 
             // MariaDB Atomic Upsert: 포인트 증감 및 닉네임 동기화
-            // GREATEST(0, Points + @Amount)를 통해 포인트가 음수가 되는 것을 방지
+            // [v4.0] Search Hash 전략: Index(StreamerChzzkUid, ViewerUidHash) 기반 UPSERT
             var sql = @"
-                INSERT INTO ViewerProfiles (StreamerChzzkUid, ViewerUid, Nickname, Points, AttendanceCount, ConsecutiveAttendanceCount)
-                VALUES (@StreamerUid, @ViewerUid, @Nickname, @Amount, 0, 0)
+                INSERT INTO ViewerProfiles (StreamerChzzkUid, ViewerUid, ViewerUidHash, Nickname, Points, AttendanceCount, ConsecutiveAttendanceCount)
+                VALUES (@StreamerUid, @ViewerUid, @ViewerUidHash, @Nickname, @Amount, 0, 0)
                 ON DUPLICATE KEY UPDATE 
                     Points = GREATEST(0, Points + @Amount),
                     Nickname = CASE WHEN @Nickname != '' THEN @Nickname ELSE Nickname END;";
@@ -44,15 +47,16 @@ public class PointTransactionService : IPointTransactionService
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 StreamerUid = streamerUid,
-                ViewerUid = viewerUid,
+                ViewerUid = viewerUid, // AppDbContext의 Converter가 암호화 처리함
+                ViewerUidHash = viewerHash,
                 Nickname = nickname ?? "",
                 Amount = amount
             }, cancellationToken: ct));
 
             // 최종 포인트 조회
             var currentPoints = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
-                "SELECT Points FROM ViewerProfiles WHERE StreamerChzzkUid = @StreamerUid AND ViewerUid = @ViewerUid",
-                new { StreamerUid = streamerUid, ViewerUid = viewerUid },
+                "SELECT Points FROM ViewerProfiles WHERE StreamerChzzkUid = @StreamerUid AND ViewerUidHash = @ViewerUidHash",
+                new { StreamerUid = streamerUid, ViewerUidHash = viewerHash },
                 cancellationToken: ct
             ));
 

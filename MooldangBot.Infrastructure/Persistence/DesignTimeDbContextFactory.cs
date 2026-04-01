@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 using MooldangBot.Application.Interfaces;
 using DotNetEnv;
 
@@ -74,7 +76,13 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));
 
-        return new AppDbContext(optionsBuilder.Options, new DesignTimeUserSession());
+        // [디자인 타임]: DataProtection 서비스 임시 생성 (scaffolding 용도)
+        var services = new ServiceCollection();
+        services.AddDataProtection();
+        var sp = services.BuildServiceProvider();
+        var protector = sp.GetRequiredService<IDataProtectionProvider>();
+
+        return new AppDbContext(optionsBuilder.Options, new DesignTimeUserSession(), protector);
     }
 
     private class DesignTimeUserSession : IUserSession

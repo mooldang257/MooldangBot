@@ -4,16 +4,24 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Domain.Common;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext
+public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 {
     private readonly IUserSession _userSession;
+    private readonly IDataProtector _protector;
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, IUserSession userSession) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, 
+                        IUserSession userSession,
+                        IDataProtectionProvider provider) 
+        : base(options)
     {
         _userSession = userSession;
+        // [v4.0] 수호자의 의지: 용도(Purpose)를 명시하여 키 관리 격리
+        _protector = provider.CreateProtector("MooldangBot.TokenEncryption.v1");
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -55,14 +63,16 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
     public DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
     public DbSet<Master_DynamicVariable> MasterDynamicVariables { get; set; }
+ 
+    // DataProtectionKey 저장소 (Microsoft.AspNetCore.DataProtection.EntityFrameworkCore)
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<ViewerProfile>()
-            .HasIndex(v => new { v.StreamerChzzkUid, v.ViewerUid })
-            .IsUnique();
+        // [v4.0] 전역 암호화 컨버터 인스턴스 생성
+        var converter = new EncryptedValueConverter(_protector);
 
         modelBuilder.Entity<ChzzkCategory>()
             .HasMany(c => c.Aliases)
@@ -113,6 +123,34 @@ public class AppDbContext : DbContext, IAppDbContext
         // ⭐ 검색 성능 최적화를 위한 인덱스 추가
         modelBuilder.Entity<StreamerProfile>()
             .HasIndex(p => p.ChzzkUid).IsUnique();
+ 
+        // [v4.0] 수호자의 암호: 암호화 필드 설정 및 길이 확장
+        modelBuilder.Entity<StreamerProfile>(entity => {
+            entity.Property(e => e.ChzzkAccessToken).HasConversion(converter);
+            entity.Property(e => e.ChzzkRefreshToken).HasConversion(converter);
+            entity.Property(e => e.ApiClientId).HasColumnType("longtext");
+            entity.Property(e => e.ApiClientSecret).HasColumnType("longtext").HasConversion(converter);
+            entity.Property(e => e.BotAccessToken).HasConversion(converter);
+            entity.Property(e => e.BotRefreshToken).HasConversion(converter);
+        });
+ 
+        modelBuilder.Entity<ViewerProfile>(entity => {
+            // [Search Hash 전략]: 원본 Uid는 암호화, 검색은 Hash 필드 이용
+            entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
+            entity.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
+            
+            entity.HasIndex(e => new { e.StreamerChzzkUid, e.ViewerUidHash }).IsUnique();
+        });
+
+        modelBuilder.Entity<RouletteSpin>(entity => {
+            entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
+        });
+
+        modelBuilder.Entity<SystemSetting>(entity => {
+            entity.Property(e => e.BotAccessToken).HasConversion(converter);
+            entity.Property(e => e.BotRefreshToken).HasConversion(converter);
+            entity.Property(e => e.KeyValue).HasConversion(converter);
+        });
 
 
         modelBuilder.Entity<SongQueue>()

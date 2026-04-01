@@ -9,6 +9,8 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Security;
 using MooldangBot.Presentation.Security;
 using MooldangBot.Application.Interfaces;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using MooldangBot.Application.State;
 using MooldangBot.Domain.Entities;
 using DotNetEnv;
@@ -112,6 +114,12 @@ try
         .WriteTo.File("logs/mooldangbot-.log", rollingInterval: RollingInterval.Day));
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+
+    // [v4.0] 수호자의 지문: 데이터 보호 서비스 등록 및 EF Core 키 저장소 설정
+    builder.Services.AddDataProtection()
+        .SetApplicationName("MooldangBot")
+        .PersistKeysToDbContext<AppDbContext>();
+
     builder.Services.AddApplicationServices();
     builder.Services.AddPresentationServices();
     builder.Services.AddHttpContextAccessor();

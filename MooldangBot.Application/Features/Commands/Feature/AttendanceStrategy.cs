@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Security;
 
 namespace MooldangBot.Application.Features.Commands.Feature;
 
@@ -27,8 +28,9 @@ public class AttendanceStrategy(
         var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, ct);
         if (streamer == null) return CommandExecutionResult.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
+        var viewerHash = Sha256Hasher.ComputeHash(notification.SenderId);
         var viewer = await db.ViewerProfiles
-            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUid == notification.SenderId, ct);
+            .FirstOrDefaultAsync(v => v.StreamerChzzkUid == notification.Profile.ChzzkUid && v.ViewerUidHash == viewerHash, ct);
 
         if (viewer == null)
         {
@@ -36,6 +38,7 @@ public class AttendanceStrategy(
             { 
                 StreamerChzzkUid = notification.Profile.ChzzkUid, 
                 ViewerUid = notification.SenderId,
+                ViewerUidHash = viewerHash,
                 Nickname = notification.Username
             };
             db.ViewerProfiles.Add(viewer);

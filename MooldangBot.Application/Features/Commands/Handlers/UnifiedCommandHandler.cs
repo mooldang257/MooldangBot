@@ -9,6 +9,7 @@ using MooldangBot.Application.Features.Commands.SystemMessage;
 using MooldangBot.Application.Features.Commands.Feature;
 using MooldangBot.Application.Features.Commands.General;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Security;
 
 namespace MooldangBot.Application.Features.Commands.Handlers;
 
@@ -120,8 +121,9 @@ public class UnifiedCommandHandler(
         {
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var viewerHash = Sha256Hasher.ComputeHash(n.SenderId);
             var viewer = await db.ViewerProfiles
-                .FirstOrDefaultAsync(v => v.StreamerChzzkUid == n.Profile.ChzzkUid.ToLower() && v.ViewerUid == n.SenderId, ct);
+                .FirstOrDefaultAsync(v => v.StreamerChzzkUid == n.Profile.ChzzkUid.ToLower() && v.ViewerUidHash == viewerHash, ct);
 
             if (viewer == null || viewer.Points < c.Cost)
             {
