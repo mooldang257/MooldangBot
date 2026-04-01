@@ -174,10 +174,11 @@ public class WebSocketShard : IWebSocketShard
         if (message == "3") return;
         if (message.StartsWith("0")) { client.Send("40"); return; }
         
-        // [v16.4] 소켓 연결 후 실제 인증 거절 메시지를 감지합니다.
-        if (message.Contains("\"error\",\"auth fail\"") || message.Contains("auth fail"))
+        // [v16.4] 소켓 연결 후 실제 인증 거절 메시지를 감지합니다. (Prefix "44"는 Engine.IO의 에러 이벤트 규격)
+        // [N8 해결]: 단순 Contains("auth fail")은 사용자의 채팅 내용 등에 의한 오탐 가능성이 농후하여 Prefix 체크 강화
+        if (message.StartsWith("44") && (message.Contains("\"error\",\"auth fail\"") || message.Contains("auth fail")))
         {
-            _logger.LogCritical("🛑 [파동의 붕괴] {ChzzkUid} 채팅 서버로부터 auth fail 수신! 자가 치유를 요청합니다.", chzzkUid);
+            _logger.LogCritical("🛑 [파동의 붕괴] {ChzzkUid} 채팅 서버로부터 실제 인증 실패(44) 수신! 무시할 수 없는 정합성 결여입니다. [메시지: {Payload}]", chzzkUid, message);
             _authErrors[chzzkUid] = true;
             return;
         }
