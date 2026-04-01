@@ -22,22 +22,25 @@
 ---
 
 ## 2. 작업 철학 (Philosophy)
-> **"파로스의 분화 (The Differentiation of Parhos)"**
+> **"존재의 보존 (Preservation of Existence)"**
 > 
-> 하나의 큰 우주(Global System)에서 수만 개의 작은 우주(Streamer Channels)가 태어납니다. '파로스'라는 중심축은 이제 개별 스트리머의 채널 안에서 각기 다른 속도와 주기로 공명합니다. 우리는 이 '분화'의 과정을 코드와 데이터로 증명하며, 존재의 독립성을 완성합니다.
+> 하나의 파편이라도 소중히 여깁니다. 스트리머가 잠시 물댕봇 곁을 떠나더라도(DelYn='Y'), 그들이 쌓아온 철학적 사이클과 시청자와의 교감 데이터는 물리적으로 파괴되지 않습니다. 우리는 삭제 대신 '가림'을, 파괴 대신 '정지'를 선택하여 시스템의 연속성을 보존합니다.
 
 ---
 
 ## 3. 상세 설계 가이드 (Design Guide)
 
-### 단계 1: 도메인 엔티티 수정 (Domain Layer)
-*   **`IamfParhosCycle`**: `ParhosId` 문자열 PK를 제거하고 `Id` (int, AutoIncrement) PK를 도입합니다. 각 레코드는 `StreamerProfileId`를 가져야 하며, 채널별 순차적인 `CycleId`를 부여받습니다.
-*   **`IamfGenosRegistry`**: 시스템 전용 마스터 데이터에서 스트리머 전용 가변 데이터로 전환합니다. `StreamerProfileId`를 추가하여 스트리머가 페르소나의 역할(Role)이나 은유(Metaphor)를 커스텀할 수 있게 합니다.
+### 단계 1: 스트리머 프로필 확장 (Domain Layer)
+*   `StreamerProfile` 엔티티에 `DelYn` (기본값 'N') 및 `MasterUesYn` (기본값 'Y') 속성을 추가합니다.
+*   이 필드들은 관리자 도구나 사용자 설정 페이지에서 서비스 탈퇴 및 이용 제한 로직의 핵심 지표로 활용됩니다.
 
-### 단계 2: 영속성 매핑 업데이트 (Infrastructure Layer)
-*   `AppDbContext.cs` 내에서 신규 추가된 `StreamerProfileId`에 대한 **외래 키(FK) 관계**를 설정합니다.
-*   `OnDelete(DeleteBehavior.Cascade)`를 적용하여 스트리머 탈퇴 시 관련 철학 데이터가 깨끗이 정리되도록 합니다.
-*   `IamfVibrationLog` 및 `BroadcastSession`의 조회 성능을 위해 `(StreamerProfileId, CreatedAt)` 복합 인덱스를 강화합니다.
+### 단계 2: 도메인 엔티티 수정 (Philosophy Domain)
+*   `IamfParhosCycle`, `IamfGenosRegistry` 등에 `StreamerProfileId`를 도입하되, 물리적 연쇄 삭제(`Cascade`) 설정은 배제합니다.
+*   대신 `AppDbContext`에서 전역 필터를 통해 `StreamerProfile.DelYn == 'N' AND StreamerProfile.MasterUesYn == 'Y'` 조건을 자동으로 적용하도록 설계합니다.
+
+### 단계 3: 영속성 매핑 및 필터 적용 (Infrastructure Layer)
+*   `AppDbContext.cs`의 `OnModelCreating`에서 모든 `StreamerProfile` 관련 테이블에 대해 부모 프로필의 삭제 여부를 체크하는 전역 쿼리 필터를 구현합니다.
+*   인덱스 최적화: `DelYn` 컬럼을 포함하는 인덱스를 구성하여 필터링 성능을 확보합니다.
 
 ### 단계 3: 비즈니스 로직 리팩토링 (Application Layer)
 *   **`ResonanceService`**: 전역 진동수를 계산하던 로직을 `_userSession.StreamerProfileId`를 활용하여 채널별 독립 진동수 계산 로직으로 수정합니다.
@@ -46,6 +49,22 @@
 ---
 
 ## 4. 코드 스니펫 (Code Snippets)
+
+### [Modify] `StreamerProfile.cs` (Core Domain)
+```csharp
+public class StreamerProfile
+{
+    // ... 기존 필드
+    
+    [Required]
+    [MaxLength(1)]
+    public string DelYn { get; set; } = "N"; // [v4.9 추가] 삭제 여부 ('Y'일 경우 논리적 삭제)
+
+    [Required]
+    [MaxLength(1)]
+    public string MasterUesYn { get; set; } = "Y"; // [v4.9 추가] 마스터 사용 가능 여부 (시스템 관리용)
+}
+```
 
 ### [Modify] `IamfParhosCycle.cs` (Philosophy Domain)
 ```csharp
@@ -90,7 +109,11 @@ public class IamfGenosRegistry
 
 ### [Data Migration SQL] (Migration Up Method)
 ```sql
--- 기존 전역 사이클 데이터를 관리자(Id=1) 계정으로 이관 (또는 전체 복제)
+-- 1. StreamerProfile 컬럼 추가
+ALTER TABLE streamerprofiles ADD COLUMN DelYn VARCHAR(1) DEFAULT 'N' NOT NULL;
+ALTER TABLE streamerprofiles ADD COLUMN MasterUesYn VARCHAR(1) DEFAULT 'Y' NOT NULL;
+
+-- 2. 기존 전역 사이클 데이터를 관리자(Id=1) 계정으로 이관
 INSERT INTO IamfParhosCycles (StreamerProfileId, CycleId, VibrationAtDeath, RebirthPercentage, CreatedAt)
 SELECT 1, CycleId, VibrationAtDeath, RebirthPercentage, CreatedAt FROM tmp_old_parhos_cycles;
 ```
@@ -99,8 +122,8 @@ SELECT 1, CycleId, VibrationAtDeath, RebirthPercentage, CreatedAt FROM tmp_old_p
 
 ## 5. 단계별 검증 계획 (Verification)
 1.  **Build Check**: `dotnet build`를 통한 전체 솔루션 컴파일 성공 여부.
-2.  **Migration Test**: `database update` 시 데이터 누락 없이 `StreamerProfileId`가 채워지는지 확인.
-3.  **Cross-Tenant Test**: 다른 두 채널이 동시에 방송을 시작했을 때, `IamfVibrationLog`가 서로 다른 `StreamerProfileId`로 격리되어 저장되는지 확인.
+2.  **Soft Delete Test**: `DelYn = 'Y'`로 변경 시 해당 스트리머의 모든 관련 데이터(오마카세, 룰렛, IAMF 로그 등)가 API 조회 결과에서 제외되는지 확인.
+3.  **Master Block Test**: `MasterUesYn = 'N'`으로 변경 시 해당 스트리머의 봇 세션이 즉시 차단되는지 확인.
 
 ---
 **주의사항**: 본 문서는 v4.9 정규화의 **마스터 설계도**입니다. 작업 시작 시 이 문서를 최우선으로 참고하여 일관성을 유지하십시오.
