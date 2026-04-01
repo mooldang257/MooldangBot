@@ -471,8 +471,8 @@ await Parallel.ForEachAsync(activeUids,
 | 🔴 P0 | KST(UTC+9) 전역 표준화 (Domain, Application, Presentation) | Critical | ✅ **완료** (v1.5) |
 | 🟡 P1 | SystemWatchdog 시간대 비교 KST 통일 | High | ✅ **완료** (v1.5) |
 | 🟡 P1 | 에러 분류 체계 도입 (4xx vs 5xx) | High | ✅ **완료** (v1.6) |
-| 🟡 P1 | 진단 로그 강화 (헤더 + 마스킹) | High | ✅ **완료** (v1.7) |
-| 🟢 P2 | `KstClock` 유틸리티 도입 | Medium | ⬜ 미착수 |
+| 🟡 P1 | 진단 로그 강화 (헤더 + 마스킹) | High | ✅ 완료 (v1.7) |
+| 🟢 P2 | `KstClock` 유틸리티 도입 | Medium | ✅ 완료 (v1.7) |
 | 🔵 P3 | `TokenRenewalService.GetSessionAuthAsync` 데드코드 정리 | Low | ⬜ 미착수 |
 | 🔵 P3 | CircuitBreaker 정적 초기화 개선 | Low | ⬜ 미착수 |
 | 🔵 P3 | 토큰 암호화 저장 | Low | ⬜ 미착수 |

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -20,7 +21,7 @@ namespace MooldangBot.Domain.Entities
         public string Name { get; set; } = string.Empty;
 
         [JsonPropertyName("updatedAt")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public KstClock UpdatedAt { get; set; } = KstClock.Now;
 
         [JsonPropertyName("items")]
         public List<RouletteItem> Items { get; set; } = new();

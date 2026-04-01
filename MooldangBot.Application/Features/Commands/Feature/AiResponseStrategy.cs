@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Common.Interfaces;
 using System;
+using MooldangBot.Domain.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,7 +43,7 @@ public class AiResponseStrategy(
             {
                 await botService.SendReplyChatAsync(notification.Profile, aiResponse, notification.SenderId, ct);
                 await phoenix.RecordScenarioAsync(
-                    scenarioId: $"AI_CMD-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    scenarioId: $"AI_CMD-{KstClock.Now:yyyyMMddHHmmss}",
                     content: $"[CMD:{command.Keyword} from {notification.Username}] {aiResponse}",
                     level: 1
                 );

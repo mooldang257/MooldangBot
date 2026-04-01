@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 using System;
 
 namespace MooldangBot.Domain.Entities
@@ -12,6 +13,6 @@ namespace MooldangBot.Domain.Entities
         public int IntervalMinutes { get; set; }
         public string Message { get; set; } = "";
         public bool IsEnabled { get; set; } = true;
-        public DateTime? LastSentAt { get; set; }
+        public KstClock? LastSentAt { get; set; }
     }
 }

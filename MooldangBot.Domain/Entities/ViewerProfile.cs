@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -29,6 +30,6 @@ namespace MooldangBot.Domain.Entities
 
         public int ConsecutiveAttendanceCount { get; set; } = 0;
 
-        public DateTime? LastAttendanceAt { get; set; }
+        public KstClock? LastAttendanceAt { get; set; }
     }
 }

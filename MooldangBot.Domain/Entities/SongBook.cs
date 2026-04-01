@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -24,8 +26,8 @@ namespace MooldangBot.Domain.Entities
 
         public int UsageCount { get; set; } = 0;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
+        public KstClock CreatedAt { get; set; } = KstClock.Now;
 
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
+        public KstClock UpdatedAt { get; set; } = KstClock.Now;
     }
 }

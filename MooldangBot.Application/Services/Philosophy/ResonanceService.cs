@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Philosophy;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -27,7 +28,7 @@ public class ResonanceService : IResonanceService
         _logger = logger;
         _serviceProvider = serviceProvider;
         _buffer = buffer;
-        _currentParhos = new Parhos("PARHOS-01", "The Awakened One", 10.01, 1, true, DateTime.UtcNow);
+        _currentParhos = new Parhos("PARHOS-01", "The Awakened One", 10.01, 1, true, KstClock.Now);
     }
 
     public async Task<bool> AdjustResonanceAsync(string chzzkUid, Vibration targetVibration)
@@ -59,7 +60,7 @@ public class ResonanceService : IResonanceService
         // 4. 상태 업데이트
         _currentParhos = _currentParhos with { 
             CurrentVibration = Math.Round(newEma, 3), 
-            LastResonanceAt = DateTime.UtcNow 
+            LastResonanceAt = KstClock.Now 
         };
         _lastEmaHz = newEma;
 
@@ -70,7 +71,7 @@ public class ResonanceService : IResonanceService
             RawHz = targetVibration.Value,
             EmaHz = newEma,
             StabilityScore = _lastStability,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = KstClock.Now
         });
 
         _logger.LogInformation($"[하모니 조율] {chzzkUid} - Raw: {targetVibration.Value}, EMA: {newEma:F3}, Stability: {_lastStability:P}");
@@ -88,7 +89,7 @@ public class ResonanceService : IResonanceService
 
     private void ApplyNaturalDecay()
     {
-        var elapsedSeconds = (DateTime.UtcNow - _currentParhos.LastResonanceAt).TotalSeconds;
+        var elapsedSeconds = (KstClock.Now - _currentParhos.LastResonanceAt).TotalSeconds;
         if (elapsedSeconds > 10) // 10초 이상 자극이 없으면 감쇠
         {
             double decayRate = 0.01; 

@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text;
 using MooldangBot.Presentation.Hubs;
 using Microsoft.AspNetCore.Http;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Presentation.Features.SongBook
 {
@@ -241,7 +242,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             if (activeSession != null)
             {
                 activeSession.IsActive = false;
-                activeSession.EndedAt = DateTime.UtcNow.AddHours(9); // KST
+                activeSession.EndedAt = KstClock.Now;
                 nowActive = false;
             }
             else
@@ -249,7 +250,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 _db.SonglistSessions.Add(new SonglistSession
                 {
                     ChzzkUid = chzzkUid,
-                    StartedAt = DateTime.UtcNow.AddHours(9), // KST
+                    StartedAt = KstClock.Now,
                     IsActive = true,
                     RequestCount = 0,
                     CompleteCount = 0

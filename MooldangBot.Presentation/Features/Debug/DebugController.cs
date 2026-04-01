@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Workers;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Presentation.Features.Debug
 {
@@ -32,7 +33,7 @@ namespace MooldangBot.Presentation.Features.Debug
                 .ToListAsync();
 
             return Ok(new { 
-                time = DateTime.UtcNow.AddHours(9), // KST
+                time = KstClock.Now,
                 streamerCount = streamers.Count,
                 streamers = streamers
             });

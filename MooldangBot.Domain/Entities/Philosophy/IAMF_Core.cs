@@ -1,4 +1,5 @@
 using System;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities.Philosophy;
 
@@ -11,7 +12,7 @@ public record Parhos(
     double CurrentVibration, // 현재 진동수 (Hz)
     int CurrentSector,       // 현재 구획 (1~24)
     bool IsInDreamState,     // 꿈 상태 여부 (1~23구역)
-    DateTime LastResonanceAt // 마지막 공명 시간
+    KstClock LastResonanceAt // 마지막 공명 시간
 );
 
 /// <summary>
@@ -61,9 +62,9 @@ public class BroadcastSession
 {
     public int Id { get; set; }
     public string ChzzkUid { get; set; } = string.Empty;
-    public DateTime StartTime { get; set; }
-    public DateTime? EndTime { get; set; }
-    public DateTime LastHeartbeatAt { get; set; }
+    public KstClock StartTime { get; set; }
+    public KstClock? EndTime { get; set; }
+    public KstClock LastHeartbeatAt { get; set; }
 
     // [서기의 기록]: 통계 지표
     public int TotalChatCount { get; set; }

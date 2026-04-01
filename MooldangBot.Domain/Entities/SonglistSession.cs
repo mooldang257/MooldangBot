@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -15,9 +16,9 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(50)]
         public string ChzzkUid { get; set; } = string.Empty;
 
-        public DateTime StartedAt { get; set; }
+        public KstClock StartedAt { get; set; }
         
-        public DateTime? EndedAt { get; set; }
+        public KstClock? EndedAt { get; set; }
 
         public int RequestCount { get; set; } = 0;
 

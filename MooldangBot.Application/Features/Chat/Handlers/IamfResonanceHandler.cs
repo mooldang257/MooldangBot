@@ -6,6 +6,7 @@ using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Features.Chat.Handlers;
 
@@ -32,7 +33,7 @@ public class IamfResonanceHandler(
 
         // 2. [피닉스의 기록] 시나리오 영속화
         await phoenix.RecordScenarioAsync(
-            scenarioId: $"CHAT-{DateTime.UtcNow:yyyyMMddHHmmss}",
+            scenarioId: $"CHAT-{KstClock.Now:yyyyMMddHHmmss}",
             content: $"[{notification.Username}] {notification.Message}",
             level: 1
         );

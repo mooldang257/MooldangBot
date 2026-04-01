@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Services;
 
@@ -107,7 +108,7 @@ public class ChzzkBotService : IChzzkBotService
     public async Task EnsureConnectionAsync(string chzzkUid, bool forceFresh = false)
     {
         // [v16.3.2] 1. [영구 봉인 해제]: 30분이 지난 실패 기록은 자동으로 소멸(Decay)시킵니다.
-        var kstNow = DateTime.UtcNow.AddHours(9);
+        var kstNow = KstClock.Now;
         if (_recoveryRetryCounts.TryGetValue(chzzkUid, out var rc) && rc >= MaxAutoRecoversPerWindow)
         {
             if (_lastRecoveryAttempts.TryGetValue(chzzkUid, out var last) && kstNow - last > TimeSpan.FromMinutes(30))
@@ -198,7 +199,7 @@ public class ChzzkBotService : IChzzkBotService
     public async Task HandleAuthFailureAsync(string chzzkUid)
     {
         // 1. [v5.7: 쿨다운 체크] 폭주 방지를 위한 최소 간격 보장 (KST 기준)
-        var kstNow = DateTime.UtcNow.AddHours(9);
+        var kstNow = KstClock.Now;
         if (_lastRecoveryAttempts.TryGetValue(chzzkUid, out var lastAttempt) &&
             kstNow - lastAttempt < RecoveryCooldown)
         {
@@ -256,7 +257,7 @@ public class ChzzkBotService : IChzzkBotService
         finally
         {
             // [v13.1] 최종 쿨다운 보정: 종료 시각을 KST(UTC+9)로 기록
-            _lastRecoveryAttempts[chzzkUid] = DateTime.UtcNow.AddHours(9);
+            _lastRecoveryAttempts[chzzkUid] = KstClock.Now;
             sema.Release();
         }
     }

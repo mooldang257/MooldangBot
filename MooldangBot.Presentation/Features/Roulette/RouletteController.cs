@@ -35,7 +35,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         public int ActiveItemCount { get; set; }
         
         [JsonPropertyName("lstUpdDt")]
-        public DateTime LstUpdDt { get; set; }
+        public KstClock LstUpdDt { get; set; }
     }
 
     public class CompleteRequest
@@ -44,7 +44,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         public string SpinId { get; set; } = string.Empty;
     }
 
-    public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, DateTime CreatedAt, int Status);
+    public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, KstClock CreatedAt, int Status);
 
     // [v1.9] 룰렛 업데이트용 통합 DTO
     public class RouletteUpdateRequest
@@ -161,7 +161,7 @@ namespace MooldangBot.Presentation.Features.Roulette
             {
                 RouletteObj.Id = 0;
                 RouletteObj.ChzzkUid = chzzkUid;
-                RouletteObj.UpdatedAt = DateTime.UtcNow.AddHours(9); // KST
+                RouletteObj.UpdatedAt = KstClock.Now;
                 
                 if (!RouletteObj.Items.Any() || RouletteObj.Items.Sum(I => I.Probability) <= 0)
                 {
@@ -197,7 +197,7 @@ namespace MooldangBot.Presentation.Features.Roulette
 
                 // 1. 룰렛 기본 정보 업데이트
                 RouletteObj.Name = req.Name;
-                RouletteObj.UpdatedAt = DateTime.UtcNow.AddHours(9); // KST
+                RouletteObj.UpdatedAt = KstClock.Now;
 
                 _db.RouletteItems.RemoveRange(RouletteObj.Items);
                 foreach (var Item in req.Items)
@@ -218,7 +218,7 @@ namespace MooldangBot.Presentation.Features.Roulette
                     UnifiedCmd.Cost = req.CostPerSpin;
                     UnifiedCmd.CostType = req.Type == RouletteType.Cheese ? CommandCostType.Cheese : CommandCostType.Point;
                     UnifiedCmd.IsActive = req.IsActive;
-                    UnifiedCmd.UpdatedAt = DateTime.UtcNow.AddHours(9); // KST
+                    UnifiedCmd.UpdatedAt = KstClock.Now;
                 }
 
                 await _db.SaveChangesAsync();
@@ -273,7 +273,7 @@ namespace MooldangBot.Presentation.Features.Roulette
                 await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
                     _db.Roulettes.IgnoreQueryFilters()
                         .Where(R => R.Items.Any(I => I.Id == ItemId)),
-                    S => S.SetProperty(R => R.UpdatedAt, DateTime.UtcNow.AddHours(9))); // KST
+                    S => S.SetProperty(R => R.UpdatedAt, KstClock.Now));
                     
                 return Ok();
             }
@@ -339,7 +339,7 @@ namespace MooldangBot.Presentation.Features.Roulette
             if (log == null) return NotFound("로그를 찾을 수 없거나 접근 권한이 없습니다.");
 
             log.Status = status;
-            log.ProcessedAt = DateTime.UtcNow.AddHours(9); // KST
+            log.ProcessedAt = KstClock.Now;
             await _db.SaveChangesAsync();
 
             return Ok(log);

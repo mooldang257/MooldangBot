@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Workers;
 
 /// <summary>
@@ -42,7 +44,7 @@ public class RouletteResultWorker : BackgroundService
                 {
                     // 활성 상태: 2초 단위 정밀 감시
                     var overdueSpins = await db.RouletteSpins
-                        .Where(s => !s.IsCompleted && s.ScheduledTime <= DateTime.UtcNow.AddHours(9))
+                        .Where(s => !s.IsCompleted && s.ScheduledTime <= KstClock.Now)
                         .OrderBy(s => s.ScheduledTime)
                         .Take(10)
                         .ToListAsync(stoppingToken);

@@ -1,3 +1,5 @@
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Models;
 
 /// <summary>
@@ -6,5 +8,5 @@ namespace MooldangBot.Application.Models;
 public sealed record ChatEventItem(
     string ChzzkUid,
     string JsonPayload,
-    DateTime ReceivedAt
+    KstClock ReceivedAt
 );

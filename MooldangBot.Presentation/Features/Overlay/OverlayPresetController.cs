@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Presentation.Hubs;
+using MooldangBot.Domain.Common;
 
 namespace MooldangAPI.Controllers
 {
@@ -82,8 +83,8 @@ namespace MooldangAPI.Controllers
                             },
                             background = new { url = "", opacity = 0.5, visible = false }
                         }),
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = KstClock.Now,
+                        UpdatedAt = KstClock.Now
                     };
 
                     _db.OverlayPresets.Add(defaultPreset);
@@ -195,8 +196,8 @@ namespace MooldangAPI.Controllers
                     ChzzkUid = chzzkUid,
                     Name = dto.Name ?? "새 프리셋",
                     ConfigJson = dto.ConfigJson ?? "{}",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = KstClock.Now,
+                    UpdatedAt = KstClock.Now
                 };
 
                 _db.OverlayPresets.Add(preset);
@@ -227,7 +228,7 @@ namespace MooldangAPI.Controllers
 
             preset.Name = dto.Name ?? preset.Name;
             preset.ConfigJson = dto.ConfigJson ?? preset.ConfigJson;
-            preset.UpdatedAt = DateTime.UtcNow;
+            preset.UpdatedAt = KstClock.Now;
 
             await _db.SaveChangesAsync();
             return NoContent();

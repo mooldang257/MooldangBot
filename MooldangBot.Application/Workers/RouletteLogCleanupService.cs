@@ -3,6 +3,7 @@ using MooldangBot.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Workers;
 
@@ -26,7 +27,7 @@ public class RouletteLogCleanupService : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-                var thresholdDate = DateTime.UtcNow.AddDays(-7);
+                var thresholdDate = KstClock.Now.AddDays(-7);
                 var oldLogs = await EntityFrameworkQueryableExtensions.ExecuteDeleteAsync(
                     db.RouletteLogs.Where(l => l.CreatedAt < thresholdDate), 
                     stoppingToken);

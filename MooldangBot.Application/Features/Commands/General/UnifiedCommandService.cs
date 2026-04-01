@@ -4,6 +4,8 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Commands.General;
 
 /// <summary>
@@ -40,7 +42,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
         else
         {
-            entity = new UnifiedCommand { ChzzkUid = targetUid, CreatedAt = DateTime.UtcNow.AddHours(9) };
+            entity = new UnifiedCommand { ChzzkUid = targetUid, CreatedAt = KstClock.Now };
             _db.UnifiedCommands.Add(entity);
         }
 
@@ -65,7 +67,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         entity.IsActive = req.IsActive;
         entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
-        entity.UpdatedAt = DateTime.UtcNow.AddHours(9);
+        entity.UpdatedAt = KstClock.Now;
 
         await _db.SaveChangesAsync();
 
@@ -161,7 +163,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         {
             ChzzkUid = targetUid,
             Name = entity.ResponseText.Length > 0 ? entity.ResponseText : "행운의 룰렛",
-            UpdatedAt = DateTime.UtcNow.AddHours(9)
+            UpdatedAt = KstClock.Now
         };
         newRoulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
         newRoulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
@@ -190,7 +192,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
 
         roulette.Name = string.IsNullOrWhiteSpace(rouletteData.Name) ? entity.ResponseText : rouletteData.Name;
-        roulette.UpdatedAt = DateTime.UtcNow.AddHours(9);
+        roulette.UpdatedAt = KstClock.Now;
 
         if (rouletteData.Items != null && rouletteData.Items.Any())
         {
@@ -226,7 +228,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         if (entity != null)
         {
             entity.IsActive = !entity.IsActive;
-            entity.UpdatedAt = DateTime.UtcNow.AddHours(9);
+            entity.UpdatedAt = KstClock.Now;
             await _db.SaveChangesAsync();
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
@@ -290,7 +292,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             ResponseText = response,
             RequiredRole = role,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow.AddHours(9)
+            CreatedAt = KstClock.Now
         };
 
         _db.UnifiedCommands.Add(entity);

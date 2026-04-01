@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 using MooldangBot.Application.Interfaces;
 using DotNetEnv;
 
@@ -221,7 +222,7 @@ async Task<int> EnsureCommand(AppDbContext db, string uid, string kw, string cat
             db.UnifiedCommands.Add(new UnifiedCommand {
                 ChzzkUid = uid, Keyword = k, Category = Enum.Parse<CommandCategory>(cat),
                 CostType = Enum.Parse<CommandCostType>(ct), Cost = cost, FeatureType = feature,
-                ResponseText = response ?? "", IsActive = true, RequiredRole = role, UpdatedAt = DateTime.UtcNow.AddHours(9)
+                ResponseText = response ?? "", IsActive = true, RequiredRole = role, CreatedAt = KstClock.Now
             });
             added++;
         }

@@ -4,6 +4,7 @@ using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Philosophy;
 using MooldangBot.Domain.Entities.Philosophy;
+using MooldangBot.Domain.Common;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -150,7 +151,7 @@ public class IamfDashboardController : ControllerBase
         setting.IsPersonaChatEnabled = request.IsPersonaChatEnabled;
         setting.SensitivityMultiplier = Math.Round(request.SensitivityMultiplier, 2);
         setting.OverlayOpacity = Math.Round(request.OverlayOpacity, 2);
-        setting.LastUpdatedAt = DateTime.UtcNow;
+        setting.LastUpdatedAt = KstClock.Now;
 
         // 4. [영속화]
         await _db.SaveChangesAsync();

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Presentation.Features.SongQueue
 {
@@ -26,7 +27,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
         {
             newSong.Id = 0;
             newSong.ChzzkUid = chzzkUid;
-            newSong.CreatedAt = DateTime.UtcNow.AddHours(9); // KST
+            newSong.CreatedAt = KstClock.Now;
             _db.SongQueues.Add(newSong);
 
             if (omakaseId.HasValue)

@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -18,7 +19,7 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(500)]
         public string? PosterImageUrl { get; set; }
 
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public KstClock UpdatedAt { get; set; } = KstClock.Now;
 
         // 약어 목록 (Navigation Property)
         public ICollection<ChzzkCategoryAlias> Aliases { get; set; } = new List<ChzzkCategoryAlias>();

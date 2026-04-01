@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Workers;
 
@@ -62,7 +63,7 @@ public class SystemWatchdogService(
             var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
 
             var inactiveSessions = db.BroadcastSessions
-                .Where(s => s.IsActive && s.LastHeartbeatAt < DateTime.UtcNow.AddMinutes(-5))
+                .Where(s => s.IsActive && s.LastHeartbeatAt < KstClock.Now.AddMinutes(-5))
                 .ToList();
 
             foreach (var session in inactiveSessions)
@@ -106,7 +107,7 @@ public class SystemWatchdogService(
 
                     // [영겁의 열쇠 체크]: 새로운 TokenRenewalBackgroundService가 백그라운드에서 갱신하므로, 
                     // 여기서는 현재 토큰이 유효한지(만료 5분 전 이상)만 확인합니다.
-                    bool isTokenValid = profile.TokenExpiresAt > DateTime.UtcNow.AddMinutes(5);
+                    bool isTokenValid = profile.TokenExpiresAt > KstClock.Now.AddMinutes(5);
 
                     // [맥박의 재점검]: 토큰이 확보되었으나 세션이 비정상인 경우 재연결 시도
                     if (isTokenValid)

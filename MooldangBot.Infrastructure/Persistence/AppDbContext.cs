@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
+using MooldangBot.Infrastructure.Persistence.Converters;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
@@ -12,6 +14,13 @@ public class AppDbContext : DbContext, IAppDbContext
     public AppDbContext(DbContextOptions<AppDbContext> options, IUserSession userSession) : base(options)
     {
         _userSession = userSession;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        // [v2.0] 모든 KstClock 타입 속성에 대해 전용 컨버터를 자동 적용합니다.
+        configurationBuilder.Properties<KstClock>().HaveConversion<KstClockConverter>();
     }
 
     public DbSet<StreamerProfile> StreamerProfiles { get; set; }

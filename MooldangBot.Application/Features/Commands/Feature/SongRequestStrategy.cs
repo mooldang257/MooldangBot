@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Commands.Feature;
 
 /// <summary>
@@ -53,7 +55,7 @@ public class SongRequestStrategy(
                 ChzzkUid = notification.Profile.ChzzkUid,
                 Title = songTitle,
                 Status = "Pending",
-                CreatedAt = DateTime.UtcNow.AddHours(9)
+                CreatedAt = KstClock.Now
             };
             db.SongQueues.Add(song);
             await db.SaveChangesAsync(ct);

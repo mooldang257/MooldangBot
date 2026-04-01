@@ -4,6 +4,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Api.Controllers.Admin;
 
 /// <summary>
@@ -30,9 +32,9 @@ public class AdminStatusController(
             TotalActiveBots = chatClient.GetActiveConnectionCount(),
             MemoryUsage = $"{memoryMb} MB",
             IsCircuitOpen = renewalService.IsCircuitOpen(),
-            Uptime = (DateTime.UtcNow.AddHours(9) - process.StartTime).ToString(@"dd\.hh\:mm\:ss"),
+            Uptime = (KstClock.Now - process.StartTime).ToString(@"dd\.hh\:mm\:ss"),
             AvgVibration = $"{avgVibration:F2} Hz",
-            Timestamp = DateTime.UtcNow.AddHours(9).ToString("O")
+            Timestamp = KstClock.Now.ToString("O")
         });
     }
 
@@ -41,8 +43,8 @@ public class AdminStatusController(
     {
         // [서기의 최종 기록]: 최신 로그 샘플 반환 (실전에서는 DB의 Logs 테이블 조회)
         return Ok(new[] {
-            new { Time = DateTime.UtcNow.AddHours(9).AddSeconds(-10).ToString("HH:mm:ss"), Level = "INFO", Msg = "[피닉스] 세션 상태 양호" },
-            new { Time = DateTime.UtcNow.AddHours(9).AddSeconds(-30).ToString("HH:mm:ss"), Level = "WARN", Msg = "[와치독] 토큰 임박 감지됨" }
+            new { Time = KstClock.Now.AddSeconds(-10).ToString("HH:mm:ss"), Level = "INFO", Msg = "[피닉스] 세션 상태 양호" },
+            new { Time = KstClock.Now.AddSeconds(-30).ToString("HH:mm:ss"), Level = "WARN", Msg = "[와치독] 토큰 임박 감지됨" }
         });
     }
 }

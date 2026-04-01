@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities;
 
@@ -32,7 +34,7 @@ public class RouletteSpin
     public bool IsCompleted { get; set; } = false;
 
     [Required]
-    public DateTime ScheduledTime { get; set; } // 결과 채팅이 전송되어야 할 예정 시각
+    public KstClock ScheduledTime { get; set; } // 결과 채팅이 전송되어야 할 예정 시각
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
+    public KstClock CreatedAt { get; set; } = KstClock.Now; // KST
 }

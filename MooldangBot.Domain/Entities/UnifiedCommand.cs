@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities;
 
@@ -42,6 +44,6 @@ public class UnifiedCommand
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
-    public DateTime? UpdatedAt { get; set; }
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.DTOs
 {
@@ -114,7 +115,7 @@ namespace MooldangBot.Domain.DTOs
         public string ConfigJson { get; set; } = "{}";
 
         [JsonPropertyName("updatedAt")]
-        public DateTime UpdatedAt { get; set; }
+        public KstClock UpdatedAt { get; set; }
     }
 
     public class SharedComponentDto

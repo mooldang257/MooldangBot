@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -27,6 +28,6 @@ namespace MooldangBot.Domain.Entities
 
         public int SortOrder { get; set; } = 0; // 드래그 앤 드롭 정렬을 기억하기 위한 순서 번호
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // 신청된 시간 (KST)
+        public KstClock CreatedAt { get; set; } = KstClock.Now; // 신청된 시간 (KST)
     }
 }

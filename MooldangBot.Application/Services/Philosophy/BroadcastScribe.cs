@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -79,7 +80,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         }
 
         stats.ChatCount++;
-        _recentChatActivity[chzzkUid] = DateTime.UtcNow; // 최근 활동 시간 갱신
+        _recentChatActivity[chzzkUid] = KstClock.Now; // 최근 활동 시간 갱신
 
         // 1. [침묵 속의 미소]: [GeneratedRegex]를 통한 이모티콘 고속 추출
         var emotes = EmoteRegex().Matches(message);
@@ -112,8 +113,8 @@ public partial class BroadcastScribe : IBroadcastScribe
             session = new BroadcastSession
             {
                 ChzzkUid = chzzkUid,
-                StartTime = DateTime.UtcNow,
-                LastHeartbeatAt = DateTime.UtcNow,
+                StartTime = KstClock.Now,
+                LastHeartbeatAt = KstClock.Now,
                 IsActive = true
             };
             db.BroadcastSessions.Add(session);
@@ -121,7 +122,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         }
         else
         {
-            session.LastHeartbeatAt = DateTime.UtcNow;
+            session.LastHeartbeatAt = KstClock.Now;
             if (!_activeStats.ContainsKey(chzzkUid))
                 _activeStats[chzzkUid] = new SessionStats();
         }
@@ -147,7 +148,7 @@ public partial class BroadcastScribe : IBroadcastScribe
             session.TopEmotesJson = JsonSerializer.Serialize(stats.Emotes.OrderByDescending(e => e.Value).Take(10).ToDictionary());
         }
 
-        session.EndTime = DateTime.UtcNow;
+        session.EndTime = KstClock.Now;
         session.IsActive = false;
         await db.SaveChangesAsync();
 
@@ -155,8 +156,9 @@ public partial class BroadcastScribe : IBroadcastScribe
         {
             session.TotalChatCount,
             TopKeywords = JsonSerializer.Deserialize<Dictionary<string, int>>(session.TopKeywordsJson ?? "{}"),
-            TopEmotes = JsonSerializer.Deserialize<Dictionary<string, int>>(session.TopEmotesJson ?? "{}"),
-            Duration = (session.EndTime - session.StartTime)?.ToString(@"hh\:mm\:ss")
+            Duration = (session.EndTime != null) 
+                        ? (session.EndTime.Value - session.StartTime).ToString(@"hh\:mm\:ss") 
+                        : "00:00:00"
         };
     }
 
@@ -166,10 +168,10 @@ public partial class BroadcastScribe : IBroadcastScribe
     private async Task TryTriggerSessionAsync(string chzzkUid)
     {
         // 1. [냉정의 유예]: 이미 최근에 라이브 확인을 수행했다면 API 보호를 위해 건너뜀 (성공 10분, 실패 1분)
-        if (_liveCheckCooldown.TryGetValue(chzzkUid, out var lastCheck) && lastCheck > DateTime.UtcNow.AddMinutes(-1))
+        if (_liveCheckCooldown.TryGetValue(chzzkUid, out var lastCheck) && lastCheck > KstClock.Now.AddMinutes(-1))
             return;
 
-        _liveCheckCooldown[chzzkUid] = DateTime.UtcNow;
+        _liveCheckCooldown[chzzkUid] = KstClock.Now;
 
         try
         {
@@ -188,13 +190,13 @@ public partial class BroadcastScribe : IBroadcastScribe
                 logger.LogInformation($"✅ [채팅 트리거 성공] {chzzkUid} 채널 라이브 확인. 새 세션(ID: {sessionId})이 생성되었습니다.");
 
                 // 성공 시에는 10분간 추가 체크 방지 (어차피 _activeStats에 들어갔으므로 이 메서드는 호출 안 됨)
-                _liveCheckCooldown[chzzkUid] = DateTime.UtcNow.AddMinutes(9); 
+                _liveCheckCooldown[chzzkUid] = KstClock.Now.AddMinutes(9); 
             }
             else
             {
                 // 실패 시에는 1분 후에 다시 시도 가능하도록 설정
-                _liveCheckCooldown[chzzkUid] = DateTime.UtcNow;
-                _recentChatActivity[chzzkUid] = DateTime.UtcNow; // 실패하더라도 채팅이 왔으므로 감시 대상에 포함
+                _liveCheckCooldown[chzzkUid] = KstClock.Now;
+                _recentChatActivity[chzzkUid] = KstClock.Now; // 실패하더라도 채팅이 왔으므로 감시 대상에 포함
             }
         }
         catch (Exception)
@@ -208,6 +210,6 @@ public partial class BroadcastScribe : IBroadcastScribe
     /// </summary>
     public bool IsRecentlyActive(string chzzkUid)
     {
-        return _recentChatActivity.TryGetValue(chzzkUid, out var lastChat) && lastChat > DateTime.UtcNow.AddHours(-1);
+        return _recentChatActivity.TryGetValue(chzzkUid, out var lastChat) && lastChat > KstClock.Now.AddHours(-1);
     }
 }

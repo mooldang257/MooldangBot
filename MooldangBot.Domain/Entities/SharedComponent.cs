@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -25,6 +26,6 @@ namespace MooldangBot.Domain.Entities
         // 컴포넌트 설정 데이터를 JSON으로 저장
         public string ConfigJson { get; set; } = "{}";
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public KstClock CreatedAt { get; set; } = KstClock.Now;
     }
 }

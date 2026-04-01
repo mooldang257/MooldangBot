@@ -1,4 +1,6 @@
+using System;
 using System.ComponentModel.DataAnnotations;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities;
 
@@ -18,5 +20,5 @@ public class StreamerManager
     [MaxLength(20)]
     public string Role { get; set; } = "manager"; // "manager", "admin" 등 확장 가능
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(9); // KST
+    public KstClock CreatedAt { get; set; } = KstClock.Now; // KST
 }

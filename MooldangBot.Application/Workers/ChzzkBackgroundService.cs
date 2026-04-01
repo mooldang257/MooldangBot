@@ -4,6 +4,7 @@ using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Workers;
 
@@ -71,7 +72,7 @@ public class ChzzkBackgroundService : BackgroundService
                                     .AnyAsync(s => s.ChzzkUid == chzzkUid, ct);
 
                                 bool hasRecentSession = hasAnySession && await db.BroadcastSessions
-                                    .AnyAsync(s => s.ChzzkUid == chzzkUid && s.StartTime > DateTime.UtcNow.AddDays(-7), ct);
+                                    .AnyAsync(s => s.ChzzkUid == chzzkUid && s.StartTime > KstClock.Now.AddDays(-7), ct);
 
                                 bool isRecentlyChatted = scribe.IsRecentlyActive(chzzkUid);
 

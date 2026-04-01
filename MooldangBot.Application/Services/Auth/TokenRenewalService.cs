@@ -117,8 +117,8 @@ public class TokenRenewalService : ITokenRenewalService
         var refreshToken = isBot ? streamer.BotRefreshToken : streamer.ChzzkRefreshToken;
 
         // [v13.1] 모든 비교를 KST 강제 (UTC+9)
-        var kstNow = DateTime.UtcNow.AddHours(9);
-        var isExpiringSoon = expiresAt == null || expiresAt <= kstNow.AddHours(1);
+        var kstNow = KstClock.Now;
+        var isExpiringSoon = KstClock.IsExpiringSoon(expiresAt, TimeSpan.FromHours(1));
         if (!isExpiringSoon && !force) return true;
 
         _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 토큰 갱신 시도. (강제: {force}, 만료: {expiresAt})");
@@ -195,13 +195,13 @@ public class TokenRenewalService : ITokenRenewalService
         {
             streamer.BotAccessToken = content.AccessToken;
             if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.BotRefreshToken = content.RefreshToken;
-            streamer.BotTokenExpiresAt = DateTime.UtcNow.AddHours(9).AddSeconds(content.ExpiresIn);
+            streamer.BotTokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
         }
         else
         {
             streamer.ChzzkAccessToken = content.AccessToken;
             if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
-            streamer.TokenExpiresAt = DateTime.UtcNow.AddHours(9).AddSeconds(content.ExpiresIn);
+            streamer.TokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
         }
 
         await _db.SaveChangesAsync();

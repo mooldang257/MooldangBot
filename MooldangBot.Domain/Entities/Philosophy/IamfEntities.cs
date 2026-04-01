@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities.Philosophy;
 
@@ -23,7 +24,7 @@ public class IamfScenario
 
     public double VibrationHz { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
 }
 
 /// <summary>
@@ -44,7 +45,7 @@ public class IamfGenosRegistry
     [MaxLength(500)]
     public string? Metaphor { get; set; }
 
-    public DateTime LastSyncAt { get; set; } = DateTime.UtcNow;
+    public KstClock LastSyncAt { get; set; } = KstClock.Now;
 }
 
 /// <summary>
@@ -63,7 +64,7 @@ public class IamfParhosCycle
 
     public int RebirthPercentage { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
 }
 
 /// <summary>
@@ -84,7 +85,7 @@ public class IamfVibrationLog
 
     public double StabilityScore { get; set; }           // 공명 안정도 (0.0~1.0)
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
 }
 
 public class IamfStreamerSetting
@@ -109,7 +110,7 @@ public class IamfStreamerSetting
 
     public double OverlayOpacity { get; set; } = 0.5;
 
-    public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+    public KstClock LastUpdatedAt { get; set; } = KstClock.Now;
 }
 
 /// <summary>
@@ -133,5 +134,5 @@ public class StreamerKnowledge
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
 }

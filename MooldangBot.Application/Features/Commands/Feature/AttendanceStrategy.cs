@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Commands.Feature;
 
 /// <summary>
@@ -39,10 +41,10 @@ public class AttendanceStrategy(
             db.ViewerProfiles.Add(viewer);
         }
 
-        bool isFirstToday = viewer.LastAttendanceAt?.Date != DateTime.UtcNow.AddHours(9).Date;
+        bool isFirstToday = viewer.LastAttendanceAt?.Date != KstClock.Today;
         if (isFirstToday)
         {
-            viewer.LastAttendanceAt = DateTime.UtcNow.AddHours(9);
+            viewer.LastAttendanceAt = KstClock.Now;
             viewer.AttendanceCount++;
             viewer.Points += streamer.PointPerAttendance;
             await db.SaveChangesAsync(ct);

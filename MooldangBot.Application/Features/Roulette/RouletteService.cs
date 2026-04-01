@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json; // [v1.9.9] 추가
 using MooldangBot.Application.State;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Roulette;
 
 // 🎰 룰렛 실행 컨텍스트 (결과 전송용)
@@ -112,8 +114,8 @@ public class RouletteService : IRouletteService
                             ItemName = result.ItemName,
                             IsMission = result.IsMission,
                             Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,
-                            CreatedAt = DateTime.UtcNow.AddHours(9),
-                            ProcessedAt = result.IsMission ? null : DateTime.UtcNow.AddHours(9)
+                            CreatedAt = KstClock.Now,
+                            ProcessedAt = result.IsMission ? null : KstClock.Now
                         });
                     }
 
@@ -145,7 +147,7 @@ public class RouletteService : IRouletteService
                         Summary = summaryStr,
                         IsCompleted = false,
                         ScheduledTime = _rouletteState.GetAndSetNextEndTime(chzzkUid, count).AddSeconds(3),
-                        CreatedAt = DateTime.UtcNow.AddHours(9)
+                        CreatedAt = KstClock.Now
                     };
                     _db.RouletteSpins.Add(spin);
                     await _db.SaveChangesAsync(ct);

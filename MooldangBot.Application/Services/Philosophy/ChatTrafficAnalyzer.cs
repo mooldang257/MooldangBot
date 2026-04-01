@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -11,14 +12,14 @@ namespace MooldangBot.Application.Services.Philosophy;
 public class ChatTrafficAnalyzer : IChatTrafficAnalyzer
 {
     // 스트리머별로 독립적인 타임스탬프 큐 관리 [오시리스의 격리]
-    private readonly ConcurrentDictionary<string, ConcurrentQueue<DateTime>> _trafficWindows = new();
+    private readonly ConcurrentDictionary<string, ConcurrentQueue<KstClock>> _trafficWindows = new();
     private const int WindowSeconds = 10;
     private const int MaxChatForFullLoad = 50;
 
     public (double SystemLoad, int InteractionCount) AnalyzeAndRecord(string chzzkUid)
     {
-        var queue = _trafficWindows.GetOrAdd(chzzkUid, _ => new ConcurrentQueue<DateTime>());
-        var now = DateTime.UtcNow;
+        var queue = _trafficWindows.GetOrAdd(chzzkUid, _ => new ConcurrentQueue<KstClock>());
+        var now = KstClock.Now;
 
         // 1. [실전 감응]: 새로운 심박 기록
         queue.Enqueue(now);

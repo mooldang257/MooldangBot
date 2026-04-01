@@ -7,6 +7,9 @@ using MooldangBot.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
+
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Features.SongBook.Handlers;
 
@@ -109,7 +112,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
                 ChzzkUid = notification.Profile.ChzzkUid,
                 Title = songTitle,
                 Status = "Pending",
-                CreatedAt = DateTime.UtcNow.AddHours(9),
+                CreatedAt = KstClock.Now,
                 SortOrder = await db.SongQueues.Where(q => q.ChzzkUid == notification.Profile.ChzzkUid).CountAsync(cancellationToken) + 1
             };
 

@@ -4,6 +4,7 @@ using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Workers;
 
@@ -48,7 +49,7 @@ public class PeriodicMessageWorker : BackgroundService
                         .ToListAsync(stoppingToken);
 
                     var messagesLookup = allMessages.ToLookup(m => m.ChzzkUid);
-                    var now = DateTimeOffset.UtcNow;
+                    var now = KstClock.Now;
 
                     foreach (var profile in profiles)
                     {
@@ -56,9 +57,7 @@ public class PeriodicMessageWorker : BackgroundService
 
                         foreach (var msg in periodicMessages)
                         {
-                            var lastSent = msg.LastSentAt != null 
-                                ? new DateTimeOffset(msg.LastSentAt.Value, TimeSpan.Zero) 
-                                : DateTimeOffset.MinValue;
+                            var lastSent = msg.LastSentAt ?? KstClock.MinValue;
                             
                             // 설정된 주기가 지났는지 확인 (타임존 독립적 비교)
                             if (now >= lastSent.AddMinutes(msg.IntervalMinutes))
@@ -69,7 +68,7 @@ public class PeriodicMessageWorker : BackgroundService
                                 
                                 if (success)
                                 {
-                                    msg.LastSentAt = now.UtcDateTime;
+                                    msg.LastSentAt = now;
                                     // 즉시 저장하여 워커 재시작 시 중복 발송 방지
                                     await db.SaveChangesAsync(stoppingToken);
                                     _logger.LogInformation($"✅ [주기적 메시지] {profile.ChzzkUid} 송출 완료 및 시간 갱신");

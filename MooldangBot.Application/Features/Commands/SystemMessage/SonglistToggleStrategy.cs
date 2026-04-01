@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Commands.SystemMessage;
 
 /// <summary>
@@ -35,7 +37,7 @@ public class SonglistToggleStrategy(
         if (activeSession != null)
         {
             activeSession.IsActive = false;
-            activeSession.EndedAt = DateTime.UtcNow.AddHours(9);
+            activeSession.EndedAt = KstClock.Now;
             statusText = "비활성화";
         }
         else
@@ -43,7 +45,7 @@ public class SonglistToggleStrategy(
             db.SonglistSessions.Add(new SonglistSession
             {
                 ChzzkUid = notification.Profile.ChzzkUid,
-                StartedAt = DateTime.UtcNow.AddHours(9),
+                StartedAt = KstClock.Now,
                 IsActive = true
             });
             statusText = "활성화";

@@ -12,6 +12,7 @@ using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 using Websocket.Client;
 using System.Linq;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
 
@@ -25,7 +26,7 @@ public class WebSocketShard : IWebSocketShard
     private readonly IChatEventChannel _eventChannel;
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
-    private readonly ConcurrentDictionary<string, DateTime> _lastActivityList = new();
+    private readonly ConcurrentDictionary<string, KstClock> _lastActivityList = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
     private readonly ConcurrentDictionary<string, bool> _authErrors = new(); // [v16.3.2.4] 인증 에러 상태 추적
     private bool _isDisposed;
@@ -48,7 +49,7 @@ public class WebSocketShard : IWebSocketShard
 
         if (_lastActivityList.TryGetValue(chzzkUid, out var lastActivity))
         {
-            if (DateTime.UtcNow - lastActivity > TimeSpan.FromMinutes(1))
+            if (KstClock.Now - lastActivity > TimeSpan.FromMinutes(1))
             {
                 _logger.LogWarning("[파동의 거부] {ChzzkUid} 채널 활동이 1분간 없습니다. (좀비 상태 의심)", chzzkUid);
                 return false;
@@ -107,7 +108,7 @@ public class WebSocketShard : IWebSocketShard
 
             client.MessageReceived.Subscribe(msg => 
             {
-                _lastActivityList[chzzkUid] = DateTime.UtcNow;
+                _lastActivityList[chzzkUid] = KstClock.Now;
                 if (msg.MessageType == WebSocketMessageType.Text && !string.IsNullOrEmpty(msg.Text))
                 {
                     _ = HandleSocketPacketAsync(chzzkUid, client, msg.Text);
@@ -127,7 +128,7 @@ public class WebSocketShard : IWebSocketShard
 
             await client.Start();
             _clients[chzzkUid] = client;
-            _lastActivityList[chzzkUid] = DateTime.UtcNow;
+            _lastActivityList[chzzkUid] = KstClock.Now;
 
             // [오시리스의 각성]: 적극적 핑 루프 가동 (10초 주기로 "2" 전송)
             var cts = new CancellationTokenSource();
@@ -183,7 +184,7 @@ public class WebSocketShard : IWebSocketShard
         if (message.StartsWith("42"))
         {
             string json = message.Substring(2);
-            _eventChannel.TryWrite(new ChatEventItem(chzzkUid, json, DateTime.UtcNow));
+            _eventChannel.TryWrite(new ChatEventItem(chzzkUid, json, KstClock.Now));
         }
     }
 

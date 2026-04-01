@@ -5,6 +5,7 @@ using MooldangBot.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using MooldangBot.Domain.Entities.Philosophy;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -35,7 +36,7 @@ public class PhoenixSystem : IPhoenixRecorder
             Content = content,
             Level = level,
             VibrationHz = 10.01, // 기본값
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = KstClock.Now
         };
 
         _buffer.AddScenario(scenario); // [v3.6.3] 직접 저장 대신 버퍼 투입

@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -24,7 +25,7 @@ namespace MooldangBot.Domain.Entities
         // ⭐ 치지직 공식 OAuth 인증 토큰 저장소 추가
         public string? ChzzkAccessToken { get; set; }
         public string? ChzzkRefreshToken { get; set; }
-        public DateTime? TokenExpiresAt { get; set; }
+        public KstClock? TokenExpiresAt { get; set; }
 
         // [추가] 1. API 키 보관 (명세서: 보안 관리를 위해 DB에 저장)
         [MaxLength(200)]
@@ -78,7 +79,7 @@ namespace MooldangBot.Domain.Entities
         public string? BotNickname { get; set; }
         public string? BotAccessToken { get; set; }
         public string? BotRefreshToken { get; set; }
-        public DateTime? BotTokenExpiresAt { get; set; }
+        public KstClock? BotTokenExpiresAt { get; set; }
 
         // [추가] 물댕봇 세션 활성화/비활성화 상태
         public bool IsBotEnabled { get; set; } = false;

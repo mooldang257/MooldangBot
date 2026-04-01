@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities
 {
@@ -31,8 +32,8 @@ namespace MooldangBot.Domain.Entities
 
         public RouletteLogStatus Status { get; set; } = RouletteLogStatus.Pending;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public KstClock CreatedAt { get; set; } = KstClock.Now;
 
-        public DateTime? ProcessedAt { get; set; }
+        public KstClock? ProcessedAt { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
+using MooldangBot.Domain.Common;
 
 namespace MooldangAPI.Controllers
 {
@@ -79,7 +80,7 @@ namespace MooldangAPI.Controllers
                 Name = dto.Name,
                 Type = dto.Type,
                 ConfigJson = dto.ConfigJson,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = KstClock.Now
             };
 
             _db.SharedComponents.Add(component);

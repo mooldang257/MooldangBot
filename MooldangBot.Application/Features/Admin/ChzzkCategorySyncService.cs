@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MooldangBot.Domain.Common;
+
 namespace MooldangBot.Application.Features.Admin;
 
 public class ChzzkCategorySyncService : IChzzkCategorySyncService
@@ -41,7 +43,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
             // 동기화 로직...
-            LastRunTime = DateTime.UtcNow.AddHours(9);
+            LastRunTime = KstClock.Now;
             LastResult = "성공";
             await Task.CompletedTask;
         }
