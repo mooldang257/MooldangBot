@@ -128,7 +128,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<StreamerProfile>(entity => {
             entity.Property(e => e.ChzzkAccessToken).HasConversion(converter);
             entity.Property(e => e.ChzzkRefreshToken).HasConversion(converter);
-            entity.Property(e => e.ApiClientId).HasColumnType("longtext");
+            entity.Property(e => e.ApiClientId).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.ApiClientSecret).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.BotAccessToken).HasConversion(converter);
             entity.Property(e => e.BotRefreshToken).HasConversion(converter);
@@ -180,12 +180,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<SongBook>()
             .HasIndex(s => new { s.ChzzkUid, s.Id }).IsDescending(false, true);
 
-        modelBuilder.Entity<RouletteLog>()
-            .HasIndex(l => l.RouletteId);
-
-        modelBuilder.Entity<RouletteLog>()
-            .HasIndex(l => new { l.ChzzkUid, l.Status, l.Id })
-            .IsDescending(false, false, true);
+        modelBuilder.Entity<RouletteLog>(entity => {
+            entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
+            entity.Property(e => e.ViewerUidHash).HasMaxLength(64);
+            entity.HasIndex(e => e.RouletteId);
+            entity.HasIndex(e => new { e.ChzzkUid, e.ViewerUidHash });
+            entity.HasIndex(e => new { e.ChzzkUid, e.Status, e.Id })
+                .IsDescending(false, false, true);
+        });
 
         // [파로스의 통합]: UnifiedCommand 설정 (Osiris Regulation)
         modelBuilder.Entity<UnifiedCommand>(entity => {

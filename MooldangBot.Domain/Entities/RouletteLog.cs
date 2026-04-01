@@ -24,6 +24,12 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(100)]
         public string ViewerNickname { get; set; } = string.Empty;
 
+        // [v4.0] 수호자의 암호: 개인정보 보호를 위한 식별자 암호화 및 해싱
+        public string? ViewerUid { get; set; }
+        
+        [MaxLength(64)]
+        public string? ViewerUidHash { get; set; }
+
         [Required]
         [MaxLength(200)]
         public string ItemName { get; set; } = string.Empty;

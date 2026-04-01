@@ -28,7 +28,6 @@ namespace MooldangBot.Domain.Entities
         public KstClock? TokenExpiresAt { get; set; }
 
         // [추가] 1. API 키 보관 (명세서: 보안 관리를 위해 DB에 저장)
-        [MaxLength(200)]
         public string? ApiClientId { get; set; }
 
         [MaxLength(200)]

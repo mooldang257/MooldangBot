@@ -9,6 +9,7 @@ using System.Text.Json; // [v1.9.9] 추가
 using MooldangBot.Application.State;
 
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Security; // [v4.0] 추가
 
 namespace MooldangBot.Application.Features.Roulette;
 
@@ -111,6 +112,8 @@ public class RouletteService : IRouletteService
                             RouletteId = rouletteId,
                             RouletteName = roulette.Name,
                             ViewerNickname = viewerNickname ?? "비회원",
+                            ViewerUid = viewerUid, // [v4.0] 추가
+                            ViewerUidHash = Sha256Hasher.ComputeHash(viewerUid), // [v4.0] 추가
                             ItemName = result.ItemName,
                             IsMission = result.IsMission,
                             Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,

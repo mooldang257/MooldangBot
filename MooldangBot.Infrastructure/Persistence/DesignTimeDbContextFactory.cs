@@ -74,7 +74,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var connectionString = $"Server={dbHost};Port=3306;Database={dbName};Uid={dbUser};Pwd={dbPass};SslMode=None;AllowUserVariables=True;";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"));
+        optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"),
+            options => options.EnableRetryOnFailure());
 
         // [디자인 타임]: DataProtection 서비스 임시 생성 (scaffolding 용도)
         var services = new ServiceCollection();
