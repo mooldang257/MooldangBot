@@ -471,7 +471,7 @@ await Parallel.ForEachAsync(activeUids,
 | 🔴 P0 | KST(UTC+9) 전역 표준화 (Domain, Application, Presentation) | Critical | ✅ **완료** (v1.5) |
 | 🟡 P1 | SystemWatchdog 시간대 비교 KST 통일 | High | ✅ **완료** (v1.5) |
 | 🟡 P1 | 에러 분류 체계 도입 (4xx vs 5xx) | High | ✅ **완료** (v1.6) |
-| 🟡 P1 | 진단 로그 강화 (헤더 + 마스킹) | High | ⬜ 미착수 |
+| 🟡 P1 | 진단 로그 강화 (헤더 + 마스킹) | High | ✅ **완료** (v1.7) |
 | 🟢 P2 | `KstClock` 유틸리티 도입 | Medium | ⬜ 미착수 |
 | 🔵 P3 | `TokenRenewalService.GetSessionAuthAsync` 데드코드 정리 | Low | ⬜ 미착수 |
 | 🔵 P3 | CircuitBreaker 정적 초기화 개선 | Low | ⬜ 미착수 |
@@ -505,7 +505,5 @@ git reset --hard HEAD~1
 > **v1.3 변경**: P0 구현 완료 — `FatalTokenException`을 Polly RetryPolicy + CircuitBreaker 핸들링 대상에서 제외  
 > **v1.4 변경**: P0 구현 완료 — AuthCallback `DateTime.Now` → `DateTime.UtcNow.AddHours(9)` KST 통일.  
 > **v1.5 변경**: P0 구현 완료 — 프로젝트 전역(Domain, Application, Presentation, API, CLI) KST 표준화 완료.  
-> **v1.6 변경**: P1 구현 완료 — 토큰 갱신 시 에러 분류 체계(4xx vs 5xx) 도입 및 정밀 로깅 적용.
-
-
-
+> **v1.6 변경**: P1 구현 완료 — 토큰 갱신 시 에러 분류 체계(4xx vs 5xx) 도입 및 정밀 로깅 적용.  
+> **v1.7 변경**: P1 구현 완료 — 진단 로그 강화 (Client-Id, RefreshToken 마스킹 포함).
