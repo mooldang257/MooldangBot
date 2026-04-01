@@ -61,7 +61,7 @@ public class WebSocketShard : IWebSocketShard
 
     public bool HasAuthError(string chzzkUid) => _authErrors.TryGetValue(chzzkUid, out var err) && err;
 
-    public async Task<bool> ConnectAsync(string chzzkUid, string accessToken)
+    public async Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null)
     {
         try
         {
@@ -70,7 +70,8 @@ public class WebSocketShard : IWebSocketShard
             using var scope = _scopeFactory.CreateScope();
             var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
             
-            var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken);
+            // [N8 해결]: 상위에서 전달된 개별 API 정보를 인증 요청에 반영
+            var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken, clientId, clientSecret);
             if (sessionAuth == null || string.IsNullOrEmpty(sessionAuth.Content?.Url))
             {
                 _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심)", chzzkUid);

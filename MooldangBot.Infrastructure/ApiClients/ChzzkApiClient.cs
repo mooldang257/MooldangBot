@@ -397,13 +397,15 @@ namespace MooldangBot.Infrastructure.ApiClients
         /// <summary>
         /// 웹소켓 연결을 위한 세션 인증 정보를 가져옵니다.
         /// </summary>
-        public async Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken)
+        public async Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, "/open/v1/sessions/auth");
-                request.Headers.Add("Client-Id", _clientId);
-                request.Headers.Add("Client-Secret", _clientSecret);
+                
+                // [N8 해결]: 주입된 ID가 있으면 사용, 없으면 전역 설정을 사용하여 ID 미스매치 방지
+                request.Headers.Add("Client-Id", clientId ?? _clientId);
+                request.Headers.Add("Client-Secret", clientSecret ?? _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var response = await _httpClient.SendAsync(request);
@@ -419,13 +421,15 @@ namespace MooldangBot.Infrastructure.ApiClients
         /// <summary>
         /// 특정 세션에 이벤트를 구독합니다.
         /// </summary>
-        public async Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId)
+        public async Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, $"/open/v1/sessions/events/subscribe/{eventType}?sessionKey={sessionKey}");
-                request.Headers.Add("Client-Id", _clientId);
-                request.Headers.Add("Client-Secret", _clientSecret);
+                
+                // [N8 해결]: 동일한 인증 정합성 유지
+                request.Headers.Add("Client-Id", clientId ?? _clientId);
+                request.Headers.Add("Client-Secret", clientSecret ?? _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 
                 var payload = new { channelId = channelId };

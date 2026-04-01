@@ -27,7 +27,7 @@ public interface IChzzkChatClient : IAsyncDisposable
     /// <summary>
     /// [파동의 시작]: 최신 토큰을 사용하여 특정 채널의 채팅 소켓 연결을 시도합니다.
     /// </summary>
-    Task<bool> ConnectAsync(string chzzkUid, string accessToken);
+    Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null);
 
     /// <summary>
     /// [파동의 정리]: 특정 채널의 소켓 연결을 안전하게 종료하고 자원을 해제합니다.

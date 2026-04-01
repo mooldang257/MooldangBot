@@ -173,7 +173,8 @@ public class ChzzkBotService : IChzzkBotService
             // 4. [유기적 복구]: 기존 좀비 자원 정리 후 재연결
             await _chatClient.DisconnectAsync(chzzkUid);
             
-            bool success = await _chatClient.ConnectAsync(chzzkUid, accessToken);
+            // [N8 해결]: DB에서 불러온 스트리머 개별 앱 정보(ID, Secret)를 소켓 레이어로 주입하여 인증 미스매치 방지
+            bool success = await _chatClient.ConnectAsync(chzzkUid, accessToken, profile.ApiClientId, profile.ApiClientSecret);
 
             if (success)
             {

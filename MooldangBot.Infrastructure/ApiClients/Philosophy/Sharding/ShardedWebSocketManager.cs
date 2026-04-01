@@ -158,7 +158,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
         return GetShard(chzzkUid).HasAuthError(chzzkUid);
     }
 
-    public async Task<bool> ConnectAsync(string chzzkUid, string accessToken)
+    public async Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null)
     {
         if (!IsMyResponsibility(chzzkUid)) return false;
 
@@ -170,7 +170,9 @@ public class ShardedWebSocketManager : IChzzkChatClient
         using (var redLock = await _lockFactory.CreateLockAsync(resource, expiry, wait, retry))
         {
             if (!redLock.IsAcquired) return false;
-            return await GetShard(chzzkUid).ConnectAsync(chzzkUid, accessToken);
+            
+            // [N8 해결]: 특정 샤드에 개별 API 정보를 그대로 주입
+            return await GetShard(chzzkUid).ConnectAsync(chzzkUid, accessToken, clientId, clientSecret);
         }
     }
 

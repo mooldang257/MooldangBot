@@ -15,8 +15,8 @@ public interface IChzzkApiClient
     Task<bool> SendChatMessageAsync(string accessToken, string channelId, string message);
     Task<bool> SendChatNoticeAsync(string accessToken, string channelId, string message);
     Task<bool> SendChatAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix = true);
-    Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken);
-    Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId);
+    Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null);
+    Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null);
     Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData);
     Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken);
     Task<ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword);
