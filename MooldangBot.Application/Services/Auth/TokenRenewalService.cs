@@ -148,16 +148,31 @@ public class TokenRenewalService : ITokenRenewalService
 
         if (!response.IsSuccessStatusCode)
         {
-            // [v16.3.1] INVALID_TOKEN (401)은 리프레시 토큰이 영구적으로 죽었음을 의미합니다.
-            // 무의미한 재시도를 즉각 중단하고 시스템에 알리는 Fatal 에러를 발생시킵니다.
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && 
-                errorDetail.Contains("INVALID_TOKEN"))
+            var statusCode = (int)response.StatusCode;
+
+            // 🔴 4xx 클라이언트 에러: 재시도 무의미 (헤더/값 오류)
+            if (statusCode is >= 400 and < 500)
             {
-                _logger.LogCritical($"❌ [영겁의 열쇠] {streamer.ChzzkUid} 채널의 리프레시 토큰이 영구 무효화되었습니다.");
-                throw new FatalTokenException("INVALID_TOKEN detected");
+                // [v16.3.1] INVALID_TOKEN (401)은 리프레시 토큰이 영구적으로 죽었음을 의미합니다.
+                // 무의미한 재시도를 즉각 중단하고 시스템에 알리는 Fatal 에러를 발생시킵니다.
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && 
+                    errorDetail.Contains("INVALID_TOKEN"))
+                {
+                    _logger.LogCritical($"❌ [영겁의 열쇠] {streamer.ChzzkUid} 채널의 리프레시 토큰이 영구 무효화되었습니다.");
+                    throw new FatalTokenException("INVALID_TOKEN detected");
+                }
+
+                // [v17.1 / P1] 400 Bad Request, 403 Forbidden 등은 클라이언트 측 파라미터/인증 정보 문제 가능성 높음
+                _logger.LogError($"[영겁의 열쇠] {streamer.ChzzkUid} 클라이언트 에러 (HTTP {statusCode}). " +
+                    $"헤더/페이로드를 점검하세요: {errorDetail}");
+                
+                // 클라이언트 에러는 재시도해도 결과가 같을 가능성이 높으므로 false 반환 (Polly는 OrResult(false)를 통해 종료)
+                return false;
             }
 
-            _logger.LogError($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 갱신 실패 (HTTP {response.StatusCode}): {errorDetail}");
+            // 🟡 5xx 서버 에러: 치지직 시스템 장애 등 일시적 현상일 가능성 (재시도 가치 있음)
+            _logger.LogWarning($"[영겁의 열쇠] {streamer.ChzzkUid} 서버 에러 (HTTP {statusCode}). " +
+                $"Polly 재시도 대상입니다: {errorDetail}");
             return false;
         }
 

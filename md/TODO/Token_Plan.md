@@ -470,7 +470,7 @@ await Parallel.ForEachAsync(activeUids,
 | 🔴 P0 | `FatalTokenException` Polly 재시도 제외 | Critical | ✅ **완료** (v1.3) |
 | 🔴 P0 | KST(UTC+9) 전역 표준화 (Domain, Application, Presentation) | Critical | ✅ **완료** (v1.5) |
 | 🟡 P1 | SystemWatchdog 시간대 비교 KST 통일 | High | ✅ **완료** (v1.5) |
-| 🟡 P1 | 에러 분류 체계 도입 (4xx vs 5xx) | High | ⬜ 미착수 |
+| 🟡 P1 | 에러 분류 체계 도입 (4xx vs 5xx) | High | ✅ **완료** (v1.6) |
 | 🟡 P1 | 진단 로그 강화 (헤더 + 마스킹) | High | ⬜ 미착수 |
 | 🟢 P2 | `KstClock` 유틸리티 도입 | Medium | ⬜ 미착수 |
 | 🔵 P3 | `TokenRenewalService.GetSessionAuthAsync` 데드코드 정리 | Low | ⬜ 미착수 |
@@ -479,14 +479,33 @@ await Parallel.ForEachAsync(activeUids,
 
 ---
 
-> **문서 버전**: v1.5  
+## ↩️ 10. 롤백 절차 (Rollback Guide)
+
+작업 중 예기치 못한 문제가 발생할 경우, 다음 명령어를 통해 안전하게 이전 상태로 되돌릴 수 있습니다.
+
+### 10.1 v1.6 (P1 에러 분류 체계) 롤백
+v1.6 작업 내용(에러 분류 및 로깅)만 취소하고 싶을 때 사용합니다.
+
+```bash
+# 최신 커밋(v1.6)을 취소하는 새로운 커밋 생성 (권장)
+git revert HEAD
+
+# 또는, 커밋 자체를 완전히 삭제하고 이전(v1.5)으로 강제 이동
+# (주의: 로컬 작업 내용이 사라질 수 있음)
+git reset --hard HEAD~1
+```
+
+---
+
+> **문서 버전**: v1.6  
 > **작성일**: 2026-04-01  
 > **대상 코드 버전**: git pull (2026-04-01 09:30 KST) 기준  
 > **v1.1 변경**: 치지직 API 도메인 지식 반영 — 봇 토큰 3단계 폴백 과잉 설계 판정, 삭제 전략으로 변경  
 > **v1.2 변경**: P0 구현 완료 — `GetBotTokenAsync`, `RefreshTokenAsync`, `UpdateOrAddSystemSetting` 삭제. 빌드 검증 통과  
 > **v1.3 변경**: P0 구현 완료 — `FatalTokenException`을 Polly RetryPolicy + CircuitBreaker 핸들링 대상에서 제외  
 > **v1.4 변경**: P0 구현 완료 — AuthCallback `DateTime.Now` → `DateTime.UtcNow.AddHours(9)` KST 통일.  
-> **v1.5 변경**: P0 구현 완료 — 프로젝트 전역(Domain, Application, Presentation, API, CLI) KST 표준화 완료. **모든 시간대 불일치 이슈 해소**
+> **v1.5 변경**: P0 구현 완료 — 프로젝트 전역(Domain, Application, Presentation, API, CLI) KST 표준화 완료.  
+> **v1.6 변경**: P1 구현 완료 — 토큰 갱신 시 에러 분류 체계(4xx vs 5xx) 도입 및 정밀 로깅 적용.
 
 
 
