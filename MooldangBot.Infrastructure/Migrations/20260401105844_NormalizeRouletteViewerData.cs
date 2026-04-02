@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -22,6 +22,15 @@ namespace MooldangBot.Infrastructure.Migrations
                 name: "ViewerProfileId",
                 table: "roulettespins",
                 type: "int",
+                nullable: true);
+
+            // [긴급 복구]: 제약 조건 충돌 방지를 위한 데이터 클린업
+            migrationBuilder.Sql("DELETE FROM roulettespins WHERE ViewerProfileId = 0 OR ViewerProfileId IS NULL OR ViewerProfileId NOT IN (SELECT Id FROM viewerprofiles);");
+            migrationBuilder.Sql("DELETE FROM roulettelogs WHERE ViewerProfileId = 0 OR (ViewerProfileId IS NOT NULL AND ViewerProfileId NOT IN (SELECT Id FROM viewerprofiles));");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "ViewerProfileId",
+                table: "roulettespins",
                 nullable: false,
                 defaultValue: 0);
 
