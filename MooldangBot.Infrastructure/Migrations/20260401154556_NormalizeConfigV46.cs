@@ -12,11 +12,37 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.6] Drop and Create for a clean slate as requested
-            migrationBuilder.DropTable(name: "avatarsettings");
-            migrationBuilder.DropTable(name: "overlaypresets");
-            migrationBuilder.DropTable(name: "periodicmessages");
-            migrationBuilder.DropTable(name: "sharedcomponents");
+            // [v4.6.5] Emergency Repair: Idempotent migration for Configs
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+                
+                -- 1. 외래 키 제약 조건 선제거 (삭제 블로킹 방지)
+                -- avatarsettings -> streamerprofiles
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'avatarsettings' AND CONSTRAINT_NAME = 'FK_avatarsettings_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE avatarsettings DROP FOREIGN KEY FK_avatarsettings_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- overlaypresets -> streamerprofiles
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'overlaypresets' AND CONSTRAINT_NAME = 'FK_overlaypresets_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE overlaypresets DROP FOREIGN KEY FK_overlaypresets_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- periodicmessages -> streamerprofiles
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'periodicmessages' AND CONSTRAINT_NAME = 'FK_periodicmessages_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE periodicmessages DROP FOREIGN KEY FK_periodicmessages_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- sharedcomponents -> streamerprofiles
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'sharedcomponents' AND CONSTRAINT_NAME = 'FK_sharedcomponents_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE sharedcomponents DROP FOREIGN KEY FK_sharedcomponents_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 2. 테이블 삭제
+                DROP TABLE IF EXISTS avatarsettings;
+                DROP TABLE IF EXISTS overlaypresets;
+                DROP TABLE IF EXISTS periodicmessages;
+                DROP TABLE IF EXISTS sharedcomponents;
+            ");
 
             migrationBuilder.CreateTable(
                 name: "avatarsettings",

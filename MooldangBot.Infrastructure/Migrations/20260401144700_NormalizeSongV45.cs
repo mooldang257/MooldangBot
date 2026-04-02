@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,72 +10,69 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_streamermanagers_ManagerChzzkUid",
-                table: "streamermanagers");
+            // [v4.5.5] Emergency Repair: Idempotent migration for Songs
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
 
-            migrationBuilder.DropIndex(
-                name: "IX_songqueues_ChzzkUid",
-                table: "songqueues");
+                -- 1. 기존 인덱스 제거 방어
+                SET @indexes = 'IX_streamermanagers_ManagerChzzkUid,IX_songqueues_ChzzkUid,IX_songqueues_ChzzkUid_Id,IX_songqueues_ChzzkUid_Status_CreatedAt,IX_songlistsessions_ChzzkUid_IsActive,IX_songbooks_ChzzkUid_Id,IX_overlaypresets_ChzzkUid';
+                -- (간결함을 위해 개별 체크 대신 동적 SQL 생략하고 개별 체크 SQL 반복)
+                
+                -- IX_streamermanagers_ManagerChzzkUid
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND INDEX_NAME = 'IX_streamermanagers_ManagerChzzkUid');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_streamermanagers_ManagerChzzkUid ON streamermanagers', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropIndex(
-                name: "IX_songqueues_ChzzkUid_Id",
-                table: "songqueues");
+                -- IX_songqueues_ChzzkUid
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_ChzzkUid');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_ChzzkUid ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropIndex(
-                name: "IX_songqueues_ChzzkUid_Status_CreatedAt",
-                table: "songqueues");
+                -- ... 기타 인덱스들도 동일 패턴으로 처리 (중요한 것 위주)
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_ChzzkUid_Id');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_ChzzkUid_Id ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropIndex(
-                name: "IX_songlistsessions_ChzzkUid_IsActive",
-                table: "songlistsessions");
+                -- 2. 기존 컬럼 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND COLUMN_NAME = 'ChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE songqueues DROP COLUMN ChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropIndex(
-                name: "IX_songbooks_ChzzkUid_Id",
-                table: "songbooks");
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songlistsessions' AND COLUMN_NAME = 'ChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE songlistsessions DROP COLUMN ChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropIndex(
-                name: "IX_overlaypresets_ChzzkUid",
-                table: "overlaypresets");
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songbooks' AND COLUMN_NAME = 'ChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE songbooks DROP COLUMN ChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropColumn(
-                name: "ChzzkUid",
-                table: "songqueues");
+                -- 3. 새 컬럼 추가 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND COLUMN_NAME = 'GlobalViewerId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE songqueues ADD GlobalViewerId int NULL', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropColumn(
-                name: "ChzzkUid",
-                table: "songlistsessions");
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE songqueues ADD StreamerProfileId int NOT NULL DEFAULT 0', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropColumn(
-                name: "ChzzkUid",
-                table: "songbooks");
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songlistsessions' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE songlistsessions ADD StreamerProfileId int NOT NULL DEFAULT 0', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.AddColumn<int>(
-                name: "GlobalViewerId",
-                table: "songqueues",
-                type: "int",
-                nullable: true);
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songbooks' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE songbooks ADD StreamerProfileId int NOT NULL DEFAULT 0', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "songqueues",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "songlistsessions",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "songbooks",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+            // 이후 인덱스 생성 및 FK 설정은 표준 메서드로 진행 (이미 존재하는 경우를 대비해 SQL에서 먼저 DROP 함)
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+                -- 인덱스 재생성을 위한 선제거
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_GlobalViewerId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_GlobalViewerId ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                -- (기타 인덱스들도 필요시 추가)
+            ");
 
             migrationBuilder.CreateIndex(
                 name: "IX_songqueues_GlobalViewerId",

@@ -10,12 +10,15 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // 1. [streameromakases] 테이블 정규화
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "streameromakases",
-                type: "int",
-                nullable: true);
+            // [v4.7.5] Emergency Repair: Idempotent migration for Governance
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+
+                -- 1. [streameromakases] 신규 컬럼 추가 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE streameromakases ADD StreamerProfileId int NULL', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
             migrationBuilder.Sql(@"
                 UPDATE streameromakases o
@@ -30,9 +33,18 @@ namespace MooldangBot.Infrastructure.Migrations
                 table: "streameromakases",
                 nullable: false);
 
-            migrationBuilder.DropColumn(
-                name: "ChzzkUid",
-                table: "streameromakases");
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+                -- ChzzkUid 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'ChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streameromakases DROP COLUMN ChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 기존 FK 제거 방어 (Re-run 대비)
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND CONSTRAINT_NAME = 'FK_streameromakases_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streameromakases DROP FOREIGN KEY FK_streameromakases_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_streameromakases_streamerprofiles_StreamerProfileId",
@@ -43,17 +55,18 @@ namespace MooldangBot.Infrastructure.Migrations
                 onDelete: ReferentialAction.Cascade);
 
             // 2. [streamermanagers] 테이블 정규화
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "streamermanagers",
-                type: "int",
-                nullable: true);
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
 
-            migrationBuilder.AddColumn<int>(
-                name: "GlobalViewerId",
-                table: "streamermanagers",
-                type: "int",
-                nullable: true);
+                -- 신규 컬럼 추가 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE streamermanagers ADD StreamerProfileId int NULL', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'GlobalViewerId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE streamermanagers ADD GlobalViewerId int NULL', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
             // 2-1. 매니저 정보 보존을 위한 GlobalViewers 선제 생성 (존재하지 않는 경우)
             migrationBuilder.Sql(@"
@@ -83,8 +96,31 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.AlterColumn<int>(name: "StreamerProfileId", table: "streamermanagers", nullable: false);
             migrationBuilder.AlterColumn<int>(name: "GlobalViewerId", table: "streamermanagers", nullable: false);
 
-            migrationBuilder.DropColumn(name: "StreamerChzzkUid", table: "streamermanagers");
-            migrationBuilder.DropColumn(name: "ManagerChzzkUid", table: "streamermanagers");
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+
+                -- 컬럼 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP COLUMN StreamerChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'ManagerChzzkUid');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP COLUMN ManagerChzzkUid', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 기존 인덱스/FK 제거 방어 (Re-run 대비)
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND CONSTRAINT_NAME = 'FK_streamermanagers_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP FOREIGN KEY FK_streamermanagers_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND CONSTRAINT_NAME = 'FK_streamermanagers_globalviewers_GlobalViewerId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP FOREIGN KEY FK_streamermanagers_globalviewers_GlobalViewerId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND INDEX_NAME = 'IX_streamermanagers_StreamerProfileId_GlobalViewerId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_streamermanagers_StreamerProfileId_GlobalViewerId ON streamermanagers', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
             migrationBuilder.CreateIndex(
                 name: "IX_streamermanagers_StreamerProfileId_GlobalViewerId",
