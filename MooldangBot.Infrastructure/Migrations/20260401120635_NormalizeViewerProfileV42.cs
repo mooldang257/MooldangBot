@@ -12,9 +12,25 @@ namespace MooldangBot.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // [v4.2.4] Emergency Repair: Drop corrupted empty tables before recreation
-            migrationBuilder.Sql("DROP TABLE IF EXISTS viewerprofiles;");
-            migrationBuilder.Sql("DROP TABLE IF EXISTS roulettespins;");
-            migrationBuilder.Sql("DROP TABLE IF EXISTS roulettelogs;");
+            // [v4.9.1] 외래 키 제약 조건 선제거 (삭제 블로킹 방지)
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+                
+                -- 1. roulettespins FK 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'roulettespins' AND CONSTRAINT_NAME = 'FK_roulettespins_viewerprofiles_ViewerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE roulettespins DROP FOREIGN KEY FK_roulettespins_viewerprofiles_ViewerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 2. roulettelogs FK 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'roulettelogs' AND CONSTRAINT_NAME = 'FK_roulettelogs_viewerprofiles_ViewerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE roulettelogs DROP FOREIGN KEY FK_roulettelogs_viewerprofiles_ViewerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 3. 이제 안전하게 테이블 삭제
+                DROP TABLE IF EXISTS roulettespins;
+                DROP TABLE IF EXISTS roulettelogs;
+                DROP TABLE IF EXISTS viewerprofiles;
+            ");
 
             // 1. Create GlobalViewer table if not exists
             migrationBuilder.Sql(@"
