@@ -10,7 +10,7 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.3.9] Final Purge & Restoration: Clean UnifiedCommand logic only
+            // [v4.3.10] Final Bulletproof Migration
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
 
@@ -56,53 +56,38 @@ namespace MooldangBot.Infrastructure.Migrations
                 ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
                 ALTER TABLE unifiedcommands MODIFY StreamerProfileId int NOT NULL;
 
-                -- 4. 인덱스/FK 정리
+                -- 4. [인덱스/FK 최종 정리] 중복 방지를 위해 삭제 후 재생성
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_MasterCommandFeatureId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_MasterCommandFeatureId ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                CREATE INDEX IX_unifiedcommands_MasterCommandFeatureId ON unifiedcommands (MasterCommandFeatureId);
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_keyword');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                CREATE UNIQUE INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands (StreamerProfileId, keyword);
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_TargetId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_TargetId ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                CREATE INDEX IX_unifiedcommands_StreamerProfileId_TargetId ON unifiedcommands (StreamerProfileId, TargetId);
+
+                -- FK 설정
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND CONSTRAINT_NAME = 'FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                ALTER TABLE unifiedcommands ADD CONSTRAINT FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId FOREIGN KEY (MasterCommandFeatureId) REFERENCES master_commandfeatures (Id) ON DELETE RESTRICT;
 
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND CONSTRAINT_NAME = 'FK_unifiedcommands_streamerprofiles_StreamerProfileId');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_streamerprofiles_StreamerProfileId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                ALTER TABLE unifiedcommands ADD CONSTRAINT FK_unifiedcommands_streamerprofiles_StreamerProfileId FOREIGN KEY (StreamerProfileId) REFERENCES streamerprofiles (Id) ON DELETE CASCADE;
             ");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_unifiedcommands_MasterCommandFeatureId",
-                table: "unifiedcommands",
-                column: "MasterCommandFeatureId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_unifiedcommands_StreamerProfileId_keyword",
-                table: "unifiedcommands",
-                columns: new[] { "StreamerProfileId", "keyword" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_unifiedcommands_StreamerProfileId_TargetId",
-                table: "unifiedcommands",
-                columns: new[] { "StreamerProfileId", "TargetId" });
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId",
-                table: "unifiedcommands",
-                column: "MasterCommandFeatureId",
-                principalTable: "master_commandfeatures",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_unifiedcommands_streamerprofiles_StreamerProfileId",
-                table: "unifiedcommands",
-                column: "StreamerProfileId",
-                principalTable: "streamerprofiles",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // (생략)
         }
     }
 }
