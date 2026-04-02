@@ -10,12 +10,22 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.3.13] Universal Clean Restoration (Lean & Mean)
-            // 전역 Collation 설정이 이미 적용되었으므로, 물리적 변환 없이 로직만 수행합니다.
+            // [v4.3.14] Total Index Hardening: Explicitly drop legacy indexes before touching columns
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 
-                -- 1. 신규 컬럼 추가 방어
+                -- 1. 기존 인덱스 강제 제거 (chzzkuid 컬럼을 물고 있는 인덱스들)
+                -- IX_unifiedcommands_chzzkuid_keyword 제거
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_chzzkuid_keyword');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_chzzkuid_keyword ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- IX_unifiedcommands_chzzkuid_TargetId 제거
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_chzzkuid_TargetId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_chzzkuid_TargetId ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 2. 신규 컬럼 추가 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'MasterCommandFeatureId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD MasterCommandFeatureId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -24,32 +34,36 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 2. 데이터 매핑 (chzzkuid는 InitialCreate 기준 소문자)
-                SET @has_old = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'FeatureType');
+                -- 3. 데이터 매핑 (인덱스가 제거되었으므로 안전하게 수행)
+                SET @has_old = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'chzzkuid');
                 IF @has_old > 0 THEN
                     UPDATE unifiedcommands u JOIN streamerprofiles p ON u.chzzkuid = p.ChzzkUid SET u.StreamerProfileId = p.Id;
                     
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE LOWER(FeatureType) = 'reply';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 2 WHERE LOWER(FeatureType) = 'notice';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 3 WHERE LOWER(FeatureType) = 'title';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 4 WHERE LOWER(FeatureType) = 'category';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 5 WHERE LOWER(FeatureType) = 'songlisttoggle';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 6 WHERE LOWER(FeatureType) = 'songrequest';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 7 WHERE LOWER(FeatureType) = 'omakase';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 8 WHERE LOWER(FeatureType) = 'roulette';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 9 WHERE LOWER(FeatureType) = 'chatpoint';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 10 WHERE LOWER(FeatureType) = 'systemresponse';
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 11 WHERE LOWER(FeatureType) = 'ai';
+                    SET @has_ft = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'FeatureType');
+                    IF @has_ft > 0 THEN
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE LOWER(FeatureType) = 'reply';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 2 WHERE LOWER(FeatureType) = 'notice';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 3 WHERE LOWER(FeatureType) = 'title';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 4 WHERE LOWER(FeatureType) = 'category';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 5 WHERE LOWER(FeatureType) = 'songlisttoggle';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 6 WHERE LOWER(FeatureType) = 'songrequest';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 7 WHERE LOWER(FeatureType) = 'omakase';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 8 WHERE LOWER(FeatureType) = 'roulette';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 9 WHERE LOWER(FeatureType) = 'chatpoint';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 10 WHERE LOWER(FeatureType) = 'systemresponse';
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 11 WHERE LOWER(FeatureType) = 'ai';
+                    END IF;
                 END IF;
 
-                -- 3. 정량화 및 컬럼 정리
+                -- 4. 정량화 및 컬럼 정리
                 SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
                 IF @has_data > 0 THEN
                     UPDATE unifiedcommands SET StreamerProfileId = (SELECT MIN(Id) FROM streamerprofiles) WHERE StreamerProfileId IS NULL;
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE MasterCommandFeatureId IS NULL;
                 END IF;
 
-                SET @col_exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'chzzkuid');
+                -- 구 컬럼 삭제 (이제 인덱스 간섭이 없으므로 안전함)
+                SET @col_exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND (COLUMN_NAME = 'chzzkuid' OR COLUMN_NAME = 'ChzzkUid'));
                 IF @col_exist > 0 THEN
                     ALTER TABLE unifiedcommands DROP COLUMN chzzkuid;
                 END IF;
@@ -67,7 +81,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
                 ALTER TABLE unifiedcommands MODIFY StreamerProfileId int NOT NULL;
 
-                -- 4. 인덱스/FK 최종 정리
+                -- 5. 신규 인덱스/FK 생성
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_MasterCommandFeatureId');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_MasterCommandFeatureId ON unifiedcommands', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
