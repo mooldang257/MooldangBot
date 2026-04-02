@@ -72,8 +72,9 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // [v4.9.2] 전역 정렬 규칙 통일: 모든 문자열 컬럼의 기본값을 unicode_ci로 강제합니다.
-        modelBuilder.HasCollation("utf8mb4_unicode_ci");
+        // [v4.9.2] 전역 정렬 규칙 및 문자셋 통일: 모든 문자열 컬럼의 기본값을 utf8mb4_unicode_ci로 강제합니다.
+        modelBuilder.HasCharSet("utf8mb4")
+                    .UseCollation("utf8mb4_unicode_ci");
 
         // [v4.0] 전역 암호화 컨버터 인스턴스 생성
         var converter = new EncryptedValueConverter(_protector);
