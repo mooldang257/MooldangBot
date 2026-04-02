@@ -41,10 +41,21 @@ namespace MooldangBot.Infrastructure.Migrations
                 ALTER TABLE roulettespins MODIFY ViewerProfileId int NOT NULL DEFAULT 0;
             ");
 
-            // 7. 인덱스 생성 방어 (EF Core는 인덱스 중복 생성을 기본적으로 막지 않으므로 SQL 처리 고려 가능하나, 
-            // 여기서는 이미 존재하는 인덱스 DROP 후 다시 생성하도록 하거나 INDEX IF NOT EXISTS가 없으므로 무시 시도)
+            // 7. 외계 키 및 인덱스 정비 (FK가 인덱스를 잡고 있으면 DROP INDEX가 실패하므로 FK부터 방어적으로 제거)
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
+                
+                -- roulettelogs FK 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'roulettelogs' AND CONSTRAINT_NAME = 'FK_roulettelogs_viewerprofiles_ViewerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE roulettelogs DROP FOREIGN KEY FK_roulettelogs_viewerprofiles_ViewerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- roulettespins FK 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'roulettespins' AND CONSTRAINT_NAME = 'FK_roulettespins_viewerprofiles_ViewerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE roulettespins DROP FOREIGN KEY FK_roulettespins_viewerprofiles_ViewerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 인덱스 제거 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'roulettespins' AND INDEX_NAME = 'IX_roulettespins_ViewerProfileId');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_roulettespins_ViewerProfileId ON roulettespins', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
