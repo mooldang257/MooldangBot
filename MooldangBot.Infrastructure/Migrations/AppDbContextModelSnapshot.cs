@@ -17,9 +17,11 @@ namespace MooldangBot.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .UseCollation("utf8mb4_unicode_ci")
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -81,7 +83,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId")
                         .IsUnique();
 
-                    b.ToTable("avatarsettings", (string)null);
+                    b.ToTable("avatar_settings", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategory", b =>
@@ -109,7 +111,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("chzzkcategories", (string)null);
+                    b.ToTable("chzzk_categories", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategoryAlias", b =>
@@ -136,7 +138,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("chzzkcategoryaliases", (string)null);
+                    b.ToTable("chzzk_category_aliases", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.GlobalViewer", b =>
@@ -161,7 +163,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("ViewerUidHash")
                         .IsUnique();
 
-                    b.ToTable("globalviewers", (string)null);
+                    b.ToTable("global_viewers", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Master_CommandCategory", b =>
@@ -185,7 +187,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("master_commandcategories", (string)null);
+                    b.ToTable("master_command_categories", (string)null);
 
                     b.HasData(
                         new
@@ -247,7 +249,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("master_commandfeatures", (string)null);
+                    b.ToTable("master_command_features", (string)null);
 
                     b.HasData(
                         new
@@ -390,7 +392,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("master_dynamicvariables", (string)null);
+                    b.ToTable("master_dynamic_variables", (string)null);
 
                     b.HasData(
                         new
@@ -399,7 +401,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "primary",
                             Description = "보유 포인트",
                             Keyword = "{포인트}",
-                            QueryString = "SELECT CAST(vp.Points AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
+                            QueryString = "SELECT CAST(vp.Points AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -407,7 +409,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "success",
                             Description = "시청자 닉네임",
                             Keyword = "{닉네임}",
-                            QueryString = "SELECT vp.Nickname FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
+                            QueryString = "SELECT vp.Nickname FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -439,7 +441,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "success",
                             Description = "연속 출석한 일수",
                             Keyword = "{연속출석일수}",
-                            QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
+                            QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -447,7 +449,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "info",
                             Description = "누적 출석한 횟수",
                             Keyword = "{누적출석일수}",
-                            QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
+                            QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -455,7 +457,7 @@ namespace MooldangBot.Infrastructure.Migrations
                             BadgeColor = "secondary",
                             Description = "최근 출석 날짜",
                             Keyword = "{마지막출석일}",
-                            QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewerprofiles vp JOIN streamerprofiles sp ON vp.StreamerProfileId = sp.Id JOIN globalviewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
+                            QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
                         },
                         new
                         {
@@ -497,7 +499,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId");
 
-                    b.ToTable("overlaypresets", (string)null);
+                    b.ToTable("overlay_presets", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.PeriodicMessage", b =>
@@ -528,7 +530,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId");
 
-                    b.ToTable("periodicmessages", (string)null);
+                    b.ToTable("periodic_messages", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", b =>
@@ -567,7 +569,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "IsActive");
 
-                    b.ToTable("broadcastsessions", (string)null);
+                    b.ToTable("broadcast_sessions", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfGenosRegistry", b =>
@@ -763,7 +765,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "Keyword");
 
-                    b.ToTable("streamerknowledges", (string)null);
+                    b.ToTable("streamer_knowledges", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
@@ -844,7 +846,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("RouletteId");
 
-                    b.ToTable("rouletteitems", (string)null);
+                    b.ToTable("roulette_items", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "items");
                 });
@@ -910,7 +912,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId", "Status", "Id")
                         .IsDescending(false, false, true);
 
-                    b.ToTable("roulettelogs", (string)null);
+                    b.ToTable("roulette_logs", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
@@ -957,7 +959,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("IsCompleted", "ScheduledTime");
 
-                    b.ToTable("roulettespins", (string)null);
+                    b.ToTable("roulette_spins", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
@@ -992,7 +994,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId");
 
-                    b.ToTable("sharedcomponents", (string)null);
+                    b.ToTable("shared_components", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
@@ -1032,7 +1034,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId", "Id")
                         .IsDescending(false, true);
 
-                    b.ToTable("songbooks", (string)null);
+                    b.ToTable("song_books", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SongQueue", b =>
@@ -1079,7 +1081,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "Status", "CreatedAt");
 
-                    b.ToTable("songqueues", (string)null);
+                    b.ToTable("song_queues", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SonglistSession", b =>
@@ -1112,7 +1114,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "IsActive");
 
-                    b.ToTable("songlistsessions", (string)null);
+                    b.ToTable("song_list_sessions", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
@@ -1144,7 +1146,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId", "GlobalViewerId")
                         .IsUnique();
 
-                    b.ToTable("streamermanagers", (string)null);
+                    b.ToTable("streamer_managers", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerOmakaseItem", b =>
@@ -1171,7 +1173,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId");
 
-                    b.ToTable("streameromakases", (string)null);
+                    b.ToTable("streamer_omakases", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerProfile", b =>
@@ -1309,7 +1311,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("ChzzkUid")
                         .IsUnique();
 
-                    b.ToTable("streamerprofiles", (string)null);
+                    b.ToTable("streamer_profiles", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SystemSetting", b =>
@@ -1330,7 +1332,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasKey("KeyName");
 
-                    b.ToTable("systemsettings", (string)null);
+                    b.ToTable("system_settings", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.UnifiedCommand", b =>
@@ -1391,7 +1393,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "TargetId");
 
-                    b.ToTable("unifiedcommands", (string)null);
+                    b.ToTable("unified_commands", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerProfile", b =>
@@ -1437,7 +1439,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "Points");
 
-                    b.ToTable("viewerprofiles", (string)null);
+                    b.ToTable("viewer_profiles", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.AvatarSetting", b =>
