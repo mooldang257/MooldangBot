@@ -10,19 +10,19 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.3.11] Universal String Unification: Proactively convert all tables to unicode_ci
+            // [v4.3.12] Linux Case-Sensitivity Fix: Ensure all column names match physical schema (lowercase)
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 
-                -- 1. 데이터베이스 및 모든 테이블의 정렬 규칙을 강제로 통일 (utf8mb4_unicode_ci)
+                -- 1. 데이터베이스 및 모든 테이블의 정렬 규칙을 강제로 통일
                 SET @sql = CONCAT('ALTER DATABASE ', @dbname, ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 기존의 주요 테이블들을 사전에 통합 (충돌 방지)
+                -- 기존 테이블 변환 (리눅스 대소문자 고려: InitialCreate와 동일하게 소문자 사용 가능성 높음)
                 ALTER TABLE streamerprofiles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
                 ALTER TABLE unifiedcommands CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
                 
-                -- 2. 신규 컬럼 추가 방어
+                -- 2. 신규 컬럼 추가 방어 (컬럼명은 C# 속성명에 맞춰 PascalCase로 생성됨)
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'MasterCommandFeatureId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD MasterCommandFeatureId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -31,9 +31,10 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 3. 데이터 매핑 (물리적 형식이 통일되었으므로 COLLATE 없이 순수 JOIN)
+                -- 3. 데이터 매핑 (chzzkuid는 InitialCreate 기준 소문자)
                 SET @has_old = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'FeatureType');
                 IF @has_old > 0 THEN
+                    -- InitialCreate에서 생성된 컬럼명은 소문자 'chzzkuid'임
                     UPDATE unifiedcommands u JOIN streamerprofiles p ON u.chzzkuid = p.ChzzkUid SET u.StreamerProfileId = p.Id;
                     
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE LOWER(FeatureType) = 'reply';
@@ -56,10 +57,20 @@ namespace MooldangBot.Infrastructure.Migrations
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE MasterCommandFeatureId IS NULL;
                 END IF;
 
-                SET @columns = (SELECT GROUP_CONCAT(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME IN ('Category', 'FeatureType', 'chzzkuid'));
-                IF @columns IS NOT NULL THEN
-                    SET @sql = CONCAT('ALTER TABLE unifiedcommands ', (SELECT GROUP_CONCAT(CONCAT('DROP COLUMN ', COLUMN_NAME)) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME IN ('Category', 'FeatureType', 'chzzkuid')));
-                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                -- 삭제 대상 컬럼명 소문자 체크 (InitialCreate 기준)
+                SET @col_exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'chzzkuid');
+                IF @col_exist > 0 THEN
+                    ALTER TABLE unifiedcommands DROP COLUMN chzzkuid;
+                END IF;
+                
+                SET @col_exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'FeatureType');
+                IF @col_exist > 0 THEN
+                    ALTER TABLE unifiedcommands DROP COLUMN FeatureType;
+                END IF;
+
+                SET @col_exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'Category');
+                IF @col_exist > 0 THEN
+                    ALTER TABLE unifiedcommands DROP COLUMN Category;
                 END IF;
 
                 ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
@@ -74,6 +85,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_keyword');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                -- keyword 또한 소문자임
                 CREATE UNIQUE INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands (StreamerProfileId, keyword);
 
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_TargetId');
