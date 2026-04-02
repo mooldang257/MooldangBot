@@ -127,6 +127,23 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "Id" },
                 descending: new[] { false, true });
 
+            // [v4.5.8] Resilient Deep Cleaning: Only run if data exists
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
+                SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
+
+                IF @has_col > 0 AND @has_data > 0 THEN
+                    SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                    
+                    UPDATE songqueues SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0 OR StreamerProfileId IS NULL;
+                    UPDATE songlistsessions SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0 OR StreamerProfileId IS NULL;
+                    UPDATE songbooks SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0 OR StreamerProfileId IS NULL;
+                    
+                    UPDATE songqueues SET GlobalViewerId = NULL WHERE GlobalViewerId NOT IN (SELECT Id FROM globalviewers) AND GlobalViewerId IS NOT NULL;
+                END IF;
+            ");
+
             migrationBuilder.AddForeignKey(
                 name: "FK_songbooks_streamerprofiles_StreamerProfileId",
                 table: "songbooks",

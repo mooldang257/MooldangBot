@@ -46,11 +46,17 @@ namespace MooldangBot.Infrastructure.Migrations
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 
-            // [v4.7.7] Deep Cleaning: Correct orphan IDs before FK
+            // [v4.7.8] Resilient Deep Cleaning: Only run if data exists
             migrationBuilder.Sql(@"
-                SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
-                UPDATE streameromakases SET StreamerProfileId = @min_streamer 
-                WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+                SET @dbname = DATABASE();
+                SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
+
+                IF @has_col > 0 AND @has_data > 0 THEN
+                   SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                   UPDATE streameromakases SET StreamerProfileId = @min_streamer 
+                   WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+                END IF;
             ");
 
             migrationBuilder.AddForeignKey(
@@ -135,14 +141,23 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "GlobalViewerId" },
                 unique: true);
 
-            // [v4.7.7] Deep Cleaning: Correct orphan IDs before FK
+            // [v4.7.8] Resilient Deep Cleaning: Only run if data exists
             migrationBuilder.Sql(@"
-                SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
-                UPDATE streamermanagers SET StreamerProfileId = @min_streamer 
-                WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+                SET @dbname = DATABASE();
+                SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
+                SET @has_gv = (SELECT COUNT(*) FROM globalviewers);
 
-                UPDATE streamermanagers SET GlobalViewerId = (SELECT MIN(Id) FROM globalviewers)
-                WHERE GlobalViewerId NOT IN (SELECT Id FROM globalviewers) OR GlobalViewerId IS NULL OR GlobalViewerId = 0;
+                IF @has_col > 0 AND @has_data > 0 THEN
+                    SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                    UPDATE streamermanagers SET StreamerProfileId = @min_streamer 
+                    WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+
+                    IF @has_gv > 0 THEN
+                        UPDATE streamermanagers SET GlobalViewerId = (SELECT MIN(Id) FROM globalviewers)
+                        WHERE GlobalViewerId NOT IN (SELECT Id FROM globalviewers) OR GlobalViewerId IS NULL OR GlobalViewerId = 0;
+                    END IF;
+                END IF;
             ");
 
             migrationBuilder.AddForeignKey(

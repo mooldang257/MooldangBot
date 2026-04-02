@@ -74,13 +74,19 @@ namespace MooldangBot.Infrastructure.Migrations
                         PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
                     END IF;
 
-                    -- 5. [강제 정상화] 이전 실행 실패로 인해 0이나 잘못된 값이 남은 경우 강제 보정
-                    -- master_commandfeatures(Id=1: Reply) 가 반드시 존재함을 전제로 함
-                    UPDATE unifiedcommands SET MasterCommandFeatureId = 1 
-                    WHERE MasterCommandFeatureId NOT IN (SELECT Id FROM master_commandfeatures) OR MasterCommandFeatureId IS NULL;
-                    
-                    UPDATE unifiedcommands SET StreamerProfileId = (SELECT MIN(Id) FROM streamerprofiles)
-                    WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL;
+                    -- 5. [강제 정상화] 데이터가 있을 때만 실행하여 텅 빈 DB에서의 NULL 오류 방지
+                    SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
+                    SET @has_master = (SELECT COUNT(*) FROM master_commandfeatures);
+
+                    IF @has_master > 0 THEN
+                        UPDATE unifiedcommands SET MasterCommandFeatureId = 1 
+                        WHERE MasterCommandFeatureId NOT IN (SELECT Id FROM master_commandfeatures) OR MasterCommandFeatureId IS NULL;
+                    END IF;
+
+                    IF @has_data > 0 THEN
+                        UPDATE unifiedcommands SET StreamerProfileId = (SELECT MIN(Id) FROM streamerprofiles)
+                        WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL;
+                    END IF;
 
                     -- 6. [제약조건] NOT NULL 설정 및 기존 인덱스/FK 제거 (Re-run 대비)
                     ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
