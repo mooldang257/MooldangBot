@@ -35,7 +35,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         public int ActiveItemCount { get; set; }
         
         [JsonPropertyName("lstUpdDt")]
-        public KstClock LstUpdDt { get; set; }
+        public KstClock? LstUpdDt { get; set; }
     }
 
     public class CompleteRequest
@@ -247,7 +247,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         }
 
         [HttpPatch("{chzzkUid}/{Id}/status")]
-        public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool IsActive)
+        public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool isActiveParam)
         {
             // [v4.3] 정문화된 필터링: StreamerProfileId와 MasterFeature를 활용한 벌크 업데이트
             var streamer = await _db.StreamerProfiles.IgnoreQueryFilters()
@@ -255,12 +255,11 @@ namespace MooldangBot.Presentation.Features.Roulette
 
             if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
 
-            var AffectedRows = await RelationalQueryableExtensions.ExecuteUpdateAsync(
-                _db.UnifiedCommands.IgnoreQueryFilters()
+            var AffectedRows = await _db.UnifiedCommands.IgnoreQueryFilters()
                     .Where(C => C.TargetId == Id 
                              && C.StreamerProfileId == streamer.Id 
-                             && C.MasterFeature!.TypeName == "Roulette"),
-                S => S.SetProperty(C => C.IsActive, IsActive));
+                             && C.MasterFeature!.TypeName == "Roulette")
+                    .ExecuteUpdateAsync(S => S.SetProperty(C => C.IsActive, isActiveParam));
 
             return AffectedRows == 0 ? NotFound() : Ok();
         }
@@ -283,19 +282,17 @@ namespace MooldangBot.Presentation.Features.Roulette
         }
 
         [HttpPatch("{chzzkUid}/items/{ItemId}/status")]
-        public async Task<IActionResult> ToggleItemStatus(string chzzkUid, int ItemId, [FromBody] bool IsActive)
+        public async Task<IActionResult> ToggleItemStatus(string chzzkUid, int ItemId, [FromBody] bool isActiveParam)
         {
-            var AffectedRows = await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
-                _db.RouletteItems.IgnoreQueryFilters()
-                    .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.StreamerProfile!.ChzzkUid == chzzkUid),
-                S => S.SetProperty(I => I.IsActive, IsActive));
+            var AffectedRows = await _db.RouletteItems.IgnoreQueryFilters()
+                    .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.StreamerProfile!.ChzzkUid == chzzkUid)
+                    .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, isActiveParam));
 
             if (AffectedRows > 0)
             {
-                await EntityFrameworkQueryableExtensions.ExecuteUpdateAsync(
-                    _db.Roulettes.IgnoreQueryFilters()
-                        .Where(R => R.Items.Any(I => I.Id == ItemId)),
-                    S => S.SetProperty(R => R.UpdatedAt, KstClock.Now));
+                await _db.Roulettes.IgnoreQueryFilters()
+                        .Where(R => R.Items.Any(I => I.Id == ItemId))
+                        .ExecuteUpdateAsync(S => S.SetProperty(R => R.UpdatedAt, KstClock.Now));
                     
                 return Ok();
             }

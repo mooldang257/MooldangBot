@@ -113,13 +113,13 @@ public partial class BroadcastScribe : IBroadcastScribe
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-        if (profile == null) return 0;
+        if (profile == null || !profile.IsActive || !profile.IsMasterEnabled) return 0; // [v6.1.6] 마스터 킬 스위치 및 활동성 체크
 
         // [v4.9] 역매핑 캐시 갱신
         _uidToProfileId[chzzkUid] = profile.Id;
 
         var session = await db.BroadcastSessions
-            .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
+            .Where(s => s.StreamerProfileId == profile.Id) // [v6.1] 전역 필터가 IsDeleted == false를 자동 처리
             .OrderByDescending(s => s.StartTime)
             .FirstOrDefaultAsync();
 
@@ -130,7 +130,7 @@ public partial class BroadcastScribe : IBroadcastScribe
                 StreamerProfileId = profile.Id,
                 StartTime = KstClock.Now,
                 LastHeartbeatAt = KstClock.Now,
-                IsActive = true
+                IsDeleted = false
             };
             db.BroadcastSessions.Add(session);
             _activeStats[profile.Id] = new SessionStats();
@@ -162,7 +162,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var session = await db.BroadcastSessions
-            .FirstOrDefaultAsync(s => s.StreamerProfileId == profileId && s.IsActive);
+            .FirstOrDefaultAsync(s => s.StreamerProfileId == profileId); // [v6.1] Global filter handles Active state
 
         if (session == null) return null;
 
@@ -174,7 +174,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         }
 
         session.EndTime = KstClock.Now;
-        session.IsActive = false;
+        session.IsDeleted = true; // [v6.1] 세션 종료는 논리 삭제로 처리 (IAMF 철학)
         await db.SaveChangesAsync();
 
         return new
@@ -196,7 +196,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-        if (profile == null) return;
+        if (profile == null || !profile.IsActive || !profile.IsMasterEnabled) return; // [v6.1.6] 비활성 스트리머 트리거 무시
 
         int profileId = profile.Id;
         _uidToProfileId[chzzkUid] = profileId;

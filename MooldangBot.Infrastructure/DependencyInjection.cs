@@ -58,7 +58,8 @@ namespace MooldangBot.Infrastructure
                         maxRetryDelay: TimeSpan.FromSeconds(5),
                         errorNumbersToAdd: null);
                     mysqlOptions.CommandTimeout(10);
-                }), poolSize: 256);
+                })
+                .UseSnakeCaseNamingConvention(), poolSize: 256);
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 

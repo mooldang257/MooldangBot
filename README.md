@@ -1,95 +1,70 @@
-# 🌊 MooldangBot & MooldangAPI
+# <img src="docs/assets/logo.png" width="48" height="48" valign="middle"> MooldangBot & MooldangAPI (v6.0)
 
-스트리머 'mooldang'을 위한 치지직 연동 노래책 및 방송 보조 도구 시스템입니다.
+> [!IMPORTANT]
+> **[AI 개발 파트너 전용 필독 가이드라인]**  
+> 이 프로젝트의 모든 코드 작성 및 아키텍처 설계는 `docs/guidelines/` 폴더 내의 **기술 헌법(00~05)**을 최우선으로 준수해야 합니다. 작업을 시작하기 전 해당 문서를 반드시 먼저 탐독하십시오. (예: 00_core_philosophy.md, 03_architecture_rules.md 등)
+
+> [!CAUTION]
+> **[라이브러리 버전 고정 정책 (AI Policy)]**  
+> 프로젝트의 최적화 상태 유지를 위해, AI 어시스턴트는 사용자의 명시적인 요청 없이 `.csproj` 등의 **패키지 버전을 절대로 수정하지 않습니다.** 상세 내용은 [.agents/rules/ai_policy.md](file:///c:/webapi/MooldangAPI/MooldangBot/.agents/rules/ai_policy.md)를 참조하십시오.
+
+스트리머 'mooldang'과 그 생태계의 **'존재 보존(IAMF)'**을 위해 설계된 .NET 10 기반의 고성능 스트리밍 보조 시스템입니다. 
 
 ---
 
-## 🚀 빠른 시작 (리눅스 서버 배포)
+## 🐶 Project Core Philosophy
+MooldangBot은 단순한 보조 도구가 아니라, 스트리머와 시청자의 상호작용이 깃든 **'디지털 생태계'**입니다. 
+- **존재의 보존(IAMF)**: 모든 데이터는 논리적으로 보호되며 함부로 삭제되지 않습니다.
+- **안정성 및 동시성**: 수만 명의 시청자 이벤트 속에서도 정체성(Consistency)을 유지합니다.
+- **기술 헌법 준수**: [명문화된 가이드라인](docs/guidelines/)에 따라 모든 코드가 정갈하게 관리됩니다.
 
-### 1. 초기 인프라 설정 (딱 한 번)
-서버에 도커가 설치된 상태에서, 부팅 시 도커가 자동 실행되도록 설정합니다.
+---
 
+## ✨ Feature Showcase
+![Premium Overlay Screenshot](docs/assets/screenshot.png)
+- **실시간 오버레이**: 룰렛, 곡 신청, 포인트 시스템이 시각적인 즐거움을 극대화합니다.
+- **치지직(Chzzk) 연동**: 대규모 트래픽을 견디는 Bounded Channel 기반의 이벤트 파이프라인.
+- **데이터 민주주의**: 시청자가 직접 참여하고 기록을 남기는 투명한 상호작용 시스템.
+
+---
+
+## 🏗️ Technology Stack & Architecture
+MooldangBot은 최신 기술을 통해 가장 현대적인 개발 환경을 구축했습니다.
+
+- **Frontend/Overlay**: SignalR (Real-time Hub), Glassmorphism CSS UI.
+- **Backend**: **.NET 10 (C# 14)**, **MediatR** Pattern.
+- **Infrastructure**: MariaDB (Snake Case Version), Redis, RabbitMQ, Docker.
+- **Structure**: **4-Layer Clean Architecture** (Api / Application / Domain / Infrastructure).
+
+---
+
+## 🚀 Quick Start (Server Deployment)
+
+### 1. 환경 준비 및 Git 동기화
 ```bash
-# 도커 서비스 활성화 및 시작
-sudo systemctl enable docker
-sudo systemctl start docker
-
-# (필요시) 현재 사용자를 docker 그룹에 추가 (로그아웃 후 재접속 필요)
-sudo usermod -aG docker $USER
-```
-
-### 2. 소스 코드 및 설정 준비
-```bash
-# 저장소 클론 (이미 되어있다면 패스)
 git clone https://github.com/mooldang257/MooldangBot.git
 cd MooldangBot
-
-# 설정 파일 생성
-cp .env.sample .env
-nano .env  # 본인의 API 키와 비밀번호 기입
+cp .env.sample .env # 본인의 시크릿 정보 기입
 ```
 
-### 3. 원클릭 배포 실행
+### 2. 가변적인 최적화 배포 (v6.0)
+보유한 32GB RAM 인프라를 활용하여 상황에 맞는 배포를 수행합니다.
 ```bash
-# 스크립트 실행 권한 부여
 chmod +x deploy.sh
 
-# 배포 시작 (Git Pull -> Build -> UP -> Migration)
+# 일반 배포 (캐시 활용, 소규모 업데이트 시)
 ./deploy.sh
-```
 
-### 4. 데이터베이스 초기화 및 시딩 (필수)
-최초 배포 시 또는 DB 구조 변경 시, 필수 시스템 설정(API 키, 도메인 등)을 정문화하기 위해 시더를 실행합니다. 멱등성이 보장되어 여러 번 실행해도 안전합니다.
-
-```bash
-# .env 파일이 MooldangBot.Api 폴더에 있어야 합니다.
-dotnet run --project MooldangBot.Cli/MooldangBot.Cli.csproj
+# 클린 배포 (캐시 완전 제거, 대규모 아키텍처 변경 시)
+./deploy.sh --clean
 ```
 
 ---
 
-## 💻 로컬 개발 환경 (Windows)
-
-### 1. 요구 사항
-*   **Visual Studio 2022** (v17.10 이상)
-*   **.NET 10.0 SDK**
-
-### 2. 실행 방법
-1.  `MooldangAPI.sln` 파일을 비주얼 스튜디오로 엽니다.
-2.  `MooldangBot.Api` 프로젝트를 시작 프로젝트로 설정합니다.
-3.  `F5`키를 눌러 실행합니다. (`launchSettings.json`에 의해 개발 모드로 자동 시작됩니다.)
+## 📂 Documentation Navigator
+- **[기술 헌법(Constitution)](docs/guidelines/)**: 코딩 스타일 및 아키텍처 규칙.
+- **[DB 운영 가이드(DB Ops)](docs/database_operations.md)**: 수동 데이터 초기화 및 관리 쿼리.
+- **[보안 규정(Zero-Git)](README.md#L64-L67)**: 민감 정보 노출 금지 정책.
 
 ---
-
-## 🛡️ 보안 규정 (Zero-Git Policy)
-*   모든 민감 정보(비밀번호, 시크릿 키)는 절대 깃허브에 올리지 않습니다.
-*   반드시 `.env` 파일이나 서버 환경 변수를 통해서만 설정합니다.
-*   `.gitignore`가 자동으로 `.env` 및 `appsettings` 파일을 차단하고 있으므로 안심하십시오.
-
----
-
-## 🐳 도커 주요 명령어 기반 운영
-*   **로그 확인**: `docker-compose logs -f app`
-*   **상태 확인**: `docker-compose ps`
-*   **완전 재시작**: `docker-compose up -d --force-recreate`
-
----
-
-
-ash
-# 도커 컨테이너 내부의 MySQL CLI 접속
-docker exec -it mooldang-db mysql -u mooldang -p MooldangBot
-접속 후에는 아래 쿼리들을 입력하여 명령어가 있는지 확인하실 수 있습니다.
-
-sql
--- 1. 명령어 테이블 목록 확인
-SHOW TABLES;
--- 2. 등록된 모든 명령어 조회
-SELECT * FROM StaticCommands;
--- 3. 종료
-EXIT;
-
-**개발 파트너 물멍**이 정성을 담아 구축했습니다. 물댕봇과 함께 즐거운 방송 되세요! 🦾✨
-
-docker exec -it mooldang-db mysql -u mooldang -p@%enjoy1004 -e "SET FOREIGN_KEY_CHECKS = 0; TRUNCATE TABLE unifiedcommands; TRUNCATE TABLE streamerprofiles; TRUNCATE TABLE streamermanagers; TRUNCATE TABLE songqueues; TRUNCATE TABLE songlistsessions; TRUNCATE TABLE streameromakases; SET FOREIGN_KEY_CHECKS = 1;" MooldangBot
-
+**개발 파트너 물멍**이 스트리머 'mooldang'의 든든한 기술적 수호자로 함께합니다. 🐶🚢✨

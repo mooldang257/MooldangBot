@@ -31,11 +31,16 @@ if command -v dotnet &> /dev/null; then
 fi
 
 # 4. 컨테이너 재가동 및 최적화 빌드
-echo -e "${GREEN}🐳 Docker: 컨테이너 최적화 빌드 및 실행 중...${NC}"
+BUILD_OPTS=""
+if [ "$1" == "--clean" ]; then
+    echo -e "${RED}🧹 Clean Build: 캐시를 사용하지 않고 전체 빌드를 수행합니다...${NC}"
+    BUILD_OPTS="--no-cache"
+fi
+
+echo -e "${GREEN}🐳 Docker: 컨테이너 빌드 및 실행 중...${NC}"
 # --remove-orphans를 추가하여 설정에서 제거된 이전 컨테이너들을 확실히 청소합니다.
 docker-compose down --remove-orphans
-# --no-cache를 제거하여 변경된 레이어만 빌드하도록 속도를 극대화합니다.
-docker-compose build
+docker-compose build $BUILD_OPTS
 docker-compose up -d
 
 # 5. 상태 모니터링

@@ -82,7 +82,8 @@ public class UnifiedCommandService : IUnifiedCommandService
         // 라이프사이클 사전 처리
         await OnBeforeSaveAsync(entity, req, targetUid);
 
-        entity.IsActive = req.IsActive;
+        entity.IsActive = req.IsActive; // [v6.1.5] 기능 활성화 (토글)
+        entity.IsDeleted = false; // [v6.1.5] 저장/수정 시 존재 상태 보장
         entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
         entity.UpdatedAt = KstClock.Now;
 
@@ -227,7 +228,7 @@ public class UnifiedCommandService : IUnifiedCommandService
                 Probability10x = i.Probability,
                 Color = i.Color,
                 IsMission = i.IsMission,
-                IsActive = i.IsActive
+                IsActive = i.IsActive // [v6.1.5] 하위 테이블은 활동성(Active)으로만 관리
             }).ToList();
         }
         else if (roulette.Items.Count == 0)
@@ -251,7 +252,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (entity != null)
         {
-            entity.IsActive = !entity.IsActive;
+            entity.IsActive = !entity.IsActive; // [v6.1.5] 토글은 활동 상태(Active)를 반전
             entity.UpdatedAt = KstClock.Now;
             await _db.SaveChangesAsync();
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
@@ -324,7 +325,8 @@ public class UnifiedCommandService : IUnifiedCommandService
             Cost = cost,
             ResponseText = response,
             RequiredRole = role,
-            IsActive = true,
+            IsActive = true, // [v6.1.5] 신규 기본 명령어는 활성화 상태
+            IsDeleted = false, 
             CreatedAt = KstClock.Now
         };
 

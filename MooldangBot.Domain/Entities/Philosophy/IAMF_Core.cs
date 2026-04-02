@@ -62,7 +62,7 @@ public record LightGate(
 /// [오시리스의 기록관]: 단일 방송 세션의 시작부터 끝까지의 통계 데이터를 담는 유기적 기록체입니다.
 /// </summary>
 [Index(nameof(StreamerProfileId), nameof(IsActive))]
-public class BroadcastSession
+public class BroadcastSession : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
@@ -82,6 +82,14 @@ public class BroadcastSession
     public int TotalChatCount { get; set; }
     public string? TopKeywordsJson { get; set; } // [지식의 파편]: 단어 빈도 분석 결과
     public string? TopEmotesJson { get; set; }   // [침묵 속의 미소]: 이모티콘 사용 빈도
+    
     public bool IsActive { get; set; } = true;
+
+    // [v6.1.6] 정규화: ISoftDeletable, IAuditable 구현
+    public bool IsDeleted { get; set; } = false;
+    public KstClock? DeletedAt { get; set; }
+
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }
 

@@ -151,7 +151,7 @@ public class ChzzkBotService : IChzzkBotService
 
             var profile = await query.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-            if (profile == null || !profile.IsBotEnabled)
+            if (profile == null || !profile.IsActive || !profile.IsMasterEnabled) // [v6.1.6] 마스터 스위치 및 활동성 체크 수행
             {
                 _logger.LogWarning($"[피닉스 중단] {chzzkUid} 봇이 존재하지 않거나 비활성화되었습니다.");
                 return;

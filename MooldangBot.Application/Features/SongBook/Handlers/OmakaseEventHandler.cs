@@ -31,8 +31,8 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         string msg = notification.Message.Trim();
         if (string.IsNullOrEmpty(msg)) return;
 
-        // 1. [영적 정합성]: 봇 활성화 확인
-        if (!notification.Profile.IsBotEnabled) return;
+        // 1. [영적 정합성]: 봇 활성화 및 마스터 킬 스위치 확인 (v6.1.6)
+        if (!notification.Profile.IsActive || !notification.Profile.IsMasterEnabled) return;
 
         // 2. [오시리스의 저울]: 가격 정책 및 세션 상태 확인
         using var scope = _serviceProvider.CreateScope();
@@ -44,7 +44,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         var allActiveCommands = await db.UnifiedCommands
             .AsNoTracking()
             .Include(c => c.MasterFeature)
-            .Where(c => c.StreamerProfile!.ChzzkUid == notification.Profile.ChzzkUid && c.IsActive)
+            .Where(c => c.StreamerProfileId == notification.Profile.Id && c.IsActive) // [v6.1.5] 기능 활성 상태(IsActive) 필터 명시
             .ToListAsync(cancellationToken);
 
         var triggerCmd = allActiveCommands
@@ -66,7 +66,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
             var activeSession = await db.SonglistSessions
                 .AsNoTracking()
                 .Include(s => s.StreamerProfile)
-                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, cancellationToken);
+                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, cancellationToken); // [v6.1.5] 세션 활성 피아 식별
                 
             if (activeSession == null)
             {
@@ -100,7 +100,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
             // [v1.5-Refine] MenuId 대신 PK(Id) 기반 1:1 매핑으로 단순화
             int targetId = triggerCmd.TargetId ?? 0;
             var selected = await db.StreamerOmakases
-                .FirstOrDefaultAsync(o => o.StreamerProfileId == notification.Profile.Id && o.Id == targetId, cancellationToken);
+                .FirstOrDefaultAsync(o => o.StreamerProfileId == notification.Profile.Id && o.Id == targetId && o.IsActive, cancellationToken); // [v6.1.5] 메뉴 활성 체크
 
             if (selected == null)
             {

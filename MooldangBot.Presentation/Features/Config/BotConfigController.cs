@@ -29,7 +29,7 @@ namespace MooldangBot.Presentation.Features.Config
 
             return Ok(new 
             { 
-                isEnabled = streamer.IsBotEnabled
+                isEnabled = streamer.IsActive // [v6.1.6] IsActive 필드 맵핑
             });
         }
 
@@ -40,13 +40,13 @@ namespace MooldangBot.Presentation.Features.Config
             var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
 
-            streamer.IsBotEnabled = req.IsEnabled;
+            streamer.IsActive = req.IsEnabled; // [v6.1.6] 활동성(Active) 반전
             await _db.SaveChangesAsync();
 
             // 백그라운드 서비스에 즉시 반영 요청
             await _chzzkService.RefreshChannelAsync(uid);
 
-            return Ok(new { success = true, isEnabled = streamer.IsBotEnabled, message = "봇 설정이 즉시 변경되었습니다." });
+            return Ok(new { success = true, isActive = streamer.IsActive, message = "봇 설정이 즉시 변경되었습니다." });
         }
 
         // 3. 스트리머 전용 API 설정 조회

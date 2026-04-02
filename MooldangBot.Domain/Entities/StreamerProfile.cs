@@ -5,7 +5,7 @@ using MooldangBot.Domain.Common;
 namespace MooldangBot.Domain.Entities;
 
 [Index(nameof(ChzzkUid), IsUnique = true)]
-public class StreamerProfile
+public class StreamerProfile : ISoftDeletable, IAuditable
     {
         [Key]
         public int Id { get; set; }
@@ -79,19 +79,18 @@ public class StreamerProfile
         public string? BotRefreshToken { get; set; }
         public KstClock? BotTokenExpiresAt { get; set; }
 
-        // [추가] 물댕봇 세션 활성화/비활성화 상태
-        public bool IsBotEnabled { get; set; } = false;
-        
-        
+        // [v6.1.6] 통합: IsBotEnabled와 IsActive는 동일한 기능으로 간주하여 IsActive로 단일화합니다.
+        public bool IsActive { get; set; } = false; // [v6.1.5] 스트리머의 봇 사용 여부 (Default:Off)
+
         public bool IsOmakaseEnabled { get; set; } = true;
 
-        [Required]
-        [MaxLength(1)]
-        public string DelYn { get; set; } = "N"; // [v4.9 추가] 삭제 여부 ('Y'일 경우 논리적 삭제)
+        public bool IsDeleted { get; set; } = false; // [v6.1.5] 채널 데이터 존재 상태 (복구용)
+        public KstClock? DeletedAt { get; set; }
 
-        [Required]
-        [MaxLength(1)]
-        public string MasterUseYn { get; set; } = "Y"; // [v4.9 추가] 마스터 사용 가능 여부
+        public bool IsMasterEnabled { get; set; } = true; // [v6.1.6] 관리자 마스터 킬 스위치 (Default:On)
+
+        public KstClock CreatedAt { get; set; } = KstClock.Now;
+        public KstClock? UpdatedAt { get; set; }
 
         public int? ActiveOverlayPresetId { get; set; }
-}
+    }

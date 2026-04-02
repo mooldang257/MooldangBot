@@ -18,7 +18,7 @@ namespace MooldangBot.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .UseCollation("utf8mb4_unicode_ci")
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
@@ -461,7 +461,7 @@ namespace MooldangBot.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = 9,
+                            Id = 10,
                             BadgeColor = "warning",
                             Description = "현재 송리스트 활성화 여부",
                             Keyword = "{송리스트}",
@@ -541,10 +541,19 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("LastHeartbeatAt")
@@ -565,6 +574,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("TotalChatCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StreamerProfileId", "IsActive");
@@ -580,8 +592,20 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<double>("Frequency")
                         .HasColumnType("double");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("LastSyncAt")
                         .HasColumnType("datetime(6)");
@@ -602,6 +626,9 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -624,11 +651,20 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("CycleId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("RebirthPercentage")
                         .HasColumnType("int");
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<double>("VibrationAtDeath")
                         .HasColumnType("double");
@@ -656,6 +692,15 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -666,6 +711,9 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<double>("VibrationHz")
                         .HasColumnType("double");
@@ -761,6 +809,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StreamerProfileId", "Keyword");
@@ -777,6 +828,22 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasAnnotation("Relational:JsonPropertyName", "createdAt");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasAnnotation("Relational:JsonPropertyName", "deletedAt");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasAnnotation("Relational:JsonPropertyName", "isActive");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)")
+                        .HasAnnotation("Relational:JsonPropertyName", "isDeleted");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -787,7 +854,7 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "streamerProfileId");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasAnnotation("Relational:JsonPropertyName", "updatedAt");
 
@@ -816,6 +883,10 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("varchar(20)")
                         .HasAnnotation("Relational:JsonPropertyName", "color");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasAnnotation("Relational:JsonPropertyName", "createdAt");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasAnnotation("Relational:JsonPropertyName", "isActive");
@@ -841,6 +912,10 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("RouletteId")
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "rouletteId");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasAnnotation("Relational:JsonPropertyName", "updatedAt");
 
                     b.HasKey("Id");
 
@@ -1006,13 +1081,22 @@ namespace MooldangBot.Infrastructure.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Artist")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Genre")
+                        .HasColumnType("longtext");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<int>("StreamerProfileId")
@@ -1023,7 +1107,7 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("UsageCount")
@@ -1095,10 +1179,19 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("CompleteCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("EndedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<int>("RequestCount")
@@ -1109,6 +1202,9 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -1165,6 +1261,9 @@ namespace MooldangBot.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
@@ -1238,24 +1337,26 @@ namespace MooldangBot.Infrastructure.Migrations
                         .HasColumnType("varchar(50)")
                         .UseCollation("utf8mb4_unicode_ci");
 
-                    b.Property<string>("DelYn")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("varchar(1)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("DesignSettingsJson")
                         .HasColumnType("longtext");
 
-                    b.Property<bool>("IsBotEnabled")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsMasterEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsOmakaseEnabled")
                         .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("MasterUseYn")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("varchar(1)");
 
                     b.Property<string>("NoticeMemo")
                         .HasColumnType("longtext");
@@ -1306,6 +1407,9 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime?>("TokenExpiresAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChzzkUid")
@@ -1353,7 +1457,13 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Keyword")
@@ -1411,8 +1521,20 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Property<int>("ConsecutiveAttendanceCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("GlobalViewerId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("LastAttendanceAt")
                         .HasColumnType("datetime(6)");
@@ -1429,6 +1551,10 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 

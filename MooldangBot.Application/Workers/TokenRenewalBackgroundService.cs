@@ -46,7 +46,7 @@ public class TokenRenewalBackgroundService(
 
         // 1. [우선순위의 산정]: 봇 활성화된 스트리머 중 만료 시간이 가장 임박한 순서로 정렬
         var profiles = await db.StreamerProfiles
-            .Where(p => p.IsBotEnabled)
+            .Where(p => p.IsActive && p.IsMasterEnabled) // [v6.1.6] 갱신 대상 선별 시 마스터 킬 스위치 반영
             .ToListAsync(ct);
 
         var sortedProfiles = profiles

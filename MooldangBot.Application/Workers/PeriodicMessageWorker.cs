@@ -36,7 +36,7 @@ public class PeriodicMessageWorker : BackgroundService
                 // 1. 활성화된 모든 스트리머 프로필 조회 (N+1 방지 시작)
                 var profiles = await db.StreamerProfiles
                     .AsNoTracking()
-                    .Where(p => p.IsBotEnabled)
+                    .Where(p => p.IsActive && p.IsMasterEnabled) // [v6.1.6] 활동성 및 마스터 킬 스위치 통합 점검
                     .ToListAsync(stoppingToken);
 
                 if (profiles.Count > 0)

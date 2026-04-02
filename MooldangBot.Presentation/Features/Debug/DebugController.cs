@@ -23,10 +23,12 @@ namespace MooldangBot.Presentation.Features.Debug
         public async Task<IActionResult> CheckSystem()
         {
             var streamers = await _db.StreamerProfiles
+                .IgnoreQueryFilters()
                 .Select(p => new { 
                     p.ChannelName, 
                     p.ChzzkUid, 
-                    p.IsBotEnabled, 
+                    p.IsActive, 
+                    p.IsMasterEnabled,
                     HasToken = !string.IsNullOrEmpty(p.ChzzkAccessToken),
                     TokenExpiry = p.TokenExpiresAt
                 })

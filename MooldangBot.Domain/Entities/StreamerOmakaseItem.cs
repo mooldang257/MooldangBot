@@ -24,5 +24,7 @@ namespace MooldangBot.Domain.Entities
 
         [ConcurrencyCheck]
         public int Count { get; set; } = 0;
+
+        public bool IsActive { get; set; } = true; // [v6.1.6] 오마카세 메뉴 활성화 (토글용)
     }
 }

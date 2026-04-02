@@ -8,34 +8,26 @@ namespace MooldangBot.Domain.Entities;
 
 /// <summary>
 /// [파로스의 통합 - v4.3 정문화]: 시스템의 모든 유료/무료 명령어를 통합 관리하는 엔티티입니다.
+/// [v6.1] 정규화: ISoftDeletable, IAuditable 상속 및 명칭 통합.
 /// </summary>
 [Index(nameof(StreamerProfileId), nameof(Keyword), IsUnique = true)]
-public class UnifiedCommand
+public class UnifiedCommand : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
 
-    // ----------------------------------------------------
-    // [정문화 영역 1] Streamer 연결
-    // ----------------------------------------------------
     [Required]
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
     public virtual StreamerProfile? StreamerProfile { get; set; }
 
-    // ----------------------------------------------------
-    // [정문화 영역 2] 마스터 기능 연결 (Category와 FeatureType 대체)
-    // ----------------------------------------------------
     [Required]
     public int MasterCommandFeatureId { get; set; }
 
     [ForeignKey(nameof(MasterCommandFeatureId))]
     public virtual Master_CommandFeature? MasterFeature { get; set; }
 
-    // ----------------------------------------------------
-    // 명령어 고유 속성 (스트리머별 커스텀 설정)
-    // ----------------------------------------------------
     [Required]
     [MaxLength(50)]
     public string Keyword { get; set; } = string.Empty;
@@ -53,7 +45,11 @@ public class UnifiedCommand
     [Required]
     public CommandRole RequiredRole { get; set; } = CommandRole.Viewer;
 
-    public bool IsActive { get; set; } = true;
+    // [v6.1] 정규화: IsActive(bool) -> IsDeleted(bool, ISoftDeletable)
+    public bool IsActive { get; set; } = true; // [v6.1.5] 기능 활성화 (스트리머 토글용)
+
+    public bool IsDeleted { get; set; } = false; // [v6.1.5] 존재 거버넌스 (물리적 배사용)
+    public KstClock? DeletedAt { get; set; }
 
     [Required]
     public KstClock CreatedAt { get; set; } = KstClock.Now;

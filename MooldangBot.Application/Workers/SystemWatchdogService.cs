@@ -83,7 +83,7 @@ public class SystemWatchdogService(
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             activeUids = db.StreamerProfiles
-                .Where(s => s.IsBotEnabled)
+                .Where(s => s.IsActive && s.IsMasterEnabled) // [v6.1.6] 마스터 킬 스위치 반영
                 .Select(s => s.ChzzkUid)
                 .ToList();
         }

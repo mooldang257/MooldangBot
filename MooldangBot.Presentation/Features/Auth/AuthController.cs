@@ -219,7 +219,8 @@ namespace MooldangBot.Presentation.Features.Auth
                     chzzkUid = p.ChzzkUid,
                     channelName = p.ChannelName,
                     profileImageUrl = p.ProfileImageUrl,
-                    isBotEnabled = p.IsBotEnabled, // Entity 필드 사용
+                    isActive = p.IsActive, // [v6.1.6] 활동성 필드로 통합
+                    isMasterEnabled = p.IsMasterEnabled, // [v6.1.6] 마스터 스위치 노출
                     lastActiveAt = p.TokenExpiresAt
                 })
                 .ToList();
@@ -341,7 +342,7 @@ namespace MooldangBot.Presentation.Features.Auth
                             botProfile.BotAccessToken = accessToken;
                             botProfile.BotRefreshToken = refreshToken;
                             botProfile.BotTokenExpiresAt = expireDate;
-                            botProfile.IsBotEnabled = true;
+                            botProfile.IsActive = true; 
 
                             Console.WriteLine($"[오시리스의 확인]: 전용 봇 연동 완료 (스트리머: {targetUid}, 봇: {setupBotNick})");
                         }
@@ -391,7 +392,8 @@ namespace MooldangBot.Presentation.Features.Auth
                     streamer = new StreamerProfile 
                     { 
                         ChzzkUid = chzzkUid,
-                        IsBotEnabled = true,
+                        IsActive = true,
+                        IsMasterEnabled = true, // [v6.1.6] 신규 가입 시 기본 활성화
                         IsOmakaseEnabled = true,
                         SongCommand = "!신청",
                         SongPrice = 1000,

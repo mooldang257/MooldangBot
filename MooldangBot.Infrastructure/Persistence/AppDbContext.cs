@@ -79,6 +79,21 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         // [v4.0] 전역 암호화 컨버터 인스턴스 생성
         var converter = new EncryptedValueConverter(_protector);
 
+        // [v6.1] 전역 쿼리 필터 자동화: ISoftDeletable을 구현하는 모든 엔티티에 대해 논리 삭제 필터 적용
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+            {
+                var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
+                var body = System.Linq.Expressions.Expression.Equal(
+                    System.Linq.Expressions.Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted)),
+                    System.Linq.Expressions.Expression.Constant(false));
+                
+                var filter = System.Linq.Expressions.Expression.Lambda(body, parameter);
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            }
+        }
+
         modelBuilder.Entity<ChzzkCategory>()
             .HasMany(c => c.Aliases)
             .WithOne(a => a.Category)
@@ -296,7 +311,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 
         // Legacy indices for RouletteLog removed (redefined above)
 
-        // [파로스의 통합]: UnifiedCommand 설정 (v4.3 정문화 적용)
+        // [파로스의 통합]: UnifiedCommand 설정 (v4.3 정형화 적용)
         modelBuilder.Entity<UnifiedCommand>(entity => {
             entity.ToTable("unified_commands");
             entity.Property(e => e.Keyword).HasColumnName("keyword").UseCollation(ciCollation);
@@ -416,7 +431,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
-                    Id = 9, 
+                    Id = 10, 
                     Keyword = "{송리스트}", 
                     Description = "현재 송리스트 활성화 여부", 
                     BadgeColor = "warning", 
@@ -514,12 +529,51 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => 
-            e.DelYn == "N" && 
-            e.MasterUseYn == "Y" && 
-            (!_userSession.IsAuthenticated || e.ChzzkUid == _userSession.ChzzkUid));
+        // [v6.1] 자식 엔티티의 필터는 암묵적 JOIN을 유발하므로 보수적으로 접근하나, 
+        // ISoftDeletable 인터페이스 구현체에 한해 리플렉션으로 자동 주입됨 (상단 foreach 로직).
+    }
 
-        // [주의] 자식 엔티티의 필터는 암묵적 JOIN을 유발하므로 제거함 (v4.9 최적화).
-        // 데이터 격리는 Application Layer의 세션 캐시(StreamerProfileId 기반)에서 선행 처리됨.
+    // [v6.1] 오시리스의 감시: 엔티티 저장 시 생성/수정 시간 및 논리 삭제 자동 처리
+    public override int SaveChanges()
+    {
+        ApplyAuditAndSoftDelete();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyAuditAndSoftDelete();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ApplyAuditAndSoftDelete()
+    {
+        var entries = ChangeTracker.Entries();
+        var now = KstClock.Now;
+
+        foreach (var entry in entries)
+        {
+            // 1. 감사 로그(Audit) 자동화
+            if (entry.Entity is IAuditable auditable)
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditable.CreatedAt = now;
+                        break;
+                    case EntityState.Modified:
+                        auditable.UpdatedAt = now;
+                        break;
+                }
+            }
+
+            // 2. 논리적 삭제(Soft Delete) 인터셉터
+            if (entry.Entity is ISoftDeletable softDeletable && entry.State == EntityState.Deleted)
+            {
+                entry.State = EntityState.Modified; // 물리 삭제를 수정으로 변경
+                softDeletable.IsDeleted = true;
+                softDeletable.DeletedAt = now;
+            }
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace MooldangBot.Domain.Entities;
 /// </summary>
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
 [Index(nameof(StreamerProfileId), nameof(Points))]
-public class ViewerProfile
+public class ViewerProfile : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
@@ -61,4 +61,15 @@ public class ViewerProfile
     /// 마지막 출석 일시
     /// </summary>
     public KstClock? LastAttendanceAt { get; set; }
+
+    public bool IsActive { get; set; } = true; // [v6.1.5] 시청자 활동 활성 상태 (Banned/Disabled 등)
+
+    public bool IsDeleted { get; set; } = false; // [v6.1.5] 시청자 데이터 존재 상태 (복구 지원)
+    public KstClock? DeletedAt { get; set; }
+
+    // [v6.1] 데이터 정규화: 감사 로그 및 MariaDB 친화적 동시성 토큰
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
+
+    [ConcurrencyCheck]
+    public KstClock? UpdatedAt { get; set; }
 }

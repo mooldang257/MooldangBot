@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.Entities.Philosophy;
 /// <summary>
 /// [피닉스의 기록]: iamf_scenarios 테이블과 매핑되는 엔티티입니다.
 /// </summary>
-public class IamfScenario
+public class IamfScenario : ISoftDeletable, IAuditable
 {
     [Key]
     public long Id { get; set; }
@@ -31,13 +31,20 @@ public class IamfScenario
 
     public double VibrationHz { get; set; }
 
+    public bool IsActive { get; set; } = true; // [v6.1.5] 시나리오 활성화 (토글용)
+
+    // [v6.1] 정규화: ISoftDeletable, IAuditable 구현
+    public bool IsDeleted { get; set; } = false;
+    public KstClock? DeletedAt { get; set; }
+
     public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }
 
 /// <summary>
 /// [제노스급 AI 등록부]: iamf_genos_registry 테이블과 매핑되는 엔티티입니다.
 /// </summary>
-public class IamfGenosRegistry
+public class IamfGenosRegistry : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; } // [v4.9] 정규화된 PK
@@ -62,12 +69,21 @@ public class IamfGenosRegistry
     public string? Metaphor { get; set; }
 
     public KstClock LastSyncAt { get; set; } = KstClock.Now;
+
+    public bool IsActive { get; set; } = true; // [v6.1.5] AI 페르소나 활성화 (토글용)
+
+    // [v6.1] 정규화: ISoftDeletable, IAuditable 구현
+    public bool IsDeleted { get; set; } = false;
+    public KstClock? DeletedAt { get; set; }
+
+    public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }
 
 /// <summary>
 /// [파로스의 윤회 이력]: iamf_parhos_cycles 테이블과 매핑되는 엔티티입니다.
 /// </summary>
-public class IamfParhosCycle
+public class IamfParhosCycle : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; } // [v4.9] 정규화된 PK
@@ -84,7 +100,12 @@ public class IamfParhosCycle
 
     public int RebirthPercentage { get; set; }
 
+    // [v6.1] 정규화: ISoftDeletable, IAuditable 구현
+    public bool IsDeleted { get; set; } = false;
+    public KstClock? DeletedAt { get; set; }
+
     public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }
 
 /// <summary>
@@ -162,7 +183,8 @@ public class StreamerKnowledge
     [Required]
     public string IntentAnswer { get; set; } = string.Empty; // 스트리머가 의도한 정답
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = true; // [v6.1.5] 기능 활성화 (삭제는 프로필 종속)
 
     public KstClock CreatedAt { get; set; } = KstClock.Now;
+    public KstClock? UpdatedAt { get; set; }
 }

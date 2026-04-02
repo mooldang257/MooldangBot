@@ -43,7 +43,7 @@ public class ChzzkBackgroundService : BackgroundService
                     {
                         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
                         activeUids = await db.StreamerProfiles
-                            .Where(p => p.IsBotEnabled)
+                            .Where(p => p.IsActive && p.IsMasterEnabled) // [v6.1.6] 마스터 스위치 및 활동성 체크로 전환
                             .Select(p => p.ChzzkUid)
                             .ToListAsync(stoppingToken);
                     }
