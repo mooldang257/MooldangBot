@@ -46,6 +46,13 @@ namespace MooldangBot.Infrastructure.Migrations
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 
+            // [v4.7.7] Deep Cleaning: Correct orphan IDs before FK
+            migrationBuilder.Sql(@"
+                SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                UPDATE streameromakases SET StreamerProfileId = @min_streamer 
+                WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+            ");
+
             migrationBuilder.AddForeignKey(
                 name: "FK_streameromakases_streamerprofiles_StreamerProfileId",
                 table: "streameromakases",
@@ -128,6 +135,16 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "GlobalViewerId" },
                 unique: true);
 
+            // [v4.7.7] Deep Cleaning: Correct orphan IDs before FK
+            migrationBuilder.Sql(@"
+                SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                UPDATE streamermanagers SET StreamerProfileId = @min_streamer 
+                WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL OR StreamerProfileId = 0;
+
+                UPDATE streamermanagers SET GlobalViewerId = (SELECT MIN(Id) FROM globalviewers)
+                WHERE GlobalViewerId NOT IN (SELECT Id FROM globalviewers) OR GlobalViewerId IS NULL OR GlobalViewerId = 0;
+            ");
+
             migrationBuilder.AddForeignKey(
                 name: "FK_streamermanagers_streamerprofiles_StreamerProfileId",
                 table: "streamermanagers",
@@ -143,6 +160,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 principalTable: "globalviewers",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
+
         }
 
         /// <inheritdoc />

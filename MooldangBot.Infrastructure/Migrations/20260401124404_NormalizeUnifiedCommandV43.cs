@@ -74,7 +74,15 @@ namespace MooldangBot.Infrastructure.Migrations
                         PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
                     END IF;
 
-                    -- 5. [제약조건] NOT NULL 설정 및 기존 인덱스/FK 제거 (Re-run 대비)
+                    -- 5. [강제 정상화] 이전 실행 실패로 인해 0이나 잘못된 값이 남은 경우 강제 보정
+                    -- master_commandfeatures(Id=1: Reply) 가 반드시 존재함을 전제로 함
+                    UPDATE unifiedcommands SET MasterCommandFeatureId = 1 
+                    WHERE MasterCommandFeatureId NOT IN (SELECT Id FROM master_commandfeatures) OR MasterCommandFeatureId IS NULL;
+                    
+                    UPDATE unifiedcommands SET StreamerProfileId = (SELECT MIN(Id) FROM streamerprofiles)
+                    WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId IS NULL;
+
+                    -- 6. [제약조건] NOT NULL 설정 및 기존 인덱스/FK 제거 (Re-run 대비)
                     ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
                     ALTER TABLE unifiedcommands MODIFY StreamerProfileId int NOT NULL;
 
@@ -123,8 +131,21 @@ namespace MooldangBot.Infrastructure.Migrations
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
 
+            // [v4.5.7] Deep Cleaning for Song migration
+            migrationBuilder.Sql(@"
+                SET @min_streamer = (SELECT MIN(Id) FROM streamerprofiles);
+                
+                -- 잘못된 StreamerProfileId 보정
+                UPDATE songqueues SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0;
+                UPDATE songlistsessions SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0;
+                UPDATE songbooks SET StreamerProfileId = @min_streamer WHERE StreamerProfileId NOT IN (SELECT Id FROM streamerprofiles) OR StreamerProfileId = 0;
+                
+                -- GlobalViewerId 가 0인 경우 NULL로 전환 (하나라도 없으면 FK 실패하므로)
+                UPDATE songqueues SET GlobalViewerId = NULL WHERE GlobalViewerId NOT IN (SELECT Id FROM globalviewers) AND GlobalViewerId IS NOT NULL;
+            ");
+
             migrationBuilder.AddForeignKey(
-                name: "FK_unifiedcommands_streamerprofiles_StreamerProfileId",
+                name: "FK_songbooks_streamerprofiles_StreamerProfileId",
                 table: "unifiedcommands",
                 column: "StreamerProfileId",
                 principalTable: "streamerprofiles",
