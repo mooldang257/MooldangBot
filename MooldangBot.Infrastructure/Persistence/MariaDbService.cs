@@ -30,7 +30,7 @@ namespace MooldangBot.Infrastructure.Persistence
             // CREATE DATABASE IF NOT EXISTS chzzk_matrix;
             // USE chzzk_matrix;
             
-            // CREATE TABLE IF NOT EXISTS StreamerTokens(
+            // CREATE TABLE IF NOT EXISTS core_streamer_tokens(
             //     ChannelId VARCHAR(100) PRIMARY KEY, /* 치지직 채널 ID (고유 식별자) */
             //     ChannelName VARCHAR(100) NOT NULL,  /* 스트리머 닉네임 */
             //     AccessToken TEXT NOT NULL,          /* 인증 토큰 */
@@ -41,7 +41,7 @@ namespace MooldangBot.Infrastructure.Persistence
             using var db = CreateConnection();
 
             string sql = @"
-            INSERT INTO StreamerTokens (ChannelId, ChannelName, AccessToken, RefreshToken, UpdatedAt)
+            INSERT INTO core_streamer_tokens (ChannelId, ChannelName, AccessToken, RefreshToken, UpdatedAt)
             VALUES (@ChannelId, @ChannelName, @AccessToken, @RefreshToken, NOW())
             ON DUPLICATE KEY UPDATE 
                 ChannelName = @ChannelName,
@@ -67,7 +67,7 @@ namespace MooldangBot.Infrastructure.Persistence
         {
             using var db = CreateConnection();
             // 단일 스트리머 로컬용이므로 가장 최근에 업데이트된 토큰 하나만 가져옵니다.
-            string sql = "SELECT AccessToken FROM StreamerTokens ORDER BY UpdatedAt DESC LIMIT 1;";
+            string sql = "SELECT AccessToken FROM core_streamer_tokens ORDER BY UpdatedAt DESC LIMIT 1;";
             return await db.QueryFirstOrDefaultAsync<string>(sql);
         }
     }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MooldangBot.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260402073501_Revision_v0_62_DomainPrefix")]
+    partial class Revision_v0_62_DomainPrefix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1272,7 +1275,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId");
 
-                    b.ToTable("song_list_omakases", (string)null);
+                    b.ToTable("func_omakase_items", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerProfile", b =>

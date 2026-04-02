@@ -112,7 +112,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 
 
         modelBuilder.Entity<StreamerOmakaseItem>(entity => {
-            entity.ToTable("streamer_omakases");
+            entity.ToTable("song_list_omakases");
             entity.HasOne(o => o.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(o => o.StreamerProfileId)
@@ -120,7 +120,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<Roulette>(entity => {
-            entity.ToTable("roulettes");
+            entity.ToTable("func_roulette_main");
             
             entity.HasOne(r => r.StreamerProfile)
                   .WithMany()
@@ -132,7 +132,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<AvatarSetting>(entity => {
-            entity.ToTable("avatar_settings");
+            entity.ToTable("overlay_avatar_settings");
             entity.HasOne(a => a.StreamerProfile)
                   .WithOne()
                   .HasForeignKey<AvatarSetting>(a => a.StreamerProfileId)
@@ -150,7 +150,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<PeriodicMessage>(entity => {
-            entity.ToTable("periodic_messages");
+            entity.ToTable("view_periodic_messages");
             entity.HasOne(m => m.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(m => m.StreamerProfileId)
@@ -159,7 +159,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<SharedComponent>(entity => {
-            entity.ToTable("shared_components");
+            entity.ToTable("overlay_components");
             entity.HasOne(s => s.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(s => s.StreamerProfileId)
@@ -172,7 +172,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<RouletteLog>(entity => {
-            entity.ToTable("roulette_logs");
+            entity.ToTable("func_roulette_logs");
             entity.Property(e => e.ViewerNickname).UseCollation(ciCollation);
 
             entity.HasOne(l => l.StreamerProfile)
@@ -197,7 +197,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<StreamerManager>(entity => {
-            entity.ToTable("streamer_managers");
+            entity.ToTable("core_streamer_managers");
             
             entity.HasOne(m => m.StreamerProfile)
                   .WithMany()
@@ -226,13 +226,13 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
  
         // [v4.2] 글로벌 시청자 암호화 설정
         modelBuilder.Entity<GlobalViewer>(entity => {
-            entity.ToTable("global_viewers");
+            entity.ToTable("core_global_viewers");
             entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
         });
 
         modelBuilder.Entity<ViewerProfile>(entity => {
-            entity.ToTable("viewer_profiles");
+            entity.ToTable("view_profiles");
             
             // 스트리머가 탈퇴/삭제되면 해당 방의 시청자 기록도 연쇄 삭제 (DB 용량 확보)
             entity.HasOne(v => v.StreamerProfile)
@@ -247,7 +247,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<RouletteSpin>(entity => {
-            entity.ToTable("roulette_spins");
+            entity.ToTable("func_roulette_spins");
             
             entity.HasOne(s => s.StreamerProfile)
                   .WithMany()
@@ -263,7 +263,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<SystemSetting>(entity => {
-            entity.ToTable("system_settings");
+            entity.ToTable("sys_settings");
             entity.Property(e => e.BotAccessToken).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.BotRefreshToken).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.KeyValue).HasColumnType("longtext").HasConversion(converter);
@@ -271,7 +271,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 
 
         modelBuilder.Entity<SongQueue>(entity => {
-            entity.ToTable("song_queues");
+            entity.ToTable("song_list_queues");
 
             entity.HasOne(s => s.StreamerProfile)
                   .WithMany()
@@ -288,7 +288,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<SongBook>(entity => {
-            entity.ToTable("song_books");
+            entity.ToTable("song_book_main");
 
             entity.HasOne(s => s.StreamerProfile)
                   .WithMany()
@@ -313,7 +313,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 
         // [파로스의 통합]: UnifiedCommand 설정 (v4.3 정형화 적용)
         modelBuilder.Entity<UnifiedCommand>(entity => {
-            entity.ToTable("unified_commands");
+            entity.ToTable("func_cmd_unified");
             entity.Property(e => e.Keyword).HasColumnName("keyword").UseCollation(ciCollation);
             entity.Property(e => e.CostType).HasConversion<string>();
             entity.Property(e => e.RequiredRole).HasConversion<string>();
@@ -336,7 +336,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<Master_CommandCategory>(entity => {
-            entity.ToTable("master_command_categories");
+            entity.ToTable("func_cmd_master_categories");
             entity.Property(e => e.Name).UseCollation(ciCollation);
 
             // [v1.7] 마스터 카테고리 재편
@@ -348,7 +348,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<Master_CommandFeature>(entity => {
-            entity.ToTable("master_command_features");
+            entity.ToTable("func_cmd_master_features");
             entity.Property(e => e.TypeName).UseCollation(ciCollation);
             entity.Property(e => e.RequiredRole).HasConversion<string>();
 
@@ -369,7 +369,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<Master_DynamicVariable>(entity => {
-            entity.ToTable("master_dynamic_variables");
+            entity.ToTable("func_cmd_master_variables");
             entity.Property(e => e.Keyword).UseCollation(ciCollation);
 
             // [v1.8] 동적 변수 시딩 (Safe Query) & [v4.4.0] 내부 메서드 리졸버 매핑
@@ -379,14 +379,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{포인트}", 
                     Description = "보유 포인트", 
                     BadgeColor = "primary", 
-                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 2, 
                     Keyword = "{닉네임}", 
                     Description = "시청자 닉네임", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT vp.Nickname FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT vp.Nickname FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 3, 
@@ -414,21 +414,21 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{연속출석일수}", 
                     Description = "연속 출석한 일수", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 7, 
                     Keyword = "{누적출석일수}", 
                     Description = "누적 출석한 횟수", 
                     BadgeColor = "info", 
-                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 8, 
                     Keyword = "{마지막출석일}", 
                     Description = "최근 출석 날짜", 
                     BadgeColor = "secondary", 
-                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM viewer_profiles vp JOIN streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 10, 
@@ -440,25 +440,25 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             );
         });
 
-        modelBuilder.Entity<SongBook>().ToTable("song_books");
-        modelBuilder.Entity<RouletteLog>().ToTable("roulette_logs");
-        modelBuilder.Entity<StreamerProfile>().ToTable("streamer_profiles");
-        modelBuilder.Entity<SongQueue>().ToTable("song_queues");
-        modelBuilder.Entity<SystemSetting>().ToTable("system_settings");
-        modelBuilder.Entity<StreamerOmakaseItem>().ToTable("streamer_omakases");
-        modelBuilder.Entity<AvatarSetting>().ToTable("avatar_settings");
-        modelBuilder.Entity<ChzzkCategory>().ToTable("chzzk_categories");
-        modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("chzzk_category_aliases");
-        modelBuilder.Entity<ViewerProfile>().ToTable("viewer_profiles");
-        modelBuilder.Entity<Roulette>().ToTable("roulettes");
+        modelBuilder.Entity<SongBook>().ToTable("song_book_main");
+        modelBuilder.Entity<RouletteLog>().ToTable("func_roulette_logs");
+        modelBuilder.Entity<StreamerProfile>().ToTable("core_streamer_profiles");
+        modelBuilder.Entity<SongQueue>().ToTable("song_list_queues");
+        modelBuilder.Entity<SystemSetting>().ToTable("sys_settings");
+        modelBuilder.Entity<StreamerOmakaseItem>().ToTable("song_list_omakases");
+        modelBuilder.Entity<AvatarSetting>().ToTable("overlay_avatar_settings");
+        modelBuilder.Entity<ChzzkCategory>().ToTable("sys_chzzk_categories");
+        modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("sys_chzzk_category_aliases");
+        modelBuilder.Entity<ViewerProfile>().ToTable("view_profiles");
+        modelBuilder.Entity<Roulette>().ToTable("func_roulette_main");
         modelBuilder.Entity<RouletteItem>(entity => {
-            entity.ToTable("roulette_items");
+            entity.ToTable("func_roulette_items");
             entity.HasOne(i => i.Roulette)
                   .WithMany(r => r.Items)
                   .HasForeignKey(i => i.RouletteId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
-        modelBuilder.Entity<PeriodicMessage>().ToTable("periodic_messages");
+        modelBuilder.Entity<PeriodicMessage>().ToTable("view_periodic_messages");
         modelBuilder.Entity<SonglistSession>().ToTable("song_list_sessions");
         modelBuilder.Entity<OverlayPreset>().ToTable("overlay_presets");
 
@@ -512,14 +512,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         });
 
         modelBuilder.Entity<BroadcastSession>(entity => {
-            entity.ToTable("broadcast_sessions");
+            entity.ToTable("sys_broadcast_sessions");
             entity.HasOne(b => b.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(b => b.StreamerProfileId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<SharedComponent>().ToTable("shared_components");
+        modelBuilder.Entity<SharedComponent>().ToTable("overlay_components");
 
         modelBuilder.Entity<StreamerKnowledge>(entity => {
             entity.ToTable("streamer_knowledges");
