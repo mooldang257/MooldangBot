@@ -10,11 +10,19 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.3.10] Final Bulletproof Migration
+            // [v4.3.11] Universal String Unification: Proactively convert all tables to unicode_ci
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
+                
+                -- 1. 데이터베이스 및 모든 테이블의 정렬 규칙을 강제로 통일 (utf8mb4_unicode_ci)
+                SET @sql = CONCAT('ALTER DATABASE ', @dbname, ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 1. 신규 컬럼 추가 방어
+                -- 기존의 주요 테이블들을 사전에 통합 (충돌 방지)
+                ALTER TABLE streamerprofiles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                ALTER TABLE unifiedcommands CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                
+                -- 2. 신규 컬럼 추가 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'MasterCommandFeatureId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD MasterCommandFeatureId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -23,10 +31,11 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 2. 데이터 매핑 (기존 컬럼 존재 시)
+                -- 3. 데이터 매핑 (물리적 형식이 통일되었으므로 COLLATE 없이 순수 JOIN)
                 SET @has_old = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'FeatureType');
                 IF @has_old > 0 THEN
-                    UPDATE unifiedcommands u JOIN streamerprofiles p ON LOWER(u.chzzkuid) = LOWER(p.ChzzkUid) SET u.StreamerProfileId = p.Id;
+                    UPDATE unifiedcommands u JOIN streamerprofiles p ON u.chzzkuid = p.ChzzkUid SET u.StreamerProfileId = p.Id;
+                    
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 1 WHERE LOWER(FeatureType) = 'reply';
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 2 WHERE LOWER(FeatureType) = 'notice';
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 3 WHERE LOWER(FeatureType) = 'title';
@@ -40,7 +49,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     UPDATE unifiedcommands SET MasterCommandFeatureId = 11 WHERE LOWER(FeatureType) = 'ai';
                 END IF;
 
-                -- 3. 정량화 및 컬럼 정리
+                -- 4. 정량화 및 컬럼 정리
                 SET @has_data = (SELECT COUNT(*) FROM streamerprofiles);
                 IF @has_data > 0 THEN
                     UPDATE unifiedcommands SET StreamerProfileId = (SELECT MIN(Id) FROM streamerprofiles) WHERE StreamerProfileId IS NULL;
@@ -56,7 +65,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 ALTER TABLE unifiedcommands MODIFY MasterCommandFeatureId int NOT NULL;
                 ALTER TABLE unifiedcommands MODIFY StreamerProfileId int NOT NULL;
 
-                -- 4. [인덱스/FK 최종 정리] 중복 방지를 위해 삭제 후 재생성
+                -- 5. 인덱스/FK 최종 정리
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_MasterCommandFeatureId');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_MasterCommandFeatureId ON unifiedcommands', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

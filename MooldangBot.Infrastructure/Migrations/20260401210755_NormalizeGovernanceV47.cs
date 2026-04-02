@@ -10,43 +10,40 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.7.5] Emergency Repair: Idempotent migration for Governance
+            // [v4.7.10] Universal String Unification: Physical table conversion
             migrationBuilder.Sql(@"
+                -- 테이블 형식을 unicode_ci로 강제 통일
+                ALTER TABLE streameromakases CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                ALTER TABLE streamermanagers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                ALTER TABLE streamerprofiles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                ALTER TABLE globalviewers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
                 SET @dbname = DATABASE();
 
                 -- 1. [streameromakases] 신규 컬럼 추가 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'StreamerProfileId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE streameromakases ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                -- 물리적 형식이 통일되었으므로 순수 JOIN 수행
+                UPDATE streameromakases o JOIN streamerprofiles p ON o.ChzzkUid = p.ChzzkUid SET o.StreamerProfileId = p.Id;
+                DELETE FROM streameromakases WHERE StreamerProfileId IS NULL;
             ");
 
-            migrationBuilder.Sql(@"
-                UPDATE streameromakases o
-                JOIN streamerprofiles p ON LOWER(o.ChzzkUid) = LOWER(p.ChzzkUid)
-                SET o.StreamerProfileId = p.Id;
-            ");
-
-            migrationBuilder.Sql("DELETE FROM streameromakases WHERE StreamerProfileId IS NULL;");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "StreamerProfileId",
-                table: "streameromakases",
-                nullable: false);
+            migrationBuilder.AlterColumn<int>(name: "StreamerProfileId", table: "streameromakases", nullable: false);
 
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
-                -- ChzzkUid 제거 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'ChzzkUid');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streameromakases DROP COLUMN ChzzkUid', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 기존 FK 제거 방어 (Re-run 대비)
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND CONSTRAINT_NAME = 'FK_streameromakases_streamerprofiles_StreamerProfileId');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streameromakases DROP FOREIGN KEY FK_streameromakases_streamerprofiles_StreamerProfileId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 
-            // [v4.7.8] Resilient Deep Cleaning: Only run if data exists
+            // [v4.7.8] Resilient Deep Cleaning
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'StreamerProfileId');
@@ -70,8 +67,6 @@ namespace MooldangBot.Infrastructure.Migrations
             // 2. [streamermanagers] 테이블 정규화
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
-
-                -- 신규 컬럼 추가 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerProfileId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE streamermanagers ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -79,40 +74,22 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'GlobalViewerId');
                 SET @sql = IF(@exist = 0, 'ALTER TABLE streamermanagers ADD GlobalViewerId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-            ");
 
-            // 2-1. 매니저 정보 보존을 위한 GlobalViewers 선제 생성 (존재하지 않는 경우)
-            migrationBuilder.Sql(@"
                 INSERT IGNORE INTO globalviewers (ViewerUidHash, ViewerUid)
-                SELECT 
-                    UPPER(HEX(SHA2(CONCAT(LOWER(ManagerChzzkUid), 'MooldangBot_Secure_Salt_2026'), 256))),
-                    'MIGRATED_MANAGER'
+                SELECT UPPER(HEX(SHA2(CONCAT(LOWER(ManagerChzzkUid), 'MooldangBot_Secure_Salt_2026'), 256))), 'MIGRATED_MANAGER'
                 FROM streamermanagers;
-            ");
 
-            // 2-2. StreamerProfileId 매핑
-            migrationBuilder.Sql(@"
-                UPDATE streamermanagers m
-                JOIN streamerprofiles p ON LOWER(m.StreamerChzzkUid) = LOWER(p.ChzzkUid)
-                SET m.StreamerProfileId = p.Id;
-            ");
+                UPDATE streamermanagers m JOIN streamerprofiles p ON m.StreamerChzzkUid = p.ChzzkUid SET m.StreamerProfileId = p.Id;
+                UPDATE streamermanagers m JOIN globalviewers g ON g.ViewerUidHash = UPPER(HEX(SHA2(CONCAT(LOWER(m.ManagerChzzkUid), 'MooldangBot_Secure_Salt_2026'), 256))) SET m.GlobalViewerId = g.Id;
 
-            // 2-3. GlobalViewerId 매핑
-            migrationBuilder.Sql(@"
-                UPDATE streamermanagers m
-                JOIN globalviewers g ON g.ViewerUidHash = UPPER(HEX(SHA2(CONCAT(LOWER(m.ManagerChzzkUid), 'MooldangBot_Secure_Salt_2026'), 256)))
-                SET m.GlobalViewerId = g.Id;
+                DELETE FROM streamermanagers WHERE StreamerProfileId IS NULL OR GlobalViewerId IS NULL;
             ");
-
-            migrationBuilder.Sql("DELETE FROM streamermanagers WHERE StreamerProfileId IS NULL OR GlobalViewerId IS NULL;");
 
             migrationBuilder.AlterColumn<int>(name: "StreamerProfileId", table: "streamermanagers", nullable: false);
             migrationBuilder.AlterColumn<int>(name: "GlobalViewerId", table: "streamermanagers", nullable: false);
 
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
-
-                -- 컬럼 제거 방어
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerChzzkUid');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP COLUMN StreamerChzzkUid', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -121,7 +98,6 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP COLUMN ManagerChzzkUid', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 기존 인덱스/FK 제거 방어 (Re-run 대비)
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND CONSTRAINT_NAME = 'FK_streamermanagers_streamerprofiles_StreamerProfileId');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP FOREIGN KEY FK_streamermanagers_streamerprofiles_StreamerProfileId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -141,7 +117,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "GlobalViewerId" },
                 unique: true);
 
-            // [v4.7.8] Resilient Deep Cleaning: Only run if data exists
+            // [v4.7.8] Resilient Deep Cleaning
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerProfileId');
@@ -175,28 +151,11 @@ namespace MooldangBot.Infrastructure.Migrations
                 principalTable: "globalviewers",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
-
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // 역마이그레이션 로직 (필요시 수동 복구)
-            migrationBuilder.DropForeignKey(name: "FK_streamermanagers_globalviewers_GlobalViewerId", table: "streamermanagers");
-            migrationBuilder.DropForeignKey(name: "FK_streamermanagers_streamerprofiles_StreamerProfileId", table: "streamermanagers");
-            migrationBuilder.DropForeignKey(name: "FK_streameromakases_streamerprofiles_StreamerProfileId", table: "streameromakases");
-
-            migrationBuilder.DropIndex(name: "IX_streamermanagers_StreamerProfileId_GlobalViewerId", table: "streamermanagers");
-
-            migrationBuilder.AddColumn<string>(name: "ChzzkUid", table: "streameromakases", type: "varchar(50)", nullable: false);
-            migrationBuilder.AddColumn<string>(name: "StreamerChzzkUid", table: "streamermanagers", type: "varchar(50)", nullable: false);
-            migrationBuilder.AddColumn<string>(name: "ManagerChzzkUid", table: "streamermanagers", type: "varchar(50)", nullable: false);
-            
-            // 데이터 역복구 SQL은 생략 (운영 환경에서는 주의 필요)
-            
-            migrationBuilder.DropColumn(name: "StreamerProfileId", table: "streameromakases");
-            migrationBuilder.DropColumn(name: "GlobalViewerId", table: "streamermanagers");
-            migrationBuilder.DropColumn(name: "StreamerProfileId", table: "streamermanagers");
         }
     }
 }
