@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,39 +10,57 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_unifiedcommands_chzzkuid_keyword",
-                table: "unifiedcommands");
+            // [v4.3.5] Emergency Repair: Idempotent migration for UnifiedCommands
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
 
-            migrationBuilder.DropIndex(
-                name: "IX_unifiedcommands_chzzkuid_TargetId",
-                table: "unifiedcommands");
+                -- 1. 기존 인덱스/컬럼 제거 방어
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_chzzkuid_keyword');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_chzzkuid_keyword ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropColumn(
-                name: "Category",
-                table: "unifiedcommands");
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_chzzkuid_TargetId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_chzzkuid_TargetId ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.DropColumn(
-                name: "FeatureType",
-                table: "unifiedcommands");
+                SET @columns = (SELECT GROUP_CONCAT(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME IN ('Category', 'FeatureType', 'chzzkuid'));
+                IF @columns IS NOT NULL THEN
+                    SET @sql = CONCAT('ALTER TABLE unifiedcommands ', (SELECT GROUP_CONCAT(CONCAT('DROP COLUMN ', COLUMN_NAME)) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME IN ('Category', 'FeatureType', 'chzzkuid')));
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                END IF;
 
-            migrationBuilder.DropColumn(
-                name: "chzzkuid",
-                table: "unifiedcommands");
+                -- 2. 새 컬럼 추가 방어 (Nullable로 시작)
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'MasterCommandFeatureId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD MasterCommandFeatureId int NOT NULL DEFAULT 0', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.AddColumn<int>(
-                name: "MasterCommandFeatureId",
-                table: "unifiedcommands",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND COLUMN_NAME = 'StreamerProfileId');
+                SET @sql = IF(@exist = 0, 'ALTER TABLE unifiedcommands ADD StreamerProfileId int NOT NULL DEFAULT 0', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-            migrationBuilder.AddColumn<int>(
-                name: "StreamerProfileId",
-                table: "unifiedcommands",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+                -- 3. [중요] 중복 데이터 제거: (StreamerProfileId, keyword) 유니크 제약 조건 충돌 방지
+                DELETE t1 FROM unifiedcommands t1
+                INNER JOIN (
+                    SELECT MIN(Id) as MinId, StreamerProfileId, keyword
+                    FROM unifiedcommands
+                    GROUP BY StreamerProfileId, keyword
+                    HAVING COUNT(*) > 1
+                ) t2 ON t1.StreamerProfileId = t2.StreamerProfileId AND t1.keyword = t2.keyword
+                WHERE t1.Id > t2.MinId;
+
+                -- 4. 기존/충돌 인덱스 및 FK 제거 방어 (Re-run 대비)
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND CONSTRAINT_NAME = 'FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND CONSTRAINT_NAME = 'FK_unifiedcommands_streamerprofiles_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_streamerprofiles_StreamerProfileId', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_keyword');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
 
             migrationBuilder.CreateIndex(
                 name: "IX_unifiedcommands_MasterCommandFeatureId",
