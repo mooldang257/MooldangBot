@@ -48,7 +48,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 ) t2 ON t1.StreamerProfileId = t2.StreamerProfileId AND t1.keyword = t2.keyword
                 WHERE t1.Id > t2.MinId;
 
-                -- 4. 기존/충돌 인덱스 및 FK 제거 방어 (Re-run 대비)
+                -- 4. 기존/충돌 인덱스 및 FK 제거 방어 (Re-run 대비 모든 인덱스/FK 삭제)
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND CONSTRAINT_NAME = 'FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId');
                 SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_master_commandfeatures_MasterCommandFeatureId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -57,8 +57,16 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist > 0, 'ALTER TABLE unifiedcommands DROP FOREIGN KEY FK_unifiedcommands_streamerprofiles_StreamerProfileId', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_MasterCommandFeatureId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_MasterCommandFeatureId ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_keyword');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_keyword ON unifiedcommands', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'unifiedcommands' AND INDEX_NAME = 'IX_unifiedcommands_StreamerProfileId_TargetId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_unifiedcommands_StreamerProfileId_TargetId ON unifiedcommands', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 

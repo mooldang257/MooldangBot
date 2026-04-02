@@ -19,18 +19,40 @@ namespace MooldangBot.Infrastructure.Migrations
                 -- (간결함을 위해 개별 체크 대신 동적 SQL 생략하고 개별 체크 SQL 반복)
                 
                 -- IX_streamermanagers_ManagerChzzkUid
-                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND INDEX_NAME = 'IX_streamermanagers_ManagerChzzkUid');
-                SET @sql = IF(@exist > 0, 'DROP INDEX IX_streamermanagers_ManagerChzzkUid ON streamermanagers', 'SELECT 1');
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND INDEX_NAME = 'IX_streamermanagers_StreamerProfileId_GlobalViewerId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_streamermanagers_StreamerProfileId_GlobalViewerId ON streamermanagers', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
+            ");
+            migrationBuilder.Sql(@"
+                SET @dbname = DATABASE();
                 -- IX_songqueues_ChzzkUid
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_ChzzkUid');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_ChzzkUid ON songqueues', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- ... 기타 인덱스들도 동일 패턴으로 처리 (중요한 것 위주)
+                -- ... 기타 인덱스들도 동일 패턴으로 처리
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_ChzzkUid_Id');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_ChzzkUid_Id ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_StreamerProfileId');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_StreamerProfileId ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_StreamerProfileId_Id');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_StreamerProfileId_Id ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songqueues' AND INDEX_NAME = 'IX_songqueues_StreamerProfileId_Status_CreatedAt');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songqueues_StreamerProfileId_Status_CreatedAt ON songqueues', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songlistsessions' AND INDEX_NAME = 'IX_songlistsessions_StreamerProfileId_IsActive');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songlistsessions_StreamerProfileId_IsActive ON songlistsessions', 'SELECT 1');
+                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'songbooks' AND INDEX_NAME = 'IX_songbooks_StreamerProfileId_Id');
+                SET @sql = IF(@exist > 0, 'DROP INDEX IX_songbooks_StreamerProfileId_Id ON songbooks', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
                 -- 2. 기존 컬럼 제거 방어
