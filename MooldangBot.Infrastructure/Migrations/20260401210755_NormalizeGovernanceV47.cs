@@ -10,14 +10,8 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.7.10] Universal String Unification: Physical table conversion
+            // [v4.7.11] Universal Clean Restoration: Physical conversion removed (handled by global policy)
             migrationBuilder.Sql(@"
-                -- 테이블 형식을 unicode_ci로 강제 통일
-                ALTER TABLE streameromakases CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE streamermanagers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE streamerprofiles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE globalviewers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
                 SET @dbname = DATABASE();
 
                 -- 1. [streameromakases] 신규 컬럼 추가 방어
@@ -25,7 +19,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist = 0, 'ALTER TABLE streameromakases ADD StreamerProfileId int NULL', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                -- 물리적 형식이 통일되었으므로 순수 JOIN 수행
+                -- 전역 Collation이 일치하므로 표준 JOIN 수행
                 UPDATE streameromakases o JOIN streamerprofiles p ON o.ChzzkUid = p.ChzzkUid SET o.StreamerProfileId = p.Id;
                 DELETE FROM streameromakases WHERE StreamerProfileId IS NULL;
             ");
@@ -43,7 +37,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 
-            // [v4.7.8] Resilient Deep Cleaning
+            // [v4.7.9] Resilient Cleaning
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streameromakases' AND COLUMN_NAME = 'StreamerProfileId');
@@ -98,14 +92,6 @@ namespace MooldangBot.Infrastructure.Migrations
                 SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP COLUMN ManagerChzzkUid', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND CONSTRAINT_NAME = 'FK_streamermanagers_streamerprofiles_StreamerProfileId');
-                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP FOREIGN KEY FK_streamermanagers_streamerprofiles_StreamerProfileId', 'SELECT 1');
-                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-                SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND CONSTRAINT_NAME = 'FK_streamermanagers_globalviewers_GlobalViewerId');
-                SET @sql = IF(@exist > 0, 'ALTER TABLE streamermanagers DROP FOREIGN KEY FK_streamermanagers_globalviewers_GlobalViewerId', 'SELECT 1');
-                PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
                 SET @exist = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND INDEX_NAME = 'IX_streamermanagers_StreamerProfileId_GlobalViewerId');
                 SET @sql = IF(@exist > 0, 'DROP INDEX IX_streamermanagers_StreamerProfileId_GlobalViewerId ON streamermanagers', 'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -117,7 +103,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "GlobalViewerId" },
                 unique: true);
 
-            // [v4.7.8] Resilient Deep Cleaning
+            // [v4.7.9] Resilient Cleaning
             migrationBuilder.Sql(@"
                 SET @dbname = DATABASE();
                 SET @has_col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'streamermanagers' AND COLUMN_NAME = 'StreamerProfileId');

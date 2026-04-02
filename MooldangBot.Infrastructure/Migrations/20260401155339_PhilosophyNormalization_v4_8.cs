@@ -10,16 +10,7 @@ namespace MooldangBot.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // [v4.8.10] Universal String Unification: Physical table conversion
-            migrationBuilder.Sql(@"
-                -- 정렬 규칙 통일을 위해 대상 테이블들을 물리적으로 변환
-                ALTER TABLE broadcastsessions CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE iamf_vibration_logs CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE iamf_streamer_settings CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE streamerknowledges CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-                ALTER TABLE streamerprofiles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            ");
-
+            // [v4.8.11] Universal Clean Restoration: Logic only (Physical conversion at model level)
             // 0. [테이블 이름 변경]
             migrationBuilder.RenameTable(
                 name: "StreamerKnowledges",
@@ -31,7 +22,7 @@ namespace MooldangBot.Infrastructure.Migrations
             migrationBuilder.AddColumn<int>(name: "StreamerProfileId", table: "iamf_streamer_settings", type: "int", nullable: true);
             migrationBuilder.AddColumn<int>(name: "StreamerProfileId", table: "streamerknowledges", type: "int", nullable: true);
 
-            // 2. [데이터 이관] 물리적 형식이 통일되었으므로 순수 JOIN 수행
+            // 2. [데이터 이관] 전역 Collation이 일치하므로 표준 JOIN 수행
             migrationBuilder.Sql(@"
                 UPDATE broadcastsessions s JOIN streamerprofiles p ON s.ChzzkUid = p.ChzzkUid SET s.StreamerProfileId = p.Id;
             ");
