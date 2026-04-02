@@ -14,14 +14,14 @@ public interface IResonanceService
     Task<bool> AdjustResonanceAsync(string chzzkUid, Vibration targetVibration);
 
     /// <summary>
-    /// 현재 파로스의 상태를 수신합니다.
+    /// 현재 특정 스트리머 파로스의 상태를 수신합니다.
     /// </summary>
-    Task<Parhos> GetCurrentParhosStateAsync();
+    Task<Parhos> GetCurrentParhosStateAsync(string chzzkUid);
 
     /// <summary>
-    /// 현재 안정도(Stability)에 따른 페르소나의 정의(Tone)를 수신합니다.
+    /// 현재 특정 스트리머의 안정도(Stability)에 따른 페르소나의 정의(Tone)를 수신합니다.
     /// </summary>
-    string GetCurrentPersonaTone();
+    string GetCurrentPersonaTone(string chzzkUid);
 
     /// <summary>
     /// 시스템 부하와 상호작용 횟수를 기반으로 동적 진동수를 산출합니다.

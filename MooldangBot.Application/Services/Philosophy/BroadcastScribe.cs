@@ -34,31 +34,31 @@ public partial class BroadcastScribe : IBroadcastScribe
 
     private void OnShutdown()
     {
-        _logger.LogInformation("⚠️ [오시리스의 종언] 서버 종료 신호를 감지했습니다. 활성 세션 데이터를 플러시합니다...");
+        _logger.LogInformation("⚠️ [오시리스의 종언] 서버 종료 신호를 감지했습니다. 모든 프로필 ID 기반 세션 데이터를 플러시합니다...");
         
-        var activeChannels = _activeStats.Keys.ToList();
-        foreach (var chzzkUid in activeChannels)
+        var activeProfileIds = _activeStats.Keys.ToList();
+        foreach (var profileId in activeProfileIds)
         {
             try
             {
-                // 종료 시점이므로 동기적으로 대기하여 완료를 보장함
-                FinalizeSessionAsync(chzzkUid).GetAwaiter().GetResult();
-                _logger.LogInformation($"✅ [세션 보존] {chzzkUid} 채널의 데이터가 안전하게 기록되었습니다.");
+                // [v4.9] profileId를 사용하여 플러시 (내부 메서드 수정 필요)
+                // chzzkUid가 필요한 경우 캐시에서 역조회하거나 메서드 시그니처 변경 고려
+                // 여기서는 profileId 기반의 새로운 종료 로직을 호출하거나 기존 로직을 수정함
+                FinalizeSessionByIdAsync(profileId).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"❌ [세션 보존 실패] {chzzkUid} 채널 플러시 중 오류 발생");
+                _logger.LogError(ex, $"❌ [세션 보존 실패] ProfileID: {profileId} 플러시 중 오류 발생");
             }
         }
     }
-    // [기록관의 책상]: 메모리 내 실시간 집계 공간 (ChzzkUid -> Statistics)
-    private static readonly ConcurrentDictionary<string, SessionStats> _activeStats = new();
+    // [v4.9] 정규화: UID 문자열 대신 StreamerProfileId(int)를 키로 사용
+    private static readonly ConcurrentDictionary<int, SessionStats> _activeStats = new();
+    private static readonly ConcurrentDictionary<int, DateTime> _liveCheckCooldown = new();
+    private static readonly ConcurrentDictionary<int, DateTime> _recentChatActivity = new();
 
-    // [냉정의 기간]: 라이브 확인 API 남용 방지를 위한 쿨다운 (ChzzkUid -> LastCheckTime)
-    private static readonly ConcurrentDictionary<string, DateTime> _liveCheckCooldown = new();
-
-    // [맥박의 여운]: 최근 채팅이 발생한 채널 (ChzzkUid -> LastChatTime) [v2.3.2]
-    private static readonly ConcurrentDictionary<string, DateTime> _recentChatActivity = new();
+    // [회귀의 이정표]: ChzzkUid -> StreamerProfileId 역매핑 캐시 (DB 조회 최소화)
+    private static readonly ConcurrentDictionary<string, int> _uidToProfileId = new();
 
     private class SessionStats
     {
@@ -72,15 +72,22 @@ public partial class BroadcastScribe : IBroadcastScribe
 
     public void AddChatMessage(string chzzkUid, string message)
     {
-        if (!_activeStats.TryGetValue(chzzkUid, out var stats))
+        // 0. [회귀의 이정표] 캐시에서 ID 확보
+        if (!_uidToProfileId.TryGetValue(chzzkUid, out var profileId))
         {
-            // 2순위: 채팅 트리거 (v2.3.0) - 세션이 없어도 채팅이 오면 라이브 확인 후 자동 세션 생성
+            // 캐시에 없으면 비동기로 트리거 (이후 Heartbeat에서 캐시 채워짐)
+            TryTriggerSessionAsync(chzzkUid).ConfigureAwait(false);
+            return;
+        }
+
+        if (!_activeStats.TryGetValue(profileId, out var stats))
+        {
             TryTriggerSessionAsync(chzzkUid).ConfigureAwait(false);
             return;
         }
 
         stats.ChatCount++;
-        _recentChatActivity[chzzkUid] = KstClock.Now; // 최근 활동 시간 갱신
+        _recentChatActivity[profileId] = KstClock.Now; 
 
         // 1. [침묵 속의 미소]: [GeneratedRegex]를 통한 이모티콘 고속 추출
         var emotes = EmoteRegex().Matches(message);
@@ -99,16 +106,17 @@ public partial class BroadcastScribe : IBroadcastScribe
 
     public async Task<int> HeartbeatAsync(string chzzkUid)
     {
-        // [캡티브 의존성 해결]: 싱글톤에서 Scoped DB 컨텍스트 안전하게 사용
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        // [정규화] ChzzkUid 문자열로 실시간 프로필 ID 조회
         var profile = await db.StreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-        if (profile == null) return 0; // 프로필이 없으면 세션 생성 불가
+        if (profile == null) return 0;
+
+        // [v4.9] 역매핑 캐시 갱신
+        _uidToProfileId[chzzkUid] = profile.Id;
 
         var session = await db.BroadcastSessions
             .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
@@ -125,13 +133,13 @@ public partial class BroadcastScribe : IBroadcastScribe
                 IsActive = true
             };
             db.BroadcastSessions.Add(session);
-            _activeStats[chzzkUid] = new SessionStats();
+            _activeStats[profile.Id] = new SessionStats();
         }
         else
         {
             session.LastHeartbeatAt = KstClock.Now;
-            if (!_activeStats.ContainsKey(chzzkUid))
-                _activeStats[chzzkUid] = new SessionStats();
+            if (!_activeStats.ContainsKey(profile.Id))
+                _activeStats[profile.Id] = new SessionStats();
         }
 
         await db.SaveChangesAsync();
@@ -142,13 +150,23 @@ public partial class BroadcastScribe : IBroadcastScribe
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        if (profile == null) return null;
+
+        return await FinalizeSessionByIdAsync(profile.Id);
+    }
+
+    public async Task<object?> FinalizeSessionByIdAsync(int profileId)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var session = await db.BroadcastSessions
-            .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid && s.IsActive);
+            .FirstOrDefaultAsync(s => s.StreamerProfileId == profileId && s.IsActive);
 
         if (session == null) return null;
 
-        if (_activeStats.TryRemove(chzzkUid, out var stats))
+        if (_activeStats.TryRemove(profileId, out var stats))
         {
             session.TotalChatCount = stats.ChatCount;
             session.TopKeywordsJson = JsonSerializer.Serialize(stats.Keywords.OrderByDescending(k => k.Value).Take(10).ToDictionary());
@@ -174,16 +192,25 @@ public partial class BroadcastScribe : IBroadcastScribe
     /// </summary>
     private async Task TryTriggerSessionAsync(string chzzkUid)
     {
+        // [v4.9] 트리거 시점에서도 ProfileId 확인 선행
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        if (profile == null) return;
+
+        int profileId = profile.Id;
+        _uidToProfileId[chzzkUid] = profileId;
+
         // 1. [냉정의 유예]: 이미 최근에 라이브 확인을 수행했다면 API 보호를 위해 건너뜀 (성공 10분, 실패 1분)
-        if (_liveCheckCooldown.TryGetValue(chzzkUid, out var lastCheck) && lastCheck > KstClock.Now.AddMinutes(-1))
+        if (_liveCheckCooldown.TryGetValue(profileId, out var lastCheck) && lastCheck > KstClock.Now.AddMinutes(-1))
             return;
 
-        _liveCheckCooldown[chzzkUid] = KstClock.Now;
+        _liveCheckCooldown[profileId] = KstClock.Now;
 
         try
         {
-            using var scope = _scopeFactory.CreateScope();
-            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
+            using var apiScope = _scopeFactory.CreateScope();
+            var chzzkApi = apiScope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
             
             bool isLive = await chzzkApi.IsLiveAsync(chzzkUid);
             if (isLive)
@@ -197,13 +224,13 @@ public partial class BroadcastScribe : IBroadcastScribe
                 logger.LogInformation($"✅ [채팅 트리거 성공] {chzzkUid} 채널 라이브 확인. 새 세션(ID: {sessionId})이 생성되었습니다.");
 
                 // 성공 시에는 10분간 추가 체크 방지 (어차피 _activeStats에 들어갔으므로 이 메서드는 호출 안 됨)
-                _liveCheckCooldown[chzzkUid] = KstClock.Now.AddMinutes(9); 
+                _liveCheckCooldown[profileId] = KstClock.Now.AddMinutes(9); 
             }
             else
             {
                 // 실패 시에는 1분 후에 다시 시도 가능하도록 설정
-                _liveCheckCooldown[chzzkUid] = KstClock.Now;
-                _recentChatActivity[chzzkUid] = KstClock.Now; // 실패하더라도 채팅이 왔으므로 감시 대상에 포함
+                _liveCheckCooldown[profileId] = KstClock.Now;
+                _recentChatActivity[profileId] = KstClock.Now; // 실패하더라도 채팅이 왔으므로 감시 대상에 포함
             }
         }
         catch (Exception)
@@ -217,6 +244,10 @@ public partial class BroadcastScribe : IBroadcastScribe
     /// </summary>
     public bool IsRecentlyActive(string chzzkUid)
     {
-        return _recentChatActivity.TryGetValue(chzzkUid, out var lastChat) && lastChat > KstClock.Now.AddHours(-1);
+        if (_uidToProfileId.TryGetValue(chzzkUid, out var profileId))
+        {
+            return _recentChatActivity.TryGetValue(profileId, out var lastChat) && lastChat > KstClock.Now.AddHours(-1);
+        }
+        return false;
     }
 }

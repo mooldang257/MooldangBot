@@ -85,5 +85,13 @@ public class StreamerProfile
         
         public bool IsOmakaseEnabled { get; set; } = true;
 
+        [Required]
+        [MaxLength(1)]
+        public string DelYn { get; set; } = "N"; // [v4.9 추가] 삭제 여부 ('Y'일 경우 논리적 삭제)
+
+        [Required]
+        [MaxLength(1)]
+        public string MasterUseYn { get; set; } = "Y"; // [v4.9 추가] 마스터 사용 가능 여부
+
         public int? ActiveOverlayPresetId { get; set; }
-}
+}

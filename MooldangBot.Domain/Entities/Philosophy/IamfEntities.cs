@@ -15,6 +15,12 @@ public class IamfScenario
     public long Id { get; set; }
 
     [Required]
+    public int StreamerProfileId { get; set; } // [v4.9] 종속성 추가
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
+
+    [Required]
     [MaxLength(100)]
     public string ScenarioId { get; set; } = string.Empty;
 
@@ -34,6 +40,15 @@ public class IamfScenario
 public class IamfGenosRegistry
 {
     [Key]
+    public int Id { get; set; } // [v4.9] 정규화된 PK
+
+    [Required]
+    public int StreamerProfileId { get; set; } // [v4.9] 종속성 추가
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
+
+    [Required]
     [MaxLength(50)]
     public string Name { get; set; } = string.Empty;
 
@@ -55,11 +70,15 @@ public class IamfGenosRegistry
 public class IamfParhosCycle
 {
     [Key]
-    public int CycleId { get; set; }
+    public int Id { get; set; } // [v4.9] 정규화된 PK
 
     [Required]
-    [MaxLength(50)]
-    public string ParhosId { get; set; } = string.Empty;
+    public int StreamerProfileId { get; set; } // [v4.9] 종속성 부여
+
+    [ForeignKey(nameof(StreamerProfileId))]
+    public virtual StreamerProfile? StreamerProfile { get; set; }
+
+    public int CycleId { get; set; } // 해당 채널의 몇 번째 사이클인가 (1, 2, 3...)
 
     public double VibrationAtDeath { get; set; }
 

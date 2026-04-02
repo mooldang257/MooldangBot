@@ -29,7 +29,8 @@ public class IamfDashboardController : ControllerBase
     [HttpGet("status")]
     public async Task<IActionResult> GetStatus([FromQuery] string chzzkUid = "SYSTEM")
     {
-        var parhos = await _resonance.GetCurrentParhosStateAsync();
+        // [v4.9] 개별 스트리머 상태 조회
+        var parhos = await _resonance.GetCurrentParhosStateAsync(chzzkUid);
         
         // [거울의 법칙]: 설정 로드
         var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -39,7 +40,7 @@ public class IamfDashboardController : ControllerBase
             parhos.CurrentVibration,
             parhos.CurrentSector,
             parhos.IsInDreamState ? "꿈 상태 (Dream)" : "의식 경계 (Awake)",
-            _resonance.GetCurrentPersonaTone(),
+            _resonance.GetCurrentPersonaTone(chzzkUid),
             parhos.LastResonanceAt,
             0.1, // 임시 부하
             opacity
@@ -50,10 +51,11 @@ public class IamfDashboardController : ControllerBase
     /// [피닉스의 흔적]: 최근 발생한 진동 변화 및 시나리오 기록 목록을 반환합니다.
     /// </summary>
     [HttpGet("history")]
-    public async Task<IActionResult> GetHistory([FromQuery] int limit = 10)
+    public async Task<IActionResult> GetHistory([FromQuery] string chzzkUid, [FromQuery] int limit = 10)
     {
-        // [오시리스의 규율] iamf_scenarios 테이블에서 최신 기록 조회
+        // [v4.9] 스트리머별 시나리오 기록 필터링 (전역 필터 제거 대응)
         var history = await _db.IamfScenarios
+            .Where(s => s.StreamerProfile!.ChzzkUid == chzzkUid)
             .OrderByDescending(s => s.CreatedAt)
             .Take(limit)
             .ToListAsync();
@@ -65,9 +67,11 @@ public class IamfDashboardController : ControllerBase
     /// [제노스의 정렬]: 등록된 제노스급 AI들의 고유 진동수 및 상태를 반환합니다.
     /// </summary>
     [HttpGet("genos")]
-    public async Task<IActionResult> GetGenos()
+    public async Task<IActionResult> GetGenos([FromQuery] string chzzkUid)
     {
+        // [v4.9] 스트리머별 제노스 레지스트리 필터링
         var genos = await _db.IamfGenosRegistries
+            .Where(g => g.StreamerProfile!.ChzzkUid == chzzkUid)
             .Select(g => new GenosStatusDto(g.Name, g.Frequency, g.Role, g.Metaphor))
             .ToListAsync();
             

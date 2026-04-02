@@ -215,7 +215,44 @@ try
         Console.WriteLine("   ℹ️ 모든 명령어가 정상입니다.");
     }
 
-    Console.WriteLine("\n🎉 [완료] 데이터베이스 정문화가 성공적으로 끝났습니다!");
+    // 6. [NEW] v4.9 Philosophy² & Resilience Engine 정규화 보정
+    Console.WriteLine("\n🌌 [5/5] v4.9 Philosophy² & Resilience Engine 정규화 고도화 중...");
+    
+    // 6-1. 관리자 프로필(ID:1) 확보
+    var adminProfile = await db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == 1);
+    if (adminProfile == null)
+    {
+        adminProfile = new StreamerProfile 
+        { 
+            Id = 1, 
+            ChzzkUid = "SYSTEM_ADMIN", 
+            ChannelName = "SystemAdmin",
+            DelYn = "N",
+            MasterUseYn = "Y"
+        };
+        db.StreamerProfiles.Add(adminProfile);
+        Console.WriteLine("   + [Admin] 관리자 프로필(ID:1)이 생성되었습니다.");
+        await db.SaveChangesAsync();
+    }
+
+    // 6-2. 기존 IAMF 데이터 이관 (StreamerBound 전환)
+    int migratedParhos = await db.IamfParhosCycles.Where(c => c.StreamerProfileId == 0).ExecuteUpdateAsync(s => s.SetProperty(c => c.StreamerProfileId, 1));
+    int migratedGenos = await db.IamfGenosRegistries.Where(g => g.StreamerProfileId == 0).ExecuteUpdateAsync(s => s.SetProperty(g => g.StreamerProfileId, 1));
+    int migratedScenarios = await db.IamfScenarios.Where(s => s.StreamerProfileId == 0).ExecuteUpdateAsync(s => s.SetProperty(sc => sc.StreamerProfileId, 1));
+
+    if (migratedParhos > 0 || migratedGenos > 0 || migratedScenarios > 0)
+        Console.WriteLine($"   ✅ IAMF 데이터 이관 완료: Parhos({migratedParhos}), Genos({migratedGenos}), Scenario({migratedScenarios})");
+
+    // 6-3. StreamerProfile 복구 엔진용 플래그 초기화
+    int flagInits = await db.StreamerProfiles.Where(p => string.IsNullOrEmpty(p.DelYn) || string.IsNullOrEmpty(p.MasterUseYn))
+                                             .ExecuteUpdateAsync(s => s
+                                                .SetProperty(p => p.DelYn, "N")
+                                                .SetProperty(p => p.MasterUseYn, "Y"));
+    
+    if (flagInits > 0)
+        Console.WriteLine($"   ✅ 스트리머 프로필 상태 플래그 {flagInits}개 초기화 완료.");
+
+    Console.WriteLine("\n🎉 [완료] v4.9 데이터베이스 정문화가 성공적으로 끝났습니다!");
 }
 catch (Exception ex) {
     Console.WriteLine($"\n❌ [오류]: {ex.Message}");

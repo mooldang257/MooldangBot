@@ -29,7 +29,7 @@ public class PersonaPromptBuilder(
         }
 
         // 2. [현재 공명 상태 확인]
-        string tone = resonance.GetCurrentPersonaTone();
+        string tone = resonance.GetCurrentPersonaTone(chzzkUid);
 
         // 3. [인격 발현]: 톤에 따른 추가 지시문 부여
         string personaInstruction = tone switch
