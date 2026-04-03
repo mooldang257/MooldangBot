@@ -104,7 +104,12 @@ services.AddSingleton<IUserSession, SystemUserSession>();
 
 services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"), 
-        mySqlOptions => mySqlOptions.EnableRetryOnFailure()));
+        mySqlOptions => 
+        {
+            mySqlOptions.MigrationsHistoryTable("__EFMigrationsHistory");
+            mySqlOptions.EnableRetryOnFailure();
+        })
+        .UseSnakeCaseNamingConvention());
 
 // 🔐 [보안 강화]: API 서버와 동일한 방식으로 데이터 보호 키 저장소 및 서비스 등록
 services.AddDataProtection()

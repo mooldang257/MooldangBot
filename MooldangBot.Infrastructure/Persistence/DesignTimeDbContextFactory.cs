@@ -75,7 +75,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb"),
-            options => options.EnableRetryOnFailure())
+            options => 
+            {
+                options.MigrationsHistoryTable("__EFMigrationsHistory");
+                options.EnableRetryOnFailure();
+            })
             .UseSnakeCaseNamingConvention();
 
         // [디자인 타임]: DataProtection 서비스 임시 생성 (scaffolding 용도)

@@ -53,6 +53,7 @@ namespace MooldangBot.Infrastructure
             services.AddDbContextPool<AppDbContext>(options =>
                 options.UseMySql(connectionString, serverVersion, mysqlOptions =>
                 {
+                    mysqlOptions.MigrationsHistoryTable("__EFMigrationsHistory");
                     mysqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,
                         maxRetryDelay: TimeSpan.FromSeconds(5),
