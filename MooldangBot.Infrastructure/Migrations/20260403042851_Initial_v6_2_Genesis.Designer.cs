@@ -12,8 +12,8 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260403041334_AutoMig_v6_2_20260403_1313")]
-    partial class AutoMig_v6_2_20260403_1313
+    [Migration("20260403042851_Initial_v6_2_Genesis")]
+    partial class Initial_v6_2_Genesis
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MooldangBot.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDonationAndBroadcastHistory_v6_2_2 : Migration
+    public partial class Initial_v6_2_Genesis : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
