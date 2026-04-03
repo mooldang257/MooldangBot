@@ -31,6 +31,7 @@ RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build
 
 # 5. 게시(Publish)
 FROM build AS publish
+WORKDIR "/src/MooldangBot.Api"
 RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 WORKDIR "/src/MooldangBot.Cli"
 RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish /p:UseAppHost=false
