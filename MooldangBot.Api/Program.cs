@@ -9,6 +9,8 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Security;
 using MooldangBot.Presentation.Security;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Services.Auth;
+using MooldangBot.Application.Common.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using MooldangBot.Application.State;
@@ -16,6 +18,9 @@ using MooldangBot.Domain.Entities;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -164,6 +169,8 @@ try
         });
     });
 
+    builder.Services.AddScoped<IAuthorizationHandler, OverlayTokenVersionHandler>();
+
     builder.Services.AddControllers().AddJsonOptions(options => {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
@@ -176,12 +183,52 @@ try
     .AddCookie(options => { 
         options.LoginPath = "/api/auth/chzzk-login"; 
         options.Cookie.Name = builder.Configuration["AUTH_COOKIE_NAME"] ?? ".MooldangBot.Session";
+    })
+    .AddJwtBearer(options => {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? "Default_Secure_Key_for_MooldangBot_Resonance"))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // SignalR은 쿼리 스트링("access_token")으로 토큰을 보낼 수 있으므로 이를 낚아챕니다.
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/overlayHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
     builder.Services.AddAuthorization(options => {
+        // [오시리스의 통합 정책]: 쿠키와 JWT 인증을 모두 허용하는 기본 인가 정책
+        options.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
+            .Build();
+
         options.AddPolicy("ChannelManager", policy => {
             policy.RequireAuthenticatedUser();
             policy.Requirements.Add(new ChannelManagerRequirement());
+        });
+
+        // [오시리스의 공명]: 오버레이 전용 (JWT 권장 + 버전 검증) 정책
+        options.AddPolicy("OverlayAuth", policy => {
+            policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new OverlayTokenVersionRequirement()); // 🔐 버전 실시간 검증
         });
     });
 

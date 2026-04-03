@@ -225,4 +225,24 @@ namespace MooldangBot.Domain.DTOs
         string Message,      // content 대응
         JsonElement? Emojis  // 이모티콘 지원
     );
+
+    // 🔐 [오시리스의 인장]: 인증 세션 관리를 위한 실시간 DTO (JSON 직렬화 최적화)
+    public class AuthSessionData
+    {
+        public string State { get; set; } = string.Empty;
+        public string CodeVerifier { get; set; } = string.Empty;
+        public string? TargetUid { get; set; }
+        public KstClock CreatedAt { get; set; } = KstClock.Now;
+    }
+
+    public record AuthMetadata(string AuthUrl, string State, string CodeVerifier);
+
+    public class AuthResult
+    {
+        public bool IsSuccess { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? ChzzkUid { get; set; }
+        public string? ChannelName { get; set; }
+        public string? RedirectUrl { get; set; }
+    }
 }

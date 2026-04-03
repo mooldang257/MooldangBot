@@ -51,4 +51,7 @@ public class StreamerProfile : ISoftDeletable, IAuditable
         public KstClock? UpdatedAt { get; set; }
 
         public int? ActiveOverlayPresetId { get; set; }
-    }
+
+        // 🔐 [오시리스의 철퇴]: 즉각적인 토큰 폐기를 위한 버전 관리 필드
+        public int OverlayTokenVersion { get; set; } = 1;
+    }

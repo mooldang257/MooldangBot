@@ -114,4 +114,38 @@ services:
         condition: service_completed_successfully
     volumes:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
+
+  # [오시리스의 대시보드]: SvelteKit Admin
+  admin:
+    build:
+      context: ./MooldangBot.Admin
+      dockerfile: Dockerfile
+    container_name: mooldang-admin
+    restart: always
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - app
+
+  # [오시리스의 무대]: Svelte Overlay
+  overlay:
+    build:
+      context: ./MooldangBot.Overlay
+      dockerfile: Dockerfile
+    container_name: mooldang-overlay
+    restart: always
+
+  # [오시리스의 관제/관리]: Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mooldang-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - admin
+      - overlay
+      - app
 

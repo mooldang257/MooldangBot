@@ -530,7 +530,7 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        public async Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null)
+        public async Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
         {
             try
             {
@@ -541,8 +541,8 @@ namespace MooldangBot.Infrastructure.ApiClients
                     clientId = _clientId,
                     clientSecret = _clientSecret,
                     code = code,
-                    state = state ?? ""
-                    // [주의]: 원본 코드에서는 redirectUri를 본문에 포함하지 않았었습니다.
+                    state = state ?? "",
+                    codeVerifier = codeVerifier // [v10.0] PKCE Verifier 추가
                 };
 
                 var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", payload);

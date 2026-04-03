@@ -20,7 +20,7 @@ public interface IChzzkApiClient
     Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData);
     Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken);
     Task<ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword);
-    Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null);
+    Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null);
     Task<ChzzkUserMeResponse?> GetUserMeAsync(string accessToken);
     Task<ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds);
 }
