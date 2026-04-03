@@ -6,18 +6,19 @@ using MooldangBot.Domain.Common;
 namespace MooldangBot.Domain.Entities;
 
 /// <summary>
-/// [v4.2] 채널별 시청자 프로필: 개별 스트리머 채널에서의 시청자 포인트 및 스탯을 관리합니다.
-/// 3제정규형(3NF)에 따라 스트리머와 글로벌 시청자를 ID(int)로 연결하여 DB 용량을 최적화합니다.
+/// [v6.2] 스트리머 채널별 시청자 프로필: 개별 스트리머 채널에서의 시청자 포인트 및 스탯을 관리합니다.
+/// 공통 정보(Nickname 등)는 GlobalViewer로 이관되어 중복이 제거되었습니다.
 /// </summary>
+[Table("view_streamer_viewers")]
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
 [Index(nameof(StreamerProfileId), nameof(Points))]
-public class ViewerProfile : ISoftDeletable, IAuditable
+public class View_StreamerViewer : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
 
     /// <summary>
-    /// [정규화] 부모 스트리머 프로필 ID
+    /// 부모 스트리머 프로필 ID
     /// </summary>
     [Required]
     public int StreamerProfileId { get; set; }
@@ -26,7 +27,7 @@ public class ViewerProfile : ISoftDeletable, IAuditable
     public virtual StreamerProfile? StreamerProfile { get; set; }
 
     /// <summary>
-    /// [정규화] 글로벌 시청자 마스터 ID
+    /// 글로벌 시청자 마스터 ID (엔티티 중심축)
     /// </summary>
     [Required]
     public int GlobalViewerId { get; set; }
@@ -35,16 +36,16 @@ public class ViewerProfile : ISoftDeletable, IAuditable
     public virtual GlobalViewer? GlobalViewer { get; set; }
 
     /// <summary>
-    /// 해당 채널에서의 닉네임 (스트리머별로 다를 수 있음)
-    /// </summary>
-    [MaxLength(100)]
-    public string Nickname { get; set; } = string.Empty;
-
-    /// <summary>
     /// 현재 보유 포인트 (동시성 제어 적용)
     /// </summary>
     [ConcurrencyCheck]
     public int Points { get; set; } = 0;
+
+    /// <summary>
+    /// 보유 후원 잔액 (DonationPoints)
+    /// </summary>
+    [ConcurrencyCheck]
+    public int DonationPoints { get; set; } = 0;
 
     /// <summary>
     /// 총 출석 횟수 (동시성 제어 적용)
@@ -62,12 +63,11 @@ public class ViewerProfile : ISoftDeletable, IAuditable
     /// </summary>
     public KstClock? LastAttendanceAt { get; set; }
 
-    public bool IsActive { get; set; } = true; // [v6.1.5] 시청자 활동 활성 상태 (Banned/Disabled 등)
+    public bool IsActive { get; set; } = true; 
 
-    public bool IsDeleted { get; set; } = false; // [v6.1.5] 시청자 데이터 존재 상태 (복구 지원)
+    public bool IsDeleted { get; set; } = false; 
     public KstClock? DeletedAt { get; set; }
 
-    // [v6.1] 데이터 정규화: 감사 로그 및 MariaDB 친화적 동시성 토큰
     public KstClock CreatedAt { get; set; } = KstClock.Now;
 
     [ConcurrencyCheck]

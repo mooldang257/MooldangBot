@@ -89,15 +89,25 @@ public class RouletteService : IRouletteService
                         .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
                     if (streamer == null) return new List<RouletteItem>();
 
-                    // 2. 글로벌 시청자 조회 및 생성 (v4.4)
+                    // 2. 글로벌 시청자 조회 및 생성 (v4.4 / v6.2 확장)
                     var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
                     var globalViewer = await _db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
                     if (globalViewer == null)
                     {
-                        globalViewer = new GlobalViewer { ViewerUid = viewerUid, ViewerUidHash = viewerHash };
+                        globalViewer = new GlobalViewer 
+                        { 
+                            ViewerUid = viewerUid, 
+                            ViewerUidHash = viewerHash,
+                            Nickname = viewerNickname ?? "비회원"
+                        };
                         _db.GlobalViewers.Add(globalViewer);
-                        await _db.SaveChangesAsync(ct);
                     }
+                    else if (!string.IsNullOrEmpty(viewerNickname) && globalViewer.Nickname != viewerNickname)
+                    {
+                        globalViewer.Nickname = viewerNickname;
+                        globalViewer.UpdatedAt = KstClock.Now;
+                    }
+                    await _db.SaveChangesAsync(ct);
 
                     var roulette = await _db.Roulettes
                         .Include(r => r.Items)
@@ -126,9 +136,8 @@ public class RouletteService : IRouletteService
                         {
                             StreamerProfileId = streamer.Id,
                             RouletteId = rouletteId,
-                            RouletteItemId = result.Id, // [v4.4] 아이템 ID 연동
+                            RouletteItemId = result.Id, 
                             RouletteName = roulette.Name,
-                            ViewerNickname = viewerNickname ?? "비회원",
                             GlobalViewerId = globalViewer.Id,
                             ItemName = result.ItemName,
                             IsMission = result.IsMission,
@@ -140,7 +149,6 @@ public class RouletteService : IRouletteService
 
                     _db.RouletteLogs.AddRange(logs);
                     await _db.SaveChangesAsync(ct);
-                    // [v4.1] 트랜잭션 커밋은 RouletteSpin 저장 이후로 이동
 
                     var summary = results.GroupBy(r => r.ItemName)
                         .Select(g => {
@@ -161,7 +169,6 @@ public class RouletteService : IRouletteService
                         StreamerProfileId = streamer.Id,
                         RouletteId = rouletteId,
                         GlobalViewerId = globalViewer.Id,
-                        ViewerNickname = viewerNickname ?? "비회원",
                         ResultsJson = JsonSerializer.Serialize(results.Select(r => r.ItemName).ToList()),
                         Summary = summaryStr,
                         IsCompleted = false,
@@ -171,7 +178,6 @@ public class RouletteService : IRouletteService
                     _db.RouletteSpins.Add(spin);
                     await _db.SaveChangesAsync(ct);
                     
-                    // [v4.1] 룰렛 실행 기록과 스핀 예약이 모두 저장된 후 최종 커밋
                     await transaction.CommitAsync(ct);
 
                     var response = new SpinRouletteResponse(
@@ -231,7 +237,6 @@ public class RouletteService : IRouletteService
     {
         try
         {
-            // [v1.9.9] 오시리스의 보존: DB에서 실행 정보를 조회하여 즉시 완료 처리 (오버레이 콜백용)
             var spin = await _db.RouletteSpins
                 .Include(s => s.StreamerProfile)
                 .Include(s => s.GlobalViewer)
@@ -239,8 +244,8 @@ public class RouletteService : IRouletteService
 
             if (spin == null) return false;
 
-            // 결과 전송
-            await SendDelayedChatResultAsync(spin.StreamerProfile!.ChzzkUid, spin.RouletteId, spin.Summary, spin.GlobalViewer!.ViewerUid ?? "", spin.ViewerNickname, ct);
+            // 결과 전송 (GlobalViewer의 닉네임 사용)
+            await SendDelayedChatResultAsync(spin.StreamerProfile!.ChzzkUid, spin.RouletteId, spin.Summary, spin.GlobalViewer!.ViewerUid ?? "", spin.GlobalViewer.Nickname, ct);
 
             spin.IsCompleted = true;
             await _db.SaveChangesAsync(ct);

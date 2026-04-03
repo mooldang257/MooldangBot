@@ -239,7 +239,7 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             return Ok(new { 
                 isActive = activeSession != null, 
-                isOmakaseActive = profile.IsOmakaseEnabled,
+                isOmakaseActive = true, // [v6.2] 개별 메뉴의 IsActive로 대체될 때까지 기본 활성화로 응답
                 session = activeSession 
             });
         }
@@ -288,16 +288,9 @@ namespace MooldangBot.Presentation.Features.SongBook
         [HttpPost("/api/omakase/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
         {
-            var targetUid = chzzkUid.ToLower();
-            var profile = await _db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
-            if (profile == null) return NotFound();
-
-            profile.IsOmakaseEnabled = !profile.IsOmakaseEnabled;
-            await _db.SaveChangesAsync();
-
-            return Ok(new { success = true, isOmakaseActive = profile.IsOmakaseEnabled });
+            // [v6.2] StreamerProfile.IsOmakaseEnabled 삭제에 따라 프론트엔드 호환성을 위해 우선 성공만 반환합니다.
+            // 실제 활성화 제어는 UnifiedCommand의 IsActive를 통해 이루어져야 합니다.
+            return Ok(new { success = true, isOmakaseActive = true });
         }
     }
 }

@@ -279,13 +279,16 @@ public class UnifiedCommandService : IUnifiedCommandService
         // 2. [기능] 룰렛 (치즈 1000)
         addedCount += await EnsureCommandAsync(streamer, "!룰렛", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.Roulette, "행운의 룰렛", CommandRole.Viewer);
 
-        // 3. [기능] 출석 (무료)
-        addedCount += await EnsureCommandAsync(streamer, "!출석", CommandCategory.Feature, CommandCostType.None, 0, CommandFeatureTypes.Attendance, "물댕봇 출석 완료!", CommandRole.Viewer);
+        // 3. [기능] 출석 (무료, 보상 10P)
+        addedCount += await EnsureCommandAsync(streamer, "!출석", CommandCategory.Feature, CommandCostType.None, 10, CommandFeatureTypes.Attendance, "{닉네임}님 출석 고마워요! 현재 {출석일수}일차이며 {포인트}포인트를 보유 중입니다.", CommandRole.Viewer);
 
-        // 4. [시스템] 송리스트 토글 (매니저)
+        // 4. [일반] 포인트 확인 (무료)
+        addedCount += await EnsureCommandAsync(streamer, "!포인트", CommandCategory.General, CommandCostType.None, 0, CommandFeatureTypes.Reply, "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)", CommandRole.Viewer);
+
+        // 5. [시스템] 송리스트 토글 (매니저)
         addedCount += await EnsureCommandAsync(streamer, "!송리스트", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.SonglistToggle, "송리스트 상태 변경", CommandRole.Manager);
 
-        // 5. [시스템] 방송 관리 3종 (매니저)
+        // 6. [시스템] 방송 관리 3종 (매니저)
         addedCount += await EnsureCommandAsync(streamer, "!공지", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Notice, "공지사항", CommandRole.Manager);
         addedCount += await EnsureCommandAsync(streamer, "!방제", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Title, "제목 변경", CommandRole.Manager);
         addedCount += await EnsureCommandAsync(streamer, "!카테고리", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Category, "카테고리 변경", CommandRole.Manager);

@@ -25,4 +25,19 @@ public class GlobalViewer
     [Required]
     [MaxLength(64)]
     public string ViewerUidHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [v6.2] 중앙 관리 닉네임 (최신값 자동 갱신)
+    /// </summary>
+    [MaxLength(100)]
+    public string Nickname { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [v6.2] 시청자 프로필 이미지 URL
+    /// </summary>
+    [MaxLength(500)]
+    public string? ProfileImageUrl { get; set; }
+
+    public MooldangBot.Domain.Common.KstClock CreatedAt { get; set; } = MooldangBot.Domain.Common.KstClock.Now;
+    public MooldangBot.Domain.Common.KstClock? UpdatedAt { get; set; }
 }

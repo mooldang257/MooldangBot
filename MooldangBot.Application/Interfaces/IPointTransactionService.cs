@@ -11,6 +11,21 @@ public interface IPointTransactionService
     Task<(bool Success, int CurrentPoints)> AddPointsAsync(string streamerUid, string viewerUid, string nickname, int amount, CancellationToken ct = default);
 
     /// <summary>
+    /// 후원 잔액(DonationPoints)을 가감합니다. (원자적 연산)
+    /// </summary>
+    Task<(bool Success, int CurrentBalance)> AddDonationPointsAsync(string streamerUid, string viewerUid, string nickname, int amount, CancellationToken ct = default);
+
+    /// <summary>
+    /// 후원 잔액(DonationPoints)을 차감합니다. (잔액 부족 시 실패)
+    /// </summary>
+    Task<(bool Success, int CurrentBalance)> DeductDonationPointsAsync(string streamerUid, string viewerUid, int amount, CancellationToken ct = default);
+
+    /// <summary>
+    /// 후원 잔액을 확인합니다.
+    /// </summary>
+    Task<int> GetDonationBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default);
+
+    /// <summary>
     /// 포인트 잔액을 확인합니다.
     /// </summary>
     Task<int> GetBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default);

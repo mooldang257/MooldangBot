@@ -14,4 +14,5 @@ public static class CommandFeatureTypes
     public const string Roulette = "Roulette";     // 룰렛 실행
     public const string Omakase = "Omakase";       // 오마카세 메뉴 선택
     public const string SongRequest = "SongRequest"; // 노래 신청
+    public const string PointCheck = "PointCheck";   // 포인트 확인 (Reply 기반)
 }

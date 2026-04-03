@@ -35,11 +35,7 @@ namespace MooldangBot.Presentation.Features.ChatPoints
             return Ok(new {
                 pointPerChat = profile.PointPerChat,
                 pointPerDonation1000 = profile.PointPerDonation1000,
-                pointPerAttendance = profile.PointPerAttendance,
-                attendanceCommands = profile.AttendanceCommands,
-                attendanceReply = profile.AttendanceReply,
-                pointCheckCommand = profile.PointCheckCommand,
-                pointCheckReply = profile.PointCheckReply
+                isAutoAccumulateDonation = profile.IsAutoAccumulateDonation
             });
         }
 
@@ -60,11 +56,7 @@ namespace MooldangBot.Presentation.Features.ChatPoints
 
             profile.PointPerChat = dto.PointPerChat;
             profile.PointPerDonation1000 = dto.PointPerDonation1000;
-            profile.PointPerAttendance = dto.PointPerAttendance;
-            profile.AttendanceCommands = dto.AttendanceCommands ?? "";
-            profile.AttendanceReply = dto.AttendanceReply ?? "";
-            profile.PointCheckCommand = dto.PointCheckCommand ?? "";
-            profile.PointCheckReply = dto.PointCheckReply ?? "";
+            profile.IsAutoAccumulateDonation = dto.IsAutoAccumulateDonation;
 
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
@@ -74,13 +66,15 @@ namespace MooldangBot.Presentation.Features.ChatPoints
         public async Task<IActionResult> GetViewers(string chzzkUid)
         {
             // ⭐ [권한 대응] 채널 매니저 권한이 확인된 경우 전역 쿼리 필터를 무시하고 해당 채널의 시청자 목록을 가져옵니다.
-            var viewers = await _context.ViewerProfiles
+            var viewers = await _context.StreamerViewers
                 .IgnoreQueryFilters()
+                .Include(v => v.GlobalViewer)
                 .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
                 .OrderByDescending(v => v.Points) // 포인트 높은 순 정렬
                 .Select(v => new {
-                    nickname = v.Nickname,
+                    nickname = v.GlobalViewer!.Nickname,
                     points = v.Points,
+                    donationPoints = v.DonationPoints, // [v6.2.1] 추가
                     attendanceCount = v.AttendanceCount,
                     lastAttendanceAt = v.LastAttendanceAt
                 })
@@ -97,20 +91,8 @@ namespace MooldangBot.Presentation.Features.ChatPoints
         
         [JsonPropertyName("pointPerDonation1000")]
         public int PointPerDonation1000 { get; set; }
-        
-        [JsonPropertyName("pointPerAttendance")]
-        public int PointPerAttendance { get; set; }
-        
-        [JsonPropertyName("attendanceCommands")]
-        public string? AttendanceCommands { get; set; }
-        
-        [JsonPropertyName("attendanceReply")]
-        public string? AttendanceReply { get; set; }
-        
-        [JsonPropertyName("pointCheckCommand")]
-        public string? PointCheckCommand { get; set; }
-        
-        [JsonPropertyName("pointCheckReply")]
-        public string? PointCheckReply { get; set; }
+
+        [JsonPropertyName("isAutoAccumulateDonation")]
+        public bool IsAutoAccumulateDonation { get; set; }
     }
 }

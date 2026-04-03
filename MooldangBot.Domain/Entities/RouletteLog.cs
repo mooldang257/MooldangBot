@@ -20,10 +20,6 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(100)]
         public string RouletteName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
-        public string ViewerNickname { get; set; } = string.Empty;
-
         public int GlobalViewerId { get; set; } // [v4.4] ViewerUid/Hash 제거 및 FK 도입
 
         [Required]

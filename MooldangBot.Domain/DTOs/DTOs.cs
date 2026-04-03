@@ -12,14 +12,8 @@ namespace MooldangBot.Domain.DTOs
 
     public class SonglistSettingsUpdateRequest
     {
-        [JsonPropertyName("songCommand")]
-        public string SongCommand { get; set; } = "!신청";
-        
         [JsonPropertyName("songRequestCommands")]
         public List<SongRequestCommandDto> SongRequestCommands { get; set; } = new();
-        
-        [JsonPropertyName("songPrice")]
-        public int SongPrice { get; set; } = 0;
         
         [JsonPropertyName("designSettingsJson")]
         public string DesignSettingsJson { get; set; } = "{}";

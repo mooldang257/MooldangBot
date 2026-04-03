@@ -22,7 +22,8 @@ namespace MooldangBot.Presentation.Features.Auth
         IChzzkApiClient _chzzkApi, 
         IChzzkBotService _botService,
         IHttpClientFactory _httpClientFactory,
-        IUnifiedCommandService _commandService) : ControllerBase
+        IUnifiedCommandService _commandService,
+        ILogger<AuthController> _logger) : ControllerBase
     {
         /// <summary>
         /// [파로스의 자각]: 설정(appsettings.json 또는 .env)에서 도메인 정보를 읽어옵니다. 
@@ -234,18 +235,7 @@ namespace MooldangBot.Presentation.Features.Auth
             string? clientId = null;
             string redirectUri = $"{BaseDomain}/Auth/callback";
 
-            if (!string.IsNullOrEmpty(uid))
-            {
-                var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
-                if (streamer != null && !string.IsNullOrEmpty(streamer.ApiClientId))
-                {
-                    clientId = streamer.ApiClientId;
-                    if (!string.IsNullOrEmpty(streamer.ApiRedirectUrl))
-                    {
-                        redirectUri = streamer.ApiRedirectUrl;
-                    }
-                }
-            }
+            // [v6.2] 개별 스트리머의 ApiClientId 참조 제거. 항상 시스템 기본값을 사용합니다.
 
             if (string.IsNullOrEmpty(clientId))
             {
@@ -277,12 +267,13 @@ namespace MooldangBot.Presentation.Features.Auth
 
             try
             {
-                string? targetUid = null;
-                // [롤백]: 개별 앱 정보를 사용하지 않고 시스템 전역 앱 정보만 사용하여 토큰 교환
+                // [v6.2] 더 이상 개별 앱 정보를 사용하지 않으므로 커스텀 정보는 null로 고정
                 string? customClientId = null;
                 string? customClientSecret = null;
                 string? customRedirectUrl = null;
 
+                string? targetUid = null;
+                
                 // UID는 여전히 추출하되, 앱 정보는 시스템 것을 사용함
                 if (state != null && state.StartsWith("bot_setup_"))
                 {
@@ -333,19 +324,8 @@ namespace MooldangBot.Presentation.Features.Auth
                     }
                     else
                     {
-                        // 특정 스트리머 전용 봇 설정
-                        var botProfile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == targetUid);
-                        if (botProfile != null)
-                        {
-                            botProfile.BotChzzkUid = setupBotUid;
-                            botProfile.BotNickname = setupBotNick;
-                            botProfile.BotAccessToken = accessToken;
-                            botProfile.BotRefreshToken = refreshToken;
-                            botProfile.BotTokenExpiresAt = expireDate;
-                            botProfile.IsActive = true; 
-
-                            Console.WriteLine($"[오시리스의 확인]: 전용 봇 연동 완료 (스트리머: {targetUid}, 봇: {setupBotNick})");
-                        }
+                        // [v6.2] 개별 스트리머 전용 봇 설정 필드 삭제로 인해 해당 로직은 더 이상 지원되지 않습니다.
+                        _logger.LogWarning($"[오시리스의 거절] {targetUid} 채널의 개별 봇 설정이 시도되었으나 더 이상 지원하지 않는 기능입니다.");
                     }
 
                     await _db.SaveChangesAsync();
@@ -394,11 +374,6 @@ namespace MooldangBot.Presentation.Features.Auth
                         ChzzkUid = chzzkUid,
                         IsActive = true,
                         IsMasterEnabled = true, // [v6.1.6] 신규 가입 시 기본 활성화
-                        IsOmakaseEnabled = true,
-                        SongCommand = "!신청",
-                        SongPrice = 1000,
-                        OmakaseCommand = "!물마카세",
-                        OmakasePrice = 10000 
                     };
                     _db.StreamerProfiles.Add(streamer);
 

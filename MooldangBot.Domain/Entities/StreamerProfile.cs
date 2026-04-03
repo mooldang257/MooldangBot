@@ -27,62 +27,19 @@ public class StreamerProfile : ISoftDeletable, IAuditable
         public string? ChzzkRefreshToken { get; set; }
         public KstClock? TokenExpiresAt { get; set; }
 
-        // [추가] 1. API 키 보관 (명세서: 보안 관리를 위해 DB에 저장)
-        public string? ApiClientId { get; set; }
-
-        public string? ApiClientSecret { get; set; }
-
-        [MaxLength(500)]
-        public string? ApiRedirectUrl { get; set; } // ⭐ 스트리머별 전용 앱 리다이렉트 URL
-
         // [추가] 2. 공지 메모
         public string? NoticeMemo { get; set; }
-
-        // [추가] 3. 물마카세(오마카세) 및 명령어 설정
-        [ConcurrencyCheck]
-        public int OmakaseCount { get; set; } = 0; // 현재 쌓인 물마카세 개수
-
-        [MaxLength(50)]
-        public string OmakaseCommand { get; set; } = "!물마카세"; // 오마카세 명령어
-
-        public int OmakasePrice { get; set; } = 1000; // 기준 치즈 금액
-
-        [MaxLength(50)]
-        public string SongCommand { get; set; } = "!신청"; // 일반 신청 명령어
-
-        public int SongPrice { get; set; } = 0; // 일반 신청 기준 금액 (0이면 무료)
 
         // [추가] 4. 화면 세부 디자인 설정 (복잡한 컴포넌트 설정은 JSON으로 통째로 저장)
         public string? DesignSettingsJson { get; set; }
 
         // [추가] 5. 시청자 포인트 및 출석 설정
         public int PointPerChat { get; set; } = 1;
-        public int PointPerDonation1000 { get; set; } = 10;
-        public int PointPerAttendance { get; set; } = 10;
-
-        [MaxLength(200)]
-        public string AttendanceCommands { get; set; } = "출석";
-
-        [MaxLength(200)]
-        public string AttendanceReply { get; set; } = "{닉네임}님 출석 고마워요!";
-
-        [MaxLength(200)]
-        public string PointCheckCommand { get; set; } = "!포인트";
-
-        [MaxLength(200)]
-        public string PointCheckReply { get; set; } = "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)";
-
-        // [추가] 스트리머 전용 커스텀 봇 계정 정보
-        public string? BotChzzkUid { get; set; }
-        public string? BotNickname { get; set; }
-        public string? BotAccessToken { get; set; }
-        public string? BotRefreshToken { get; set; }
-        public KstClock? BotTokenExpiresAt { get; set; }
+        // [v6.2.1] 후원 잔액 시스템 설정
+        public bool IsAutoAccumulateDonation { get; set; } = false;
 
         // [v6.1.6] 통합: IsBotEnabled와 IsActive는 동일한 기능으로 간주하여 IsActive로 단일화합니다.
         public bool IsActive { get; set; } = false; // [v6.1.5] 스트리머의 봇 사용 여부 (Default:Off)
-
-        public bool IsOmakaseEnabled { get; set; } = true;
 
         public bool IsDeleted { get; set; } = false; // [v6.1.5] 채널 데이터 존재 상태 (복구용)
         public KstClock? DeletedAt { get; set; }

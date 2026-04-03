@@ -323,6 +323,7 @@ namespace MooldangBot.Presentation.Features.Roulette
                 .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Include(l => l.StreamerProfile)
+                .Include(l => l.GlobalViewer) // [v6.2] 닉네임 조회를 위해 포함
                 .Where(l => l.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (status.HasValue) query = query.Where(l => l.Status == status.Value);
@@ -335,7 +336,7 @@ namespace MooldangBot.Presentation.Features.Roulette
                     l.Id, 
                     l.RouletteId, 
                     l.RouletteName, 
-                    l.ViewerNickname, 
+                    l.GlobalViewer!.Nickname, // [v6.2] 정문화된 닉네임 사용
                     l.ItemName, 
                     l.CreatedAt, 
                     (int)l.Status

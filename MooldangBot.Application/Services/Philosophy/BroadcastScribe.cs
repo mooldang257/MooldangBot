@@ -134,6 +134,7 @@ public partial class BroadcastScribe : IBroadcastScribe
             };
             db.BroadcastSessions.Add(session);
             _activeStats[profile.Id] = new SessionStats();
+            await db.SaveChangesAsync(ct); // ID 확보를 위해 선 저장
         }
         else
         {
@@ -142,7 +143,57 @@ public partial class BroadcastScribe : IBroadcastScribe
                 _activeStats[profile.Id] = new SessionStats();
         }
 
-        await db.SaveChangesAsync();
+        // 🚀 [v6.2.2] 방송 정보(제목, 카테고리) 변화 추적 (오시리스의 서기)
+        try
+        {
+            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
+            var liveSetting = await chzzkApi.GetLiveSettingAsync(profile.ChzzkAccessToken ?? "");
+            
+            if (liveSetting?.Content != null)
+            {
+                var newTitle = (liveSetting.Content.DefaultLiveTitle ?? "").Trim();
+                var newCategory = (liveSetting.Content.Category?.CategoryValue ?? "").Trim();
+
+                // 1. 초기 정보 기록 (세션 시작 후 첫 하트비트인 경우)
+                if (string.IsNullOrEmpty(session.InitialTitle))
+                {
+                    session.InitialTitle = newTitle;
+                    session.InitialCategory = newCategory;
+                    session.CurrentTitle = newTitle;
+                    session.CurrentCategory = newCategory;
+
+                    // 최초 로그 생성
+                    db.BroadcastHistoryLogs.Add(new BroadcastHistoryLog {
+                        BroadcastSessionId = session.Id,
+                        Title = newTitle,
+                        CategoryName = newCategory,
+                        LogDate = KstClock.Now
+                    });
+                }
+                // 2. 변화 감지 및 로그 기록 (.Trim 기반 정밀 비교)
+                else if (!newTitle.Equals((session.CurrentTitle ?? "").Trim()) || 
+                         !newCategory.Equals((session.CurrentCategory ?? "").Trim()))
+                {
+                    _logger.LogInformation($"📝 [{chzzkUid}] 방송 정보 변경 감지: {session.CurrentTitle} -> {newTitle} / {session.CurrentCategory} -> {newCategory}");
+                    
+                    db.BroadcastHistoryLogs.Add(new BroadcastHistoryLog {
+                        BroadcastSessionId = session.Id,
+                        Title = newTitle,
+                        CategoryName = newCategory,
+                        LogDate = KstClock.Now
+                    });
+
+                    session.CurrentTitle = newTitle;
+                    session.CurrentCategory = newCategory;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning($"⚠️ [BroadcastScribe] 방송 정보 추적 중 오류 (무시됨): {ex.Message}");
+        }
+
+        await db.SaveChangesAsync(ct);
         return session.Id;
     }
 

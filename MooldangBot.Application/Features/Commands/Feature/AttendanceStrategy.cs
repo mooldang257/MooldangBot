@@ -34,24 +34,32 @@ public class AttendanceStrategy(
         var globalViewer = await db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
         if (globalViewer == null)
         {
-            globalViewer = new GlobalViewer { ViewerUid = notification.SenderId, ViewerUidHash = viewerHash };
+            globalViewer = new GlobalViewer 
+            { 
+                ViewerUid = notification.SenderId, 
+                ViewerUidHash = viewerHash,
+                Nickname = notification.Username
+            };
             db.GlobalViewers.Add(globalViewer);
-            await db.SaveChangesAsync(ct);
+        }
+        else if (globalViewer.Nickname != notification.Username)
+        {
+            globalViewer.Nickname = notification.Username;
+            globalViewer.UpdatedAt = KstClock.Now;
         }
 
         // 2. 채널별 프로필 확보
-        var viewer = await db.ViewerProfiles
+        var viewer = await db.StreamerViewers
             .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewer.Id, ct);
 
         if (viewer == null)
         {
-            viewer = new ViewerProfile 
+            viewer = new View_StreamerViewer 
             { 
                 StreamerProfileId = streamer.Id,
-                GlobalViewerId = globalViewer.Id,
-                Nickname = notification.Username
+                GlobalViewerId = globalViewer.Id
             };
-            db.ViewerProfiles.Add(viewer);
+            db.StreamerViewers.Add(viewer);
         }
 
         bool isFirstToday = viewer.LastAttendanceAt?.Date != KstClock.Today;
@@ -59,7 +67,7 @@ public class AttendanceStrategy(
         {
             viewer.LastAttendanceAt = KstClock.Now;
             viewer.AttendanceCount++;
-            viewer.Points += streamer.PointPerAttendance;
+            viewer.Points += command.Cost; // [v6.2] 명령어의 Cost 필드를 보상 포인트로 사용
             await db.SaveChangesAsync(ct);
 
             string responseTemplate = string.IsNullOrWhiteSpace(command.ResponseText)

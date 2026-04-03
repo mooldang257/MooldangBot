@@ -21,9 +21,6 @@ public class RouletteSpin
 
     public int GlobalViewerId { get; set; } // [v4.4] ViewerUid 제거 및 FK 도입
 
-    [MaxLength(100)]
-    public string ViewerNickname { get; set; } = string.Empty;
-
     [Required]
     public string ResultsJson { get; set; } = string.Empty; // List<string> 직렬화
 

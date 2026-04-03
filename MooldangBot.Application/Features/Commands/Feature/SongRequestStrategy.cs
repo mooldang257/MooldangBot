@@ -49,10 +49,27 @@ public class SongRequestStrategy(
                 return CommandExecutionResult.Failure("송리스트 비활성화 상태", shouldRefund: true);
             }
 
-            // 2.2 [v4.5] 신청자(GlobalViewer) 전조 확인
+            // 2.2 [v4.5] 신청자(GlobalViewer) 전조 확인 (v6.2 해시 기반 수정)
+            var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(notification.SenderId);
             var viewer = await db.GlobalViewers
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(g => g.ViewerUidHash == notification.SenderId, ct);
+                .FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
+
+            if (viewer == null)
+            {
+                viewer = new GlobalViewer 
+                { 
+                    ViewerUid = notification.SenderId, 
+                    ViewerUidHash = viewerHash,
+                    Nickname = notification.Username
+                };
+                db.GlobalViewers.Add(viewer);
+            }
+            else if (viewer.Nickname != notification.Username)
+            {
+                viewer.Nickname = notification.Username;
+                viewer.UpdatedAt = KstClock.Now;
+            }
+            await db.SaveChangesAsync(ct);
 
             // 2.3 곡 신청 큐에 저장
             var song = new SongQueue

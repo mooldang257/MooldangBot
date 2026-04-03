@@ -50,7 +50,7 @@ public class TokenRenewalBackgroundService(
             .ToListAsync(ct);
 
         var sortedProfiles = profiles
-            .OrderBy(p => GetEarliestExpiry(p))
+            .OrderBy(p => p.TokenExpiresAt?.Ticks ?? long.MaxValue)
             .ToList();
 
         if (sortedProfiles.Count == 0) return;
@@ -78,12 +78,5 @@ public class TokenRenewalBackgroundService(
                 logger.LogWarning($"⚠️ [영겁의 파수꾼] {profile.ChzzkUid} 토큰 갱신 중 오류: {ex.Message}");
             }
         }
-    }
-
-    private long GetEarliestExpiry(MooldangBot.Domain.Entities.StreamerProfile p)
-    {
-        long streamerExpiry = p.TokenExpiresAt?.Ticks ?? long.MaxValue;
-        long botExpiry = p.BotTokenExpiresAt?.Ticks ?? long.MaxValue;
-        return Math.Min(streamerExpiry, botExpiry);
     }
 }

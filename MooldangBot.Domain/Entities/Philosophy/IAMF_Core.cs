@@ -74,6 +74,16 @@ public class BroadcastSession : ISoftDeletable, IAuditable
     [ForeignKey(nameof(StreamerProfileId))]
     public virtual StreamerProfile? StreamerProfile { get; set; }
 
+    [MaxLength(255)]
+    public string? InitialTitle { get; set; }
+    [MaxLength(100)]
+    public string? InitialCategory { get; set; }
+
+    [MaxLength(255)]
+    public string? CurrentTitle { get; set; }
+    [MaxLength(100)]
+    public string? CurrentCategory { get; set; }
+
     public KstClock StartTime { get; set; }
     public KstClock? EndTime { get; set; }
     public KstClock LastHeartbeatAt { get; set; }

@@ -39,7 +39,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
     public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
     public DbSet<GlobalViewer> GlobalViewers { get; set; }
-    public DbSet<ViewerProfile> ViewerProfiles { get; set; }
+    public DbSet<View_StreamerViewer> StreamerViewers { get; set; }
     public DbSet<Roulette> Roulettes { get; set; }
     public DbSet<RouletteItem> RouletteItems { get; set; }
     public DbSet<PeriodicMessage> PeriodicMessages { get; set; }
@@ -54,6 +54,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     public DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
     public DbSet<StreamerKnowledge> StreamerKnowledges { get; set; }
     public DbSet<BroadcastSession> BroadcastSessions { get; set; }
+    public DbSet<BroadcastHistoryLog> BroadcastHistoryLogs { get; set; }
 
     public DbSet<SharedComponent> SharedComponents { get; set; }
     public DbSet<StreamerManager> StreamerManagers { get; set; }
@@ -167,13 +168,13 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasIndex(s => s.StreamerProfileId);
         });
 
-        modelBuilder.Entity<ViewerProfile>(entity => {
-            entity.Property(e => e.Nickname).UseCollation(ciCollation);
+        modelBuilder.Entity<View_StreamerViewer>(entity => {
+            // [v6.2] 닉네임 필드 제거됨
         });
 
         modelBuilder.Entity<RouletteLog>(entity => {
             entity.ToTable("func_roulette_logs");
-            entity.Property(e => e.ViewerNickname).UseCollation(ciCollation);
+            // [v6.2] ViewerNickname 필드 제거됨
 
             entity.HasOne(l => l.StreamerProfile)
                   .WithMany()
@@ -221,10 +222,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<StreamerProfile>(entity => {
             entity.Property(e => e.ChzzkAccessToken).HasConversion(converter);
             entity.Property(e => e.ChzzkRefreshToken).HasConversion(converter);
-            entity.Property(e => e.ApiClientId).HasColumnType("longtext").HasConversion(converter);
-            entity.Property(e => e.ApiClientSecret).HasColumnType("longtext").HasConversion(converter);
-            entity.Property(e => e.BotAccessToken).HasConversion(converter);
-            entity.Property(e => e.BotRefreshToken).HasConversion(converter);
         });
  
         // [v4.2] 글로벌 시청자 암호화 설정
@@ -232,10 +229,11 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.ToTable("core_global_viewers");
             entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Nickname).UseCollation(ciCollation); // [v6.2] 중앙 닉네임
         });
 
-        modelBuilder.Entity<ViewerProfile>(entity => {
-            entity.ToTable("view_profiles");
+        modelBuilder.Entity<View_StreamerViewer>(entity => {
+            entity.ToTable("view_streamer_viewers");
             
             // 스트리머가 탈퇴/삭제되면 해당 방의 시청자 기록도 연쇄 삭제 (DB 용량 확보)
             entity.HasOne(v => v.StreamerProfile)
@@ -376,7 +374,9 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                 new Master_CommandFeature { Id = 8, CategoryId = 3, TypeName = "Roulette", DisplayName = "룰렛", DefaultCost = 500, RequiredRole = CommandRole.Viewer },
                 new Master_CommandFeature { Id = 9, CategoryId = 3, TypeName = "ChatPoint", DisplayName = "채팅포인트", DefaultCost = 0, RequiredRole = CommandRole.Viewer },
                 new Master_CommandFeature { Id = 10, CategoryId = 2, TypeName = "SystemResponse", DisplayName = "시스템 응답", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 11, CategoryId = 3, TypeName = "AI", DisplayName = "AI 답변", DefaultCost = 1000, RequiredRole = CommandRole.Viewer }
+                new Master_CommandFeature { Id = 11, CategoryId = 3, TypeName = "AI", DisplayName = "AI 답변", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 12, CategoryId = 3, TypeName = "Attendance", DisplayName = "출석체크", DefaultCost = 10, RequiredRole = CommandRole.Viewer },
+                new Master_CommandFeature { Id = 13, CategoryId = 1, TypeName = "PointCheck", DisplayName = "포인트확인", DefaultCost = 0, RequiredRole = CommandRole.Viewer }
             );
         });
 
@@ -391,14 +391,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{포인트}", 
                     Description = "보유 포인트", 
                     BadgeColor = "primary", 
-                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 2, 
                     Keyword = "{닉네임}", 
                     Description = "시청자 닉네임", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT vp.Nickname FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT gv.Nickname FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 3, 
@@ -426,21 +426,21 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                     Keyword = "{연속출석일수}", 
                     Description = "연속 출석한 일수", 
                     BadgeColor = "success", 
-                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 7, 
                     Keyword = "{누적출석일수}", 
                     Description = "누적 출석한 횟수", 
                     BadgeColor = "info", 
-                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 8, 
                     Keyword = "{마지막출석일}", 
                     Description = "최근 출석 날짜", 
                     BadgeColor = "secondary", 
-                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM view_profiles vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
+                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
                 },
                 new Master_DynamicVariable { 
                     Id = 10, 
@@ -461,7 +461,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
         modelBuilder.Entity<AvatarSetting>().ToTable("overlay_avatar_settings");
         modelBuilder.Entity<ChzzkCategory>().ToTable("sys_chzzk_categories");
         modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("sys_chzzk_category_aliases");
-        modelBuilder.Entity<ViewerProfile>().ToTable("view_profiles");
+        modelBuilder.Entity<View_StreamerViewer>().ToTable("view_streamer_viewers");
         modelBuilder.Entity<Roulette>().ToTable("func_roulette_main");
         modelBuilder.Entity<RouletteItem>(entity => {
             entity.ToTable("func_roulette_items");
@@ -529,6 +529,17 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .WithMany()
                   .HasForeignKey(b => b.StreamerProfileId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BroadcastHistoryLog>(entity => {
+            entity.ToTable("sys_broadcast_history_logs");
+            entity.HasOne(h => h.BroadcastSession)
+                  .WithMany()
+                  .HasForeignKey(h => h.BroadcastSessionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // 🚀 [v6.2.2] 시계열 데이터 조회를 위한 복합 인덱스 (오시리스의 인덱싱)
+            entity.HasIndex(h => new { h.BroadcastSessionId, h.LogDate });
         });
 
         modelBuilder.Entity<SharedComponent>().ToTable("overlay_components");

@@ -199,7 +199,7 @@ try
     var allFeatures = await db.MasterCommandFeatures.AsNoTracking().ToListAsync();
 
     foreach (var p in profiles) {
-        provisionCount += await EnsureCommand(db, p, allFeatures, p.SongCommand ?? "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
         provisionCount += await EnsureCommand(db, p, allFeatures, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
         
         // [매니저 전용 명령어 추가]
@@ -227,8 +227,8 @@ try
             Id = 1, 
             ChzzkUid = "SYSTEM_ADMIN", 
             ChannelName = "SystemAdmin",
-            DelYn = "N",
-            MasterUseYn = "Y"
+            IsDeleted = false,
+            IsMasterEnabled = true
         };
         db.StreamerProfiles.Add(adminProfile);
         Console.WriteLine("   + [Admin] 관리자 프로필(ID:1)이 생성되었습니다.");
@@ -244,10 +244,11 @@ try
         Console.WriteLine($"   ✅ IAMF 데이터 이관 완료: Parhos({migratedParhos}), Genos({migratedGenos}), Scenario({migratedScenarios})");
 
     // 6-3. StreamerProfile 복구 엔진용 플래그 초기화
-    int flagInits = await db.StreamerProfiles.Where(p => string.IsNullOrEmpty(p.DelYn) || string.IsNullOrEmpty(p.MasterUseYn))
+    // [v6.2] 레거시 DelYn, MasterUseYn은 이미 삭제됨
+    int flagInits = await db.StreamerProfiles.Where(p => !p.IsMasterEnabled) // 비활성화된 것들만 대상 (예시)
                                              .ExecuteUpdateAsync(s => s
-                                                .SetProperty(p => p.DelYn, "N")
-                                                .SetProperty(p => p.MasterUseYn, "Y"));
+                                                .SetProperty(p => p.IsDeleted, false)
+                                                .SetProperty(p => p.IsMasterEnabled, true));
     
     if (flagInits > 0)
         Console.WriteLine($"   ✅ 스트리머 프로필 상태 플래그 {flagInits}개 초기화 완료.");

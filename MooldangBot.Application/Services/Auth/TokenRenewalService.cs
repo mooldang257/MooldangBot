@@ -102,37 +102,31 @@ public class TokenRenewalService : ITokenRenewalService
         }
 
         // 1. 스트리머 본인 토큰 갱신 (채팅 연결 핵심 - 실패 시 즉시 중단)
-        bool streamerSuccess = await RenewTokenInternalAsync(streamer, isBot: false, force: force);
+        bool streamerSuccess = await RenewTokenInternalAsync(streamer, force: force);
         if (!streamerSuccess)
         {
             _logger.LogError("❌ [영겁의 열쇠] {ChzzkUid} 스트리머 본인 토큰 갱신 실패로 자가 치유를 중단합니다.", chzzkUid);
             return false;
         }
 
-        // 2. 봇 계정 토큰 갱신 (선택 사항)
-        if (!string.IsNullOrEmpty(streamer.BotRefreshToken))
-        {
-             await RenewTokenInternalAsync(streamer, isBot: true, force: force);
-        }
-
         return true;
     }
 
-    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool isBot, bool force)
+    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool force)
     {
-        var expiresAt = isBot ? streamer.BotTokenExpiresAt : streamer.TokenExpiresAt;
-        var refreshToken = isBot ? streamer.BotRefreshToken : streamer.ChzzkRefreshToken;
+        var expiresAt = streamer.TokenExpiresAt;
+        var refreshToken = streamer.ChzzkRefreshToken;
 
         // [v13.1] 모든 비교를 KST 강제 (UTC+9)
         var kstNow = KstClock.Now;
         var isExpiringSoon = KstClock.IsExpiringSoon(expiresAt, TimeSpan.FromHours(1));
         if (!isExpiringSoon && !force) return true;
 
-        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} {(isBot ? "봇" : "스트리머")} 토큰 갱신 시도. (강제: {force}, 만료: {expiresAt})");
+        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} 스트리머 토큰 갱신 시도. (강제: {force}, 만료: {expiresAt})");
 
-        // 스트리머 전용 앱 정보 또는 시스템 기본값 사용
-        string clientId = streamer.ApiClientId ?? _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
-        string clientSecret = streamer.ApiClientSecret ?? _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
+        // [v6.2] 개별 앱 정보 필드 삭제에 따라 시스템 기본값만 사용
+        string clientId = _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
+        string clientSecret = _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
 
         using var client = _httpClientFactory.CreateClient();
         
@@ -198,18 +192,9 @@ public class TokenRenewalService : ITokenRenewalService
         if (result == null || result.Content == null || string.IsNullOrEmpty(result.Content.AccessToken)) return false;
 
         var content = result.Content;
-        if (isBot)
-        {
-            streamer.BotAccessToken = content.AccessToken;
-            if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.BotRefreshToken = content.RefreshToken;
-            streamer.BotTokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
-        }
-        else
-        {
-            streamer.ChzzkAccessToken = content.AccessToken;
-            if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
-            streamer.TokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
-        }
+        streamer.ChzzkAccessToken = content.AccessToken;
+        if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
+        streamer.TokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
 
         await _db.SaveChangesAsync();
         return true;

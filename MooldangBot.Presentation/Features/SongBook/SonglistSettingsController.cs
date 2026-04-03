@@ -58,9 +58,9 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             return Results.Ok(new
             {
-                songCommand = profile.SongCommand,
+                songCommand = "!신청", // 레거시 호환용 고정값 (실제 사용은 songRequestCommands 참조)
                 songRequestCommands = songCommands,
-                songPrice = profile.SongPrice,
+                songPrice = 0,
                 designSettingsJson = profile.DesignSettingsJson,
                 // 🛡️ [Osiris's Simplification]: MenuId 그룹화 제거 및 PK(Id)-TargetId 기반 1:1 매핑
                 omakases = omakaseItems
@@ -110,8 +110,6 @@ namespace MooldangBot.Presentation.Features.SongBook
                 
             if (profile != null)
             {
-                profile.SongCommand = req.SongCommand;
-                profile.SongPrice = req.SongPrice;
                 profile.DesignSettingsJson = req.DesignSettingsJson;
 
                 // 1. Omakase Items Sync (1:1 PK-TargetId Policy)
