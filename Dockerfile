@@ -14,25 +14,26 @@ COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
 COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Presentation/MooldangBot.Presentation.csproj", "MooldangBot.Presentation/"]
+COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
 COPY ["MooldangAPI.sln", "./"]
 
 # 2. 패키지 복원
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
+RUN dotnet restore "MooldangBot.Cli/MooldangBot.Cli.csproj"
 RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj"
 
 # 3. 소스 코드 전체 복사 및 빌드
 COPY . .
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
-
-# 4. 마이그레이션 번들 생성 (MooldangBot.Api에서 실행)
-RUN dotnet ef migrations bundle -o /app/efbundle \
-    -p ../MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj \
-    -s MooldangBot.Api.csproj
+WORKDIR "/src/MooldangBot.Cli"
+RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build
 
 # 5. 게시(Publish)
 FROM build AS publish
 RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/MooldangBot.Cli"
+RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # ------------------------------------------
 # 🚀 Runtime Stage
@@ -40,7 +41,7 @@ RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseApp
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY --from=publish /app/efbundle .
+# efbundle 대신 MooldangBot.Cli.dll을 사용하므로 번들 복사 불필요
 
 # 업로드/데이터 폴더 생성 및 권한 설정
 RUN mkdir -p /app/wwwroot/images/avatars && \
