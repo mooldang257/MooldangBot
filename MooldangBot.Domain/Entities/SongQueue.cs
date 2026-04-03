@@ -7,7 +7,7 @@ namespace MooldangBot.Domain.Entities
 {
     [Index(nameof(StreamerProfileId), nameof(Id))]
     [Index(nameof(StreamerProfileId), nameof(Status), nameof(CreatedAt))]
-    public class SongQueue
+    public class SongQueue : ISoftDeletable, IAuditable
     {
         [Key]
         public int Id { get; set; }
@@ -24,6 +24,14 @@ namespace MooldangBot.Domain.Entities
         [ForeignKey(nameof(GlobalViewerId))]
         public virtual GlobalViewer? GlobalViewer { get; set; }
 
+        /// <summary>
+        /// [v6.2.2] 노래책 연동 (선택 사항: 노래책에 있는 곡인 경우 연결)
+        /// </summary>
+        public int? SongBookId { get; set; }
+
+        [ForeignKey(nameof(SongBookId))]
+        public virtual SongBook? SongBook { get; set; }
+
         [Required]
         [MaxLength(200)]
         public string Title { get; set; } = string.Empty; // 곡 제목
@@ -32,11 +40,16 @@ namespace MooldangBot.Domain.Entities
         public string? Artist { get; set; } // 가수
 
         [Required]
-        [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // 상태: Pending(대기), Playing(재생중), Completed(완료)
+        public SongStatus Status { get; set; } = SongStatus.Pending; // [v6.2.2] Enum 전환
 
         public int SortOrder { get; set; } = 0; // 드래그 앤 드롭 정렬을 기억하기 위한 순서 번호
 
-        public KstClock CreatedAt { get; set; } = KstClock.Now; // 신청된 시간 (KST)
+        // [v6.2.2] 거버넌스 및 감사 필드 통합
+        public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
+        public KstClock? DeletedAt { get; set; }
+
+        public KstClock CreatedAt { get; set; } = KstClock.Now; 
+        public KstClock? UpdatedAt { get; set; }
     }
 }

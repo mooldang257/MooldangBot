@@ -27,4 +27,24 @@ namespace MooldangBot.Domain.Entities
         Cheese, 
         Point 
     }
+
+    /// <summary>
+    /// [v6.2.2] 노래 신청 상태 열거형
+    /// </summary>
+    public enum SongStatus
+    {
+        Pending = 0,    // 대기
+        Playing = 1,    // 재생중
+        Completed = 2,  // 완료
+        Cancelled = 3   // 취소
+    }
+
+    /// <summary>
+    /// [v6.2.2] 방송 세션 상태 열거형
+    /// </summary>
+    public enum BroadcastStatus
+    {
+        Active = 1,     // 방송중
+        Ended = 0       // 종료됨
+    }
 }

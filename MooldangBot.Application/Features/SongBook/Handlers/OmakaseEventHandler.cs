@@ -119,7 +119,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
             {
                 StreamerProfileId = notification.Profile.Id,
                 Title = songTitle,
-                Status = "Pending",
+                Status = SongStatus.Pending,
                 CreatedAt = KstClock.Now,
                 SortOrder = await db.SongQueues
                     .Include(q => q.StreamerProfile)

@@ -77,7 +77,7 @@ public class SongRequestStrategy(
                 StreamerProfileId = notification.Profile.Id,
                 GlobalViewerId = viewer?.Id,
                 Title = songTitle,
-                Status = "Pending",
+                Status = SongStatus.Pending,
                 CreatedAt = KstClock.Now
             };
             db.SongQueues.Add(song);

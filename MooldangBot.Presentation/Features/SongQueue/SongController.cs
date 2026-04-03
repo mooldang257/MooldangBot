@@ -37,7 +37,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
         [HttpGet("/api/song/queue/{chzzkUid}")]
         public async Task<IResult> GetSongQueue(
             string chzzkUid, 
-            [FromQuery] string? status,
+            [FromQuery] SongStatus? status,
             [AsParameters] CursorPagedRequest request)
         {
             // 🛡️ 보안: 세션 기반 권한 검증 및 정문화된 ID 조회
@@ -59,9 +59,9 @@ namespace MooldangBot.Presentation.Features.SongQueue
                 .Where(s => s.StreamerProfileId == streamerId);
 
             // 상태 필터 적용 (있을 경우 IX_SongQueue_Status_Cursor 활용)
-            if (!string.IsNullOrEmpty(status))
+            if (status.HasValue)
             {
-                query = query.Where(s => s.Status == status);
+                query = query.Where(s => s.Status == status.Value);
             }
 
             // 🚀 커서 기반 필터링 (최신순/ID 역순 기준)
@@ -129,7 +129,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
         }
 
         [HttpPut("/api/song/{chzzkUid}/{id}/status")]
-        public async Task<Microsoft.AspNetCore.Http.IResult> UpdateStatus(string chzzkUid, int id, [FromQuery] string status)
+        public async Task<Microsoft.AspNetCore.Http.IResult> UpdateStatus(string chzzkUid, int id, [FromQuery] SongStatus status)
         {
             var targetUid = chzzkUid.ToLower();
             var song = await _db.SongQueues
@@ -146,26 +146,26 @@ namespace MooldangBot.Presentation.Features.SongQueue
 
                 if (activeSession != null)
                 {
-                    if (status == "Completed" && song.Status != "Completed")
+                    if (status == SongStatus.Completed && song.Status != SongStatus.Completed)
                     {
                         activeSession.CompleteCount++;
                     }
-                    else if (song.Status == "Completed" && status != "Completed")
+                    else if (song.Status == SongStatus.Completed && status != SongStatus.Completed)
                     {
                         activeSession.CompleteCount--;
                         if (activeSession.CompleteCount < 0) activeSession.CompleteCount = 0;
                     }
                 }
 
-                if (status == "Playing")
+                if (status == SongStatus.Playing)
                 {
                     var current = await _db.SongQueues
                         .IgnoreQueryFilters()
                         .Include(s => s.StreamerProfile)
-                        .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == "Playing");
+                        .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == SongStatus.Playing);
                     if (current != null)
                     {
-                        current.Status = "Completed";
+                        current.Status = SongStatus.Completed;
                         if (activeSession != null) activeSession.CompleteCount++;
                     }
                 }

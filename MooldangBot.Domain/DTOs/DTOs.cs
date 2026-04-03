@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Domain.DTOs
 {
@@ -64,7 +65,7 @@ namespace MooldangBot.Domain.DTOs
         public string Artist { get; set; } = string.Empty;
 
         [JsonPropertyName("status")]
-        public string Status { get; set; } = string.Empty;
+        public SongStatus Status { get; set; }
         
         [JsonPropertyName("sortOrder")]
         public int SortOrder { get; set; }

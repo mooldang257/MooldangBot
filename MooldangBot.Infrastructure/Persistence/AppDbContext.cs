@@ -230,6 +230,9 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.Property(e => e.ViewerUid).HasColumnType("longtext").HasConversion(converter);
             entity.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
             entity.Property(e => e.Nickname).UseCollation(ciCollation); // [v6.2] 중앙 닉네임
+            
+            // 🚀 [v6.2.2] 닉네임 기반 시청자 검색 성능 최적화 (오시리스의 눈)
+            entity.HasIndex(e => e.Nickname).HasDatabaseName("IX_GlobalViewer_Nickname");
         });
 
         modelBuilder.Entity<View_StreamerViewer>(entity => {
@@ -284,7 +287,16 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .HasForeignKey(s => s.GlobalViewerId)
                   .OnDelete(DeleteBehavior.Restrict);
 
+            // [v6.2.2] 노래책 연동 (선택 사항)
+            entity.HasOne(s => s.SongBook)
+                  .WithMany()
+                  .HasForeignKey(s => s.SongBookId)
+                  .OnDelete(DeleteBehavior.SetNull); // 노래책 항목이 삭제되어도 신청 기록은 유지
+ 
             entity.HasIndex(e => e.StreamerProfileId);
+
+            // [v6.2.2] 상태값 Enum 변환
+            entity.Property(e => e.Status).HasConversion<int>();
             
             // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
             entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.Id })
