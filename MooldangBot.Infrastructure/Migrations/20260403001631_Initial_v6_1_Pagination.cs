@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MooldangBot.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial_v0_62_PrefixFinal : Migration
+    public partial class Initial_v6_1_Pagination : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -1043,6 +1043,12 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "TargetId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_UnifiedCommand_CursorPaging",
+                table: "func_cmd_unified",
+                columns: new[] { "StreamerProfileId", "Id" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_func_roulette_items_RouletteId",
                 table: "func_roulette_items",
                 column: "RouletteId");
@@ -1068,7 +1074,7 @@ namespace MooldangBot.Infrastructure.Migrations
                 columns: new[] { "StreamerProfileId", "GlobalViewerId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_func_roulette_logs_StreamerProfileId_Status_Id",
+                name: "IX_RouletteLog_Status_Cursor",
                 table: "func_roulette_logs",
                 columns: new[] { "StreamerProfileId", "Status", "Id" },
                 descending: new[] { false, false, true });
@@ -1166,6 +1172,12 @@ namespace MooldangBot.Infrastructure.Migrations
                 name: "IX_song_list_queues_StreamerProfileId_Status_CreatedAt",
                 table: "song_list_queues",
                 columns: new[] { "StreamerProfileId", "Status", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SongQueue_Status_Cursor",
+                table: "song_list_queues",
+                columns: new[] { "StreamerProfileId", "Status", "Id" },
+                descending: new[] { false, false, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_song_list_sessions_StreamerProfileId_IsActive",

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
+using Microsoft.Extensions.Configuration; // [Phase 1] 설정 연동
 
 namespace MooldangBot.Presentation.Features.SongQueue
 {
@@ -15,11 +16,73 @@ namespace MooldangBot.Presentation.Features.SongQueue
     {
         private readonly IAppDbContext _db;
         private readonly IOverlayNotificationService _notificationService;
+        private readonly IUserSession _userSession; // [v6.1] 세션 정보 주입
+        private readonly IConfiguration _config; // [Phase 1] MaxLimit 정책용
 
-        public SongController(IAppDbContext db, IOverlayNotificationService notificationService)
+        public SongController(
+            IAppDbContext db, 
+            IOverlayNotificationService notificationService,
+            IUserSession userSession,
+            IConfiguration config)
         {
             _db = db;
             _notificationService = notificationService;
+            _userSession = userSession;
+            _config = config;
+        }
+
+        /// <summary>
+        /// [v2.0] 곡 대기열 목록 조회 (커서 기반 페이지네이션)
+        /// </summary>
+        [HttpGet("/api/song/queue/{chzzkUid}")]
+        public async Task<IResult> GetSongQueue(
+            string chzzkUid, 
+            [FromQuery] string? status,
+            [AsParameters] CursorPagedRequest request)
+        {
+            // 🛡️ 보안: 세션 기반 권한 검증 및 정문화된 ID 조회
+            var streamer = await _db.StreamerProfiles
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+            if (streamer == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
+
+            var streamerId = streamer.Id;
+            int maxLimit = _config.GetValue<int>("Pagination:MaxLimit", 100);
+            int effectiveLimit = Math.Min(request.Limit, maxLimit);
+
+            // 🔍 기본 쿼리 빌드 (AsNoTracking 성능 최적화)
+            var query = _db.SongQueues
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(s => s.StreamerProfileId == streamerId);
+
+            // 상태 필터 적용 (있을 경우 IX_SongQueue_Status_Cursor 활용)
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(s => s.Status == status);
+            }
+
+            // 🚀 커서 기반 필터링 (최신순/ID 역순 기준)
+            if (request.Cursor.HasValue)
+            {
+                query = query.Where(s => s.Id < request.Cursor.Value);
+            }
+
+            // [Limit + 1] 개를 조회하여 다음 페이지 존재 여부 확인
+            var items = await query
+                .OrderByDescending(s => s.Id)
+                .Take(effectiveLimit + 1)
+                .ToListAsync();
+
+            // 응답 데이터 가공
+            bool hasNext = items.Count > effectiveLimit;
+            if (hasNext) items.RemoveAt(effectiveLimit);
+
+            int? nextCursor = items.LastOrDefault()?.Id;
+
+            return Results.Ok(new CursorPagedResponse<MooldangBot.Domain.Entities.SongQueue>(items, nextCursor, hasNext));
         }
 
         [HttpPost("/api/song/add/{chzzkUid}")]

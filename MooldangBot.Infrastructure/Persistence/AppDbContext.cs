@@ -192,8 +192,11 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
 
             entity.HasIndex(e => e.RouletteId);
             entity.HasIndex(e => new { e.StreamerProfileId, e.GlobalViewerId });
+            
+            // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
             entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.Id })
-                .IsDescending(false, false, true);
+                  .IsDescending(false, false, true)
+                  .HasDatabaseName("IX_RouletteLog_Status_Cursor");
         });
 
         modelBuilder.Entity<StreamerManager>(entity => {
@@ -284,7 +287,11 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.StreamerProfileId);
-            entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.CreatedAt });
+            
+            // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Status, e.Id })
+                  .IsDescending(false, false, true)
+                  .HasDatabaseName("IX_SongQueue_Status_Cursor");
         });
 
         modelBuilder.Entity<SongBook>(entity => {
@@ -333,6 +340,11 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             // [Index] 복합 인덱스: (StreamerProfileId, Keyword) 유니크 조합
             entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword }).IsUnique();
             entity.HasIndex(e => new { e.StreamerProfileId, e.TargetId });
+
+            // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Id })
+                  .IsDescending(false, true)
+                  .HasDatabaseName("IX_UnifiedCommand_CursorPaging");
         });
 
         modelBuilder.Entity<Master_CommandCategory>(entity => {

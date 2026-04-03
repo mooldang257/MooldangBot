@@ -103,3 +103,16 @@ public async Task<IResult> GetSongQueue(string chzzkUid, [AsParameters] CursorPa
 3. `CommandsController.cs`의 `GetCommands` 메서드 수정
 4. `SongController.cs`에 `GetSongQueue` 메서드 추가 (또는 기존 로직 수정)
 5. 프론트엔드(`commands.html`, `dashboard.html`)에서 스크롤 시 `NextCursor`를 상태로 저장하여 무한 스크롤(Infinite Scroll) 또는 "더 보기" 버튼 로직으로 연동
+
+## 6. 검증방법
+1. Phase 1 -- 커서 페이징 쿼리 시뮬레이션
+EXPLAIN SELECT * FROM unifiedcommands 
+WHERE chzzkuid = 'TARGET_UID' AND id < 100 
+ORDER BY id DESC 
+LIMIT 21;
+
+2. Phase 2 -- 오프셋 페이징 쿼리 시뮬레이션
+EXPLAIN SELECT * FROM unifiedcommands 
+WHERE chzzkuid = 'TARGET_UID' 
+ORDER BY id DESC 
+LIMIT 100 OFFSET 0;

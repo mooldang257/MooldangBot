@@ -985,7 +985,8 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId", "GlobalViewerId");
 
                     b.HasIndex("StreamerProfileId", "Status", "Id")
-                        .IsDescending(false, false, true);
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("IX_RouletteLog_Status_Cursor");
 
                     b.ToTable("func_roulette_logs", (string)null);
                 });
@@ -1164,6 +1165,10 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasIndex("StreamerProfileId", "Id");
 
                     b.HasIndex("StreamerProfileId", "Status", "CreatedAt");
+
+                    b.HasIndex("StreamerProfileId", "Status", "Id")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("IX_SongQueue_Status_Cursor");
 
                     b.ToTable("song_list_queues", (string)null);
                 });
@@ -1497,6 +1502,10 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MasterCommandFeatureId");
+
+                    b.HasIndex("StreamerProfileId", "Id")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_UnifiedCommand_CursorPaging");
 
                     b.HasIndex("StreamerProfileId", "Keyword")
                         .IsUnique();

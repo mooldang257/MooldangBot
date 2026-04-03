@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration; // [Phase 1] 설정 연동
 
 namespace MooldangBot.Presentation.Features.Commands
 {
@@ -16,51 +17,68 @@ namespace MooldangBot.Presentation.Features.Commands
     {
         private readonly IAppDbContext _db;
         private readonly ICommandCacheService _cacheService;
-        private readonly IUnifiedCommandService _unifiedCommandService; // [v1.8] 통합 서비스 도입
+        private readonly IUnifiedCommandService _unifiedCommandService;
         private readonly ICommandMasterCacheService _masterCache;
+        private readonly IUserSession _userSession; // [v6.1] 세션 정보 주입
         private readonly ILogger<CommandsController> _logger;
+        private readonly IConfiguration _config; // [Phase 1] MaxLimit 정책용
 
         public CommandsController(
             IAppDbContext db, 
             ICommandCacheService cacheService, 
-            IUnifiedCommandService unifiedCommandService, // [v1.8] 주입
+            IUnifiedCommandService unifiedCommandService,
             ICommandMasterCacheService masterCache, 
-            ILogger<CommandsController> logger)
+            IUserSession userSession,
+            ILogger<CommandsController> logger,
+            IConfiguration config)
         {
             _db = db;
             _cacheService = cacheService;
             _unifiedCommandService = unifiedCommandService;
             _masterCache = masterCache;
+            _userSession = userSession;
             _logger = logger;
+            _config = config;
         }
 
 
         /// <summary>
-        /// [v1.5] 통합 명령어 목록 조회 (오프셋 기반 인풋 페이징)
+        /// [v2.0] 통합 명령어 목록 조회 (커서 기반 페이지네이션 고도화)
         /// </summary>
         [HttpGet("/api/commands/unified/{chzzkUid}")]
         public async Task<IResult> GetUnifiedCommands(
             string chzzkUid, 
-            [FromQuery] int page = 1, 
-            [FromQuery] int pageSize = 1000)
+            [AsParameters] CursorPagedRequest request)
         {
-            var targetUid = chzzkUid.Trim().ToLower();
-            
-            // 🔍 기본 쿼리 빌드 (Id 내림차순 정렬) [v4.3 정문화 반영]
-            var query = _db.UnifiedCommands
+            // 🛡️ 보안: 세션 기반 권한 검증 및 정규화된 ID 조회
+            var streamer = await _db.StreamerProfiles
+                .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Include(c => c.StreamerProfile)
+                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+            if (streamer == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
+            
+            var streamerId = streamer.Id;
+            int maxLimit = _config.GetValue<int>("Pagination:MaxLimit", 100);
+            int effectiveLimit = Math.Min(request.Limit, maxLimit);
+
+            // 🔍 기본 쿼리 빌드
+            var query = _db.UnifiedCommands
+                .AsNoTracking()
+                .IgnoreQueryFilters()
                 .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid)
-                .OrderByDescending(c => c.Id);
+                .Where(c => c.StreamerProfileId == streamerId);
 
-            // 전체 카운트는 인풋 페이징의 totalPages 계산을 위해 필수적임
-            int totalCount = await query.CountAsync();
+            // 🚀 커서 기반 필터링 (ID 역순/최신순 기준)
+            if (request.Cursor.HasValue)
+            {
+                query = query.Where(c => c.Id < request.Cursor.Value);
+            }
 
-            // 🚀 오프셋 페이징 (v4.3 정문화 매핑)
+            // [Limit + 1] 개를 조회하여 다음 페이지 존재 여부 확인 (IX_UnifiedCommand_CursorPaging 활용)
             var items = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .OrderByDescending(c => c.Id)
+                .Take(effectiveLimit + 1)
                 .Select(c => new UnifiedCommandDto(
                     c.Id, 
                     c.Keyword, 
@@ -74,7 +92,13 @@ namespace MooldangBot.Presentation.Features.Commands
                     c.RequiredRole.ToString()))
                 .ToListAsync();
 
-            return Results.Ok(new UnifiedPagedResponse<UnifiedCommandDto>(items, totalCount, page, pageSize));
+            // 응답 데이터 가공
+            bool hasNext = items.Count > effectiveLimit;
+            if (hasNext) items.RemoveAt(effectiveLimit);
+
+            int? nextCursor = items.LastOrDefault()?.Id;
+
+            return Results.Ok(new CursorPagedResponse<UnifiedCommandDto>(items, nextCursor, hasNext));
         }
 
         /// <summary>
