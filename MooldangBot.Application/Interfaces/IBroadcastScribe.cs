@@ -21,7 +21,7 @@ public interface IBroadcastScribe
     /// <summary>
     /// [각성의 신호]: 새로운 방송 세션을 시작하거나 기존 세션의 맥박을 갱신합니다.
     /// </summary>
-    Task<int> HeartbeatAsync(string chzzkUid);
+    Task<int> HeartbeatAsync(string chzzkUid, System.Threading.CancellationToken ct = default);
     /// <summary>
     /// [감시자의 안광]: 최근 1시간 내에 채팅 활동(신호)이 있었는지 확인합니다.
     /// </summary>

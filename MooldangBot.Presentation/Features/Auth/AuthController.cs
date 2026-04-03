@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
+using Microsoft.Extensions.Logging;
 
 namespace MooldangBot.Presentation.Features.Auth
 {

@@ -104,14 +104,14 @@ public partial class BroadcastScribe : IBroadcastScribe
         }
     }
 
-    public async Task<int> HeartbeatAsync(string chzzkUid)
+    public async Task<int> HeartbeatAsync(string chzzkUid, System.Threading.CancellationToken ct = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         var profile = await db.StreamerProfiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
 
         if (profile == null || !profile.IsActive || !profile.IsMasterEnabled) return 0; // [v6.1.6] 마스터 킬 스위치 및 활동성 체크
 
@@ -267,7 +267,7 @@ public partial class BroadcastScribe : IBroadcastScribe
             if (isLive)
             {
                 // [회귀의 시작]: 라이브임이 확인되면 하트비트를 통해 세션 공식 시작
-                int sessionId = await HeartbeatAsync(chzzkUid);
+                int sessionId = await HeartbeatAsync(chzzkUid, System.Threading.CancellationToken.None);
                 
                 // [v2.3.4] 로그 강화: 임시 스코프를 통해 로거 확보
                 using var logScope = _scopeFactory.CreateScope();

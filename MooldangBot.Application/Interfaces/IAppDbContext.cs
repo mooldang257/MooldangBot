@@ -23,6 +23,7 @@ namespace MooldangBot.Application.Interfaces
         DbSet<SonglistSession> SonglistSessions { get; set; }
         DbSet<OverlayPreset> OverlayPresets { get; set; }
         DbSet<BroadcastSession> BroadcastSessions { get; set; }
+        DbSet<BroadcastHistoryLog> BroadcastHistoryLogs { get; set; }
         DbSet<UnifiedCommand> UnifiedCommands { get; set; }
         DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
         DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }

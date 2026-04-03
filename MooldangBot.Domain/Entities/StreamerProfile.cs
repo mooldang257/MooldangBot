@@ -37,6 +37,7 @@ public class StreamerProfile : ISoftDeletable, IAuditable
         public int PointPerChat { get; set; } = 1;
         // [v6.2.1] 후원 잔액 시스템 설정
         public bool IsAutoAccumulateDonation { get; set; } = false;
+        public int PointPerDonation1000 { get; set; } = 1000;
 
         // [v6.1.6] 통합: IsBotEnabled와 IsActive는 동일한 기능으로 간주하여 IsActive로 단일화합니다.
         public bool IsActive { get; set; } = false; // [v6.1.5] 스트리머의 봇 사용 여부 (Default:Off)

@@ -200,21 +200,3 @@ public class UnifiedCommandHandler(
         _ => "시청자"
     };
 }
-
-    private CommandRole MapToCommandRole(string roleCode)
-    {
-        return (roleCode ?? "").ToLower() switch
-        {
-            "streamer" => CommandRole.Streamer,
-            "manager" => CommandRole.Manager,
-            _ => CommandRole.Viewer
-        };
-    }
-
-    private string GetRoleName(CommandRole role) => role switch
-    {
-        CommandRole.Streamer => "스트리머",
-        CommandRole.Manager => "매니저",
-        _ => "시청자"
-    };
-}
