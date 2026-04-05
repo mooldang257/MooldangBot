@@ -49,10 +49,11 @@
 
 ## 3. 안티그래비티의 고동 (Work Snapshot)
 
-### 🚀 최근 성과 (Phase 3 & 4 완료)
-- **프론트엔드 마이그레이션**: SvelteKit(Admin) 및 Svelte(Overlay) 아키텍처로 완전히 전환 성공.
-- **Zero Trust 최적화**: Cloudflare Tunnel 기반 인프라 최적화(내부망 신뢰 방식) 및 Nginx 최적화 완료.
-- **Git 형상 관리**: 모든 코드는 `UI` 브런치에 안전하게 푸시되어 있음.
+### 🚀 최근 성과 (Phase 10 & 11 완료)
+- **함교의 시각화 (Phase 10)**: SignalR 기반 양방향 맥박(Heartbeat) 시스템 및 Svelte Admin ECG 실시간 차트 구축.
+- **천상의 장부 (Phase 11)**: Dapper 기반 고성능 통계 집계 엔진 및 주간 디스코드 리포트 시스템 통합.
+- **데이터 거버넌스 강화**: 포인트 상세 이력(30일 TTL) 및 룰렛 확률 감사(Audit) 시스템 구축.
+- **Git 형상 관리**: 모든 코드는 `MooldangBot.Api` 및 관련 모듈에 안전하게 병합되어 있음.
 
 ### 🔍 직전 마주한 해결 이슈
 - **Real IP 추출**: 클라우드플레어 터널 환경에서 내부망 IP 문제를 Docker Subnet 신뢰 설정으로 해결.

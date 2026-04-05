@@ -25,6 +25,7 @@ namespace MooldangBot.Application
         {
             services.AddScoped<IChzzkBotService, ChzzkBotService>();
             services.AddScoped<ISongBookService, SongBookService>();
+            services.AddScoped<ISongLibraryService, SongLibraryService>(); // [v12.0] 중앙 병기창 추가
             services.AddScoped<IRouletteService, RouletteService>();
             services.AddScoped<IPointTransactionService, PointTransactionService>();
             services.AddSingleton<ICommandCacheService, CommandCacheService>();
@@ -72,6 +73,12 @@ namespace MooldangBot.Application
             // [v3.6.3] 벌크 로그 시스템 등록 (고성능 로깅)
             services.AddSingleton<ILogBulkBuffer, LogBulkBuffer>();
             services.AddHostedService<LogBulkBufferWorker>();
+
+            // [Phase 7] 고성능 포인트 공명 시스템 등록 (Resonance Overdrive)
+            services.AddSingleton<IPointBatchService, PointBatchService>();
+            services.AddHostedService<PointBatchWorker>();
+            services.AddHostedService<CelestialLedgerWorker>(); // [v11.1] 천상의 장부 (Aggregation Engine)
+            services.AddHostedService<WeeklyStatsReporter>();   // [v11.1] 천상의 전령 (Weekly Hub Report)
 
             return services;
         }

@@ -30,6 +30,7 @@ public class Master_CommandCategory
 public class Master_CommandFeature
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)] // 마스터 데이터이므로 직접 ID 지정
     public int Id { get; set; }
 
     [Required]

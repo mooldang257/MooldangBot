@@ -57,15 +57,31 @@ export const createSignalRStore = (token: string): Readable<OverlayState> => {
                 currentState.isConnected = true;
                 set(currentState);
                 console.log("[오시리스의 공명] 오버레이 네트워크 공명 가동 시작");
+
+                // [v10.1] 함교의 맥박: 30초마다 서버에 생존 신고 (Pulse of Abyss)
+                const pulseId = setInterval(async () => {
+                    if (connection.state === signalR.HubConnectionState.Connected) {
+                        try {
+                            await connection.invoke("ReportPulse");
+                        } catch (e) {
+                            console.warn("맥박 보고 실패:", e);
+                        }
+                    }
+                }, 30000);
+
+                return pulseId;
             } catch (err) {
                 console.error("[오시리스의 불협화음] SignalR 연결 가동 실패:", err);
+                return null;
             }
         };
 
-        init();
+        const pulseTimerPromise = init();
 
         // [오시리스의 안식]: 스토어가 더 이상 사용되지 않을 때 리소스를 정리합니다.
-        return () => {
+        return async () => {
+            const timerId = await pulseTimerPromise;
+            if (timerId) clearInterval(timerId);
             connection.stop();
         };
     });

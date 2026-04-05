@@ -9,39 +9,52 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
+using Microsoft.Extensions.Configuration;
+using RedLockNet;
 
 namespace MooldangBot.Application.Workers;
 
 /// <summary>
-/// [오시리스의 감시자]: 시스템의 모든 활성화된 파동(토큰 및 세션)을 1분 주기로 감시하는 서비스입니다.
+/// [이지스의 파수꾼]: 함대 전체의 상태를 감시하고 위급 상황 발생 시 선장님께 즉각 보고하는 조기 경보 서비스입니다.
+/// [v15.0] RedLock 마스터 선출을 통해 중복 알림을 방지하며, 유연한 임계치 기반 경보를 수행합니다.
 /// </summary>
 public class SystemWatchdogService(
     IServiceProvider serviceProvider,
+    IHealthMonitorService healthMonitor,
+    INotificationService notificationService,
+    IDistributedLockFactory lockFactory,
     ILogger<SystemWatchdogService> logger) : BackgroundService
 {
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+    
+    // [v15.1] 정기 보고 주기 관리 (6시간)
+    private static DateTime _lastStatusReportAt = DateTime.MinValue;
+    private static readonly TimeSpan _statusReportInterval = TimeSpan.FromHours(6);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("[오시리스의 감시자] 시스템 와치독이 가동되었습니다. (주기: 1분)");
+        logger.LogInformation("🛡️ [이지스의 경보] 통합 와치독 가동되었습니다. (주기: 1분)");
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // [N7 해결]: 이전 작업이 진행 중이면 이번 주기를 건너뜁니다. (WaitAsync(0) 사용)
             if (!await _semaphore.WaitAsync(0, stoppingToken))
             {
-                logger.LogWarning("[오시리스의 감시자] 이전 감시 작업이 아직 완료되지 않았습니다. 이번 주기를 건너뜁니다.");
+                logger.LogWarning("[Watchdog] 이전 감시 작업이 지연되고 있습니다. 건너뜁니다.");
             }
             else
             {
                 try
                 {
+                    // 1. [기존]: 세션/토큰 생존 신호 관리
                     await MonitorAndRenewPulseAsync(stoppingToken);
+                    
+                    // 2. [신규]: 함대 전역 건강검진 및 분산 알림 (Master Only)
+                    await CheckFleetHealthAndAlertAsync(stoppingToken);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "[오시리스의 감시자] 감시 루프 중 예상치 못한 오류 발생");
+                    logger.LogError(ex, "❌ [Watchdog] 감시 루프 오류 발생");
                 }
                 finally
                 {
@@ -55,7 +68,6 @@ public class SystemWatchdogService(
 
     private async Task MonitorAndRenewPulseAsync(CancellationToken stoppingToken)
     {
-        // 1. [오시리스의 기록관]: 방송 종료 감시 (하트비트가 5분 이상 끊기면 자동 종료) — 짧은 Scope
         using (var scope = serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -70,62 +82,72 @@ public class SystemWatchdogService(
             foreach (var session in inactiveSessions)
             {
                 var chzzkUid = session.StreamerProfile?.ChzzkUid ?? "Unknown";
-                logger.LogWarning("[기록관의 붓] {ChzzkUid} 채널의 하트비트 단절 감지. 세션을 자동 갈무리합니다.", chzzkUid);
+                logger.LogWarning("[Watchdog] {ChzzkUid} 하트비트 단절. 세션 갈무리.", chzzkUid);
                 await scribe.FinalizeSessionAsync(chzzkUid);
                 await chatClient.DisconnectAsync(chzzkUid);
             }
-
         }
+    }
 
-        // 2. [활성 파동 추출]: 활성 스트리머 UID 목록 조회 (짧은 Scope)
-        List<string> activeUids;
-        using (var scope = serviceProvider.CreateScope())
+    private async Task CheckFleetHealthAndAlertAsync(CancellationToken ct)
+    {
+        // [v15.0] 분산 락을 통해 함대 내 단 한 대만 '알림 마스터' 역할 수행
+        var resource = "lock:watchdog:alert-master";
+        var expiry = TimeSpan.FromSeconds(50); // 주기(1분)보다 조금 짧게 설정
+
+        await using var redLock = await lockFactory.CreateLockAsync(resource, expiry);
+        if (!redLock.IsAcquired) return;
+
+        var report = await healthMonitor.GetSystemPulseAsync(ct);
+        
+        // 1. 인프라 기반 장애 체크 (DB, Redis, RabbitMQ)
+        if (!report.Database || !report.Redis || !report.RabbitMQ)
         {
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            activeUids = db.StreamerProfiles
-                .Where(s => s.IsActive && s.IsMasterEnabled) // [v6.1.6] 마스터 킬 스위치 반영
-                .Select(s => s.ChzzkUid)
-                .ToList();
+            string msg = $"🔥 [인프라 긴급] 함선 엔진 계통 고장!\nDB: {report.Database}, Redis: {report.Redis}, Rabbit: {report.RabbitMQ}";
+            await notificationService.SendAlertAsync(msg, true, "infra:death", TimeSpan.FromMinutes(30));
         }
 
-        logger.LogInformation("🔍 [오시리스의 감시자] {Count}명의 파동을 병렬로 점검합니다. (MaxParallelism=10)", activeUids.Count);
+        // 2. 개별 인스턴스 전수 조사
+        foreach (var instance in report.FleetInstances.Values)
+        {
+            var machine = instance.MachineName;
 
-        // 3. [병렬 배치 처리]: 토큰 갱신 및 재연결을 병렬로 수행 (채널당 독립 Scope)
-        await Parallel.ForEachAsync(activeUids,
-            new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = stoppingToken },
-            async (chzzkUid, ct) =>
+            // [임계치: 함대 이탈] 5분 이상 무소식
+            if ((DateTime.UtcNow - instance.LastSeenAt).TotalMinutes >= 5)
             {
-                try
+                string msg = $"🚨 [함대 이탈] 인스턴스 [{machine}]의 신호가 끊겼습니다! (5분 경과)";
+                await notificationService.SendAlertAsync(msg, true, $"lost:{machine}", TimeSpan.FromHours(1));
+                continue;
+            }
+
+            // [임계치: 과식 경보] 메모리 1GB 초과
+            if (instance.MemoryUsageMb > 1024)
+            {
+                string msg = $"🍔 [과식 경보] 인스턴스 [{machine}]가 과식 중입니다! (Memory: {instance.MemoryUsageMb}MB)";
+                await notificationService.SendAlertAsync(msg, true, $"mem:{machine}", TimeSpan.FromHours(1));
+            }
+
+            // [임계치: 워커 정지]
+            foreach (var worker in instance.Workers)
+            {
+                if (!worker.Value)
                 {
-                    // [지연 시간의 분산]: Thundering Herd 방지를 위한 랜덤 지터 (100~500ms로 축소)
-                    int jitterMs = Random.Shared.Next(100, 501);
-                    await Task.Delay(jitterMs, ct);
-
-                    using var scope = serviceProvider.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-                    var chatBotService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
-
-                    var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
-                    if (profile == null) return;
-
-                    // [영겁의 열쇠 체크]: 새로운 TokenRenewalBackgroundService가 백그라운드에서 갱신하므로, 
-                    // 여기서는 현재 토큰이 유효한지(만료 5분 전 이상)만 확인합니다.
-                    bool isTokenValid = profile.TokenExpiresAt > KstClock.Now.AddMinutes(5);
-
-                    // [맥박의 재점검]: 토큰이 확보되었으나 세션이 비정상인 경우 재연결 시도
-                    if (isTokenValid)
-                    {
-                        await chatBotService.EnsureConnectionAsync(chzzkUid);
-                    }
-                    else
-                    {
-                        logger.LogWarning("[오시리스의 감시자] {ChzzkUid} 스트리머의 토큰 파동이 끊겼습니다. 수동 조치가 필요할 수 있습니다.", chzzkUid);
-                    }
+                    string msg = $"⚠️ [워커 정지] 인스턴스 [{machine}]의 '{worker.Key}' 워커가 정지되었습니다.";
+                    await notificationService.SendAlertAsync(msg, true, $"worker:{machine}:{worker.Key}", TimeSpan.FromHours(1));
                 }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "⚠️ [오시리스의 감시자] {ChzzkUid} 개별 점검 중 오류 발생 (다른 채널에 영향 없음)", chzzkUid);
-                }
-            });
+            }
+        }
+
+        // 3. 정기 상태 보고 (6시간 주기는 마스터가 전담)
+        if (DateTime.UtcNow > _lastStatusReportAt.Add(_statusReportInterval))
+        {
+            _lastStatusReportAt = DateTime.UtcNow;
+            string reportMsg = $"📊 [오시리스 정기 보고] 함대 전체의 맥박이 고르게 뛰고 있습니다.\n" +
+                               $"가동 시간: {DateTime.UtcNow:O}\n" +
+                               $"활성 인스턴스 수: {report.FleetInstances.Count}대\n" +
+                               $"전체 맥박 상태: OK";
+            
+            await notificationService.SendAlertAsync(reportMsg, false, "status:periodic", TimeSpan.FromHours(6));
+        }
     }
 }

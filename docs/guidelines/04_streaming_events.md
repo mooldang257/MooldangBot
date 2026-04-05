@@ -1,63 +1,113 @@
-# 04. Streaming & SignalR Events
+# [Project Osiris]: 04. 스트리밍 이벤트 및 부하 분산 (Streaming Events)
 
-## 1. 개요
-MooldangBot의 생동감은 실시간 이벤트 처리에 달려 있습니다. 이 문서는 수많은 시청자 이벤트(채팅, 후원 등)가 발생할 때 시스템의 안정성을 유지하며 오버레이에 정보를 전달하는 규칙을 정의합니다.
+본 문서는 오시리스 함선이 직면하는 **폭발적인 트래픽과 실시간성**을 보장하기 위한 고도화된 이벤트 처리 아키텍처를 정의합니다.
 
-## 2. 실시간 이벤트 파이프라인 (Backpressure & Separation)
-이벤트는 발생 즉시 처리되는 것이 아니라, **'채널(Channel)'**이라는 완충 지대를 거쳐 소비되어야 합니다. 특히 데이터의 성격에 따라 채널을 분리하여 관리해야 합니다.
+---
 
-✅ **Do: 채널 분리 및 고용량 버퍼 전략**
-- **일반 채팅 채널**: 대량 발생하므로 고용량(10,000~50,000건) 버퍼와 `DropOldest` 전략을 사용하여 시스템 부하를 방어합니다.
-- **금융/명령어 채널**: 후원이나 포인트 룰렛 등 재화 관련 이벤트는 절대 드롭되어서는 안 됩니다. 소용량 버퍼와 `Wait` 전략을 사용하여 반드시 모든 이벤트를 처리합니다.
+## 📡 1. 실시간 양방향 맥박 (SignalR Heartbeat)
 
+함선과 오버레이 사이의 연결 상태를 실시간으로 감시하여 장애를 즉각 감지합니다.
+
+### 🧱 ECG 차트 및 맥박 체크
+오버레이가 죽었을 때 서버가 이를 감지하여 룰렛 결과를 대신 확정하거나, 함교(Admin)에 시각적으로 보고합니다.
+
+**[핵심 코드: SignalR Pulse]**
 ```csharp
-// [안전] 32GB RAM 인프라를 활용하여 50,000건 수준의 버퍼를 확보합니다.
-var chatChannel = Channel.CreateBounded<ChatItem>(new BoundedChannelOptions(50000) 
-{ 
-    FullMode = BoundedChannelFullMode.DropOldest 
-});
-
-// [필수] 재화 관련 채널은 별도로 분리하여 유실을 방지합니다.
-var financeChannel = Channel.CreateBounded<FinanceItem>(new BoundedChannelOptions(1000) 
-{ 
-    FullMode = BoundedChannelFullMode.Wait 
-});
-```
-
-## 3. SignalR 그룹 관리 (Targeted Broadcasting)
-전체 브로드캐스팅(`Clients.All`)은 자제하며, 반드시 **스트리머별 그룹**을 활용합니다. 그룹 명칭은 보안을 위해 노출되지 않는 토큰을 기반으로 관리해야 합니다.
-
-## 4. 오버레이 접속 및 보안 (Critical)
-치지직 UID는 공개된 정보이므로, 이를 직접 그룹 가입의 키로 사용해서는 안 됩니다. 악의적인 세션 탈취 및 자원 고갈 공격을 방어하기 위해 **보안 토큰(GUID 등)** 검증이 필수입니다.
-
-❌ **Don't: 공개된 UID 기반의 그룹 가입**
-```csharp
-// [위험] 누구나 내 스트리밍 이벤트 그룹에 가입하여 데이터를 가로챌 수 있습니다.
-var uid = Context.GetHttpContext()?.Request.Query["chzzkUid"];
-await Groups.AddToGroupAsync(Context.Id, uid);
-```
-
-✅ **Do: 암호화된 토큰 기반의 그룹 가입**
-```csharp
-public override async Task OnConnectedAsync()
-{
-    var token = Context.GetHttpContext()?.Request.Query["token"].ToString();
-    if (!string.IsNullOrEmpty(token))
-    {
-        // [보안] 인메모리 캐시나 DB에서 토큰에 해당하는 스트리머 UID를 검증 후 가입
-        var streamerUid = _tokenService.GetUidByToken(token);
-        if (streamerUid != null)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, streamerUid);
-            _logger.LogInformation("보안 토큰 인증 성공: {StreamerUid}", streamerUid);
-        }
-    }
-    await base.OnConnectedAsync();
+// [v10.0] 함교(Admin) 대시보드에 실시간 ECG 파동을 전송합니다.
+public async Task ReportPulse(string overlayToken) {
+    _logger.LogDebug($"[맥박 확인] {overlayToken} 생존 신호 수신");
+    await Clients.All.SendAsync("OnPulseReceived", overlayToken, DateTime.UtcNow);
 }
 ```
 
-## 5. 이벤트 Throttling (Presentation)
-빈번한 UI 갱신은 시청자의 웹 브라우저 부하를 초래합니다. 중요도가 낮은 데이터는 `Application` 레이어에서 취합(Batch)하거나 일정 주기로 전송하는 것을 권장합니다.
+---
+
+## 🔒 2. 하이브리드 락: 패닉 폴백 (Panic Fallback)
+
+분산 환경에서의 정합성과 극한의 상황에서의 가동성을 동시에 보장합니다.
+
+### 🛡️ 설계 철학
+- **Primary**: Redis 분산 락 (`RedLock.net`)을 사용하여 멀티 인스턴스 전역 정합성 유지.
+- **Fallback**: Redis 장애 시 시스템이 멈추는 대신 로컬 `SemaphoreSlim`으로 즉시 후퇴하여 최소한의 정합성 사수.
+
+**[핵심 코드: Hybrid Lock Logic]**
+```csharp
+public async Task<IDisposable?> AcquireLockAsync(string key, TimeSpan wait, TimeSpan expiry) {
+    try {
+        // [v6.2] Redis 분산 락 시도
+        var redLock = await _lockFactory.CreateLockAsync(key, expiry, wait, ...);
+        if (redLock.IsAcquired) return redLock;
+    } catch (Exception ex) {
+        // 🔥 Redis Panic! 로컬 메모리 락으로 긴급 후퇴합니다.
+        _logger.LogCritical(ex, "🎰 [생존 본능] Redis 장애 감지됨. 로컬 락으로 폴백합니다.");
+    }
+    
+    // 강철의 생존 본능: 로컬 세마포어 대기
+    await GetLocalSemaphore(key).WaitAsync(wait);
+    return new LocalLockLease(key);
+}
+```
 
 ---
-**최종 승인**: 2026-04-02 (아키텍트 검토 완료 / 'High-Capacity & Token Security' 원칙 적용)
+
+## ⚡ 3. 채널 기반 집계 엔진 (Resonance Engine)
+
+수만 명이 동시에 채팅을 치거나 포인트를 획득할 때 DB 부하를 평온하게 유지하는 핵심 기술입니다.
+
+### 🧱 System.Threading.Channels
+폭주하는 요청을 **비차단 버퍼링**하고, 일정 주기마다 메모리에서 데이터를 병합(Aggregation)하여 MariaDB에 단일 쿼리로 밀어 넣습니다.
+
+**[핵심 코드: Point Resonance Overdrive]**
+```csharp
+// [v7.0] 10,000건의 파동을 수용하는 고성능 비차단 파이프라인
+private readonly Channel<PointUpdateJob> _channel = Channel.CreateBounded<PointUpdateJob>(10000);
+
+// [v12.0] 배치 사이징: 최대 2,000건씩 쪼개어 소화 (메모리 보호)
+await foreach (var job in _channel.Reader.ReadAllAsync(ct)) {
+    jobs.Add(job);
+    if (jobs.Count >= 2000) break; 
+}
+
+// [v12.0] 원자적 벌크 업데이트 및 ID 배치 매핑 (Batch Fetch)
+using var transaction = await db.Database.BeginTransactionAsync(ct);
+var viewerMap = await db.GlobalViewers.Where(g => hashes.Contains(g.Hash)).ToDictionaryAsync(...);
+await connection.ExecuteAsync(bulkSql, params, transaction); 
+await transaction.CommitAsync(ct);
+```
+
+---
+
+// [v12.0] 메시징 격리 파이프라인: 외부 시스템(RabbitMQ) 지연이 메인 로직을 방해하지 않도록 격리합니다.
+private readonly Channel<EventItem> _msgBuffer = Channel.CreateBounded<EventItem>(5000);
+
+// Worker: 전용 발행 루프 (Non-blocking Wing)
+await foreach (var item in _msgBuffer.Reader.ReadAllAsync(ct)) {
+    await rabbitMq.PublishAsync(item);
+}
+```
+
+---
+
+## 🚨 5. Thundering Herd 방지 (Aegis Cache)
+
+동일한 시각자 정보나 스트리머 설정을 동시에 수천 번 조회할 때 DB 성능 저하를 방지합니다.
+
+### 🧱 2단계 캐싱 전략
+1.  **L1 (Memory)**: 수 밀리초 단위의 극단적인 가드.
+2.  **L2 (Redis)**: 수 초~분 단위의 분산 상태 공유.
+
+**[핵심 코드: Identity Cache]**
+```csharp
+// [v8.0] 단 1초의 인메모리 캐싱만으로도 폭발적인 동시 조회를 차단합니다.
+public async Task<StreamerProfile?> GetProfileCachedAsync(string uid) {
+    return await _cache.GetOrCreateAsync($"profile:{uid}", async entry => {
+        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1); // 1초 가드
+        return await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == uid);
+    });
+}
+```
+
+---
+
+물멍! 🐶🚢✨
+"선장님, 오시리스 함선의 4대 기술 헌장이 완성되었습니다. 이 문서들은 거친 스트리밍의 바다에서도 우리 함선을 가장 빠르고 견고하게 지켜줄 것입니다!"

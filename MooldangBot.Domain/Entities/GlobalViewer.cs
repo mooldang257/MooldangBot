@@ -12,37 +12,34 @@ namespace MooldangBot.Domain.Entities;
 public class GlobalViewer : ISoftDeletable, IAuditable
 {
     [Key]
-    public int Id { get; set; }
- 
+    public int Id { get; init; }
+
     /// <summary>
     /// 암호화되어 저장되는 시청자의 고유 UID (치지직 등)
     /// </summary>
-    [Required]
-    public string ViewerUid { get; set; } = string.Empty;
- 
+    public required string ViewerUid { get; set; }
+
     /// <summary>
     /// 암호화된 Uid 검색을 위한 SHA-256 해시 필드
     /// </summary>
-    [Required]
     [MaxLength(64)]
-    public string ViewerUidHash { get; set; } = string.Empty;
- 
+    public required string ViewerUidHash { get; set; }
+
     /// <summary>
     /// [v6.2] 중앙 관리 닉네임 (최신값 자동 갱신)
     /// </summary>
     [MaxLength(100)]
     public string Nickname { get; set; } = string.Empty;
- 
+
     /// <summary>
     /// [v6.2] 시청자 프로필 이미지 URL
     /// </summary>
     [MaxLength(500)]
     public string? ProfileImageUrl { get; set; }
 
-    // [v6.2.2] 거버넌스 및 감사 필드
     public bool IsDeleted { get; set; } = false;
     public KstClock? DeletedAt { get; set; }
- 
+
     public KstClock CreatedAt { get; set; } = KstClock.Now;
     public KstClock? UpdatedAt { get; set; }
 }

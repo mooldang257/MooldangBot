@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
@@ -11,18 +12,24 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MooldangBot.Presentation.Features.Auth
 {
 
     [ApiController]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}")] // 새로운 버전 명시 경로
+    [Route("api")]                       // 레거시 하위 호환 경로
     public class AuthController(
         IAppDbContext _db, 
         IConfiguration _configuration, 
         IChzzkApiClient _chzzkApi, 
         IAuthService _authService,
+        IIdentityCacheService _identityCache,
         Microsoft.Extensions.Caching.Distributed.IDistributedCache _cache,
         IHttpClientFactory _httpClientFactory,
         ILogger<AuthController> _logger) : ControllerBase
@@ -43,12 +50,15 @@ namespace MooldangBot.Presentation.Features.Auth
         }
 
         [HttpGet("/api/auth/chzzk-login")]
-        public async Task<IResult> ChzzkLogin()
+        [HttpGet("/api/v1/auth/chzzk-login")]
+        [EnableRateLimiting("strict-auth")]
+        public async Task<IActionResult> ChzzkLogin([FromQuery] string? type)
         {
             try 
             {
+                var loginType = type ?? "streamer";
                 // [오시리스의 전령]: 메타데이터 생성 (PKCE Verifier 포함)
-                var metadata = await _authService.GenerateAuthMetadataAsync();
+                var metadata = await _authService.GenerateAuthMetadataAsync(null, loginType);
                 
                 // [물멍의 제언]: Double-Submit Cookie 패턴 적용
                 Response.Cookies.Append(StateCookieName, metadata.State, new CookieOptions 
@@ -59,27 +69,31 @@ namespace MooldangBot.Presentation.Features.Auth
                     Expires = DateTimeOffset.UtcNow.AddMinutes(5) 
                 });
 
-                // [분산 캐시]: 세션 데이터 보관 (Verifier 등)
-                var sessionData = new AuthSessionData { State = metadata.State, CodeVerifier = metadata.CodeVerifier };
+                // [분산 캐시]: 세션 데이터 보관 (Verifier 및 로그인 타입 포함)
+                var sessionData = new AuthSessionData { 
+                    State = metadata.State, 
+                    CodeVerifier = metadata.CodeVerifier,
+                    LoginType = loginType
+                };
                 var json = JsonSerializer.Serialize(sessionData);
                 await _cache.SetStringAsync($"auth:state:{metadata.State}", json, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions 
                 { 
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) 
                 });
 
-                return Results.Redirect(metadata.AuthUrl);
+                return Redirect(metadata.AuthUrl);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[오시리스의 거절] 로그인 URL 생성 실패");
-                return Results.Text($"[인증 오류] {ex.Message}");
+                return Content($"[인증 오류] {ex.Message}");
             }
         }
 
-        [HttpGet("/api/proxy/image")]
-        public async Task<IResult> ProxyImage([FromQuery] string url)
+        [HttpGet("proxy/image")]
+        public async Task<IActionResult> ProxyImage([FromQuery] string url)
         {
-            if (string.IsNullOrEmpty(url)) return Results.NotFound();
+            if (string.IsNullOrEmpty(url)) return NotFound();
 
             // 💡 [핵심]: 네이버 이미지인 경우 고화질 타입으로 강제 변환
             if (url.Contains("pstatic.net"))
@@ -101,48 +115,44 @@ namespace MooldangBot.Presentation.Features.Auth
             if (!response.IsSuccessStatusCode) 
             {
                 Console.WriteLine($"[ImageProxy] Failed to fetch: {url}, Status: {response.StatusCode}");
-                return Results.NotFound();
+                return NotFound();
             }
             
             var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
             var stream = await response.Content.ReadAsStreamAsync();
             
-            return Results.Stream(stream, contentType);
+            return File(stream, contentType);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[ImageProxy] Error fetching {url}: {ex.Message}");
-            return Results.NotFound();
+            return NotFound();
         }
     }
 
-        [HttpGet("/api/auth/me")]
-        public async Task<IResult> GetMyProfile([FromQuery] string? uid, [FromServices] IChzzkApiClient chzzkApi)
+        [HttpGet("auth/me")]
+        public async Task<IActionResult> GetMyProfile([FromQuery] string? uid, [FromServices] IChzzkApiClient chzzkApi)
         {
             if (User.Identity?.IsAuthenticated != true)
             {
-                return Results.Json(new { isAuthenticated = false });
+                return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("인증되지 않은 사용자입니다."));
             }
 
-            // [핵심]: uid 파라미터가 있으면 해당 UID를, 없으면 본인 UID를 사용
             var chzzkUid = uid ?? User.FindFirstValue("StreamerId");
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
+                return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("치지직 계정 연동 정보가 없습니다."));
             }
 
-            // [파로스의 확인]: 실시간 정보 갱신 (API 실패가 로그인을 방해하지 않도록 try-catch 적용)
             try 
             {
                 var channelRes = await chzzkApi.GetChannelsAsync(new[] { chzzkUid });
-                
                 var profile = await _db.StreamerProfiles
                                  .IgnoreQueryFilters() 
                                  .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
                 if (profile != null)
                 {
-                    // 치지직 API 응답이 성공적이었다면 DB 업데이트
                     if (channelRes?.Content?.Data?.FirstOrDefault() is { } channelData)
                     {
                         if (!string.IsNullOrEmpty(channelData.ChannelName)) profile.ChannelName = channelData.ChannelName;
@@ -150,49 +160,67 @@ namespace MooldangBot.Presentation.Features.Auth
                         await _db.SaveChangesAsync();
                     }
 
-                    return Results.Json(new {
+                    return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                         isAuthenticated = true,
                         isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
                         channelName = profile.ChannelName ?? "스트리머",
                         profileImageUrl = profile.ProfileImageUrl ?? "",
-                        chzzkUid = profile.ChzzkUid
-                    });
+                        chzzkUid = profile.ChzzkUid,
+                        slug = profile.Slug
+                    }));
+                }
+                else
+                {
+                    var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
+                    var viewer = await _db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == viewerHash);
+                    if (viewer != null)
+                    {
+                        return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
+                            isAuthenticated = true,
+                            isChzzkLinked = false,
+                            channelName = viewer.Nickname,
+                            profileImageUrl = viewer.ProfileImageUrl ?? "",
+                            chzzkUid = viewer.ViewerUid,
+                            slug = (string?)null
+                        }));
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[AuthMe] Profile refresh failed for {chzzkUid}: {ex.Message}");
-                
-                // API 실패 시에도 DB에 있는 기존 정보로 로그인 진행
-                var profileFallback = await _db.StreamerProfiles
-                                .IgnoreQueryFilters() 
-                                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-                
-                if (profileFallback != null)
-                {
-                    return Results.Json(new {
-                        isAuthenticated = true,
-                        isChzzkLinked = !string.IsNullOrEmpty(profileFallback.ChzzkAccessToken),
-                        channelName = profileFallback.ChannelName ?? "스트리머",
-                        profileImageUrl = profileFallback.ProfileImageUrl ?? "",
-                        chzzkUid = profileFallback.ChzzkUid
-                    });
-                }
+                _logger.LogError(ex, $"[AuthMe] Profile refresh failed for {chzzkUid}");
+                return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure($"정보 갱신 실패: {ex.Message}"));
             }
 
-            return Results.Json(new { isAuthenticated = true, isChzzkLinked = false });
+            return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("프로필 정보를 찾을 수 없습니다."));
         }
 
-        [HttpGet("/api/auth/logout")]
-        public async Task<IResult> Logout()
+        [HttpGet("auth/resolve-slug/{slug}")]
+        public async Task<IActionResult> ResolveStreamerSlug(string slug)
+        {
+            if (string.IsNullOrEmpty(slug)) return BadRequest("[오시리스의 거절] 유효하지 않은 주소입니다.");
+
+            // [이지스의 눈]: 레디스 역방향 색인을 통해 고유 ID를 조회합니다.
+            var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
+
+            if (string.IsNullOrEmpty(chzzkUid))
+            {
+                return Ok(Result<object>.Failure("[오시리스의 거절] 존재하지 않는 함교 주소입니다."));
+            }
+            
+            return Ok(Result<object>.Success(new { chzzkUid }));
+        }
+
+        [HttpGet("auth/logout")]
+        public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Results.Redirect("/");
+            return Redirect(BaseDomain);
         }
 
-        [HttpGet("/api/admin/bot/streamers")]
+        [HttpGet("admin/bot/streamers")]
         [Authorize] // 🔐 인증된 사용자라면 일단 목록 조회 허용 (추후 master로 강화 가능)
-        public async Task<IResult> GetStreamers([FromServices] IChzzkApiClient chzzkApi)
+        public async Task<IActionResult> GetStreamers([FromServices] IChzzkApiClient chzzkApi)
         {
             // 1. DB에서 모든 스트리머 프로필 조회
             var streamersInDb = await _db.StreamerProfiles
@@ -240,15 +268,16 @@ namespace MooldangBot.Presentation.Features.Auth
                 })
                 .ToList();
 
-            return Results.Json(result);
+            return Ok(Result<object>.Success(result));
         }
 
-        [HttpGet("/api/admin/bot/login")]
-        public async Task<IResult> BotLogin([FromQuery] string? uid)
+        [HttpGet("admin/bot/login")]
+        [EnableRateLimiting("strict-auth")]
+        public async Task<IActionResult> BotLogin([FromQuery] string? uid)
         {
             try 
             {
-                var metadata = await _authService.GenerateAuthMetadataAsync(uid);
+                var metadata = await _authService.GenerateAuthMetadataAsync(uid, "bot");
                 
                 // Double-Submit Cookie
                 Response.Cookies.Append(StateCookieName, metadata.State, new CookieOptions 
@@ -259,51 +288,53 @@ namespace MooldangBot.Presentation.Features.Auth
                     Expires = DateTimeOffset.UtcNow.AddMinutes(5) 
                 });
 
-                var sessionData = new AuthSessionData { State = metadata.State, CodeVerifier = metadata.CodeVerifier, TargetUid = uid };
+                var sessionData = new AuthSessionData { State = metadata.State, CodeVerifier = metadata.CodeVerifier, TargetUid = uid, LoginType = "bot" };
                 await _cache.SetStringAsync($"auth:state:{metadata.State}", JsonSerializer.Serialize(sessionData), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions 
                 { 
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) 
                 });
 
-                return Results.Redirect(metadata.AuthUrl);
+                return Redirect(metadata.AuthUrl);
             }
             catch (Exception ex)
             {
-                return Results.Text($"[봇 인증 오류] {ex.Message}");
+                return Content($"[봇 인증 오류] {ex.Message}");
             }
         }
 
-        [HttpGet("/Auth/callback")]
+        [HttpGet("/api/auth/callback")]
+        [HttpGet("/api/v1/auth/callback")]
+        [HttpGet("/Auth/callback")] // 레거시 호환용
         [AllowAnonymous]
-        public async Task<IResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
+        public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state)) 
-                return Results.Text("[오시리스의 거절] 필수 인증 파라미터가 누락되었습니다.");
+                return Content("[오시리스의 거절] 필수 인증 파라미터가 누락되었습니다.");
 
             // 🛡️ [물멍의 수호]: Double-Submit Cookie 검증
             var stateFromCookie = Request.Cookies[StateCookieName];
             if (string.IsNullOrEmpty(stateFromCookie) || stateFromCookie != state)
             {
                 _logger.LogWarning($"[CSRF 감지] State 불일치 (URL: {state}, Cookie: {stateFromCookie})");
-                return Results.Text("[보안 경고] 인증 세션이 유효하지 않거나 변조되었습니다. 다시 시도해 주세요.");
+                return Content("[보안 경고] 인증 세션이 유효하지 않거나 변조되었습니다. 다시 시도해 주세요.");
             }
 
             // [분산 캐시]: 세션 데이터 조회
             var cachedJson = await _cache.GetStringAsync($"auth:state:{state}");
             if (string.IsNullOrEmpty(cachedJson))
             {
-                return Results.Text("[인증 만료] 인증 시간이 초과되었습니다. 다시 로그인해 주세요.");
+                return Content("[인증 만료] 인증 시간이 초과되었습니다. 다시 로그인해 주세요.");
             }
 
             var cachedData = JsonSerializer.Deserialize<AuthSessionData>(cachedJson);
-            if (cachedData == null) return Results.Text("[시스템 오류] 인증 세션 데이터가 손상되었습니다.");
+            if (cachedData == null) return Content("[시스템 오류] 인증 세션 데이터가 손상되었습니다.");
 
             // 🚀 [AuthService]: 핵심 비즈니스 로직(토큰 교환, DB 동기화 등) 처리
             var result = await _authService.ProcessCallbackAsync(code, cachedData);
 
             if (!result.IsSuccess)
             {
-                return Results.Text($"[인증 실패] {result.ErrorMessage}");
+                return Content($"[인증 실패] {result.ErrorMessage}");
             }
 
             // 봇 설정인 경우 특수 결과 반환
@@ -320,42 +351,42 @@ namespace MooldangBot.Presentation.Features.Auth
                         </div>
                     </body>
                     </html>";
-                return Results.Content(htmlResponse, "text/html; charset=utf-8");
+                return Content(htmlResponse, "text/html; charset=utf-8");
             }
 
             // 일반 로그인: 역할(RBAC) 조회 및 클레임 생성
             string chzzkUid = result.ChzzkUid!;
             string channelName = result.ChannelName!;
             
-            var userRole = "viewer";
+            var userRole = cachedData.LoginType == "viewer" ? "viewer" : "streamer";
             var allowedChannels = new List<string> { chzzkUid };
 
             string masterUid = _configuration["MASTER_UID"] ?? "";
             string botUid = _configuration["BOT_UID"] ?? "";
 
-            if ((!string.IsNullOrEmpty(masterUid) && chzzkUid == masterUid) || 
-                (!string.IsNullOrEmpty(botUid) && chzzkUid == botUid))
+            // [v6.2.3] 역할 판별 로직 고도화: 의도된 로그인 타입이 streamer인 경우에만 상위 권한 체크
+            if (cachedData.LoginType != "viewer")
             {
-                userRole = "master";
-            }
-            else
-            {
-                var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
-                var managedChannels = await _db.StreamerManagers
-                    .Include(m => m.StreamerProfile)
-                    .Include(m => m.GlobalViewer)
-                    .Where(m => m.GlobalViewer!.ViewerUidHash == viewerHash)
-                    .Select(m => m.StreamerProfile!.ChzzkUid)
-                    .ToListAsync();
-
-                if (managedChannels.Any())
+                if ((!string.IsNullOrEmpty(masterUid) && chzzkUid == masterUid) || 
+                    (!string.IsNullOrEmpty(botUid) && chzzkUid == botUid))
                 {
-                    userRole = "manager";
-                    allowedChannels.AddRange(managedChannels);
+                    userRole = "master";
                 }
                 else
                 {
-                    userRole = "streamer";
+                    var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
+                    var managedChannels = await _db.StreamerManagers
+                        .Include(m => m.StreamerProfile)
+                        .Include(m => m.GlobalViewer)
+                        .Where(m => m.GlobalViewer!.ViewerUidHash == viewerHash)
+                        .Select(m => m.StreamerProfile!.ChzzkUid)
+                        .ToListAsync();
+
+                    if (managedChannels.Any())
+                    {
+                        userRole = "manager";
+                        allowedChannels.AddRange(managedChannels);
+                    }
                 }
             }
 
@@ -388,7 +419,11 @@ namespace MooldangBot.Presentation.Features.Auth
             Response.Cookies.Delete(StateCookieName);
             await _cache.RemoveAsync($"auth:state:{state}");
 
-            return Results.Redirect("/");
+            // [물멍]: 역할에 따른 전용 함교 리다이렉트 (Slug 우선, 없으면 UID 폴백)
+            string targetPath = !string.IsNullOrEmpty(result.Slug) ? result.Slug : chzzkUid;
+            string redirectPath = $"/{targetPath}/dashboard";
+            
+            return Redirect($"{BaseDomain.TrimEnd('/')}{redirectPath}");
         }
     }
 }

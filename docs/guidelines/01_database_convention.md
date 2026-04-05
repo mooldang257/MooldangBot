@@ -6,8 +6,9 @@
 ## 2. 네이밍 규칙 (Naming Rules)
 * **[Rule 1]** 모든 **테이블 및 컬럼명**은 반드시 **소문자 스네이크 케이스(`snake_case`)**를 사용한다.
   * 리눅스 MariaDB의 대소문자 구분(Case-sensitivity) 이슈를 원천 차단하기 위함입니다.
-  * ❌ `StreamerProfiles`, `viewerprofiles`
-  * ✅ `streamer_profiles`, `viewer_profiles`
+  * **[1.1 Raw SQL 주의]** Dapper나 ADO.NET을 활용한 **직접 쿼리 작성 시에도 반드시 소문자 컬럼명을 사용**해야 합니다. PascalCase 사용 시 도커 환경에서 `Unknown column` 오류가 발생합니다.
+  * ❌ `SELECT StreamerProfileId FROM ...`
+  * ✅ `SELECT streamer_profile_id FROM ...`
 * **[Rule 2]** 데이터베이스 객체 이름에 공백이나 특수문자 사용을 금지하며, 의미가 명확한 영문 단어를 조합한다.
 
 ## 3. 문자셋 및 정렬 규칙 (Character Set & Collation)

@@ -11,6 +11,7 @@ using System.Text;
 using MooldangBot.Application.Features.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Admin
 {
@@ -52,14 +53,14 @@ namespace MooldangBot.Presentation.Features.Admin
         [HttpGet("sync-status")]
         public IActionResult GetSyncStatus()
         {
-            return Ok(new
+            return Ok(Result<object>.Success(new
             {
                 isRunning = IChzzkCategorySyncService.IsRunning,
                 lastRunTime = IChzzkCategorySyncService.LastRunTime?.ToString("yyyy-MM-dd HH:mm:ss"),
                 lastResult = IChzzkCategorySyncService.LastResult,
                 addedCount = IChzzkCategorySyncService.LastAddedCount,
                 updatedCount = IChzzkCategorySyncService.LastUpdatedCount
-            });
+            }));
         }
 
         // 3. 카테고리 동기화 수동 시작
@@ -68,7 +69,7 @@ namespace MooldangBot.Presentation.Features.Admin
         {
             if (IChzzkCategorySyncService.IsRunning)
             {
-                return BadRequest(new { message = "이미 동기화가 진행 중입니다." });
+                return BadRequest(Result<object>.Failure("이미 동기화가 진행 중입니다."));
             }
 
             var specificKeyword = req?.Keyword;
@@ -78,11 +79,11 @@ namespace MooldangBot.Presentation.Features.Admin
                 // 단일 키워드 검색: 대기 후 즉시 결과 반환
                 var results = await _syncService.SearchAndSaveCategoryAsync(specificKeyword);
 
-                return Ok(new 
+                return Ok(Result<object>.Success(new 
                 { 
                     message = $"'{specificKeyword}' 키워드로 {results.Count}개의 카테고리를 동기화했습니다.",
                     results = results
-                });
+                }));
             }
 
             // 백그라운드에서 실행되도록 Fire and Forget 방식으로 호출 (전체 동기화)
@@ -91,7 +92,7 @@ namespace MooldangBot.Presentation.Features.Admin
                 await _syncService.SyncCategoriesAsync(default);
             });
 
-            return Ok(new { message = "전체 카테고리 동기화를 시작했습니다." });
+            return Ok(Result<object>.Success(new { message = "전체 카테고리 동기화를 시작했습니다." }));
         }
 
         // ==========================================
@@ -115,7 +116,7 @@ namespace MooldangBot.Presentation.Features.Admin
             // 검색어가 없을 때는 최신 업데이트 순서대로 최대 100개만
             var results = await query.OrderByDescending(c => c.UpdatedAt).Take(100).ToListAsync();
 
-            return Ok(results);
+            return Ok(Result<List<ChzzkCategory>>.Success(results));
         }
 
         [HttpPost("categories/{categoryId}/aliases")]
@@ -129,14 +130,14 @@ namespace MooldangBot.Presentation.Features.Admin
 
             var category = await db.ChzzkCategories.FindAsync(categoryId);
             if (category == null)
-                return NotFound("존재하지 않는 카테고리입니다.");
+                return NotFound(Result<object>.Failure("존재하지 않는 카테고리입니다."));
 
             var aliasName = request.Alias.Trim();
 
             // 중복 검사
             if (await db.ChzzkCategoryAliases.AnyAsync(a => a.CategoryId == categoryId && a.Alias == aliasName))
             {
-                return BadRequest("해당 약어가 이 카테고리에 이미 존재합니다.");
+                return BadRequest(Result<object>.Failure("해당 약어가 이 카테고리에 이미 존재합니다."));
             }
 
             var newAlias = new ChzzkCategoryAlias
@@ -148,7 +149,7 @@ namespace MooldangBot.Presentation.Features.Admin
             db.ChzzkCategoryAliases.Add(newAlias);
             await db.SaveChangesAsync();
 
-            return Ok(newAlias);
+            return Ok(Result<ChzzkCategoryAlias>.Success(newAlias));
         }
 
         [HttpDelete("categories/{categoryId}/aliases/{aliasId}")]
@@ -160,13 +161,13 @@ namespace MooldangBot.Presentation.Features.Admin
             var alias = await db.ChzzkCategoryAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.CategoryId == categoryId);
             if (alias == null)
             {
-                return NotFound("해당 카테고리의 약어 데이터를 찾을 수 없습니다.");
+                return NotFound(Result<object>.Failure("해당 카테고리의 약어 데이터를 찾을 수 없습니다."));
             }
 
             db.ChzzkCategoryAliases.Remove(alias);
             await db.SaveChangesAsync();
 
-            return Ok(new { message = "약어가 정상적으로 삭제되었습니다." });
+            return Ok(Result<object>.Success(new { message = "약어가 정상적으로 삭제되었습니다." }));
         }
     }
 }

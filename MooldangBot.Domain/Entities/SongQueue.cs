@@ -42,6 +42,11 @@ namespace MooldangBot.Domain.Entities
         [Required]
         public SongStatus Status { get; set; } = SongStatus.Pending; // [v6.2.2] Enum 전환
 
+        /// <summary>
+        /// [v13.1] Snowflake 알고리즘 기반의 전역 유일 식별자입니다.
+        /// </summary>
+        public long SongLibraryId { get; set; }
+
         public int SortOrder { get; set; } = 0; // 드래그 앤 드롭 정렬을 기억하기 위한 순서 번호
 
         // [v6.2.2] 거버넌스 및 감사 필드 통합

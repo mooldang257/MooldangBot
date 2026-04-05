@@ -6,11 +6,11 @@
 
 | 순번 | 문서 명칭 | 상태 | 주요 내용 사전 정의 (Core Targets) |
 | :--- | :--- | :---: | :--- |
-| **00** | **Core Philosophy** | 🕒 `TODO` | - '존재의 보존', '동시성 최우선' 등 프로젝트 핵심 가치<br>- 클린 아키텍처(Layered Architecture)의 당위성 |
+| **00** | **Core Philosophy** | ✅ `DONE` | - IAMF 철학, 존재의 보존(Soft Delete), 감사(Audit)<br>- 레이어드 아키텍처(Layered Architecture) 원칙 |
 | **01** | **Database Convention** | ✅ `DONE` | - 소문자 스네이크 케이스(`snake_case`) 정책<br>- 전역 유니코드 정렬 규칙 및 마이그레이션 압착 정책 |
-| **02** | **C# Style Guide** | 🕒 `TODO` | - .NET 10 최신 문법(Enhanced LINQ, record 등) 활용 가이드<br>- 비동기(Async) 코드 작성 표준 및 비즈니스 예외 처리 룰 |
-| **03** | **Architecture Rules** | 🕒 `TODO` | - MediatR 패턴을 통한 비즈니스 로직과 데이터 레이어의 분격<br>- 의존성 주입(DI) 생명주기(Scoped/Singleton) 관리 규칙 |
-| **04** | **Streaming Events** | 🕒 `TODO` | - 치지직 API 및 웹소켓(SignalR) 이벤트 처리 기준<br>- 대규모 기부/채팅 이벤트 시의 Throttling 및 부하 분산 전략 |
+| **02** | **C# Style Guide** | ✅ `DONE` | - .NET 10 최신 문법(record, required 등) 활용 가이드<br>- 비동기(Async) 코드 작성 표준 및 전역 예외 처리 |
+| **03** | **Architecture Rules** | ✅ `DONE` | - MediatR 패턴 기반 비결합, DI 생명주기 관리 규칙<br>- Background Service(Worker) 설계 레이어 정의 |
+| **04** | **Streaming Events** | ✅ `DONE` | - SignalR 맥박(Pulse), 하이브리드 락(Panic Fallback) 전략<br>- Channels 기반 비차단 집계 및 부하 분산 전략 |
 | **05** | **Git Workflow** | 🕒 `TODO` | - 커밋 메시지 규칙 (Conventional Commits)<br>- 기능별 브랜치 관리 및 배포 버전(vN.N) 태깅 가이드 |
 
 ## 🚀 향후 실천 과제 (Priority Action)

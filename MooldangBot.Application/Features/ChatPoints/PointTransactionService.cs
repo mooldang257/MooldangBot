@@ -3,6 +3,7 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Dapper;
 using MooldangBot.Application.Common.Security;
 
@@ -17,6 +18,102 @@ public class PointTransactionService : IPointTransactionService
     {
         _db = db;
         _logger = logger;
+    }
+
+    public async Task BulkUpdatePointsAsync(IEnumerable<PointJob> items, CancellationToken ct = default)
+    {
+        var jobList = items.ToList();
+        if (jobList.Count == 0) return;
+
+        // [오시리스의 지혜]: 동일 시청자 포인트 합산 및 정렬 (데드락 방지)
+        var sortedJobs = jobList
+            .GroupBy(j => (j.StreamerUid, j.ViewerUid))
+            .Select(g => new { 
+                g.Key.StreamerUid, 
+                g.Key.ViewerUid, 
+                Hash = g.Key.ViewerUid.GetHashCode(), 
+                Nickname = g.First().Nickname,
+                Total = g.Sum(x => x.Amount),
+                ViewerHash = Sha256Hasher.ComputeHash(g.Key.ViewerUid)
+            })
+            .OrderBy(x => x.StreamerUid)
+            .ThenBy(x => x.ViewerUid)
+            .ToList();
+
+        using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        try
+        {
+            var connection = _db.Database.GetDbConnection();
+
+            // 1. [오시리스의 기억]: 스트리머 ID 사전 매핑
+            var streamerUids = sortedJobs.Select(j => j.StreamerUid).Distinct().ToList();
+            var streamerMap = await _db.StreamerProfiles
+                .AsNoTracking()
+                .Where(s => streamerUids.Contains(s.ChzzkUid))
+                .ToDictionaryAsync(s => s.ChzzkUid, s => s.Id, ct);
+
+            // 2. [오시리스의 수거]: 글로벌 시청자 ID 배치 페치
+            var viewerHashes = sortedJobs.Select(j => j.ViewerHash).Distinct().ToList();
+            var viewerMap = await _db.GlobalViewers
+                .AsNoTracking()
+                .Where(g => viewerHashes.Contains(g.ViewerUidHash))
+                .ToDictionaryAsync(g => g.ViewerUidHash, g => g.Id, ct);
+
+            // 3. [오시리스의 조각]: 벌크 파라미터 생성
+            var valuesList = new List<string>();
+            var parameters = new DynamicParameters();
+            var validJobs = new List<dynamic>();
+
+            for (int i = 0; i < sortedJobs.Count; i++)
+            {
+                var job = sortedJobs[i];
+                if (streamerMap.TryGetValue(job.StreamerUid, out int streamerId) &&
+                    viewerMap.TryGetValue(job.ViewerHash, out int viewerId))
+                {
+                    valuesList.Add($"(@S{i}, @V{i}, @A{i})");
+                    parameters.Add($"S{i}", streamerId);
+                    parameters.Add($"V{i}", viewerId);
+                    parameters.Add($"A{i}", job.Total);
+                    
+                    validJobs.Add(new { StreamerId = streamerId, ViewerId = viewerId, Amount = job.Total });
+                }
+            }
+
+            if (valuesList.Count > 0)
+            {
+                // [오시리스의 일격]: 순수 ID 기반 최적화된 벌크 인서트
+                var sql = $@"
+                    INSERT INTO view_streamer_viewers (StreamerProfileId, GlobalViewerId, Points)
+                    VALUES {string.Join(",", valuesList)}
+                    ON DUPLICATE KEY UPDATE Points = GREATEST(0, Points + VALUES(Points));";
+
+                await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction: transaction.GetDbTransaction(), cancellationToken: ct));
+
+                // 4. [천상의 장부]: 트랜잭션 내 로그 기록 (Atomicity 보장)
+                var logSql = @"
+                    INSERT INTO log_point_transactions (StreamerProfileId, GlobalViewerId, Amount, Type, Reason, CreatedAt)
+                    VALUES (@StreamerId, @ViewerId, @Amount, @Type, @Reason, NOW());";
+                
+                var logParams = validJobs.Select(j => new {
+                    StreamerId = j.StreamerId,
+                    ViewerId = j.ViewerId,
+                    Amount = (int)j.Amount,
+                    Type = (int)j.Amount > 0 ? PointTransactionType.Earn : PointTransactionType.Spend,
+                    Reason = "Chat Resonance (Atomic Batch)"
+                });
+
+                await connection.ExecuteAsync(logSql, logParams, transaction: transaction.GetDbTransaction());
+            }
+
+            await transaction.CommitAsync(ct);
+            _logger.LogInformation("🌊 [공명 업데이트 완결] {Count}명의 시청자 포인트가 트랜잭션 내에서 안전하게 적재되었습니다.", validJobs.Count);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(ct);
+            _logger.LogError(ex, "❌ [Point Bulk Update 실패] 트랜잭션 롤백됨: {Message}", ex.Message);
+            throw; // 워커에서 로깅하도록 던짐
+        }
     }
 
     public async Task<int> GetBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default)
@@ -55,9 +152,9 @@ public class PointTransactionService : IPointTransactionService
             // 🛡️ [오시리스의 철퇴]: 잔액이 부족하면 차감하지 않는 원자적 쿼리
             var sql = @"
                 UPDATE view_streamer_viewers 
-                SET DonationPoints = DonationPoints - @Amount 
-                WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId 
-                  AND DonationPoints >= @Amount;";
+                SET donation_points = donation_points - @Amount 
+                WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId 
+                  AND donation_points >= @Amount;";
 
             int affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
@@ -111,11 +208,12 @@ public class PointTransactionService : IPointTransactionService
             await _db.SaveChangesAsync(ct);
 
             var connection = _db.Database.GetDbConnection();
+            var dbColumn = columnName == "Points" ? "points" : "donation_points";
             var sql = $@"
-                INSERT INTO view_streamer_viewers (StreamerProfileId, GlobalViewerId, Points, DonationPoints, AttendanceCount, ConsecutiveAttendanceCount)
+                INSERT INTO view_streamer_viewers (streamer_profile_id, global_viewer_id, points, donation_points, attendance_count, consecutive_attendance_count)
                 VALUES (@StreamerId, @GlobalId, IF(@Col='Points', @Amount, 0), IF(@Col='DonationPoints', @Amount, 0), 0, 0)
                 ON DUPLICATE KEY UPDATE 
-                    {columnName} = GREATEST(0, {columnName} + @Amount);";
+                    {dbColumn} = GREATEST(0, {dbColumn} + @Amount);";
 
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
@@ -125,8 +223,22 @@ public class PointTransactionService : IPointTransactionService
                 Col = columnName
             }, cancellationToken: ct));
 
+            // [v11.1] 천상의 장부: 상세 로그 기록
+            var logSql = @"
+                INSERT INTO log_point_transactions (streamer_profile_id, global_viewer_id, amount, type, reason, created_at)
+                VALUES (@StreamerId, @GlobalId, @Amount, @Type, @Reason, NOW());";
+
+            await connection.ExecuteAsync(new CommandDefinition(logSql, new
+            {
+                StreamerId = streamer.Id,
+                GlobalId = globalViewer.Id,
+                Amount = amount,
+                Type = amount > 0 ? PointTransactionType.Earn : PointTransactionType.Spend,
+                Reason = columnName == "DonationPoints" ? "Donation Adjustment" : "Manual Adjustment"
+            }, cancellationToken: ct));
+
             var result = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
-                $"SELECT {columnName} FROM view_streamer_viewers WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
+                $"SELECT {dbColumn} FROM view_streamer_viewers WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
                 new { StreamerId = streamer.Id, GlobalId = globalViewer.Id },
                 cancellationToken: ct
             ));

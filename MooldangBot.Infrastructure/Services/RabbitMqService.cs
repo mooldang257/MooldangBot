@@ -18,6 +18,23 @@ public class RabbitMqService : IRabbitMqService, IDisposable
     private readonly ILogger<RabbitMqService> _logger;
     private const string ChatExchange = "mooldang.chat.events";
     private const string LogExchange = "mooldang.bot.events";
+    
+    // [오시리스의 기억]: GC 압박을 줄이기 위한 직렬화 옵션 캐싱
+    private static readonly JsonSerializerOptions _jsonOptions = new() 
+    { 
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false 
+    };
+
+    static RabbitMqService()
+    {
+        _jsonOptions.TypeInfoResolverChain.Insert(0, MooldangBot.Domain.Serialization.ChzzkJsonContext.Default);
+        _jsonOptions.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
+    }
+
+    // [전령의 통로]: 채널 재사용을 위한 필드 및 정합성 수호자
+    private IChannel? _channel;
+    private readonly SemaphoreSlim _channelLock = new(1, 1);
     private bool _disposed;
 
     public bool IsConnected => _connection.IsConnected;
@@ -28,58 +45,50 @@ public class RabbitMqService : IRabbitMqService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<bool> CheckConnectionAsync()
+    private async Task<IChannel> GetChannelAsync()
     {
-        return await _connection.TryConnectAsync();
+        if (_channel is { IsOpen: true }) return _channel;
+
+        await _channelLock.WaitAsync();
+        try
+        {
+            if (_channel is { IsOpen: true }) return _channel;
+
+            if (!_connection.IsConnected) await _connection.TryConnectAsync();
+            
+            _channel = await _connection.CreateModelAsync();
+
+            // [오시리스의 선언]: 채널 생성 시 익스체인지를 한 번만 선언 (중복 네트워크 호출 제거)
+            await _channel.ExchangeDeclareAsync(ChatExchange, ExchangeType.Fanout, true);
+            await _channel.ExchangeDeclareAsync(LogExchange, ExchangeType.Topic, true);
+
+            _logger.LogInformation("📡 [전령] RabbitMQ 전용 채널이 개설되고 익스체인지가 선언되었습니다.");
+            return _channel;
+        }
+        finally
+        {
+            _channelLock.Release();
+        }
     }
+
+    public async Task<bool> CheckConnectionAsync() => await _connection.TryConnectAsync();
 
     public async Task PublishChatEventAsync(ChatEventItem eventItem)
     {
-        // [Legacy Support] 기존 채팅 이벤트 발행 로직 (Fanout 기반)
-        await PublishAsync(eventItem, "chat.event", ChatExchange, ExchangeType.Fanout);
+        await PublishInternalAsync(eventItem, "chat.event", ChatExchange);
     }
 
     public async Task PublishAsync<T>(T eventData, string? routingKey = null) where T : class
     {
-        // [New Standard] 비즈니스 로직 및 로그 발행 (Topic 기반)
-        await PublishInternalAsync(eventData, routingKey ?? typeof(T).Name.ToLower(), LogExchange, ExchangeType.Topic);
+        await PublishInternalAsync(eventData, routingKey ?? typeof(T).Name.ToLower(), LogExchange);
     }
 
-    // 하위 호환성을 위해 routingKey가 없는 오버로드 (특정 익스체인지 지정용)
-    private async Task PublishAsync<T>(T eventData, string routingKey, string exchangeName, string type) where T : class
-    {
-        await PublishInternalAsync(eventData, routingKey, exchangeName, type);
-    }
-
-    private async Task PublishInternalAsync<T>(T eventData, string routingKey, string exchangeName, string type) where T : class
+    private async Task PublishInternalAsync<T>(T eventData, string routingKey, string exchangeName) where T : class
     {
         try
         {
-            if (!_connection.IsConnected)
-            {
-                await _connection.TryConnectAsync();
-            }
-
-            using var channel = await _connection.CreateModelAsync();
-
-            // [오시리스의 선언]: 익스체인지가 없으면 신규 선언
-            await channel.ExchangeDeclareAsync(
-                exchange: exchangeName,
-                type: type,
-                durable: true,
-                autoDelete: false);
-
-            // [세피로스의 하이브리드 직렬화]: Source Gen과 Reflection을 병행하여 익명 타입도 안전하게 수용합니다. 🛡️🦾
-            var options = new JsonSerializerOptions 
-            { 
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false 
-            };
-            options.TypeInfoResolverChain.Insert(0, MooldangBot.Domain.Serialization.ChzzkJsonContext.Default);
-            options.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
-
-            var json = JsonSerializer.Serialize(eventData, options);
-            
+            var channel = await GetChannelAsync();
+            var json = JsonSerializer.Serialize(eventData, _jsonOptions);
             var body = Encoding.UTF8.GetBytes(json);
             
             var properties = new BasicProperties
@@ -89,19 +98,27 @@ public class RabbitMqService : IRabbitMqService, IDisposable
                 Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             };
 
-            // [전령의 배달]: 비동기 메시지 발행
-            await channel.BasicPublishAsync(
-                exchange: exchangeName,
-                routingKey: routingKey,
-                mandatory: false,
-                basicProperties: properties,
-                body: body);
+            await _channelLock.WaitAsync(); // 채널 동시 접근 보호 (비동기 송신)
+            try
+            {
+                await channel.BasicPublishAsync(
+                    exchange: exchangeName,
+                    routingKey: routingKey,
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: body);
+            }
+            finally
+            {
+                _channelLock.Release();
+            }
 
-            _logger.LogDebug($"📡 [전령] 이벤트 발행 완료 : {routingKey} (Ex: {exchangeName})");
+            _logger.LogDebug("📡 [전령] 이벤트 발행 완료 : {RoutingKey} (Ex: {Exchange})", routingKey, exchangeName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"❌ [전령] 이벤트 발행 중 오류 발생: {ex.Message}");
+            _logger.LogError(ex, "❌ [전령] 이벤트 발행 중 오류 발생: {Message}", ex.Message);
+            _channel = null; // 오류 발생 시 채널 재발급 유도
         }
     }
 
@@ -109,6 +126,8 @@ public class RabbitMqService : IRabbitMqService, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        // [세피로스의 지혜]: 싱글톤인 _connection은 직접 Dispose하지 않고 DI 컨테이너의 관리에 맡깁니다.
+        
+        _channel?.Dispose();
+        _channelLock.Dispose();
     }
 }

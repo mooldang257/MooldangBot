@@ -1,0 +1,75 @@
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Services;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Infrastructure.Services.Engines;
+using NSubstitute;
+using Xunit;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text;
+
+namespace MooldangBot.Tests;
+
+public class AegisPipelineTests
+{
+    private readonly IDistributedCache _cache = Substitute.For<IDistributedCache>();
+    private readonly IAppDbContext _db = Substitute.For<IAppDbContext>();
+    private readonly ILogger<IdentityCacheService> _logger = Substitute.For<ILogger<IdentityCacheService>>();
+
+    [Fact]
+    public async Task IdentityCache_Should_Return_Cached_Profile_Without_DB_Hit()
+    {
+        // [Arrange]
+        var service = new IdentityCacheService(_cache, _db, _logger);
+        var streamerUid = "streamer123";
+        var profile = new StreamerProfile { ChzzkUid = streamerUid, ChannelName = "TestChannel" };
+        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile);
+
+        // 캐시에 데이터가 있다고 가정
+        _cache.GetAsync($"Streamer:{streamerUid}", Arg.Any<CancellationToken>()).Returns(profileBytes);
+
+        // [Act]
+        var result = await service.GetStreamerProfileAsync(streamerUid);
+
+        // [Assert]
+        Assert.NotNull(result);
+        Assert.Equal("TestChannel", result?.ChannelName);
+        
+        // 캐시 조회가 성공했다는 것은 DB 조회를 거치지 않았음을 의미함
+    }
+
+    [Fact]
+    public async Task DynamicQueryEngine_Should_Resolve_Variables_Parallel()
+    {
+        // [Arrange]
+        var cache = Substitute.For<ICommandMasterCacheService>();
+        var resolver = Substitute.For<IDynamicVariableResolver>();
+        var db = Substitute.For<IAppDbContext>();
+        var logger = Substitute.For<ILogger<DynamicQueryEngine>>();
+        var engine = new DynamicQueryEngine(db, cache, resolver, logger);
+
+        var variables = new List<Master_DynamicVariable>
+        {
+            new() { Keyword = "$(user)", QueryString = "METHOD:User" },
+            new() { Keyword = "$(points)", QueryString = "METHOD:Points" }
+        };
+
+        cache.GetFullVariablesAsync().Returns(variables);
+        resolver.ResolveAsync("User", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(Task.FromResult("Muldang"));
+        resolver.ResolveAsync("Points", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(Task.FromResult("1000"));
+
+        // [Act]
+        var result = await engine.ProcessMessageAsync("Hello $(user), you have $(points)P", "s1", "v1", "Muldang");
+
+        // [Assert]
+        Assert.Equal("Hello Muldang, you have 1000P", result);
+        
+        // 두 변수가 각각 1번씩 Resolve 호출되었는지 확인
+        await resolver.Received(1).ResolveAsync("User", "s1", "v1", "Muldang");
+        await resolver.Received(1).ResolveAsync("Points", "s1", "v1", "Muldang");
+    }
+}

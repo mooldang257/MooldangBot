@@ -15,7 +15,9 @@ namespace MooldangBot.Api.Controllers.Admin;
 [Route("api/admin/system-health")]
 public class AdminStatusController(
     IChzzkChatClient chatClient,
-    ITokenRenewalService renewalService) : ControllerBase
+    ITokenRenewalService renewalService,
+    IHealthMonitorService healthMonitor,
+    IChaosManager chaos) : ControllerBase
 {
     [HttpGet]
     public IActionResult GetSystemHealth()
@@ -36,6 +38,27 @@ public class AdminStatusController(
             AvgVibration = $"{avgVibration:F2} Hz",
             Timestamp = KstClock.Now.ToString("O")
         });
+    }
+
+    /// <summary>
+    /// [심연의 맥박]: 모든 인프라와 워커의 상세 건강 상태를 조회합니다.
+    /// </summary>
+    [HttpGet("pulse")]
+    public async Task<IActionResult> GetSystemPulse(CancellationToken ct)
+    {
+        var pulse = await healthMonitor.GetSystemPulseAsync(ct);
+        return Ok(pulse);
+    }
+
+    /// <summary>
+    /// [혼돈의 도래]: 시스템에 인위적인 장애 시뮬레이션을 On/Off 합니다. (관리자 전용)
+    /// </summary>
+    [HttpPost("chaos/toggle")]
+    public IActionResult ToggleChaos([FromQuery] bool enabled)
+    {
+        chaos.IsChaosEnabled = enabled;
+        var status = enabled ? "가동 (시련의 시작)" : "중단 (이지스의 안식)";
+        return Ok(new { ChaosEnabled = enabled, Message = $"⛈️ [카오스 시뮬레이터] {status}" });
     }
 
     [HttpGet("logs")]

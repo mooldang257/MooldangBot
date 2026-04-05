@@ -21,7 +21,8 @@ public class UnifiedCommandHandler(
     IChzzkBotService botService,
     IEnumerable<ICommandFeatureStrategy> strategies,
     IServiceProvider serviceProvider,
-    IPointTransactionService pointService, // [v6.2.1] 포인트 서비스 직접 주입
+    IPointTransactionService pointService,
+    IIdentityCacheService identityCache, // [Phase 8] 이지스 파이프라인 연동
     IRabbitMqService rabbitMq,
     ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
@@ -86,7 +87,11 @@ public class UnifiedCommandHandler(
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, $"❌ [UnifiedCommandHandler] 전략 실행 중 오류: {featureType}");
+                        logger.LogError(ex, "❌ [UnifiedCommandHandler] 전략 실행 중 오류: {FeatureType}. 보상 트랜잭션(환불)을 시도합니다.", featureType);
+                        
+                        // 🛡️ [이지스의 자비]: 명령 실행 실패 시 소모된 재화 복구
+                        await CompensateRequirementAsync(notification, command, currentDonation, ct);
+
                         await rabbitMq.PublishAsync(new CommandExecutionEvent(
                             targetUid, keyword, notification.SenderId, notification.Username,
                             false, $"서버 내부 오류: {ex.Message}", notification.DonationAmount, KstClock.Now));
@@ -178,9 +183,35 @@ public class UnifiedCommandHandler(
 
     private async Task<StreamerProfile?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-        return await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
+        return await identityCache.GetStreamerProfileAsync(chzzkUid, ct);
+    }
+
+    /// <summary>
+    /// 🛡️ [이지스의 자비]: 명령 실행 실패 시 소모된 재화(치즈/포인트)를 복구합니다.
+    /// </summary>
+    private async Task CompensateRequirementAsync(ChatMessageReceivedEvent n, UnifiedCommand c, int currentDonation, CancellationToken ct)
+    {
+        try
+        {
+            if (c.CostType == CommandCostType.Cheese && c.Cost > 0)
+            {
+                // 소진된 치즈를 DonationPoints로 환불 (Deducted cheese case)
+                await pointService.AddDonationPointsAsync(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, ct);
+                logger.LogWarning("💸 [보상 트랜잭션] {Keyword} 실행 실패로 인해 {Cost}치즈가 환불되었습니다.", c.Keyword, c.Cost);
+            }
+            else if (c.CostType == CommandCostType.Point && c.Cost > 0)
+            {
+                // 소진된 포인트를 환불
+                await pointService.AddPointsAsync(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, ct);
+                logger.LogWarning("🅿️ [보상 트랜잭션] {Keyword} 실행 실패로 인해 {Cost}P가 환불되었습니다.", c.Keyword, c.Cost);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 🚨 [Dead Letter Log]: 환불조차 실패했을 경우 - 수동 복구가 필요한 치명적 상태
+            logger.LogCritical(ex, "💀 [CRITICAL] 보상 트랜잭션(환불) 실행 중 장애 발생! 수동 데이터 복구 필요. (Streamer: {StreamerUid}, Viewer: {ViewerUid}, Cost: {Cost})", 
+                n.Profile.ChzzkUid, n.SenderId, c.Cost);
+        }
     }
 
     private CommandRole MapToCommandRole(string roleCode)

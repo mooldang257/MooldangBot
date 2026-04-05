@@ -38,3 +38,12 @@ db_data/
 efbundle*
 .DS_Store
 Thumbs.db
+# 7. [물멍] 추가 - 현대적 웹 및 빌드 산출물
+node_modules/
+data/
+build_output.txt
+test_results.txt
+Report/
+TODO/
+*.tmp
+*.bak

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
+using MooldangBot.Application.Common.Models; // Result<T> 도입
 
 namespace MooldangAPI.Controllers
 {
@@ -35,7 +36,7 @@ namespace MooldangAPI.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(list);
+            return Ok(Result<List<PeriodicMessageDto>>.Success(list));
         }
 
         [HttpPost("save/{chzzkUid}")]
@@ -58,7 +59,7 @@ namespace MooldangAPI.Controllers
             else
             {
                 var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-                if (profile == null) return NotFound("Profile not found");
+                if (profile == null) return NotFound(Result<bool>.Failure("Profile not found"));
 
                 _db.PeriodicMessages.Add(new PeriodicMessage
                 {
@@ -70,7 +71,7 @@ namespace MooldangAPI.Controllers
             }
 
             await _db.SaveChangesAsync();
-            return Ok();
+            return Ok(Result<bool>.Success(true));
         }
 
         [HttpDelete("delete/{chzzkUid}/{id}")]
@@ -86,7 +87,7 @@ namespace MooldangAPI.Controllers
                 _db.PeriodicMessages.Remove(item);
                 await _db.SaveChangesAsync();
             }
-            return Ok();
+            return Ok(Result<bool>.Success(true));
         }
 
         [HttpPatch("toggle/{chzzkUid}/{id}")]
@@ -102,7 +103,7 @@ namespace MooldangAPI.Controllers
                 item.IsEnabled = !item.IsEnabled;
                 await _db.SaveChangesAsync();
             }
-            return Ok();
+            return Ok(Result<bool>.Success(true));
         }
     }
 

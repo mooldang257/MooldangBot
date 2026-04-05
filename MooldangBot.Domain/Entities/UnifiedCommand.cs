@@ -32,6 +32,10 @@ public class UnifiedCommand : ISoftDeletable, IAuditable
     [MaxLength(50)]
     public string Keyword { get; set; } = string.Empty;
 
+    [Required]
+    [MaxLength(500)]
+    public string Icon { get; set; } = "🎵";
+
     public int Cost { get; set; } = 0;
 
     [Required]

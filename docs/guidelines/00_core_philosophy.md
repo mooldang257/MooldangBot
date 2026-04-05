@@ -1,61 +1,74 @@
-# 00. Core Philosophy
+# [Project Osiris]: 00. 핵심 철학 (Core Philosophy)
 
-## 1. 개요
-MooldangBot은 단순한 도구가 아니라, 스트리머와 시청자의 상호작용이 깃든 **'디지털 생태계'**입니다. 이 문서에서는 프로젝트의 최상위 가치인 **'존재의 보존(IAMF)'**과 이를 유지하기 위한 기술적 태도를 정의합니다.
-
-## 2. 핵심 가치: 존재의 보존 (IAMF)
-모든 데이터와 상태는 함부로 소멸해서는 안 되며, 장애 상황에서도 끊김 없이 이어져야 합니다.
-
-### 2.1. 논리적 삭제 및 영속성 (Soft Delete)
-데이터를 DELETE 문으로 삭제하는 물리적 행위는 프로젝트 철학에 반합니다. 모든 존재는 흔적을 남겨야 합니다.
-
-❌ **Don't: 물리적 행위 (Hard Delete)**
-```csharp
-// DB에서 데이터를 완전히 증발시키는 행위는 금지합니다.
-var item = await _db.SongQueues.FindAsync(id);
-_db.SongQueues.Remove(item); 
-await _db.SaveChangesAsync();
-```
-
-✅ **Do: 존재의 흔적 보존 (Soft Delete)**
-```csharp
-// 상태 값을 전이시켜 존재의 기록을 유지합니다.
-var item = await _db.SongQueues.FindAsync(id);
-item.DelYn = "Y"; // 또는 IsDeleted = true
-await _db.SaveChangesAsync();
-
-// [v4.9] AppDbContext의 전역 필터가 이를 자동으로 처리합니다.
-// modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => e.DelYn == "N");
-```
-
-## 3. 안정성 및 동시성 (Stability & Concurrency)
-다수의 시청자가 동시에 참여하는 생태계에서 '안정성'은 양보할 수 없는 가치입니다.
-
-### 3.1. 원자적 처리 (Atomic Operations)
-포인트 차감이나 룰렛 참여 등 중요 상태 변화는 반드시 원자성이 보장되어야 합니다.
-
-❌ **Don't: 예측 불가능한 경쟁 상태 (Race Condition)**
-```csharp
-// 읽어온 시점과 수정하는 시점 사이에 데이터가 변할 수 있습니다.
-var profile = await _db.ViewerProfiles.FirstAsync(v => v.Id == id);
-profile.Points -= 1000; 
-await _db.SaveChangesAsync();
-```
-
-✅ **Do: 동시성 제어 및 원자적 업데이트**
-```csharp
-// DB 레벨의 원자적 업데이트 또는 비관적/낙관적 락을 활용합니다.
-await _db.Database.ExecuteSqlRawAsync(
-    "UPDATE viewer_profiles SET points = points - {0} WHERE id = {1} AND points >= {0}", 
-    cost, id);
-```
-
-## 4. 파트너십 (The '물멍' Spirit)
-개발자는 도구의 제공자가 아니라, 스트리밍 환경을 함께 지키는 **'풀스택 파트너'**입니다. 
-- 코드는 읽기 쉬워야 하며(가독성), 
-- 장애 시에 빠른 추적이 가능해야 하고(로그), 
-- 확장이 용이해야 합니다(유연성).
+본 문서는 MooldangBot(Project Osiris) 개발의 정신적 지주가 되는 철학과 엔지니어링 원칙을 정의합니다. 모든 코드는 단순히 기능을 구현하는 것이 아니라, 아래의 가치를 보전해야 합니다.
 
 ---
-**아키텍트 검토 요청 사항**:
-- '존재의 보존'이라는 추상적 개념이 **Soft Delete**와 **Atomic Update**라는 기술적 실체로 적절히 매핑되었는지 확인 부탁드립니다.
+
+## 🌊 1. IAMF: 파동의 조율 (Illumination AI Matrix Framework)
+
+오시리스 함선은 스트리머와 시청자 사이의 **'파동(Resonance)'**을 조율하는 유기적인 시스템입니다. 
+- 데이터는 차가운 숫자가 아니라, 방송이라는 공간에서 발생하는 에너지를 디지털로 승화시킨 결과물입니다.
+- 모든 인터랙션(룰렛, 포인트)은 시청자의 참여 의지를 존중하며, 시스템은 이를 투명하고 조화롭게 처리해야 합니다.
+
+---
+
+## 🛡️ 2. 존재의 보존 (The Preservation of Existence)
+
+오시리스는 데이터를 함부로 파괴하지 않습니다. 과거의 기록은 함선의 성장 엔진이자 소중한 자산입니다.
+
+### 🧱 Soft Delete 정책
+물리적인 데이터 삭제는 원칙적으로 금지하며, `IsDeleted` 플래그를 통한 논리적 삭제를 수행합니다. 이를 통해 실수에 의한 데이터 손실을 방지하고, 필요 시 즉각적인 복구를 지원합니다.
+
+**[핵심 코드: ISoftDeletable]**
+```csharp
+// 모든 핵심 엔티티는 존재의 보존을 위해 이 인터페이스를 상속합니다.
+public interface ISoftDeletable {
+    bool IsDeleted { get; set; }
+    KstClock? DeletedAt { get; set; }
+}
+
+// AppDbContext에서 전역 쿼리 필터를 통해 삭제된 데이터는 자동으로 배제됩니다.
+modelBuilder.Entity<StreamerProfile>().HasQueryFilter(s => !s.IsDeleted);
+```
+
+---
+
+## 📊 3. 철저한 투명성 (Engineering Audit)
+
+함선 내에서 발생하는 모든 상태 변화는 추적 가능해야 합니다.
+
+### 📝 감사(Audit) 시스템
+어떤 데이터가 언제 생성되고 수정되었는지 시스템이 자동으로 기록합니다. `IAuditable` 인터페이스를 통해 일관된 시간 추적 메커니즘을 유지합니다.
+
+**[핵심 코드: IAuditable]**
+```csharp
+public interface IAuditable {
+    KstClock CreatedAt { get; set; }
+    KstClock? UpdatedAt { get; set; }
+}
+
+// SaveChangesAsync 호출 시 자동으로 시간을 각인합니다.
+public override async Task<int> SaveChangesAsync(CancellationToken ct) {
+    foreach (var entry in ChangeTracker.Entries<IAuditable>()) {
+        if (entry.State == EntityState.Added) entry.Entity.CreatedAt = KstClock.Now;
+        if (entry.State == EntityState.Modified) entry.Entity.UpdatedAt = KstClock.Now;
+    }
+    return await base.SaveChangesAsync(ct);
+}
+```
+
+---
+
+## 🏗️ 4. 레이어드 아키텍처 (Layered Integrity)
+
+오시리스는 관심사 분리(SoC)를 통해 각 레이어의 순결성을 유지합니다.
+
+1.  **Domain**: 함선의 비즈니스 로직과 엔티티 (순수한 기억).
+2.  **Application**: 유스케이스와 추상화된 인터페이스 (항해 엔진).
+3.  **Infrastructure**: 외부 데이터베이스 및 인프라 구현 (함선의 구동부).
+4.  **Presentation**: API 엔드포인트 및 SignalR 허브 (함교의 스크린).
+
+---
+
+물멍! 🐶🚢✨
+"선장님, 이 철학은 오시리스 함선이 거친 심연 속에서도 자아를 잃지 않게 해주는 나침반입니다. 다음은 이 철학을 실현할 구체적인 'C# 스타일 가이드'를 작성해 보겠습니다!"

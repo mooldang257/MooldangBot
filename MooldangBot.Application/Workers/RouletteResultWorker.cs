@@ -34,31 +34,13 @@ public class RouletteResultWorker : BackgroundService
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
                 var rouletteService = scope.ServiceProvider.GetRequiredService<IRouletteService>();
 
-                // [v1.9.9.2] 스마트 폴링: 미완료된 세션이 있는지 가볍게 확인
-                var hasPending = await db.RouletteSpins.AnyAsync(s => !s.IsCompleted, stoppingToken);
-
-                if (hasPending)
-                {
-                    // 활성 상태: 2초 단위 정밀 감시
-                    var overdueSpins = await db.RouletteSpins
-                        .Where(s => !s.IsCompleted && s.ScheduledTime <= KstClock.Now)
-                        .OrderBy(s => s.ScheduledTime)
-                        .Take(10)
-                        .ToListAsync(stoppingToken);
-
-                    foreach (var spin in overdueSpins)
-                    {
-                        await rouletteService.CompleteRouletteAsync(spin.Id);
-                    }
-                }
-                else
-                {
-                    // 휴면 상태: 30초 단위 저부하 감시 (사용자 요청)
-                    nextDelayMs = 30000;
-                }
+                // [v2.2.0] 지능형 타임아웃 처리 위임
+                await rouletteService.ProcessTimeoutSpinsAsync(stoppingToken);
+                
+                // 유휴 상태 확인은 서비스 내에서 쿼리 최적화가 되어 있으므로 단순 2초 주기로 유지
+                nextDelayMs = 2000;
             }
             catch (Exception ex)
             {

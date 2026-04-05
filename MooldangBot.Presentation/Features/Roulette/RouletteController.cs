@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using MooldangBot.Application.Interfaces;
@@ -11,62 +12,11 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangBot.Presentation.Features.Roulette
 {
-    public class RouletteSummaryDto
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-        
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-        
-        [JsonPropertyName("type")]
-        public RouletteType Type { get; set; }
-        
-        [JsonPropertyName("command")]
-        public string Command { get; set; } = string.Empty;
-        
-        [JsonPropertyName("costPerSpin")]
-        public int CostPerSpin { get; set; }
-        
-        [JsonPropertyName("isActive")]
-        public bool IsActive { get; set; }
-        
-        [JsonPropertyName("activeItemCount")]
-        public int ActiveItemCount { get; set; }
-        
-        [JsonPropertyName("lstUpdDt")]
-        public KstClock? LstUpdDt { get; set; }
-    }
-
-    public class CompleteRequest
-    {
-        [JsonPropertyName("spinId")]
-        public string SpinId { get; set; } = string.Empty;
-    }
-
-    public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, KstClock CreatedAt, int Status);
-
-    // [v1.9] 룰렛 업데이트용 통합 DTO
-    public class RouletteUpdateRequest
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-        [JsonPropertyName("type")]
-        public RouletteType Type { get; set; } = RouletteType.Cheese;
-        [JsonPropertyName("command")]
-        public string? Command { get; set; }
-        [JsonPropertyName("costPerSpin")]
-        public int CostPerSpin { get; set; }
-        [JsonPropertyName("isActive")]
-        public bool IsActive { get; set; }
-        [JsonPropertyName("items")]
-        public List<MooldangBot.Domain.Entities.RouletteItem> Items { get; set; } = new();
-    }
-
+    // [v6.2.6] 이지스의 정화: 로컬 DTO를 Domain.DTOs로 통합 이주 완료
     [ApiController]
-    [Route("api/admin/roulette")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/admin/roulette")] // 새로운 버전 명시 경로
+    [Route("api/admin/roulette")]                       // 레거시 하위 호환 경로
     [Authorize(Policy = "ChannelManager")]
     public class RouletteController : ControllerBase
     {
@@ -195,8 +145,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         {
             try
             {
-                if (Id <= 0) return BadRequest("유효하지 않은 Id입니다.");
-
+                // [v6.2.5] 이지스의 정화: manual validation 제거 (FluentValidation에 위임)
                 var RouletteObj = await _db.Roulettes
                     .IgnoreQueryFilters()
                     .Include(R => R.Items)
@@ -266,19 +215,19 @@ namespace MooldangBot.Presentation.Features.Roulette
 
         [HttpPost("complete")]
         [AllowAnonymous]
-        public async Task<IActionResult> CompleteAnimation([FromBody] CompleteRequest Request)
+        public async Task<IActionResult> CompleteAnimation([FromBody] CompleteRequest Request, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(Request.SpinId)) return BadRequest("Invalid SpinId");
+            // [v6.2.5] 이지스의 정화: manual validation 제거 (FluentValidation에 위임)
 
-            var CacheKey = $"Spin:{Request.SpinId}";
-            if (_cache.TryGetValue(CacheKey, out SpinResultContext? Context) && Context != null)
+            // [v9.1] 지능형 상호작용: 메모리 캐시 의존성을 제거하고 DB 영속성(SpinId) 기반으로 완료 처리합니다.
+            var success = await _rouletteService.CompleteRouletteAsync(Request.SpinId, ct);
+            
+            if (success)
             {
-                _cache.Remove(CacheKey);
-                await _rouletteService.SendDelayedChatResultAsync(Context.ChzzkUid, Context.RouletteId, Context.ItemName, Context.ViewerUid ?? "", Context.ViewerNickname);
                 return Ok(new { Success = true });
             }
 
-            return NotFound("Spin context expired or already processed.");
+            return NotFound("이미 처리되었거나 유효하지 않은 SpinId입니다.");
         }
 
         [HttpPatch("{chzzkUid}/items/{ItemId}/status")]

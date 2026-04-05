@@ -13,11 +13,13 @@ namespace MooldangBot.Presentation.Features.Config
     {
         private readonly IAppDbContext _db;
         private readonly IChzzkBotService _chzzkService;
+        private readonly IIdentityCacheService _identityCache;
 
-        public BotConfigController(IAppDbContext db, IChzzkBotService chzzkService)
+        public BotConfigController(IAppDbContext db, IChzzkBotService chzzkService, IIdentityCacheService identityCache)
         {
             _db = db;
             _chzzkService = chzzkService;
+            _identityCache = identityCache;
         }
 
         // 1. 현재 봇 활성화 상태 조회
@@ -49,6 +51,45 @@ namespace MooldangBot.Presentation.Features.Config
             return Ok(new { success = true, isActive = streamer.IsActive, message = "봇 설정이 즉시 변경되었습니다." });
         }
 
+        // 3. 함교 주소(Slug) 조회
+        [HttpGet("slug/{uid}")]
+        public async Task<IActionResult> GetStreamerSlug(string uid)
+        {
+            var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
+
+            return Ok(new { slug = streamer.Slug });
+        }
+
+        // 4. 함교 주소(Slug) 변경
+        [HttpPost("slug/{uid}")]
+        public async Task<IActionResult> UpdateStreamerSlug(string uid, [FromBody] SlugUpdateRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Slug)) return BadRequest("주소는 비워둘 수 없습니다.");
+            
+            // [물멍]: 보안 및 가독성을 위한 슬러그 형식 검증 (알파벳, 숫자, 하이픈만 허용)
+            var slugPattern = new System.Text.RegularExpressions.Regex("^[a-z0-9-]{3,20}$");
+            if (!slugPattern.IsMatch(req.Slug)) return BadRequest("주소는 3~20자의 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.");
+
+            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            if (streamer == null) return NotFound("스트리머를 찾을 수 없습니다.");
+
+            // [오시리스의 눈]: 중복 체크
+            var isTaken = await _db.StreamerProfiles.AnyAsync(p => p.Slug == req.Slug && p.ChzzkUid != uid);
+            if (isTaken) return Conflict(new { message = "이미 사용 중인 ID입니다." });
+
+            var oldSlug = streamer.Slug;
+            streamer.Slug = req.Slug;
+            await _db.SaveChangesAsync();
+
+            // [이지스의 정화]: 기존 캐시 무효화
+            _identityCache.InvalidateStreamer(uid);
+            if (!string.IsNullOrEmpty(oldSlug)) _identityCache.InvalidateSlug(oldSlug);
+            _identityCache.InvalidateSlug(req.Slug);
+            
+            return Ok(new { success = true, slug = streamer.Slug, message = "함교의 새로운 주소가 등록되었습니다." });
+        }
+
         // 3. [v6.2] 개별 API 설정 및 전용 봇 로그인 기능은 더 이상 지원되지 않습니다.
     }
 
@@ -62,5 +103,10 @@ namespace MooldangBot.Presentation.Features.Config
         public string? ClientId { get; set; }
         public string? ClientSecret { get; set; }
         public string? RedirectUrl { get; set; }
+    }
+
+    public class SlugUpdateRequest
+    {
+        public string Slug { get; set; } = string.Empty;
     }
 }

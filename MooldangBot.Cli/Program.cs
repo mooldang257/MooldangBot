@@ -195,6 +195,23 @@ try
     await SyncFeature(11, 3, "AI", "AI 답변", 1000, CommandRole.Viewer);
     await db.SaveChangesAsync();
 
+    // 4-1. [NEW] 동적 변수 마스터 데이터 시딩
+    Console.WriteLine("\n💎 [3-1/4] 동적 변수(Dynamic Variables) 동기화 중...");
+    async Task SyncVariable(int id, string kw, string desc, string color, string query) {
+        var existing = await db.MasterDynamicVariables.FindAsync(id);
+        if (existing == null) {
+            db.MasterDynamicVariables.Add(new Master_DynamicVariable { 
+                Id = id, Keyword = kw, Description = desc, BadgeColor = color, QueryString = query 
+            });
+            Console.WriteLine($"   + [Variable] {kw} 생성됨");
+        }
+    }
+    await SyncVariable(1, "$(닉네임)", "명령어를 사용한 시청자의 이름", "primary", "SELECT ChannelName FROM core_streamer_profiles WHERE Id = {0}");
+    await SyncVariable(2, "$(포인트)", "시청자의 현재 보유 포인트", "success", "SELECT Points FROM core_global_viewers WHERE ChzzkUid = {0}");
+    await SyncVariable(3, "$(내용)", "명령어와 함께 입력된 추가 텍스트 내용", "info", "N/A");
+    await SyncVariable(4, "$(송리스트상태)", "현재 송리스트의 오픈/클로즈 상태", "warning", "N/A");
+    await db.SaveChangesAsync();
+
     // 5. 통합 명령어 보정
     Console.WriteLine("\n🧩 [4/4] 통합 명령어(UnifiedCommands) 정합성 전수 보정 중...");
     var profiles = await db.StreamerProfiles.IgnoreQueryFilters().ToListAsync();
@@ -205,12 +222,12 @@ try
 
     foreach (var p in profiles) {
         provisionCount += await EnsureCommand(db, p, allFeatures, "!신청", "Feature", "Cheese", 1000, "SongRequest", null, CommandRole.Viewer);
-        provisionCount += await EnsureCommand(db, p, allFeatures, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 {송리스트상태}되었습니다. ✨", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!송리스트", "System", "None", 0, "SonglistToggle", "송리스트가 $(송리스트상태)되었습니다. ✨", CommandRole.Manager);
         
         // [매니저 전용 명령어 추가]
-        provisionCount += await EnsureCommand(db, p, allFeatures, "!공지", "System", "None", 0, "Notice", "공지사항: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p, allFeatures, "!방제", "System", "None", 0, "Title", "방송 제목이 변경되었습니다: {내용}", CommandRole.Manager);
-        provisionCount += await EnsureCommand(db, p, allFeatures, "!카테고리", "System", "None", 0, "Category", "카테고리가 변경되었습니다: {내용}", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!공지", "System", "None", 0, "Notice", "공지사항: $(내용)", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!방제", "System", "None", 0, "Title", "방송 제목이 변경되었습니다: $(내용)", CommandRole.Manager);
+        provisionCount += await EnsureCommand(db, p, allFeatures, "!카테고리", "System", "None", 0, "Category", "카테고리가 변경되었습니다: $(내용)", CommandRole.Manager);
     }
 
     if (provisionCount > 0) {
@@ -230,7 +247,7 @@ try
         adminProfile = new StreamerProfile 
         { 
             Id = 1, 
-            ChzzkUid = "SYSTEM_ADMIN", 
+            ChzzkUid = configuration["MASTER_UID"] ?? "SYSTEM_ADMIN", 
             ChannelName = "SystemAdmin",
             IsDeleted = false,
             IsMasterEnabled = true

@@ -14,6 +14,8 @@ public readonly record struct KstClock : IFormattable
     public DateTime Value { get; }
     public long Ticks => Value.Ticks;
     public DateTime Date => Value.Date;
+
+    public static KstClock FromTicks(long ticks) => new(new DateTime(ticks, DateTimeKind.Unspecified));
     
     public static KstClock MinValue => FromDateTime(DateTime.MinValue);
     public static KstClock MaxValue => FromDateTime(DateTime.MaxValue);

@@ -1,29 +1,36 @@
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Application.State;
 
-using System.Collections.Concurrent;
-
-public class RouletteState
+/// <summary>
+/// [하모니의 조율]: 특정 채널(chzzkUid)의 룰렛 애니메이션이 끝날 것으로 예상되는 시각을 Redis에서 전역적으로 관리합니다.
+/// [v13.0] RedLock을 사용하여 분산 환경에서도 원자적인 타이밍 계산을 보장합니다.
+/// </summary>
+public class RouletteState(ILuaScriptProvider luaProvider)
 {
-    private readonly ConcurrentDictionary<string, KstClock> _lastExpectedEndTimes = new();
+    private const string KeyPrefix = "roulette:v1:last-end:";
 
-    /// <summary>
-    /// [하모니의 조율]: 특정 채널(chzzkUid)의 룰렛 애니메이션이 끝날 것으로 예상되는 시각을 계산하고 갱신합니다.
-    /// </summary>
-    public KstClock GetAndSetNextEndTime(string chzzkUid, int count)
+    public async Task<KstClock> GetAndSetNextEndTimeAsync(string chzzkUid, int count)
     {
         var now = KstClock.Now;
-        // 기존 대기열 종료 시각을 가져오되, 이미 지났다면 현재 시각을 기준으로 함
-        var lastEnd = _lastExpectedEndTimes.GetOrAdd(chzzkUid, now);
-        if (lastEnd < now) lastEnd = now;
+        var nowTicks = now.Value.Ticks;
 
-        // [v1.9.9.1] 애니메이션 시간 최적화: 
-        // 오버레이 연출 주기(개당 1.2초)에 맞춰 정밀 동기화
+        // [v17.0] 애니메이션 시간 계산 (개당 1.2초 + 여유 2초, Ticks 단위)
         int durationSeconds = count > 1 ? (int)Math.Ceiling(count * 1.2) + 2 : 6;
-        var nextEnd = lastEnd.AddSeconds(durationSeconds);
-        
-        _lastExpectedEndTimes[chzzkUid] = nextEnd;
-        return nextEnd;
+        long durationTicks = TimeSpan.FromSeconds(durationSeconds).Ticks;
+
+        // [심연의 조율자]: Lua 스크립트를 통해 Redis 내부에서 원자적으로 종료 시각을 계산하고 저장합니다.
+        try
+        {
+            var nextEndTicks = await luaProvider.EvaluateRouletteSyncAsync(chzzkUid, nowTicks, durationTicks);
+            return KstClock.FromTicks(nextEndTicks);
+        }
+        catch (Exception)
+        {
+            // [심연의 시련]: Redis 장애 시 로컬 메모리 모드로 비상 전환
+            // 여러 인스턴스가 동시에 돌 경우 오차가 발생할 수 있으나, 서비스 중단은 막음
+            return KstClock.Now.AddSeconds(durationSeconds);
+        }
     }
 }

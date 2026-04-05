@@ -5,48 +5,51 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MooldangBot.Api.Health;
 
 /// <summary>
-/// [오시리스의 감시]: WebSocketShard 메트릭 및 인프라(Redis, RabbitMQ) 상태를 포함한 통합 헬스 체크입니다.
+/// [오시리스의 감시]: WebSocketShard 메트릭 및 인프라(DB, Redis, RabbitMQ) 상태를 포함한 통합 헬스 체크입니다.
+/// (Refined): Scoped Dependency 해결을 위해 IServiceScopeFactory 사용 버전
 /// </summary>
-public class BotHealthCheck : IHealthCheck
+public class BotHealthCheck(
+    IChzzkChatClient chatClient, 
+    IConnectionMultiplexer redis,
+    IRabbitMqService rabbitMq,
+    IServiceScopeFactory scopeFactory) : IHealthCheck
 {
-    private readonly IChzzkChatClient _chatClient;
-    private readonly IConnectionMultiplexer _redis;
-    private readonly IRabbitMqService _rabbitMq;
-
-    public BotHealthCheck(
-        IChzzkChatClient chatClient, 
-        IConnectionMultiplexer redis,
-        IRabbitMqService rabbitMq)
-    {
-        _chatClient = chatClient;
-        _redis = redis;
-        _rabbitMq = rabbitMq;
-    }
-
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var shardStatuses = _chatClient.GetShardStatuses().ToList();
+        var shardStatuses = chatClient.GetShardStatuses().ToList();
         var totalConnections = shardStatuses.Sum(s => s.ConnectionCount);
         var unhealthyShards = shardStatuses.Count(s => !s.IsHealthy);
         
-        var isRedisConnected = _redis.IsConnected;
-        var isRabbitMqConnected = await _rabbitMq.CheckConnectionAsync();
+        var isRedisConnected = redis.IsConnected;
+        var isRabbitMqConnected = await rabbitMq.CheckConnectionAsync();
+        
+        // 🛡️ [오시리스의 방패]: Scoped DbContext를 안전하게 조회하기 위해 직접 Scope를 생성합니다.
+        bool isDbConnected;
+        try 
+        { 
+            using var scope = scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            isDbConnected = await db.Database.CanConnectAsync(cancellationToken); 
+        }
+        catch { isDbConnected = false; }
 
         var data = new Dictionary<string, object>
         {
             { "TotalConnections", totalConnections },
             { "InstanceShardCount", shardStatuses.Count },
             { "UnhealthyShards", unhealthyShards },
+            { "DbConnected", isDbConnected },
             { "RedisConnected", isRedisConnected },
             { "RabbitMqConnected", isRabbitMqConnected },
             { "Shards", shardStatuses }
         };
 
-        if (unhealthyShards > 0 || !isRedisConnected || !isRabbitMqConnected)
+        if (unhealthyShards > 0 || !isRedisConnected || !isRabbitMqConnected || !isDbConnected)
         {
             return HealthCheckResult.Degraded("[오시리스의 경고] 일부 인프라 또는 샤드가 비정상 상태입니다.", data: data);
         }

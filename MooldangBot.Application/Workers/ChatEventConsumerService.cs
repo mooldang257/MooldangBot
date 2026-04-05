@@ -1,71 +1,96 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 
-namespace MooldangBot.Application.Workers;
-
-/// <summary>
-/// [Phase1: 역압 처리] Channel에서 채팅 이벤트를 소비하는 백그라운드 서비스입니다.
-/// 다중 소비자(3개)로 병렬 처리하여 처리량을 극대화합니다.
-/// </summary>
-public sealed class ChatEventConsumerService(
-    IChatEventChannel eventChannel,
-    IServiceScopeFactory scopeFactory,
-    IRabbitMqService rabbitMqService,
-    ILogger<ChatEventConsumerService> logger) : BackgroundService
+public sealed class ChatEventConsumerService : BackgroundService
 {
-    private const int ConsumerCount = 8; // 동시 소비자 수 (처리량 극대화)
+    private readonly IChatEventChannel _eventChannel;
+    private readonly IRabbitMqService _rabbitMqService;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IPulseService _pulse;
+    private readonly ILogger<ChatEventConsumerService> _logger;
+    private const int ConsumerCount = 8;
+
+    // [오시리스의 전송로]: 채팅 처리와 RabbitMQ 발행을 격리하기 위한 완충 지대
+    private readonly Channel<ChatEventItem> _rabbitMqBuffer = Channel.CreateBounded<ChatEventItem>(5000);
+
+    public ChatEventConsumerService(
+        IChatEventChannel eventChannel,
+        IRabbitMqService rabbitMqService,
+        IServiceProvider serviceProvider,
+        IPulseService pulse,
+        ILogger<ChatEventConsumerService> logger)
+    {
+        _eventChannel = eventChannel;
+        _rabbitMqService = rabbitMqService;
+        _serviceProvider = serviceProvider;
+        _pulse = pulse;
+        _logger = logger;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("🔄 [이벤트 소비자] {ConsumerCount}개의 병렬 소비자가 가동되었습니다.", ConsumerCount);
+        _logger.LogInformation("🔄 [이벤트 소비자] {ConsumerCount}개의 병렬 소비자 및 RabbitMQ 전용 전송로 가동", ConsumerCount);
 
-        // 다중 소비자 패턴: N개의 소비자가 동시에 Channel에서 이벤트를 소비합니다.
+        // 1. [오시리스의 날개]: RabbitMQ 전용 발행 워커 가동 (비차단 송신)
+        var rabbitWorker = Task.Run(() => PublishToRabbitMqLoopAsync(stoppingToken), stoppingToken);
+
+        // 2. [오시리스의 집행]: 다중 소비자 가동
         var consumers = Enumerable.Range(0, ConsumerCount)
             .Select(id => ConsumeAsync(id, stoppingToken))
             .ToArray();
 
-        await Task.WhenAll(consumers);
+        await Task.WhenAll(consumers.Append(rabbitWorker));
     }
 
     private async Task ConsumeAsync(int consumerId, CancellationToken ct)
     {
-        logger.LogDebug($"[소비자 #{consumerId}] 시작됨");
-
-        await foreach (var item in eventChannel.ReadAllAsync(ct))
+        await foreach (var item in _eventChannel.ReadAllAsync(ct))
         {
-            // [병목 모니터링]: 채널에 쌓인 이벤트가 많을 경우 경고 출력 (역압 감지)
-            // Note: Channel<T>의 Count는 BoundedChannel에서만 의미가 있으나, 모니터링 용도로 로그만 남김
-            logger.LogDebug("[소비자 #{ConsumerId}] 이벤트 처리 시작 (채널: {ChzzkUid})", consumerId, item.ChzzkUid);
-
             try
             {
-                // [v4.5.1] 오시리스의 전령: 외부 시스템 연동을 위해 RabbitMQ로 이벤트 발행
-                await rabbitMqService.PublishChatEventAsync(item);
+                _pulse.ReportPulse($"ChatEventConsumerService-#{consumerId}");
+
+                // [오시리스의 위임]: RabbitMQ 발행은 버퍼에 던지고 바로 다음 채팅 처리로 넘어감 (비차단)
+                if (!_rabbitMqBuffer.Writer.TryWrite(item))
+                {
+                    _logger.LogWarning("⚠️ [전송로 과부하] RabbitMQ 버퍼가 가득 차 이벤트를 드랍합니다.");
+                }
                 
                 await ProcessEventAsync(item, ct);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
+            catch (Exception ex)
             {
-                break;
+                _logger.LogError(ex, "❌ [소비자 #{ConsumerId}] 이벤트 처리 중 오류", consumerId);
+            }
+        }
+    }
+
+    private async Task PublishToRabbitMqLoopAsync(CancellationToken ct)
+    {
+        await foreach (var item in _rabbitMqBuffer.Reader.ReadAllAsync(ct))
+        {
+            try
+            {
+                await _rabbitMqService.PublishChatEventAsync(item);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "❌ [소비자 #{ConsumerId}] 이벤트 처리 중 오류 (채널: {ChzzkUid})", consumerId, item.ChzzkUid);
+                _logger.LogWarning("❌ [RabbitMQ 비동기 송신 실패] {Message}", ex.Message);
             }
         }
-
-        logger.LogDebug($"[소비자 #{consumerId}] 종료됨");
     }
 
     private async Task ProcessEventAsync(ChatEventItem item, CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var mediatr = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
@@ -73,9 +98,11 @@ public sealed class ChatEventConsumerService(
         var root = doc.RootElement;
         
         // [데이터 현장검증]: 치지직으로부터 받은 원본 JSON 페이로드 로깅
-        logger.LogInformation("📥 [치지직 원본 수신] 채널: {ChzzkUid}, Payload: {Payload}", item.ChzzkUid, item.JsonPayload);
+        _logger.LogInformation("📥 [치지직 원본 수신] 채널: {ChzzkUid}, Payload: {Payload}", item.ChzzkUid, item.JsonPayload);
 
         string eventName = root[0].GetString() ?? "";
+
+        var identityCache = scope.ServiceProvider.GetRequiredService<IIdentityCacheService>();
 
         if (eventName == "SYSTEM")
         {
@@ -83,11 +110,11 @@ public sealed class ChatEventConsumerService(
         }
         else if (eventName == "CHAT")
         {
-            await HandleChatEventAsync(item.ChzzkUid, root, db, mediatr, ct);
+            await HandleChatEventAsync(item.ChzzkUid, root, identityCache, mediatr, ct);
         }
         else if (eventName == "DONATION")
         {
-            await HandleDonationEventAsync(item.ChzzkUid, root, db, mediatr, ct);
+            await HandleDonationEventAsync(item.ChzzkUid, root, identityCache, mediatr, ct);
         }
     }
 
@@ -110,14 +137,14 @@ public sealed class ChatEventConsumerService(
                 bool donationSub = await chzzkApi.SubscribeEventAsync(profile.ChzzkAccessToken!, sessionKey, "donation", chzzkUid);
 
                 if (chatSub && donationSub)
-                    logger.LogInformation($"✨ [유기적 구독] {chzzkUid} 채널의 이벤트 구독이 완료되었습니다.");
+                    _logger.LogInformation($"✨ [유기적 구독] {chzzkUid} 채널의 이벤트 구독이 완료되었습니다.");
                 else
-                    logger.LogWarning("⚠️ [구독 실패] {ChzzkUid} 채널 구독 중 일부 실패 (Chat: {ChatSub}, Donation: {DonationSub})", chzzkUid, chatSub, donationSub);
+                    _logger.LogWarning("⚠️ [구독 실패] {ChzzkUid} 채널 구독 중 일부 실패 (Chat: {ChatSub}, Donation: {DonationSub})", chzzkUid, chatSub, donationSub);
             }
         }
     }
 
-    private async Task HandleChatEventAsync(string chzzkUid, JsonElement root, IAppDbContext db, MediatR.IMediator mediatr, CancellationToken ct)
+    private async Task HandleChatEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, CancellationToken ct)
     {
         var payloadString = root[1].GetString() ?? "{}";
         using var payloadDoc = JsonDocument.Parse(payloadString);
@@ -126,7 +153,9 @@ public sealed class ChatEventConsumerService(
         string msg = payload.GetProperty("content").GetString() ?? "";
         string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
 
-        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
+        // 🛡️ [이지스 캐싱]: 매 채팅마다 DB 조회를 하지 않고 메모리 락(Lock) 없이 즉시 반환
+        var profile = await identityCache.GetStreamerProfileAsync(chzzkUid, ct);
+        
         if (profile != null)
         {
             var profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
@@ -144,7 +173,7 @@ public sealed class ChatEventConsumerService(
         }
     }
 
-    private async Task HandleDonationEventAsync(string chzzkUid, JsonElement root, IAppDbContext db, MediatR.IMediator mediatr, CancellationToken ct)
+    private async Task HandleDonationEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, CancellationToken ct)
     {
         var payloadString = root[1].GetString() ?? "{}";
         using var payloadDoc = JsonDocument.Parse(payloadString);
@@ -169,9 +198,11 @@ public sealed class ChatEventConsumerService(
 
         string nickname = payload.TryGetProperty("donatorNickname", out var dnick) ? dnick.GetString() ?? "후원자" : "후원자";
 
-        logger.LogInformation("💰 [후원 감지] {ChzzkUid} 채널에서 {CheeseAmount}치즈 후원 발생 ({Nickname}): {Message}", chzzkUid, cheeseAmount, nickname, msg);
+        _logger.LogInformation("💰 [후원 감지] {ChzzkUid} 채널에서 {CheeseAmount}치즈 후원 발생 ({Nickname}): {Message}", chzzkUid, cheeseAmount, nickname, msg);
 
-        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(pr => pr.ChzzkUid == chzzkUid, ct);
+        // 🛡️ [이지스 캐싱]: 후원 시에도 스트리머 정보를 캐시에서 즉시 인출
+        var profile = await identityCache.GetStreamerProfileAsync(chzzkUid, ct);
+        
         if (profile != null)
         {
             // [v4.5.5] 후원 시 닉네임 결정 로직 고도화

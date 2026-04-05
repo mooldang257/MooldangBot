@@ -2,15 +2,22 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using MooldangBot.Application.State;
 
 namespace MooldangBot.Presentation.Hubs;
 
 /// <summary>
 /// [오시리스의 지휘소]: 서버와 오버레이 간의 실시간 공명 통로입니다.
-/// (Aegis of Resonance): 이제 JWT 토큰(OverlayAuth 정책) 없이는 접근할 수 없습니다.
+/// (Aegis of Resonance): 이제 JWT(오버레이)와 Cookie(대시보드) 인증을 모두 지원합니다.
 /// </summary>
-[Authorize(Policy = "OverlayAuth")]
-public class OverlayHub(IRouletteService rouletteService, ILogger<OverlayHub> logger) : Hub
+[Authorize(AuthenticationSchemes = "Bearer,Cookies")]
+[EnableRateLimiting("overlay-high")]
+public class OverlayHub(
+    IRouletteService rouletteService, 
+    IPulseService pulseService, // [Phase 10] 맥박 서비스 연동
+    ILogger<OverlayHub> logger, 
+    OverlayState overlayState) : Hub
 {
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 시 서버에 결과를 알립니다.
@@ -24,56 +31,66 @@ public class OverlayHub(IRouletteService rouletteService, ILogger<OverlayHub> lo
     public override async Task OnConnectedAsync()
     {
         // 🔐 [오시리스의 절대 인장]: 오직 JWT 토큰 내에 서명된 StreamerId 클레임만 신뢰합니다.
-        // ⚠️ [보안 리뷰 반영]: 클라이언트가 조작 가능한 쿼리 스트링 폴백을 제거하여 Group Spoofing 방어
         var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
 
         if (!string.IsNullOrWhiteSpace(chzzkUid))
         {
-            // 1. 소문자로 정규화하여 그룹 가입 (대소문자 불일치 방지)
             var normalizedUid = chzzkUid.ToLower();
             await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
-            
-            // 2. 구조화된 로깅으로 접속 및 자동 가입 기록
-            logger.LogInformation("[오시리스의 공명] 오버레이가 성공적으로 연결되었습니다. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
+            await overlayState.IncrementAsync(normalizedUid); // [v13.0] Redis 분산 카운트 증가
+            logger.LogInformation("[오시리스의 공명] 오버레이 연결 성공. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
         }
         else
         {
-            // 🛑 [오시리스의 불협화음]: 유효한 스트리머 클레임이 없는 경우 연결을 즉시 차단
-            logger.LogWarning("[오시리스의 불협화음] 유효한 스트리머 클레임이 없는 오버레이 연결 시도. ConnectionId: {ConnectionId}", Context.ConnectionId);
-            Context.Abort(); // 💡 불법 연결 즉시 강제 종료
+            logger.LogWarning("[오시리스의 불협화음] 유효한 클레임 없는 오버레이 연결 시도 차단. ConnectionId: {ConnectionId}", Context.ConnectionId);
+            Context.Abort();
             return;
         }
         
         await base.OnConnectedAsync();
     }
 
-    /// <summary>
-    /// [그룹의 소속]: 스트리머의 UID를 기준으로 오버레이들을 그룹화합니다.
-    /// (Strict Claim Trust): 클라이언트가 전달한 UID 대신 토큰 내의 StreamerId를 사용합니다.
-    /// </summary>
-    public async Task JoinStreamerGroup(string? chzzkUid = null)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (string.IsNullOrEmpty(streamerUid)) return;
-        
-        await Groups.AddToGroupAsync(Context.ConnectionId, streamerUid.ToLower());
+        var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
+        if (!string.IsNullOrWhiteSpace(chzzkUid))
+        {
+            await overlayState.DecrementAsync(chzzkUid.ToLower()); // [v13.0] Redis 분산 카운트 감소
+        }
+
+        logger.LogTrace("[오시리스의 잔상] 오버레이 연결 종료. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", chzzkUid ?? "Unknown", Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task LeaveStreamerGroup(string? chzzkUid = null)
+    /// <summary>
+    /// [v2.2.0] 클라이언트 매개변수 의존성을 제거하고 오직 토큰의 클레임만 신뢰합니다.
+    /// </summary>
+    public async Task JoinStreamerGroup()
     {
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (string.IsNullOrEmpty(streamerUid)) return;
-        
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, streamerUid.ToLower());
+        if (!string.IsNullOrEmpty(streamerUid))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, streamerUid.ToLower());
+        }
+    }
+
+    public async Task LeaveStreamerGroup()
+    {
+        var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
+        if (!string.IsNullOrEmpty(streamerUid))
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, streamerUid.ToLower());
+        }
     }
 
     // 💡 대시보드 상태 업데이트를 동일 그룹(스트리머)의 오버레이들에 전송
-    public async Task UpdateOverlayState(string stateJson, string? chzzkUid = null)
+    public async Task UpdateOverlayState(string stateJson)
     {
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (string.IsNullOrEmpty(streamerUid)) return;
-
-        await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayState", stateJson);
+        if (!string.IsNullOrEmpty(streamerUid))
+        {
+            await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayState", stateJson);
+        }
     }
 
     // 특정 프리셋 그룹에 가입 (프리셋별 독립 업데이트 지원)
@@ -94,11 +111,24 @@ public class OverlayHub(IRouletteService rouletteService, ILogger<OverlayHub> lo
     }
 
     // 💡 디자인 설정 업데이트를 동일 그룹(스트리머)의 오버레이들에 전송
-    public async Task UpdateOverlayStyle(string styleJson, string? chzzkUid = null)
+    public async Task UpdateOverlayStyle(string styleJson)
     {
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (string.IsNullOrEmpty(streamerUid)) return;
+        if (!string.IsNullOrEmpty(streamerUid))
+        {
+            await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayStyle", styleJson);
+        }
+    }
 
-        await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayStyle", styleJson);
+    /// <summary>
+    /// [v2.2.1] 오버레이 클라이언트의 실시간 생존 맥박을 수신합니다.
+    /// </summary>
+    public async Task ReportPulse()
+    {
+        var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
+        if (!string.IsNullOrEmpty(streamerUid))
+        {
+            pulseService.ReportPulse($"Overlay:{streamerUid.ToLower()}");
+        }
     }
 }

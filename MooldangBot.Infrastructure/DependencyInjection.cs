@@ -1,3 +1,4 @@
+using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,8 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using RabbitMQ.Client;
 using MooldangBot.Infrastructure.Messaging;
+using MooldangBot.Application.Services;
+using MooldangBot.Infrastructure.Services.Background; // [v13.1] 백그라운드 워커 네임스페이스
 
 
 namespace MooldangBot.Infrastructure
@@ -24,8 +27,25 @@ namespace MooldangBot.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
+            services.AddDistributedMemoryCache();
+            services.AddScoped<IIdentityCacheService, IdentityCacheService>();
+            services.AddSingleton<INotificationService, NotificationService>();
+            
+            // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
+            services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
+            // [v13.1] 스테이징 데이터 수명 주기 관리 워커 등록
+            services.AddHostedService<StagingCleanupWorker>();
+            
+            // [Phase 9] 심연의 맥박: 건강 모니터링 및 알림용 서비스
+            services.AddSingleton<IPulseService, PulseService>();
+            services.AddHttpClient();
+            services.AddSingleton<IHealthMonitorService, HealthMonitorService>();
+            // [Phase 18.5] 심연의 지배자 (Chaos) - 함대 전역 상태 일관성을 위해 반드시 Singleton
+            services.AddSingleton<IChaosManager, ChaosManager>();
+
             // [오시리스의 영속]: Redis 인프라 구성 (N3/M3: 동기 블로킹 방지 및 지연 연결 보장)
-            var redisUrl = configuration["REDIS_URL"] ?? "localhost:6379";
+            var redisUrl = configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets에 의해 존재 보장됨
             
             services.AddSingleton<IConnectionMultiplexer>(sp => 
             {
@@ -38,12 +58,18 @@ namespace MooldangBot.Infrastructure
                 return ConnectionMultiplexer.Connect(options);
             });
             
-            // [RedLock]: 분산 락 팩토리 통합 관리
+            // [RedLock]: 분산 락 팩토리 및 제공자 통합 관리
             services.AddSingleton<IDistributedLockFactory>(sp => 
             {
                 var redis = sp.GetRequiredService<IConnectionMultiplexer>();
                 return RedLockFactory.Create(new List<RedLockMultiplexer> { new RedLockMultiplexer(redis) });
             });
+            services.AddSingleton<IRouletteLockProvider, MooldangBot.Infrastructure.Security.RouletteLockProvider>();
+
+            // [v13.0] 파로스의 등대: 분산 상태 관리 서비스 등록
+            services.AddSingleton<ILuaScriptProvider, LuaScriptProvider>();
+            services.AddSingleton<MooldangBot.Application.State.RouletteState>();
+            services.AddSingleton<MooldangBot.Application.State.OverlayState>();
 
             // Database — [Phase4] AddDbContextPool 상향 (poolSize: 256)
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -64,9 +90,33 @@ namespace MooldangBot.Infrastructure
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-            // Api Clients — [12-2]: Polly 표준 탄력성 핸들러 적용 (Retry, CircuitBreaker, Timeout 등)
+            // Api Clients — [v13.0] 파로스의 등대: 탄력성 파이프라인 표준화 및 지능형 429 대응
             services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
-                .AddStandardResilienceHandler();
+                .AddStandardResilienceHandler(options =>
+                {
+                    // [오시리스의 인내]: 지수 백오프 기반 재시도 전략 (2s, 4s, 8s) + 지터(무작위성) 추가
+                    options.Retry.MaxRetryAttempts = 3;
+                    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                    options.Retry.UseJitter = true; // [물멍의 팁]: 재시도 폭풍 방지용 지터 활성화
+                    options.Retry.Delay = TimeSpan.FromSeconds(2);
+                    
+                    // [오시리스의 각성]: 429(Too Many Requests) 및 5xx 에러에만 재시도 수행
+                    options.Retry.ShouldHandle = args => ValueTask.FromResult(
+                        args.Outcome.Exception is HttpRequestException ||
+                        (args.Outcome.Result != null && 
+                            ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500))
+                    );
+
+                    // [오시리스의 방패]: 429 발생 시 서킷을 더 빨리 닫아 IP 차단 방지
+                    options.CircuitBreaker.MinimumThroughput = 5;
+                    options.CircuitBreaker.FailureRatio = 0.3; // 30% 실패 시 차단
+                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+                    options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(
+                        args.Outcome.Result != null && 
+                            ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500)
+                    );
+                });
             
             // [거울의 신경망]: Gemini API 실전 연동
             services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
@@ -90,10 +140,10 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<IConnectionFactory>(sp => 
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();
-                var host = configuration["RABBITMQ_HOST"] ?? "localhost";
+                var host = configuration["RABBITMQ_HOST"]!;
                 var port = int.TryParse(configuration["RABBITMQ_PORT"], out var p) ? p : 5672;
-                var user = configuration["RABBITMQ_USER"] ?? "guest";
-                var pass = configuration["RABBITMQ_PASS"] ?? "guest";
+                var user = configuration["RABBITMQ_USER"]!;
+                var pass = configuration["RABBITMQ_PASS"]!;
 
                 return new ConnectionFactory
                 {
@@ -110,10 +160,20 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<RabbitMQPersistentConnection>();
             services.AddSingleton<IRabbitMqService, RabbitMqService>();
 
-            // [v4.5.1] RabbitMQ POC 소비자 워커 등록 (기본 호환 유지)
-            // services.AddHostedService<RabbitMqConsumerService>();
+            // [v16.0] 지휘관 선호도 전용 기억 장치 (Redis Preference)
+            services.AddSingleton<IPreferenceCacheService, PreferenceCacheService>();
+            
+            // [v16.1] 지휘관 영구 선호도 저장소 (MariaDB Preference)
+            services.AddScoped<IPreferenceDbService, PreferenceDbService>();
 
+            // [v13.0] 유튜브 실시간 정찰기(YouTube Recon Synergy) 등록
+            services.AddScoped<IYouTubeSearchService, YouTubeSearchService>();
 
+            // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
+            // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
+            services.AddScoped<IDbInitializer, DbInitializer>();
 
             return services;
         }

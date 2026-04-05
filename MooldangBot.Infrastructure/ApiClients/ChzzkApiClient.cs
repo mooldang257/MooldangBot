@@ -21,9 +21,6 @@ namespace MooldangBot.Infrastructure.ApiClients
         private const string BaseUrl = "https://openapi.chzzk.naver.com"; 
         private readonly IMemoryCache _cache;
         private readonly ILogger<ChzzkApiClient> _logger;
-        
-        // [.NET 10 / Polly] 탄력성 파이프라인 (2초 타임아웃 & 서킷 브레이커)
-        private readonly Polly.ResiliencePipeline _resiliencePipeline;
 
         public ChzzkApiClient(HttpClient httpClient, IConfiguration config, ILogger<ChzzkApiClient> logger, IMemoryCache cache)
         {
@@ -31,25 +28,13 @@ namespace MooldangBot.Infrastructure.ApiClients
             _logger = logger;
             _cache = cache;
             
-            // 파이프라인 빌드 (별도 서비스 등록이 권장되나 명세에 따라 내부 구현 가능)
-            _resiliencePipeline = new Polly.ResiliencePipelineBuilder()
-                .AddTimeout(TimeSpan.FromSeconds(2))
-                .AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions 
-                {
-                    FailureRatio = 0.5,
-                    SamplingDuration = TimeSpan.FromSeconds(30),
-                    MinimumThroughput = 5,
-                    BreakDuration = TimeSpan.FromSeconds(15)
-                })
-                .Build();
-                
             _httpClient.BaseAddress = new Uri(BaseUrl);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
             _clientId = config["CHZZK_API:CLIENT_ID"] ?? config["ChzzkApi:ClientId"] ?? "";
             _clientSecret = config["CHZZK_API:CLIENT_SECRET"] ?? config["ChzzkApi:ClientSecret"] ?? "";
             
-            // [롤백]: 안정성을 위해 다시 기본 헤더에 인증 정보를 고정합니다.
+            // [오시리스의 인장]: 공통 인증 헤더 고정 (개별 요청에서 중복 추가 방지)
             if (!string.IsNullOrEmpty(_clientId)) _httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
             if (!string.IsNullOrEmpty(_clientSecret)) _httpClient.DefaultRequestHeaders.Add("Client-Secret", _clientSecret);
         }
@@ -61,20 +46,15 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             try
             {
-                // [리팩토링] HttpRequestMessage를 사용하여 명시적으로 Client-Id 추가
-                using var request = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels/{channelId}");
-                request.Headers.Add("Client-Id", _clientId);
-                request.Headers.Add("Client-Secret", _clientSecret);
-
-                var response = await _httpClient.SendAsync(request);
-
-                // 오시리스의 심판: 인증 실패(401) 등 오류 시 예외 발생
+                // [v13.0] DI에서 주입된 표준 탄력성 핸들러가 자동으로 적용됩니다.
+                var response = await _httpClient.GetAsync($"/open/v1/channels/{channelId}");
                 response.EnsureSuccessStatusCode();
 
                 return await response.Content.ReadAsStringAsync();
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogWarning($"[이지스 경고] 채널 정보 조회 실패 ({channelId}): {ex.Message}");
                 return $"[하모니 경고] 인증 또는 통신 실패: {ex.Message}";
             }
         }
@@ -104,6 +84,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                     state = state ?? string.Empty
                 };
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", requestData);
 
                 if (!response.IsSuccessStatusCode)
@@ -125,32 +106,48 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         /// <summary>
         /// [파로스의 증명]: 획득한 토큰을 사용해 로그인한 스트리머의 정보를 가져옵니다.
+        /// [v6.1] 캐시 폴백 적용: API 실패 시 마지막으로 성공했던 프로필 정보를 반환합니다.
         /// </summary>
         public async Task<ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken)
         {
+            string cacheKey = $"profile_{accessToken.GetHashCode()}";
+
             try
             {
-                // [리팩토링] 싱글톤 HttpClient의 DefaultRequestHeaders를 수정하는 대신 
-                // HttpRequestMessage를 사용하여 스레드 안전하게 요청합니다.
                 using var request = new HttpRequestMessage(HttpMethod.Get, "https://openapi.chzzk.naver.com/open/v1/users/me");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var profileResponse = await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkUserProfileResponse);
-                    return profileResponse?.Content;
+                    var content = profileResponse?.Content;
+
+                    if (content != null)
+                    {
+                        // 성공 시 10분간 캐싱 (폴백용)
+                        _cache.Set(cacheKey, content, TimeSpan.FromMinutes(10));
+                    }
+                    return content;
                 }
 
-                Console.WriteLine($"[오시리스의 거절] 프로필 조회 실패: HTTP {response.StatusCode}");
-                return null;
+                _logger.LogWarning($"[오시리스의 거절] 프로필 조회 실패: HTTP {response.StatusCode}. 캐시 폴백을 시도합니다.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[하모니 경고] 프로필 파동 수신 오류: {ex.Message}");
-                return null;
+                _logger.LogWarning($"[하모니 경고] 프로필 파동 수신 오류: {ex.Message}. 캐시 폴백을 시도합니다.");
             }
+
+            // 🛡️ [캐시 폴백]: API 실패 또는 서킷 차단 시 기존 캐시 데이터 반환
+            if (_cache.TryGetValue(cacheKey, out ChzzkUserProfileContent? cachedProfile))
+            {
+                _logger.LogInformation("✅ [오시리스의 자비] 캐시된 프로필 정보를 반환합니다. (Resilience Fallback)");
+                return cachedProfile;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -178,6 +175,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                     request.Headers.Add("Client-Secret", clientSecret);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                    // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                     var response = await _httpClient.SendAsync(request);
                     if (!response.IsSuccessStatusCode) break;
 
@@ -233,6 +231,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 if (!string.IsNullOrEmpty(accessToken))
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -274,6 +273,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
                 request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -355,8 +355,8 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var payload = new { message = finalMessage };
                 request.Content = JsonContent.Create(payload);
 
-                var response = await _resiliencePipeline.ExecuteAsync(async token => 
-                    await _httpClient.SendAsync(request, token));
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
+                var response = await _httpClient.SendAsync(request);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -408,6 +408,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Add("Client-Secret", clientSecret ?? _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -435,6 +436,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 var payload = new { channelId = channelId };
                 request.Content = JsonContent.Create(payload);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
@@ -454,8 +456,8 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 request.Content = JsonContent.Create(updateData);
 
-                var response = await _resiliencePipeline.ExecuteAsync(async token => 
-                    await _httpClient.SendAsync(request, token));
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
+                var response = await _httpClient.SendAsync(request);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -484,6 +486,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Add("Client-Secret", _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -515,6 +518,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Add("Client-Id", _clientId);
                 request.Headers.Add("Client-Secret", _clientSecret);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 
                 if (response.IsSuccessStatusCode)
@@ -545,6 +549,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                     codeVerifier = codeVerifier // [v10.0] PKCE Verifier 추가
                 };
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.PostAsJsonAsync("/auth/v1/token", payload);
                 if (response.IsSuccessStatusCode)
                 {
@@ -575,6 +580,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Add("Client-Secret", _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -601,6 +607,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                 request.Headers.Add("Client-Id", _clientId);
                 request.Headers.Add("Client-Secret", _clientSecret);
 
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {

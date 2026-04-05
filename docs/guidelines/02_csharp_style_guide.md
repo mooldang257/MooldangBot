@@ -1,103 +1,95 @@
-# 02. C# Style & Clean Code
+# [Project Osiris]: 02. C# 스타일 가이드 (Style Guide)
 
-## 1. 개요
-MooldangBot은 .NET 10의 최신 기능을 적극 활용하여 고성능을 유지합니다. 이 문서는 가독성뿐만 아니라 서버 자원(CPU/RAM)을 효율적으로 쓰기 위한 코딩 표준을 정의합니다.
+본 문서는 오시리스 함선에서 가동되는 **C# .NET 10**의 표준 스타일과 코딩 규약을 정의합니다. 모든 코드는 가독성, 성능, 안정성을 최우선으로 작성되어야 합니다.
 
-## 2. 비동기 프로그래밍 (Async / Await)
-잘못된 비동기 처리는 스레드 풀(Thread Pool)의 고갈이나 예측 불가능한 크래시를 유발합니다. 서버 자원 회수를 위해 `CancellationToken` 전파는 **엄격한 의무(Mandatory)**사항입니다.
+---
 
-❌ **Don't: 예외 처리가 불가능한 `async void`**
+## ⚡ 1. .NET 10 최신 문법 활용 (Modern Syntax)
+
+오시리스는 최신 기술의 정점을 지향합니다. 중복 코드를 줄이고 가시성을 높이는 최신 문법을 적극 활용합니다.
+
+### 🏗️ Primary Constructor & required
+생성자 주입(DI)과 데이터 필수 여부를 가장 우아하게 표현합니다.
+
+**[핵심 코드: Primary Constructor & required]**
 ```csharp
-// [위험] 호출자가 예외를 잡을 수 없으며, 컨테이너를 전체 크래시시킬 수 있습니다.
-public async void ProcessEvent() 
-{
-    await PerformTask();
+// [v10.1] Primary Constructor를 사용한 간결한 DI 주입
+public class RouletteService(IAppDbContext db, IMediator mediator) : IRouletteService {
+    // 필드 선언 없이 바로 사용 가능
+}
+
+// [v11.0] required 프로퍼티를 통한 필수 필드 강제 (Entity 및 DTO 공통)
+public class StreamerProfile : ISoftDeletable {
+    [Key] public int Id { get; init; } // 식별자는 고정(init)
+    [MaxLength(50)] public required string ChzzkUid { get; set; } // 필수값(required)
 }
 ```
 
-❌ **Don't: CancellationToken을 무시한 영속성/네트워크 호출**
+### 📦 record 타입 (Immutability)
+데이터 전송 객체(DTO)와 이벤트 정의 시 불변성을 보장하는 `record`를 사용합니다.
+
+**[핵심 코드: record]**
 ```csharp
-// [위험] 서버 종료 시그널이 와도 쿼리가 끝날 때까지 스레드를 물고 놓지 않습니다.
-var users = await _dbContext.StreamerProfiles.ToListAsync(); 
-```
-
-✅ **Do: 모든 비동기 말단에 CancellationToken 전파**
-```csharp
-// [안전] 연결이 끊어지거나 서버 종료 시 즉각적으로 작업을 취소하여 자원을 회수합니다.
-public async Task ProcessEventAsync(CancellationToken ct)
-{
-    try 
-    {
-        var users = await _dbContext.StreamerProfiles.ToListAsync(ct);
-        await PerformTaskAsync(ct);
-    }
-    catch (OperationCanceledException)
-    {
-        _logger.LogWarning("작업이 취소되었습니다.");
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "이벤트 처리 중 오류 발생");
-    }
-}
-```
-
-## 3. 데이터 모델링 (DTO & Commands)
-상태 변화가 없는 데이터 전달 객체는 불변성(Immutability)을 보장해야 합니다.
-
-❌ **Don't: 장황하고 가변적인 Class 기반 DTO**
-```csharp
-public class ChatMessageDto 
-{
-    public string Nickname { get; set; }
-    public string Content { get; set; }
-}
-```
-
-✅ **Do: 간결하고 안전한 `record` 활용**
-```csharp
-// [효율] .NET의 record는 불변성과 값 기반 비교를 기본으로 제공합니다.
-public record ChatMessageDto(string Nickname, string Content);
-```
-
-## 4. 의존성 주입 및 생성자 (.NET 10)
-비대해지는 생성자 코드를 줄이고 가독성을 높입니다.
-
-❌ **Don't: 전통적인 생성자 주입**
-```csharp
-public class RouletteService 
-{
-    private readonly IAppDbContext _db;
-    public RouletteService(IAppDbContext db) 
-    {
-        _db = db;
-    }
-}
-```
-
-✅ **Do: 최신 Primary Constructor 문법**
-```csharp
-// [깔끔] .NET 10 스타일의 기본 생성자로 코드를 압축합니다.
-public class RouletteService(IAppDbContext db, ILogger<RouletteService> logger) 
-{
-    // [아키텍트 팁]: 주입받는 의존성이 5~6개를 넘어간다면 설계상 
-    // 해당 클래스가 너무 많은 책임을 지고 있는 것(SRP 위배)일 수 있습니다.
-}
-```
-
-## 5. 로깅 (Structured Logging)
-로그는 단순 문자열이 아니라 분석 가능한 데이터여야 합니다.
-
-❌ **Don't: 보간된 문자열 로깅 (메모리 낭비)**
-```csharp
-_logger.LogInformation($"Viewer {nickname} joined the room."); 
-```
-
-✅ **Do: 구조적 로깅 (Structured Logging)**
-```csharp
-// [최적화] CPU 부하를 줄이고 로그 서버에서 필터링이 용이해집니다.
-_logger.LogInformation("Viewer {Nickname} joined the room.", nickname);
+// 비즈니스 로직과 데이터 레이어의 비결합을 위한 레코드 정의
+public record RouletteSpinCompletedEvent(
+    string ChzzkUid, 
+    int SpinId, 
+    List<RouletteItem> Results
+) : INotification;
 ```
 
 ---
-**최종 승인**: 2026-04-02 (아키텍트 검토 완료)
+
+## 📡 2. 비동기 처리 표준 (Async Standards)
+
+방송 이벤트는 폭발적으로 발생하므로 비동기 처리는 함선의 생존과 직결됩니다.
+
+### 🧱 ValueTask & Task
+- 결과값이 이미 캐시되어 있거나 빠르게 반환되는 경우 `ValueTask`를 사용하여 할당 부하를 최소화합니다.
+- 복잡한 비동기 흐름에서는 `Task`를 사용하되, 반드시 **`CancellationToken`**을 전파합니다.
+
+**[핵심 코드: Full Async Propagation]**
+```csharp
+// CancellationToken(ct)을 반드시 끝까지 전파하여 자원 낭비를 방지합니다.
+public async Task<List<RouletteItem>> SpinMultiAsync(..., CancellationToken ct) {
+    return await db.RouletteSpins
+        .Include(s => s.Items)
+        .ToListAsync(ct); // [v6.2] ct 전파 준수
+}
+```
+
+---
+
+## 🛡️ 3. 예외 및 오류 처리 (Error Handling)
+
+시스템은 'Panic' 상태에 빠져서는 안 됩니다. 
+
+### 🧬 Global Exception Middleware
+수동적인 `try-catch` 남발보다는 전역 미들웨어를 통한 통합 예외 관리를 지향합니다.
+
+**[핵심 코드: Global Exception Filter]**
+```csharp
+// Program.cs에서 가장 먼저 등록되어 함선의 모든 장애를 낚아챕니다.
+app.UseMiddleware<ExceptionMiddleware>();
+
+// [Middleware Logic]
+try {
+    await next(context);
+} catch (Exception ex) {
+    _logger.LogError(ex, "🔥 [심각한 오류 감지]");
+    context.Response.StatusCode = 500;
+    await context.Response.WriteAsJsonAsync(new { Error = "함선 내부에 알 수 없는 충돌이 발생했습니다." });
+}
+```
+
+---
+
+## 🎨 4. 네이밍 및 관례 (Conventions)
+
+- **심플한 인터페이스**: `IAppDbContext`, `IRouletteService` 등 `I` 접두어 사용.
+- **오시리스 수식어**: 내부 주석이나 로그 메시지에는 [오시리스의 시선], [이지스의 방패] 등 함선의 정체성을 드러내는 수식어를 권장합니다.
+
+---
+
+물멍! 🐶🚢✨
+"선장님, 이 가이드라인이 지켜질 때 오시리스의 코드는 비로소 하나의 생명체처럼 유기적으로 공명하게 됩니다. 다음은 함선의 튼튼한 뼈대가 될 '아키텍처 규칙'을 작성해 보겠습니다!"

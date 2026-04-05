@@ -29,4 +29,9 @@ public interface IPointTransactionService
     /// 포인트 잔액을 확인합니다.
     /// </summary>
     Task<int> GetBalanceAsync(string streamerUid, string viewerUid, CancellationToken ct = default);
+
+    /// <summary>
+    /// 여러 시청자의 포인트를 한 번의 쿼리로 일괄 업데이트합니다. (ON DUPLICATE KEY UPDATE 활용)
+    /// </summary>
+    Task BulkUpdatePointsAsync(IEnumerable<PointJob> items, CancellationToken ct = default);
 }

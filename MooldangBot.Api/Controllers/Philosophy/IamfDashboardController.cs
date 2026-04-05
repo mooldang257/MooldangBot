@@ -7,11 +7,13 @@ using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Domain.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MooldangBot.Api.Controllers.Philosophy;
 
 [ApiController]
 [Route("api/iamf")]
+[EnableRateLimiting("overlay-high")]
 public class IamfDashboardController : ControllerBase
 {
     private readonly IResonanceService _resonance;

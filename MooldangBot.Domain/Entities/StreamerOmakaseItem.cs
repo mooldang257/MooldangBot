@@ -19,7 +19,7 @@ namespace MooldangBot.Domain.Entities
         public virtual StreamerProfile? StreamerProfile { get; set; }
 
         [Required]
-        [MaxLength(20)]
+        [MaxLength(500)]
         public string Icon { get; set; } = "🍣";
 
         [ConcurrencyCheck]

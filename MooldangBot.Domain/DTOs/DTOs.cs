@@ -25,6 +25,9 @@ namespace MooldangBot.Domain.DTOs
 
     public class SongRequestCommandDto
     {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = "노래 신청";
+
         [JsonPropertyName("keyword")]
         public string Keyword { get; set; } = "!신청";
         
@@ -69,6 +72,22 @@ namespace MooldangBot.Domain.DTOs
         
         [JsonPropertyName("sortOrder")]
         public int SortOrder { get; set; }
+    }
+
+    // [v12.5] 메타데이터가 통합된 대기열 뷰 DTO
+    public class SongQueueViewDto : SongQueueDto
+    {
+        [JsonPropertyName("url")]
+        public string? Url { get; set; }
+
+        [JsonPropertyName("lyrics")]
+        public string? Lyrics { get; set; }
+
+        [JsonPropertyName("createdAt")]
+        public KstClock CreatedAt { get; set; }
+
+        [JsonPropertyName("globalViewer")]
+        public GlobalViewer? GlobalViewer { get; set; }
     }
 
     public class SonglistDataDto
@@ -150,12 +169,15 @@ namespace MooldangBot.Domain.DTOs
     }
 
     // 🎵 대기열 곡 정보 수정을 위한 DTO (.NET 10 record 활용)
-    public record SongUpdateRequest(string? Title, string? Artist);
+    public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? Lyrics);
+
+    // 🎵 대기열 곡 추가를 위한 DTO
+    public record SongAddRequest(string Title, string? Artist, string? Url, string? Lyrics, int? GlobalViewerId = null);
 
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
-    public record RouletteSummaryDto(string ItemName, int Count, bool IsMission, string Color);
-    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSummaryDto> Summary);
+    public record RouletteSpinSummaryDto(string ItemName, int Count, bool IsMission, string Color);
+    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSpinSummaryDto> Summary);
 
     // 🎰 룰렛 저장용 DTO (통합 저장 지원)
     public class RouletteSaveDto
@@ -232,6 +254,7 @@ namespace MooldangBot.Domain.DTOs
         public string State { get; set; } = string.Empty;
         public string CodeVerifier { get; set; } = string.Empty;
         public string? TargetUid { get; set; }
+        public string? LoginType { get; set; } // [v6.2.3] "streamer" | "viewer"
         public KstClock CreatedAt { get; set; } = KstClock.Now;
     }
 
@@ -243,6 +266,52 @@ namespace MooldangBot.Domain.DTOs
         public string? ErrorMessage { get; set; }
         public string? ChzzkUid { get; set; }
         public string? ChannelName { get; set; }
+        public string? Slug { get; set; } // [v6.2.7] 리다이렉션을 위한 슬러그 정보 추가
         public string? RedirectUrl { get; set; }
+    }
+
+    // 🎰 [v6.2.6] 이지스의 정화: 룰렛 관리용 요청 DTO
+    public class RouletteSummaryDto
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("type")]
+        public RouletteType Type { get; set; }
+        [JsonPropertyName("command")]
+        public string Command { get; set; } = string.Empty;
+        [JsonPropertyName("costPerSpin")]
+        public int CostPerSpin { get; set; }
+        [JsonPropertyName("isActive")]
+        public bool IsActive { get; set; }
+        [JsonPropertyName("activeItemCount")]
+        public int ActiveItemCount { get; set; }
+        [JsonPropertyName("lstUpdDt")]
+        public KstClock? LstUpdDt { get; set; }
+    }
+
+    public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, KstClock CreatedAt, int Status);
+
+    public record CompleteRequest(
+        [property: JsonPropertyName("spinId")] string SpinId
+    );
+
+    public class RouletteUpdateRequest
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("type")]
+        public RouletteType Type { get; set; } = RouletteType.Cheese;
+        [JsonPropertyName("command")]
+        public string? Command { get; set; }
+        [JsonPropertyName("costPerSpin")]
+        public int CostPerSpin { get; set; }
+        [JsonPropertyName("isActive")]
+        public bool IsActive { get; set; }
+        [JsonPropertyName("items")]
+        public List<MooldangBot.Domain.Entities.RouletteItem> Items { get; set; } = new();
     }
 }

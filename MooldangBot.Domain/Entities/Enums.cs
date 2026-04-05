@@ -47,4 +47,26 @@ namespace MooldangBot.Domain.Entities
         Active = 1,     // 방송중
         Ended = 0       // 종료됨
     }
+
+    /// <summary>
+    /// [v11.1] 포인트 거래 구분
+    /// </summary>
+    public enum PointTransactionType
+    {
+        Unknown = 0,
+        Earn = 1,       // 획득 (채팅, 이벤트 등)
+        Spend = 2,      // 사용 (룰렛, 신청 등)
+        Gift = 3,       // 선물
+        System = 4      // 관리자 조정
+    }
+
+    /// <summary>
+    /// [v12.0] 노래 메타데이터 출처 구분
+    /// </summary>
+    public enum MetadataSourceType
+    {
+        Admin = 0,
+        Streamer = 1,
+        Viewer = 2
+    }
 }

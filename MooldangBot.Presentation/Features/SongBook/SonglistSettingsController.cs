@@ -6,6 +6,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using System.Text.Json.Serialization;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.SongBook
 {
@@ -24,39 +25,38 @@ namespace MooldangBot.Presentation.Features.SongBook
             _unifiedCommandService = unifiedCommandService;
         }
 
-        [HttpGet("/api/settings/data/{chzzkUid}")]
+        [HttpGet("/api/settings/data/{streamerUid}")]
         [AllowAnonymous] 
-        public async Task<IResult> GetSonglistSettingsData(string chzzkUid)
+        public async Task<IActionResult> GetSonglistSettingsData(string streamerUid)
         {
-            var targetUid = chzzkUid.ToLower();
+            var targetUid = streamerUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             
-            if (profile == null) return Results.NotFound();
+            if (profile == null) return NotFound(Result<object>.Failure("존재하지 않는 채널입니다."));
 
             var omakaseItems = await _db.StreamerOmakases
                 .IgnoreQueryFilters()
                 .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
 
-            var omakaseCommands = await _db.UnifiedCommands
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .Include(c => c.StreamerProfile)
-                .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
-                .ToListAsync();
-
+            // [물멍]: 문자열(ChzzkUid) 대신 숫자 PK(ProfileId)를 사용해 조인 효율을 높였습니다.
             var songCommands = await _db.UnifiedCommands
                 .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Include(c => c.StreamerProfile)
                 .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest)
-                .Select(c => new { Keyword = c.Keyword, Price = c.Cost })
+                .Where(c => c.StreamerProfileId == profile.Id && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest)
+                .Select(c => new { Keyword = c.Keyword, Price = c.Cost, Name = c.ResponseText })
                 .ToListAsync();
 
-            return Results.Ok(new
+            var omakaseCommands = await _db.UnifiedCommands
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .Include(c => c.MasterFeature)
+                .Where(c => c.StreamerProfileId == profile.Id && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
+                .ToListAsync();
+
+            return Ok(Result<object>.Success(new
             {
                 songCommand = "!신청", // 레거시 호환용 고정값 (실제 사용은 songRequestCommands 참조)
                 songRequestCommands = songCommands,
@@ -76,17 +76,17 @@ namespace MooldangBot.Presentation.Features.SongBook
                         };
                     }),
                 labels = TryGetLabels(profile.DesignSettingsJson)
-            });
+            }));
         }
 
-        [HttpPost("/api/settings/labels/{chzzkUid}")]
-        public async Task<IResult> UpdateLabels(string chzzkUid, [FromBody] System.Text.Json.JsonElement labels)
+        [HttpPost("/api/settings/labels/{streamerUid}")]
+        public async Task<IActionResult> UpdateLabels(string streamerUid, [FromBody] System.Text.Json.JsonElement labels)
         {
-            var targetUid = chzzkUid.ToLower();
+            var targetUid = streamerUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
-            if (profile == null) return Results.NotFound();
+            if (profile == null) return NotFound(Result<object>.Failure("존재하지 않는 채널입니다."));
 
             var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
             var designData = string.IsNullOrEmpty(profile.DesignSettingsJson) 
@@ -97,13 +97,13 @@ namespace MooldangBot.Presentation.Features.SongBook
             profile.DesignSettingsJson = System.Text.Json.JsonSerializer.Serialize(designData, options);
             
             await _db.SaveChangesAsync();
-            return Results.Ok();
+            return Ok(Result<object>.Success(null));
         }
 
-        [HttpPost("/api/settings/update/{chzzkUid}")]
-        public async Task<IResult> UpdateSonglistSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest req)
+        [HttpPost("/api/settings/update/{streamerUid}")]
+        public async Task<IActionResult> UpdateSonglistSettings(string streamerUid, [FromBody] SonglistSettingsUpdateRequest req)
         {
-            var targetUid = chzzkUid.ToLower();
+            var targetUid = streamerUid.ToLower();
             var profile = await _db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
@@ -181,7 +181,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                             CostType: CommandCostType.Cheese.ToString(),
                             Cost: sc.Price,
                             FeatureType: CommandFeatureTypes.SongRequest,
-                            ResponseText: "노래 신청",
+                            ResponseText: string.IsNullOrWhiteSpace(sc.Name) ? "노래 신청" : sc.Name.Trim(), // [물멍]: 커스텀 이름 적용
                             TargetId: null,
                             IsActive: true,
                             RequiredRole: (songMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
@@ -230,7 +230,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             }
 
             await _db.SaveChangesAsync();
-            return Results.Ok();
+            return Ok(Result<object>.Success(null));
         }
 
         private object TryGetLabels(string? json)

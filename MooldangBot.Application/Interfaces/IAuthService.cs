@@ -11,7 +11,7 @@ public interface IAuthService
     /// <summary>
     /// 치지직 OAuth 인증을 위한 메타데이터(URL, State, Verifier)를 생성합니다.
     /// </summary>
-    Task<AuthMetadata> GenerateAuthMetadataAsync(string? targetUid = null);
+    Task<AuthMetadata> GenerateAuthMetadataAsync(string? targetUid = null, string? loginType = null);
 
     /// <summary>
     /// 콜백으로 전달된 코드를 토큰으로 교환하고 사용자 프로필을 동기화합니다.

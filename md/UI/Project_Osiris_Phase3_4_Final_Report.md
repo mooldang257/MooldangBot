@@ -87,7 +87,7 @@ async function copyOverlayUrl() {
 ```yaml
 services:
   admin:
-    build: { context: ./MooldangBot.Admin }
+    build: { context: ./MooldangBot.Studio }
     container_name: mooldang-admin
   
   overlay:

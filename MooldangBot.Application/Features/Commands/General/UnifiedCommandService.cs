@@ -37,13 +37,17 @@ public class UnifiedCommandService : IUnifiedCommandService
             .FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
         if (streamer == null) throw new KeyNotFoundException("스트리머 프로필을 찾을 수 없습니다.");
 
-        // [v4.3] 마스터 기능 조회 (Category + FeatureType 조합)
-        var categoryValue = (int)Enum.Parse<CommandCategory>(req.Category, true);
+        // [v4.3] 마스터 기능 조회 (Category Name + FeatureType 조합으로 더욱 견고하게 조회)
         var masterFeature = await _db.MasterCommandFeatures
+            .Include(f => f.Category)
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(f => f.CategoryId == (categoryValue + 1) && f.TypeName == req.FeatureType);
+            .FirstOrDefaultAsync(f => f.Category!.Name == req.Category && f.TypeName == req.FeatureType);
         
-        if (masterFeature == null) throw new InvalidOperationException("정의되지 않은 명령어 기능 타입입니다.");
+        if (masterFeature == null) 
+        {
+            _logger.LogWarning("⚠️ [UnifiedCommandService]: 정의되지 않은 명령어 기능 타입 요청 (Category: {Category}, Type: {Type})", req.Category, req.FeatureType);
+            throw new InvalidOperationException($"정의되지 않은 명령어 기능 타입입니다. (Category: {req.Category}, Type: {req.FeatureType})");
+        }
 
         UnifiedCommand? entity;
         if (req.Id.HasValue && req.Id.Value > 0)
@@ -64,13 +68,21 @@ public class UnifiedCommandService : IUnifiedCommandService
             _db.UnifiedCommands.Add(entity);
         }
 
-        // 중복 키워드 검사
+        // 중복 키워드 및 이름 검사
         int currentId = req.Id ?? 0;
-        bool isDuplicate = await _db.UnifiedCommands
+        bool isDuplicateKeyword = await _db.UnifiedCommands
             .IgnoreQueryFilters()
             .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.Keyword == req.Keyword && c.Id != currentId);
 
-        if (isDuplicate) throw new InvalidOperationException("이미 존재하는 명령어 키워드입니다.");
+        if (isDuplicateKeyword) throw new InvalidOperationException("이미 존재하는 명령어 키워드입니다.");
+
+        // [물멍]: 동일한 이름(ResponseText)의 명령어가 이미 존재하는지 체크 (무결성 강화)
+        bool isDuplicateName = await _db.UnifiedCommands
+            .IgnoreQueryFilters()
+            .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.ResponseText == req.ResponseText && c.Id != currentId 
+                      && c.MasterCommandFeatureId == masterFeature.Id); // 같은 카테고리 내에서만 체크
+
+        if (isDuplicateName) throw new InvalidOperationException($"이미 '{req.ResponseText}' 이름의 명령어가 존재합니다.");
 
         // 데이터 매핑
         entity.Keyword = req.Keyword.Trim();
@@ -117,26 +129,26 @@ public class UnifiedCommandService : IUnifiedCommandService
             .Include(c => c.MasterFeature)
             .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == targetUid);
 
-        if (entity != null)
+        if (entity == null) throw new KeyNotFoundException("삭제할 명령어를 찾을 수 없거나 이미 삭제되었습니다.");
+
+        // [v6.2.5] 자식 엔티티(오마카세 등) 연쇄 삭제 처리 (Soft-Delete 아닌 하드 삭제 수행)
+        var featureType = entity.MasterFeature?.TypeName ?? "";
+        if (featureType == CommandFeatureTypes.Omakase && entity.TargetId.HasValue)
         {
-            var featureType = entity.MasterFeature?.TypeName ?? "";
-            if (featureType == CommandFeatureTypes.Omakase && entity.TargetId.HasValue)
+            var itemsToDelete = await _db.StreamerOmakases
+                .IgnoreQueryFilters()
+                .Where(o => o.StreamerProfileId == entity.StreamerProfileId && o.Id == entity.TargetId.Value)
+                .ToListAsync();
+
+            if (itemsToDelete.Any())
             {
-                var itemsToDelete = await _db.StreamerOmakases
-                    .IgnoreQueryFilters()
-                    .Where(o => o.StreamerProfileId == entity.StreamerProfileId && o.Id == entity.TargetId.Value)
-                    .ToListAsync();
-
-                if (itemsToDelete.Any())
-                {
-                    _db.StreamerOmakases.RemoveRange(itemsToDelete);
-                }
+                _db.StreamerOmakases.RemoveRange(itemsToDelete);
             }
-
-            _db.UnifiedCommands.Remove(entity);
-            await _db.SaveChangesAsync();
-            await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
+
+        _db.UnifiedCommands.Remove(entity);
+        await _db.SaveChangesAsync();
+        await _cacheService.RefreshUnifiedAsync(targetUid, default);
     }
 
     private async Task OnBeforeSaveAsync(UnifiedCommand entity, SaveUnifiedCommandRequest req, string targetUid)
@@ -156,7 +168,8 @@ public class UnifiedCommandService : IUnifiedCommandService
 
     private async Task OnAfterSaveAsync(UnifiedCommand entity, SaveUnifiedCommandRequest req, string targetUid, bool isNew)
     {
-        if (!isNew) return;
+        // [물멍]: 신규 생성이 아니거나, 이미 TargetId가 할당된 경우(컨트롤러에서 직접 생성 등) 건너뜁니다.
+        if (!isNew || entity.TargetId.HasValue) return;
 
         var featureType = req.FeatureType; 
         switch (featureType)

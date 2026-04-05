@@ -8,6 +8,7 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration; // [Phase 1] 설정 연동
+using MooldangBot.Application.Common.Models; // Result<T> 도입
 
 namespace MooldangBot.Presentation.Features.Commands
 {
@@ -48,7 +49,7 @@ namespace MooldangBot.Presentation.Features.Commands
         [HttpGet("/api/commands/unified/{chzzkUid}")]
         public async Task<IResult> GetUnifiedCommands(
             string chzzkUid, 
-            [AsParameters] CursorPagedRequest request)
+            [FromQuery] CursorPagedRequest request)
         {
             // 🛡️ 보안: 세션 기반 권한 검증 및 정규화된 ID 조회
             var streamer = await _db.StreamerProfiles
@@ -56,17 +57,17 @@ namespace MooldangBot.Presentation.Features.Commands
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
-            if (streamer == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
+            if (streamer == null) return Results.NotFound(Result<object>.Failure("스트리머를 찾을 수 없습니다."));
             
             var streamerId = streamer.Id;
             int maxLimit = _config.GetValue<int>("Pagination:MaxLimit", 100);
             int effectiveLimit = Math.Min(request.Limit, maxLimit);
 
-            // 🔍 기본 쿼리 빌드
+            // 🔍 기본 쿼리 빌드 (ISoftDeletable 필터 적용을 위해 IgnoreQueryFilters 제외)
             var query = _db.UnifiedCommands
                 .AsNoTracking()
-                .IgnoreQueryFilters()
                 .Include(c => c.MasterFeature)
+                .ThenInclude(f => f.Category)
                 .Where(c => c.StreamerProfileId == streamerId);
 
             // 🚀 커서 기반 필터링 (ID 역순/최신순 기준)
@@ -82,10 +83,10 @@ namespace MooldangBot.Presentation.Features.Commands
                 .Select(c => new UnifiedCommandDto(
                     c.Id, 
                     c.Keyword, 
-                    c.MasterFeature!.Category!.Name, 
+                    c.MasterFeature != null && c.MasterFeature.Category != null ? c.MasterFeature.Category.Name : "General", 
                     c.CostType.ToString(), 
                     c.Cost, 
-                    c.MasterFeature!.TypeName, 
+                    c.MasterFeature != null ? c.MasterFeature.TypeName : "Unknown", 
                     c.ResponseText, 
                     c.TargetId, 
                     c.IsActive,
@@ -98,7 +99,7 @@ namespace MooldangBot.Presentation.Features.Commands
 
             int? nextCursor = items.LastOrDefault()?.Id;
 
-            return Results.Ok(new CursorPagedResponse<UnifiedCommandDto>(items, nextCursor, hasNext));
+            return Results.Ok(Result<CursorPagedResponse<UnifiedCommandDto>>.Success(new CursorPagedResponse<UnifiedCommandDto>(items, nextCursor, hasNext)));
         }
 
         /// <summary>
@@ -110,15 +111,15 @@ namespace MooldangBot.Presentation.Features.Commands
             try
             {
                 var entity = await _unifiedCommandService.UpsertCommandAsync(chzzkUid, req);
-                return Results.Ok(new { Message = req.Id > 0 ? "수정 완료" : "생성 완료", Id = entity.Id });
+                return Results.Ok(Result<object>.Success(new { Message = req.Id > 0 ? "수정 완료" : "생성 완료", Id = entity.Id }));
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { Message = ex.Message });
+                return Results.BadRequest(Result<object>.Failure(ex.Message));
             }
             catch (KeyNotFoundException ex)
             {
-                return Results.NotFound(ex.Message);
+                return Results.NotFound(Result<object>.Failure(ex.Message));
             }
         }
 
@@ -131,14 +132,14 @@ namespace MooldangBot.Presentation.Features.Commands
         public async Task<IResult> DeleteUnifiedCommand(string chzzkUid, int id)
         {
             await _unifiedCommandService.DeleteCommandAsync(chzzkUid, id);
-            return Results.Ok();
+            return Results.Ok(Result<bool>.Success(true));
         }
 
         [HttpPatch("/api/commands/unified/toggle/{chzzkUid}/{id}")]
         public async Task<IResult> ToggleUnifiedCommand(string chzzkUid, int id)
         {
             await _unifiedCommandService.ToggleCommandAsync(chzzkUid, id);
-            return Results.Ok();
+            return Results.Ok(Result<bool>.Success(true));
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace MooldangBot.Presentation.Features.Commands
         public async Task<IResult> GetMasterData()
         {
             var masterData = await _masterCache.GetMasterDataAsync();
-            return Results.Ok(masterData);
+            return Results.Ok(Result<object>.Success(masterData));
         }
 
         /// <summary>
@@ -162,17 +163,17 @@ namespace MooldangBot.Presentation.Features.Commands
         {
             _masterCache.RefreshCache();
             _logger.LogInformation("Command Master Cache has been refreshed by administrator.");
-            return Results.Ok(new { Message = "Master cache refreshed successfully." });
+            return Results.Ok(Result<object>.Success(new { Message = "Master cache refreshed successfully." }));
         }
 
         // --- Legacy Support ---
         [HttpGet("/api/commands/list/{chzzkUid}")]
-        public async Task<IResult> GetCommands(string chzzkUid) => Results.Ok(new List<CombinedCommandDto>());
+        public async Task<IResult> GetCommands(string chzzkUid) => Results.Ok(Result<List<CombinedCommandDto>>.Success(new List<CombinedCommandDto>()));
 
         [HttpPost("/api/commands/save/{chzzkUid}")]
-        public async Task<IResult> SaveCommand(string chzzkUid, [FromBody] object cmd) => Results.Ok();
+        public async Task<IResult> SaveCommand(string chzzkUid, [FromBody] object cmd) => Results.Ok(Result<bool>.Success(true));
 
         [HttpDelete("/api/commands/delete/{chzzkUid}/{idStr}")]
-        public async Task<IResult> DeleteCommand(string chzzkUid, string idStr) => Results.Ok();
+        public async Task<IResult> DeleteCommand(string chzzkUid, string idStr) => Results.Ok(Result<bool>.Success(true));
     }
 }
