@@ -118,8 +118,12 @@ namespace MooldangBot.Infrastructure
                     );
                 });
             
-            // [거울의 신경망]: Gemini API 실전 연동
-            services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
+            // [거울의 신경망]: Gemini API 실전 연동 (⚠️ 현재 고도화 및 운영 정책에 따라 일시 중단 - 삭제 금지)
+            // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
+            // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
+            
+            // AI 기능 호출 시 무응답(Silence) 처리를 위해 Mock 서비스를 등록합니다.
+            services.AddSingleton<ILlmService, LlmServiceMock>();
 
             // [피닉스의 심장]: 실전 채팅 클라이언트 (샤드 분할 관리형)
             services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();

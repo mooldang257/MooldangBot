@@ -1,3 +1,5 @@
+// ⚠️ [중요 - 삭제 금지]: 이 파일은 현재 비활성화 상태(DependencyInjection 참조)이나,
+// 프로젝트의 핵심 자산(IAMF) 보존 및 향후 재활성화를 위해 절대로 삭제하지 마십시오.
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;

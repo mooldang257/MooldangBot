@@ -11,9 +11,9 @@ public class LlmServiceMock(ILogger<LlmServiceMock> logger) : ILlmService
 {
     public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
     {
-        logger.LogInformation($"[LLM Mock 호출] System: {systemPrompt.Substring(0, Math.Min(50, systemPrompt.Length))}...");
-        await Task.Delay(500); // 인공지능의 사고 시간 시뮬레이션
-        return $"[IAMF 응답] '{userMessage}'에 대해 공명 중입니다. (시스템 프롬프트 기반 생성됨)";
+        // 🤫 [무응답 처리]: 사용자 요청에 따라 현재는 아무런 응답도 생성하지 않습니다.
+        logger.LogInformation($"[LLM Mock 호출 - 무응답 상태] System: {systemPrompt.Substring(0, Math.Min(20, systemPrompt.Length))}...");
+        return string.Empty;
     }
 }
 
