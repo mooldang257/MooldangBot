@@ -28,9 +28,12 @@ export const handle: Handle = async ({ event, resolve }) => {
         // [이지스]: 백엔드 전령(API)에게 별칭의 실소유주를 물어봅니다.
         const res = await event.fetch(`/api/auth/resolve-slug/${segment}`);
         if (res.ok) {
-            const { chzzkUid } = await res.json();
-            event.locals.streamerUid = chzzkUid;
-            // Console.log(`🛡️ [관문 신원 변환] 별칭: ${segment} -> UID: ${chzzkUid}`);
+            const result = await res.json();
+            if (result.isSuccess && result.value) {
+                const chzzkUid = result.value.chzzkUid;
+                event.locals.streamerUid = chzzkUid;
+                // console.log(`🛡️ [관문 신원 변환] 별칭: ${segment} -> UID: ${chzzkUid}`);
+            }
         } else {
             // 별칭이 아닌 경우 기존처럼 UID로 취급 (locals.streamerUid를 설정하지 않음)
             // 추후 필요 시 segment 자체가 유효한 UID 포맷인지 검증하는 로직 추가 가능
