@@ -139,7 +139,15 @@ namespace MooldangBot.Presentation.Features.Auth
                 return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("인증되지 않은 사용자입니다."));
             }
 
-            var chzzkUid = uid ?? User.FindFirstValue("StreamerId");
+            var resolvedUid = uid;
+            if (!string.IsNullOrEmpty(uid))
+            {
+                // [이지스]: 슬러그 파라미터가 들어온 경우 UID로 역방향 색인 시도
+                var uidFromSlug = await _identityCache.GetChzzkUidBySlugAsync(uid);
+                if (!string.IsNullOrEmpty(uidFromSlug)) resolvedUid = uidFromSlug;
+            }
+
+            var chzzkUid = resolvedUid ?? User.FindFirstValue("StreamerId");
             if (string.IsNullOrEmpty(chzzkUid))
             {
                 return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("치지직 계정 연동 정보가 없습니다."));
@@ -150,7 +158,7 @@ namespace MooldangBot.Presentation.Features.Auth
                 var channelRes = await _chzzkApi.GetChannelsAsync(new[] { chzzkUid });
                 var profile = await _db.StreamerProfiles
                                  .IgnoreQueryFilters() 
-                                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid || p.Slug == chzzkUid);
 
                 if (profile != null)
                 {
@@ -310,7 +318,12 @@ namespace MooldangBot.Presentation.Features.Auth
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state)) 
+            {
+                _logger.LogWarning("[인증] 필수 파라미터(code/state) 누락");
                 return Ok(Result<object>.Failure("필수 인증 파라미터가 누락되었습니다."));
+            }
+
+            _logger.LogInformation($"[인증] 치지직 콜백 수신 (State: {state})");
 
             // 🛡️ [물멍의 수호]: Double-Submit Cookie 검증
             var stateFromCookie = Request.Cookies[StateCookieName];
@@ -422,9 +435,10 @@ namespace MooldangBot.Presentation.Features.Auth
 
             // [물멍]: 역할에 따른 전용 함교 리다이렉트 (Slug 우선, 없으면 UID 폴백)
             string targetPath = !string.IsNullOrEmpty(result.Slug) ? result.Slug : chzzkUid;
-            string redirectPath = $"/{targetPath}/dashboard";
+            string redirectUri = $"{BaseDomain.TrimEnd('/')}/{targetPath}/dashboard";
             
-            return Redirect($"{BaseDomain.TrimEnd('/')}{redirectPath}");
+            _logger.LogInformation($"[인증] 로그인 완료 (UID: {chzzkUid}, Role: {userRole}, Redirect: {redirectUri})");
+            return Redirect(redirectUri);
         }
     }
 }

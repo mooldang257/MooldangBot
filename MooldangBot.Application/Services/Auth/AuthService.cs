@@ -74,10 +74,12 @@ public class AuthService(
             
             if (tokenResult?.Content == null)
             {
+                _logger.LogError("[인증] 토큰 교환 실패: 응답 데이터가 없거나 형식이 잘못되었습니다.");
                 return new AuthResult { IsSuccess = false, ErrorMessage = "토큰 교환 실패 또는 응답 데이터 없음" };
             }
 
             var content = tokenResult.Content;
+            _logger.LogInformation($"[인증] 토큰 교환 성공 (ExpiresIn: {content.ExpiresIn})");
             var expireDate = KstClock.Now.AddSeconds(content.ExpiresIn);
 
             // 2. 봇 설정 흐름 처리 (v17.0 이후 레거시 대응: 개별 스트리머 프로필로 통합됨)
@@ -191,6 +193,7 @@ public class AuthService(
         }
 
         await _db.SaveChangesAsync(); // [물멍의 제언]: 원자적 저장
+        _logger.LogInformation($"[인증] 스트리머 프로필 동기화 완료 (UID: {chzzkUid}, Slug: {streamer.Slug})");
 
         return new AuthResult { IsSuccess = true, ChzzkUid = chzzkUid, ChannelName = channelName, Slug = streamer.Slug };
     }
