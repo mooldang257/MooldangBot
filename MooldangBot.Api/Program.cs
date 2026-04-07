@@ -230,7 +230,7 @@ try
         // [Aegis 로컬 패스]: 로컬/HTTP 환경에서도 세션이 유지되도록 보안 정책 조정
         var isDev = builder.Environment.IsDevelopment();
         options.Cookie.SecurePolicy = isDev ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-        options.Cookie.SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax; // [v22.2] 동일 도메인 환경에서의 세션 유지력 강화 (Lax 권장)
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true; // [v22.1] 필수 쿠키로 지정하여 시스템 가용성 보장
     })

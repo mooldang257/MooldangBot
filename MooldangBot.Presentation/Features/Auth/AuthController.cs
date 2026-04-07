@@ -134,6 +134,8 @@ namespace MooldangBot.Presentation.Features.Auth
         [HttpGet("auth/me")]
         public async Task<IActionResult> GetMyProfile([FromQuery] string? uid)
         {
+            _logger.LogInformation($"[인증] 프로필 조회 요청 수신 (Param-UID: {uid}, IsAuth: {User.Identity?.IsAuthenticated}, User: {User.Identity?.Name})");
+
             if (User.Identity?.IsAuthenticated != true)
             {
                 return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("인증되지 않은 사용자입니다."));
