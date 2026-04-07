@@ -37,7 +37,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
             
             var streamer = await db.StreamerProfiles
                 .AsNoTracking()
-                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
 
             if (streamer == null) 
@@ -149,7 +148,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
             if (omakaseId.HasValue)
             {
                 var omakase = await db.StreamerOmakases
-                    .IgnoreQueryFilters()
                     .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id);
                     
                 if (omakase != null)
@@ -157,8 +155,8 @@ namespace MooldangBot.Presentation.Features.SongQueue
                     omakase.Count--;
                     if (omakase.Count < 0) omakase.Count = 0;
 
+                    const string query = "SELECT * FROM SonglistSessions WHERE ChzzkUid = {0} AND IsActive = 1";
                     var activeSession = await db.SonglistSessions
-                        .IgnoreQueryFilters()
                         .Include(s => s.StreamerProfile)
                         .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
                         .FirstOrDefaultAsync();
@@ -186,7 +184,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
                 return NotFound(Result<string>.Failure("수정할 곡을 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
-                .IgnoreQueryFilters()
                 .Include(s => s.StreamerProfile)
                 .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
                 .FirstOrDefaultAsync();
@@ -207,7 +204,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
             if (status == SongStatus.Playing)
             {
                 var current = await db.SongQueues
-                    .IgnoreQueryFilters()
                     .Include(s => s.StreamerProfile)
                     .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == SongStatus.Playing);
                 if (current != null)
@@ -248,7 +244,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
         {
             var targetUid = chzzkUid.ToLower();
             var songItem = await db.SongQueues
-                .IgnoreQueryFilters()
                 .Include(s => s.StreamerProfile)
                 .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid);
 

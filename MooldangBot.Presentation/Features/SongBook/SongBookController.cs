@@ -34,13 +34,11 @@ namespace MooldangBot.Presentation.Features.SongBook
             [FromQuery] int pageSize = 20)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var query = db.StreamerOmakases
-                .IgnoreQueryFilters()
                 .Where(o => o.StreamerProfileId == profile.Id);
 
             if (targetId.HasValue)
@@ -57,7 +55,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             var items = await query
                 .OrderByDescending(o => o.Id)
                 .Take(pageSize + 1)
-                .Join(db.UnifiedCommands.IgnoreQueryFilters()
+                .Join(db.UnifiedCommands
                     .Include(c => c.StreamerProfile)
                     .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.FeatureType.ToString() == CommandFeatureTypes.Omakase),
                     o => o.Id,
@@ -88,30 +86,25 @@ namespace MooldangBot.Presentation.Features.SongBook
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var omakases = await db.StreamerOmakases
-                .IgnoreQueryFilters() 
                 .Where(o => o.StreamerProfileId == profile.Id)
                 .ToListAsync();
 
             var songs = await db.SongQueues
-                .IgnoreQueryFilters()
                 .Where(s => s.StreamerProfileId == profile.Id)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
             var memo = await db.StreamerPreferences
-                .IgnoreQueryFilters()
                 .Where(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "SongList_Memo")
                 .Select(p => p.PreferenceValue)
                 .FirstOrDefaultAsync() ?? "";
 
             var omakaseCommands = await db.UnifiedCommands
-                .IgnoreQueryFilters()
                 .Include(c => c.StreamerProfile)
                 .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.FeatureType.ToString() == CommandFeatureTypes.Omakase)
                 .ToListAsync();
@@ -145,13 +138,11 @@ namespace MooldangBot.Presentation.Features.SongBook
         public async Task<IActionResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var item = await db.StreamerOmakases
-                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(o => o.Id == id && o.StreamerProfileId == profile.Id);
 
             if (item == null)
@@ -192,8 +183,7 @@ namespace MooldangBot.Presentation.Features.SongBook
         public async Task<IActionResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
                 
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
@@ -222,14 +212,12 @@ namespace MooldangBot.Presentation.Features.SongBook
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
-                .IgnoreQueryFilters()
-                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
+                                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
 
             return Ok(Result<object>.Success(new { 
@@ -243,14 +231,12 @@ namespace MooldangBot.Presentation.Features.SongBook
         public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
         {
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+                                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
-                .IgnoreQueryFilters()
-                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
+                                .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
 
             bool nowActive;
