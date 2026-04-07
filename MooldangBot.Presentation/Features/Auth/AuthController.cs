@@ -149,21 +149,30 @@ namespace MooldangBot.Presentation.Features.Auth
                 if (!string.IsNullOrEmpty(uidFromSlug)) resolvedUid = uidFromSlug;
             }
 
-            var chzzkUid = resolvedUid ?? User.FindFirstValue("StreamerId");
+            // [물멍]: 파라미터가 비어 있거나(empty string) 공백인 경우 세션 정보를 우선 사용하도록 폴백 강화
+            var chzzkUid = !string.IsNullOrWhiteSpace(resolvedUid) 
+                ? resolvedUid 
+                : User.FindFirstValue("StreamerId");
+
             if (string.IsNullOrEmpty(chzzkUid))
             {
+                _logger.LogWarning("[인증] 프로필 조회 실패: 유효한 UID 또는 세션 정보가 없습니다.");
                 return Ok(MooldangBot.Application.Common.Models.Result<object>.Failure("치지직 계정 연동 정보가 없습니다."));
             }
 
             try 
             {
-                var channelRes = await _chzzkApi.GetChannelsAsync(new[] { chzzkUid });
                 var profile = await _db.StreamerProfiles
                                  .IgnoreQueryFilters() 
                                  .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid || p.Slug == chzzkUid);
 
                 if (profile != null)
                 {
+                    _logger.LogInformation($"[인증] 프로필 조회 성공 (ID: {chzzkUid}, Slug: {profile.Slug})");
+                    var channelRes = await _chzzkApi.GetChannelsAsync(new[] { profile.ChzzkUid });
+                    
+                    bool isLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken);
+
                     if (channelRes?.Content?.Data?.FirstOrDefault() is { } channelData)
                     {
                         if (!string.IsNullOrEmpty(channelData.ChannelName)) profile.ChannelName = channelData.ChannelName;
