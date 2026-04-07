@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Application.Workers;
 
@@ -60,16 +61,21 @@ public class LogBulkBufferWorker(
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var dbContext = (DbContext)db; // BulkInsertAsync 호출을 위해 캐스팅
 
+            var bulkConfig = new BulkConfig 
+            { 
+                BatchSize = 1000
+            };
+
             if (vibrationLogs.Count > 0)
             {
                 logger.LogInformation("[기록관의 수레] {Count}개의 진동 로그를 벌크 저장합니다.", vibrationLogs.Count);
-                await dbContext.BulkInsertAsync(vibrationLogs);
+                await dbContext.BulkInsertAsync(vibrationLogs, bulkConfig);
             }
 
             if (scenarios.Count > 0)
             {
                 logger.LogInformation("[기록관의 수레] {Count}개의 시나리오 로그를 벌크 저장합니다.", scenarios.Count);
-                await dbContext.BulkInsertAsync(scenarios);
+                await dbContext.BulkInsertAsync(scenarios, bulkConfig);
             }
         }
         catch (Exception ex)

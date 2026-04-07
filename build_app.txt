@@ -1,0 +1,44 @@
+﻿  蹂듭썝???꾨줈?앺듃瑜??뺤씤?섎뒗 以?..
+  蹂듭썝??紐⑤뱺 ?꾨줈?앺듃媛 理쒖떊 ?곹깭?낅땲??
+  MooldangBot.Domain -> C:\webapi\MooldangAPI\MooldangBot.Domain\bin\Debug\net10.0\MooldangBot.Domain.dll
+  MooldangBot.ChzzkAPI -> C:\webapi\MooldangAPI\MooldangBot.ChzzkAPI\bin\Debug\net10.0\MooldangBot.ChzzkAPI.dll
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(17,23): warning CS9113: ?쁦ntentRouter??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(18,17): warning CS9113: ?쁫lmService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(19,23): warning CS9113: ?쁟hatService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(20,22): warning CS9113: ?쁯hoenix??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\TitleStrategy.cs(58,28): warning CS0472: 'bool' ?뺤떇??媛믪? 'bool?' ?뺤떇??'null'怨?媛숈쓣 ???놁쑝誘濡???寃곌낵????긽 'true'?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\SonglistToggleStrategy.cs(19,37): warning CS9113: ?쁫ogger??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\Feature\AttendanceStrategy.cs(20,33): warning CS9113: ?쁫ogger??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Workers\WeeklyStatsReporter.cs(19,26): warning CS9113: ?쁭otificationService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\State\OverlayState.cs(38,26): warning CS0168: 'ex' 蹂?섍? ?좎뼵?섏뿀吏留??ъ슜?섏? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(31,28): warning CS9113: ??commandService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\CategoryStrategy.cs(80,32): warning CS0472: 'bool' ?뺤떇??媛믪? 'bool?' ?뺤떇??'null'怨?媛숈쓣 ???놁쑝誘濡???寃곌낵????긽 'true'?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(92,63): warning CS8604: 'Task<ChzzkUserMeResponse?> IChzzkApiClient.GetUserMeAsync(string accessToken)'??留ㅺ컻 蹂??'accessToken'?????媛?ν븳 null 李몄“ ?몄닔?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(108,143): warning CS8604: 'Task<AuthResult> AuthService.SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)'??留ㅺ컻 蹂??'refreshToken'?????媛?ν븳 null 李몄“ ?몄닔?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\Handlers\UnifiedCommandHandler.cs(23,22): warning CS9113: ?쁲erviceProvider??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(158,14): warning CS0219: 'isNewStreamer' ?좊떦?섏뿀吏留??ъ슜?섏? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Workers\PointBatchWorker.cs(19,30): warning CS9113: ?쁥ostLifetime??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+  MooldangBot.Application -> C:\webapi\MooldangAPI\MooldangBot.Application\bin\Debug\net10.0\MooldangBot.Application.dll
+
+鍮뚮뱶?덉뒿?덈떎.
+
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(17,23): warning CS9113: ?쁦ntentRouter??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(18,17): warning CS9113: ?쁫lmService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(19,23): warning CS9113: ?쁟hatService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Chat\Handlers\ChatInteractionHandler.cs(20,22): warning CS9113: ?쁯hoenix??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\TitleStrategy.cs(58,28): warning CS0472: 'bool' ?뺤떇??媛믪? 'bool?' ?뺤떇??'null'怨?媛숈쓣 ???놁쑝誘濡???寃곌낵????긽 'true'?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\SonglistToggleStrategy.cs(19,37): warning CS9113: ?쁫ogger??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\Feature\AttendanceStrategy.cs(20,33): warning CS9113: ?쁫ogger??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Workers\WeeklyStatsReporter.cs(19,26): warning CS9113: ?쁭otificationService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\State\OverlayState.cs(38,26): warning CS0168: 'ex' 蹂?섍? ?좎뼵?섏뿀吏留??ъ슜?섏? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(31,28): warning CS9113: ??commandService??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\SystemMessage\CategoryStrategy.cs(80,32): warning CS0472: 'bool' ?뺤떇??媛믪? 'bool?' ?뺤떇??'null'怨?媛숈쓣 ???놁쑝誘濡???寃곌낵????긽 'true'?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(92,63): warning CS8604: 'Task<ChzzkUserMeResponse?> IChzzkApiClient.GetUserMeAsync(string accessToken)'??留ㅺ컻 蹂??'accessToken'?????媛?ν븳 null 李몄“ ?몄닔?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(108,143): warning CS8604: 'Task<AuthResult> AuthService.SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)'??留ㅺ컻 蹂??'refreshToken'?????媛?ν븳 null 李몄“ ?몄닔?낅땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Features\Commands\Handlers\UnifiedCommandHandler.cs(23,22): warning CS9113: ?쁲erviceProvider??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Services\Auth\AuthService.cs(158,14): warning CS0219: 'isNewStreamer' ?좊떦?섏뿀吏留??ъ슜?섏? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+C:\webapi\MooldangAPI\MooldangBot.Application\Workers\PointBatchWorker.cs(19,30): warning CS9113: ?쁥ostLifetime??留ㅺ컻 蹂?섎? ?쎌? ?딆븯?듬땲?? [C:\webapi\MooldangAPI\MooldangBot.Application\MooldangBot.Application.csproj]
+    寃쎄퀬 16媛?
+    ?ㅻ쪟 0媛?
+
+寃쎄낵 ?쒓컙: 00:00:02.44
