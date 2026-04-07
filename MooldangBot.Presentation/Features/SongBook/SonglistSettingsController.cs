@@ -23,27 +23,23 @@ namespace MooldangBot.Presentation.Features.SongBook
         {
             var targetUid = streamerUid.ToLower();
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
             
             if (profile == null) 
                 return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
 
             var omakaseItems = await db.StreamerOmakases
-                .IgnoreQueryFilters()
-                .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
+                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted).ToListAsync();
 
             var songCommands = await db.UnifiedCommands
                 .AsNoTracking()
-                .IgnoreQueryFilters()
-                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest)
+                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest && !c.IsDeleted)
                 .Select(c => new { Keyword = c.Keyword, Price = c.Cost, Name = c.ResponseText })
                 .ToListAsync();
 
             var omakaseCommands = await db.UnifiedCommands
                 .AsNoTracking()
-                .IgnoreQueryFilters()
-                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase)
+                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted)
                 .ToListAsync();
 
             var result = new
@@ -80,8 +76,7 @@ namespace MooldangBot.Presentation.Features.SongBook
         {
             var targetUid = streamerUid.ToLower();
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
             
             if (profile == null) 
                 return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
@@ -103,8 +98,7 @@ namespace MooldangBot.Presentation.Features.SongBook
         {
             var targetUid = streamerUid.ToLower();
             var profile = await db.StreamerProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
                 
             if (profile == null) 
                 return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
@@ -113,8 +107,7 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             // 1. Omakase Items Sync
             var existingItems = await db.StreamerOmakases
-                .IgnoreQueryFilters()
-                .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
+                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted).ToListAsync();
 
             if (req.Omakases != null)
             {
@@ -149,9 +142,8 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             // Sync Commands
             var existingCmds = await db.UnifiedCommands
-                .IgnoreQueryFilters()
                 .Include(c => c.StreamerProfile)
-                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && (c.FeatureType == CommandFeatureType.SongRequest || c.FeatureType == CommandFeatureType.Omakase))
+                .Where(c => c.StreamerProfileId == profile.Id && (c.FeatureType == CommandFeatureType.SongRequest || c.FeatureType == CommandFeatureType.Omakase) && !c.IsDeleted)
                 .ToListAsync();
 
             var features = CommandFeatureRegistry.All;

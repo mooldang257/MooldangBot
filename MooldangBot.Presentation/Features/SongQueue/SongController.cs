@@ -37,7 +37,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             
             var streamer = await db.StreamerProfiles
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
 
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
@@ -51,7 +51,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var query = db.SongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
-                .Where(s => s.StreamerProfileId == streamerId);
+                .Where(s => s.StreamerProfileId == streamerId && !s.IsDeleted);
 
             if (status.HasValue)
             {
@@ -116,7 +116,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
         {
             var targetUid = chzzkUid.ToLower();
             var profile = await db.StreamerProfiles
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
                 
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
@@ -148,7 +148,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             if (omakaseId.HasValue)
             {
                 var omakase = await db.StreamerOmakases
-                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id);
+                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id && !o.IsDeleted);
                     
                 if (omakase != null)
                 {
@@ -158,7 +158,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
                     const string query = "SELECT * FROM SonglistSessions WHERE ChzzkUid = {0} AND IsActive = 1";
                     var activeSession = await db.SonglistSessions
                         .Include(s => s.StreamerProfile)
-                        .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                        .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive && !s.IsDeleted)
                         .FirstOrDefaultAsync();
                     if (activeSession != null)
                     {
@@ -178,14 +178,14 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var song = await db.SongQueues
                 .Include(s => s.StreamerProfile)
-                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && !s.IsDeleted);
             
             if (song == null)
                 return NotFound(Result<string>.Failure("수정할 곡을 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
                 .Include(s => s.StreamerProfile)
-                .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive)
+                .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive && !s.IsDeleted)
                 .FirstOrDefaultAsync();
 
             if (activeSession != null)
@@ -205,7 +205,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             {
                 var current = await db.SongQueues
                     .Include(s => s.StreamerProfile)
-                    .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == SongStatus.Playing);
+                    .FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.Status == SongStatus.Playing && !s.IsDeleted);
                 if (current != null)
                 {
                     current.Status = SongStatus.Completed;
@@ -225,7 +225,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var songs = await db.SongQueues
                 .Include(s => s.StreamerProfile)
-                .Where(s => ids.Contains(s.Id) && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid)
+                .Where(s => ids.Contains(s.Id) && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && !s.IsDeleted)
                 .ToListAsync();
                 
             if (songs.Any())
@@ -245,7 +245,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var songItem = await db.SongQueues
                 .Include(s => s.StreamerProfile)
-                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && !s.IsDeleted);
 
             if (songItem == null) 
                 return NotFound(Result<string>.Failure("수정할 곡을 찾을 수 없습니다."));
@@ -285,14 +285,14 @@ namespace MooldangBot.Presentation.Features.SongQueue
             var targetUid = chzzkUid.ToLower();
             var streamer = await db.StreamerProfiles
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted);
 
             if (streamer == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             // [v10.1] EF Core 7+ ExecuteDeleteAsync를 사용하여 대량 삭제 최적화
             int deletedCount = await db.SongQueues
-                .Where(s => s.StreamerProfileId == streamer.Id && s.Status == status)
+                .Where(s => s.StreamerProfileId == streamer.Id && s.Status == status && !s.IsDeleted)
                 .ExecuteDeleteAsync();
 
             if (deletedCount > 0)
