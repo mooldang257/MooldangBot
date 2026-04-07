@@ -284,5 +284,29 @@ namespace MooldangBot.Presentation.Features.SongQueue
                 return StatusCode(500, Result<string>.Failure("데이터베이스 저장 중 오류가 발생했습니다.", ex.Message));
             }
         }
+        [HttpDelete("/api/song/clear/{chzzkUid}/{status}")]
+        public async Task<IActionResult> ClearSongsByStatus(string chzzkUid, SongStatus status)
+        {
+            var targetUid = chzzkUid.ToLower();
+            var streamer = await db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
+
+            if (streamer == null)
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+
+            // [v10.1] EF Core 7+ ExecuteDeleteAsync를 사용하여 대량 삭제 최적화
+            int deletedCount = await db.SongQueues
+                .Where(s => s.StreamerProfileId == streamer.Id && s.Status == status)
+                .ExecuteDeleteAsync();
+
+            if (deletedCount > 0)
+            {
+                await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+                return Ok(Result<int>.Success(deletedCount));
+            }
+
+            return Ok(Result<string>.Success("삭제할 내역이 없습니다."));
+        }
     }
 }

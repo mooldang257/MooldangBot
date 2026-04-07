@@ -370,6 +370,19 @@
             completed = previousCompleted;
             console.error("기록 삭제 실패:", err);
         }
+    // [물멍]: 완료 목록 전체 삭제 (DB 반영)
+    const handleClearHistory = async () => {
+        if (!confirm("정말로 모든 완료 기록을 삭제하시겠습니까? (복구 불가능)")) return;
+        
+        const result = await apiFetch<any>(`/api/song/clear/${$page.params.streamerId}/Completed`, {
+            method: 'DELETE'
+        });
+
+        if (result) {
+            completed = [];
+            // [이지스]: 목록이 비워졌음을 알림
+            console.log("🛡️ [천상의 장부] 완료 기록 말소 완료");
+        }
     };
 </script>
 
@@ -497,6 +510,7 @@
                             onDeleteItems={handleDeleteItems}
                             onRevert={handleRevertSong}
                             onRemoveHistory={handleRemoveHistory}
+                            onClearHistory={handleClearHistory}
                         />
                     </div>
                 </section>

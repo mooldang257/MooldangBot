@@ -25,7 +25,8 @@
         onEdit = (song: any) => {},
         onDeleteItems = (ids: number[]) => {},
         onRevert = (song: any) => {}, // [물멍] 추가
-        onRemoveHistory = (songId: number) => {} // [물멍] 추가
+        onRemoveHistory = (songId: number) => {}, // [물멍] 추가
+        onClearHistory = () => {} // [물멍] 추가: 전체 기록 삭제 전용
     } = $props();
 
     let queueEl: HTMLElement | undefined = $state();
@@ -201,7 +202,7 @@
             <h6 class="text-xs font-black text-slate-600 uppercase tracking-widest">History (Latest First)</h6>
             {#if completed.length > 0}
                 <button 
-                    onclick={() => completed = []}
+                    onclick={onClearHistory}
                     class="text-[10px] font-black text-rose-400 hover:text-rose-600 transition-colors"
                 >전체 기록 삭제</button>
             {/if}
