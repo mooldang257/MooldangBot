@@ -100,9 +100,9 @@
                     </button>
                 {:else}
                     <div class="flex items-center gap-2 md:gap-3 bg-white/60 p-1 md:p-1.5 pr-4 md:pr-5 rounded-full border border-white shadow-sm hover:shadow-md transition-shadow shrink-0" in:fade>
-                        <img src={userState.profileUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-white object-cover" />
+                        <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-white object-cover" />
                         <div class="flex flex-col -gap-0.5 max-w-[80px] md:max-w-[150px]">
-                            <span class="font-bold text-slate-700 text-[10px] md:text-sm truncate">{userState.name}</span>
+                            <span class="font-bold text-slate-700 text-[10px] md:text-sm truncate">{userState.channelName}</span>
                             <a href="/{userState.slug}/dashboard" class="text-[8px] md:text-[10px] font-black text-primary hover:underline uppercase tracking-tighter">내 대시보드</a>
                         </div>
                         <div class="hidden md:block w-px h-6 bg-slate-300 mx-1"></div>

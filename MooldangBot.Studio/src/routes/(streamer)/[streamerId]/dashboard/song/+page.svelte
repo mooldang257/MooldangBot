@@ -239,7 +239,7 @@
         const tempSong = {
             id: -Date.now(), // 임시 ID
             ...song,
-            requester: userState.name,
+            requester: userState.channelName,
             createdAt: new Date().toISOString()
         };
         queue = [...queue, tempSong];
