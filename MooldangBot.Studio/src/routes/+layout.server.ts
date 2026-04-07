@@ -21,11 +21,7 @@ export const load: LayoutServerLoad = async ({ cookies, fetch: svelteFetch }) =>
 
         return {
             isAuthenticated: true,
-            userData: {
-                channelName: userData.channelName,
-                profileImageUrl: userData.profileImageUrl,
-                chzzkUid: userData.chzzkUid
-            }
+            userData: userData 
         };
     } catch (error) {
         console.error('🛡️ [layout.server] 인증 정보 로드 실패:', error);
