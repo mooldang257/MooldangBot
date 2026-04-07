@@ -86,12 +86,12 @@ public static class ConfigurationExtensions
         return builder;
     }
 
-    /// <summary>
-    /// ⚖️ [오시리스의 저울]: 시스템 기동 전 필수 환경 변수와 설정값이 모두 존재하는지 엄격히 검증합니다.
-    /// </summary>
     public static IConfiguration ValidateMandatorySecrets(this IConfiguration config)
     {
-        // 필수 검증 키 리스트 (Project Osiris 골든 리스트)
+        // 1. [오시리스의 저울]: 모든 설정값의 평면화(Flattening) 및 대소문자 무시 검색 준비
+        var configDict = config.AsEnumerable().ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
+
+        // 2. 필수 검증 키 리스트 (Project Osiris 골든 리스트)
         string[] requiredKeys = [
             "ConnectionStrings:DefaultConnection",
             "JwtSettings:Secret",
@@ -99,16 +99,33 @@ public static class ConfigurationExtensions
             "ChzzkApi:ClientId",
             "ChzzkApi:ClientSecret",
             "REDIS_URL",
-            "BASE_DOMAIN", // AuthService 콜백 및 오버레이 라우팅 필수
+            "BASE_DOMAIN", 
             "RABBITMQ_HOST",
             "RABBITMQ_USER",
             "RABBITMQ_PASS"
         ];
 
-        // 값이 null이거나 비어있는 키 필터링
-        var missingKeys = requiredKeys
-            .Where(key => string.IsNullOrWhiteSpace(config[key]))
-            .ToList();
+        // 3. 누락된 키 필터링 (Case-Insensitive 체크)
+        var missingKeys = new List<string>();
+        foreach (var key in requiredKeys)
+        {
+            // Case-Insensitive Dictionary에서 먼저 시도
+            if (configDict.TryGetValue(key, out var val) && !string.IsNullOrWhiteSpace(val)) continue;
+
+            // [물멍]: PascalCase 섹션이 없는 경우 ALL_CAPS 매핑도 시도 (예: ChzzkApi:ClientId -> CHZZK_API:CLIENT_ID)
+            var upperKey = key.Replace(":", "_").ToUpper();
+            var colonUpperKey = key.ToUpper(); // 중간에 : 이 있는 경우 (예: CHZZKAPI:CLIENTID)
+            
+            bool foundFallback = false;
+            foreach (var kvp in configDict)
+            {
+                var normKey = kvp.Key.Replace(":", "_").ToUpper();
+                if (normKey == upperKey && !string.IsNullOrWhiteSpace(kvp.Value)) { foundFallback = true; break; }
+                if (kvp.Key.ToUpper() == colonUpperKey && !string.IsNullOrWhiteSpace(kvp.Value)) { foundFallback = true; break; }
+            }
+
+            if (!foundFallback) missingKeys.Add(key);
+        }
 
         if (missingKeys.Any())
         {
