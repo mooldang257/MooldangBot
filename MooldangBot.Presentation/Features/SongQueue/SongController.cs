@@ -148,7 +148,9 @@ namespace MooldangBot.Presentation.Features.SongQueue
             if (omakaseId.HasValue)
             {
                 var omakase = await db.StreamerOmakases
-                    .FirstOrDefaultAsync(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id && !o.IsDeleted);
+                    .Where(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id)
+                    .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+                    .FirstOrDefaultAsync();
                     
                 if (omakase != null)
                 {
