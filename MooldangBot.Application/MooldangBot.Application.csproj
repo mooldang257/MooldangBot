@@ -32,4 +32,8 @@
     <PackageReference Include="EFCore.BulkExtensions" Version="9.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MooldangBot.ChzzkAPI\MooldangBot.ChzzkAPI.csproj" />
+  </ItemGroup>
+
 </Project>

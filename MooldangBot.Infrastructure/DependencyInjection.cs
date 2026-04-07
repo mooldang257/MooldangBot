@@ -2,9 +2,10 @@ using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Infrastructure.ApiClients;
+// using MooldangBot.Infrastructure.ApiClients; // [v10.0] 삭제 (ChzzkAPI 모듈로 이동)
 using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI; // [v10.0] ChzzkAPI 독립 모듈 참조
+using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
@@ -90,7 +91,7 @@ namespace MooldangBot.Infrastructure
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-            // Api Clients — [v13.0] 파로스의 등대: 탄력성 파이프라인 표준화 및 지능형 429 대응
+            // Api Clients — [v10.0] "심연의 도서관" 치지직 전용 모듈 연동
             services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
                 .AddStandardResilienceHandler(options =>
                 {

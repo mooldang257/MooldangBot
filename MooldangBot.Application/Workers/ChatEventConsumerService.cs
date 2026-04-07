@@ -5,6 +5,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 

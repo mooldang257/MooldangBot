@@ -6,6 +6,7 @@ using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Serialization;
+using MooldangBot.ChzzkAPI.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 

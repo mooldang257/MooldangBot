@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 using Websocket.Client;

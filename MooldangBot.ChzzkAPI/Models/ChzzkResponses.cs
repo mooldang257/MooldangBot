@@ -1,8 +1,7 @@
-
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
-
-namespace MooldangBot.Domain.DTOs
+namespace MooldangBot.ChzzkAPI.Models
 {
     // 치지직 서버가 반환하는 최상위 껍데기 구조
     public class ChzzkTokenResponse

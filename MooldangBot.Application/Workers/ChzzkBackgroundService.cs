@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

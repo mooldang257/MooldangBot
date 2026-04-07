@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;

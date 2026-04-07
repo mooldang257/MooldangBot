@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 using MooldangBot.Domain.DTOs;
+using MooldangBot.ChzzkAPI.Models;
 
-namespace MooldangBot.Domain.Serialization;
+namespace MooldangBot.ChzzkAPI.Serialization;
 
 /// <summary>
-/// [도메인 동기화]: 모든 계층에서 접근 가능한 중심(Domain)에 위치한 고성능 JSON Source Generator 컨텍스트입니다.
-/// 치지직 API 및 주요 도메인 DTO들의 직렬화 설계도를 관리합니다.
+/// [오시리스의 인장]: 치지직 API 및 보트 시스템의 모든 주요 모델들에 대한 고성능 JSON Source Generator 컨텍스트입니다.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, 
@@ -20,7 +20,7 @@ namespace MooldangBot.Domain.Serialization;
 [JsonSerializable(typeof(ChzzkUserMeResponse))]
 [JsonSerializable(typeof(ChzzkLiveSettingResponse))]
 [JsonSerializable(typeof(ChzzkChannelsResponse))]
-// Domain DTOs
+// Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
 [JsonSerializable(typeof(SonglistSettingsUpdateRequest))]
 [JsonSerializable(typeof(SongRequestCommandDto))]

@@ -28,7 +28,7 @@ public class RabbitMqService : IRabbitMqService, IDisposable
 
     static RabbitMqService()
     {
-        _jsonOptions.TypeInfoResolverChain.Insert(0, MooldangBot.Domain.Serialization.ChzzkJsonContext.Default);
+        _jsonOptions.TypeInfoResolverChain.Insert(0, MooldangBot.ChzzkAPI.Serialization.ChzzkJsonContext.Default);
         _jsonOptions.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
     }
 

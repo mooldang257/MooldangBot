@@ -1,9 +1,9 @@
-using MooldangBot.Domain.DTOs;
+using MooldangBot.ChzzkAPI.Models;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.ChzzkAPI.Interfaces;
 
 public interface IChzzkApiClient
 {

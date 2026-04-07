@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services.Engines
 {
@@ -50,18 +51,16 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveTitle_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedTitle)) return cachedTitle;
 
-            var accessToken = await GetAccessTokenAsync(streamerUid);
-            if (string.IsNullOrEmpty(accessToken)) return null;
+            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!, streamerUid);
+            var title = result.IsSuccess ? result.Value?.Content?.DefaultLiveTitle : null;
 
-            var setting = await _chzzkApi.GetLiveSettingAsync(accessToken);
-            var result = setting?.Content?.DefaultLiveTitle;
-
-            if (result != null)
+            if (title != null)
             {
-                _cache.Set(cacheKey, result, TimeSpan.FromSeconds(30));
+                _cache.Set(cacheKey, title, TimeSpan.FromSeconds(30));
             }
 
-            return result;
+            return title;
         }
 
         /// <summary>
@@ -72,18 +71,16 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveCategory_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedCategory)) return cachedCategory;
 
-            var accessToken = await GetAccessTokenAsync(streamerUid);
-            if (string.IsNullOrEmpty(accessToken)) return null;
+            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!, streamerUid);
+            var category = result.IsSuccess ? result.Value?.Content?.Category?.CategoryValue : null;
 
-            var setting = await _chzzkApi.GetLiveSettingAsync(accessToken);
-            var result = setting?.Content?.Category?.CategoryValue;
-
-            if (result != null)
+            if (category != null)
             {
-                _cache.Set(cacheKey, result, TimeSpan.FromSeconds(30));
+                _cache.Set(cacheKey, category, TimeSpan.FromSeconds(30));
             }
 
-            return result;
+            return category;
         }
 
         /// <summary>

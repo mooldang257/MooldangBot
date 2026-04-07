@@ -5,13 +5,13 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.ChzzkAPI.Models;
+using MooldangBot.ChzzkAPI.Serialization;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
-using Polly;
-using MooldangBot.Domain.Serialization;
 
-namespace MooldangBot.Infrastructure.ApiClients
+namespace MooldangBot.ChzzkAPI
 {
     public class ChzzkApiClient : IChzzkApiClient
     {
@@ -66,8 +66,6 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             return await CallTokenApiAsync("authorization_code", code, state);
         }
-
-
 
         private async Task<string?> CallTokenApiAsync(string grantType, string codeOrRefresh, string? state = null)
         {
@@ -164,9 +162,8 @@ namespace MooldangBot.Infrastructure.ApiClients
 
             try
             {
-                // 공용 HttpClient를 사용하되, 이번 요청에만 필요한 인증 헤더를 설정하기 위해 HttpRequestMessage 사용
                 int page = 0;
-                int maxPagesToSearch = 5; // 성능을 위해 검색 범위 축소 (원본 10 -> 5)
+                int maxPagesToSearch = 5; // 성능을 위해 검색 범위 축소
 
                 while (page < maxPagesToSearch)
                 {
@@ -222,8 +219,6 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             try
             {
-                // [v3.0 공식 최적화] 공식 가이드(Gitbook)에 명시된 채널 목록 조회 방식을 사용합니다.
-                // 비공식 live-status 엔드포인트는 404 오류를 유발하므로 제거했습니다.
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/channels?channelIds={channelId}");
                 request.Headers.Add("Client-Id", _clientId);
                 request.Headers.Add("Client-Secret", _clientSecret);
@@ -236,7 +231,6 @@ namespace MooldangBot.Infrastructure.ApiClients
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning($"[ChzzkApi] 공식 채널 조회 실패: {response.StatusCode} (ID: {channelId})");
-                    // 공식 API 장애 시 비공식 서비스 API로 최종 폴백
                     return await CheckLiveViaServiceApiFallbackAsync(channelId);
                 }
 
@@ -250,7 +244,6 @@ namespace MooldangBot.Infrastructure.ApiClients
                     if (isLive) return true;
                 }
 
-                // 공식 채널 정보에 방송 중이 아니라고 되어 있다면 서비스 API로 크로스 체크
                 return await CheckLiveViaServiceApiFallbackAsync(channelId);
             }
             catch (Exception ex)
@@ -260,15 +253,10 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-
-        /// <summary>
-        /// [시도 3] 치지직 서비스 API (Web API)를 통해 라이브 상태를 최후로 확인합니다. (v2.3.7)
-        /// </summary>
         private async Task<bool> CheckLiveViaServiceApiFallbackAsync(string channelId)
         {
             try
             {
-                // 서비스 API는 별도의 인증 헤더 없이도 공개된 방송 정보를 제공합니다.
                 var serviceUrl = $"https://api.chzzk.naver.com/service/v2/channels/{channelId}/live-detail";
                 using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
                 request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
@@ -282,7 +270,6 @@ namespace MooldangBot.Infrastructure.ApiClients
                     
                     if (doc.RootElement.TryGetProperty("content", out var ct) && ct.ValueKind == JsonValueKind.Object)
                     {
-                        // 서비스 API에서는 "status" 값이 "OPEN"이면 방송 중입니다.
                         if (ct.TryGetProperty("status", out var st) && st.GetString() == "OPEN")
                         {
                             _logger.LogInformation($"✨ [ChzzkApi] Live Detected via Service API (SUCCESS): {channelId}");
@@ -291,39 +278,28 @@ namespace MooldangBot.Infrastructure.ApiClients
                     }
                 }
             }
-            catch { /* Silence is golden */ }
+            catch { }
             return false;
         }
 
-        /// <summary>
-        /// 치지직 채팅을 전송합니다.
-        /// </summary>
         public async Task<bool> SendChatMessageAsync(string accessToken, string channelId, string message)
         {
             return await SendChatAsync(accessToken, channelId, "/open/v1/chats/send", message);
         }
 
-        /// <summary>
-        /// 치지직 공지(Notice)를 등록합니다. (상단 고정용, 접두어 제외)
-        /// </summary>
         public async Task<bool> SendChatNoticeAsync(string accessToken, string channelId, string message)
         {
             return await SendChatAsync(accessToken, channelId, "/open/v1/chats/notice", message, addPrefix: false);
         }
-        // 치지직 최대 글자수 100자 중, 접두어(\u200B) 1자를 제외한 임계값 (일반 채팅)
+
         private const int MaxMessageLength = 99;
-        // 접두어가 없는 상단 공지용 임계값 [v4.4.5]
         private const int MaxNoticeLength = 100;
         private const string ZeroWidthSpace = "\u200B";
 
-        /// <summary>
-        /// 메시지를 99자(채팅) 또는 100자(공지) 단위로 분할하여 전송합니다.
-        /// </summary>
         public async Task<bool> SendChatAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix = true)
         {
             if (string.IsNullOrWhiteSpace(message)) return false;
 
-            // [v4.4.5] 접두어 유무에 따른 동적 임계값 적용
             int limit = addPrefix ? MaxMessageLength : MaxNoticeLength;
             var chunks = message.Chunk(limit);
             bool allSuccess = true;
@@ -331,12 +307,8 @@ namespace MooldangBot.Infrastructure.ApiClients
             foreach (var chunk in chunks)
             {
                 string part = new string(chunk);
-                // 각 조각마다 설정에 따라 접두어를 붙여 전송
                 bool result = await SendChatInternalAsync(accessToken, channelId, endpoint, part, addPrefix);
-
                 if (!result) allSuccess = false;
-
-                // API 레이트 리밋을 고려하여 짧은 대기 시간을 가질 수 있습니다.
                 await Task.Delay(100);
             }
 
@@ -350,7 +322,6 @@ namespace MooldangBot.Infrastructure.ApiClients
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                // 상단 공지는 접두어 없이, 일반 채팅은 무한 루프 방지용 투명 문자 결합
                 string finalMessage = addPrefix ? ZeroWidthSpace + message : message;
                 var payload = new { message = finalMessage };
                 request.Content = JsonContent.Create(payload);
@@ -373,37 +344,11 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        //private async Task<bool> SendChatInternalAsync(string accessToken, string endpoint, string message)
-        //{
-        //    try
-        //    {
-        //        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        //        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                
-        //        // 무한 루프 방지를 위해 투명 문자 추가
-        //        var payload = new { message = "\u200B" + message };
-        //        request.Content = JsonContent.Create(payload);
-
-        //        var response = await _httpClient.SendAsync(request);
-        //        return response.IsSuccessStatusCode;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError($"[ChzzkApi] Chat Send Error ({endpoint}): {ex.Message}");
-        //        return false;
-        //    }
-        //}
-
-        /// <summary>
-        /// 웹소켓 연결을 위한 세션 인증 정보를 가져옵니다.
-        /// </summary>
         public async Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, "/open/v1/sessions/auth");
-                
-                // [N8 해결]: 주입된 ID가 있으면 사용, 없으면 전역 설정을 사용하여 ID 미스매치 방지
                 request.Headers.Add("Client-Id", clientId ?? _clientId);
                 request.Headers.Add("Client-Secret", clientSecret ?? _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -419,16 +364,11 @@ namespace MooldangBot.Infrastructure.ApiClients
             catch { return null; }
         }
 
-        /// <summary>
-        /// 특정 세션에 이벤트를 구독합니다.
-        /// </summary>
         public async Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, $"/open/v1/sessions/events/subscribe/{eventType}?sessionKey={sessionKey}");
-                
-                // [N8 해결]: 동일한 인증 정합성 유지
                 request.Headers.Add("Client-Id", clientId ?? _clientId);
                 request.Headers.Add("Client-Secret", clientSecret ?? _clientSecret);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -443,9 +383,6 @@ namespace MooldangBot.Infrastructure.ApiClients
             catch { return false; }
         }
 
-        /// <summary>
-        /// 방송 설정을 업데이트합니다 (제목, 카테고리 등)
-        /// </summary>
         public async Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData)
         {
             try
@@ -458,13 +395,11 @@ namespace MooldangBot.Infrastructure.ApiClients
 
                 // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorDetail = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning($"❌ [ChzzkApi] UpdateLiveSetting 실패: {response.StatusCode} - {errorDetail}");
                 }
-                
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -474,9 +409,6 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        /// <summary>
-        /// [v4.4.0] 현재 방제 및 카테고리 정보 등을 실시간으로 조회합니다.
-        /// </summary>
         public async Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken)
         {
             try
@@ -504,23 +436,17 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        /// <summary>
-        /// 카테고리를 검색합니다.
-        /// </summary>
         public async Task<ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword)
         {
             try
             {
                 string encodedQuery = Uri.EscapeDataString(keyword);
-                
-                // [리팩토링] 명시적으로 서비스 앱 헤더 주입
                 using var request = new HttpRequestMessage(HttpMethod.Get, $"/open/v1/categories/search?query={encodedQuery}&size=30");
                 request.Headers.Add("Client-Id", _clientId);
                 request.Headers.Add("Client-Secret", _clientSecret);
 
                 // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
                 var response = await _httpClient.SendAsync(request);
-                
                 if (response.IsSuccessStatusCode)
                 {
                     return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkCategorySearchResponse);
@@ -538,7 +464,6 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             try
             {
-                // [롤백]: 개별 앱 정보를 무시하고 시스템 앱 정보로만 동작하게 합니다.
                 var payload = new
                 {
                     grantType = "authorization_code",
@@ -546,7 +471,7 @@ namespace MooldangBot.Infrastructure.ApiClients
                     clientSecret = _clientSecret,
                     code = code,
                     state = state ?? "",
-                    codeVerifier = codeVerifier // [v10.0] PKCE Verifier 추가
+                    codeVerifier = codeVerifier
                 };
 
                 // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
@@ -558,7 +483,6 @@ namespace MooldangBot.Infrastructure.ApiClients
 
                 string errorDetail = await response.Content.ReadAsStringAsync();
                 _logger.LogWarning($"[오시리스의 거절] 롤백 시도 실패: {response.StatusCode} - {errorDetail}");
-                
                 return null;
             }
             catch (Exception ex)
@@ -568,9 +492,6 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        /// <summary>
-        /// 내 정보를 조회합니다.
-        /// </summary>
         public async Task<ChzzkUserMeResponse?> GetUserMeAsync(string accessToken)
         {
             try
@@ -595,9 +516,6 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        /// <summary>
-        /// [임무: 다중 채널 로드] 최대 20개의 채널 정보를 한꺼번에 조회합니다.
-        /// </summary>
         public async Task<ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds)
         {
             try
@@ -625,4 +543,3 @@ namespace MooldangBot.Infrastructure.ApiClients
         }
     }
 }
-
