@@ -17,7 +17,7 @@ services:
     volumes:
       - ${DB_DATA_PATH}:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1"]
+      test: [ "CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,14 +49,14 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 20s
 
   migration:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: mooldang-migration
@@ -74,8 +74,9 @@ services:
       - MARIADB_DATABASE=${MARIADB_DATABASE}
       - MARIADB_USER=${MARIADB_USER}
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - BASE_DOMAIN=${BASE_DOMAIN}
       - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
-    entrypoint: ["dotnet", "MooldangBot.Cli.dll"]
+    entrypoint: [ "dotnet", "MooldangBot.Cli.dll" ]
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +105,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASS=${RABBITMQ_PASS:-guest}
+      - BASE_DOMAIN=${BASE_DOMAIN}
       - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
     depends_on:
       db:
@@ -128,6 +130,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - ORIGIN=${BASE_DOMAIN}
     depends_on:
       - app
 
@@ -152,4 +155,3 @@ services:
       - studio
       - overlay
       - app
-
