@@ -370,6 +370,8 @@
             completed = previousCompleted;
             console.error("기록 삭제 실패:", err);
         }
+    };
+
     // [물멍]: 완료 목록 전체 삭제 (DB 반영)
     const handleClearHistory = async () => {
         if (!confirm("정말로 모든 완료 기록을 삭제하시겠습니까? (복구 불가능)")) return;
