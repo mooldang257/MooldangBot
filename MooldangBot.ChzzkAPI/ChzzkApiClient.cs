@@ -481,8 +481,7 @@ namespace MooldangBot.ChzzkAPI
                     clientId = _clientId,
                     clientSecret = _clientSecret,
                     code = code,
-                    state = state ?? "",
-                    codeVerifier = codeVerifier
+                    state = state ?? ""
                 };
 
                 // [v13.0] 표준 탄력성 핸들러가 가동됩니다.

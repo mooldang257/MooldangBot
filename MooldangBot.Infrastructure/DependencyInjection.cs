@@ -74,6 +74,7 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<ILuaScriptProvider, LuaScriptProvider>();
             services.AddSingleton<MooldangBot.Application.State.RouletteState>();
             services.AddSingleton<MooldangBot.Application.State.OverlayState>();
+            services.AddSingleton<MooldangBot.Application.Features.SongBook.SongBookState>();
 
             // Database — [Phase4] AddDbContextPool 상향 (poolSize: 256)
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -135,6 +136,9 @@ namespace MooldangBot.Infrastructure
 
             // [v1.2] 마스터 데이터 캐시 서비스 등록
             services.AddScoped<ICommandMasterCacheService, CommandMasterCacheService>();
+
+            // [v13.1] 리포지토리 등록
+            services.AddScoped<ISongBookRepository, MooldangBot.Infrastructure.Persistence.Repositories.SongBookRepository>();
 
             // [v1.8] Safe Dynamic Query Engine 등록
             services.AddScoped<IDynamicQueryEngine, MooldangBot.Infrastructure.Services.Engines.DynamicQueryEngine>();

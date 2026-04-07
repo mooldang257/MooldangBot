@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.Admin;
@@ -10,12 +11,12 @@ namespace MooldangBot.Application.Workers;
 public class CategorySyncBackgroundService : BackgroundService
 {
     private readonly ILogger<CategorySyncBackgroundService> _logger;
-    private readonly ChzzkCategorySyncService _syncService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public CategorySyncBackgroundService(ILogger<CategorySyncBackgroundService> logger, ChzzkCategorySyncService syncService)
+    public CategorySyncBackgroundService(ILogger<CategorySyncBackgroundService> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _syncService = syncService;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,7 +27,9 @@ public class CategorySyncBackgroundService : BackgroundService
         {
             try
             {
-                await _syncService.SyncCategoriesAsync(stoppingToken);
+                using var scope = _scopeFactory.CreateScope();
+                var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
+                await syncService.SyncCategoriesAsync(stoppingToken);
             }
             catch (Exception ex)
             {

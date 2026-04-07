@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -14,10 +15,11 @@ namespace MooldangBot.Application.Workers;
 /// (S1: 통찰): 룰렛 확률 이상 여부와 포인트 유통량, 인기 명령어를 요약 보고합니다.
 /// </summary>
 public class WeeklyStatsReporter(
-    IAppDbContext db,
+    IServiceScopeFactory scopeFactory,
     INotificationService notificationService,
     ILogger<WeeklyStatsReporter> logger) : BackgroundService
 {
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(30);
     private const string SettingKey = "LastWeeklyReportDate";
 
@@ -33,10 +35,14 @@ public class WeeklyStatsReporter(
                 
                 if (now.Value.DayOfWeek == DayOfWeek.Monday && now.Value.Hour == 9)
                 {
-                    if (await ShouldSendReportAsync(now.Date, stoppingToken))
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                    if (await ShouldSendReportAsync(db, now.Date, stoppingToken))
                     {
-                        await SendWeeklyReportAsync(stoppingToken);
-                        await MarkReportAsSentAsync(now.Date, stoppingToken);
+                        await SendWeeklyReportAsync(db, notificationService, stoppingToken);
+                        await MarkReportAsSentAsync(db, now.Date, stoppingToken);
                     }
                 }
 
@@ -50,7 +56,7 @@ public class WeeklyStatsReporter(
         }
     }
 
-    private async Task<bool> ShouldSendReportAsync(DateTime today, CancellationToken ct)
+    private async Task<bool> ShouldSendReportAsync(IAppDbContext db, DateTime today, CancellationToken ct)
     {
         var lastSentDate = await db.StreamerPreferences
             .Where(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey)
@@ -60,7 +66,7 @@ public class WeeklyStatsReporter(
         return lastSentDate != today.ToString("yyyy-MM-dd");
     }
 
-    private async Task MarkReportAsSentAsync(DateTime today, CancellationToken ct)
+    private async Task MarkReportAsSentAsync(IAppDbContext db, DateTime today, CancellationToken ct)
     {
         var preference = await db.StreamerPreferences
             .FirstOrDefaultAsync(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey, ct);
@@ -83,7 +89,7 @@ public class WeeklyStatsReporter(
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task SendWeeklyReportAsync(CancellationToken ct)
+    private async Task SendWeeklyReportAsync(IAppDbContext db, INotificationService notificationService, CancellationToken ct)
     {
         logger.LogInformation("📊 [천상의 전령] 주간 리포트 생성을 시작합니다...");
 

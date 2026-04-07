@@ -11,14 +11,12 @@ namespace MooldangBot.Application.Workers;
 public class PeriodicMessageWorker : BackgroundService
 {
     private readonly ILogger<PeriodicMessageWorker> _logger;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IOverlayNotificationService _overlayService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public PeriodicMessageWorker(ILogger<PeriodicMessageWorker> logger, IServiceProvider serviceProvider, IOverlayNotificationService overlayService)
+    public PeriodicMessageWorker(ILogger<PeriodicMessageWorker> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _serviceProvider = serviceProvider;
-        _overlayService = overlayService;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,9 +27,10 @@ public class PeriodicMessageWorker : BackgroundService
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
+                using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
                 var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
+                var overlayService = scope.ServiceProvider.GetRequiredService<IOverlayNotificationService>();
 
                 // 1. 활성화된 모든 스트리머 프로필 조회 (N+1 방지 시작)
                 var profiles = await db.StreamerProfiles

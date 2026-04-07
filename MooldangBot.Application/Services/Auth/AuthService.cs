@@ -50,29 +50,27 @@ public class AuthService(
                          ?? _configuration["ChzzkApi:ClientId"] 
                          ?? throw new Exception("Chzzk Client ID가 설정되어 있지 않습니다. (.env 확인 필요)");
 
-        // 2. PKCE & State 생성
+        // 2. State 생성 (PKCE 제거)
         string state = Guid.NewGuid().ToString("N");
-        string verifier = CryptoHelper.GenerateCodeVerifier();
-        string challenge = CryptoHelper.GenerateCodeChallenge(verifier);
 
         // 3. 인증 URL 구성
         string redirectUri = $"{BaseDomain}/Auth/callback";
         string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
         
-        // 치지직 API PKCE 파라미터 규격 적용
-        string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}&code_challenge={challenge}&code_challenge_method=S256";
+        // 치지직 표준 AUTH URL (PKCE 파라미터 제거)
+        string authUrl = $"https://chzzk.naver.com/account-interlock?clientId={clientId}&redirectUri={encodedRedirect}&state={state}";
 
         _logger.LogInformation($"[오시리스의 전령] 신규 인증 요청 생성 (State: {state}, Type: {loginType})");
         
-        return new AuthMetadata(authUrl, state, verifier);
+        return new AuthMetadata(authUrl, state, "");
     }
 
     public async Task<AuthResult> ProcessCallbackAsync(string code, AuthSessionData cachedData)
     {
         try
         {
-            // 1. [오시리스 v10.1]: 통합 서비스를 통한 토큰 교환
-            var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, cachedData.CodeVerifier);
+            // 1. [오시리스 v10.1]: 통합 서비스를 통한 토큰 교환 (PKCE 제거 및 State 추가)
+            var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, state: cachedData.State);
             
             if (tokenResult?.Content == null)
             {

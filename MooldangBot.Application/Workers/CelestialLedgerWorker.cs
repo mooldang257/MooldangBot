@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
@@ -13,10 +14,10 @@ namespace MooldangBot.Application.Workers;
 /// (P2: 성능): Dapper를 사용하여 초고속 집계 쿼리를 수행합니다.
 /// </summary>
 public class CelestialLedgerWorker(
-    IAppDbContext db,
-    IPulseService pulse,
+    IServiceScopeFactory scopeFactory,
     ILogger<CelestialLedgerWorker> logger) : BackgroundService
 {
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly TimeSpan _interval = TimeSpan.FromHours(6);
     private const int RetentionDays = 30; // 상세 로그 보관 주기
 
@@ -28,16 +29,20 @@ public class CelestialLedgerWorker(
         {
             try
             {
+                using var scope = _scopeFactory.CreateScope();
+                var pulse = scope.ServiceProvider.GetRequiredService<IPulseService>();
+                var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
                 pulse.ReportPulse("CelestialLedgerWorker");
 
                 // 1. 포인트 통계 집계 (Daily Aggregation)
-                await AggregatePointStatsAsync(stoppingToken);
+                await AggregatePointStatsAsync(db, stoppingToken);
 
                 // 2. 룰렛 확률 감사 집계 (Roulette Audit)
-                await AggregateRouletteStatsAsync(stoppingToken);
+                await AggregateRouletteStatsAsync(db, stoppingToken);
 
                 // 3. 만료된 로그 숙청 (Retention Policy)
-                await CleanupExpiredLogsAsync(stoppingToken);
+                await CleanupExpiredLogsAsync(db, stoppingToken);
 
                 await Task.Delay(_interval, stoppingToken);
             }
@@ -53,7 +58,7 @@ public class CelestialLedgerWorker(
         }
     }
 
-    private async Task AggregatePointStatsAsync(CancellationToken ct)
+    private async Task AggregatePointStatsAsync(IAppDbContext db, CancellationToken ct)
     {
         logger.LogInformation("📊 [천상의 장부] 포인트 데이터 집계 중...");
         var connection = db.Database.GetDbConnection();
@@ -94,7 +99,7 @@ public class CelestialLedgerWorker(
         logger.LogInformation("✅ [천상의 장부] 포인트 집계 완료 ({Count}일자 데이터 갱신)", affectedRows);
     }
 
-    private async Task AggregateRouletteStatsAsync(CancellationToken ct)
+    private async Task AggregateRouletteStatsAsync(IAppDbContext db, CancellationToken ct)
     {
         logger.LogInformation("🎰 [천상의 장부] 룰렛 확률 감사 집계 중...");
         var connection = db.Database.GetDbConnection();
@@ -123,7 +128,7 @@ public class CelestialLedgerWorker(
         logger.LogInformation("✅ [천상의 장부] 룰렛 감사 집계 완료 ({Count}항목 갱신)", affectedRows);
     }
 
-    private async Task CleanupExpiredLogsAsync(CancellationToken ct)
+    private async Task CleanupExpiredLogsAsync(IAppDbContext db, CancellationToken ct)
     {
         logger.LogInformation("🧹 [천상의 장부] {RetentionDays}일이 지난 상세 로그를 숙청합니다...", RetentionDays);
         var connection = db.Database.GetDbConnection();
