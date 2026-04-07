@@ -223,7 +223,7 @@ namespace MooldangBot.Presentation.Features.SongQueue
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpPost("/api/song/delete/{chzzkUid}")]
+        [HttpDelete("/api/song/delete/{chzzkUid}")]
         public async Task<IActionResult> DeleteSongs(string chzzkUid, [FromBody] List<int> ids)
         {
             var targetUid = chzzkUid.ToLower();

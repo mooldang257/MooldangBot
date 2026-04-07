@@ -216,10 +216,10 @@
         queue = queue.filter((s) => !ids.includes(s.id));
 
         try {
-            await apiFetch(`/api/song/delete/${userState.uid}`, {
-                method: "POST",
-                body: JSON.stringify(ids)
-            });
+         const result = await apiFetch<any>(`/api/song/delete/${$page.params.streamerId}`, {
+            method: 'DELETE',
+            body: JSON.stringify(ids)
+        });
         } catch (err) {
             queue = previousQueue;
             console.error("삭제 실패:", err);

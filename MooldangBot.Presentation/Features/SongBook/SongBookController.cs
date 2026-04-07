@@ -185,7 +185,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             }
 
             await overlayService.NotifyRefreshAsync(chzzkUid);
-            return Ok(Result<object>.Success(new { success = true, count = item.Count }));
+            return Ok(Result<object>.Success(new { count = item.Count }));
         }
 
         [HttpPost("/api/test/chat")]
@@ -214,7 +214,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 await chzzkApi.SendChatMessageAsync(profile.ChzzkAccessToken, profile.ChzzkUid, message);
             }
 
-            return Ok(Result<object>.Success(new { success = true, message = "시뮬레이션 채팅이 전송되었습니다." }));
+            return Ok(Result<object>.Success(new { message = "시뮬레이션 채팅이 전송되었습니다." }));
         }
 
         [HttpGet("/api/songlist/status/{chzzkUid}")]
@@ -274,13 +274,13 @@ namespace MooldangBot.Presentation.Features.SongBook
             }
 
             await db.SaveChangesAsync();
-            return Ok(Result<object>.Success(new { success = true, isActive = nowActive }));
+            return Ok(Result<object>.Success(new { isActive = nowActive }));
         }
 
         [HttpPost("/api/omakase/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
         {
-            return Ok(Result<object>.Success(new { success = true, isOmakaseActive = true }));
+            return Ok(Result<object>.Success(new { isOmakaseActive = true }));
         }
     }
 }
