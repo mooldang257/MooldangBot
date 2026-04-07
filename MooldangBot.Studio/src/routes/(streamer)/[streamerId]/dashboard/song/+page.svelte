@@ -403,35 +403,18 @@
                 />
             </div>
 
-
-            {#if isOmakaseActive}
-                <div style="isolation: isolate;" in:fade out:fade>
-                    <OmakaseManagement omakases={visibleOmakases} bind:selectedOmakase />
-                </div>
-            {/if}
-
-            <div
-                id="manual-request-container"
-                class="scroll-mt-32 relative transition-all duration-300 {isManualSearching
-                    ? 'z-50'
-                    : 'z-0'}"
-                style="isolation: isolate;"
-            >
-                <ManualRequestForm
-                    bind:selectedOmakase
-                    bind:editingSong
-                    bind:showResults={isManualSearching}
-                    onAddManualSong={handleAddManualSong}
-                    onUpdateSong={handleUpdateSong}
-                />
-            </div>
-
             {#if isCommandActive}
                 <div style="isolation: isolate;" in:fade out:fade>
                     <CommandManagement 
                         bind:commands={commandList} 
                         onSync={handleSyncSettings}
                     />
+                </div>
+            {/if}
+
+            {#if isOmakaseActive}
+                <div style="isolation: isolate;" in:fade out:fade>
+                    <OmakaseManagement omakases={visibleOmakases} bind:selectedOmakase />
                 </div>
             {/if}
 
