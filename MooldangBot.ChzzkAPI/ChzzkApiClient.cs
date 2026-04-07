@@ -409,6 +409,17 @@ namespace MooldangBot.ChzzkAPI
             }
         }
 
+        public async Task<bool> UpdateLiveSettingAsync(string accessToken, string title, string category, string? chatSettingTitle = null)
+        {
+            var updateData = new
+            {
+                defaultLiveTitle = title,
+                category = category,
+                chatSettingTitle = chatSettingTitle ?? title
+            };
+            return await UpdateLiveSettingAsync(accessToken, updateData);
+        }
+
         public async Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken)
         {
             try
@@ -538,6 +549,29 @@ namespace MooldangBot.ChzzkAPI
             catch (Exception ex)
             {
                 _logger.LogError($"[ChzzkApi] GetChannels Error: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<ChzzkLiveDetailResponse?> GetLiveDetailAsync(string channelId)
+        {
+            try
+            {
+                var serviceUrl = $"https://api.chzzk.naver.com/service/v2/channels/{channelId}/live-detail";
+                using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
+                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+                // [v13.0] 표준 탄력성 핸들러가 가동됩니다.
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkLiveDetailResponse);
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[ChzzkApi] GetLiveDetail Error: {ex.Message}");
                 return null;
             }
         }

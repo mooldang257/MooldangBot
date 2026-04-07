@@ -1,6 +1,6 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
-using MooldangBot.Domain.Serialization;
+using MooldangBot.ChzzkAPI.Serialization;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
 using MooldangBot.Presentation;

@@ -157,7 +157,7 @@ public partial class BroadcastScribe : IBroadcastScribe
             if (liveSetting != null)
             {
                 var newTitle = (liveSetting.DefaultLiveTitle ?? "").Trim();
-                var newCategory = (liveSetting.Content.Category?.CategoryValue ?? "").Trim();
+                var newCategory = (liveSetting.Category?.CategoryValue ?? "").Trim();
 
                 // 1. 초기 정보 기록 (세션 시작 후 첫 하트비트인 경우)
                 if (string.IsNullOrEmpty(session.InitialTitle))

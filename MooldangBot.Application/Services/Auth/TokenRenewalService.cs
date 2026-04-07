@@ -12,6 +12,7 @@ using MooldangBot.Domain.Common;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
+using MooldangBot.ChzzkAPI.Models;
 
 namespace MooldangBot.Application.Services.Auth;
 

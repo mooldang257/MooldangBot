@@ -97,17 +97,17 @@ public class AuthService(
                 return new AuthResult { IsSuccess = false, ErrorMessage = "사용자 정보 조회 실패 또는 응답 데이터 없음" };
             }
 
-            string chzzkUid = userMeResult.Content.UserHash.ToLower(); // ChzzkAPI 모델의 UserHash 사용
-            string channelName = userMeResult.Content.Nickname ?? "알 수 없음";
+            string chzzkUid = userMeResult.Content.EffectiveChannelId.ToLower();
+            string channelName = userMeResult.Content.EffectiveChannelName ?? "알 수 없음";
 
             // 4. 역할별 동기화 분기 (v6.2.3)
             if (cachedData.LoginType == "viewer")
             {
-                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeResult.Content.ProfileImageUrl);
+                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeResult.Content.ChannelImageUrl);
             }
             else
             {
-                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeResult.Content.ProfileImageUrl, content.AccessToken, content.RefreshToken, expireDate);
+                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeResult.Content.ChannelImageUrl, content.AccessToken, content.RefreshToken, expireDate);
                 
                 // [v17.0] 봇 서비스 복구 락 해제
                 _botService.CleanupRecoveryLock(chzzkUid);

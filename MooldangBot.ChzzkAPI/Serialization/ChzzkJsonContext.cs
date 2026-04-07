@@ -20,6 +20,7 @@ namespace MooldangBot.ChzzkAPI.Serialization;
 [JsonSerializable(typeof(ChzzkUserMeResponse))]
 [JsonSerializable(typeof(ChzzkLiveSettingResponse))]
 [JsonSerializable(typeof(ChzzkChannelsResponse))]
+[JsonSerializable(typeof(ChzzkLiveDetailResponse))]
 // Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
 [JsonSerializable(typeof(SonglistSettingsUpdateRequest))]

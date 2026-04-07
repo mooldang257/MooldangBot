@@ -26,6 +26,7 @@
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
+    <ProjectReference Include="..\MooldangBot.ChzzkAPI\MooldangBot.ChzzkAPI.csproj" />
     <PackageReference Include="MediatR" Version="12.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Mapster" Version="7.4.0" />

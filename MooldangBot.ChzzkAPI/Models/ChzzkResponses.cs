@@ -191,4 +191,22 @@ namespace MooldangBot.ChzzkAPI.Models
         [JsonPropertyName("verifiedMark")]
         public bool VerifiedMark { get; set; }
     }
+
+    public class ChzzkLiveDetailResponse
+    {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        [JsonPropertyName("content")]
+        public ChzzkLiveDetailContent? Content { get; set; }
+    }
+
+    public class ChzzkLiveDetailContent
+    {
+        [JsonPropertyName("status")]
+        public string? Status { get; set; } // "OPEN" or "CLOSE"
+        [JsonPropertyName("liveTitle")]
+        public string? LiveTitle { get; set; }
+        [JsonPropertyName("category")]
+        public string? Category { get; set; }
+    }
 }
