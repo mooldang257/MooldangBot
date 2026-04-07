@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MooldangBot.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial_Production_v01 : Migration
+    public partial class Initial_v01 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

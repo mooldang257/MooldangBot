@@ -14,7 +14,6 @@ using MooldangBot.Application.Interfaces;
 using DotNetEnv;
 using Microsoft.AspNetCore.DataProtection;
 
-string Mask(string s) => s.Length > 4 ? s[..4] + "****" : "****";
 
 // 1. [파로스의 자각]: .env 파일 탐색
 string[] potentialPaths = { 
@@ -136,34 +135,12 @@ try
         Console.WriteLine("   ℹ️ 최신 버전입니다.");
     }
 
-    // 3. 시스템 설정 시딩
-    Console.WriteLine("\n🌱 [2/3] 필수 시스템 설정(SystemSettings) 동기화 중...");
-    async Task SyncSetting(string key, string? value)
-    {
-        if (string.IsNullOrEmpty(value)) return;
-        var existing = await db.SystemSettings.FindAsync(key);
-        if (existing == null) {
-            db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
-            Console.WriteLine($"   + [{key}] 생성됨: {Mask(value)}");
-        } else if (string.IsNullOrEmpty(existing.KeyValue)) {
-            existing.KeyValue = value;
-            Console.WriteLine($"   * [{key}] 업데이트됨: {Mask(value)}");
-        } else {
-            Console.WriteLine($"   - [{key}] 유지됨.");
-        }
-    }
+    // 3. 명령어 마스터 데이터는 이제 코드 레지스트리(Registry)에서 관리됩니다. (DB 시딩 생략)
+    Console.WriteLine("\n📋 [2/3] 명령어 마스터 데이터는 Registry 기반으로 전환되었습니다.");
 
-    await SyncSetting("ChzzkClientId", configuration["CHZZK_API:CLIENT_ID"] ?? configuration["ChzzkApi:ClientId"]);
-    await SyncSetting("ChzzkClientSecret", configuration["CHZZK_API:CLIENT_SECRET"] ?? configuration["ChzzkApi:ClientSecret"]);
-    await SyncSetting("BaseDomain", configuration["BASE_DOMAIN"]);
-    await SyncSetting("MasterUid", configuration["MASTER_UID"]);
-    await db.SaveChangesAsync();
+    // 4. 통합 명령어 보정
+    Console.WriteLine("\n🧩 [3/3] 통합 명령어(UnifiedCommands) 정합성 전수 보정 중...");
 
-    // 4. 명령어 마스터 데이터는 이제 코드 레지스트리(Registry)에서 관리됩니다. (DB 시딩 생략)
-    Console.WriteLine("\n📋 [3/4] 명령어 마스터 데이터는 Registry 기반으로 전환되었습니다.");
-
-    // 5. 통합 명령어 보정
-    Console.WriteLine("\n🧩 [4/4] 통합 명령어(UnifiedCommands) 정합성 전수 보정 중...");
     var profiles = await db.StreamerProfiles.IgnoreQueryFilters().ToListAsync();
     int provisionCount = 0;
 
