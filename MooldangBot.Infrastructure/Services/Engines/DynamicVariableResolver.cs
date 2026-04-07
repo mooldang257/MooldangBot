@@ -52,8 +52,8 @@ namespace MooldangBot.Infrastructure.Services.Engines
             if (_cache.TryGetValue(cacheKey, out string? cachedTitle)) return cachedTitle;
 
             var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!, streamerUid);
-            var title = result.IsSuccess ? result.Value?.Content?.DefaultLiveTitle : null;
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!);
+            var title = result?.Content?.DefaultLiveTitle;
 
             if (title != null)
             {
@@ -72,8 +72,8 @@ namespace MooldangBot.Infrastructure.Services.Engines
             if (_cache.TryGetValue(cacheKey, out string? cachedCategory)) return cachedCategory;
 
             var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!, streamerUid);
-            var category = result.IsSuccess ? result.Value?.Content?.Category?.CategoryValue : null;
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!);
+            var category = result?.Content?.Category?.CategoryValue;
 
             if (category != null)
             {

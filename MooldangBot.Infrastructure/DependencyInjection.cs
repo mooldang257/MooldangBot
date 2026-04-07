@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.ChzzkAPI; // [v10.0] ChzzkAPI 독립 모듈 참조
 using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
