@@ -183,7 +183,7 @@ namespace MooldangBot.Presentation.Features.Auth
                         return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                             isAuthenticated = true,
                             isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                            nickname = profile.ChannelName ?? "스트리머",
+                            channelName = profile.ChannelName ?? "스트리머",
                             profileImageUrl = profile.ProfileImageUrl ?? "",
                             chzzkUid = profile.ChzzkUid,
                             slug = profile.Slug
@@ -198,7 +198,7 @@ namespace MooldangBot.Presentation.Features.Auth
                             return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                                 isAuthenticated = true,
                                 isChzzkLinked = false,
-                                nickname = viewer.Nickname,
+                                channelName = viewer.Nickname, // 시청자도 통칭 channelName으로 통일
                                 profileImageUrl = viewer.ProfileImageUrl ?? "",
                                 chzzkUid = viewer.ViewerUid,
                                 slug = (string?)null
