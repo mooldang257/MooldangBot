@@ -183,8 +183,8 @@ namespace MooldangBot.Presentation.Features.Auth
                         return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                             isAuthenticated = true,
                             isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                            channelName = profile.ChannelName ?? "스트리머",
-                            profileUrl = profile.ProfileImageUrl ?? "",
+                            nickname = profile.ChannelName ?? "스트리머",
+                            profileImageUrl = profile.ProfileImageUrl ?? "",
                             chzzkUid = profile.ChzzkUid,
                             slug = profile.Slug
                         }));
@@ -198,8 +198,8 @@ namespace MooldangBot.Presentation.Features.Auth
                             return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                                 isAuthenticated = true,
                                 isChzzkLinked = false,
-                                channelName = viewer.Nickname,
-                                profileUrl = viewer.ProfileImageUrl ?? "",
+                                nickname = viewer.Nickname,
+                                profileImageUrl = viewer.ProfileImageUrl ?? "",
                                 chzzkUid = viewer.ViewerUid,
                                 slug = (string?)null
                             }));
