@@ -28,7 +28,7 @@ export async function apiFetch<T>(
     // [Aegis Bridge]: SSR 환경에서는 브라우저 프록시가 작동하지 않으므로 백엔드 주소를 직접 명시
     let finalUrl = url;
     if (!browser && url.startsWith('/api')) {
-        finalUrl = `http://localhost:8080${url}`;
+        finalUrl = `http://mooldang-app:8080${url}`;
     }
 
     const fetchOptions: RequestInit = {
