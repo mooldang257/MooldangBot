@@ -418,6 +418,22 @@
                 </div>
             {/if}
 
+            <div
+                id="manual-request-container"
+                class="scroll-mt-32 relative transition-all duration-300 {isManualSearching
+                    ? 'z-50'
+                    : 'z-0'}"
+                style="isolation: isolate;"
+            >
+                <ManualRequestForm
+                    bind:selectedOmakase
+                    bind:editingSong
+                    bind:showResults={isManualSearching}
+                    onAddManualSong={handleAddManualSong}
+                    onUpdateSong={handleUpdateSong}
+                />
+            </div>
+
             <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
                 <section
                     class="lg:col-span-8 flex flex-col gap-6 h-full"
