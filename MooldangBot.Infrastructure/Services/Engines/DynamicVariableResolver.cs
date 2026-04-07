@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.Entities;
 using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services.Engines
@@ -51,8 +52,10 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveTitle_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedTitle)) return cachedTitle;
 
-            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!);
+            var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
+
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkAccessToken);
             var title = result?.Content?.DefaultLiveTitle;
 
             if (title != null)
@@ -71,8 +74,10 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveCategory_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedCategory)) return cachedCategory;
 
-            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer?.ChzzkAccessToken!);
+            var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
+
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkAccessToken);
             var category = result?.Content?.Category?.CategoryValue;
 
             if (category != null)
@@ -94,8 +99,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var command = await _db.UnifiedCommands
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
-                .Include(c => c.MasterFeature)
-                .FirstOrDefaultAsync(c => c.StreamerProfile!.ChzzkUid == streamerUid && c.MasterFeature!.TypeName == "Notice");
+                .FirstOrDefaultAsync(c => c.StreamerProfile!.ChzzkUid == streamerUid && c.FeatureType == CommandFeatureType.Notice);
             
             var result = command?.ResponseText;
 
@@ -129,16 +133,5 @@ namespace MooldangBot.Infrastructure.Services.Engines
             return result;
         }
 
-        /// <summary>
-        /// 주어진 스트리머의 치지직 Access Token을 DB에서 조회합니다.
-        /// </summary>
-        private async Task<string?> GetAccessTokenAsync(string streamerUid)
-        {
-            var profile = await _db.StreamerProfiles
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
-            
-            return profile?.ChzzkAccessToken;
-        }
     }
 }

@@ -12,81 +12,79 @@ namespace MooldangBot.Presentation.Features.SongBook
 {
     [ApiController]
     [Route("api/settings")]
-    public class SonglistSettingsController : ControllerBase
+    // [v10.1] Primary Constructor 적용
+    public class SonglistSettingsController(
+        IAppDbContext db, 
+        IUnifiedCommandService unifiedCommandService) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-        private readonly IUserSession _userSession;
-        private readonly IUnifiedCommandService _unifiedCommandService; // [v1.8] 주입
-
-        public SonglistSettingsController(IAppDbContext db, IUserSession userSession, IUnifiedCommandService unifiedCommandService)
-        {
-            _db = db;
-            _userSession = userSession;
-            _unifiedCommandService = unifiedCommandService;
-        }
-
         [HttpGet("/api/settings/data/{streamerUid}")]
         [AllowAnonymous] 
         public async Task<IActionResult> GetSonglistSettingsData(string streamerUid)
         {
             var targetUid = streamerUid.ToLower();
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             
-            if (profile == null) return NotFound(Result<object>.Failure("존재하지 않는 채널입니다."));
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
 
-            var omakaseItems = await _db.StreamerOmakases
+            var omakaseItems = await db.StreamerOmakases
                 .IgnoreQueryFilters()
                 .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
 
-            // [물멍]: 문자열(ChzzkUid) 대신 숫자 PK(ProfileId)를 사용해 조인 효율을 높였습니다.
-            var songCommands = await _db.UnifiedCommands
+            var songCommands = await db.UnifiedCommands
                 .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfileId == profile.Id && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest)
+                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest)
                 .Select(c => new { Keyword = c.Keyword, Price = c.Cost, Name = c.ResponseText })
                 .ToListAsync();
 
-            var omakaseCommands = await _db.UnifiedCommands
+            var omakaseCommands = await db.UnifiedCommands
                 .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfileId == profile.Id && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
+                .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase)
                 .ToListAsync();
 
-            return Ok(Result<object>.Success(new
+            var result = new
             {
-                songCommand = "!신청", // 레거시 호환용 고정값 (실제 사용은 songRequestCommands 참조)
-                songRequestCommands = songCommands,
+                songCommand = "!신청", 
+                songRequestCommands = songCommands.Select(c => new { 
+                    trigger = c.Keyword, 
+                    cost = c.Price, 
+                    name = c.Name 
+                }),
                 songPrice = 0,
                 designSettingsJson = profile.DesignSettingsJson,
-                // 🛡️ [Osiris's Simplification]: MenuId 그룹화 제거 및 PK(Id)-TargetId 기반 1:1 매핑
                 omakases = omakaseItems
                     .Select(o => {
                         var cmd = omakaseCommands.FirstOrDefault(c => c.TargetId == o.Id);
                         return new {
                             id = o.Id,
                             name = cmd?.ResponseText ?? "새 오마카세",
-                            command = cmd?.Keyword ?? "", 
+                            trigger = cmd?.Keyword ?? "", 
                             icon = o.Icon,
-                            price = cmd?.Cost ?? 0,
-                            targetId = o.Id // 이제 PK가 곧 TargetId
+                            cost = cmd?.Cost ?? 0,
+                            targetId = o.Id,
+                            count = o.Count
                         };
                     }),
                 labels = TryGetLabels(profile.DesignSettingsJson)
-            }));
+            };
+
+            return Ok(Result<object>.Success(result));
         }
 
         [HttpPost("/api/settings/labels/{streamerUid}")]
         public async Task<IActionResult> UpdateLabels(string streamerUid, [FromBody] System.Text.Json.JsonElement labels)
         {
             var targetUid = streamerUid.ToLower();
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
-            if (profile == null) return NotFound(Result<object>.Failure("존재하지 않는 채널입니다."));
+            
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
 
             var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
             var designData = string.IsNullOrEmpty(profile.DesignSettingsJson) 
@@ -96,141 +94,134 @@ namespace MooldangBot.Presentation.Features.SongBook
             designData["Labels"] = labels;
             profile.DesignSettingsJson = System.Text.Json.JsonSerializer.Serialize(designData, options);
             
-            await _db.SaveChangesAsync();
-            return Ok(Result<object>.Success(null));
+            await db.SaveChangesAsync();
+            return Ok(Result<object>.Success(new { success = true }));
         }
 
         [HttpPost("/api/settings/update/{streamerUid}")]
         public async Task<IActionResult> UpdateSonglistSettings(string streamerUid, [FromBody] SonglistSettingsUpdateRequest req)
         {
             var targetUid = streamerUid.ToLower();
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
                 
-            if (profile != null)
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
+
+            profile.DesignSettingsJson = req.DesignSettingsJson;
+
+            // 1. Omakase Items Sync
+            var existingItems = await db.StreamerOmakases
+                .IgnoreQueryFilters()
+                .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
+
+            if (req.Omakases != null)
             {
-                profile.DesignSettingsJson = req.DesignSettingsJson;
+                var processedIds = new HashSet<int>();
 
-                // 1. Omakase Items Sync (1:1 PK-TargetId Policy)
-                var existingItems = await _db.StreamerOmakases
-                    .IgnoreQueryFilters()
-                    .Where(o => o.StreamerProfileId == profile.Id).ToListAsync();
-
-                if (req.Omakases != null)
+                foreach (var dto in req.Omakases)
                 {
-                    var processedIds = new HashSet<int>();
-
-                    foreach (var dto in req.Omakases)
+                    var item = existingItems.FirstOrDefault(x => x.Id == dto.Id && dto.Id > 0);
+                    if (item == null)
                     {
-                        var item = existingItems.FirstOrDefault(x => x.Id == dto.Id && dto.Id > 0);
-                        if (item == null)
+                        item = new StreamerOmakaseItem
                         {
-                            item = new StreamerOmakaseItem
-                            {
-                                StreamerProfileId = profile.Id,
-                                Icon = dto.Icon,
-                                Count = 0
-                            };
-                            _db.StreamerOmakases.Add(item);
-                        }
-                        else
-                        {
-                            item.Icon = dto.Icon;
-                        }
-
-                        // Save to get ID if it's new
-                        await _db.SaveChangesAsync();
-                        processedIds.Add(item.Id);
-                        
-                        // 명시적으로 DTO의 ID를 업데이트 (나중에 Command와 연결할 때 사용)
-                        dto.Id = item.Id;
+                            StreamerProfileId = profile.Id,
+                            Icon = dto.Icon,
+                            Count = 0
+                        };
+                        db.StreamerOmakases.Add(item);
                     }
-
-                    // 🧹 [Cleaning]: 이번에 처리되지 않은 Omakase 아이템들 제거
-                    var toDelete = existingItems.Where(e => !processedIds.Contains(e.Id));
-                    _db.StreamerOmakases.RemoveRange(toDelete);
-                }
-
-                // Sync Commands (v4.3 정문화 반영)
-                var existingCmds = await _db.UnifiedCommands
-                    .IgnoreQueryFilters()
-                    .Include(c => c.StreamerProfile)
-                    .Include(c => c.MasterFeature)
-                    .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && (c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest || c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase))
-                    .ToListAsync();
-
-                // 🔍 [마스터 데이터 기반 동기화]: 기능 정의 로드
-                var features = await _db.MasterCommandFeatures.Include(f => f.Category).ToListAsync();
-                var songMaster = features.FirstOrDefault(f => f.TypeName == CommandFeatureTypes.SongRequest);
-                var omakaseMaster = features.FirstOrDefault(f => f.TypeName == CommandFeatureTypes.Omakase);
-
-                // 1. SongRequest Upsert
-                if (req.SongRequestCommands != null)
-                {
-                    foreach (var sc in req.SongRequestCommands)
+                    else
                     {
-                        if (string.IsNullOrWhiteSpace(sc.Keyword)) continue;
-                        
-                        var existing = existingCmds.FirstOrDefault(c => c.Keyword == sc.Keyword && c.MasterFeature!.TypeName == CommandFeatureTypes.SongRequest);
-                        
-                        await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
-                            Id: existing?.Id,
-                            Keyword: sc.Keyword.Trim(),
-                            Category: songMaster?.Category?.Name ?? "Feature",
-                            CostType: CommandCostType.Cheese.ToString(),
-                            Cost: sc.Price,
-                            FeatureType: CommandFeatureTypes.SongRequest,
-                            ResponseText: string.IsNullOrWhiteSpace(sc.Name) ? "노래 신청" : sc.Name.Trim(), // [물멍]: 커스텀 이름 적용
-                            TargetId: null,
-                            IsActive: true,
-                            RequiredRole: (songMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
-                        ));
+                        item.Icon = dto.Icon;
                     }
+
+                    await db.SaveChangesAsync();
+                    processedIds.Add(item.Id);
+                    dto.Id = item.Id;
                 }
 
-                // 2. Omakase Upsert
-                if (req.Omakases != null && req.Omakases.Any())
+                var toDelete = existingItems.Where(e => !processedIds.Contains(e.Id));
+                db.StreamerOmakases.RemoveRange(toDelete);
+            }
+
+            // Sync Commands
+            var existingCmds = await db.UnifiedCommands
+                .IgnoreQueryFilters()
+                .Include(c => c.StreamerProfile)
+                .Where(c => c.StreamerProfile!.ChzzkUid == targetUid && (c.FeatureType == CommandFeatureType.SongRequest || c.FeatureType == CommandFeatureType.Omakase))
+                .ToListAsync();
+
+            var features = CommandFeatureRegistry.All;
+            var songMaster = features.FirstOrDefault(f => f.Type == CommandFeatureType.SongRequest);
+            var omakaseMaster = features.FirstOrDefault(f => f.Type == CommandFeatureType.Omakase);
+
+            // 1. SongRequest Upsert
+            if (req.SongRequestCommands != null)
+            {
+                foreach (var sc in req.SongRequestCommands)
                 {
-                    var uniqueKeywords = req.Omakases
-                        .Where(o => !string.IsNullOrWhiteSpace(o.Command))
-                        .GroupBy(o => o.Command.Trim())
-                        .Select(g => new { Keyword = g.Key, First = g.First() })
-                        .ToList();
-
-                    foreach (var uk in uniqueKeywords)
-                    {
-                        var existing = existingCmds.FirstOrDefault(c => string.Equals(c.Keyword, uk.Keyword, StringComparison.OrdinalIgnoreCase) && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase);
-
-                        await _unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
-                            Id: existing?.Id,
-                            Keyword: uk.Keyword.Trim(),
-                            Category: omakaseMaster?.Category?.Name ?? "Feature",
-                            CostType: CommandCostType.Cheese.ToString(),
-                            Cost: uk.First.Price,
-                            FeatureType: CommandFeatureTypes.Omakase,
-                            ResponseText: uk.First.Name.Trim(),
-                            TargetId: uk.First.Id,
-                            IsActive: true,
-                            RequiredRole: (omakaseMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
-                        ));
-                    }
-                }
-
-                // Cleanup deleted commands
-                var incomingKeywords = (req.SongRequestCommands?.Select(s => s.Keyword.Trim()) ?? Enumerable.Empty<string>())
-                    .Concat(req.Omakases?.Select(o => o.Command?.Trim()).Where(k => !string.IsNullOrEmpty(k)) ?? Enumerable.Empty<string>())
-                    .ToList();
-
-                var toRemove = existingCmds.Where(e => !incomingKeywords.Any(k => string.Equals(k, e.Keyword, StringComparison.OrdinalIgnoreCase)));
-                foreach (var tr in toRemove)
-                {
-                    await _unifiedCommandService.DeleteCommandAsync(targetUid, tr.Id);
+                    if (string.IsNullOrWhiteSpace(sc.Keyword)) continue;
+                    
+                    var existing = existingCmds.FirstOrDefault(c => c.Keyword == sc.Keyword && c.FeatureType == CommandFeatureType.SongRequest);
+                    
+                    await unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
+                        Id: existing?.Id,
+                        Keyword: sc.Keyword.Trim(),
+                        Category: CommandCategory.Feature.ToString(),
+                        CostType: CommandCostType.Cheese.ToString(),
+                        Cost: sc.Price,
+                        FeatureType: CommandFeatureTypes.SongRequest,
+                        ResponseText: string.IsNullOrWhiteSpace(sc.Name) ? "노래 신청" : sc.Name.Trim(),
+                        TargetId: null,
+                        IsActive: true,
+                        RequiredRole: (songMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
+                    ));
                 }
             }
 
-            await _db.SaveChangesAsync();
-            return Ok(Result<object>.Success(null));
+            // 2. Omakase Upsert
+            if (req.Omakases != null && req.Omakases.Any())
+            {
+                var uniqueKeywords = req.Omakases
+                    .Where(o => !string.IsNullOrWhiteSpace(o.Command))
+                    .GroupBy(o => o.Command.Trim())
+                    .Select(g => new { Keyword = g.Key, First = g.First() })
+                    .ToList();
+
+                foreach (var uk in uniqueKeywords)
+                {
+                    var existing = existingCmds.FirstOrDefault(c => string.Equals(c.Keyword, uk.Keyword, StringComparison.OrdinalIgnoreCase) && c.FeatureType == CommandFeatureType.Omakase);
+
+                    await unifiedCommandService.UpsertCommandAsync(targetUid, new SaveUnifiedCommandRequest(
+                        Id: existing?.Id,
+                        Keyword: uk.Keyword.Trim(),
+                        Category: CommandCategory.Feature.ToString(),
+                        CostType: CommandCostType.Cheese.ToString(),
+                        Cost: uk.First.Price,
+                        FeatureType: CommandFeatureTypes.Omakase,
+                        ResponseText: uk.First.Name.Trim(),
+                        TargetId: uk.First.Id,
+                        IsActive: true,
+                        RequiredRole: (omakaseMaster?.RequiredRole ?? CommandRole.Viewer).ToString()
+                    ));
+                }
+            }
+
+            var incomingKeywords = (req.SongRequestCommands?.Select(s => s.Keyword.Trim()) ?? Enumerable.Empty<string>())
+                .Concat(req.Omakases?.Select(o => o.Command?.Trim()).Where(k => !string.IsNullOrEmpty(k)) ?? Enumerable.Empty<string>())
+                .ToList();
+
+            var toRemove = existingCmds.Where(e => !incomingKeywords.Any(k => string.Equals(k, e.Keyword, StringComparison.OrdinalIgnoreCase)));
+            foreach (var tr in toRemove)
+            {
+                await unifiedCommandService.DeleteCommandAsync(targetUid, tr.Id);
+            }
+
+            await db.SaveChangesAsync();
+            return Ok(Result<object>.Success(new { success = true }));
         }
 
         private object TryGetLabels(string? json)

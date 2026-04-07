@@ -32,7 +32,7 @@ class UserState {
         
         // [물멍]: 네이버/치지직 프로필 이미지 해상도 보정 전략
         // 기본 80px 혹은 40px 저해상도를 240px 이상으로 변환하여 선명도 확보
-        let rawUrl = data.profileImageUrl || "";
+        let rawUrl = data.profileUrl || "";
         if (rawUrl.includes("nng-phinf.pstatic.net")) {
             this.profileUrl = rawUrl.replace(/type=f\d+_\d+/g, "type=f240_240");
         } else {

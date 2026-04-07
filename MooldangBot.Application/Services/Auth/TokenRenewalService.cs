@@ -9,7 +9,6 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
-using MooldangBot.ChzzkAPI.Models;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;

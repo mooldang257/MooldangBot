@@ -4,26 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Application.Common.Models; // Result<T> 도입
+using MooldangBot.Application.Common.Models;
 
-namespace MooldangAPI.Controllers
+namespace MooldangBot.Presentation.Features.PeriodicMessages
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Policy = "ChannelManager")] // 🛡️ 정기 메세지 관리에 채널 매니저 정책 적용
-    public class PeriodicMessageController : ControllerBase
+    [Route("api/PeriodicMessage")]
+    [Authorize(Policy = "ChannelManager")]
+    // [v10.1] Primary Constructor 적용
+    public class PeriodicMessageController(IAppDbContext db) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-
-        public PeriodicMessageController(IAppDbContext db)
-        {
-            _db = db;
-        }
-
         [HttpGet("list/{chzzkUid}")]
         public async Task<IActionResult> GetList(string chzzkUid)
         {
-            var list = await _db.PeriodicMessages
+            var list = await db.PeriodicMessages
                 .Include(m => m.StreamerProfile)
                 .Where(m => m.StreamerProfile!.ChzzkUid == chzzkUid)
                 .OrderBy(m => m.Id)
@@ -36,7 +30,7 @@ namespace MooldangAPI.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(Result<List<PeriodicMessageDto>>.Success(list));
+            return Ok(Result<ListResponse<PeriodicMessageDto>>.Success(new ListResponse<PeriodicMessageDto>(list, list.Count)));
         }
 
         [HttpPost("save/{chzzkUid}")]
@@ -44,24 +38,25 @@ namespace MooldangAPI.Controllers
         {
             if (req.Id > 0)
             {
-                var existing = await _db.PeriodicMessages
+                var existing = await db.PeriodicMessages
                     .IgnoreQueryFilters()
                     .Include(m => m.StreamerProfile)
                     .FirstOrDefaultAsync(m => m.Id == req.Id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                     
-                if (existing != null)
-                {
-                    existing.IntervalMinutes = req.IntervalMinutes;
-                    existing.Message = req.Message;
-                    existing.IsEnabled = req.IsEnabled;
-                }
+                if (existing == null)
+                    return NotFound(Result<string>.Failure("해당 메시지를 찾을 수 없습니다."));
+
+                existing.IntervalMinutes = req.IntervalMinutes;
+                existing.Message = req.Message;
+                existing.IsEnabled = req.IsEnabled;
             }
             else
             {
-                var profile = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-                if (profile == null) return NotFound(Result<bool>.Failure("Profile not found"));
+                var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                if (profile == null) 
+                    return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
-                _db.PeriodicMessages.Add(new PeriodicMessage
+                db.PeriodicMessages.Add(new PeriodicMessage
                 {
                     StreamerProfileId = profile.Id,
                     IntervalMinutes = req.IntervalMinutes,
@@ -70,39 +65,41 @@ namespace MooldangAPI.Controllers
                 });
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
             return Ok(Result<bool>.Success(true));
         }
 
         [HttpDelete("delete/{chzzkUid}/{id}")]
         public async Task<IActionResult> Delete(string chzzkUid, int id)
         {
-            var item = await _db.PeriodicMessages
+            var item = await db.PeriodicMessages
                 .IgnoreQueryFilters()
                 .Include(m => m.StreamerProfile)
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
-            if (item != null)
-            {
-                _db.PeriodicMessages.Remove(item);
-                await _db.SaveChangesAsync();
-            }
+            if (item == null)
+                return NotFound(Result<string>.Failure("해당 메시지를 찾을 수 없습니다."));
+
+            db.PeriodicMessages.Remove(item);
+            await db.SaveChangesAsync();
+            
             return Ok(Result<bool>.Success(true));
         }
 
         [HttpPatch("toggle/{chzzkUid}/{id}")]
         public async Task<IActionResult> Toggle(string chzzkUid, int id)
         {
-            var item = await _db.PeriodicMessages
+            var item = await db.PeriodicMessages
                 .IgnoreQueryFilters()
                 .Include(m => m.StreamerProfile)
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
-            if (item != null)
-            {
-                item.IsEnabled = !item.IsEnabled;
-                await _db.SaveChangesAsync();
-            }
+            if (item == null)
+                return NotFound(Result<string>.Failure("해당 메시지를 찾을 수 없습니다."));
+
+            item.IsEnabled = !item.IsEnabled;
+            await db.SaveChangesAsync();
+            
             return Ok(Result<bool>.Success(true));
         }
     }

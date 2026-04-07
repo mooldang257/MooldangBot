@@ -52,9 +52,9 @@ public class WeeklyStatsReporter(
 
     private async Task<bool> ShouldSendReportAsync(DateTime today, CancellationToken ct)
     {
-        var lastSentDate = await db.SystemSettings
-            .Where(s => s.KeyName == SettingKey)
-            .Select(s => s.KeyValue)
+        var lastSentDate = await db.StreamerPreferences
+            .Where(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey)
+            .Select(p => p.PreferenceValue)
             .FirstOrDefaultAsync(ct);
 
         return lastSentDate != today.ToString("yyyy-MM-dd");
@@ -62,19 +62,23 @@ public class WeeklyStatsReporter(
 
     private async Task MarkReportAsSentAsync(DateTime today, CancellationToken ct)
     {
-        var setting = await db.SystemSettings.FirstOrDefaultAsync(s => s.KeyName == SettingKey, ct);
-        if (setting == null)
+        var preference = await db.StreamerPreferences
+            .FirstOrDefaultAsync(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey, ct);
+            
+        if (preference == null)
         {
-            db.SystemSettings.Add(new Domain.Entities.SystemSetting 
+            db.StreamerPreferences.Add(new Domain.Entities.StreamerPreference 
             { 
-                KeyName = SettingKey, 
-                KeyValue = today.ToString("yyyy-MM-dd") 
+                StreamerProfileId = null,
+                PreferenceKey = SettingKey, 
+                PreferenceValue = today.ToString("yyyy-MM-dd"),
+                CreatedAt = KstClock.Now
             });
         }
         else
         {
-            setting.KeyValue = today.ToString("yyyy-MM-dd");
-            setting.UpdatedAt = KstClock.Now;
+            preference.PreferenceValue = today.ToString("yyyy-MM-dd");
+            preference.UpdatedAt = KstClock.Now;
         }
         await db.SaveChangesAsync(ct);
     }

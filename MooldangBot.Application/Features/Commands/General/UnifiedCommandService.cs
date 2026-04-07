@@ -37,16 +37,13 @@ public class UnifiedCommandService : IUnifiedCommandService
             .FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
         if (streamer == null) throw new KeyNotFoundException("스트리머 프로필을 찾을 수 없습니다.");
 
-        // [v4.3] 마스터 기능 조회 (Category Name + FeatureType 조합으로 더욱 견고하게 조회)
-        var masterFeature = await _db.MasterCommandFeatures
-            .Include(f => f.Category)
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(f => f.Category!.Name == req.Category && f.TypeName == req.FeatureType);
+        // [v4.3] 마스터 기능 조회 (레지스트리 참조로 전환)
+        var masterFeature = CommandFeatureRegistry.GetByTypeName(req.FeatureType);
         
         if (masterFeature == null) 
         {
-            _logger.LogWarning("⚠️ [UnifiedCommandService]: 정의되지 않은 명령어 기능 타입 요청 (Category: {Category}, Type: {Type})", req.Category, req.FeatureType);
-            throw new InvalidOperationException($"정의되지 않은 명령어 기능 타입입니다. (Category: {req.Category}, Type: {req.FeatureType})");
+            _logger.LogWarning("⚠️ [UnifiedCommandService]: 정의되지 않은 명령어 기능 타입 요청 (Type: {Type})", req.FeatureType);
+            throw new InvalidOperationException($"정의되지 않은 명령어 기능 타입입니다. (Type: {req.FeatureType})");
         }
 
         UnifiedCommand? entity;
@@ -80,13 +77,13 @@ public class UnifiedCommandService : IUnifiedCommandService
         bool isDuplicateName = await _db.UnifiedCommands
             .IgnoreQueryFilters()
             .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.ResponseText == req.ResponseText && c.Id != currentId 
-                      && c.MasterCommandFeatureId == masterFeature.Id); // 같은 카테고리 내에서만 체크
+                      && c.FeatureType == masterFeature.Type); // 같은 기능 타입 내에서만 체크
 
         if (isDuplicateName) throw new InvalidOperationException($"이미 '{req.ResponseText}' 이름의 명령어가 존재합니다.");
 
         // 데이터 매핑
         entity.Keyword = req.Keyword.Trim();
-        entity.MasterCommandFeatureId = masterFeature.Id; // [v4.3] 정문화된 기능 ID 할당
+        entity.FeatureType = masterFeature.Type; // [v4.3] 정문화된 기능 Enum 할당
         entity.CostType = Enum.Parse<CommandCostType>(req.CostType, true);
         entity.Cost = req.Cost;
         entity.ResponseText = req.ResponseText;
@@ -126,13 +123,12 @@ public class UnifiedCommandService : IUnifiedCommandService
         var entity = await _db.UnifiedCommands
             .IgnoreQueryFilters()
             .Include(c => c.StreamerProfile)
-            .Include(c => c.MasterFeature)
             .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == targetUid);
 
         if (entity == null) throw new KeyNotFoundException("삭제할 명령어를 찾을 수 없거나 이미 삭제되었습니다.");
 
         // [v6.2.5] 자식 엔티티(오마카세 등) 연쇄 삭제 처리 (Soft-Delete 아닌 하드 삭제 수행)
-        var featureType = entity.MasterFeature?.TypeName ?? "";
+        var featureType = entity.FeatureType.ToString();
         if (featureType == CommandFeatureTypes.Omakase && entity.TargetId.HasValue)
         {
             var itemsToDelete = await _db.StreamerOmakases
@@ -325,10 +321,8 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (exists) return 0;
 
-        // 마스터 기능 조회
-        var masterFeature = await _db.MasterCommandFeatures
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(f => f.CategoryId == ((int)cat + 1) && f.TypeName == feature);
+        // 마스터 기능 조회 (레지스트리 참조)
+        var masterFeature = CommandFeatureRegistry.GetByTypeName(feature);
         
         if (masterFeature == null) return 0;
 
@@ -336,7 +330,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         {
             StreamerProfileId = streamer.Id,
             Keyword = keyword,
-            MasterCommandFeatureId = masterFeature.Id,
+            FeatureType = masterFeature.Type,
             CostType = costType,
             Cost = cost,
             ResponseText = response,

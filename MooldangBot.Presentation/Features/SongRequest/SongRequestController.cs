@@ -4,11 +4,12 @@ using MooldangBot.Application.Common.Models;
 namespace MooldangBot.Presentation.Features.SongRequest;
 
 /// <summary>
-/// 표준 통신 프로토콜 (Result<T>) 적용 검증을 위한 샘플 컨트롤러
+/// [v10.1] 표준 통신 프로토콜 (Result<T>) 적용 검증을 위한 샘플 컨트롤러
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
-public class SongRequestController : ControllerBase
+[Route("api/SongRequest")]
+// [v10.1] Primary Constructor 적용
+public class SongRequestController() : ControllerBase
 {
     [HttpGet("pending/{chzzkUid}")]
     public IActionResult GetPendingSongs(string chzzkUid)

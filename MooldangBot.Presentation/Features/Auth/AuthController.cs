@@ -87,7 +87,7 @@ namespace MooldangBot.Presentation.Features.Auth
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[오시리스의 거절] 로그인 URL 생성 실패");
-                return Content($"[인증 오류] {ex.Message}");
+                return Ok(Result<object>.Failure($"로그인 URL 생성 실패: {ex.Message}"));
             }
         }
 
@@ -132,7 +132,7 @@ namespace MooldangBot.Presentation.Features.Auth
     }
 
         [HttpGet("auth/me")]
-        public async Task<IActionResult> GetMyProfile([FromQuery] string? uid, [FromServices] IChzzkApiClient chzzkApi)
+        public async Task<IActionResult> GetMyProfile([FromQuery] string? uid)
         {
             if (User.Identity?.IsAuthenticated != true)
             {
@@ -147,7 +147,7 @@ namespace MooldangBot.Presentation.Features.Auth
 
             try 
             {
-                var channelRes = await chzzkApi.GetChannelsAsync(new[] { chzzkUid });
+                var channelRes = await _chzzkApi.GetChannelsAsync(new[] { chzzkUid });
                 var profile = await _db.StreamerProfiles
                                  .IgnoreQueryFilters() 
                                  .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
@@ -161,31 +161,31 @@ namespace MooldangBot.Presentation.Features.Auth
                         await _db.SaveChangesAsync();
                     }
 
-                    return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
-                        isAuthenticated = true,
-                        isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                        channelName = profile.ChannelName ?? "스트리머",
-                        profileImageUrl = profile.ProfileImageUrl ?? "",
-                        chzzkUid = profile.ChzzkUid,
-                        slug = profile.Slug
-                    }));
-                }
-                else
-                {
-                    var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
-                    var viewer = await _db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == viewerHash);
-                    if (viewer != null)
-                    {
                         return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
                             isAuthenticated = true,
-                            isChzzkLinked = false,
-                            channelName = viewer.Nickname,
-                            profileImageUrl = viewer.ProfileImageUrl ?? "",
-                            chzzkUid = viewer.ViewerUid,
-                            slug = (string?)null
+                            isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
+                            channelName = profile.ChannelName ?? "스트리머",
+                            profileUrl = profile.ProfileImageUrl ?? "",
+                            chzzkUid = profile.ChzzkUid,
+                            slug = profile.Slug
                         }));
                     }
-                }
+                    else
+                    {
+                        var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
+                        var viewer = await _db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == viewerHash);
+                        if (viewer != null)
+                        {
+                            return Ok(MooldangBot.Application.Common.Models.Result<object>.Success(new {
+                                isAuthenticated = true,
+                                isChzzkLinked = false,
+                                channelName = viewer.Nickname,
+                                profileUrl = viewer.ProfileImageUrl ?? "",
+                                chzzkUid = viewer.ViewerUid,
+                                slug = (string?)null
+                            }));
+                        }
+                    }
             }
             catch (Exception ex)
             {
@@ -221,7 +221,7 @@ namespace MooldangBot.Presentation.Features.Auth
 
         [HttpGet("admin/bot/streamers")]
         [Authorize] // 🔐 인증된 사용자라면 일단 목록 조회 허용 (추후 master로 강화 가능)
-        public async Task<IActionResult> GetStreamers([FromServices] IChzzkApiClient chzzkApi)
+        public async Task<IActionResult> GetStreamers()
         {
             // 1. DB에서 모든 스트리머 프로필 조회
             var streamersInDb = await _db.StreamerProfiles
@@ -235,7 +235,7 @@ namespace MooldangBot.Presentation.Features.Auth
                 for (int i = 0; i < uids.Count; i += 20)
                 {
                     var chunk = uids.Skip(i).Take(20).ToList();
-                    var channelRes = await chzzkApi.GetChannelsAsync(chunk);
+                    var channelRes = await _chzzkApi.GetChannelsAsync(chunk);
 
                     if (channelRes?.Content?.Data != null)
                     {
@@ -262,14 +262,14 @@ namespace MooldangBot.Presentation.Features.Auth
                 .Select(p => new {
                     chzzkUid = p.ChzzkUid,
                     channelName = p.ChannelName,
-                    profileImageUrl = p.ProfileImageUrl,
+                    profileUrl = p.ProfileImageUrl,
                     isActive = p.IsActive, // [v6.1.6] 활동성 필드로 통합
                     isMasterEnabled = p.IsMasterEnabled, // [v6.1.6] 마스터 스위치 노출
                     lastActiveAt = p.TokenExpiresAt
                 })
                 .ToList();
 
-            return Ok(Result<object>.Success(result));
+            return Ok(Result<ListResponse<object>>.Success(new ListResponse<object>(result, result.Count)));
         }
 
         [HttpGet("admin/bot/login")]
@@ -310,32 +310,32 @@ namespace MooldangBot.Presentation.Features.Auth
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state)) 
-                return Content("[오시리스의 거절] 필수 인증 파라미터가 누락되었습니다.");
+                return Ok(Result<object>.Failure("필수 인증 파라미터가 누락되었습니다."));
 
             // 🛡️ [물멍의 수호]: Double-Submit Cookie 검증
             var stateFromCookie = Request.Cookies[StateCookieName];
             if (string.IsNullOrEmpty(stateFromCookie) || stateFromCookie != state)
             {
                 _logger.LogWarning($"[CSRF 감지] State 불일치 (URL: {state}, Cookie: {stateFromCookie})");
-                return Content("[보안 경고] 인증 세션이 유효하지 않거나 변조되었습니다. 다시 시도해 주세요.");
+                return Ok(Result<object>.Failure("인증 세션이 유효하지 않거나 변조되었습니다. 다시 시도해 주세요."));
             }
 
             // [분산 캐시]: 세션 데이터 조회
             var cachedJson = await _cache.GetStringAsync($"auth:state:{state}");
             if (string.IsNullOrEmpty(cachedJson))
             {
-                return Content("[인증 만료] 인증 시간이 초과되었습니다. 다시 로그인해 주세요.");
+                return Ok(Result<object>.Failure("인증 시간이 초과되었습니다. 다시 로그인해 주세요."));
             }
 
             var cachedData = JsonSerializer.Deserialize<AuthSessionData>(cachedJson);
-            if (cachedData == null) return Content("[시스템 오류] 인증 세션 데이터가 손상되었습니다.");
+            if (cachedData == null) return Ok(Result<object>.Failure("시스템 오류: 인증 세션 데이터가 손상되었습니다."));
 
             // 🚀 [AuthService]: 핵심 비즈니스 로직(토큰 교환, DB 동기화 등) 처리
             var result = await _authService.ProcessCallbackAsync(code, cachedData);
 
             if (!result.IsSuccess)
             {
-                return Content($"[인증 실패] {result.ErrorMessage}");
+                return Ok(Result<object>.Failure($"인증 실패: {result.ErrorMessage}"));
             }
 
             // 봇 설정인 경우 특수 결과 반환

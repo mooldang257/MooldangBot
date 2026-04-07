@@ -1,87 +1,97 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace MooldangBot.Presentation.Features.View
 {
     [ApiController]
-    public class ViewController : ControllerBase
+    [ApiExplorerSettings(IgnoreApi = true)] // [v10.1] Swagger 등 API 문서에서 제외
+    // [v10.1] Primary Constructor 적용
+    public class ViewController(IWebHostEnvironment env) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-
-        public ViewController(IAppDbContext db)
-        {
-            _db = db;
-        }
-
         [HttpGet("/bot")]
         [AllowAnonymous]
-        public IResult Index()
+        public IActionResult Index()
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/main.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "main.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/songlist_settings/{chzzkUid}")]
         [Authorize(Policy = "ChannelManager")]
-        public IResult SettingsPage(string chzzkUid)
+        public IActionResult SettingsPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_settings.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "songlist_settings.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/login")]
-        public IResult Login()
+        public IActionResult Login()
         {
-            return Results.Redirect("/api/auth/chzzk-login");
+            return Redirect("/api/auth/chzzk-login");
         }
 
         [HttpGet("/songlist/{chzzkUid}")]
         [Authorize(Policy = "ChannelManager")]
-        public IResult DashboardPage(string chzzkUid)
+        public IActionResult DashboardPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "songlist.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/commands-manager/{chzzkUid}")]
         [Authorize(Policy = "ChannelManager")]
-        public IResult CommandsManagerPage(string chzzkUid)
+        public IActionResult CommandsManagerPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/commands.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "commands.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/overlay_manager/{chzzkUid}")]
         [Authorize(Policy = "ChannelManager")]
-        public IResult OverlayManagerPage(string chzzkUid)
+        public IActionResult OverlayManagerPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/overlay_manager.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "overlay_manager.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
 
         [HttpGet("/songlist_overlay/{chzzkUid}")]
-        public IResult SonglistOverlayPage(string chzzkUid)
+        public IActionResult SonglistOverlayPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/songlist_overlay.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "songlist_overlay.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/roulette_overlay/{chzzkUid}")]
-        public IResult RouletteOverlayPage(string chzzkUid)
+        public IActionResult RouletteOverlayPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/roulette_overlay.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "roulette_overlay.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/avatar_overlay/{chzzkUid}")]
-        public IResult AvatarOverlayPage(string chzzkUid)
+        public IActionResult AvatarOverlayPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/avatar_overlay.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "avatar_overlay.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
 
         [HttpGet("/overlay/{chzzkUid}")]
-        public IResult OverlayPage(string chzzkUid)
+        public IActionResult OverlayPage(string chzzkUid)
         {
-            return Results.File(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/overlay.html"), "text/html; charset=utf-8");
+            var htmlPath = Path.Combine(env.WebRootPath, "overlay.html");
+            if (!System.IO.File.Exists(htmlPath)) return NotFound();
+            return PhysicalFile(htmlPath, "text/html; charset=utf-8");
         }
     }
 }

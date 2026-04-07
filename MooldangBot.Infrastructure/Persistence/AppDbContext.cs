@@ -32,7 +32,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     }
 
     public DbSet<StreamerProfile> StreamerProfiles { get; set; }
-    public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<SongQueue> SongQueues { get; set; }
     public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
     public DbSet<AvatarSetting> AvatarSettings { get; set; }
@@ -63,9 +62,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     public DbSet<RouletteLog> RouletteLogs { get; set; }
     public DbSet<RouletteSpin> RouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성
     public DbSet<UnifiedCommand> UnifiedCommands { get; set; }
-    public DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
-    public DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
-    public DbSet<Master_DynamicVariable> MasterDynamicVariables { get; set; }
     public DbSet<Master_SongLibrary> MasterSongLibraries { get; set; }
     public DbSet<Streamer_SongLibrary> StreamerSongLibraries { get; set; } // [v12.5] 스트리머 라이브러리
     public DbSet<Master_SongStaging> MasterSongStagings { get; set; }
@@ -313,21 +309,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasIndex(e => new { e.IsCompleted, e.ScheduledTime });
         });
 
-        modelBuilder.Entity<SystemSetting>(entity => {
-            entity.ToTable("sys_settings");
-            if (Database.IsMySql())
-            {
-                entity.Property(e => e.BotAccessToken).HasColumnType("longtext").HasConversion(converter);
-                entity.Property(e => e.BotRefreshToken).HasColumnType("longtext").HasConversion(converter);
-                entity.Property(e => e.KeyValue).HasColumnType("longtext").HasConversion(converter);
-            }
-            else
-            {
-                entity.Property(e => e.BotAccessToken).HasConversion(converter);
-                entity.Property(e => e.BotRefreshToken).HasConversion(converter);
-                entity.Property(e => e.KeyValue).HasConversion(converter);
-            }
-        });
 
 
         modelBuilder.Entity<SongQueue>(entity => {
@@ -424,11 +405,10 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .HasForeignKey(c => c.StreamerProfileId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // 2. 마스터 데이터(기능) 삭제 시 명령어 데이터 보호 (Restrict)
-            entity.HasOne(c => c.MasterFeature)
-                  .WithMany()
-                  .HasForeignKey(c => c.MasterCommandFeatureId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            // 2. 마스터 데이터 연동 제거 (Enum 기반으로 관리됨)
+            entity.Property(e => e.FeatureType)
+                  .HasConversion<string>()
+                  .HasColumnName("feature_type");
 
             // [Index] 복합 인덱스: (StreamerProfileId, Keyword) 유니크 조합
             entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword }).IsUnique();
@@ -440,127 +420,11 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
                   .HasDatabaseName("IX_UnifiedCommand_CursorPaging");
         });
 
-        modelBuilder.Entity<Master_CommandCategory>(entity => {
-            entity.ToTable("func_cmd_master_categories");
-            if (Database.IsMySql())
-            {
-                entity.Property(e => e.Name).UseCollation(ciCollation);
-            }
-
-            // [v1.7] 마스터 카테고리 재편
-            entity.HasData(
-                new Master_CommandCategory { Id = 1, Name = "General", DisplayName = "일반", SortOrder = 1 },
-                new Master_CommandCategory { Id = 2, Name = "System", DisplayName = "시스템메세지", SortOrder = 2 },
-                new Master_CommandCategory { Id = 3, Name = "Feature", DisplayName = "기능", SortOrder = 3 }
-            );
-        });
-
-        modelBuilder.Entity<Master_CommandFeature>(entity => {
-            entity.ToTable("func_cmd_master_features");
-            if (Database.IsMySql())
-            {
-                entity.Property(e => e.TypeName).UseCollation(ciCollation);
-            }
-            entity.Property(e => e.RequiredRole).HasConversion<string>();
-
-            // [v1.7] 마스터 기능 재편 (9종)
-            entity.HasData(
-                new Master_CommandFeature { Id = 1, CategoryId = 1, TypeName = "Reply", DisplayName = "텍스트 답변", DefaultCost = 0, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 2, CategoryId = 2, TypeName = "Notice", DisplayName = "공지", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 3, CategoryId = 2, TypeName = "Title", DisplayName = "방제", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 4, CategoryId = 2, TypeName = "Category", DisplayName = "카테고리", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 5, CategoryId = 2, TypeName = "SonglistToggle", DisplayName = "송리스트", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 6, CategoryId = 3, TypeName = "SongRequest", DisplayName = "노래신청", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 7, CategoryId = 3, TypeName = "Omakase", DisplayName = "오마카세", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 8, CategoryId = 3, TypeName = "Roulette", DisplayName = "룰렛", DefaultCost = 500, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 9, CategoryId = 3, TypeName = "ChatPoint", DisplayName = "채팅포인트", DefaultCost = 0, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 10, CategoryId = 2, TypeName = "SystemResponse", DisplayName = "시스템 응답", DefaultCost = 0, RequiredRole = CommandRole.Manager },
-                new Master_CommandFeature { Id = 11, CategoryId = 3, TypeName = "AI", DisplayName = "AI 답변", DefaultCost = 1000, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 12, CategoryId = 3, TypeName = "Attendance", DisplayName = "출석체크", DefaultCost = 10, RequiredRole = CommandRole.Viewer },
-                new Master_CommandFeature { Id = 13, CategoryId = 1, TypeName = "PointCheck", DisplayName = "포인트확인", DefaultCost = 0, RequiredRole = CommandRole.Viewer }
-            );
-        });
-
-        modelBuilder.Entity<Master_DynamicVariable>(entity => {
-            entity.ToTable("func_cmd_master_variables");
-            if (Database.IsMySql())
-            {
-                entity.Property(e => e.Keyword).UseCollation(ciCollation);
-            }
-
-            // [v1.8] 동적 변수 시딩 (Safe Query) & [v4.4.0] 내부 메서드 리졸버 매핑
-            entity.HasData(
-                new Master_DynamicVariable { 
-                    Id = 1, 
-                    Keyword = "$(포인트)", 
-                    Description = "보유 포인트", 
-                    BadgeColor = "primary", 
-                    QueryString = "SELECT CAST(vp.Points AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 2, 
-                    Keyword = "$(닉네임)", 
-                    Description = "시청자 닉네임", 
-                    BadgeColor = "success", 
-                    QueryString = "SELECT gv.Nickname FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 3, 
-                    Keyword = "$(방제)", 
-                    Description = "현재 방송 제목", 
-                    BadgeColor = "secondary", 
-                    QueryString = "METHOD:GetLiveTitle" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 4, 
-                    Keyword = "$(카테고리)", 
-                    Description = "현재 방송 카테고리", 
-                    BadgeColor = "info", 
-                    QueryString = "METHOD:GetLiveCategory" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 5, 
-                    Keyword = "$(공지)", 
-                    Description = "현재 방송 공지", 
-                    BadgeColor = "warning", 
-                    QueryString = "METHOD:GetLiveNotice" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 6, 
-                    Keyword = "$(연속출석일수)", 
-                    Description = "연속 출석한 일수", 
-                    BadgeColor = "success", 
-                    QueryString = "SELECT CAST(vp.ConsecutiveAttendanceCount AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 7, 
-                    Keyword = "$(누적출석일수)", 
-                    Description = "누적 출석한 횟수", 
-                    BadgeColor = "info", 
-                    QueryString = "SELECT CAST(vp.AttendanceCount AS CHAR) FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 8, 
-                    Keyword = "$(마지막출석일)", 
-                    Description = "최근 출석 날짜", 
-                    BadgeColor = "secondary", 
-                    QueryString = "SELECT DATE_FORMAT(vp.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM view_streamer_viewers vp JOIN core_streamer_profiles sp ON vp.StreamerProfileId = sp.Id JOIN core_global_viewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash" 
-                },
-                new Master_DynamicVariable { 
-                    Id = 10, 
-                    Keyword = "$(송리스트)", 
-                    Description = "현재 송리스트 활성화 여부", 
-                    BadgeColor = "warning", 
-                    QueryString = "METHOD:GetSonglistStatus" 
-                }
-            );
-        });
 
         modelBuilder.Entity<SongBook>().ToTable("song_book_main");
         modelBuilder.Entity<RouletteLog>().ToTable("func_roulette_logs");
         modelBuilder.Entity<StreamerProfile>().ToTable("core_streamer_profiles");
         modelBuilder.Entity<SongQueue>().ToTable("song_list_queues");
-        modelBuilder.Entity<SystemSetting>().ToTable("sys_settings");
         modelBuilder.Entity<StreamerOmakaseItem>().ToTable("song_list_omakases");
         modelBuilder.Entity<AvatarSetting>().ToTable("overlay_avatar_settings");
         modelBuilder.Entity<ChzzkCategory>().ToTable("sys_chzzk_categories");
@@ -667,6 +531,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             // [오시리스의 인덱싱]: 사용자별 설정 키는 유니크해야 하며, 조회 성능을 위해 인덱싱함
             entity.HasIndex(p => new { p.StreamerProfileId, p.PreferenceKey }).IsUnique();
         });
+
 
         // [v6.1] 자식 엔티티의 필터는 암묵적 JOIN을 유발하므로 보수적으로 접근하나, 
         // ISoftDeletable 인터페이스 구현체에 한해 리플렉션으로 자동 주입됨 (상단 foreach 로직).

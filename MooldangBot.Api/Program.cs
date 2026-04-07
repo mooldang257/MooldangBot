@@ -1,6 +1,6 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
-using MooldangBot.ChzzkAPI.Serialization;
+using MooldangBot.Domain.Serialization;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
 using MooldangBot.Presentation;
@@ -131,6 +131,14 @@ try
     builder.Services.AddCors(options => {
         options.AddPolicy("IamfOverlayPolicy", policy => {
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        });
+
+        // [오시리스의 중계]: Studio 프론트엔드 연동을 위한 전용 CORS 정책
+        options.AddPolicy("StudioCorsPolicy", policy => {
+            policy.WithOrigins("http://localhost:3000") // 로컬 SvelteKit 포트
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // ★ 중요: 인증 쿠키(세션) 공유를 위해 필수
         });
     });
 
@@ -294,7 +302,9 @@ try
 
     // 🛡️ [오시리스의 열쇠]: 속도 제한은 라우팅 직후, CORS와 함께 배치
     app.UseRateLimiter();
-    app.UseCors("IamfOverlayPolicy");
+    // [오시리스의 중계]: 주 조타실(Studio)을 위한 자격 증명 허용 정책 우선 적용
+    app.UseCors("StudioCorsPolicy"); 
+    app.UseCors("IamfOverlayPolicy"); // [v6.2] 레거시 오버레이 호환성 유지
 
     app.UseAuthentication();
     app.UseAuthorization();

@@ -47,8 +47,15 @@ public class TitleStrategy(
         {
             logger.LogInformation($"🛠️ [방제 변경 요청] {notification.Username} -> {newTitle}");
             
-            var updateData = new { defaultLiveTitle = newTitle };
-            bool success = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken ?? "", updateData);
+            if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
+                throw new Exception("스트리머의 액세스 토큰이 없습니다.");
+
+            // [물멍의 제언]: 방제만 변경하더라도 카테고리 정보가 유실되지 않도록 현재 설정을 먼저 가져옵니다.
+            var currentSetting = await chzzkApi.GetLiveSettingAsync(notification.Profile.ChzzkAccessToken);
+            var category = currentSetting?.Content?.Category?.CategoryValue ?? "talk"; // 기본값 talk
+            
+            var result = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken, newTitle, category);
+            bool success = result != null;
 
             if (success)
             {

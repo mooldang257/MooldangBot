@@ -43,7 +43,6 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
         // 키워드 매칭은 긴 단어 우선순위 및 대소문자 구분을 위해 애플리케이션 레이어에서 처리합니다.
         var allActiveCommands = await db.UnifiedCommands
             .AsNoTracking()
-            .Include(c => c.MasterFeature)
             .Where(c => c.StreamerProfileId == notification.Profile.Id && c.IsActive) // [v6.1.5] 기능 활성 상태(IsActive) 필터 명시
             .ToListAsync(cancellationToken);
 
@@ -53,7 +52,7 @@ public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent
 
         if (triggerCmd == null) return; 
 
-        var featureType = triggerCmd.MasterFeature?.TypeName ?? "";
+        var featureType = triggerCmd.FeatureType.ToString();
         bool isSongRequestFeature = featureType == CommandFeatureTypes.SongRequest;
         bool isOmakaseFeature = featureType == CommandFeatureTypes.Omakase;
 

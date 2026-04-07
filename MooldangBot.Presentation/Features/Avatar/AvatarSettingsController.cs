@@ -5,52 +5,47 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Avatar
 {
     [ApiController]
-    public class AvatarSettingsController : ControllerBase
+    // [v10.1] Primary Constructor 적용
+    public class AvatarSettingsController(IAppDbContext db, IWebHostEnvironment env) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-        private readonly IWebHostEnvironment _env;
-
-        public AvatarSettingsController(IAppDbContext db, IWebHostEnvironment env)
-        {
-            _db = db;
-            _env = env;
-        }
-
         [HttpGet("/api/avatar/settings/{chzzkUid}")]
-        public async Task<IResult> GetAvatarSettings(string chzzkUid)
+        public async Task<IActionResult> GetAvatarSettings(string chzzkUid)
         {
-            var p = await _db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
-            if (p == null) return Results.NotFound();
+            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            if (p == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var setting = await _db.AvatarSettings
+            var setting = await db.AvatarSettings
                 .Include(s => s.StreamerProfile)
                 .FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
                 
             if (setting == null)
             {
                 setting = new AvatarSetting { StreamerProfileId = p.Id };
-                _db.AvatarSettings.Add(setting);
-                await _db.SaveChangesAsync();
+                db.AvatarSettings.Add(setting);
+                await db.SaveChangesAsync();
             }
 
-            return Results.Ok(setting);
+            return Ok(Result<AvatarSetting>.Success(setting));
         }
 
         [HttpPost("/api/avatar/settings/update")]
-        public async Task<IResult> UpdateAvatarSettings([FromQuery] string chzzkUid, [FromBody] AvatarSetting req)
+        public async Task<IActionResult> UpdateAvatarSettings([FromQuery] string chzzkUid, [FromBody] AvatarSetting req)
         {
-            var p = await _db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
-            if (p == null) return Results.Unauthorized();
+            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            if (p == null) 
+                return Unauthorized(Result<string>.Failure("인증되지 않은 사용자입니다."));
 
-            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
+            var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
             if (setting == null)
             {
                 setting = new AvatarSetting { StreamerProfileId = p.Id };
-                _db.AvatarSettings.Add(setting);
+                db.AvatarSettings.Add(setting);
             }
 
             setting.IsEnabled = req.IsEnabled;
@@ -62,57 +57,63 @@ namespace MooldangBot.Presentation.Features.Avatar
             setting.StopImageUrl = req.StopImageUrl;
             setting.InteractionImageUrl = req.InteractionImageUrl;
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
             
-            // TODO: Broadcast the updated settings to the overlay?
-            // This is optional if the overlay just fetches it on load.
-
-            return Results.Ok(setting);
+            return Ok(Result<AvatarSetting>.Success(setting));
         }
 
         [HttpPost("/api/avatar/settings/upload-image")]
-        public async Task<IResult> UploadAvatarImage([FromForm] string chzzkUid, [FromForm] string tier, IFormFile file)
+        public async Task<IActionResult> UploadAvatarImage([FromForm] string chzzkUid, [FromForm] string tier, IFormFile file)
         {
-            var p = await _db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
-            if (p == null) return Results.Unauthorized();
+            // [이지스 가드]: 권한 확인 실패 시 Result.Failure 반환
+            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            if (p == null) 
+                return Unauthorized(Result<string>.Failure("인증되지 않은 사용자입니다."));
 
             if (file == null || file.Length == 0)
-                return Results.BadRequest("파일이 없습니다.");
+                return BadRequest(Result<string>.Failure("업로드할 파일이 없거나 비어있습니다."));
 
-            var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif" };
-            var ext = Path.GetExtension(file.FileName).ToLower();
-            if (!allowedExts.Contains(ext))
-                return Results.BadRequest("허용되지 않는 파일 형식입니다.");
-
-            string uploadsFolder = Path.Combine(_env.WebRootPath, "images", "avatars");
-            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
-            // 파일명: chzzkuid_tier_timestamp.ext (캐시 무효화 목적)
-            string fileName = $"{chzzkUid}_{tier}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}{ext}";
-            string filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            try 
             {
-                await file.CopyToAsync(stream);
+                var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif" };
+                var ext = Path.GetExtension(file.FileName).ToLower();
+                if (!allowedExts.Contains(ext))
+                    return BadRequest(Result<string>.Failure("허용되지 않는 파일 형식입니다. (.png, .jpg, .gif만 가능)"));
+
+                string uploadsFolder = Path.Combine(env.WebRootPath, "images", "avatars");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                // 파일명: chzzkuid_tier_timestamp.ext (캐시 무효화 목적)
+                string fileName = $"{chzzkUid}_{tier}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}{ext}";
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                string fileUrl = $"/images/avatars/{fileName}";
+
+                // DB 업데이트
+                var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
+                if (setting == null)
+                {
+                    setting = new AvatarSetting { StreamerProfileId = p.Id };
+                    db.AvatarSettings.Add(setting);
+                }
+
+                if (tier == "walking") setting.WalkingImageUrl = fileUrl;
+                else if (tier == "stop") setting.StopImageUrl = fileUrl;
+                else if (tier == "interaction") setting.InteractionImageUrl = fileUrl;
+
+                await db.SaveChangesAsync();
+
+                return Ok(Result<object>.Success(new { success = true, url = fileUrl }));
             }
-
-            string fileUrl = $"/images/avatars/{fileName}";
-
-            // DB 업데이트
-            var setting = await _db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
-            if (setting == null)
+            catch (Exception ex)
             {
-                setting = new AvatarSetting { StreamerProfileId = p.Id };
-                _db.AvatarSettings.Add(setting);
+                return BadRequest(Result<string>.Failure($"아바타 이미지 저장 중 오류가 발생했습니다: {ex.Message}"));
             }
-
-            if (tier == "walking") setting.WalkingImageUrl = fileUrl;
-            else if (tier == "stop") setting.StopImageUrl = fileUrl;
-            else if (tier == "interaction") setting.InteractionImageUrl = fileUrl;
-
-            await _db.SaveChangesAsync();
-
-            return Results.Ok(new { url = fileUrl });
         }
     }
 }

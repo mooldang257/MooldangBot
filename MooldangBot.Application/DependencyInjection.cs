@@ -32,7 +32,6 @@ namespace MooldangBot.Application
             services.AddScoped<ChzzkCategorySyncService>();
             services.AddSingleton<IObsWebSocketService, ObsWebSocketService>();
             services.AddScoped<ITokenRenewalService, TokenRenewalService>(); // [영겁의 열쇠] 추가
-            services.AddScoped<IUnifiedCommandService, UnifiedCommandService>(); // [파로스의 통합] 추가
             services.AddScoped<IAuthService, AuthService>(); // [오시리스의 전령] 추가
 
             // Command Strategies

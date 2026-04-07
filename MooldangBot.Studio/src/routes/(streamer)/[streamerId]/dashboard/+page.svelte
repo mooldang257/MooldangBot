@@ -6,66 +6,69 @@
     import { 
         Activity, Music, Zap, Coins, 
         ArrowUpRight, Clock, Shield, Bell,
-        LayoutDashboard, Settings2, ExternalLink, Monitor
+        LayoutDashboard, Settings2, ExternalLink, Monitor,
+        Edit
     } from 'lucide-svelte';
+    import { apiFetch } from '$lib/api/client';
+    import * as signalR from "@microsoft/signalr";
 
     // [물멍]: 대시보드 상태 관리
-    let isLoaded = false;
-    let streamerId = $page.params.streamerId;
-    
-    // [물멍]: 함교 주소(Slug) 상태 관리
-    let currentSlug = '';
-    let newSlug = '';
-    let isSavingSlug = false;
-    let slugFeedback = '';
+    let isLoaded = $state(false);
+    let streamerId = $derived($page.params.streamerId);
+    let currentSlug = $state('');
+    let newSlug = $state('');
+    let isSavingSlug = $state(false);
+    let slugFeedback = $state('');
+    let hubConnection: signalR.HubConnection | null = $state(null);
 
-    // [물멍]: 실시간 통계 데이터 (Mock)
-    const statusCards = [
+    // [물멍]: 실시간 데이터 상태 관리
+    let summary = $state<any>(null);
+    let activities = $state<any[]>([]);
+
+    // [물멍]: 실시간 통계 데이터 생성기 (summary 기반)
+    let statusCards = $derived([
         { 
             title: '방송 상태', 
-            value: 'LIVE', 
-            detail: '02h 45m 소요 중', 
+            value: summary?.isLive ? 'LIVE' : 'OFFLINE', 
+            detail: summary?.isLive ? '현재 방송 중' : '보조 시스템 대기 중', 
             icon: Activity, 
-            color: 'text-rose-500', 
-            bg: 'bg-rose-50',
-            trend: '+12% vs last'
+            color: summary?.isLive ? 'text-rose-500' : 'text-slate-400', 
+            bg: summary?.isLive ? 'bg-rose-50' : 'bg-slate-50',
+            trend: summary?.isLive ? 'Active' : 'Stable'
         },
         { 
             title: '오늘의 신청곡', 
-            value: '24곡', 
-            detail: '현재 대기열 5곡', 
+            value: `${summary?.todaySongs || 0}곡`, 
+            detail: `대기열 ${summary?.pendingSongs || 0}곡`, 
             icon: Music, 
             color: 'text-blue-500', 
             bg: 'bg-blue-50',
-            trend: 'Stable'
+            trend: 'Direct'
         },
         { 
-            title: '채팅 포인트', 
-            value: '12.5k', 
-            detail: '전일 대비 2.4k 증가', 
+            title: '오늘의 포인트', 
+            value: summary?.todayPoints >= 0 ? `+${(summary?.todayPoints / 1000).toFixed(1)}k` : `${(summary?.todayPoints / 1000).toFixed(1)}k`, 
+            detail: `전체: ${(summary?.totalPoints / 1000).toFixed(1)}k`, 
             icon: Coins, 
             color: 'text-amber-600', 
             bg: 'bg-amber-50',
-            trend: '+5.2%'
+            trend: 'Live'
         },
         { 
             title: '명령어 호출', 
-            value: '456회', 
-            detail: '최다: !신청곡', 
+            value: `${summary?.todayCommands || 0}회`, 
+            detail: `최다: ${summary?.topCommand || '-'}`, 
             icon: Zap, 
             color: 'text-emerald-500', 
             bg: 'bg-emerald-50',
             trend: 'Active'
         }
-    ];
+    ]);
 
-    // [물멍]: 최근 활동 로그 (Mock)
-    const recentActivities = [
-        { id: 1, time: '2분 전', user: '가나다라', type: 'song', content: '신청곡: Night Glow - HoYoMiX', icon: Music },
-        { id: 2, time: '5분 전', user: '물댕댕', type: 'point', content: '룰렛 500포인트 소모', icon: Coins },
-        { id: 3, time: '12분 전', user: 'System', type: 'shield', content: '스팸 필터링: 링크 포함 채팅 차단', icon: Shield },
-        { id: 4, time: '15분 전', user: '치지직봇', type: 'notif', content: '방송 알림 성공적으로 전송됨', icon: Bell }
-    ];
+    // [물멍]: 아이콘 매핑 전략
+    const iconMap: Record<string, any> = {
+        Music, Coins, Zap, Shield, Bell, Settings2, Edit
+    };
 
     async function updateSlug() {
         if (!newSlug || isSavingSlug) return;
@@ -74,40 +77,66 @@
         slugFeedback = '함교의 대지에 새 주소를 기록 중...';
 
         try {
-            const res = await fetch(`/api/settings/bot/slug/${streamerId}`, {
+            const res: any = await apiFetch(`/api/settings/bot/slug/${streamerId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slug: newSlug.toLowerCase().trim() })
             });
 
-            if (res.ok) {
-                currentSlug = newSlug.toLowerCase().trim();
-                slugFeedback = '✨ 함교의 정문 주소가 변경되었습니다!';
-                // [물멍]: 주소가 변경되면 페이지 전체의 문맥이 바뀔 수 있으므로 새로고침 권장
-            } else {
-                const err = await res.text();
-                slugFeedback = `❌ 실패: ${err}`;
-            }
-        } catch (e) {
-            slugFeedback = '❌ 통신 장애가 발생했습니다.';
+            currentSlug = res.slug;
+            slugFeedback = '✨ 함교의 정문 주소가 변경되었습니다!';
+            // [물멍]: 주소가 변경되면 페이지 전체의 문맥이 바뀔 수 있으므로 새로고침 권장
+        } catch (e: any) {
+            slugFeedback = `❌ 실패: ${e.message}`;
         } finally {
             isSavingSlug = false;
+        }
+    }
+
+    async function refreshDashboard() {
+        try {
+            const [sumData, actData] = await Promise.all([
+                apiFetch<any>(`/api/dashboard/summary/${streamerId}`),
+                apiFetch<any[]>(`/api/dashboard/activities/${streamerId}`)
+            ]);
+            summary = sumData;
+            activities = actData;
+        } catch (e) {}
+    }
+
+    // [물멍]: 실시간 공명 시스템(SignalR) 초기화
+    async function initSignalR() {
+        if (hubConnection) return;
+        
+        try {
+            hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/overlayHub")
+                .withAutomaticReconnect()
+                .build();
+
+            // [오시리스의 공명]: 데이터 갱신 신호 수신 시 대시보드 리프레시
+            hubConnection.on("RefreshSongAndDashboard", async () => {
+                await refreshDashboard();
+            });
+
+            await hubConnection.start();
+            await hubConnection.invoke("JoinStreamerGroup");
+        } catch (err) {
+            console.warn("[Dashboard] SignalR 연결 실패 - 수동 갱신 모드로 동작합니다.", err);
         }
     }
 
     onMount(async () => {
         isLoaded = true;
         
-        // [물멍]: 초기 프로필 데이터 로드 (Slug 추출용)
+        // [물멍]: 초기 데이터 로드 및 실시간 연결
+        refreshDashboard();
+        initSignalR();
+
         try {
-            const res = await fetch('/api/auth/me');
-            if (res.ok) {
-                const profile = await res.json();
-                if (profile.slug) {
-                    currentSlug = profile.slug;
-                    newSlug = profile.slug;
-                    // [이지스]: 현재 주소를 이미 가졌다면 미리 채워넣습니다.
-                }
+            const profile: any = await apiFetch('/api/auth/me');
+            if (profile.slug) {
+                currentSlug = profile.slug;
+                newSlug = profile.slug;
             }
         } catch (e) {}
 
@@ -200,10 +229,10 @@
 
             <div class="bg-white/85 backdrop-blur-xl rounded-[2.5rem] border border-white p-6 md:p-8 shadow-[0_15px_45px_rgba(0,147,233,0.04)] overflow-hidden">
                 <div class="space-y-3">
-                    {#each recentActivities as activity}
+                    {#each activities as activity}
                         <div class="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/60 transition-all group cursor-pointer border border-transparent hover:border-sky-50 shadow-sm hover:shadow-md">
                             <div class="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-                                <svelte:component this={activity.icon} size={18} />
+                                <svelte:component this={iconMap[activity.iconType] || Bell} size={18} />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-center mb-0.5">

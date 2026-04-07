@@ -23,10 +23,7 @@ public class UnifiedCommand : ISoftDeletable, IAuditable
     public virtual StreamerProfile? StreamerProfile { get; set; }
 
     [Required]
-    public int MasterCommandFeatureId { get; set; }
-
-    [ForeignKey(nameof(MasterCommandFeatureId))]
-    public virtual Master_CommandFeature? MasterFeature { get; set; }
+    public CommandFeatureType FeatureType { get; set; } = CommandFeatureType.Reply;
 
     [Required]
     [MaxLength(50)]

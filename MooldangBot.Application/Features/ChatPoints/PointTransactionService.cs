@@ -13,11 +13,16 @@ public class PointTransactionService : IPointTransactionService
 {
     private readonly IAppDbContext _db;
     private readonly ILogger<PointTransactionService> _logger;
+    private readonly IOverlayNotificationService _notificationService;
 
-    public PointTransactionService(IAppDbContext db, ILogger<PointTransactionService> logger)
+    public PointTransactionService(
+        IAppDbContext db, 
+        ILogger<PointTransactionService> logger,
+        IOverlayNotificationService notificationService)
     {
         _db = db;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     public async Task BulkUpdatePointsAsync(IEnumerable<PointJob> items, CancellationToken ct = default)
@@ -107,6 +112,12 @@ public class PointTransactionService : IPointTransactionService
 
             await transaction.CommitAsync(ct);
             _logger.LogInformation("🌊 [공명 업데이트 완결] {Count}명의 시청자 포인트가 트랜잭션 내에서 안전하게 적재되었습니다.", validJobs.Count);
+
+            // [물멍]: 함교 대시보드 실시간 업데이트 전파
+            foreach (var uid in streamerUids)
+            {
+                _ = _notificationService.NotifyPointChangedAsync(uid);
+            }
         }
         catch (Exception ex)
         {
@@ -166,6 +177,7 @@ public class PointTransactionService : IPointTransactionService
             if (affectedRows == 0) return (false, await GetDonationBalanceAsync(streamerUid, viewerUid, ct));
 
             var currentBalance = await GetDonationBalanceAsync(streamerUid, viewerUid, ct);
+            _ = _notificationService.NotifyPointChangedAsync(streamerUid); // [물멍]: 실시간 통계 반영
             return (true, currentBalance);
         }
         catch (Exception ex)
@@ -243,6 +255,7 @@ public class PointTransactionService : IPointTransactionService
                 cancellationToken: ct
             ));
 
+            _ = _notificationService.NotifyPointChangedAsync(streamerUid); // [물멍]: 실시간 통계 반영
             return (true, result);
         }
         catch (Exception ex)

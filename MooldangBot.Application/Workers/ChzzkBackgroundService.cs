@@ -80,9 +80,10 @@ public class ChzzkBackgroundService : BackgroundService
 
                                 if (!hasAnySession || hasRecentSession || isRecentlyChatted)
                                 {
-                                    // [N5 해결 완료]: Scope 내에서 Resolve된 chzzkApi를 사용하여 DNS 정보를 항상 갱신합니다.
-                                    bool isLive = await chzzkApi.IsLiveAsync(chzzkUid);
-                                    if (isLive)
+                                    // [v10.1] IChzzkApiClient를 통한 라이브 상태 확인
+                                    var liveResult = await chzzkApi.GetLiveDetailAsync(chzzkUid);
+                                    bool isLiveNow = liveResult?.Content?.Status == "OPEN";
+                                    if (isLiveNow)
                                     {
                                         _logger.LogInformation($"📡 [라이브 감지 성공] {chzzkUid} 채널 방송 중.");
                                         await scribe.HeartbeatAsync(chzzkUid);

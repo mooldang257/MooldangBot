@@ -64,15 +64,20 @@ public class CategoryStrategy(
             logger.LogInformation($"🔍 [카테고리 변경 요청] {notification.Username} -> 원본: {inputKeyword}, 검색어: {searchKeyword}");
             
             var searchResult = await chzzkApi.SearchCategoryAsync(searchKeyword);
-            if (searchResult != null && searchResult.Code == 200 && searchResult.Content?.Data?.Count > 0)
+            if (searchResult?.Content?.Data?.Count > 0)
             {
                 var target = searchResult.Content.Data[0];
                 logger.LogInformation($"✅ [카테고리 검색 결과] {target.CategoryValue} (Type: {target.CategoryType}, ID: {target.CategoryId})");
                 
-                // 💡 [중요] 치지직 Open API는 PATCH 시 평면 구조(Flat)를 기대합니다.
-                // 전역 핸들러에서 토큰을 이미 최신화했으므로 프로필의 토큰을 신뢰할 수 있습니다.
-                var updateData = new { categoryType = target.CategoryType, categoryId = target.CategoryId };
-                bool success = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken ?? "", updateData);
+                if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
+                    throw new Exception("스트리머의 액세스 토큰이 없습니다.");
+
+                // [물멍]: 카테고리 변경 시 방제 정보가 유실되지 않도록 현재 설정을 먼저 가져옵니다.
+                var currentSetting = await chzzkApi.GetLiveSettingAsync(notification.Profile.ChzzkAccessToken);
+                var currentTitle = currentSetting?.Content?.DefaultLiveTitle ?? "Mooldang Bot Broadcast";
+
+                var updateResult = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken, currentTitle, target.CategoryValue, currentTitle);
+                bool success = updateResult != null;
 
                 if (success)
                 {

@@ -3,26 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Workers;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Debug
 {
     [ApiController]
     [Route("api/debug")]
-    public class DebugController : ControllerBase
+    // [v10.1] Primary Constructor 적용
+    public class DebugController(IAppDbContext db, ChzzkBackgroundService chzzkService) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-        private readonly ChzzkBackgroundService _chzzkService;
-
-        public DebugController(IAppDbContext db, ChzzkBackgroundService chzzkService)
-        {
-            _db = db;
-            _chzzkService = chzzkService;
-        }
-
         [HttpGet("system-check")]
         public async Task<IActionResult> CheckSystem()
         {
-            var streamers = await _db.StreamerProfiles
+            var streamers = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .Select(p => new { 
                     p.ChannelName, 
@@ -34,11 +27,11 @@ namespace MooldangBot.Presentation.Features.Debug
                 })
                 .ToListAsync();
 
-            return Ok(new { 
+            return Ok(Result<object>.Success(new { 
                 time = KstClock.Now,
                 streamerCount = streamers.Count,
                 streamers = streamers
-            });
+            }));
         }
     }
 }

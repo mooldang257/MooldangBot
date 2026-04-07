@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using System.Collections.Generic;
@@ -17,7 +16,6 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ChannelSettingEventHandler> _logger;
-    private readonly IChzzkApiClient _chzzkApi;
     private readonly IChzzkBotService _botService;
 
     // 💡 [카테고리 사전]: 사용자가 입력하는 단축어 -> 검색용 키워드
@@ -38,13 +36,14 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
         { "철권", "철권 8" }
     };
 
-    public ChannelSettingEventHandler(ILogger<ChannelSettingEventHandler> logger, IServiceProvider serviceProvider, IChzzkApiClient chzzkApi, IChzzkBotService botService)
+    public ChannelSettingEventHandler(ILogger<ChannelSettingEventHandler> logger, IServiceProvider serviceProvider, IChzzkBotService botService)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _chzzkApi = chzzkApi;
         _botService = botService;
     }
+    
+    // ...
 
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {

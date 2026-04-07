@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
 using Websocket.Client;
@@ -69,10 +68,10 @@ public class WebSocketShard : IWebSocketShard
             await DisconnectAsync(chzzkUid);
 
             using var scope = _scopeFactory.CreateScope();
-            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
+            var chatApiClient = scope.ServiceProvider.GetRequiredService<MooldangBot.Application.Interfaces.Chzzk.IChzzkChatApiClient>();
             
-            // [N8 해결]: 상위에서 전달된 개별 API 정보를 인증 요청에 반영
-            var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken, clientId, clientSecret);
+            // [v10.1] 분할된 Chat 전용 클라이언트를 사용하여 세션 인증 정보 획득
+            var sessionAuth = await chatApiClient.GetSessionAuthAsync(accessToken);
             if (sessionAuth == null || string.IsNullOrEmpty(sessionAuth.Content?.Url))
             {
                 _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심)", chzzkUid);

@@ -14,8 +14,9 @@ public class StreamerPreference : IAuditable
 
     /// <summary>
     /// 대상 스트리머의 고유 식별자 (FK)
+    /// null인 경우 시스템 전역 설정을 의미합니다.
     /// </summary>
-    public int StreamerProfileId { get; set; }
+    public int? StreamerProfileId { get; set; }
 
     /// <summary>
     /// 설정 키 (예: "DarkMode", "TableRowsPerPage")

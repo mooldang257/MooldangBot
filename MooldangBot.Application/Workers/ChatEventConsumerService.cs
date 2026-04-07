@@ -5,9 +5,9 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Domain.Events;
+using MooldangBot.ChzzkAPI.Interfaces;
 
 public sealed class ChatEventConsumerService : BackgroundService
 {
@@ -132,10 +132,10 @@ public sealed class ChatEventConsumerService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
             var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
-            if (profile != null)
+            if (profile != null && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
             {
-                bool chatSub = await chzzkApi.SubscribeEventAsync(profile.ChzzkAccessToken!, sessionKey, "chat", chzzkUid);
-                bool donationSub = await chzzkApi.SubscribeEventAsync(profile.ChzzkAccessToken!, sessionKey, "donation", chzzkUid);
+                var chatSub = await chzzkApi.SubscribeEventAsync(profile.ChzzkAccessToken, sessionKey, "chat", chzzkUid);
+                var donationSub = await chzzkApi.SubscribeEventAsync(profile.ChzzkAccessToken, sessionKey, "donation", chzzkUid);
 
                 if (chatSub && donationSub)
                     _logger.LogInformation($"✨ [유기적 구독] {chzzkUid} 채널의 이벤트 구독이 완료되었습니다.");

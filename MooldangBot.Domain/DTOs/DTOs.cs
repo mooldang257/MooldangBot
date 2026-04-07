@@ -88,6 +88,9 @@ namespace MooldangBot.Domain.DTOs
 
         [JsonPropertyName("globalViewer")]
         public GlobalViewer? GlobalViewer { get; set; }
+
+        [JsonPropertyName("requester")]
+        public string Requester { get; set; } = "익명";
     }
 
     public class SonglistDataDto

@@ -12,30 +12,19 @@ using System.Text;
 using MooldangBot.Presentation.Hubs;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.SongBook
 {
     [ApiController]
     [Authorize(Policy = "ChannelManager")]
-    public class SongBookController : ControllerBase
+    // [v10.1] Primary Constructor 적용
+    public class SongBookController(
+        IAppDbContext db, 
+        IMediator mediator, 
+        IOverlayNotificationService overlayService, 
+        IChzzkApiClient chzzkApi) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-        private readonly IMediator _mediator;
-        private readonly IOverlayNotificationService _overlayService;
-        private readonly IChzzkApiClient _chzzkApi;
-
-        public SongBookController(
-            IAppDbContext db, 
-            IMediator mediator, 
-            IOverlayNotificationService overlayService, 
-            IChzzkApiClient chzzkApi)
-        {
-            _db = db;
-            _mediator = mediator;
-            _overlayService = overlayService;
-            _chzzkApi = chzzkApi;
-        }
-
         [HttpGet("/api/omakase/list/{chzzkUid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetOmakaseList(
@@ -44,12 +33,13 @@ namespace MooldangBot.Presentation.Features.SongBook
             [FromQuery] int? lastId, 
             [FromQuery] int pageSize = 20)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
-            if (profile == null) return NotFound();
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var query = _db.StreamerOmakases
+            var query = db.StreamerOmakases
                 .IgnoreQueryFilters()
                 .Where(o => o.StreamerProfileId == profile.Id);
 
@@ -58,7 +48,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 query = query.Where(o => o.Id == targetId.Value);
             }
 
-            // [Keyset Pagination] lastId보다 작은 항목들을 가져옴 (Id 내림차순 정렬 가정)
+            // [Keyset Pagination] lastId보다 작은 항목들을 가져옴
             if (lastId.HasValue && lastId.Value > 0)
             {
                 query = query.Where(o => o.Id < lastId.Value);
@@ -67,10 +57,9 @@ namespace MooldangBot.Presentation.Features.SongBook
             var items = await query
                 .OrderByDescending(o => o.Id)
                 .Take(pageSize + 1)
-                .Join(_db.UnifiedCommands.IgnoreQueryFilters()
+                .Join(db.UnifiedCommands.IgnoreQueryFilters()
                     .Include(c => c.StreamerProfile)
-                    .Include(c => c.MasterFeature)
-                    .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase),
+                    .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.FeatureType.ToString() == CommandFeatureTypes.Omakase),
                     o => o.Id,
                     c => c.TargetId,
                     (o, c) => new OmakaseDto
@@ -86,45 +75,45 @@ namespace MooldangBot.Presentation.Features.SongBook
             bool hasNext = items.Count > pageSize;
             if (hasNext) items.RemoveAt(pageSize);
 
-            return Ok(new
+            return Ok(Result<object>.Success(new
             {
                 items,
                 hasNext,
                 lastId = items.LastOrDefault()?.Id
-            });
+            }));
         }
 
         [HttpGet("/api/songlist/data/{chzzkUid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
-            if (profile == null) return NotFound();
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var omakases = await _db.StreamerOmakases
+            var omakases = await db.StreamerOmakases
                 .IgnoreQueryFilters() 
                 .Where(o => o.StreamerProfileId == profile.Id)
                 .ToListAsync();
 
-            var songs = await _db.SongQueues
+            var songs = await db.SongQueues
                 .IgnoreQueryFilters()
                 .Where(s => s.StreamerProfileId == profile.Id)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
-            var memo = await _db.SystemSettings
+            var memo = await db.StreamerPreferences
                 .IgnoreQueryFilters()
-                .Where(s => s.KeyName == $"Memo_{chzzkUid}")
-                .Select(s => s.KeyValue)
+                .Where(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "SongList_Memo")
+                .Select(p => p.PreferenceValue)
                 .FirstOrDefaultAsync() ?? "";
 
-            var omakaseCommands = await _db.UnifiedCommands
+            var omakaseCommands = await db.UnifiedCommands
                 .IgnoreQueryFilters()
                 .Include(c => c.StreamerProfile)
-                .Include(c => c.MasterFeature)
-                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.MasterFeature!.TypeName == CommandFeatureTypes.Omakase)
+                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid && c.FeatureType.ToString() == CommandFeatureTypes.Omakase)
                 .ToListAsync();
 
             var omakaseDtos = omakases.Select(o => {
@@ -142,71 +131,74 @@ namespace MooldangBot.Presentation.Features.SongBook
                 Id = s.Id, Title = s.Title, Artist = s.Artist ?? "", Status = s.Status, SortOrder = s.SortOrder 
             }).ToList();
 
-            var result = new SonglistDataDto
+            var data = new SonglistDataDto
             {
                 Memo = memo,
                 Omakases = omakaseDtos,
                 Songs = songDtos
             };
 
-            return Ok(result);
+            return Ok(Result<SonglistDataDto>.Success(data));
         }
 
         [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]
-        public async Task<IResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
+        public async Task<IActionResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
-            if (profile == null) return Results.NotFound();
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var item = await _db.StreamerOmakases
+            var item = await db.StreamerOmakases
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(o => o.Id == id && o.StreamerProfileId == profile.Id);
 
-            if (item != null)
+            if (item == null)
+                return NotFound(Result<string>.Failure("해당 항목을 찾을 수 없습니다."));
+
+            int retryCount = 0;
+            const int maxRetries = 3;
+            bool saved = false;
+
+            while (!saved && retryCount < maxRetries)
             {
-                int retryCount = 0;
-                const int maxRetries = 3;
-                bool saved = false;
-
-                while (!saved && retryCount < maxRetries)
+                try
                 {
-                    try
-                    {
-                        item.Count += delta;
-                        if (item.Count < 0) item.Count = 0;
-                        await _db.SaveChangesAsync();
-                        saved = true;
-                    }
-                    catch (DbUpdateConcurrencyException ex)
-                    {
-                        retryCount++;
-                        foreach (var entry in ex.Entries)
-                        {
-                            var dbValues = await entry.GetDatabaseValuesAsync();
-                            if (dbValues != null) entry.OriginalValues.SetValues(dbValues);
-                        }
-
-                        if (retryCount >= maxRetries) throw;
-                    }
+                    item.Count += delta;
+                    if (item.Count < 0) item.Count = 0;
+                    await db.SaveChangesAsync();
+                    saved = true;
                 }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    retryCount++;
+                    foreach (var entry in ex.Entries)
+                    {
+                        var dbValues = await entry.GetDatabaseValuesAsync();
+                        if (dbValues != null) entry.OriginalValues.SetValues(dbValues);
+                    }
 
-                await _overlayService.NotifyRefreshAsync(chzzkUid);
+                    if (retryCount >= maxRetries) 
+                        return BadRequest(Result<string>.Failure("동시성 제어 오류로 업데이트에 실패했습니다."));
+                }
             }
-            return Results.Ok();
+
+            await overlayService.NotifyRefreshAsync(chzzkUid);
+            return Ok(Result<object>.Success(new { success = true, count = item.Count }));
         }
 
         [HttpPost("/api/test/chat")]
-        public async Task<IResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
+        public async Task<IActionResult> SimulatorChat([FromQuery] string chzzkUid, [FromQuery] string message, [FromQuery] int donation = 0)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
                 
-            if (profile == null) return Results.NotFound("스트리머를 찾을 수 없습니다.");
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            await _mediator.Publish(new ChatMessageReceivedEvent(
+            await mediator.Publish(new ChatMessageReceivedEvent(
                 profile, 
                 "시뮬레이터", 
                 message, 
@@ -218,42 +210,45 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             if (!string.IsNullOrEmpty(message) && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
             {
-                await _chzzkApi.SendChatMessageAsync(profile.ChzzkAccessToken, profile.ChzzkUid, message);
+                // [물멍]: IChzzkApiClient를 통해 고속 채팅 전송 (v10.1)
+                await chzzkApi.SendChatMessageAsync(profile.ChzzkAccessToken, profile.ChzzkUid, message);
             }
 
-            return Results.Ok();
+            return Ok(Result<object>.Success(new { success = true, message = "시뮬레이션 채팅이 전송되었습니다." }));
         }
 
         [HttpGet("/api/songlist/status/{chzzkUid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetSonglistStatus(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
-            if (profile == null) return NotFound();
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var activeSession = await _db.SonglistSessions
+            var activeSession = await db.SonglistSessions
                 .IgnoreQueryFilters()
                 .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
 
-            return Ok(new { 
+            return Ok(Result<object>.Success(new { 
                 isActive = activeSession != null, 
-                isOmakaseActive = true, // [v6.2] 개별 메뉴의 IsActive로 대체될 때까지 기본 활성화로 응답
+                isOmakaseActive = true,
                 session = activeSession 
-            });
+            }));
         }
 
         [HttpPost("/api/songlist/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleSonglistStatus(string chzzkUid)
         {
-            var profile = await _db.StreamerProfiles
+            var profile = await db.StreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
-            if (profile == null) return NotFound();
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var activeSession = await _db.SonglistSessions
+            var activeSession = await db.SonglistSessions
                 .IgnoreQueryFilters()
                 .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                 .FirstOrDefaultAsync();
@@ -267,11 +262,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             }
             else
             {
-                // profile is already loaded above
-                
-                if (profile == null) return NotFound();
-
-                _db.SonglistSessions.Add(new SonglistSession
+                db.SonglistSessions.Add(new SonglistSession
                 {
                     StreamerProfileId = profile.Id,
                     StartedAt = KstClock.Now,
@@ -282,16 +273,14 @@ namespace MooldangBot.Presentation.Features.SongBook
                 nowActive = true;
             }
 
-            await _db.SaveChangesAsync();
-            return Ok(new { success = true, isActive = nowActive });
+            await db.SaveChangesAsync();
+            return Ok(Result<object>.Success(new { success = true, isActive = nowActive }));
         }
 
         [HttpPost("/api/omakase/toggle/{chzzkUid}")]
         public async Task<IActionResult> ToggleOmakaseStatus(string chzzkUid)
         {
-            // [v6.2] StreamerProfile.IsOmakaseEnabled 삭제에 따라 프론트엔드 호환성을 위해 우선 성공만 반환합니다.
-            // 실제 활성화 제어는 UnifiedCommand의 IsActive를 통해 이루어져야 합니다.
-            return Ok(new { success = true, isOmakaseActive = true });
+            return Ok(Result<object>.Success(new { success = true, isOmakaseActive = true }));
         }
     }
 }

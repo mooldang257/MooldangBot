@@ -1,5 +1,4 @@
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
@@ -12,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MooldangBot.Domain.Common;
+using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Application.Features.Admin;
 
@@ -43,19 +43,83 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            // 동기화 로직...
+            // [오시리스 v10.1]: 현재 DB에 등록된 별칭(Alias) 기반으로 최신 카테고리 정보 업데이트
+            var aliases = await db.ChzzkCategoryAliases
+                .Include(a => a.Category)
+                .ToListAsync(stoppingToken);
+
+            int updated = 0;
+            foreach (var alias in aliases)
+            {
+                var result = await _chzzkApi.SearchCategoryAsync(alias.Alias);
+                if (result?.Content?.Data?.Any() == true)
+                {
+                    var match = result.Content.Data.FirstOrDefault(d => d.CategoryType == alias.Category?.CategoryType);
+                    if (match != null && alias.Category != null)
+                    {
+                        alias.Category.CategoryValue = match.CategoryValue;
+                        updated++;
+                    }
+                }
+                await Task.Delay(200, stoppingToken); // API 과부하 방지
+            }
+
+            LastUpdatedCount = updated;
             LastRunTime = KstClock.Now;
-            LastResult = "성공";
-            await Task.CompletedTask;
+            LastResult = $"성공 (업데이트: {updated})";
+            await db.SaveChangesAsync(stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ [배치] 카테고리 동기화 중 오류 발생");
+            LastResult = $"실패: {ex.Message}";
         }
         finally {
             IsRunning = false;
         }
     }
 
-    public async Task<List<ChzzkCategory>> SearchAndSaveCategoryAsync(string keyword, CancellationToken cancellationToken = default)
+    public async Task<List<ChzzkCategory>> SearchAndSaveCategoryAsync(string keyword, CancellationToken ct = default)
     {
-        // 실구현 생략 또는 기존 로직 복구
-        return new List<ChzzkCategory>();
+        var result = await _chzzkApi.SearchCategoryAsync(keyword);
+        if (result?.Content?.Data == null) return new List<ChzzkCategory>();
+
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+        var savedCategories = new List<ChzzkCategory>();
+        int added = 0;
+
+        foreach (var data in result.Content.Data)
+        {
+            var existing = await db.ChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
+            if (existing == null)
+            {
+                var newCategory = new ChzzkCategory
+                {
+                    CategoryId = data.CategoryId,
+                    CategoryType = data.CategoryType,
+                    CategoryValue = data.CategoryValue,
+                    UpdatedAt = KstClock.Now
+                };
+                db.ChzzkCategories.Add(newCategory);
+                savedCategories.Add(newCategory);
+                added++;
+            }
+            else
+            {
+                existing.CategoryValue = data.CategoryValue;
+                existing.UpdatedAt = KstClock.Now;
+                savedCategories.Add(existing);
+            }
+        }
+
+        if (added > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            LastAddedCount = added;
+        }
+
+        return savedCategories;
     }
 }

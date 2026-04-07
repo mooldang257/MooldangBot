@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Common.Security;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
@@ -13,6 +12,8 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Caching.Distributed;
+using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.ChzzkAPI.Models;
 
 using Microsoft.AspNetCore.DataProtection;
 
@@ -44,12 +45,10 @@ public class AuthService(
 
     public async Task<AuthMetadata> GenerateAuthMetadataAsync(string? targetUid = null, string? loginType = null)
     {
-        // 1. 시스템 ClientId 조회
-        var clientIdConf = await _db.SystemSettings.FindAsync("ChzzkClientId");
-        string clientId = clientIdConf?.KeyValue 
-                         ?? _configuration["CHZZK_API:CLIENT_ID"] 
+        // 1. 시스템 ClientId 조회 (환경 변수 우선 시스템으로 전향)
+        string clientId = _configuration["CHZZK_API:CLIENT_ID"] 
                          ?? _configuration["ChzzkApi:ClientId"] 
-                         ?? throw new Exception("Chzzk Client ID가 설정되어 있지 않습니다.");
+                         ?? throw new Exception("Chzzk Client ID가 설정되어 있지 않습니다. (.env 확인 필요)");
 
         // 2. PKCE & State 생성
         string state = Guid.NewGuid().ToString("N");
@@ -72,41 +71,43 @@ public class AuthService(
     {
         try
         {
-            // 1. 토큰 교환
-            var tokenRes = await _chzzkApi.ExchangeTokenAsync(code, null, null, cachedData.State, null, cachedData.CodeVerifier);
+            // 1. [오시리스 v10.1]: 통합 서비스를 통한 토큰 교환
+            var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, cachedData.CodeVerifier);
             
-            if (tokenRes?.Code != 200 || tokenRes?.Content == null)
+            if (tokenResult?.Content == null)
             {
-                return new AuthResult { IsSuccess = false, ErrorMessage = "토큰 교환 실패" };
+                return new AuthResult { IsSuccess = false, ErrorMessage = "토큰 교환 실패 또는 응답 데이터 없음" };
             }
 
-            var content = tokenRes.Content;
+            var content = tokenResult.Content;
             var expireDate = KstClock.Now.AddSeconds(content.ExpiresIn);
 
-            // 2. 봇 설정 흐름 처리
+            // 2. 봇 설정 흐름 처리 (v17.0 이후 레거시 대응: 개별 스트리머 프로필로 통합됨)
             if (cachedData.State.StartsWith("bot_setup_") || !string.IsNullOrEmpty(cachedData.TargetUid))
             {
-                return await HandleBotSetupAsync(content.AccessToken, content.RefreshToken, expireDate, cachedData.TargetUid);
+                _logger.LogWarning("[오시리스의 경고] 레거시 봇 설정 흐름이 감지되었습니다. 봇 권한은 스트리머 프로필 동기화로 통합되었습니다.");
+                // 봇 설정 페이지로 리다이렉트하거나 일반 스트리머 동기화로 유도
+                return new AuthResult { IsSuccess = true, ChannelName = "Legacy Bot Setup", RedirectUrl = "/dashboard" };
             }
 
-            // 3. 사용자 정보 조회
-            var userMeRes = await _chzzkApi.GetUserMeAsync(content.AccessToken);
-            if (userMeRes?.Code != 200 || userMeRes?.Content == null)
+            // 3. [오시리스 v10.1]: 통합 서비스를 통한 사용자 정보 조회
+            var userMeResult = await _chzzkApi.GetUserMeAsync(content.AccessToken);
+            if (userMeResult?.Content == null)
             {
-                return new AuthResult { IsSuccess = false, ErrorMessage = "사용자 정보 조회 실패" };
+                return new AuthResult { IsSuccess = false, ErrorMessage = "사용자 정보 조회 실패 또는 응답 데이터 없음" };
             }
 
-            string chzzkUid = userMeRes.Content.EffectiveChannelId.ToLower();
-            string channelName = userMeRes.Content.EffectiveChannelName ?? "알 수 없음";
+            string chzzkUid = userMeResult.Content.UserHash.ToLower(); // ChzzkAPI 모델의 UserHash 사용
+            string channelName = userMeResult.Content.Nickname ?? "알 수 없음";
 
             // 4. 역할별 동기화 분기 (v6.2.3)
             if (cachedData.LoginType == "viewer")
             {
-                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeRes.Content.ChannelImageUrl);
+                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeResult.Content.ProfileImageUrl);
             }
             else
             {
-                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeRes.Content.ChannelImageUrl, content.AccessToken, content.RefreshToken, expireDate);
+                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeResult.Content.ProfileImageUrl, content.AccessToken, content.RefreshToken, expireDate);
                 
                 // [v17.0] 봇 서비스 복구 락 해제
                 _botService.CleanupRecoveryLock(chzzkUid);
@@ -151,30 +152,7 @@ public class AuthService(
         return new AuthResult { IsSuccess = true, ChzzkUid = chzzkUid, ChannelName = channelName };
     }
 
-    private async Task<AuthResult> HandleBotSetupAsync(string accessToken, string refreshToken, KstClock? expireDate, string? targetUid)
-    {
-        var botMeRes = await _chzzkApi.GetUserMeAsync(accessToken);
-        string setupBotUid = botMeRes?.Content?.EffectiveChannelId ?? "";
-        string setupBotNick = botMeRes?.Content?.EffectiveChannelName ?? "알 수 없음";
-
-        // 시스템 공용 봇 설정 업데이트
-        void UpdateOrAddSetting(string key, string value)
-        {
-            var setting = _db.SystemSettings.FirstOrDefault(s => s.KeyName == key);
-            if (setting == null) _db.SystemSettings.Add(new SystemSetting { KeyName = key, KeyValue = value });
-            else setting.KeyValue = value;
-        }
-
-        UpdateOrAddSetting("BotAccessToken", accessToken);
-        UpdateOrAddSetting("BotRefreshToken", refreshToken);
-        UpdateOrAddSetting("BotTokenExpiresAt", expireDate?.Value.ToString("O") ?? "");
-        UpdateOrAddSetting("BotUid", setupBotUid);
-        UpdateOrAddSetting("BotNickname", setupBotNick);
-
-        await _db.SaveChangesAsync();
-
-        return new AuthResult { IsSuccess = true, ChannelName = setupBotNick, RedirectUrl = "/bot-setup-success" };
-    }
+    // [v18.0] HandleBotSetupAsync 제거됨 (SystemSetting 테이블 폐기에 따름)
 
     private async Task<AuthResult> SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)
     {

@@ -77,8 +77,8 @@
             completed = completedData.items || [];
             
             // ... (명령어 매핑 로직 원본 유지)
-            if (settingsData && settingsData.data) {
-                const sData = settingsData.data;
+            if (settingsData) {
+                const sData = settingsData;
                 designSettings = sData.designSettingsJson || "{}"; // 원본 보존
 
                 const newCommandList: any[] = [];

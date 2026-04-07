@@ -28,27 +28,14 @@ namespace MooldangBot.Presentation.Features.Admin
     [ApiController]
     [Route("api/admin/bot")]
     [Authorize(Roles = "master")] // 🔐 마스터 및 봇 전용 보안 강화
-    public class AdminBotController : ControllerBase
+    // [v10.1] Primary Constructor 적용
+    public class AdminBotController(
+        IAppDbContext db, 
+        IConfiguration configuration, 
+        IServiceScopeFactory scopeFactory, 
+        IChzzkCategorySyncService syncService, 
+        IChzzkBotService chzzkBotService) : ControllerBase
     {
-        private readonly IAppDbContext _db;
-        private readonly IConfiguration _configuration;
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IChzzkCategorySyncService _syncService;
-        private readonly IChzzkBotService _chzzkBotService; // Injected IChzzkBotService
-
-        public AdminBotController(IAppDbContext db, IConfiguration configuration, IServiceScopeFactory scopeFactory, IChzzkCategorySyncService syncService, IChzzkBotService chzzkBotService)
-        {
-            _db = db;
-            _configuration = configuration;
-            _scopeFactory = scopeFactory;
-            _syncService = syncService;
-            _chzzkBotService = chzzkBotService; // Assigned injected service
-        }
-
-        // [이관됨]: AuthController의 /api/admin/bot/streamers로 이동
-
-        // ... BotLogin 삭제됨 (AuthController로 통합)
-
         // 2. 카테고리 동기화 상태 조회
         [HttpGet("sync-status")]
         public IActionResult GetSyncStatus()
@@ -69,7 +56,7 @@ namespace MooldangBot.Presentation.Features.Admin
         {
             if (IChzzkCategorySyncService.IsRunning)
             {
-                return BadRequest(Result<object>.Failure("이미 동기화가 진행 중입니다."));
+                return BadRequest(Result<string>.Failure("이미 동기화가 진행 중입니다."));
             }
 
             var specificKeyword = req?.Keyword;
@@ -77,7 +64,7 @@ namespace MooldangBot.Presentation.Features.Admin
             if (!string.IsNullOrEmpty(specificKeyword))
             {
                 // 단일 키워드 검색: 대기 후 즉시 결과 반환
-                var results = await _syncService.SearchAndSaveCategoryAsync(specificKeyword);
+                var results = await syncService.SearchAndSaveCategoryAsync(specificKeyword);
 
                 return Ok(Result<object>.Success(new 
                 { 
@@ -89,7 +76,7 @@ namespace MooldangBot.Presentation.Features.Admin
             // 백그라운드에서 실행되도록 Fire and Forget 방식으로 호출 (전체 동기화)
             _ = Task.Run(async () =>
             {
-                await _syncService.SyncCategoriesAsync(default);
+                await syncService.SyncCategoriesAsync(default);
             });
 
             return Ok(Result<object>.Success(new { message = "전체 카테고리 동기화를 시작했습니다." }));
@@ -102,10 +89,10 @@ namespace MooldangBot.Presentation.Features.Admin
         [HttpGet("categories")]
         public async Task<IActionResult> SearchCategories([FromQuery] string? search)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            using var scope = scopeFactory.CreateScope();
+            var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var query = db.ChzzkCategories.Include(c => c.Aliases).AsQueryable();
+            var query = scopedDb.ChzzkCategories.Include(c => c.Aliases).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -116,28 +103,28 @@ namespace MooldangBot.Presentation.Features.Admin
             // 검색어가 없을 때는 최신 업데이트 순서대로 최대 100개만
             var results = await query.OrderByDescending(c => c.UpdatedAt).Take(100).ToListAsync();
 
-            return Ok(Result<List<ChzzkCategory>>.Success(results));
+            return Ok(Result<ListResponse<ChzzkCategory>>.Success(new ListResponse<ChzzkCategory>(results, results.Count)));
         }
 
         [HttpPost("categories/{categoryId}/aliases")]
         public async Task<IActionResult> AddCategoryAlias(string categoryId, [FromBody] AliasRequest request)
         {
             if (string.IsNullOrWhiteSpace(request?.Alias))
-                return BadRequest("약어(Alias)를 올바르게 입력해주세요.");
+                return BadRequest(Result<string>.Failure("약어(Alias)를 올바르게 입력해주세요."));
 
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            using var scope = scopeFactory.CreateScope();
+            var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var category = await db.ChzzkCategories.FindAsync(categoryId);
+            var category = await scopedDb.ChzzkCategories.FindAsync(categoryId);
             if (category == null)
-                return NotFound(Result<object>.Failure("존재하지 않는 카테고리입니다."));
+                return NotFound(Result<string>.Failure("존재하지 않는 카테고리입니다."));
 
             var aliasName = request.Alias.Trim();
 
             // 중복 검사
-            if (await db.ChzzkCategoryAliases.AnyAsync(a => a.CategoryId == categoryId && a.Alias == aliasName))
+            if (await scopedDb.ChzzkCategoryAliases.AnyAsync(a => a.CategoryId == categoryId && a.Alias == aliasName))
             {
-                return BadRequest(Result<object>.Failure("해당 약어가 이 카테고리에 이미 존재합니다."));
+                return BadRequest(Result<string>.Failure("해당 약어가 이 카테고리에 이미 존재합니다."));
             }
 
             var newAlias = new ChzzkCategoryAlias
@@ -146,8 +133,8 @@ namespace MooldangBot.Presentation.Features.Admin
                 Alias = aliasName
             };
 
-            db.ChzzkCategoryAliases.Add(newAlias);
-            await db.SaveChangesAsync();
+            scopedDb.ChzzkCategoryAliases.Add(newAlias);
+            await scopedDb.SaveChangesAsync();
 
             return Ok(Result<ChzzkCategoryAlias>.Success(newAlias));
         }
@@ -155,19 +142,19 @@ namespace MooldangBot.Presentation.Features.Admin
         [HttpDelete("categories/{categoryId}/aliases/{aliasId}")]
         public async Task<IActionResult> DeleteCategoryAlias(string categoryId, int aliasId)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            using var scope = scopeFactory.CreateScope();
+            var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var alias = await db.ChzzkCategoryAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.CategoryId == categoryId);
+            var alias = await scopedDb.ChzzkCategoryAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.CategoryId == categoryId);
             if (alias == null)
             {
-                return NotFound(Result<object>.Failure("해당 카테고리의 약어 데이터를 찾을 수 없습니다."));
+                return NotFound(Result<string>.Failure("해당 카테고리의 약어 데이터를 찾을 수 없습니다."));
             }
 
-            db.ChzzkCategoryAliases.Remove(alias);
-            await db.SaveChangesAsync();
+            scopedDb.ChzzkCategoryAliases.Remove(alias);
+            await scopedDb.SaveChangesAsync();
 
-            return Ok(Result<object>.Success(new { message = "약어가 정상적으로 삭제되었습니다." }));
+            return Ok(Result<object>.Success(new { success = true, message = "약어가 정상적으로 삭제되었습니다." }));
         }
     }
 }

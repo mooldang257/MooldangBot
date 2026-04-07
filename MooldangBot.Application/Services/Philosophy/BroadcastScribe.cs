@@ -10,9 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Domain.Common;
+using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -22,11 +22,13 @@ namespace MooldangBot.Application.Services.Philosophy;
 public partial class BroadcastScribe : IBroadcastScribe
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IChzzkApiClient _chzzkApi;
     private readonly ILogger<BroadcastScribe> _logger;
 
-    public BroadcastScribe(IServiceScopeFactory scopeFactory, IHostApplicationLifetime appLifetime, ILogger<BroadcastScribe> logger)
+    public BroadcastScribe(IServiceScopeFactory scopeFactory, IChzzkApiClient chzzkApi, IHostApplicationLifetime appLifetime, ILogger<BroadcastScribe> logger)
     {
         _scopeFactory = scopeFactory;
+        _chzzkApi = chzzkApi;
         _logger = logger;
         
         // [v4.0.0] Graceful Shutdown: 서버 종료 신호 감지 시 메모리 데이터 플러시 등록
@@ -144,15 +146,17 @@ public partial class BroadcastScribe : IBroadcastScribe
                 _activeStats[profile.Id] = new SessionStats();
         }
 
-        // 🚀 [v6.2.2] 방송 정보(제목, 카테고리) 변화 추적 (오시리스의 서기)
+        // 🚀 [v10.1] 방송 정보(제목, 카테고리) 변화 추적 (오시리스의 서기)
         try
         {
-            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
-            var liveSetting = await chzzkApi.GetLiveSettingAsync(profile.ChzzkAccessToken ?? "");
+            if (string.IsNullOrEmpty(profile.ChzzkAccessToken)) return session.Id;
+
+            var liveResult = await _chzzkApi.GetLiveSettingAsync(profile.ChzzkAccessToken);
+            var liveSetting = liveResult?.Content;
             
-            if (liveSetting?.Content != null)
+            if (liveSetting != null)
             {
-                var newTitle = (liveSetting.Content.DefaultLiveTitle ?? "").Trim();
+                var newTitle = (liveSetting.DefaultLiveTitle ?? "").Trim();
                 var newCategory = (liveSetting.Content.Category?.CategoryValue ?? "").Trim();
 
                 // 1. 초기 정보 기록 (세션 시작 후 첫 하트비트인 경우)
@@ -261,10 +265,8 @@ public partial class BroadcastScribe : IBroadcastScribe
 
         try
         {
-            using var apiScope = _scopeFactory.CreateScope();
-            var chzzkApi = apiScope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
-            
-            bool isLive = await chzzkApi.IsLiveAsync(chzzkUid);
+            var liveResult = await _chzzkApi.GetLiveDetailAsync(chzzkUid);
+            bool isLive = liveResult?.Content?.Status == "OPEN";
             if (isLive)
             {
                 // [회귀의 시작]: 라이브임이 확인되면 하트비트를 통해 세션 공식 시작

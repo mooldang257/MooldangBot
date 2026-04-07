@@ -65,7 +65,7 @@ public class UnifiedCommandHandler(
         }
         else if (command.IsActive)
         {
-            var featureType = command.MasterFeature?.TypeName ?? "";
+            var featureType = command.FeatureType.ToString();
             logger.LogInformation($"🚀 [{targetUid}] 명령어 매칭 성공: {keyword} ({featureType})");
 
             // 2. [오시리스의 검증]: 재화 및 권한 체크 (후원금 우선 소진 포함)

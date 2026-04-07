@@ -28,11 +28,10 @@ public class CommandCacheService : ICommandCacheService
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            // [v4.3] 정문화된 스키마 탐색: StreamerProfile을 거쳐 MasterFeature까지 로드
+            // [v4.3] 정문화된 스키마 탐색: StreamerProfile 로드
             var commands = await db.UnifiedCommands
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
-                .Include(c => c.MasterFeature)
                 .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid)
                 .ToListAsync(ct);
 
@@ -40,8 +39,8 @@ public class CommandCacheService : ICommandCacheService
                 c => c.Keyword, 
                 c => {
                     // [v2.1.7] 하모니의 강제 교정: !질문 키워드는 무조건 AI 모드로 작동하도록 자동 변환
-                    // [v4.3] 정문화된 MasterFeature 정보를 검사 및 교정 (메모리상에서만 반영)
-                    var featureType = c.MasterFeature?.TypeName ?? "";
+                    // [v4.3] 정문화된 FeatureType 정보를 검사 및 교정 (메모리상에서만 반영)
+                    var featureType = c.FeatureType.ToString();
                     if (c.Keyword.Equals("!질문", StringComparison.OrdinalIgnoreCase) && featureType != "AI")
                     {
                         _logger.LogWarning($"⚠️ [CommandCache] {chzzkUid}의 '!질문' 명령어가 {featureType}에서 AI로 자동 교정되었습니다.");
@@ -100,7 +99,7 @@ public class CommandCacheService : ICommandCacheService
 
         // [v1.9.7] 후원 룰렛 자동 매칭 (v4.3 정문화 반영)
         return commands.Values
-            .FirstOrDefault(c => (c.MasterFeature?.TypeName ?? "") == featureType && 
+            .FirstOrDefault(c => c.FeatureType.ToString() == featureType && 
                                c.CostType == CommandCostType.Cheese && 
                                c.IsActive);
     }

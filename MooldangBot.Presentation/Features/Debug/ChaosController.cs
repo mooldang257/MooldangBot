@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
+using MooldangBot.Application.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Debug;
 
@@ -14,31 +15,28 @@ public class ChaosController(IChaosManager chaosManager, IChzzkChatService chatS
     /// <summary>
     /// [v18.0] 가상 Redis 장애(Panic)를 5분간 활성화합니다.
     /// </summary>
-    [HttpPost("redis/panic")]
     public IActionResult TriggerRedisPanic([FromQuery] int minutes = 5)
     {
         chaosManager.TriggerRedisPanic(TimeSpan.FromMinutes(minutes));
-        return Ok(new { Message = $"🔥 [심연의 시련] 가상 Redis 장애가 {minutes}분간 활성화되었습니다." });
+        return Ok(Result<object>.Success(new { Message = $"🔥 [심연의 시련] 가상 Redis 장애가 {minutes}분간 활성화되었습니다." }));
     }
 
     /// <summary>
     /// [v18.0] 가상 API 지연(Delay)을 5분간 활성화합니다.
     /// </summary>
-    [HttpPost("api/delay")]
     public IActionResult TriggerApiDelay([FromQuery] int minutes = 5)
     {
         chaosManager.TriggerApiDelay(TimeSpan.FromMinutes(minutes));
-        return Ok(new { Message = $"🌪️ [심연의 시련] 가상 API 지연이 {minutes}분간 활성화되었습니다." });
+        return Ok(Result<object>.Success(new { Message = $"🌪️ [심연의 시련] 가상 API 지연이 {minutes}분간 활성화되었습니다." }));
     }
 
     /// <summary>
     /// [v18.0] 모든 가상 장애 상태를 즉시 해제합니다.
     /// </summary>
-    [HttpPost("reset")]
     public IActionResult Reset()
     {
         chaosManager.Reset();
-        return Ok(new { Message = "✅ [심연의 시련] 모든 장애 상황이 종료되었으며, 평화가 찾아왔습니다." });
+        return Ok(Result<object>.Success(new { Message = "✅ [심연의 시련] 모든 장애 상황이 종료되었으며, 평화가 찾아왔습니다." }));
     }
 
     /// <summary>
@@ -51,6 +49,6 @@ public class ChaosController(IChaosManager chaosManager, IChzzkChatService chatS
         
         await chatService.SendMessageAsync(chzzkUid, trialMessage, "SYSTEM_CHAOS");
         
-        return Ok(new { Message = "⚓ [심연의 시련] 채널에 정식 공지를 타전했습니다.", Channel = chzzkUid });
+        return Ok(Result<object>.Success(new { Message = "⚓ [심연의 시련] 채널에 정식 공지를 타전했습니다.", Channel = chzzkUid }));
     }
 }

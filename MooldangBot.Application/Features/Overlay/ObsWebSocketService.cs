@@ -1,5 +1,4 @@
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -11,13 +10,11 @@ public class ObsWebSocketService : IObsWebSocketService
 {
     private readonly ILogger<ObsWebSocketService> _logger;
     private readonly IConfiguration _config;
-    private readonly IChzzkApiClient _chzzkApi;
 
-    public ObsWebSocketService(ILogger<ObsWebSocketService> logger, IConfiguration config, IChzzkApiClient chzzkApi)
+    public ObsWebSocketService(ILogger<ObsWebSocketService> logger, IConfiguration config)
     {
         _logger = logger;
         _config = config;
-        _chzzkApi = chzzkApi;
     }
 
     public async Task ChangeSceneAsync(string chzzkUid, string sceneName)

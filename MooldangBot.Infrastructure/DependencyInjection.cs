@@ -1,15 +1,18 @@
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
-// using MooldangBot.Infrastructure.ApiClients; // [v10.0] 삭제 (ChzzkAPI 모듈로 이동)
-using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.ChzzkAPI; // [v10.0] ChzzkAPI 독립 모듈 참조
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
+using MooldangBot.Application.Services;
+using MooldangBot.Infrastructure.ApiClients;
+using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Infrastructure.Messaging;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
+using MooldangBot.ChzzkAPI; 
+using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Infrastructure.Services;
 using MooldangBot.Application.Workers;
@@ -18,15 +21,14 @@ using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using RabbitMQ.Client;
-using MooldangBot.Infrastructure.Messaging;
-using MooldangBot.Application.Services;
-using MooldangBot.Infrastructure.Services.Background; // [v13.1] 백그라운드 워커 네임스페이스
+using MooldangBot.Infrastructure.Services.Background;
 
 
 namespace MooldangBot.Infrastructure
 {
     public static class DependencyInjection
     {
+
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
@@ -119,8 +121,6 @@ namespace MooldangBot.Infrastructure
                             ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500)
                     );
                 });
-            
-            // [거울의 신경망]: Gemini API 실전 연동 (⚠️ 현재 고도화 및 운영 정책에 따라 일시 중단 - 삭제 금지)
             // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
             // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
             

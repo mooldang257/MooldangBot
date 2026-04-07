@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Caching.Memory;
@@ -38,7 +37,6 @@ public class RouletteService : IRouletteService
     private readonly IAppDbContext _db;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RouletteState _rouletteState;
-    private readonly IChzzkApiClient _chzzkApi;
     private readonly ILogger<RouletteService> _logger;
     private readonly IMediator _mediator;
     private readonly OverlayState _overlayState;
@@ -50,7 +48,6 @@ public class RouletteService : IRouletteService
         IAppDbContext db, 
         IServiceScopeFactory scopeFactory, 
         RouletteState rouletteState,
-        IChzzkApiClient chzzkApi, 
         ILogger<RouletteService> logger, 
         IMediator mediator,
         OverlayState overlayState,
@@ -59,7 +56,6 @@ public class RouletteService : IRouletteService
         _db = db;
         _scopeFactory = scopeFactory;
         _rouletteState = rouletteState;
-        _chzzkApi = chzzkApi;
         _logger = logger;
         _mediator = mediator;
         _overlayState = overlayState;

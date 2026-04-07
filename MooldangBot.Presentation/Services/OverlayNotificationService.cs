@@ -5,7 +5,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
-using MooldangBot.ChzzkAPI.Serialization;
+using MooldangBot.Domain.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,6 +32,11 @@ namespace MooldangBot.Presentation.Services
         }
 
         public async Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default)
+        {
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
+        }
+
+        public async Task NotifyPointChangedAsync(string chzzkUid, CancellationToken token = default)
         {
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
         }

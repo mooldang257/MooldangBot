@@ -39,13 +39,11 @@ public class CommandMasterCacheService : ICommandMasterCacheService
         return masterData;
     }
 
-    public async Task<List<Master_DynamicVariable>> GetFullVariablesAsync()
+    public async Task<List<DynamicVariableMetadata>> GetFullVariablesAsync()
     {
-        if (!_cache.TryGetValue(CacheKeyVars, out List<Master_DynamicVariable>? vars) || vars == null)
+        if (!_cache.TryGetValue(CacheKeyVars, out List<DynamicVariableMetadata>? vars) || vars == null)
         {
-            vars = await _context.MasterDynamicVariables
-                .AsNoTracking()
-                .ToListAsync();
+            vars = DynamicVariableRegistry.All.ToList();
 
             var cacheOps = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(CacheDuration)
@@ -63,21 +61,28 @@ public class CommandMasterCacheService : ICommandMasterCacheService
         _cache.Remove(CacheKeyVars);
     }
 
-    private async Task<MasterDataDto> LoadFromDbAsync()
+    private Task<MasterDataDto> LoadFromDbAsync()
     {
-        // 🔍 DB에서 마스터 데이터 및 연관 기능들을 로드
-        var categories = await _context.MasterCommandCategories
-            .OrderBy(c => c.SortOrder)
-            .AsNoTracking()
-            .ToListAsync();
+        // 🔍 코드 내 레지스트리(Registry)에서 마스터 데이터 및 연관 기능들을 로드
+        var categories = new List<CommandCategoryDto>
+        {
+            new(1, "General", "일반"),
+            new(2, "System", "시스템메세지"),
+            new(3, "Feature", "기능")
+        };
 
-        var features = await _context.MasterCommandFeatures
-            .AsNoTracking()
-            .ToListAsync();
+        var features = CommandFeatureRegistry.All.Select(f => new CommandFeatureDto(
+            (int)f.Type, 
+            f.CategoryId, 
+            f.TypeName, 
+            f.DisplayName, 
+            f.DefaultCost, 
+            f.RequiredRole.ToString()
+        )).ToList();
 
-        var variables = await _context.MasterDynamicVariables
-            .AsNoTracking()
-            .ToListAsync();
+        var variables = DynamicVariableRegistry.All.Select(v => new DynamicVariableDto(
+            v.Keyword, v.Description, v.BadgeColor
+        )).ToList();
 
         var roles = new List<CommandRoleDto>
         {
@@ -86,19 +91,7 @@ public class CommandMasterCacheService : ICommandMasterCacheService
             new("Streamer", "👤 스트리머 전용")
         };
 
-        // 📦 DTO 변환 및 불변 객체 생성
-        return new MasterDataDto(
-            categories.Select(c => new CommandCategoryDto(c.Id, c.Name, c.DisplayName)).ToList(),
-            features.Select(f => new CommandFeatureDto(
-                f.Id, 
-                f.CategoryId, 
-                f.TypeName, 
-                f.DisplayName, 
-                f.DefaultCost, 
-                f.RequiredRole.ToString()
-            )).ToList(),
-            roles,
-            variables.Select(v => new DynamicVariableDto(v.Keyword, v.Description, v.BadgeColor)).ToList()
-        );
+        // 📦 DTO 변환 및 불변 객체 생성 (비동기 래핑)
+        return Task.FromResult(new MasterDataDto(categories, features, roles, variables));
     }
 }

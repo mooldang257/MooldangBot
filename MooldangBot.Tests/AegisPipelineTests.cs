@@ -50,10 +50,10 @@ public class AegisPipelineTests
         var logger = Substitute.For<ILogger<DynamicQueryEngine>>();
         var engine = new DynamicQueryEngine(db, cache, resolver, logger);
 
-        var variables = new List<Master_DynamicVariable>
+        var variables = new List<DynamicVariableMetadata>
         {
-            new() { Keyword = "$(user)", QueryString = "METHOD:User" },
-            new() { Keyword = "$(points)", QueryString = "METHOD:Points" }
+            new() { Keyword = "$(user)", QueryString = "METHOD:User", BadgeColor = "info", Description = "Test" },
+            new() { Keyword = "$(points)", QueryString = "METHOD:Points", BadgeColor = "success", Description = "Test" }
         };
 
         cache.GetFullVariablesAsync().Returns(variables);

@@ -24,7 +24,6 @@ namespace MooldangBot.StressTests;
 
 public class RouletteConcurrencyTests : IDisposable
 {
-    private readonly IChzzkApiClient _mockChzzkApi = Substitute.For<IChzzkApiClient>();
     private readonly ILogger<RouletteService> _mockLogger = Substitute.For<ILogger<RouletteService>>();
     private readonly IServiceScopeFactory _mockScopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly IMediator _mockMediator = Substitute.For<IMediator>();
@@ -101,7 +100,7 @@ public class RouletteConcurrencyTests : IDisposable
         var chzzkUid = "streamer1";
         await SeedDataAsync(db, chzzkUid);
 
-        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockChzzkApi, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
+        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
         service.DelayExecuteSpinLogic = true;
 
         var task1 = Task.Run(() => service.SpinRouletteAsync(chzzkUid, 1, "viewer1"));
@@ -127,7 +126,7 @@ public class RouletteConcurrencyTests : IDisposable
         var chzzkUid = "streamer_busy";
         await SeedDataAsync(db, chzzkUid);
 
-        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockChzzkApi, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
+        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
         service.DelayExecuteSpinLogic = true;
         
         var task1 = Task.Run(() => service.SpinRouletteAsync(chzzkUid, 1, "viewer1"));
@@ -156,8 +155,8 @@ public class RouletteConcurrencyTests : IDisposable
         await SeedDataAsync(db2, "s2");
 
         // 상태 관리는 싱글톤이므로 공유함
-        var service1 = new TestableRouletteService(db1, _mockScopeFactory, _rouletteState, _mockChzzkApi, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
-        var service2 = new TestableRouletteService(db2, _mockScopeFactory, _rouletteState, _mockChzzkApi, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
+        var service1 = new TestableRouletteService(db1, _mockScopeFactory, _rouletteState, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
+        var service2 = new TestableRouletteService(db2, _mockScopeFactory, _rouletteState, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
 
         service1.DelayExecuteSpinLogic = true;
         var taskS1 = Task.Run(() => service1.SpinRouletteAsync("s1", 1, "v1"));
@@ -181,7 +180,7 @@ public class RouletteConcurrencyTests : IDisposable
         var chzzkUid = "heavy_streamer";
         await SeedDataAsync(db, chzzkUid);
 
-        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockChzzkApi, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
+        var service = new TestableRouletteService(db, _mockScopeFactory, _rouletteState, _mockLogger, _mockMediator, _mockOverlayState, _lockProvider);
         var requestCount = 1000;
 
         var tasks = Enumerable.Range(0, requestCount)
@@ -209,8 +208,8 @@ public class RouletteConcurrencyTests : IDisposable
         public bool DelayExecuteSpinLogic { get; set; }
         private readonly ManualResetEventSlim _mre = new(false);
 
-        public TestableRouletteService(IAppDbContext db, IServiceScopeFactory scopeFactory, RouletteState rouletteState, IChzzkApiClient chzzkApi, ILogger<RouletteService> logger, IMediator mediator, OverlayState overlayState, IRouletteLockProvider lockProvider) 
-            : base(db, scopeFactory, rouletteState, chzzkApi, logger, mediator, overlayState, lockProvider)
+        public TestableRouletteService(IAppDbContext db, IServiceScopeFactory scopeFactory, RouletteState rouletteState, ILogger<RouletteService> logger, IMediator mediator, OverlayState overlayState, IRouletteLockProvider lockProvider) 
+            : base(db, scopeFactory, rouletteState, logger, mediator, overlayState, lockProvider)
         {
         }
 

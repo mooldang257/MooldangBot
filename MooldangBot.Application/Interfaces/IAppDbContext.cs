@@ -9,7 +9,6 @@ namespace MooldangBot.Application.Interfaces
         Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
         
         DbSet<StreamerProfile> StreamerProfiles { get; set; }
-        DbSet<SystemSetting> SystemSettings { get; set; }
         DbSet<SongQueue> SongQueues { get; set; }
         DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
         DbSet<AvatarSetting> AvatarSettings { get; set; }
@@ -26,9 +25,6 @@ namespace MooldangBot.Application.Interfaces
         DbSet<BroadcastSession> BroadcastSessions { get; set; }
         DbSet<BroadcastHistoryLog> BroadcastHistoryLogs { get; set; }
         DbSet<UnifiedCommand> UnifiedCommands { get; set; }
-        DbSet<Master_CommandCategory> MasterCommandCategories { get; set; }
-        DbSet<Master_CommandFeature> MasterCommandFeatures { get; set; }
-        DbSet<Master_DynamicVariable> MasterDynamicVariables { get; set; }
         
         // IAMF Philosophy
         DbSet<IamfScenario> IamfScenarios { get; set; }

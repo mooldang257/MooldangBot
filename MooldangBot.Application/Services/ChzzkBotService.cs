@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
+using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Application.Services;
 
@@ -89,9 +89,11 @@ public class ChzzkBotService : IChzzkBotService
 
             _logger.LogInformation($"📡 [봇 채팅 발송] 대상채널: {profile.ChzzkUid}, 타입: {(isNotice ? "상단공지" : "일반")}");
 
-            return isNotice 
+            bool result = isNotice 
                 ? await _chzzkApi.SendChatNoticeAsync(tokenToUse, profile.ChzzkUid, processedMessage)
                 : await _chzzkApi.SendChatMessageAsync(tokenToUse, profile.ChzzkUid, processedMessage);
+
+            return result;
         }
         catch (Exception ex)
         {
