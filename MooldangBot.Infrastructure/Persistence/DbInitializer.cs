@@ -19,6 +19,10 @@ public class DbInitializer(
 
         try
         {
+            // 1. 데이터베이스 마이그레이션 적용 (스키마 자동 생성/변경)
+            logger.LogInformation("🛠️ [오시리스의 시동] 데이터베이스 마이그레이션을 적용 중...");
+            await db.Database.MigrateAsync();
+
             // 2. 초기 기동 서비스 실행 (치지직 채팅 클라이언트 등)
             logger.LogInformation("📡 [오시리스의 시동] 치지직 채팅 클라이언트 초기화를 시작합니다.");
             await chatClient.InitializeAsync();
