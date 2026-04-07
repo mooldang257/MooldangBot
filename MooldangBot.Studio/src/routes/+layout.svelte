@@ -8,12 +8,10 @@
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
     let { data } = $props();
 
-    // [물멍]: 데이터(data)가 변경될 때마다 전역 유저 상태 동기화
-    $effect(() => {
-        if (data) {
-            userState.set(data.userData);
-        }
-    });
+    // [Osiris]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
+    if (data && data.userData) {
+        userState.set(data.userData);
+    }
 
     const isLoaded = $derived(!!data);
 
