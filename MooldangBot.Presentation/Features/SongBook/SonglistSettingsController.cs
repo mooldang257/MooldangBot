@@ -29,7 +29,9 @@ namespace MooldangBot.Presentation.Features.SongBook
                 return NotFound(Result<string>.Failure("존재하지 않는 채널입니다."));
 
             var omakaseItems = await db.StreamerOmakases
-                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted).ToListAsync();
+                .Where(o => o.StreamerProfileId == profile.Id)
+                .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+                .ToListAsync();
 
             var songCommands = await db.UnifiedCommands
                 .AsNoTracking()
@@ -107,7 +109,9 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             // 1. Omakase Items Sync
             var existingItems = await db.StreamerOmakases
-                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted).ToListAsync();
+                .Where(o => o.StreamerProfileId == profile.Id)
+                .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+                .ToListAsync();
 
             if (req.Omakases != null)
             {

@@ -127,20 +127,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (entity == null) throw new KeyNotFoundException("삭제할 명령어를 찾을 수 없거나 이미 삭제되었습니다.");
 
-        // [v6.2.5] 자식 엔티티(오마카세 등) 연쇄 삭제 처리 (Soft-Delete 아닌 하드 삭제 수행)
-        var featureType = entity.FeatureType.ToString();
-        if (featureType == CommandFeatureTypes.Omakase && entity.TargetId.HasValue)
-        {
-            var itemsToDelete = await _db.StreamerOmakases
-                .IgnoreQueryFilters()
-                .Where(o => o.StreamerProfileId == entity.StreamerProfileId && o.Id == entity.TargetId.Value)
-                .ToListAsync();
-
-            if (itemsToDelete.Any())
-            {
-                _db.StreamerOmakases.RemoveRange(itemsToDelete);
-            }
-        }
+        // [물멍]: 자식 엔티티(오마카세 등)는 연쇄 삭제하지 않고 보존합니다. (선장님 피드백 반영: 데이터 영속성 유지)
 
         _db.UnifiedCommands.Remove(entity);
         await _db.SaveChangesAsync();

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.ChzzkAPI.Interfaces;
@@ -18,35 +18,35 @@ namespace MooldangBot.Presentation.Features.SongBook
 {
     [ApiController]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor ?�용
+    // [v10.1] Primary Constructor 적용
     public class SongBookController(
-        IAppDbContext db, 
-        IMediator mediator, 
-        IOverlayNotificationService overlayService, 
+        IAppDbContext db,
+        IMediator mediator,
+        IOverlayNotificationService overlayService,
         IChzzkApiClient chzzkApi) : ControllerBase
     {
         [HttpGet("/api/omakase/list/{chzzkUid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetOmakaseList(
-            string chzzkUid, 
+            string chzzkUid,
             [FromQuery] int? targetId,
-            [FromQuery] int? lastId, 
+            [FromQuery] int? lastId,
             [FromQuery] int pageSize = 20)
         {
             var profile = await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
-            if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+            if (profile == null)
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var query = db.StreamerOmakases
-                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted);
+                .Where(o => o.StreamerProfileId == profile.Id);
 
             if (targetId.HasValue)
             {
                 query = query.Where(o => o.Id == targetId.Value);
             }
 
-            // [Keyset Pagination] lastId보다 ?��? ??��?�을 가?�옴
+            // [Keyset Pagination] lastId보다 작은 항목들을 가져옴
             if (lastId.HasValue && lastId.Value > 0)
             {
                 query = query.Where(o => o.Id < lastId.Value);
@@ -64,45 +64,35 @@ namespace MooldangBot.Presentation.Features.SongBook
                     {
                         Id = o.Id,
                         Name = c.ResponseText,
+                        Count = o.Count,
                         Icon = o.Icon,
-                        Price = (int)c.Cost,
-                        Count = o.Count
+                        Price = c.Cost
                     })
                 .ToListAsync();
 
-            bool hasNext = items.Count > pageSize;
+            var hasNext = items.Count > pageSize;
             if (hasNext) items.RemoveAt(pageSize);
 
-            return Ok(Result<object>.Success(new
-            {
-                items,
-                hasNext,
-                lastId = items.LastOrDefault()?.Id
-            }));
+            return Ok(Result<object>.Success(new { items, hasNext }));
         }
 
         [HttpGet("/api/songlist/data/{chzzkUid}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetSonglistData(string chzzkUid)
         {
             var profile = await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
-            if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
-
-            var omakases = await db.StreamerOmakases
-                .Where(o => o.StreamerProfileId == profile.Id && !o.IsDeleted)
-                .ToListAsync();
+            if (profile == null)
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var songs = await db.SongQueues
                 .Where(s => s.StreamerProfileId == profile.Id && !s.IsDeleted)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
-            var memo = await db.StreamerPreferences
-                .Where(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "SongList_Memo")
-                .Select(p => p.PreferenceValue)
-                .FirstOrDefaultAsync() ?? "";
+            var omakases = await db.StreamerOmakases
+                .Where(o => o.StreamerProfileId == profile.Id)
+                .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+                .ToListAsync();
 
             var omakaseCommands = await db.UnifiedCommands
                 .Include(c => c.StreamerProfile)
@@ -113,16 +103,21 @@ namespace MooldangBot.Presentation.Features.SongBook
                 var cmd = omakaseCommands.FirstOrDefault(c => c.TargetId == o.Id);
                 return new OmakaseDto { 
                     Id = o.Id, 
-                    Name = cmd?.ResponseText ?? "???�마카세", 
+                    Name = cmd?.ResponseText ?? "새 오마카세", 
                     Count = o.Count, 
                     Icon = o.Icon, 
                     Price = cmd?.Cost ?? 0
                 };
             }).ToList();
 
-            var songDtos = songs.Select(s => new SongQueueDto { 
-                Id = s.Id, Title = s.Title, Artist = s.Artist ?? "", Status = s.Status, SortOrder = s.SortOrder 
+            var songDtos = songs.Select(s => new SongQueueDto {
+                Id = s.Id, Title = s.Title, Artist = s.Artist ?? "", Status = s.Status, SortOrder = s.SortOrder
             }).ToList();
+
+            var memo = await db.StreamerPreferences
+                .Where(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "SongList_Memo")
+                .Select(p => p.PreferenceValue)
+                .FirstOrDefaultAsync() ?? "";
 
             var data = new SonglistDataDto
             {
@@ -134,19 +129,19 @@ namespace MooldangBot.Presentation.Features.SongBook
             return Ok(Result<SonglistDataDto>.Success(data));
         }
 
-        [HttpPut("/api/songlist/omakase/{chzzkUid}/{id}")]
+        [HttpPost("/api/omakase/update/{chzzkUid}/{id}")]
         public async Task<IActionResult> UpdateOmakaseCount(string chzzkUid, int id, [FromQuery] int delta)
         {
             var profile = await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var item = await db.StreamerOmakases
-                .FirstOrDefaultAsync(o => o.Id == id && o.StreamerProfileId == profile.Id && !o.IsDeleted);
-
+                .FirstOrDefaultAsync(o => o.Id == id && o.StreamerProfileId == profile.Id);
+            
             if (item == null)
-                return NotFound(Result<string>.Failure("?�당 ??��??찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("해당 항목을 찾을 수 없습니다."));
 
             int retryCount = 0;
             const int maxRetries = 3;
@@ -158,8 +153,11 @@ namespace MooldangBot.Presentation.Features.SongBook
                 {
                     item.Count += delta;
                     if (item.Count < 0) item.Count = 0;
+                    
                     await db.SaveChangesAsync();
                     saved = true;
+                    
+                    await overlayService.NotifyRefreshAsync(chzzkUid);
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
@@ -168,15 +166,15 @@ namespace MooldangBot.Presentation.Features.SongBook
                     {
                         var dbValues = await entry.GetDatabaseValuesAsync();
                         if (dbValues != null) entry.OriginalValues.SetValues(dbValues);
+                        else throw;
                     }
 
                     if (retryCount >= maxRetries) 
-                        return BadRequest(Result<string>.Failure("?�시???�어 ?�류�??�데?�트???�패?�습?�다."));
+                        return BadRequest(Result<string>.Failure("동시성 제어 오류로 업데이트에 실패했습니다."));
                 }
             }
 
-            await overlayService.NotifyRefreshAsync(chzzkUid);
-            return Ok(Result<object>.Success(new { count = item.Count }));
+            return Ok(Result<object>.Success(new { id = item.Id, count = item.Count }));
         }
 
         [HttpPost("/api/test/chat")]
@@ -186,11 +184,11 @@ namespace MooldangBot.Presentation.Features.SongBook
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
                 
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             await mediator.Publish(new ChatMessageReceivedEvent(
                 profile, 
-                "?��??�이??, 
+                "시뮬레이터", 
                 message, 
                 "streamer", 
                 "simulator_sender_id", 
@@ -200,11 +198,11 @@ namespace MooldangBot.Presentation.Features.SongBook
 
             if (!string.IsNullOrEmpty(message) && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
             {
-                // [물멍]: IChzzkApiClient�??�해 고속 채팅 ?�송 (v10.1)
+                // [물멍]: IChzzkApiClient를 통해 고속 채팅 전송 (v10.1)
                 await chzzkApi.SendChatMessageAsync(profile.ChzzkAccessToken, profile.ChzzkUid, message);
             }
 
-            return Ok(Result<object>.Success(new { message = "?��??�이??채팅???�송?�었?�니??" }));
+            return Ok(Result<object>.Success(new { message = "시뮬레이션 채팅이 전송되었습니다." }));
         }
 
         [HttpGet("/api/songlist/status/{chzzkUid}")]
@@ -214,16 +212,16 @@ namespace MooldangBot.Presentation.Features.SongBook
             var profile = await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
                                 .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
-                .FirstOrDefaultAsync();
+                                .FirstOrDefaultAsync();
 
             return Ok(Result<object>.Success(new { 
-                isActive = activeSession != null, 
+                isActive = activeSession != null,
                 isOmakaseActive = true,
-                session = activeSession 
+                session = activeSession
             }));
         }
 
@@ -233,11 +231,11 @@ namespace MooldangBot.Presentation.Features.SongBook
             var profile = await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower() && !p.IsDeleted);
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var activeSession = await db.SonglistSessions
                                 .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
-                .FirstOrDefaultAsync();
+                                .FirstOrDefaultAsync();
 
             bool nowActive;
             if (activeSession != null)
