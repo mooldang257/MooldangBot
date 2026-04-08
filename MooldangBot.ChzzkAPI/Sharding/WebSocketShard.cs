@@ -185,6 +185,9 @@ public class WebSocketShard : IWebSocketShard
         if (message.StartsWith("42"))
         {
             FleetMetrics.MessagesReceivedTotal.WithLabels(_shardId.ToString()).Inc();
+            
+            // [강제 정찰]: 42로 시작하는 모든 원본 메시지를 로그에 노출
+            _logger.LogInformation("📡 [RawPacket] {Message}", message);
 
             string json = message.Substring(2);
             var messageId = Guid.NewGuid();
@@ -196,7 +199,11 @@ public class WebSocketShard : IWebSocketShard
                 
                 using var doc = System.Text.Json.JsonDocument.Parse(json);
                 var root = doc.RootElement;
-                if (root[0].GetString() == "CHAT")
+                
+                // 이벤트명이 무엇인지 파악하기 위해 첫 번째 요소 로그
+                string eventName = root[0].GetString() ?? "Unknown";
+                
+                if (eventName.Equals("CHAT", StringComparison.OrdinalIgnoreCase))
                 {
                     var payloadString = root[1].GetString() ?? "{}";
                     using var payloadDoc = System.Text.Json.JsonDocument.Parse(payloadString);
