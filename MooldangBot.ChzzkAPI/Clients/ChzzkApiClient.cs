@@ -93,7 +93,8 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            var serviceUrl = "https://api.chzzk.naver.com/service/v1/channels/events/session-auth";
+            // [오시리스의 예언]: v1 경로가 사장됨에 따라 최신 v2 경로로 승격합니다.
+            var serviceUrl = "https://api.chzzk.naver.com/service/v2/channels/events/session-auth";
             using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
 
@@ -115,7 +116,8 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            var serviceUrl = "https://api.chzzk.naver.com/service/v1/channels/events/subscribe";
+            // [오시리스의 예언]: 인증 주소와 마찬가지로 구독 주소도 v2로 승격합니다.
+            var serviceUrl = "https://api.chzzk.naver.com/service/v2/channels/events/subscribe";
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl);
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
 

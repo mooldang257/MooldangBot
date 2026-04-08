@@ -27,7 +27,12 @@ try
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
     // [v2.4.5] 치지직 전문가(Implementation) 수동 등록
-    builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
+    builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>(client => 
+        {
+            // [오시리스의 위장]: 봇 탐지 회피를 위해 브라우저 기반 User-Agent 주입
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        })
         .AddStandardResilienceHandler(options =>
         {
             options.Retry.MaxRetryAttempts = 3;
