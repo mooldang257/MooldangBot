@@ -35,7 +35,7 @@ public class OverlayState(IConnectionMultiplexer redis, ILuaScriptProvider luaPr
             await _db.StringIncrementAsync(globalKey);
             await _db.KeyExpireAsync(globalKey, TimeSpan.FromDays(7));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Redis 장애 시 로컬 카운트만이라도 유지하여 기동 보장
             // [심연의 시련] 룰에 따라 무시함

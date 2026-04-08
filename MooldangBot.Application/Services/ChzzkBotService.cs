@@ -67,7 +67,10 @@ public class ChzzkBotService : IChzzkBotService
                 profile.ChzzkUid, 
                 isNotice ? BotCommandType.SendChatNotice : BotCommandType.SendMessage, 
                 processedMessage, 
-                KstClock.Now); // [v2.5] 공지 타입 구분 로직 적용
+                null, // CategoryId
+                null, // CategoryType
+                KstClock.Now,
+                "2.6"); 
 
             await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
 
@@ -83,7 +86,7 @@ public class ChzzkBotService : IChzzkBotService
     public async Task<bool> UpdateTitleAsync(StreamerProfile profile, string newTitle, string senderUid, CancellationToken token)
     {
         _logger.LogInformation($"📡 [방송 정보 변경 요청] 채널: {profile.ChzzkUid}, 제목: {newTitle}");
-        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateTitle, newTitle, token);
+        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateTitle, newTitle, token: token);
     }
 
     public async Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, string? categoryId = null, string? categoryType = null, CancellationToken token = default)
@@ -132,7 +135,10 @@ public class ChzzkBotService : IChzzkBotService
             chzzkUid, 
             BotCommandType.Reconnect, 
             null,
-            KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
+            null, // CategoryId
+            null, // CategoryType
+            KstClock.Now,
+            "2.6"); 
 
         await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
     }
@@ -146,7 +152,10 @@ public class ChzzkBotService : IChzzkBotService
             chzzkUid, 
             BotCommandType.RefreshSettings, 
             null,
-            KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
+            null, // CategoryId
+            null, // CategoryType
+            KstClock.Now,
+            "2.6"); 
 
         await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
     }
