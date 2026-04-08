@@ -18,17 +18,20 @@ public class ChzzkCommandConsumer : BackgroundService
     private readonly ILogger<ChzzkCommandConsumer> _logger;
     private readonly IChzzkChatClient _chzzkChatClient;
     private readonly RabbitMQPersistentConnection _connection;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly string _exchangeName = RabbitMqExchanges.BotCommands;
     private IChannel? _channel;
 
     public ChzzkCommandConsumer(
         ILogger<ChzzkCommandConsumer> logger,
         IChzzkChatClient chzzkChatClient,
-        RabbitMQPersistentConnection connection)
+        RabbitMQPersistentConnection connection,
+        IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _chzzkChatClient = chzzkChatClient;
         _connection = connection;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,8 +41,7 @@ public class ChzzkCommandConsumer : BackgroundService
         _channel = await _connection.CreateModelAsync();
         await _channel.ExchangeDeclareAsync(_exchangeName, ExchangeType.Direct, true);
 
-        // [오시리스의 무대]: 인스턴스 전용 임시 큐 생성 (Fanout 대신 Direct를 사용하여 특정 명령 하달 가능성 열어둠)
-        // 현재는 모든 인스턴스가 명령 익스체인지를 바라보되, ShardedWebSocketManager가 자신의 책임 여부를 판별함.
+        // [오시리스의 무대]: 인스턴스 전용 임시 큐 생성
         var queueName = (await _channel.QueueDeclareAsync()).QueueName;
         await _channel.QueueBindAsync(queueName, _exchangeName, "");
 
@@ -74,9 +76,6 @@ public class ChzzkCommandConsumer : BackgroundService
 
     private async Task ProcessCommandAsync(ChzzkBotCommand command)
     {
-        // [v2.0] 수평 확장을 고려하여, 이 인스턴스가 해당 스트리머를 담당하고 있는지 확인
-        // ShardedWebSocketManager 내부에 이미 이 로직이 포함되어 있거나, 직접 판단 가능
-        
         _logger.LogInformation("📥 [명령 수신] 유형: {Type}, 채널: {ChzzkUid}", command.CommandType, command.ChzzkUid);
 
         switch (command.CommandType)
@@ -85,8 +84,17 @@ public class ChzzkCommandConsumer : BackgroundService
                 if (!string.IsNullOrEmpty(command.Payload))
                 {
                     bool success = await _chzzkChatClient.SendMessageAsync(command.ChzzkUid, command.Payload);
-                    if (success) _logger.LogInformation("✅ [명령 완료] {ChzzkUid} 메시지 전송 성공 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
-                    else _logger.LogWarning("⚠️ [명령 실패] {ChzzkUid} 메시지 전송 실패 (담당 샤드가 아니거나 연결 끊김) (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
+                    
+                    // [시니어 팁]: 만약 연결이 안 되어 있어서 실패했다면, 자동으로 다시 연결 시도 후 재발송 로직을 고려할 수 있습니다.
+                    if (!success)
+                    {
+                        _logger.LogWarning("⚠️ [명령 지연] {ChzzkUid} 소켓 연결이 없거나 담당 인스턴스가 아닙니다. (자동 재연결 대기)", command.ChzzkUid);
+                        // SendMessage 실패 시 Reconnect를 유도하거나 직접 호출할 수 있음
+                    }
+                    else
+                    {
+                        _logger.LogInformation("✅ [명령 완료] {ChzzkUid} 메시지 전송 성공 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
+                    }
                 }
                 break;
 
@@ -96,8 +104,26 @@ public class ChzzkCommandConsumer : BackgroundService
                 break;
 
             case BotCommandType.Reconnect:
-                _logger.LogInformation("🔄 [명령 완료] {ChzzkUid} 채널 재연결 명령 수신 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
-                // TODO: 재연결 로직 구현
+                _logger.LogInformation("🔄 [명령 실행] {ChzzkUid} 채널에 대한 실시간 연결을 수립합니다...", command.ChzzkUid);
+                
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+                    var profile = await db.StreamerProfiles
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.ChzzkUid == command.ChzzkUid);
+
+                    if (profile != null && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
+                    {
+                        bool success = await _chzzkChatClient.ConnectAsync(command.ChzzkUid, profile.ChzzkAccessToken);
+                        if (success) _logger.LogInformation("✅ [연결 성공] {ChzzkUid} 소켓이 가동되었습니다.", command.ChzzkUid);
+                        else _logger.LogWarning("⚠️ [연결 거부] {ChzzkUid} 채널 연결이 거부되었습니다 (담당 구역 아님 등).", command.ChzzkUid);
+                    }
+                    else
+                    {
+                        _logger.LogError("❌ [연결 실패] {ChzzkUid} 채널의 토큰 정보를 DB에서 찾을 수 없습니다.", command.ChzzkUid);
+                    }
+                }
                 break;
 
             case BotCommandType.RefreshSettings:
