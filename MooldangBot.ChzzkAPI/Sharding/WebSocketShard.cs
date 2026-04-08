@@ -241,8 +241,17 @@ public class WebSocketShard : IWebSocketShard
                 {
                     var payloadString = root[1].GetString() ?? "{}";
                     using var payloadDoc = System.Text.Json.JsonDocument.Parse(payloadString);
-                    string content = payloadDoc.RootElement.GetProperty("content").GetString() ?? "";
-                    string nickname = payloadDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "Unknown" : "Unknown";
+                    var payloadRoot = payloadDoc.RootElement;
+                    
+                    string content = payloadRoot.GetProperty("content").GetString() ?? "";
+                    
+                    // [오시리스의 정석]: 공식 규격상 닉네임은 profile 객체 내부에 위치함
+                    string nickname = "Unknown";
+                    if (payloadRoot.TryGetProperty("profile", out var profileProp) && 
+                        profileProp.TryGetProperty("nickname", out var nickProp))
+                    {
+                        nickname = nickProp.GetString() ?? "Unknown";
+                    }
                     
                     _logger.LogInformation("💬 [{ChzzkUid}] {Nickname}: {Content}", chzzkUid, nickname, content);
                     
