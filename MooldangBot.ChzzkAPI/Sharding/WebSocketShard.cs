@@ -332,22 +332,45 @@ public class WebSocketShard : IWebSocketShard
     public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
     {
         return await ExecuteWithTokenAsync(chzzkUid, async (api, token) => {
-            // [v2.5] 방제 변경 시 카테고리 유실 방지를 위해 현재 설정 조회 후 병합 업데이트
+            // [v2.6] 방제 변경 시 공식 오픈 API 규격에 맞춰 현재 카테고리 ID/Type 보존
             var current = await api.GetLiveSettingAsync(token);
-            var cat = current?.Content?.Category?.CategoryValue ?? "talk";
-            var result = await api.UpdateLiveSettingAsync(token, newTitle, cat);
-            return result != null;
+            var categoryId = current?.Content?.Category?.CategoryId;
+            var categoryType = current?.Content?.Category?.CategoryType ?? "ETC";
+            
+            return await api.UpdateLiveSettingAsync(token, newTitle, categoryId, categoryType);
         });
     }
 
-    public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
+    public async Task<bool> UpdateCategoryAsync(string chzzkUid, string categoryKeyword)
     {
         return await ExecuteWithTokenAsync(chzzkUid, async (api, token) => {
-            // [v2.5] 카테고리 변경 시 방제 유실 방지를 위해 현재 설정 조회 후 병합 업데이트
+            // 1. [v2.6] 현장 지능형 수색: 키워드를 바탕으로 공식 식별자(ID) 확보 시도
+            _logger.LogInformation("🔍 [현장 수색] '{Category}' 키워드로 공식 카테고리 식별자를 조회합니다.", categoryKeyword);
+            var search = await api.SearchCategoryAsync(categoryKeyword);
+            
+            string? targetId = null;
+            string? targetType = "ETC";
+
+            if (search?.Data != null && search.Data.Count > 0)
+            {
+                var first = search.Data[0];
+                targetId = first.CategoryId;
+                targetType = first.CategoryType;
+                _logger.LogInformation("✅ [수색 성공] '{Keyword}' -> ID: {ID}, Type: {Type} 포착", categoryKeyword, targetId, targetType);
+            }
+            else
+            {
+                // [오시리스의 도박]: 검색 결과가 없으면 사용자의 입력을 믿고 직접 반영 시도 (Fallback)
+                _logger.LogWarning("⚠️ [수색 실패] 공식 결과 없음. 사용자 입력값 '{Keyword}'으로 직접 반영을 시도합니다.", categoryKeyword);
+                targetId = categoryKeyword; // ID가 없으면 명칭이라도 보냄
+            }
+
+            // 2. 방제 유실 방지를 위해 현재 제목 확보
             var current = await api.GetLiveSettingAsync(token);
-            var title = current?.Content?.DefaultLiveTitle ?? "Mooldang Bot Broadcast";
-            var result = await api.UpdateLiveSettingAsync(token, title, category);
-            return result != null;
+            var currentTitle = current?.Content?.DefaultLiveTitle ?? "Mooldang Bot Broadcast";
+            
+            // 3. 최종 공식 오픈 API 포격
+            return await api.UpdateLiveSettingAsync(token, currentTitle, targetId, targetType);
         });
     }
 

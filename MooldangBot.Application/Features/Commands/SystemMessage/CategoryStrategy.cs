@@ -12,10 +12,8 @@ namespace MooldangBot.Application.Features.Commands.SystemMessage;
 /// [하모니의 카테고리]: 치지직 방송 카테고리를 실시간으로 변경하는 전략입니다.
 /// </summary>
 public class CategoryStrategy(
-    IChzzkApiClient chzzkApi,
     IChzzkBotService botService,
     IDynamicQueryEngine dynamicEngine,
-    IServiceProvider serviceProvider,
     ILogger<CategoryStrategy> logger) : ICommandFeatureStrategy
 {
     public string FeatureType => CommandFeatureTypes.Category;
@@ -37,7 +35,7 @@ public class CategoryStrategy(
 
     private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent notification, string keyword, string responseTemplate, CancellationToken ct)
     {
-        // [인수 추출]: 명령어 키워드 이후 텍스트를 검색 카테고리로 인식
+        // 1. [인수 추출]
         string msg = notification.Message.Trim();
         string inputKeyword = msg.Length > keyword.Length ? msg.Substring(keyword.Length).Trim() : "";
 
@@ -50,79 +48,38 @@ public class CategoryStrategy(
 
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            
-            var aliasObj = await db.ChzzkCategoryAliases
-                .Include(a => a.Category)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Alias == inputKeyword, ct);
+            // 2. [별칭 해석]: DB나 하드코딩된 별칭이 있으면 변환 (예: '저챗' -> 'talk')
+            string searchKeyword = HardcodedAliases.TryGetValue(inputKeyword, out var hardcoded) ? hardcoded : inputKeyword;
 
-            string searchKeyword = aliasObj?.Category?.CategoryValue ?? 
-                                   (HardcodedAliases.TryGetValue(inputKeyword, out var hardcoded) ? hardcoded : inputKeyword);
-
-            logger.LogInformation($"🔍 [카테고리 변경 요청] {notification.Username} -> 원본: {inputKeyword}, 검색어: {searchKeyword}");
+            logger.LogInformation($"🚀 [카테고리 변경 명령 발행] {notification.Username} -> 키워드: {searchKeyword}");
             
-            var searchResult = await chzzkApi.SearchCategoryAsync(searchKeyword);
-            if (searchResult?.Data?.Count > 0)
+            // 3. [명령 하달]: 봇 엔진에게 수색 및 반영을 일임합니다. (v2.6 아키텍처 전환)
+            bool success = await botService.UpdateCategoryAsync(notification.Profile, searchKeyword, notification.SenderId, token: ct);
+
+            if (success)
             {
-                var target = searchResult.Data[0];
-                logger.LogInformation($"✅ [카테고리 검색 결과] {target.CategoryValue} (Type: {target.CategoryType}, ID: {target.CategoryId})");
+                string template = string.IsNullOrEmpty(responseTemplate) 
+                    ? "✅ 카테고리를 [{내용}](으)로 변경 요청했습니다! 🎈" 
+                    : responseTemplate;
                 
-                if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
-                    throw new Exception("스트리머의 액세스 토큰이 없습니다.");
+                string processedReply = await dynamicEngine.ProcessMessageAsync(
+                    template.Replace("{내용}", searchKeyword).Replace("{카테고리}", searchKeyword), 
+                    notification.Profile.ChzzkUid, 
+                    notification.SenderId
+                );
 
-                // [명령 하달]: 백엔드에서 확정된 카테고리 명칭을 봇 엔진에게 실행 지시
-                bool success = await botService.UpdateCategoryAsync(notification.Profile, target.CategoryValue, notification.SenderId, ct);
-
-                if (success)
-                {
-                    logger.LogInformation($"🚀 [카테고리 변경 오더] {notification.Profile.ChzzkUid}: [{target.CategoryValue}]");
-                    
-                    string template = string.IsNullOrEmpty(responseTemplate) 
-                        ? "✅ 카테고리가 [{내용}](으)로 변경 명령이 전달되었습니다! 🎈" 
-                        : responseTemplate;
-                    
-                    string processedReply = await dynamicEngine.ProcessMessageAsync(
-                        template.Replace("{내용}", target.CategoryValue).Replace("{카테고리}", target.CategoryValue), 
-                        notification.Profile.ChzzkUid, 
-                        notification.SenderId
-                    );
-
-                    await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
-                    return CommandExecutionResult.Success();
-                }
-                else
-                {
-                    logger.LogWarning($"⚠️ [카테고리 변경 실패] {notification.Profile.ChzzkUid} 명령 발행 실패");
-                    return CommandExecutionResult.Failure("카테고리 변경 명령 발행에 실패했습니다.", shouldRefund: true);
-                }
+                await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+                return CommandExecutionResult.Success();
             }
             else
             {
-                // [v2.5] 강습 모드(Fallback): 검색 결과가 없더라도 입력값이 명확한 경우(슬래시 포함 등) 직접 반영 시도
-                if (inputKeyword.Contains("/") || inputKeyword.Length >= 2)
-                {
-                    logger.LogInformation($"🚀 [카테고리 강습 모드] 검색 결과는 없으나 '{inputKeyword}'로 직접 변경 명령을 발행합니다.");
-                    bool success = await botService.UpdateCategoryAsync(notification.Profile, inputKeyword, notification.SenderId, ct);
-                    
-                    if (success)
-                    {
-                        string statusReply = await dynamicEngine.ProcessMessageAsync($"✅ 카테고리를 '{inputKeyword}'(으)로 직접 변경 시도했습니다! (공식 검색 결과 없음) 🎈", notification.Profile.ChzzkUid, notification.SenderId);
-                        await botService.SendReplyChatAsync(notification.Profile, statusReply, notification.SenderId, ct);
-                        return CommandExecutionResult.Success();
-                    }
-                }
-
-                logger.LogWarning($"🕵️‍♂️ [카테고리 검색 실패] '{searchKeyword}' (공식 카테고리 없음)");
-                await botService.SendReplyChatAsync(notification.Profile, $"⚠️ '{searchKeyword}'(으)로 검색되는 공식 카테고리가 없습니다. 정확한 명칭을 입력해 주세요. 🕵️‍♂️", notification.SenderId, ct);
-                return CommandExecutionResult.Failure("카테고리를 찾을 수 없습니다.", shouldRefund: true);
+                logger.LogWarning($"⚠️ [명령 발행 실패] {notification.Profile.ChzzkUid} RabbitMQ 송신 오류");
+                return CommandExecutionResult.Failure("카테고리 변경 명령 발행에 실패했습니다.", shouldRefund: true);
             }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, $"🚨 [CategoryStrategy] 시스템 오류: {ex.Message}");
-            await botService.SendReplyChatAsync(notification.Profile, "🚨 치지직 서버와 통신 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. 💫", notification.SenderId, ct);
             return CommandExecutionResult.Failure($"시스템 오류: {ex.Message}", shouldRefund: true);
         }
     }

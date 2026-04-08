@@ -22,7 +22,7 @@ public interface IChzzkApiClient
     Task<ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null);
     Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null);
     Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData);
-    Task<bool> UpdateLiveSettingAsync(string accessToken, string title, string category, string? chatSettingTitle = null);
+    Task<bool> UpdateLiveSettingAsync(string accessToken, string? title, string? categoryId, string? categoryType = null);
     Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken);
     Task<ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword);
     Task<ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null);

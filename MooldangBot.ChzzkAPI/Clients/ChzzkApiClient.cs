@@ -166,45 +166,76 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            var serviceUrl = "https://api.chzzk.naver.com/service/v1/channels/live-setting";
+            // [v2.6] 치지직 공식 오픈 API 방송 설정 변경 규격으로 전환
+            var serviceUrl = "https://openapi.chzzk.naver.com/open/v1/lives/setting";
             using var request = new HttpRequestMessage(HttpMethod.Patch, serviceUrl);
+            
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
+            
+            // [오시리스의 인장]: 공식 API 인증 헤더 추가
+            string clientId = _configuration["CHZZK_API:CLIENT_ID"] ?? _configuration["ChzzkApi:ClientId"] ?? "";
+            string clientSecret = _configuration["CHZZK_API:CLIENT_SECRET"] ?? _configuration["ChzzkApi:ClientSecret"] ?? "";
+            if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
+            if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
+
             request.Content = JsonContent.Create(updateData);
 
             var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"[ChzzkApi] UpdateLiveSetting Failed ({response.StatusCode}). Error: {errorBody}");
+            }
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[ChzzkApi] UpdateLiveSetting Error: {ex.Message}");
+            _logger.LogError(ex, $"[ChzzkApi] UpdateLiveSetting Error: {ex.Message}");
             return false;
         }
     }
 
-    public async Task<bool> UpdateLiveSettingAsync(string accessToken, string title, string category, string? chatSettingTitle = null)
+    public async Task<bool> UpdateLiveSettingAsync(string accessToken, string? title, string? categoryId, string? categoryType = null)
     {
-        var update = new { defaultLiveTitle = title, categoryValue = category };
-        return await UpdateLiveSettingAsync(accessToken, update);
+        // [v2.6] 공식 오픈 API 규격 필드명 적용 (liveTitle, categoryId, categoryType)
+        var update = new 
+        { 
+            liveTitle = title, 
+            categoryId = categoryId, 
+            categoryType = categoryType 
+        };
+        return await UpdateLiveSettingAsync(accessToken, (object)update);
     }
 
     public async Task<ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken)
     {
         try
         {
-            var serviceUrl = "https://api.chzzk.naver.com/service/v1/channels/live-setting";
+            // [v2.6] 공식 오픈 API 방송 설정 조회 규격으로 전환
+            var serviceUrl = "https://openapi.chzzk.naver.com/open/v1/lives/setting";
             using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
+            
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
+            
+            // [오시리스의 인장]: 공식 API 인증 헤더 추가
+            string clientId = _configuration["CHZZK_API:CLIENT_ID"] ?? _configuration["ChzzkApi:ClientId"] ?? "";
+            string clientSecret = _configuration["CHZZK_API:CLIENT_SECRET"] ?? _configuration["ChzzkApi:ClientSecret"] ?? "";
+            if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
+            if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
 
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkLiveSettingResponse);
             }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning($"[ChzzkApi] GetLiveSetting Failed ({response.StatusCode}). Raw: {errorBody}");
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[ChzzkApi] GetLiveSetting Error: {ex.Message}");
+            _logger.LogError(ex, $"[ChzzkApi] GetLiveSetting Error: {ex.Message}");
             return null;
         }
     }

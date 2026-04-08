@@ -86,22 +86,26 @@ public class ChzzkBotService : IChzzkBotService
         return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateTitle, newTitle, token);
     }
 
-    public async Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, CancellationToken token)
+    public async Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, string? categoryId = null, string? categoryType = null, CancellationToken token = default)
     {
         _logger.LogInformation($"📡 [방송 정보 변경 요청] 채널: {profile.ChzzkUid}, 카테고리: {category}");
-        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateCategory, category, token);
+        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateCategory, category, categoryId, categoryType, token);
     }
 
-    private async Task<bool> SendCommandInternalAsync(string chzzkUid, BotCommandType type, string? payload, CancellationToken token)
+    private async Task<bool> SendCommandInternalAsync(string chzzkUid, BotCommandType type, string? payload, string? categoryId = null, string? categoryType = null, CancellationToken token = default)
     {
         try
         {
+            // [v2.6] 정밀 카테고리 업데이트를 위한 식별자(ID, Type) 포함
             var command = new ChzzkBotCommand(
                 Guid.NewGuid(), 
                 chzzkUid, 
                 type, 
                 payload, 
-                KstClock.Now);
+                categoryId,
+                categoryType,
+                KstClock.Now,
+                "2.6"); // [v2.6] 규격 버전 업그레이드
 
             await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
             return true;

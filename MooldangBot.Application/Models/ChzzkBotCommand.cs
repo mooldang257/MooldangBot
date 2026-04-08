@@ -24,8 +24,10 @@ public record ChzzkBotCommand(
     string ChzzkUid,
     BotCommandType CommandType, // [v2.2] 열거형으로 변경
     string? Payload,
-    DateTime Timestamp,
-    string Version = "2.2" // [v2.2] 규격 버전 관리
+    string? CategoryId = null,    // [v2.6] 정밀 카테고리 업데이트용
+    string? CategoryType = null,  // [v2.6] 정밀 카테고리 업데이트용
+    DateTime Timestamp = default,
+    string Version = "2.6" // [v2.6] 규격 버전 업그레이드
 );
 
 public static class ChzzkCommandTypes

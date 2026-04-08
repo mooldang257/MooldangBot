@@ -22,9 +22,9 @@ public interface IChzzkBotService
     Task<bool> UpdateTitleAsync(StreamerProfile profile, string newTitle, string senderUid, CancellationToken token);
 
     /// <summary>
-    /// 방송 카테고리를 변경합니다. (v2.5)
+    /// 방송 카테고리를 변경합니다. (v2.6 식별자 기반 정밀 대응 추가)
     /// </summary>
-    Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, CancellationToken token);
+    Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, string? categoryId = null, string? categoryType = null, CancellationToken token = default);
 
     /// <summary>
     /// 특정 채널의 봇 설정을 즉시 새로고침합니다.
