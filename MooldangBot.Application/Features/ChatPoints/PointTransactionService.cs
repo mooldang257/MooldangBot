@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Dapper;
 using MooldangBot.Application.Common.Security;
+using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Application.Features.ChatPoints;
 
@@ -248,6 +249,9 @@ public class PointTransactionService : IPointTransactionService
                         new { StreamerId = streamer.Id, GlobalId = globalViewer.Id }, cancellationToken: ct));
                     return (false, failResult);
                 }
+
+                // [v2.4.1] 포인트 소모량 누적 카운팅
+                FleetMetrics.PointSpentTotal.WithLabels(columnName).Inc(Math.Abs(amount));
             }
             else
             {
@@ -265,6 +269,12 @@ public class PointTransactionService : IPointTransactionService
                     Amount = amount,
                     Col = columnName
                 }, cancellationToken: ct));
+
+                // [v2.4.1] 포인트 적립량 누적 카운팅
+                if (amount > 0)
+                {
+                    FleetMetrics.PointEarnedTotal.WithLabels(columnName).Inc(amount);
+                }
             }
 
             // [v11.1] 천상의 장부: 상거래 로그 기록 (차감 성공 또는 적립 시에만)

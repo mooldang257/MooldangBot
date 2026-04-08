@@ -312,8 +312,14 @@ try
     // 3. 🎶 [하모니의 기록]: 반드시 인증(Authorization) 직후에 배치해야 User 정보가 존재함
     app.UseMiddleware<LogEnrichmentMiddleware>();
 
-    // app.MapGet("/", () => Results.Redirect("/swagger")); // [Project Osiris]: 포트 3000번 대시보드 호환성을 위해 리다이렉트 제거
+    // app.MapGet("/", () => Results.Redirect("/swagger")); // [v2.4.1] Prometheus 메트릭 미들웨어 및 엔드포인트 노출
+    app.UseHttpMetrics();
+
+    // ---------------------------------------------------------
+    // [최후의 보루]: 애플리케이션 시작
+    // ---------------------------------------------------------
     app.MapControllers();
+    app.MapMetrics(); // /metrics 엔드포인트 매핑
     app.MapHub<OverlayHub>("/overlayHub");
 
     // [v4.9] Swagger UI 활성화 (보안을 위해 개발 환경 또는 명시적 설정 시에만 노출)

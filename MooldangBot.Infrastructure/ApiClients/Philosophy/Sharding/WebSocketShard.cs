@@ -13,6 +13,7 @@ using MooldangBot.Domain.Events;
 using Websocket.Client;
 using System.Linq;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
 
@@ -131,6 +132,9 @@ public class WebSocketShard : IWebSocketShard
             _clients[chzzkUid] = client;
             _lastActivityList[chzzkUid] = KstClock.Now;
 
+            // [v2.4.1] 활성 소켓 연결 수 증가 지표 반영
+            FleetMetrics.ActiveShardsConnections.Inc();
+
             // [오시리스의 각성]: 적극적 핑 루프 가동 (10초 주기로 "2" 전송)
             var cts = new CancellationTokenSource();
             _pingCtsList[chzzkUid] = cts;
@@ -185,6 +189,9 @@ public class WebSocketShard : IWebSocketShard
 
         if (message.StartsWith("42"))
         {
+            // [v2.4.1] 메시지 관류량 카운팅
+            FleetMetrics.MessagesReceivedTotal.WithLabels(_shardId.ToString()).Inc();
+
             string json = message.Substring(2);
             // [v2.2] 메시지마다 고유 ID 생성 (CorrelationId의 근원)
             var messageId = Guid.NewGuid();
@@ -229,6 +236,9 @@ public class WebSocketShard : IWebSocketShard
 
         if (_clients.TryRemove(chzzkUid, out var client))
         {
+            // [v2.4.1] 활성 소켓 연결 수 감소 지표 반영
+            FleetMetrics.ActiveShardsConnections.Dec();
+
             try
             {
                 client.Dispose();

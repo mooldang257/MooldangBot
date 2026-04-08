@@ -3,6 +3,7 @@ using MooldangBot.Infrastructure.Extensions;
 using MooldangBot.Application;
 using MooldangBot.ChzzkAPI.Workers;
 using Serilog;
+using Prometheus;
 
 // [오시리스의 인장]: 봇 전용 호스트 로깅 설정
 Log.Logger = new LoggerConfiguration()
@@ -54,7 +55,12 @@ try
 
     var host = builder.Build();
 
-    Log.Information("🚀 [물멍 봇 엔진] 가동을 시작합니다. (Sharding Index: {ShardIndex})", builder.Configuration["SHARD_INDEX"] ?? "Auto");
+    // [v2.4.1] 함대 관제용 메트릭 서버 기동 (standalone port: 8080)
+    // [보안]: 내부 도커 네트워크 내에서만 Prometheus가 접근합니다.
+    var metricServer = new MetricServer(port: 8080);
+    metricServer.Start();
+
+    Log.Information("🚀 [물멍 봇 엔진] 가동을 시작합니다. (Sharding Index: {ShardIndex}, Metrics: 8080)", builder.Configuration["SHARD_INDEX"] ?? "Auto");
     
     await host.RunAsync();
 }

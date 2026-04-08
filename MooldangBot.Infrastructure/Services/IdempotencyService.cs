@@ -1,6 +1,5 @@
-using MooldangBot.Application.Interfaces;
-using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Infrastructure.Services;
 
@@ -27,6 +26,7 @@ public class IdempotencyService(IConnectionMultiplexer redis, ILogger<Idempotenc
 
             if (!success)
             {
+                FleetMetrics.IdempotencyBlocked.WithLabels("general").Inc(); // [v2.4.1] 멱등성 가드 실적 카운팅
                 logger.LogWarning("⚠️ [중복 요청 감지] 이미 처리 중이거나 완료된 요청입니다: {Key}", key);
             }
 
@@ -34,6 +34,7 @@ public class IdempotencyService(IConnectionMultiplexer redis, ILogger<Idempotenc
         }
         catch (Exception ex)
         {
+            FleetMetrics.IdempotencyErrors.WithLabels("general").Inc(); // [v2.4.1] Fail-Closed 발생 카운팅
             // [오시리스의 침묵 - Fail-Closed 전략]: 
             // 사용자님의 조언에 따라 금융(포인트) 정합성을 위해 Redis 장애 시 요청을 차단합니다.
             // "중복 처리가 발생하는 것보다 서비스가 잠시 멈추는 것이 신뢰를 지키는 길이다."

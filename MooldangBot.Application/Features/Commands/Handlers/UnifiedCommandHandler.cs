@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Features.Commands.SystemMessage;
 using MooldangBot.Application.Features.Commands.Feature;
 using MooldangBot.Application.Features.Commands.General;
-using MooldangBot.Domain.Common;
 using MooldangBot.Application.Common.Security;
+using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Application.Features.Commands.Handlers;
 
@@ -222,6 +222,9 @@ public class UnifiedCommandHandler(
             }
 
             await idempotency.MarkAsCompletedAsync(compKey, TimeSpan.FromMinutes(30));
+            
+            // [v2.4.1] 보상 트랜잭션(환불) 성공 지표 카운팅
+            FleetMetrics.CompensationRefundTotal.Inc();
         }
         catch (Exception ex)
         {
