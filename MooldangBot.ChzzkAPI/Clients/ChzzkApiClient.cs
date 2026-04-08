@@ -93,16 +93,22 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            // [오시리스의 예언]: v1 경로가 사장됨에 따라 최신 v2 경로로 승격합니다.
-            var serviceUrl = "https://api.chzzk.naver.com/service/v2/channels/events/session-auth";
+            // [오시리스의 정석]: 치지직 공식 오픈 API 규격 적용
+            var serviceUrl = "https://openapi.chzzk.naver.com/open/v1/sessions/auth";
             using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
+            
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
+            if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
+            if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
 
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkSessionAuthResponse);
             }
+            
+            var errorBody = await response.Content.ReadAsStringAsync();
+            _logger.LogError($"[ChzzkApi] GetSessionAuth Failed ({response.StatusCode}): {errorBody}");
             return null;
         }
         catch (Exception ex)
@@ -116,15 +122,24 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            // [오시리스의 예언]: 인증 주소와 마찬가지로 구독 주소도 v2로 승격합니다.
-            var serviceUrl = "https://api.chzzk.naver.com/service/v2/channels/events/subscribe";
+            // [오시리스의 정석]: 공식 오픈 API 규격에 따른 채팅 구독
+            // 참고: 공식 규격에서는 /subscribe/chat 엔드포인트를 사용하며 sessionKey만 요구함
+            var serviceUrl = "https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat";
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl);
+            
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
+            if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
+            if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
 
-            var payload = new { sessionKey, eventType, channelId };
+            var payload = new { sessionKey };
             request.Content = JsonContent.Create(payload);
 
             var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"[ChzzkApi] SubscribeEvent Failed ({response.StatusCode}): {errorBody}");
+            }
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

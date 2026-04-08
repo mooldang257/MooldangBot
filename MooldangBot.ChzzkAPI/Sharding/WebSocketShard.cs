@@ -29,7 +29,10 @@ public class WebSocketShard : IWebSocketShard
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, KstClock> _lastActivityList = new();
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
+    private readonly ConcurrentDictionary<string, string> _accessTokens = new();
+    private readonly ConcurrentDictionary<string, string?> _clientIds = new();
+    private readonly ConcurrentDictionary<string, string?> _clientSecrets = new();
+    private readonly ConcurrentDictionary<string, bool> _isSubscribed = new();
     private readonly ConcurrentDictionary<string, bool> _authErrors = new(); 
     private bool _isDisposed;
 
@@ -83,6 +86,10 @@ public class WebSocketShard : IWebSocketShard
             }
             
             _authErrors.TryRemove(chzzkUid, out _);
+            _isSubscribed[chzzkUid] = false;
+            _accessTokens[chzzkUid] = accessToken;
+            _clientIds[chzzkUid] = clientId;
+            _clientSecrets[chzzkUid] = clientSecret;
 
             string socketUrl = sessionAuth.Content.Url;
             _logger.LogInformation("🔗 [파동의 경로] {ChzzkUid} 소켓 URL 획득 완료: {Url}", chzzkUid, socketUrl);
@@ -209,6 +216,21 @@ public class WebSocketShard : IWebSocketShard
                 // 이벤트명이 무엇인지 파악하기 위해 첫 번째 요소 로그
                 string eventName = root[0].GetString() ?? "Unknown";
                 
+                // [오시리스의 정석]: SYSTEM 메시지 처리 (sessionKey 획득 및 구독)
+                if (eventName.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = root[1];
+                    if (payload.TryGetProperty("sessionKey", out var keyProp))
+                    {
+                        string sessionKey = keyProp.GetString() ?? "";
+                        _logger.LogInformation("📥 [SYSTEM 메시지] {ChzzkUid} 세션 키 획득 완료: {SessionKey}", chzzkUid, sessionKey);
+                        
+                        // 즉시 채팅 구독 API 호출
+                        _ = SubscribeToChatAsync(chzzkUid, sessionKey);
+                    }
+                    return;
+                }
+
                 if (eventName.Equals("CHAT", StringComparison.OrdinalIgnoreCase))
                 {
                     var payloadString = root[1].GetString() ?? "{}";
@@ -224,6 +246,36 @@ public class WebSocketShard : IWebSocketShard
 
             await _rabbitMqService.PublishAsync(item, $"streamer.{chzzkUid}.chat", RabbitMqExchanges.ChatEvents);
             await _rabbitMqService.PublishChatEventAsync(item);
+        }
+    }
+
+    private async Task SubscribeToChatAsync(string chzzkUid, string sessionKey)
+    {
+        try
+        {
+            if (!_accessTokens.TryGetValue(chzzkUid, out var token)) return;
+            _clientIds.TryGetValue(chzzkUid, out var cid);
+            _clientSecrets.TryGetValue(chzzkUid, out var csec);
+
+            using var scope = _scopeFactory.CreateScope();
+            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
+
+            _logger.LogInformation("📡 [채팅 구독 신청] {ChzzkUid} 채널에 대한 구독을 요청합니다...", chzzkUid);
+            bool success = await chzzkApi.SubscribeEventAsync(token, sessionKey, "CHAT", chzzkUid, cid, csec);
+
+            if (success)
+            {
+                _isSubscribed[chzzkUid] = true;
+                _logger.LogInformation("✅ [채팅 구독 성공] {ChzzkUid} 채널의 실시간 채팅 수신이 활성화되었습니다.", chzzkUid);
+            }
+            else
+            {
+                _logger.LogError("❌ [채팅 구독 실패] {ChzzkUid} 채널의 채팅 구독에 실패했습니다.", chzzkUid);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔥 [구독 프로세스 오류] {ChzzkUid} 채팅 구독 중 예외 발생", chzzkUid);
         }
     }
 

@@ -20,6 +20,7 @@ public class ChzzkCommandConsumer : BackgroundService
     private readonly IChzzkChatClient _chzzkChatClient;
     private readonly RabbitMQPersistentConnection _connection;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IConfiguration _configuration;
     private readonly string _exchangeName = RabbitMqExchanges.BotCommands;
     private IChannel? _channel;
 
@@ -27,12 +28,14 @@ public class ChzzkCommandConsumer : BackgroundService
         ILogger<ChzzkCommandConsumer> logger,
         IChzzkChatClient chzzkChatClient,
         RabbitMQPersistentConnection connection,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        IConfiguration configuration)
     {
         _logger = logger;
         _chzzkChatClient = chzzkChatClient;
         _connection = connection;
         _scopeFactory = scopeFactory;
+        _configuration = configuration;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -117,7 +120,10 @@ public class ChzzkCommandConsumer : BackgroundService
 
                     if (profile != null && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
                     {
-                        bool success = await _chzzkChatClient.ConnectAsync(command.ChzzkUid, profile.ChzzkAccessToken);
+                        var clientId = _configuration["CHZZK_CLIENT_ID"];
+                        var clientSecret = _configuration["CHZZK_CLIENT_SECRET"];
+
+                        bool success = await _chzzkChatClient.ConnectAsync(command.ChzzkUid, profile.ChzzkAccessToken, clientId, clientSecret);
                         if (success) _logger.LogInformation("✅ [연결 성공] {ChzzkUid} 소켓이 가동되었습니다.", command.ChzzkUid);
                         else _logger.LogWarning("⚠️ [연결 거부] {ChzzkUid} 채널 연결이 거부되었습니다 (담당 구역 아님 등).", command.ChzzkUid);
                     }
