@@ -41,20 +41,18 @@ done
 
 # 아무 옵션도 없을 경우 전체 배포
 if [ "$DEPLOY_APP" = false ] && [ "$DEPLOY_UI" = false ] && [ "$DEPLOY_DB" = false ]; then
-    echo -e "${YELLOW}ℹ️ 옵션이 지정되지 않아 전체 서비스를 배포합니다.${NC}"
-    DEPLOY_APP=true
-    DEPLOY_UI=true
-    DEPLOY_DB=true
+    echo -e "${YELLOW}ℹ️ 옵션이 지정되지 않아 전체 함대 서비스를 배포합니다.${NC}"
+    SERVICES=""
+else
+    # 배포 대상 서비스 리스트 구성
+    [ "$DEPLOY_DB" = true ] && SERVICES="$SERVICES db migration"
+    [ "$DEPLOY_APP" = true ] && SERVICES="$SERVICES app chzzk-bot"
+    [ "$DEPLOY_UI" = true ] && SERVICES="$SERVICES studio admin overlay"
+    SERVICES="$SERVICES nginx redis rabbitmq" # 핵심 인프라는 항상 상태 유지 확인
 fi
 
-# 배포 대상 서비스 리스트 구성
-[ "$DEPLOY_DB" = true ] && SERVICES="$SERVICES db migration"
-[ "$DEPLOY_APP" = true ] && SERVICES="$SERVICES app"
-[ "$DEPLOY_UI" = true ] && SERVICES="$SERVICES studio"
-SERVICES="$SERVICES nginx redis rabbitmq" # 핵심 인프라는 항상 상태 유지 확인
-
 # 4. 사전 빌드 검사 (App 포함 시)
-if [ "$DEPLOY_APP" = true ] && command -v dotnet &> /dev/null; then
+if [[ "$SERVICES" == *"app"* || -z "$SERVICES" ]] && command -v dotnet &> /dev/null; then
     echo -e "${GREEN}🛠️ Build Check: 백엔드 컴파일 오류를 검사합니다...${NC}"
     dotnet build -c Release
     if [ $? -ne 0 ]; then
@@ -67,8 +65,12 @@ fi
 BUILD_OPTS=""
 [ "$CLEAN_BUILD" = true ] && BUILD_OPTS="--no-cache"
 
-echo -e "${GREEN}🐳 Docker: 선택된 서비스 [$SERVICES ] 빌드 및 실행 중...${NC}"
+echo -e "${GREEN}🐳 Docker: 함대 기동 중 [$SERVICES]...${NC}"
 docker compose up -d --build $BUILD_OPTS $SERVICES
+
+# [v2.4.11] Nginx 업스트림 정렬 강제 수행
+echo -e "${GREEN}🔄 Nginx: 업스트림 동기화 중...${NC}"
+docker compose restart nginx
 
 # 6. 상태 모니터링 및 로그 제안
 echo -e "${GREEN}🔍 Health Check: 서비스 가동 상태 확인...${NC}"
