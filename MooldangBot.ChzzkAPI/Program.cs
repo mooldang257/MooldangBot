@@ -32,15 +32,24 @@ try
 
     // 5. 로깅 설정 (Loki/Serilog)
     builder.Host.UseSerilog((context, services, configuration) => {
+        var lokiUrl = context.Configuration["LOKI_URL"] ?? "http://localhost:3100";
+        var instanceId = context.Configuration["INSTANCE_ID"] ?? "chzzk-bot-1";
+        var env = context.Configuration["DOTNET_ENVIRONMENT"] ?? "Production";
+
         configuration
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Service", "MooldangBot.ChzzkAPI")
-            .Enrich.WithProperty("InstanceId", builder.Configuration["INSTANCE_ID"] ?? "chzzk-bot-1")
-            .WriteTo.Console();
-        
-        // Loki 설정은 필요시 추가 (Infrastructure에서 공통으로 처리 가능)
+            .Enrich.WithProperty("InstanceId", instanceId)
+            .WriteTo.Console()
+            .WriteTo.GrafanaLoki(lokiUrl, new[] 
+            { 
+                new Serilog.Sinks.Grafana.Loki.LokiLabel { Key = "app", Value = "mooldangbot" },
+                new Serilog.Sinks.Grafana.Loki.LokiLabel { Key = "service", Value = "chzzk-bot" },
+                new Serilog.Sinks.Grafana.Loki.LokiLabel { Key = "instance", Value = instanceId },
+                new Serilog.Sinks.Grafana.Loki.LokiLabel { Key = "env", Value = env }
+            });
     });
 
     var host = builder.Build();

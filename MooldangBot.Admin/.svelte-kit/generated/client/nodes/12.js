@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/(viewer)/[streamerId]/songbook/+page.svelte";

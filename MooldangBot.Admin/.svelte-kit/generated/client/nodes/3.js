@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/(viewer)/[streamerId]/viewer/+layout.svelte";
