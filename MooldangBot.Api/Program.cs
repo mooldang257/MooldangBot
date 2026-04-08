@@ -39,15 +39,14 @@ using MooldangBot.Api.Health;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using Prometheus;
-
 // [오시리스의 인장]: 애플리케이션 수명 주기 동안 로깅 보장
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
 try 
-    {
-        var builder = WebApplication.CreateBuilder(args);
+{
+    var builder = WebApplication.CreateBuilder(args);
 
     // ⚖️ [오시리스의 저울]: .env 로드 및 필수 설정값 검증 (Fail-Fast)
     builder.Configuration.AddCustomDotEnv(args).AddEnvironmentVariables();
@@ -107,7 +106,7 @@ try
         });
     builder.Services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();
 
-    // [v2.4.8] 중복된 DataProtection 및 MemoryCache 등록을 제거하고 Infrastructure의 공통 설정을 따릅니다.
+
 
     builder.Services.AddApplicationServices();
     builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
@@ -144,6 +143,7 @@ try
         options.InstanceName = "MooldangBot_";
     });
 
+
     builder.Services.AddHealthChecks().AddCheck<BotHealthCheck>("MooldangBot_Shards");
     builder.Services.ConfigureHttpJsonOptions(options => {
         options.SerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
@@ -156,158 +156,221 @@ try
         options.AddPolicy("IamfOverlayPolicy", policy => {
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
         });
+
+        // [오시리스의 중계]: Studio 프론트엔드 연동을 위한 전용 CORS 정책
+        options.AddPolicy("StudioCorsPolicy", policy => {
+            policy.WithOrigins("http://localhost:3000") // 로컬 SvelteKit 포트
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // ★ 중요: 인증 쿠키(세션) 공유를 위해 필수
+        });
     });
 
-    builder.Services.AddAuthorization(options => {
-        options.AddPolicy("ChannelManagerOnly", policy => 
-            policy.Requirements.Add(new ChannelManagerRequirement()));
+    builder.Services.AddScoped<IAuthorizationHandler, OverlayTokenVersionHandler>();
+
+    // 🌩️ [Aegis Bridge]: 프록시(Vite/Nginx) 환경에서의 원본 IP 및 프로토콜 전달 설정
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // 로컬 개발 환경(localhost)에서의 프록시는 신뢰하도록 설정
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
     });
+
+    // 🛡️ [이지스의 방패]: API 버전 관리 등록
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true; // 버전 명시 안 된 레거시 요청은 1.0으로 간주
+        options.ReportApiVersions = true; // 응답 헤더에 지원하는 버전 명시
+        options.ApiVersionReader = ApiVersionReader.Combine(
+            new UrlSegmentApiVersionReader(),
+            new HeaderApiVersionReader("X-Api-Version") // 헤더 방식도 예비로 지원
+        );
+    })
+    .AddMvc()
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
+
+    // 🧼 [이지스의 정화]: FluentValidation 자동 검증 등록
+    builder.Services.AddFluentValidationAutoValidation();
+    builder.Services.AddValidatorsFromAssembly(typeof(MooldangBot.Application.Interfaces.IAppDbContext).Assembly);
+
+    builder.Services.AddControllers()
+        .AddApplicationPart(typeof(MooldangBot.Presentation.DependencyInjection).Assembly)
+        .AddJsonOptions(options => {
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
+        });
+
+    // 📖 [오시리스의 서고]: Swagger/OpenAPI 실전 문서화 설정
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo 
+        { 
+            Title = "MooldangBot API", 
+            Version = "v1.1",
+            Description = "[하모니의 도화지]: 물댕봇 백엔드 통합 API 명세서입니다."
+        });
+
+        // JWT 인증 UI 추가
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "Bearer"
+        });
+
+        // OpenAPI 2.x (OAS 3.x) 람다 기반 보안 요구사항 규격 적용
+        options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", null, null)] = new List<string>()
+        });
+    });
+
+    // [v4.0] 오시리스의 열쇠: JWT 시크릿 키 검증 (전용 검증은 ValidateMandatorySecrets에서 수행됨)
+    var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
+    
+    if (Encoding.UTF8.GetBytes(jwtSecret).Length < 32)
+    {
+        throw new InvalidOperationException("🔥 [Security Error]: JWT 시크릿 키가 너무 짧습니다. 최소 32바이트(256비트) 이상의 키를 사용하십시오.");
+    }
+    var issuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
     builder.Services.AddAuthentication(options => {
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = "Chzzk";
+        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
-        options.LoginPath = "/auth/login";
-        options.AccessDeniedPath = "/auth/access-denied";
-        options.Cookie.Name = "MooldangBot.Auth";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
+    .AddCookie(options => { 
+        options.LoginPath = "/api/auth/chzzk-login"; 
+        options.Cookie.Name = builder.Configuration["AUTH_COOKIE_NAME"] ?? ".MooldangBot.Session";
+        
+        // [Aegis 로컬 패스]: 로컬/HTTP 환경에서도 세션이 유지되도록 보안 정책 조정
+        var isDev = builder.Environment.IsDevelopment();
+        options.Cookie.SecurePolicy = isDev ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax; // [v22.2] 동일 도메인 환경에서의 세션 유지력 강화 (Lax 권장)
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true; // [v22.1] 필수 쿠키로 지정하여 시스템 가용성 보장
     })
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options => {
-        var jwtKey = builder.Configuration["JWT_KEY"]!;
-        var jwtIssuer = builder.Configuration["JWT_ISSUER"]!;
-        var jwtAudience = builder.Configuration["JWT_AUDIENCE"]!;
-
+    .AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "MooldangBot",
+            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "MooldangBot_Overlay",
+            IssuerSigningKey = issuerSigningKey
         };
-    })
-    .AddChzzk(options => {
-        options.ClientId = builder.Configuration["CHZZK_CLIENT_ID"]!;
-        options.ClientSecret = builder.Configuration["CHZZK_CLIENT_SECRET"]!;
-        options.CallbackPath = "/signin-chzzk";
-        options.SaveTokens = true;
 
-        options.Events.OnCreatingTicket = async context => {
-            var chzzkUid = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(chzzkUid)) return;
-
-            using var scope = context.HttpContext.RequestServices.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-
-            if (profile == null)
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
             {
-                profile = new StreamerProfile
+                // SignalR은 쿼리 스트링("access_token")으로 토큰을 보낼 수 있으므로 이를 낚아챕니다.
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/overlayHub"))
                 {
-                    ChzzkUid = chzzkUid,
-                    ChannelName = context.Principal?.FindFirstValue(ClaimTypes.Name) ?? "Unknown",
-                    ProfileImageUrl = context.Principal?.FindFirstValue("profile_image") ?? "",
-                    Slug = chzzkUid.Substring(0, 8),
-                    IsActive = true
-                };
-                db.StreamerProfiles.Add(profile);
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
             }
-            else
-            {
-                profile.ChannelName = context.Principal?.FindFirstValue(ClaimTypes.Name) ?? profile.ChannelName;
-                profile.ProfileImageUrl = context.Principal?.FindFirstValue("profile_image") ?? profile.ProfileImageUrl;
-            }
-
-            profile.ChzzkAccessToken = context.AccessToken ?? "";
-            profile.ChzzkRefreshToken = context.RefreshToken ?? "";
-            profile.TokenExpiresAt = DateTime.UtcNow.Add(context.ExpiresIn ?? TimeSpan.FromHours(1));
-
-            await db.SaveChangesAsync();
         };
     });
 
-    builder.Services.AddControllersWithViews()
-        .AddJsonOptions(options => {
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
+    builder.Services.AddAuthorization(options => {
+        // [오시리스의 통합 정책]: 쿠키와 JWT 인증을 모두 허용하는 기본 인가 정책
+        options.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
+            .Build();
+
+        options.AddPolicy("ChannelManager", policy => {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new ChannelManagerRequirement());
         });
 
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddApiVersioning(options => {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
-        options.AssumeDefaultVersionWhenUnspecified = true;
-        options.ReportApiVersions = true;
-    }).AddApiExplorer(options => {
-        options.GroupNameFormat = "'v'VVV";
-        options.SubstituteApiVersionInUrl = true;
-    });
-
-    builder.Services.AddSwaggerGen(options => {
-        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "MooldangBot API", Version = "v1" });
+        // [오시리스의 공명]: 오버레이 전용 (JWT 권장 + 버전 검증) 정책
+        options.AddPolicy("OverlayAuth", policy => {
+            policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new OverlayTokenVersionRequirement()); // 🔐 버전 실시간 검증
+        });
     });
 
     var app = builder.Build();
 
-    // [전역 미들웨어 설정]
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    // 1. [오시리스의 심판]: 가장 먼저 예외를 낚아채기 위해 최상단에 배치
+    app.UseMiddleware<ExceptionMiddleware>();
+
+    // 2. 헬스체크 로그 스팸 방지 (정상일 땐 Verbose, 에러일 땐 Error)
+    app.UseSerilogRequestLogging(options =>
     {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        options.GetLevel = (ctx, _, ex) => 
+            ex != null || ctx.Response.StatusCode > 499 ? Serilog.Events.LogEventLevel.Error :
+            ctx.Request.Path.StartsWithSegments("/health") ? Serilog.Events.LogEventLevel.Verbose : 
+            Serilog.Events.LogEventLevel.Information;
     });
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-    else 
-    {
-        app.UseExceptionHandler("/Home/Error");
-        app.UseHsts();
-    }
-
-    app.UseStaticFiles();
+    app.UseForwardedHeaders();
+    app.UseStaticFiles(); // [하모니의 화랑]: 업로드된 이미지 등 정적 파일 서빙 활성화
     app.UseRouting();
-    app.UseCors("IamfOverlayPolicy");
+
+    // 🛡️ [오시리스의 열쇠]: 속도 제한은 라우팅 직후, CORS와 함께 배치
+    app.UseRateLimiter();
+    // [오시리스의 중계]: 주 조타실(Studio)을 위한 자격 증명 허용 정책 우선 적용
+    app.UseCors("StudioCorsPolicy"); 
+    app.UseCors("IamfOverlayPolicy"); // [v6.2] 레거시 오버레이 호환성 유지
 
     app.UseAuthentication();
     app.UseAuthorization();
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+    // 3. 🎶 [하모니의 기록]: 반드시 인증(Authorization) 직후에 배치해야 User 정보가 존재함
+    app.UseMiddleware<LogEnrichmentMiddleware>();
+
+    // app.MapGet("/", () => Results.Redirect("/swagger")); // [v2.4.1] Prometheus 메트릭 미들웨어 및 엔드포인트 노출
+    app.UseHttpMetrics();
+
+    // ---------------------------------------------------------
+    // [최후의 보루]: 애플리케이션 시작
+    // ---------------------------------------------------------
     app.MapControllers();
-    app.MapHub<OverlayHub>("/hubs/overlay");
-    app.MapHealthChecks("/health", new HealthCheckOptions
-    {
-        ResponseWriter = async (context, report) =>
-        {
-            context.Response.ContentType = "application/json";
-            var result = JsonSerializer.Serialize(new
-            {
-                status = report.Status.ToString(),
-                shards = report.Entries.Select(e => new { name = e.Key, status = e.Value.Status.ToString(), description = e.Value.Description })
-            });
-            await context.Response.WriteAsync(result);
-        }
-    });
+    app.MapMetrics(); // /metrics 엔드포인트 매핑
+    app.MapHub<OverlayHub>("/overlayHub");
 
-    // [오시리스의 시동]: DB 마이그레이션 및 초기화
-    using (var scope = app.Services.CreateScope())
+    // [v4.9] Swagger UI 활성화 (보안을 위해 개발 환경 또는 명시적 설정 시에만 노출)
+    if (app.Environment.IsDevelopment() || app.Configuration["EnableSwagger"] == "true")
     {
-        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-        await dbInitializer.InitializeAsync();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MooldangBot API v1.1");
+        });
     }
 
-    Log.Information("🚀 MooldangBot API 함대가 가동되었습니다.");
-    await app.RunAsync();
+    // [오시리스의 시동]: 시스템 초기화 (DB 시딩 및 서비스 기동)
+    using (var scope = app.Services.CreateScope())
+    {
+        await scope.ServiceProvider.GetRequiredService<IDbInitializer>().InitializeAsync();
+    }
+
+    app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "🚨 MooldangBot API 기동 중 치명적인 결함이 발견되었습니다.");
+    Log.Fatal(ex, "🔥 [심각한 오류 발생]: 애플리케이션 기동 중 복구 불가능한 예외가 발생했습니다.");
+    throw;
 }
 finally
 {
+    Log.Information("👋 [오시리스의 평온]: 애플리케이션을 안전하게 종료합니다.");
     Log.CloseAndFlush();
 }

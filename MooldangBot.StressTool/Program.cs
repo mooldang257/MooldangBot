@@ -1,19 +1,17 @@
-using System;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
-using RabbitMQ.Client;
 using Newtonsoft.Json;
+using RabbitMQ.Client;
 using DotNetEnv;
 
 namespace MooldangBot.StressTool;
 
+// [v2.4.3] 함대 최종 병기: 실시간 부하 및 멱등성 검증 툴
 class Program
 {
     private static string _chzzkUid = "";
-    private static string _rabbitHost = "localhost";
-    private static string _rabbitUser = "guest";
-    private static string _rabbitPass = "guest";
+    private static string _rabbitHost = "192.168.219.103";
+    private static string _rabbitUser = "mooldang_guest";
+    private static string _rabbitPass = "mooldang1234!";
     private static string _exchange = "MooldangBot.ChatEvents";
 
     static async Task Main(string[] args)
@@ -24,90 +22,56 @@ class Program
         Console.WriteLine("함대의 무결성과 맷집을 한계까지 몰아붙입니다.");
         Console.WriteLine("====================================================");
 
+        // 1. 환경 설정 로드 (.env)
         try
         {
-            // 1. 환경 설정 로드 (.env)
-            try
-            {
-                var localEnv = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-                var parentEnv = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
-                
-                if (File.Exists(localEnv)) Env.Load(localEnv);
-                else if (File.Exists(parentEnv)) Env.Load(parentEnv);
-
-                _rabbitHost = Env.GetString("RABBITMQ_HOST", "localhost");
-                _rabbitUser = Env.GetString("RABBITMQ_USER", "guest");
-                _rabbitPass = Env.GetString("RABBITMQ_PASS", "guest");
-                _chzzkUid = Env.GetString("TEST_CHZZK_UID", "");
-
-                Console.WriteLine($"🔍 설정 로드됨: RabbitMQ({_rabbitHost}), User({_rabbitUser})");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ .env 로드 중 오류 발생 (기본값 사용): {ex.Message}");
-            }
-
-            // 2. 대상 채널 입력
-            if (string.IsNullOrEmpty(_chzzkUid))
-            {
-                Console.Write($"🔹 대상 Chzzk UID를 입력하세요: ");
-                var inputUid = Console.ReadLine();
-                if (!string.IsNullOrEmpty(inputUid)) _chzzkUid = inputUid;
-            }
-            else
-            {
-                Console.WriteLine($"🔹 대상 Chzzk UID: {_chzzkUid}");
-            }
-
-            if (string.IsNullOrEmpty(_chzzkUid))
-            {
-                Console.WriteLine("❌ 대상 UID가 지정되지 않았습니다. 종료합니다.");
-            }
-            else
-            {
-                // 3. 메인 전술 루프
-                while (true)
-                {
-                    Console.WriteLine("\n[전술 선택]");
-                    Console.WriteLine("1. 🧨 Idempotency Bomb (멱등성 가중 테스트: 동일 ID 10회 난사)");
-                    Console.WriteLine("2. 🌊 Fleet Flood (대규모 채팅 시뮬레이션: TPS 조절 가능)");
-                    Console.WriteLine("3. 🅿️ Point Stress (포인트 명령어 난사: DB 원자성 검증)");
-                    Console.WriteLine("0. 🛑 작전 종료");
-                    Console.Write("선택: ");
-
-                    var choice = Console.ReadLine();
-                    if (choice == "0") break;
-
-                    switch (choice)
-                    {
-                        case "1":
-                            await ExecuteIdempotencyBomb();
-                            break;
-                        case "2":
-                            await ExecuteFleetFlood();
-                            break;
-                        case "3":
-                            await ExecutePointStress();
-                            break;
-                        default:
-                            Console.WriteLine("⚠️ 잘못된 선택입니다.");
-                            break;
-                    }
-                }
-            }
+            Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"));
+            _rabbitHost = Env.GetString("RABBITMQ_HOST", "localhost");
+            _rabbitUser = Env.GetString("RABBITMQ_USER", "guest");
+            _rabbitPass = Env.GetString("RABBITMQ_PASS", "guest");
+            _chzzkUid = Env.GetString("TEST_CHZZK_UID", "");
         }
-        catch (Exception ex)
+        catch { /* .env 없을 경우 기본값 사용 */ }
+
+        // 2. 대상 채널 입력
+        Console.Write($"🔹 대상 Chzzk UID (기본값: {_chzzkUid}): ");
+        var inputUid = Console.ReadLine();
+        if (!string.IsNullOrEmpty(inputUid)) _chzzkUid = inputUid;
+
+        if (string.IsNullOrEmpty(_chzzkUid))
         {
-            Console.WriteLine("\n❌ [시스템 치명적 오류 발생]");
-            Console.WriteLine($"메시지: {ex.Message}");
-            Console.WriteLine("--- 상세 로그 ---");
-            Console.WriteLine(ex.ToString());
+            Console.WriteLine("❌ 대상 UID가 지정되지 않았습니다. 종료합니다.");
+            return;
         }
-        finally
+
+        // 3. 메인 전술 루프
+        while (true)
         {
-            Console.WriteLine("\n====================================================");
-            Console.WriteLine("종료하려면 아무 키나 누르세요...");
-            Console.ReadKey();
+            Console.WriteLine("\n[전술 선택]");
+            Console.WriteLine("1. 🧨 Idempotency Bomb (멱등성 가중 테스트: 동일 ID 10회 난사)");
+            Console.WriteLine("2. 🌊 Fleet Flood (대규모 채팅 시뮬레이션: TPS 조절 가능)");
+            Console.WriteLine("3. 🅿️ Point Stress (포인트 명령어 난사: DB 원자성 검증)");
+            Console.WriteLine("0. 🛑 작전 종료");
+            Console.Write("선택: ");
+
+            var choice = Console.ReadLine();
+            if (choice == "0") break;
+
+            switch (choice)
+            {
+                case "1":
+                    await ExecuteIdempotencyBomb();
+                    break;
+                case "2":
+                    await ExecuteFleetFlood();
+                    break;
+                case "3":
+                    await ExecutePointStress();
+                    break;
+                default:
+                    Console.WriteLine("⚠️ 잘못된 선택입니다.");
+                    break;
+            }
         }
     }
 
@@ -218,9 +182,6 @@ class Program
 
     private static async Task PublishMessageAsync(IChannel channel, object eventItem)
     {
-        // [v2.4.6] 교환기가 없을 경우를 대비해 직접 선언 (Topic 타입)
-        await channel.ExchangeDeclareAsync(exchange: _exchange, type: ExchangeType.Topic, durable: true);
-
         var json = JsonConvert.SerializeObject(eventItem);
         var body = Encoding.UTF8.GetBytes(json);
         
@@ -230,23 +191,33 @@ class Program
             ContentType = "application/json"
         };
 
+        // v2.0 규격 라우팅 키: streamer.{uid}.chat
+        var routingKey = $"streamer.{_chzzkUid}.chat";
+        
+        // [v2.4.6] 봇 엔진 기동 전에도 테스트 가능하도록 교환기 자동 선언
+        await channel.ExchangeDeclareAsync(exchange: _exchange, type: ExchangeType.Topic, durable: true, autoDelete: false);
+
         await channel.BasicPublishAsync(
             exchange: _exchange,
-            routingKey: "chat.event", 
+            routingKey: routingKey,
             mandatory: false,
             basicProperties: properties,
             body: body);
     }
 
-    private static string CreateChatPayload(string channelId, string content, string senderId = "test_user_777", string nickname = "무력한시청자")
+    private static string CreateChatPayload(string chzzkUid, string content, string senderId = "stress_test_bot", string nickname = "스트레스정찰기")
     {
-        var payload = new 
+        // 치지직 원본 JSON 규격 시뮬레이션 (최소 필수 데이터)
+        var payload = new object[]
         {
-            channelId = channelId,
-            senderId = senderId,
-            nickname = nickname,
-            content = content,
-            receivedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+            "CHAT",
+            JsonConvert.SerializeObject(new
+            {
+                content = content,
+                senderId = senderId,
+                nickname = nickname,
+                userRole = "viewer"
+            })
         };
         return JsonConvert.SerializeObject(payload);
     }

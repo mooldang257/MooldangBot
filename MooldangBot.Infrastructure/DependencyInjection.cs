@@ -1,7 +1,5 @@
 using Polly;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
@@ -21,12 +19,15 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using RabbitMQ.Client;
 using MooldangBot.Infrastructure.Services.Background;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MooldangBot.Infrastructure.Security;
 
 namespace MooldangBot.Infrastructure
 {
     public static class DependencyInjection
     {
+
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
@@ -174,6 +175,9 @@ namespace MooldangBot.Infrastructure
             return services;
         }
 
+        /// <summary>
+        /// [v2.0] RabbitMQ 이벤트 컨슈머 등록 (API 전용)
+        /// </summary>
         public static IServiceCollection AddRabbitMqConsumer(this IServiceCollection services)
         {
             services.AddHostedService<RabbitMqConsumerService>();
