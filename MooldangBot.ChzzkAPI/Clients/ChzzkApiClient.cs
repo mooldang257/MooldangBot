@@ -121,23 +121,25 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            // [오시리스의 정석]: 공식 오픈 API 규격에 따른 채팅 구독
-            // 참고: 공식 규격에서는 /subscribe/chat 엔드포인트를 사용하며 sessionKey만 요구함
-            var serviceUrl = "https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat";
-            using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl);
+            // [오시리스의 정석]: 공식 규격상 쿼리 파라미터로 sessionKey와 channelId를 전달해야 함
+            var baseUrl = "https://openapi.chzzk.naver.com/open/v1/sessions/events/subscribe/chat";
+            var queryUrl = $"{baseUrl}?sessionKey={Uri.EscapeDataString(sessionKey)}&channelId={Uri.EscapeDataString(channelId)}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, queryUrl);
             
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
             if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
             if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
 
-            var payload = new { sessionKey };
-            request.Content = JsonContent.Create(payload);
+            // [N7 팁]: POST 요청이므로 빈 JSON 객체라도 바디에 명시해주는 것이 안전함
+            request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 var errorBody = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning($"[ChzzkApi] SubscribeEvent Failed ({response.StatusCode}): {errorBody}");
+                // [사령관님의 조언]: JSON 전문을 로그로 남겨 분석 용의성 증대
+                _logger.LogWarning($"[ChzzkApi] SubscribeEvent Failed ({response.StatusCode}). Raw Response: {errorBody}");
             }
             return response.IsSuccessStatusCode;
         }
