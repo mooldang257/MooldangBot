@@ -1,4 +1,5 @@
 using Polly;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +27,6 @@ namespace MooldangBot.Infrastructure
 {
     public static class DependencyInjection
     {
-
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
@@ -37,6 +37,11 @@ namespace MooldangBot.Infrastructure
             // [v2.4.6] 오시리스의 세션: 봇 엔진 등 백그라운드 환경용 기본 세션 등록
             // API 환경에서는 Presentation 레이어에서 등록된 실제 UserSession으로 덮어씌워집니다.
             services.TryAddScoped<IUserSession, BotUserSession>();
+
+            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록
+            // AppDbContext가 IDataProtectionProvider를 생성자에서 요구하므로 모든 호스트에서 등록 필요합니다.
+            services.AddDataProtection()
+                .SetApplicationName("MooldangBot");
             
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
@@ -167,9 +172,6 @@ namespace MooldangBot.Infrastructure
             return services;
         }
 
-        /// <summary>
-        /// [v2.0] RabbitMQ 이벤트 컨슈머 등록 (API 전용)
-        /// </summary>
         public static IServiceCollection AddRabbitMqConsumer(this IServiceCollection services)
         {
             services.AddHostedService<RabbitMqConsumerService>();
