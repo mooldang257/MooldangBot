@@ -16,7 +16,6 @@ public class PointBatchWorker(
     IServiceScopeFactory scopeFactory,
     IPulseService pulse,
     IChaosManager chaosManager,
-    IHostApplicationLifetime hostLifetime,
     ILogger<PointBatchWorker> logger) : BackgroundService
 {
     private readonly TimeSpan _flushInterval = TimeSpan.FromSeconds(5);

@@ -10,7 +10,6 @@ namespace MooldangBot.Application.Features.Commands.SystemMessage;
 /// [오시리스의 선포]: 방송 제목(!방제)을 실시간으로 변경하는 전략입니다. (v4.1.0)
 /// </summary>
 public class TitleStrategy(
-    IChzzkApiClient chzzkApi,
     IChzzkBotService botService,
     IDynamicQueryEngine dynamicEngine,
     ILogger<TitleStrategy> logger) : ICommandFeatureStrategy

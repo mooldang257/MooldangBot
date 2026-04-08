@@ -16,7 +16,6 @@ namespace MooldangBot.Application.Workers;
 /// </summary>
 public class WeeklyStatsReporter(
     IServiceScopeFactory scopeFactory,
-    INotificationService notificationService,
     ILogger<WeeklyStatsReporter> logger) : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;

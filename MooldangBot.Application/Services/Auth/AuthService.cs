@@ -27,7 +27,6 @@ public class AuthService(
     IChzzkApiClient _chzzkApi,
     IConfiguration _configuration,
     IChzzkBotService _botService,
-    IUnifiedCommandService _commandService,
     IDistributedCache _cache,
     IDataProtectionProvider _protectionProvider,
     ILogger<AuthService> _logger) : IAuthService
@@ -78,6 +77,14 @@ public class AuthService(
             }
 
             var content = tokenResult.Content;
+            
+            // [v2.6] 필수 토큰 유효성 검증 강화 (CS8604 대응)
+            if (string.IsNullOrEmpty(content.AccessToken) || string.IsNullOrEmpty(content.RefreshToken))
+            {
+                _logger.LogError("[인증] 토큰 교환 성공했으나 필수 토큰 정보가 누락되었습니다.");
+                return new AuthResult { IsSuccess = false, ErrorMessage = "인증 토큰 정보가 불완전합니다." };
+            }
+
             _logger.LogInformation($"[인증] 토큰 교환 성공 (ExpiresIn: {content.ExpiresIn})");
             var expireDate = KstClock.Now.AddSeconds(content.ExpiresIn);
 
@@ -156,11 +163,8 @@ public class AuthService(
     private async Task<AuthResult> SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)
     {
         var streamer = await _db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-        bool isNewStreamer = false;
-
         if (streamer == null)
         {
-            isNewStreamer = true;
             streamer = new StreamerProfile 
             { 
                 ChzzkUid = chzzkUid,

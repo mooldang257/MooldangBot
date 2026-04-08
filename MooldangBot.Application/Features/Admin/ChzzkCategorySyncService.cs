@@ -52,9 +52,9 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             foreach (var alias in aliases)
             {
                 var result = await _chzzkApi.SearchCategoryAsync(alias.Alias);
-                if (result?.Content?.Data?.Any() == true)
+                if (result?.Data?.Any() == true)
                 {
-                    var match = result.Content.Data.FirstOrDefault(d => d.CategoryType == alias.Category?.CategoryType);
+                    var match = result.Data.FirstOrDefault(d => d.CategoryType == alias.Category?.CategoryType);
                     if (match != null && alias.Category != null)
                     {
                         alias.Category.CategoryValue = match.CategoryValue;
@@ -82,7 +82,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
     public async Task<List<ChzzkCategory>> SearchAndSaveCategoryAsync(string keyword, CancellationToken ct = default)
     {
         var result = await _chzzkApi.SearchCategoryAsync(keyword);
-        if (result?.Content?.Data == null) return new List<ChzzkCategory>();
+        if (result?.Data == null) return new List<ChzzkCategory>();
 
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
@@ -90,7 +90,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
         var savedCategories = new List<ChzzkCategory>();
         int added = 0;
 
-        foreach (var data in result.Content.Data)
+        foreach (var data in result.Data)
         {
             var existing = await db.ChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
             if (existing == null)

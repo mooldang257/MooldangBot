@@ -15,8 +15,7 @@ namespace MooldangBot.Application.Features.Commands.SystemMessage;
 public class SonglistToggleStrategy(
     IServiceProvider serviceProvider,
     IChzzkBotService botService,
-    IDynamicQueryEngine dynamicEngine,
-    ILogger<SonglistToggleStrategy> logger) : ICommandFeatureStrategy
+    IDynamicQueryEngine dynamicEngine) : ICommandFeatureStrategy
 {
     public string FeatureType => CommandFeatureTypes.SonglistToggle;
 

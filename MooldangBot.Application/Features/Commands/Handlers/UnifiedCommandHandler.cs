@@ -21,7 +21,6 @@ public class UnifiedCommandHandler(
     ICommandCacheService cache,
     IChzzkBotService botService,
     IEnumerable<ICommandFeatureStrategy> strategies,
-    IServiceProvider serviceProvider,
     IPointTransactionService pointService,
     IIdentityCacheService identityCache, // [Phase 8] 이지스 파이프라인 연동
     IRabbitMqService rabbitMq,

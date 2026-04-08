@@ -14,11 +14,6 @@ namespace MooldangBot.Application.Features.Chat.Handlers;
 /// [통합의 완성]: IAMF의 모든 엔진을 결합하여 실전 채팅 응답을 수행하는 최종 핸들러입니다.
 /// </summary>
 public class ChatInteractionHandler(
-    IChatIntentRouter intentRouter,
-    ILlmService llmService,
-    IChzzkChatService chatService,
-    IPhoenixRecorder phoenix, // [v2.0.2] AI 발화 기록을 위해 추가
-    IServiceProvider serviceProvider,
     ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)

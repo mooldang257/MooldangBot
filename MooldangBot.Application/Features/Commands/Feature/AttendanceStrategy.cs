@@ -16,8 +16,7 @@ namespace MooldangBot.Application.Features.Commands.Feature;
 public class AttendanceStrategy(
     IServiceProvider serviceProvider,
     IChzzkBotService botService,
-    IDynamicQueryEngine dynamicEngine,
-    ILogger<AttendanceStrategy> logger) : ICommandFeatureStrategy
+    IDynamicQueryEngine dynamicEngine) : ICommandFeatureStrategy
 {
     public string FeatureType => "Attendance";
 
