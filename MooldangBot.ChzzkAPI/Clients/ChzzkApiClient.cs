@@ -210,17 +210,23 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            var serviceUrl = $"https://api.chzzk.naver.com/service/v1/search/categories?keyword={System.Net.WebUtility.UrlEncode(keyword)}&size=10";
+            // [v2.5] 치지직 공식 오픈 API 규격으로 전환 (슬래시 등 특수문자 검색 안정성 확보)
+            var query = System.Net.WebUtility.UrlEncode(keyword);
+            var serviceUrl = $"https://openapi.chzzk.naver.com/open/v1/categories/search?query={query}&size=10";
+            
             var response = await _httpClient.GetAsync(serviceUrl);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkCategorySearchResponse);
             }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning($"[ChzzkApi] SearchCategory Failed ({response.StatusCode}). Raw: {errorBody}");
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[ChzzkApi] SearchCategory Error: {ex.Message}");
+            _logger.LogError(ex, $"[ChzzkApi] SearchCategory Error: {ex.Message}");
             return null;
         }
     }

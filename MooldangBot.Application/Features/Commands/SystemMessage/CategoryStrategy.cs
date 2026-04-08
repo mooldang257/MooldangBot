@@ -64,9 +64,9 @@ public class CategoryStrategy(
             logger.LogInformation($"🔍 [카테고리 변경 요청] {notification.Username} -> 원본: {inputKeyword}, 검색어: {searchKeyword}");
             
             var searchResult = await chzzkApi.SearchCategoryAsync(searchKeyword);
-            if (searchResult?.Content?.Data?.Count > 0)
+            if (searchResult?.Data?.Count > 0)
             {
-                var target = searchResult.Content.Data[0];
+                var target = searchResult.Data[0];
                 logger.LogInformation($"✅ [카테고리 검색 결과] {target.CategoryValue} (Type: {target.CategoryType}, ID: {target.CategoryId})");
                 
                 if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
@@ -100,6 +100,20 @@ public class CategoryStrategy(
             }
             else
             {
+                // [v2.5] 강습 모드(Fallback): 검색 결과가 없더라도 입력값이 명확한 경우(슬래시 포함 등) 직접 반영 시도
+                if (inputKeyword.Contains("/") || inputKeyword.Length >= 2)
+                {
+                    logger.LogInformation($"🚀 [카테고리 강습 모드] 검색 결과는 없으나 '{inputKeyword}'로 직접 변경 명령을 발행합니다.");
+                    bool success = await botService.UpdateCategoryAsync(notification.Profile, inputKeyword, notification.SenderId, ct);
+                    
+                    if (success)
+                    {
+                        string statusReply = await dynamicEngine.ProcessMessageAsync($"✅ 카테고리를 '{inputKeyword}'(으)로 직접 변경 시도했습니다! (공식 검색 결과 없음) 🎈", notification.Profile.ChzzkUid, notification.SenderId);
+                        await botService.SendReplyChatAsync(notification.Profile, statusReply, notification.SenderId, ct);
+                        return CommandExecutionResult.Success();
+                    }
+                }
+
                 logger.LogWarning($"🕵️‍♂️ [카테고리 검색 실패] '{searchKeyword}' (공식 카테고리 없음)");
                 await botService.SendReplyChatAsync(notification.Profile, $"⚠️ '{searchKeyword}'(으)로 검색되는 공식 카테고리가 없습니다. 정확한 명칭을 입력해 주세요. 🕵️‍♂️", notification.SenderId, ct);
                 return CommandExecutionResult.Failure("카테고리를 찾을 수 없습니다.", shouldRefund: true);

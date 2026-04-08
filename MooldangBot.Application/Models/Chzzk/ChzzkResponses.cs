@@ -92,12 +92,6 @@ public class ChzzkCategorySearchResponse
 {
     [JsonPropertyName("code")]
     public int Code { get; set; }
-    [JsonPropertyName("content")]
-    public ChzzkCategorySearchContent? Content { get; set; }
-}
-
-public class ChzzkCategorySearchContent
-{
     [JsonPropertyName("data")]
     public List<ChzzkCategoryData>? Data { get; set; }
 }
