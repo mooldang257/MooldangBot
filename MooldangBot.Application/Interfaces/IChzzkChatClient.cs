@@ -48,4 +48,19 @@ public interface IChzzkChatClient : IAsyncDisposable
     /// [전령의 발송]: 특정 채널로 채팅 메시지를 전송합니다.
     /// </summary>
     Task<bool> SendMessageAsync(string chzzkUid, string message);
+
+    /// <summary>
+    /// [전령의 선포]: 특정 채널에 상단 공지를 등록합니다. (v2.5)
+    /// </summary>
+    Task<bool> SendNoticeAsync(string chzzkUid, string message);
+
+    /// <summary>
+    /// [구조의 변경]: 방송 제목을 변경합니다. (v2.5)
+    /// </summary>
+    Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle);
+
+    /// <summary>
+    /// [분류의 재배치]: 방송 카테고리를 변경합니다. (v2.5)
+    /// </summary>
+    Task<bool> UpdateCategoryAsync(string chzzkUid, string category);
 }

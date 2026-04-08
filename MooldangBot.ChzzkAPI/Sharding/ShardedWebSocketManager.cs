@@ -212,6 +212,27 @@ public class ShardedWebSocketManager : IChzzkChatClient
         return await GetShard(chzzkUid).SendMessageAsync(chzzkUid, message);
     }
 
+    public async Task<bool> SendNoticeAsync(string chzzkUid, string message)
+    {
+        if (!IsMyResponsibility(chzzkUid)) return false;
+        
+        return await GetShard(chzzkUid).SendNoticeAsync(chzzkUid, message);
+    }
+
+    public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
+    {
+        if (!IsMyResponsibility(chzzkUid)) return false;
+        
+        return await GetShard(chzzkUid).UpdateTitleAsync(chzzkUid, newTitle);
+    }
+
+    public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
+    {
+        if (!IsMyResponsibility(chzzkUid)) return false;
+        
+        return await GetShard(chzzkUid).UpdateCategoryAsync(chzzkUid, category);
+    }
+
     public int GetActiveConnectionCount()
     {
         return _shards.Sum(s => s.ConnectionCount);

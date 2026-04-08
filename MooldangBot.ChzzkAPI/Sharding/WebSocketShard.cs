@@ -321,6 +321,41 @@ public class WebSocketShard : IWebSocketShard
 
     public async Task<bool> SendMessageAsync(string chzzkUid, string message)
     {
+        return await ExecuteWithTokenAsync(chzzkUid, (api, token) => api.SendChatMessageAsync(token, chzzkUid, message));
+    }
+
+    public async Task<bool> SendNoticeAsync(string chzzkUid, string message)
+    {
+        return await ExecuteWithTokenAsync(chzzkUid, (api, token) => api.SendChatNoticeAsync(token, chzzkUid, message));
+    }
+
+    public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
+    {
+        return await ExecuteWithTokenAsync(chzzkUid, async (api, token) => {
+            // [v2.5] 방제 변경 시 카테고리 유실 방지를 위해 현재 설정 조회 후 병합 업데이트
+            var current = await api.GetLiveSettingAsync(token);
+            var cat = current?.Content?.Category?.CategoryValue ?? "talk";
+            var result = await api.UpdateLiveSettingAsync(token, newTitle, cat);
+            return result != null;
+        });
+    }
+
+    public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
+    {
+        return await ExecuteWithTokenAsync(chzzkUid, async (api, token) => {
+            // [v2.5] 카테고리 변경 시 방제 유실 방지를 위해 현재 설정 조회 후 병합 업데이트
+            var current = await api.GetLiveSettingAsync(token);
+            var title = current?.Content?.DefaultLiveTitle ?? "Mooldang Bot Broadcast";
+            var result = await api.UpdateLiveSettingAsync(token, title, category);
+            return result != null;
+        });
+    }
+
+    /// <summary>
+    /// [이지스의 보호]: 공통된 토큰 검증 및 API 실행 로직을 통합 수행합니다.
+    /// </summary>
+    private async Task<bool> ExecuteWithTokenAsync(string chzzkUid, Func<IChzzkApiClient, string, Task<bool>> action)
+    {
         if (!_clients.TryGetValue(chzzkUid, out var client) || !client.IsRunning)
         {
             _logger.LogWarning("⚠️ [발사 전 중단] {ChzzkUid} 채널의 소켓 연결이 없거나 가동 중이 아닙니다.", chzzkUid);
@@ -346,7 +381,15 @@ public class WebSocketShard : IWebSocketShard
             return false;
         }
 
-        return await chzzkApi.SendChatMessageAsync(accessToken, chzzkUid, message);
+        try
+        {
+            return await action(chzzkApi, accessToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔥 [ExecuteWithToken] {ChzzkUid} 실행 중 예외 발생: {Message}", chzzkUid, ex.Message);
+            return false;
+        }
     }
 
     public ShardStatus GetStatus()

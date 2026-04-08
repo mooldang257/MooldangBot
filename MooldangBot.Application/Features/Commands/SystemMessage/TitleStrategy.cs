@@ -35,37 +35,25 @@ public class TitleStrategy(
             return CommandExecutionResult.Success();
         }
 
-        // 1.1 [정화]: 40자 초과 시 자동 절삭 및 안내 메시지
+        // 1.1 [정화]: 40자 초과 시 자동 절삭
         if (newTitle.Length > 40)
         {
             newTitle = newTitle[..40];
-            await botService.SendReplyChatAsync(notification.Profile, "⚠️ 방송제목은 40자까지만 입력됩니다. (자동 절삭됨) 🖋️", notification.SenderId, ct);
         }
 
-        // 2. [신성한 선언]: 치지직 API를 통해 실제 방제 변경 시도
+        // 2. [명령 하달]: 봇 엔진에게 방제 변경 명령 송출
         try
         {
-            logger.LogInformation($"🛠️ [방제 변경 요청] {notification.Username} -> {newTitle}");
+            logger.LogInformation($"📡 [방제 변경 오더] {notification.Profile.ChzzkUid} -> {newTitle}");
             
-            if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
-                throw new Exception("스트리머의 액세스 토큰이 없습니다.");
-
-            // [물멍의 제언]: 방제만 변경하더라도 카테고리 정보가 유실되지 않도록 현재 설정을 먼저 가져옵니다.
-            var currentSetting = await chzzkApi.GetLiveSettingAsync(notification.Profile.ChzzkAccessToken);
-            var category = currentSetting?.Content?.Category?.CategoryValue ?? "talk"; // 기본값 talk
-            
-            var result = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken, newTitle, category);
-            bool success = result != null;
+            bool success = await botService.UpdateTitleAsync(notification.Profile, newTitle, notification.SenderId, ct);
 
             if (success)
             {
-                logger.LogInformation($"✨ [방제 변경 완료] {notification.Profile.ChzzkUid}: {newTitle}");
-                
                 string template = string.IsNullOrEmpty(responseTemplate) 
-                    ? "✅ 방송 제목이 성공적으로 변경되었습니다! {내용} 🖋️" 
+                    ? "✅ 방송 제목 변경 명령이 전달되었습니다! {내용} 🖋️" 
                     : responseTemplate;
                 
-                // {내용}은 입력값으로 치환하고, 나머지는 엔진에게 맡김
                 string processedReply = await dynamicEngine.ProcessMessageAsync(
                     template.Replace("{내용}", newTitle), 
                     notification.Profile.ChzzkUid, 
@@ -75,18 +63,13 @@ public class TitleStrategy(
                 await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
                 return CommandExecutionResult.Success();
             }
-            else
-            {
-                logger.LogWarning($"❌ [방제 변경 실패] {notification.Profile.ChzzkUid} (권한 또는 토큰 만료)");
-                await botService.SendReplyChatAsync(notification.Profile, "❌ 방제 변경에 실패했습니다. 스트리머의 권한 설정이나 토큰 상태를 확인해주세요. 🚫", notification.SenderId, ct);
-                return CommandExecutionResult.Failure("방제 변경 권한이 없거나 토큰이 만료되었습니다.", shouldRefund: true);
-            }
+            
+            return CommandExecutionResult.Failure("방제 변경 명령 발행에 실패했습니다.", shouldRefund: true);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"🔥 [TitleStrategy] API 통신 오류: {ex.Message}");
-            await botService.SendReplyChatAsync(notification.Profile, "⚠️ 치지직 서버와 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. 🌪️", notification.SenderId, ct);
-            return CommandExecutionResult.Failure("치지직 API 통신 오류", shouldRefund: true);
+            logger.LogError(ex, $"🔥 [TitleStrategy] 오류: {ex.Message}");
+            return CommandExecutionResult.Failure("방제 처리 중 서버 오류가 발생했습니다.", shouldRefund: true);
         }
     }
 }

@@ -10,7 +10,10 @@ public enum BotCommandType
     SendMessage,
     Disconnect,
     Reconnect,
-    RefreshSettings
+    RefreshSettings,
+    SendChatNotice, // [v2.5] 상단 공지 등록
+    UpdateTitle,    // [v2.5] 방송 제목 변경
+    UpdateCategory  // [v2.5] 방송 카테고리 변경
 }
 
 /// <summary>

@@ -72,19 +72,15 @@ public class CategoryStrategy(
                 if (string.IsNullOrEmpty(notification.Profile.ChzzkAccessToken))
                     throw new Exception("스트리머의 액세스 토큰이 없습니다.");
 
-                // [물멍]: 카테고리 변경 시 방제 정보가 유실되지 않도록 현재 설정을 먼저 가져옵니다.
-                var currentSetting = await chzzkApi.GetLiveSettingAsync(notification.Profile.ChzzkAccessToken);
-                var currentTitle = currentSetting?.Content?.DefaultLiveTitle ?? "Mooldang Bot Broadcast";
-
-                var updateResult = await chzzkApi.UpdateLiveSettingAsync(notification.Profile.ChzzkAccessToken, currentTitle, target.CategoryValue, currentTitle);
-                bool success = updateResult != null;
+                // [명령 하달]: 백엔드에서 확정된 카테고리 명칭을 봇 엔진에게 실행 지시
+                bool success = await botService.UpdateCategoryAsync(notification.Profile, target.CategoryValue, notification.SenderId, ct);
 
                 if (success)
                 {
-                    logger.LogInformation($"🚀 [카테고리 변경 완료] {notification.Profile.ChzzkUid}: [{target.CategoryValue}]");
+                    logger.LogInformation($"🚀 [카테고리 변경 오더] {notification.Profile.ChzzkUid}: [{target.CategoryValue}]");
                     
                     string template = string.IsNullOrEmpty(responseTemplate) 
-                        ? "✅ 카테고리가 [{내용}](으)로 성공적으로 변경되었습니다! 🎈" 
+                        ? "✅ 카테고리가 [{내용}](으)로 변경 명령이 전달되었습니다! 🎈" 
                         : responseTemplate;
                     
                     string processedReply = await dynamicEngine.ProcessMessageAsync(
@@ -98,9 +94,8 @@ public class CategoryStrategy(
                 }
                 else
                 {
-                    logger.LogWarning($"⚠️ [카테고리 변경 실패] {notification.Profile.ChzzkUid} (권한 없는 토큰 또는 만료)");
-                    await botService.SendReplyChatAsync(notification.Profile, "❌ 카테고리 변경 권한이 없거나 토큰이 만료되었습니다. 🔓", notification.SenderId, ct);
-                    return CommandExecutionResult.Failure("API 업데이트 실패", shouldRefund: true);
+                    logger.LogWarning($"⚠️ [카테고리 변경 실패] {notification.Profile.ChzzkUid} 명령 발행 실패");
+                    return CommandExecutionResult.Failure("카테고리 변경 명령 발행에 실패했습니다.", shouldRefund: true);
                 }
             }
             else

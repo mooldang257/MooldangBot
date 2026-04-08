@@ -17,6 +17,16 @@ public interface IChzzkBotService
     Task<bool> SendReplyNoticeAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token);
 
     /// <summary>
+    /// 방송 제목을 변경합니다. (v2.5)
+    /// </summary>
+    Task<bool> UpdateTitleAsync(StreamerProfile profile, string newTitle, string senderUid, CancellationToken token);
+
+    /// <summary>
+    /// 방송 카테고리를 변경합니다. (v2.5)
+    /// </summary>
+    Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, CancellationToken token);
+
+    /// <summary>
     /// 특정 채널의 봇 설정을 즉시 새로고침합니다.
     /// </summary>
     Task RefreshChannelAsync(string chzzkUid);

@@ -138,6 +138,33 @@ public class ChzzkCommandConsumer : BackgroundService
                 _logger.LogInformation("⚙️ [명령 완료] {ChzzkUid} 설정 새로고침 수신 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
                 break;
 
+            case BotCommandType.SendChatNotice:
+                if (!string.IsNullOrEmpty(command.Payload))
+                {
+                    bool success = await _chzzkChatClient.SendNoticeAsync(command.ChzzkUid, command.Payload);
+                    if (success) _logger.LogInformation("✅ [공지 완료] {ChzzkUid} 상단 공지 등록 성공 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
+                    else _logger.LogWarning("⚠️ [공지 실패] {ChzzkUid} 상단 공지 등록 실패 (소켓 미연결 등)", command.ChzzkUid);
+                }
+                break;
+
+            case BotCommandType.UpdateTitle:
+                if (!string.IsNullOrEmpty(command.Payload))
+                {
+                    bool success = await _chzzkChatClient.UpdateTitleAsync(command.ChzzkUid, command.Payload);
+                    if (success) _logger.LogInformation("✅ [방제 완료] {ChzzkUid} 방송 제목 변경 성공 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
+                    else _logger.LogWarning("⚠️ [방제 실패] {ChzzkUid} 방송 제목 변경 실패", command.ChzzkUid);
+                }
+                break;
+
+            case BotCommandType.UpdateCategory:
+                if (!string.IsNullOrEmpty(command.Payload))
+                {
+                    bool success = await _chzzkChatClient.UpdateCategoryAsync(command.ChzzkUid, command.Payload);
+                    if (success) _logger.LogInformation("✅ [분류 완료] {ChzzkUid} 카테고리 변경 성공 (MsgId: {MsgId})", command.ChzzkUid, command.MessageId);
+                    else _logger.LogWarning("⚠️ [분류 실패] {ChzzkUid} 카테고리 변경 실패", command.ChzzkUid);
+                }
+                break;
+
             default:
                 _logger.LogWarning("❓ [명령 수신] 정의되지 않은 명령어 유형입니다: {Type} (MsgId: {MsgId})", command.CommandType, command.MessageId);
                 break;

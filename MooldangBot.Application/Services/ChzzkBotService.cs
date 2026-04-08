@@ -65,9 +65,9 @@ public class ChzzkBotService : IChzzkBotService
             var command = new ChzzkBotCommand(
                 Guid.NewGuid(), 
                 profile.ChzzkUid, 
-                BotCommandType.SendMessage, 
+                isNotice ? BotCommandType.SendChatNotice : BotCommandType.SendMessage, 
                 processedMessage, 
-                KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
+                KstClock.Now); // [v2.5] 공지 타입 구분 로직 적용
 
             await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
 
@@ -76,6 +76,39 @@ public class ChzzkBotService : IChzzkBotService
         catch (Exception ex)
         {
             _logger.LogError(ex, $"❌ [ChzzkBotService] {profile.ChzzkUid} 명령 발행 에러: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateTitleAsync(StreamerProfile profile, string newTitle, string senderUid, CancellationToken token)
+    {
+        _logger.LogInformation($"📡 [방송 정보 변경 요청] 채널: {profile.ChzzkUid}, 제목: {newTitle}");
+        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateTitle, newTitle, token);
+    }
+
+    public async Task<bool> UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, CancellationToken token)
+    {
+        _logger.LogInformation($"📡 [방송 정보 변경 요청] 채널: {profile.ChzzkUid}, 카테고리: {category}");
+        return await SendCommandInternalAsync(profile.ChzzkUid, BotCommandType.UpdateCategory, category, token);
+    }
+
+    private async Task<bool> SendCommandInternalAsync(string chzzkUid, BotCommandType type, string? payload, CancellationToken token)
+    {
+        try
+        {
+            var command = new ChzzkBotCommand(
+                Guid.NewGuid(), 
+                chzzkUid, 
+                type, 
+                payload, 
+                KstClock.Now);
+
+            await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ [ChzzkBotService] {chzzkUid} 명령 발행 에러 ({type}): {ex.Message}");
             return false;
         }
     }
