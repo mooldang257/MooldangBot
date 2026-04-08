@@ -61,8 +61,16 @@ public class CategoryStrategy(
                     ? "✅ 카테고리를 [{내용}](으)로 변경 요청했습니다! 🎈" 
                     : responseTemplate;
                 
-                string processedReply = await dynamicEngine.ProcessMessageAsync(
-                    template.Replace("{내용}", searchKeyword).Replace("{카테고리}", searchKeyword), 
+                // [v2.7] 템플릿 변수 치환 정밀화: {내용}, ${내용}, $(내용) 등 모든 규격 지원
+                string processedReply = System.Text.RegularExpressions.Regex.Replace(
+                    template, 
+                    @"[\$]?[\{\(](내용|카테고리)[\}\)]", 
+                    searchKeyword, 
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+
+                processedReply = await dynamicEngine.ProcessMessageAsync(
+                    processedReply, 
                     notification.Profile.ChzzkUid, 
                     notification.SenderId
                 );

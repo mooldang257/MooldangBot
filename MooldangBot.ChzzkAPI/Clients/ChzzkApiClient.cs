@@ -197,10 +197,10 @@ public class ChzzkApiClient : IChzzkApiClient
 
     public async Task<bool> UpdateLiveSettingAsync(string accessToken, string? title, string? categoryId, string? categoryType = null)
     {
-        // [v2.6] 공식 오픈 API 규격 필드명 적용 (liveTitle, categoryId, categoryType)
+        // [v2.7] 공식 오픈 API 규격 필드명 정밀 교정 (liveTitle -> defaultLiveTitle)
         var update = new 
         { 
-            liveTitle = title, 
+            defaultLiveTitle = title, 
             categoryId = categoryId, 
             categoryType = categoryType 
         };
