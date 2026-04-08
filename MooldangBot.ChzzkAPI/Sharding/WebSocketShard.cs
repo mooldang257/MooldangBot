@@ -322,16 +322,31 @@ public class WebSocketShard : IWebSocketShard
     public async Task<bool> SendMessageAsync(string chzzkUid, string message)
     {
         if (!_clients.TryGetValue(chzzkUid, out var client) || !client.IsRunning)
+        {
+            _logger.LogWarning("⚠️ [발사 전 중단] {ChzzkUid} 채널의 소켓 연결이 없거나 가동 중이 아닙니다.", chzzkUid);
             return false;
+        }
 
         using var scope = _scopeFactory.CreateScope();
         var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
         var tokenStore = scope.ServiceProvider.GetRequiredService<IChzzkTokenStore>();
 
         var tokenInfo = await tokenStore.GetTokenAsync(chzzkUid);
-        if (tokenInfo == null) return false;
+        string? accessToken = tokenInfo?.AccessToken;
 
-        return await chzzkApi.SendChatMessageAsync(tokenInfo.AccessToken, chzzkUid, message);
+        // [오시리스의 백업]: Store에 없다면 메모리에 있는 토큰 시도
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            _accessTokens.TryGetValue(chzzkUid, out accessToken);
+        }
+
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            _logger.LogError("❌ [발사 전 중단] {ChzzkUid} 채널의 액세스 토큰을 찾을 수 없습니다.", chzzkUid);
+            return false;
+        }
+
+        return await chzzkApi.SendChatMessageAsync(accessToken, chzzkUid, message);
     }
 
     public ShardStatus GetStatus()

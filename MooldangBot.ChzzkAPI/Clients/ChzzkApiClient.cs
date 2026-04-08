@@ -71,19 +71,28 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            var serviceUrl = $"https://api.chzzk.naver.com/service/v1/channels/{channelId}/{endpoint}";
+            // [오시리스의 정석]: 공식 Open API 규격으로 전환 (endpoint가 'chat'이면 'send', 'notice'면 'notice')
+            var apiPath = endpoint.Equals("notice", StringComparison.OrdinalIgnoreCase) ? "notice" : "send";
+            var serviceUrl = $"https://openapi.chzzk.naver.com/open/v1/chats/{apiPath}";
+            
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl);
             request.Headers.Add("Authorization", $"Bearer {accessToken}");
+            request.Headers.Add("X-Chzzk-Channel-Id", channelId); // [v2.4] 공식 API에서 채널 식별을 위해 필요
 
             var payload = new { message };
             request.Content = JsonContent.Create(payload);
 
             var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning($"[ChzzkApi] SendChat Failed ({response.StatusCode}). Endpoint: {apiPath}, Error: {errorBody}");
+            }
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[ChzzkApi] SendChat Error: {ex.Message}");
+            _logger.LogError(ex, $"[ChzzkApi] SendChat Error: {ex.Message}");
             return false;
         }
     }
