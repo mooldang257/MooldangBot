@@ -229,9 +229,9 @@ services:
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
 
-  # [v2.4] 정찰병: MySQL Exporter
+  # [v2.4] 정찰병: MySQL Exporter (안정 버전 고정)
   mysql-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.15.0
     container_name: mooldang-mysql-exporter
     restart: always
     environment:
