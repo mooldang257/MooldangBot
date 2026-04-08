@@ -1,5 +1,6 @@
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using RabbitMQ.Client;
 using MooldangBot.Infrastructure.Services.Background;
-
+using MooldangBot.Infrastructure.Security;
 
 namespace MooldangBot.Infrastructure
 {
@@ -32,6 +33,10 @@ namespace MooldangBot.Infrastructure
             services.AddDistributedMemoryCache();
             services.AddScoped<IIdentityCacheService, IdentityCacheService>();
             services.AddSingleton<INotificationService, NotificationService>();
+
+            // [v2.4.6] 오시리스의 세션: 봇 엔진 등 백그라운드 환경용 기본 세션 등록
+            // API 환경에서는 Presentation 레이어에서 등록된 실제 UserSession으로 덮어씌워집니다.
+            services.TryAddScoped<IUserSession, BotUserSession>();
             
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
