@@ -65,13 +65,14 @@ public class RabbitMqConsumerService : BackgroundService
 
             try
             {
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 using var scope = _scopeFactory.CreateScope();
                 var mediatr = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
 
                 // [v2.0] 라우팅 키에 따른 지능형 분기
                 if (routingKey.StartsWith("streamer."))
                 {
-                    var eventItem = JsonSerializer.Deserialize<ChatEventItem>(message);
+                    var eventItem = JsonSerializer.Deserialize<ChatEventItem>(message, jsonOptions);
                     if (eventItem != null)
                     {
                         await ProcessChatEventAsync(eventItem, mediatr, scope, stoppingToken);
@@ -79,7 +80,7 @@ public class RabbitMqConsumerService : BackgroundService
                 }
                 else if (routingKey == "command.log")
                 {
-                    var execEvent = JsonSerializer.Deserialize<CommandExecutionEvent>(message);
+                    var execEvent = JsonSerializer.Deserialize<CommandExecutionEvent>(message, jsonOptions);
                     if (execEvent != null)
                     {
                         // [v2.2] 로그 인리칭: 명령어 로그 처리 시에도 상관관계 ID 유지
