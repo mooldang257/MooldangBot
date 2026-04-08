@@ -197,7 +197,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       # [v2.4.4] 서브패스(/admin/monitoring) 지원 설정
-      - GF_SERVER_ROOT_URL=https://${BASE_DOMAIN}/admin/monitoring/
+      - GF_SERVER_ROOT_URL=${BASE_DOMAIN}/admin/monitoring/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana-data:/var/lib/grafana
