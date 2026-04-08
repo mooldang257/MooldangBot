@@ -190,6 +190,23 @@ public class WebSocketShard : IWebSocketShard
             var messageId = Guid.NewGuid();
             var item = new ChatEventItem(messageId, chzzkUid, json, KstClock.Now);
             
+            // [v2.3] 통계 집계: 봇 엔진 내부에서 즉시 기록 (분산 환경 대응)
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
+                
+                // 간단한 파싱으로 메시지 텍스트 추출 (Scribe의 로직 활용)
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root[0].GetString() == "CHAT")
+                {
+                    var payloadString = root[1].GetString() ?? "{}";
+                    using var payloadDoc = System.Text.Json.JsonDocument.Parse(payloadString);
+                    string content = payloadDoc.RootElement.GetProperty("content").GetString() ?? "";
+                    scribe.AddChatMessage(chzzkUid, content);
+                }
+            }
+
             // [v2.0] RabbitMQ Topic 발행 (streamer.{chzzkUid}.{type})
             await _rabbitMqService.PublishAsync(item, $"streamer.{chzzkUid}.chat", RabbitMqExchanges.ChatEvents);
             

@@ -1,11 +1,8 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
-using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Application;
-using MooldangBot.Application.Workers;
 using MooldangBot.ChzzkAPI.Workers;
 using Serilog;
-using Serilog.Sinks.Grafana.Loki;
 
 // [오시리스의 인장]: 봇 전용 호스트 로깅 설정
 Log.Logger = new LoggerConfiguration()
@@ -20,37 +17,31 @@ try
     builder.Configuration.AddCustomDotEnv(args).AddEnvironmentVariables();
     builder.Configuration.ValidateMandatorySecrets();
 
-    builder.Services.AddSerilog((services, configuration) => {
-        var lokiUrl = builder.Configuration["LOKI_URL"] ?? "http://localhost:3100";
-        var instanceId = builder.Configuration["INSTANCE_ID"] ?? $"chzzk-bot-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-        var env = builder.Environment.EnvironmentName;
+    // 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
+    builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    // 2. 비즈니스 로직 주입
+    builder.Services.AddApplicationServices();
+
+    // 3. 🤖 봇 엔진 전용 핵심 서비스 (AddBotEngineServices)
+    // 이 메서드는 Application/DependencyInjection.cs에서 관리합니다.
+    builder.Services.AddBotEngineServices();
+
+    // 4. [NEW] 아웃바운드 제어 컨슈머 등록 (API -> Bot 명령 수신)
+    builder.Services.AddHostedService<ChzzkCommandConsumer>();
+
+    // 5. 로깅 설정 (Loki/Serilog)
+    builder.Host.UseSerilog((context, services, configuration) => {
         configuration
-            .ReadFrom.Configuration(builder.Configuration)
+            .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .Enrich.WithProperty("InstanceId", instanceId)
-            .Enrich.WithProperty("Environment", env)
-            .Enrich.WithProperty("App", "mooldang-chzzk-bot")
-            .WriteTo.Console()
-            .WriteTo.File("logs/chzzk-bot-.log", rollingInterval: RollingInterval.Day)
-            .WriteTo.GrafanaLoki(lokiUrl, new[] 
-            { 
-                new LokiLabel { Key = "app", Value = "mooldangbot" },
-                new LokiLabel { Key = "task", Value = "chzzk-bot" },
-                new LokiLabel { Key = "instance", Value = instanceId },
-                new LokiLabel { Key = "env", Value = env }
-            });
+            .Enrich.WithProperty("Service", "MooldangBot.ChzzkAPI")
+            .Enrich.WithProperty("InstanceId", builder.Configuration["INSTANCE_ID"] ?? "chzzk-bot-1")
+            .WriteTo.Console();
+        
+        // Loki 설정은 필요시 추가 (Infrastructure에서 공통으로 처리 가능)
     });
-
-    // 인프라 및 애플리케이션 서비스 등록
-    builder.Services.AddInfrastructureServices(builder.Configuration);
-    builder.Services.AddApplicationServices();
-    builder.Services.AddBotEngineServices(); // [v2.0] 봇 엔진 핵심 워커 일괄 등록
-
-    // [v2.0] Outbound 명령 컨슈머 (Api -> Bot)
-    builder.Services.AddHostedService<ChzzkCommandConsumer>();
 
     var host = builder.Build();
 

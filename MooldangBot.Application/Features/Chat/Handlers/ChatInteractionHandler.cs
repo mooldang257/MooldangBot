@@ -24,13 +24,8 @@ public class ChatInteractionHandler(
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
     {
         logger.LogDebug($"[채팅 핸들러 수신] Channel: {notification.Profile.ChzzkUid}, User: {notification.Username}, Msg: {notification.Message}");
-        // 0. [오시리스의 기록관]: 실시간 채팅 집계 (통계를 위해 모든 메시지 기록)
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
-            scribe.AddChatMessage(notification.Profile.ChzzkUid, notification.Message);
-        }
-
+        // [v2.3] 통계 집계(Scribe)는 이제 봇 엔진(ChzzkAPI)에서 직접 수행하므로 여기서는 제거합니다.
+        
         // 1. [무한 루프 및 명령어 방지]: 봇 자신의 말이거나 시스템 메시지, 혹은 명령어(!)에는 반응하지 않음
         if (notification.Username.Contains("MooldangBot") || 
             string.IsNullOrEmpty(notification.SenderId) ||
