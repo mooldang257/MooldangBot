@@ -30,6 +30,7 @@ namespace MooldangBot.Infrastructure
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
+            services.AddMemoryCache();
             services.AddDistributedMemoryCache();
             services.AddScoped<IIdentityCacheService, IdentityCacheService>();
             services.AddSingleton<INotificationService, NotificationService>();
@@ -38,10 +39,11 @@ namespace MooldangBot.Infrastructure
             // API 환경에서는 Presentation 레이어에서 등록된 실제 UserSession으로 덮어씌워집니다.
             services.TryAddScoped<IUserSession, BotUserSession>();
 
-            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록
-            // AppDbContext가 IDataProtectionProvider를 생성자에서 요구하므로 모든 호스트에서 등록 필요합니다.
+            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록 (열쇠 전역 공유)
+            // 봇 엔진(ChzzkAPI)에서도 API가 저장한 암호화 토큰을 읽을 수 있도록 DB에 키를 저장합니다.
             services.AddDataProtection()
-                .SetApplicationName("MooldangBot");
+                .SetApplicationName("MooldangBot")
+                .PersistKeysToDbContext<AppDbContext>();
             
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
