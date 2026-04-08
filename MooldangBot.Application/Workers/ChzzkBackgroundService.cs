@@ -13,18 +13,34 @@ public class ChzzkBackgroundService : BackgroundService
 {
     private readonly ILogger<ChzzkBackgroundService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IChzzkChatClient _chatClient;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    // [N5 해결]: Singleton 서비스에서 Scoped/Transient 의존성을 직접 주입받지 않고 Factory를 사용합니다.
-    public ChzzkBackgroundService(ILogger<ChzzkBackgroundService> logger, IServiceScopeFactory scopeFactory)
+    public ChzzkBackgroundService(
+        ILogger<ChzzkBackgroundService> logger, 
+        IServiceScopeFactory scopeFactory,
+        IChzzkChatClient chatClient)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _chatClient = chatClient;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("🚀 [치지직 백그라운드 서비스] 가동 중... (Phase1: 병렬 배치 처리 모드)");
+
+        try
+        {
+            _logger.LogInformation("[파동의 시동] 채팅 클라이언트 초기화를 시작합니다...");
+            await _chatClient.InitializeAsync();
+            _logger.LogInformation("✅ [파동의 시동] 채팅 클라이언트가 성공적으로 초기화되었습니다.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "❌ [파동의 침몰] 채팅 클라이언트 초기화 중 치명적 오류 발생. 서비스를 중단합니다.");
+            return;
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {

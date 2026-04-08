@@ -68,11 +68,11 @@ public class ShardedWebSocketManager : IChzzkChatClient
     {
         if (_instanceIndex >= 0)
         {
-            _logger.LogInformation("[파동의 지휘자] 고정 인덱스 {InstanceIndex}/{InstanceCount}로 가동합니다.", _instanceIndex, _instanceCount);
+            _logger.LogInformation("[파동의 지휘자] 고정 인덱스 {InstanceIndex}/{InstanceCount}로 가동합니다. (InstanceId: {InstanceId})", _instanceIndex, _instanceCount, _instanceId);
             return;
         }
 
-        _logger.LogInformation("[파동의 탐색] 가용한 인덱스를 자동으로 검색합니다...");
+        _logger.LogInformation("[파동의 탐색] 가용한 인덱스를 자동으로 검색합니다... (MaxInstanceCount: {Count})", _instanceCount);
 
         try
         {
@@ -80,10 +80,11 @@ public class ShardedWebSocketManager : IChzzkChatClient
             for (int i = 0; i < _instanceCount; i++)
             {
                 var lockKey = $"shard:registry:{i}";
+                _logger.LogDebug("[파동의 시도] 인덱스 {Index} 점유 시도 중...", i);
                 if (await db.LockTakeAsync(lockKey, _instanceId, TimeSpan.FromSeconds(60)))
                 {
                     _instanceIndex = i;
-                    _logger.LogInformation("[파동의 정착] 인덱스 {InstanceIndex}를 점유했습니다. (InstanceId: {InstanceId})", _instanceIndex, _instanceId);
+                    _logger.LogInformation("🎯 [파동의 정착] 인덱스 {InstanceIndex}를 점유했습니다! (InstanceId: {InstanceId})", _instanceIndex, _instanceId);
                     StartHeartbeat(i);
                     return;
                 }
@@ -96,6 +97,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
             return;
         }
 
+        _logger.LogError("[파동의 절망] 가용한 SHARD_INDEX를 찾을 수 없습니다. (모든 {Count}개 인덱스가 이미 점유됨)", _instanceCount);
         throw new InvalidOperationException("[파동의 고립] 가용한 SHARD_INDEX를 찾을 수 없습니다. 인스턴스 수를 확인하세요.");
     }
 
@@ -104,6 +106,8 @@ public class ShardedWebSocketManager : IChzzkChatClient
         _heartbeatCts = new CancellationTokenSource();
         var token = _heartbeatCts.Token;
         var lockKey = $"shard:registry:{index}";
+
+        _logger.LogInformation("[파동의 고동] 인덱스 {Index}에 대한 하트비트 루프를 가동합니다.", index);
 
         _ = Task.Run(async () =>
         {
@@ -118,6 +122,10 @@ public class ShardedWebSocketManager : IChzzkChatClient
                         if (await db.LockTakeAsync(lockKey, _instanceId, expiry))
                         {
                             _logger.LogInformation("[파동의 재탈환] 인덱스 {Index}를 성공적으로 재점유했습니다.", index);
+                        }
+                        else
+                        {
+                            _logger.LogCritical("[파동의 분리] 인덱스 {Index} 점유권을 상실했습니다! (다른 인스턴스에 의해 선점됨)", index);
                         }
                     }
                 }
@@ -140,8 +148,22 @@ public class ShardedWebSocketManager : IChzzkChatClient
 
     private bool IsMyResponsibility(string chzzkUid)
     {
+        if (_instanceIndex < 0)
+        {
+            _logger.LogWarning("⚠️ [파동의 미아] 아직 인덱스가 할당되지 않아 {ChzzkUid} 채널에 대한 책임을 거부합니다. (Index: {Index})", chzzkUid, _instanceIndex);
+            return false;
+        }
+
         uint hash = GetDeterministicHashCode(chzzkUid);
-        return (hash % (uint)_instanceCount) == (uint)_instanceIndex;
+        bool isMine = (hash % (uint)_instanceCount) == (uint)_instanceIndex;
+        
+        if (!isMine)
+        {
+            _logger.LogDebug("[파동의 타지] {ChzzkUid} 채널은 내 점유 구역이 아닙니다. (Hash: {Hash}, NeedIdx: {NeedIdx}, MyIdx: {MyIdx})", 
+                chzzkUid, hash, hash % (uint)_instanceCount, _instanceIndex);
+        }
+
+        return isMine;
     }
 
     private IWebSocketShard GetShard(string chzzkUid)
