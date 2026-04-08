@@ -200,8 +200,8 @@ public class WebSocketShard : IWebSocketShard
         {
             FleetMetrics.MessagesReceivedTotal.WithLabels(_shardId.ToString()).Inc();
             
-            // [강제 정찰]: 42로 시작하는 모든 원본 메시지를 로그에 노출
-            _logger.LogInformation("📡 [RawPacket] {Message}", message);
+            // [오시리스의 정제]: 파악이 완료된 원본 메시지는 디버그 레벨로 격하합니다.
+            _logger.LogDebug("📡 [RawPacket] {Message}", message);
 
             string json = message.Substring(2);
             var messageId = Guid.NewGuid();
@@ -253,7 +253,7 @@ public class WebSocketShard : IWebSocketShard
                         nickname = nickProp.GetString() ?? "Unknown";
                     }
                     
-                    _logger.LogInformation("💬 [{ChzzkUid}] {Nickname}: {Content}", chzzkUid, nickname, content);
+                    _logger.LogInformation("💬 [{Nickname}] {Content}", nickname, content);
                     
                     scribe.AddChatMessage(chzzkUid, content);
                 }
