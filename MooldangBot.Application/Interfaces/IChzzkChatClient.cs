@@ -43,4 +43,9 @@ public interface IChzzkChatClient : IAsyncDisposable
     /// [파동의 전수조사]: 모든 샤드의 상세 상태 정보를 반환합니다.
     /// </summary>
     IEnumerable<ShardStatus> GetShardStatuses();
+
+    /// <summary>
+    /// [전령의 발송]: 특정 채널로 채팅 메시지를 전송합니다.
+    /// </summary>
+    Task<bool> SendMessageAsync(string chzzkUid, string message);
 }

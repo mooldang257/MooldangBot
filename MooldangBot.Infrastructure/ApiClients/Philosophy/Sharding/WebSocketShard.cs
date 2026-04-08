@@ -23,7 +23,7 @@ public class WebSocketShard : IWebSocketShard
 {
     private readonly ILogger _logger;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IChatEventChannel _eventChannel;
+    private readonly IRabbitMqService _rabbitMqService;
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, KstClock> _lastActivityList = new();
@@ -34,12 +34,12 @@ public class WebSocketShard : IWebSocketShard
     public int ShardId => _shardId;
     public int ConnectionCount => _clients.Count;
 
-    public WebSocketShard(int shardId, ILoggerFactory loggerFactory, IServiceScopeFactory scopeFactory, IChatEventChannel eventChannel)
+    public WebSocketShard(int shardId, ILoggerFactory loggerFactory, IServiceScopeFactory scopeFactory, IRabbitMqService rabbitMqService)
     {
         _shardId = shardId;
         _logger = loggerFactory.CreateLogger($"WebSocketShard-{shardId}");
         _scopeFactory = scopeFactory;
-        _eventChannel = eventChannel;
+        _rabbitMqService = rabbitMqService;
     }
 
     public bool IsConnected(string chzzkUid)
@@ -186,7 +186,15 @@ public class WebSocketShard : IWebSocketShard
         if (message.StartsWith("42"))
         {
             string json = message.Substring(2);
-            _eventChannel.TryWrite(new ChatEventItem(chzzkUid, json, KstClock.Now));
+            // [v2.2] 메시지마다 고유 ID 생성 (CorrelationId의 근원)
+            var messageId = Guid.NewGuid();
+            var item = new ChatEventItem(messageId, chzzkUid, json, KstClock.Now);
+            
+            // [v2.0] RabbitMQ Topic 발행 (streamer.{chzzkUid}.{type})
+            await _rabbitMqService.PublishAsync(item, $"streamer.{chzzkUid}.chat", RabbitMqExchanges.ChatEvents);
+            
+            // 하위 호환을 위한 Legacy 익스체인지 발행 병행
+            await _rabbitMqService.PublishChatEventAsync(item);
         }
     }
 
@@ -212,6 +220,21 @@ public class WebSocketShard : IWebSocketShard
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task<bool> SendMessageAsync(string chzzkUid, string message)
+    {
+        if (!_clients.TryGetValue(chzzkUid, out var client) || !client.IsRunning)
+            return false;
+
+        using var scope = _scopeFactory.CreateScope();
+        var chzzkApi = scope.ServiceProvider.GetRequiredService<MooldangBot.ChzzkAPI.Interfaces.IChzzkApiClient>();
+        var tokenStore = scope.ServiceProvider.GetRequiredService<IChzzkTokenStore>();
+
+        var tokenInfo = await tokenStore.GetTokenAsync(chzzkUid);
+        if (tokenInfo == null) return false;
+
+        return await chzzkApi.SendChatMessageAsync(tokenInfo.AccessToken, chzzkUid, message);
     }
 
     public ShardStatus GetStatus()

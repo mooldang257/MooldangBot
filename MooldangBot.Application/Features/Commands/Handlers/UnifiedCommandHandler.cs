@@ -59,7 +59,7 @@ public class UnifiedCommandHandler(
             {
                 // [v6.2.1] 명령어가 없더라도 후원금은 나중에 적립 로직으로 흐릅니다.
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
-                    targetUid, keyword, notification.SenderId, notification.Username,
+                    notification.CorrelationId, targetUid, keyword, notification.SenderId, notification.Username,
                     false, "명령어를 찾을 수 없음", currentDonation, KstClock.Now));
             }
         }
@@ -82,7 +82,7 @@ public class UnifiedCommandHandler(
                     {
                         await strategy.ExecuteAsync(notification, command, ct);
                         await rabbitMq.PublishAsync(new CommandExecutionEvent(
-                            targetUid, keyword, notification.SenderId, notification.Username,
+                            notification.CorrelationId, targetUid, keyword, notification.SenderId, notification.Username,
                             true, null, notification.DonationAmount, KstClock.Now));
                     }
                     catch (Exception ex)
@@ -93,7 +93,7 @@ public class UnifiedCommandHandler(
                         await CompensateRequirementAsync(notification, command, currentDonation, ct);
 
                         await rabbitMq.PublishAsync(new CommandExecutionEvent(
-                            targetUid, keyword, notification.SenderId, notification.Username,
+                            notification.CorrelationId, targetUid, keyword, notification.SenderId, notification.Username,
                             false, $"서버 내부 오류: {ex.Message}", notification.DonationAmount, KstClock.Now));
                     }
                 }
@@ -101,7 +101,7 @@ public class UnifiedCommandHandler(
             else
             {
                 await rabbitMq.PublishAsync(new CommandExecutionEvent(
-                    targetUid, keyword, notification.SenderId, notification.Username,
+                    notification.CorrelationId, targetUid, keyword, notification.SenderId, notification.Username,
                     false, "권한 또는 재화 부족", notification.DonationAmount, KstClock.Now));
             }
         }

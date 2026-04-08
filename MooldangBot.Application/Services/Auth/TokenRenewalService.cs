@@ -24,6 +24,7 @@ public class TokenRenewalService : ITokenRenewalService
     private readonly IAppDbContext _db;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _config;
+    private readonly IChzzkTokenStore _tokenStore;
     private readonly ILogger<TokenRenewalService> _logger;
     private readonly AsyncRetryPolicy<bool> _retryPolicy;
     private static AsyncCircuitBreakerPolicy<bool>? _circuitBreaker; // [제너릭 전환]
@@ -33,11 +34,13 @@ public class TokenRenewalService : ITokenRenewalService
         IAppDbContext db,
         IHttpClientFactory httpClientFactory,
         IConfiguration config,
+        IChzzkTokenStore tokenStore,
         ILogger<TokenRenewalService> logger)
     {
         _db = db;
         _httpClientFactory = httpClientFactory;
         _config = config;
+        _tokenStore = tokenStore;
         _logger = logger;
 
         // [서킷 브레이커의 지혜]: 3번 연속 실패 시 30초간 회로 차단
@@ -197,7 +200,16 @@ public class TokenRenewalService : ITokenRenewalService
         if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
         streamer.TokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
 
+        // 🛡️ [v2.0] Redis 우선 갱신 (Write-Through/Behind 전략의 시작)
+        await _tokenStore.SetTokenAsync(streamer.ChzzkUid, new ChzzkTokenInfo(
+            content.AccessToken,
+            streamer.ChzzkRefreshToken ?? "",
+            streamer.TokenExpiresAt.Value,
+            DateTime.UtcNow
+        ));
+
         await _db.SaveChangesAsync();
+        _logger.LogInformation("✅ [영겁의 열쇠] {ChzzkUid} 토큰 갱신 및 동기화 완료 (Redis + DB)", streamer.ChzzkUid);
         return true;
     }
 

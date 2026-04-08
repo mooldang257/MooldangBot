@@ -182,9 +182,21 @@ namespace MooldangBot.Infrastructure
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
+            // [v2.0] 영겁의 저장소: 분산 토큰 저장소 등록
+            services.AddSingleton<IChzzkTokenStore, RedisTokenStore>();
+
             // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
             services.AddScoped<IDbInitializer, DbInitializer>();
 
+            return services;
+        }
+
+        /// <summary>
+        /// [v2.0] RabbitMQ 이벤트 컨슈머 등록 (API 전용)
+        /// </summary>
+        public static IServiceCollection AddRabbitMqConsumer(this IServiceCollection services)
+        {
+            services.AddHostedService<RabbitMqConsumerService>();
             return services;
         }
     }

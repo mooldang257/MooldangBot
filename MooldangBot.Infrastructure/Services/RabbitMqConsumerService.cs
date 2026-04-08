@@ -8,142 +8,151 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Application.Common.Security;
+using MooldangBot.Domain.Events;
 using MooldangBot.Domain.Common;
-using MooldangBot.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using MooldangBot.Infrastructure.Messaging;
+using Serilog.Context;
 
 namespace MooldangBot.Infrastructure.Services;
 
 /// <summary>
-/// [오시리스의 청취자]: RabbitMQ에서 채팅 이벤트를 구독하여 처리하는 POC(Proof of Concept) 서비스입니다.
-/// 인프라 종속성 해결을 위해 Infrastructure 레이어에 구현되었습니다.
+/// [오시리스의 청취자]: RabbitMQ의 Topic 익스체인지로부터 치지직 이벤트를 수신하여 리액터(MediatR 등)에 중계하는 서비스입니다.
+/// MooldangBot.Api 프로젝트에서 상주하며 봇 엔진으로부터 메시지를 받아 비즈니스 로직을 수행합니다.
 /// </summary>
 public class RabbitMqConsumerService : BackgroundService
 {
     private readonly ILogger<RabbitMqConsumerService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ConnectionFactory _factory;
-    private readonly string _exchangeName = "mooldang.chat.events";
+    private readonly RabbitMQPersistentConnection _connection;
+    private readonly string _chatExchange = RabbitMqExchanges.ChatEvents;
+    private readonly string _logExchange = RabbitMqExchanges.SystemLogs;
+    private IChannel? _channel;
 
-    public RabbitMqConsumerService(IConfiguration config, ILogger<RabbitMqConsumerService> logger, IServiceScopeFactory scopeFactory)
+    public RabbitMqConsumerService(
+        ILogger<RabbitMqConsumerService> logger, 
+        IServiceScopeFactory scopeFactory,
+        RabbitMQPersistentConnection connection)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
-        
-        var host = config["RABBITMQ_HOST"] ?? "localhost";
-        var port = int.TryParse(config["RABBITMQ_PORT"], out var p) ? p : 5672;
-        var user = config["RABBITMQ_USER"] ?? "guest";
-        var pass = config["RABBITMQ_PASS"] ?? "guest";
-
-        _factory = new ConnectionFactory
-        {
-            HostName = host,
-            Port = port,
-            UserName = user,
-            Password = pass
-        };
+        _connection = connection;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
+        _logger.LogInformation("📡 [청취자의 대기] RabbitMQ Topic(v2.0) 이벤트 구독을 시작합니다.");
+
+        if (!_connection.IsConnected) await _connection.TryConnectAsync();
+
+        _channel = await _connection.CreateModelAsync();
+
+        // 1. [익스체인지 선언] (이미 발행측에서 선언되었으나 안전을 위해 재선언)
+        await _channel.ExchangeDeclareAsync(_chatExchange, ExchangeType.Topic, true);
+        await _channel.ExchangeDeclareAsync(_logExchange, ExchangeType.Topic, true);
+
+        // 2. [채팅 처리용 큐 설정]
+        var queueName = (await _channel.QueueDeclareAsync(queue: "", exclusive: true, autoDelete: true)).QueueName;
+        await _channel.QueueBindAsync(queueName, _chatExchange, "streamer.#"); // 모든 스트리머 채팅 구독
+        await _channel.QueueBindAsync(queueName, _logExchange, "command.log"); // 명령어 집계 로그 구독
+
+        // 3. [비동기 소비자 구성]
+        var consumer = new AsyncEventingBasicConsumer(_channel);
+        consumer.ReceivedAsync += async (model, ea) =>
         {
-            _logger.LogInformation("[청취자의 대기] RabbitMQ 이벤트 구독을 시작합니다...");
-            
-            await using var connection = await _factory.CreateConnectionAsync(stoppingToken);
-            await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+            var body = ea.Body.ToArray();
+            var message = Encoding.UTF8.GetString(body);
+            var routingKey = ea.RoutingKey;
 
-            await channel.ExchangeDeclareAsync(_exchangeName, ExchangeType.Fanout, durable: true, cancellationToken: stoppingToken);
-
-            // [오시리스의 익명 채널]: 임시 큐 생성
-            var queueDeclareResult = await channel.QueueDeclareAsync(queue: "", exclusive: true, autoDelete: true, cancellationToken: stoppingToken);
-            var queueName = queueDeclareResult.QueueName;
-
-            await channel.QueueBindAsync(queueName, _exchangeName, string.Empty, cancellationToken: stoppingToken);
-
-            var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ReceivedAsync += async (model, ea) =>
+            try
             {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                
-                try
+                using var scope = _scopeFactory.CreateScope();
+                var mediatr = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+
+                // [v2.0] 라우팅 키에 따른 지능형 분기
+                if (routingKey.StartsWith("streamer."))
                 {
-                    // 1. [Legacy/Standard] ChatEventItem 처리
-                    if (message.Contains("ChzzkUid") && !message.Contains("Keyword"))
+                    var eventItem = JsonSerializer.Deserialize<ChatEventItem>(message);
+                    if (eventItem != null)
                     {
-                        var eventItem = JsonSerializer.Deserialize<ChatEventItem>(message);
-                        if (eventItem != null) _logger.LogDebug($"[청취자의 기록] 채팅 이벤트 수신: {eventItem.ChzzkUid}");
+                        await ProcessChatEventAsync(eventItem, mediatr, scope, stoppingToken);
                     }
-                    // 2. [v11.1] CommandExecutionEvent 처리 (천상의 장부 로그용)
-                    else if (message.Contains("Keyword"))
+                }
+                else if (routingKey == "command.log")
+                {
+                    var execEvent = JsonSerializer.Deserialize<CommandExecutionEvent>(message);
+                    if (execEvent != null)
                     {
-                        var execEvent = JsonSerializer.Deserialize<CommandExecutionEvent>(message);
-                        if (execEvent != null)
+                        // [v2.2] 로그 인리칭: 명령어 로그 처리 시에도 상관관계 ID 유지
+                        using (LogContext.PushProperty("CorrelationId", execEvent.CorrelationId))
                         {
-                            await SaveCommandLogAsync(execEvent);
+                            _logger.LogDebug("📉 [천상의 장부] 명령어 로그 수신: {Keyword}", execEvent.Keyword);
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[청취자의 혼란] 메시지 역직렬화 또는 인스턴트 저장 중 오류 발생");
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [청취자] 메시지 중사/중계 중 오류 발생 (RoutingKey: {RoutingKey})", routingKey);
+            }
 
-                await Task.CompletedTask;
-            };
+            await Task.CompletedTask;
+        };
 
-            await channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer, cancellationToken: stoppingToken);
+        await _channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer);
+        
+        _logger.LogInformation("✅ [청취자 안착] Topic 구독 활성화 완료. (Queue: {QueueName})", queueName);
 
-            _logger.LogInformation($"[청취자의 안착] 전용 큐({queueName})를 통해 익스체인지({_exchangeName})를 구독 중입니다.");
+        await Task.Delay(Timeout.Infinite, stoppingToken);
+    }
 
-            await Task.Delay(Timeout.Infinite, stoppingToken);
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception ex)
+    private async Task ProcessChatEventAsync(ChatEventItem item, MediatR.IMediator mediatr, IServiceScope scope, CancellationToken ct)
+    {
+        // [v2.2] 로그 인리칭: 이 블록 내에서 발생하는 모든 로그에 CorrelationId를 자동으로 삽입
+        using (LogContext.PushProperty("CorrelationId", item.MessageId))
         {
-            _logger.LogError(ex, "[청취자의 침묵] RabbitMQ 소비자 기동 중 오류가 발생했습니다. (서버 부재 가능성)");
+            // 1. 패킷 파싱
+            using var doc = JsonDocument.Parse(item.JsonPayload);
+            var root = doc.RootElement;
+            string eventName = root[0].GetString() ?? "";
+
+            // 2. 프로필 조회 (캐시 활용)
+            var identityCache = scope.ServiceProvider.GetRequiredService<IIdentityCacheService>();
+            var profile = await identityCache.GetStreamerProfileAsync(item.ChzzkUid, ct);
+            
+            if (profile == null) return;
+
+            if (eventName == "CHAT")
+            {
+                var payloadString = root[1].GetString() ?? "{}";
+                using var payloadDoc = JsonDocument.Parse(payloadString);
+                var payload = payloadDoc.RootElement;
+
+                string msg = payload.GetProperty("content").GetString() ?? "";
+                string senderId = payload.TryGetProperty("senderChannelId", out var idProp) ? idProp.GetString() ?? "" : "";
+                
+                var profileJson = payload.GetProperty("profile").ValueKind == JsonValueKind.String
+                                        ? payload.GetProperty("profile").GetString() ?? "{}"
+                                        : payload.GetProperty("profile").GetRawText();
+
+                using var profileDoc = JsonDocument.Parse(profileJson);
+                string nickname = profileDoc.RootElement.TryGetProperty("nickname", out var n) ? n.GetString() ?? "시청자" : "시청자";
+                string userRole = profileDoc.RootElement.TryGetProperty("userRoleCode", out var r) ? r.GetString() ?? "common_user" : "common_user";
+
+                JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
+
+                // [v2.2] Reactor 트리거: 원본 MessageId를 CorrelationId로 전달
+                await mediatr.Publish(new ChatMessageReceivedEvent(item.MessageId, profile, nickname, msg, userRole, senderId, emojis, 0), ct);
+            }
+            else if (eventName == "DONATION")
+            {
+                _logger.LogInformation("💰 [후원 중계] {ChzzkUid} 채널의 후원 이벤트를 Reactor로 전달합니다.", item.ChzzkUid);
+            }
         }
     }
 
-    /// <summary>
-    /// [천상의 장부]: 명령어 실행 이력을 DB에 영속화합니다.
-    /// </summary>
-    private async Task SaveCommandLogAsync(CommandExecutionEvent e)
+    public override void Dispose()
     {
-        using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-        // [v11.1] 비동기 데이터 정규화: ChzzkUid -> StreamerProfileId 매핑
-        var streamerId = await db.StreamerProfiles
-            .Where(s => s.ChzzkUid == e.ChzzkUid)
-            .Select(s => s.Id)
-            .FirstOrDefaultAsync();
-
-        if (streamerId == 0) return;
-
-        // GlobalViewerId 조회 (해시 기반)
-        var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(e.SenderId ?? "");
-        var globalViewerId = await db.GlobalViewers
-            .Where(g => g.ViewerUidHash == viewerHash)
-            .Select(g => g.Id)
-            .FirstOrDefaultAsync();
-
-        var log = new CommandExecutionLog
-        {
-            StreamerProfileId = streamerId,
-            GlobalViewerId = globalViewerId,
-            Keyword = e.Keyword,
-            IsSuccess = e.IsSuccess,
-            ErrorMessage = e.ErrorMessage,
-            DonationAmount = e.DonationAmount ?? 0,
-            CreatedAt = KstClock.Now
-        };
-
-        db.CommandExecutionLogs.Add(log);
-        await db.SaveChangesAsync();
-        
-        _logger.LogDebug($"📉 [천상의 장부 기록] 명령어 '{e.Keyword}' 실행 이력 저장 완료 (Streamer: {e.ChzzkUid})");
+        _channel?.Dispose();
+        base.Dispose();
     }
 }

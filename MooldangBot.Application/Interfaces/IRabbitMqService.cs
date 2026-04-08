@@ -26,7 +26,15 @@ public interface IRabbitMqService
     /// <summary>
     /// [New] 제네릭 이벤트를 발행합니다. (Topic 기반 고도의 관제 지원)
     /// </summary>
-    Task PublishAsync<T>(T eventData, string? routingKey = null) where T : class;
+    Task PublishAsync<T>(T eventData, string? routingKey = null, string? exchangeName = null) where T : class;
+}
+
+public static class RabbitMqExchanges
+{
+    public const string ChatEvents = "mooldang.chzzk.events"; // v2.0 고성능 토픽 익스체인지
+    public const string BotCommands = "mooldang.chzzk.commands"; // Outbound 명령용 (Api -> Bot)
+    public const string LegacyChat = "mooldang.chat.events"; // 하위 호환
+    public const string SystemLogs = "mooldang.bot.events";
 }
 
 /// <summary>
@@ -34,6 +42,7 @@ public interface IRabbitMqService
 /// 채팅창을 방해하지 않고 이 정보를 통해 실시간 관제가 이루어집니다.
 /// </summary>
 public record CommandExecutionEvent(
+    Guid CorrelationId,    // [v2.2] 원본 메시지와의 상관관계 추적 ID
     string ChzzkUid,
     string Keyword,
     string? SenderId,
@@ -42,4 +51,6 @@ public record CommandExecutionEvent(
     string? ErrorMessage,
     int? DonationAmount,
     DateTime OccurredAt
+);
+
 );

@@ -85,6 +85,8 @@ try
         .PersistKeysToDbContext<AppDbContext>();
 
     builder.Services.AddApplicationServices();
+    builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
+    builder.Services.AddRabbitMqConsumer(); // [v2.0] 봇 엔진 이벤트 수신을 위한 컨슈머 등록
     builder.Services.AddPresentationServices();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IUserSession, UserSession>();
@@ -94,8 +96,6 @@ try
         cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Application.DependencyInjection).Assembly);
     });
     builder.Services.AddSingleton<SongQueueState>();
-    builder.Services.AddHostedService<MooldangBot.Application.Workers.RouletteResultWorker>();
-    builder.Services.AddHostedService<MooldangBot.Application.Workers.ZeroingWorker>();
     builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
 
     var redisUrl = builder.Configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets에 의해 보장됨

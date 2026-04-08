@@ -24,6 +24,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
     private readonly ILogger<ShardedWebSocketManager> _logger;
     private readonly IDistributedLockFactory _lockFactory;
     private readonly IConnectionMultiplexer _redis;
+    private readonly IRabbitMqService _rabbitMqService;
     
     private int _instanceIndex = -1; 
     private readonly int _instanceCount;
@@ -34,7 +35,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
     public ShardedWebSocketManager(
         ILoggerFactory loggerFactory, 
         IServiceScopeFactory scopeFactory, 
-        IChatEventChannel eventChannel,
+        IRabbitMqService rabbitMqService,
         IConfiguration config,
         IDistributedLockFactory lockFactory,
         IConnectionMultiplexer redis,
@@ -43,6 +44,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
         _logger = loggerFactory.CreateLogger<ShardedWebSocketManager>();
         _lockFactory = lockFactory;
         _redis = redis;
+        _rabbitMqService = rabbitMqService;
         
         string? envIndex = config["SHARD_INDEX"];
         if (!string.IsNullOrEmpty(envIndex) && int.TryParse(envIndex, out var idx))
@@ -57,7 +59,7 @@ public class ShardedWebSocketManager : IChzzkChatClient
         
         for (int i = 0; i < _shardCount; i++)
         {
-            _shards[i] = new WebSocketShard(i, loggerFactory, scopeFactory, eventChannel);
+            _shards[i] = new WebSocketShard(i, loggerFactory, scopeFactory, _rabbitMqService);
         }
     }
 
@@ -179,6 +181,14 @@ public class ShardedWebSocketManager : IChzzkChatClient
     public async Task DisconnectAsync(string chzzkUid)
     {
         await GetShard(chzzkUid).DisconnectAsync(chzzkUid);
+    }
+
+    public async Task<bool> SendMessageAsync(string chzzkUid, string message)
+    {
+        // [v2.0] 수평 확장을 고려하여, 이 인스턴스가 해당 스트리머를 담당하고 있는지 확인
+        if (!IsMyResponsibility(chzzkUid)) return false;
+        
+        return await GetShard(chzzkUid).SendMessageAsync(chzzkUid, message);
     }
 
     public int GetActiveConnectionCount()

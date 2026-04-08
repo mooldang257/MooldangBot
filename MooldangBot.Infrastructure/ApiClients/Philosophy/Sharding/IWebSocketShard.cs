@@ -13,4 +13,5 @@ public interface IWebSocketShard : IAsyncDisposable
     Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null);
     Task DisconnectAsync(string chzzkUid);
     ShardStatus GetStatus();
+    Task<bool> SendMessageAsync(string chzzkUid, string message);
 }
