@@ -201,6 +201,10 @@ public class WebSocketShard : IWebSocketShard
                     var payloadString = root[1].GetString() ?? "{}";
                     using var payloadDoc = System.Text.Json.JsonDocument.Parse(payloadString);
                     string content = payloadDoc.RootElement.GetProperty("content").GetString() ?? "";
+                    string nickname = payloadDoc.RootElement.TryGetProperty("nickname", out var nickProp) ? nickProp.GetString() ?? "Unknown" : "Unknown";
+                    
+                    _logger.LogInformation("💬 [{ChzzkUid}] {Nickname}: {Content}", chzzkUid, nickname, content);
+                    
                     scribe.AddChatMessage(chzzkUid, content);
                 }
             }
