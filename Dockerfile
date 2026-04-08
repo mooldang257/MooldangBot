@@ -10,6 +10,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 
 # 1. 프로젝트 파일 복사 (캐시 효율화)
 COPY ["MooldangBot.Api/MooldangBot.Api.csproj", "MooldangBot.Api/"]
+COPY ["MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj", "MooldangBot.ChzzkAPI/"]
 COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
 COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
@@ -19,6 +20,7 @@ COPY ["MooldangAPI.sln", "./"]
 
 # 2. 패키지 복원
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
+RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
 RUN dotnet restore "MooldangBot.Cli/MooldangBot.Cli.csproj"
 RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj"
 
@@ -26,6 +28,8 @@ RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj
 COPY . .
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
+WORKDIR "/src/MooldangBot.ChzzkAPI"
+RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build
 WORKDIR "/src/MooldangBot.Cli"
 RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build
 
@@ -33,6 +37,8 @@ RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build
 FROM build AS publish
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/MooldangBot.ChzzkAPI"
+RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 WORKDIR "/src/MooldangBot.Cli"
 RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
