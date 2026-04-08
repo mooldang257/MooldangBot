@@ -182,8 +182,9 @@ namespace MooldangBot.Infrastructure
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
-            // [v2.0] 영겁의 저장소: 분산 토큰 저장소 등록
+            // [v2.0] 영겁의 저장소: 분산 토큰 저장소 및 멱등성 가드 등록
             services.AddSingleton<IChzzkTokenStore, RedisTokenStore>();
+            services.AddSingleton<IIdempotencyService, IdempotencyService>();
 
             // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
             services.AddScoped<IDbInitializer, DbInitializer>();

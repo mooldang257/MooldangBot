@@ -24,10 +24,17 @@ public class UnifiedCommandHandler(
     IPointTransactionService pointService,
     IIdentityCacheService identityCache, // [Phase 8] 이지스 파이프라인 연동
     IRabbitMqService rabbitMq,
+    IIdempotencyService idempotency,
     ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
 {
     public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken ct)
     {
+        // [v2.4] 멱등성 가드 (The Gatekeeper): 10분간 중복 요청 방어
+        if (!await idempotency.TryAcquireAsync(notification.CorrelationId.ToString(), TimeSpan.FromMinutes(10)))
+        {
+            return; // 이미 처리 중이거나 완료된 메시지는 무시 (SILENT RETURN)
+        }
+
         // 0. [피닉스의 눈]: 명령어 처리 전 스트리머 토커 유효성 확보
         await botService.GetStreamerTokenAsync(notification.Profile);
 
@@ -191,6 +198,14 @@ public class UnifiedCommandHandler(
     /// </summary>
     private async Task CompensateRequirementAsync(ChatMessageReceivedEvent n, UnifiedCommand c, int currentDonation, CancellationToken ct)
     {
+        // [v2.4.1] 환불 멱등성 가드 (The Compensator): 중복 환불 방지
+        var compKey = $"comp:{n.CorrelationId}";
+        if (!await idempotency.TryAcquireAsync(compKey, TimeSpan.FromMinutes(30)))
+        {
+            logger.LogWarning("⚠️ [중복 환불 시도 차단] 이미 환불 처리가 진행되었거나 완료되었습니다: {Key}", compKey);
+            return;
+        }
+
         try
         {
             if (c.CostType == CommandCostType.Cheese && c.Cost > 0)
@@ -205,6 +220,8 @@ public class UnifiedCommandHandler(
                 await pointService.AddPointsAsync(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, ct);
                 logger.LogWarning("🅿️ [보상 트랜잭션] {Keyword} 실행 실패로 인해 {Cost}P가 환불되었습니다.", c.Keyword, c.Cost);
             }
+
+            await idempotency.MarkAsCompletedAsync(compKey, TimeSpan.FromMinutes(30));
         }
         catch (Exception ex)
         {

@@ -211,31 +211,63 @@ public class PointTransactionService : IPointTransactionService
             {
                 globalViewer = new GlobalViewer { ViewerUid = viewerUid, ViewerUidHash = viewerHash, Nickname = nickname ?? "" };
                 _db.GlobalViewers.Add(globalViewer);
+                await _db.SaveChangesAsync(ct);
             }
             else if (!string.IsNullOrEmpty(nickname) && globalViewer.Nickname != nickname)
             {
                 globalViewer.Nickname = nickname;
                 globalViewer.UpdatedAt = MooldangBot.Domain.Common.KstClock.Now;
+                await _db.SaveChangesAsync(ct);
             }
-            await _db.SaveChangesAsync(ct);
 
             var connection = _db.Database.GetDbConnection();
             var dbColumn = columnName == "Points" ? "points" : "donation_points";
-            var sql = $@"
-                INSERT INTO view_streamer_viewers (streamer_profile_id, global_viewer_id, points, donation_points, attendance_count, consecutive_attendance_count)
-                VALUES (@StreamerId, @GlobalId, IF(@Col='Points', @Amount, 0), IF(@Col='DonationPoints', @Amount, 0), 0, 0)
-                ON DUPLICATE KEY UPDATE 
-                    {dbColumn} = GREATEST(0, {dbColumn} + @Amount);";
+            int affectedRows = 0;
 
-            await connection.ExecuteAsync(new CommandDefinition(sql, new
+            if (amount < 0)
             {
-                StreamerId = streamer.Id,
-                GlobalId = globalViewer.Id,
-                Amount = amount,
-                Col = columnName
-            }, cancellationToken: ct));
+                // 🛡️ [v2.4] Atomic Banker Logic: 차감 시 잔액 검증 WHERE 절 추가
+                var updateSql = $@"
+                    UPDATE view_streamer_viewers 
+                    SET {dbColumn} = {dbColumn} + @Amount 
+                    WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId 
+                      AND {dbColumn} >= ABS(@Amount);";
 
-            // [v11.1] 천상의 장부: 상세 로그 기록
+                affectedRows = await connection.ExecuteAsync(new CommandDefinition(updateSql, new
+                {
+                    StreamerId = streamer.Id,
+                    GlobalId = globalViewer.Id,
+                    Amount = amount
+                }, cancellationToken: ct));
+                
+                if (affectedRows == 0) 
+                {
+                    _logger.LogWarning("⚠️ [포인적 차감 실패] 잔액 부족: {Uid} (Req: {Amount})", viewerUid, amount);
+                    var failResult = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
+                        $"SELECT {dbColumn} FROM view_streamer_viewers WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+                        new { StreamerId = streamer.Id, GlobalId = globalViewer.Id }, cancellationToken: ct));
+                    return (false, failResult);
+                }
+            }
+            else
+            {
+                // 적립 시에는 기존처럼 Upsert 수행
+                var upsertSql = $@"
+                    INSERT INTO view_streamer_viewers (streamer_profile_id, global_viewer_id, points, donation_points, attendance_count, consecutive_attendance_count)
+                    VALUES (@StreamerId, @GlobalId, IF(@Col='Points', @Amount, 0), IF(@Col='DonationPoints', @Amount, 0), 0, 0)
+                    ON DUPLICATE KEY UPDATE 
+                        {dbColumn} = {dbColumn} + @Amount;";
+
+                affectedRows = await connection.ExecuteAsync(new CommandDefinition(upsertSql, new
+                {
+                    StreamerId = streamer.Id,
+                    GlobalId = globalViewer.Id,
+                    Amount = amount,
+                    Col = columnName
+                }, cancellationToken: ct));
+            }
+
+            // [v11.1] 천상의 장부: 상거래 로그 기록 (차감 성공 또는 적립 시에만)
             var logSql = @"
                 INSERT INTO log_point_transactions (streamer_profile_id, global_viewer_id, amount, type, reason, created_at)
                 VALUES (@StreamerId, @GlobalId, @Amount, @Type, @Reason, NOW());";
@@ -246,7 +278,7 @@ public class PointTransactionService : IPointTransactionService
                 GlobalId = globalViewer.Id,
                 Amount = amount,
                 Type = amount > 0 ? PointTransactionType.Earn : PointTransactionType.Spend,
-                Reason = columnName == "DonationPoints" ? "Donation Adjustment" : "Manual Adjustment"
+                Reason = columnName == "DonationPoints" ? "Donation Adjustment (v2.4)" : "Command Cost (v2.4)"
             }, cancellationToken: ct));
 
             var result = await connection.QueryFirstOrDefaultAsync<int>(new CommandDefinition(
@@ -255,12 +287,12 @@ public class PointTransactionService : IPointTransactionService
                 cancellationToken: ct
             ));
 
-            _ = _notificationService.NotifyPointChangedAsync(streamerUid); // [물멍]: 실시간 통계 반영
+            _ = _notificationService.NotifyPointChangedAsync(streamerUid);
             return (true, result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"❌ [Dapper 트랜잭션 오류 - {columnName}] {viewerUid}: {ex.Message}");
+            _logger.LogError(ex, $"❌ [Atomic 트랜잭션 오류 - {columnName}] {viewerUid}: {ex.Message}");
             return (false, 0);
         }
     }
