@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 
@@ -13,11 +14,13 @@ public class ChzzkApiClient : IChzzkApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ChzzkApiClient> _logger;
+    private readonly IConfiguration _configuration;
 
-    public ChzzkApiClient(HttpClient httpClient, ILogger<ChzzkApiClient> logger)
+    public ChzzkApiClient(HttpClient httpClient, ILogger<ChzzkApiClient> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<string> GetChannelInfoAsync(string channelId)
@@ -210,18 +213,32 @@ public class ChzzkApiClient : IChzzkApiClient
     {
         try
         {
-            // [v2.5] 치지직 공식 오픈 API 규격으로 전환 (슬래시 등 특수문자 검색 안정성 확보)
+            // [v2.6] 치지직 공식 오픈 API 정밀 수색 로직 (Logging & Auth)
             var query = System.Net.WebUtility.UrlEncode(keyword);
             var serviceUrl = $"https://openapi.chzzk.naver.com/open/v1/categories/search?query={query}&size=10";
             
-            var response = await _httpClient.GetAsync(serviceUrl);
+            using var request = new HttpRequestMessage(HttpMethod.Get, serviceUrl);
+            
+            // [오시리스의 인장]: 공식 API는 Client-Id 인증을 요구하므로 헤더를 보강합니다.
+            string clientId = _configuration["CHZZK_API:CLIENT_ID"] ?? _configuration["ChzzkApi:ClientId"] ?? "";
+            string clientSecret = _configuration["CHZZK_API:CLIENT_SECRET"] ?? _configuration["ChzzkApi:ClientSecret"] ?? "";
+            
+            if (!string.IsNullOrEmpty(clientId)) request.Headers.Add("Client-Id", clientId);
+            if (!string.IsNullOrEmpty(clientSecret)) request.Headers.Add("Client-Secret", clientSecret);
+            
+            var response = await _httpClient.SendAsync(request);
+            var rawBody = await response.Content.ReadAsStringAsync();
+            
+            // 📡 [블랙박스 기록]: 사령관님의 데이터 분석을 위해 RAW JSON 실시간 출력
+            _logger.LogInformation($"[ChzzkApi] SearchCategory Raw Response (Keyword: {keyword}): {rawBody}");
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync(ChzzkJsonContext.Default.ChzzkCategorySearchResponse);
+                // [N7 팁]: 원본 문자열로부터 직접 역직렬화 수행
+                return System.Text.Json.JsonSerializer.Deserialize(rawBody, ChzzkJsonContext.Default.ChzzkCategorySearchResponse);
             }
 
-            var errorBody = await response.Content.ReadAsStringAsync();
-            _logger.LogWarning($"[ChzzkApi] SearchCategory Failed ({response.StatusCode}). Raw: {errorBody}");
+            _logger.LogWarning($"[ChzzkApi] SearchCategory Failed ({response.StatusCode}). Keyword: {keyword}");
             return null;
         }
         catch (Exception ex)
