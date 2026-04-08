@@ -54,7 +54,8 @@ public class ChzzkCommandConsumer : BackgroundService
             
             try
             {
-                var command = JsonSerializer.Deserialize<ChzzkBotCommand>(message);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var command = JsonSerializer.Deserialize<ChzzkBotCommand>(message, options);
                 if (command != null)
                 {
                     await ProcessCommandAsync(command);
