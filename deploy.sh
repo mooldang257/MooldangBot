@@ -68,12 +68,12 @@ BUILD_OPTS=""
 [ "$CLEAN_BUILD" = true ] && BUILD_OPTS="--no-cache"
 
 echo -e "${GREEN}🐳 Docker: 선택된 서비스 [$SERVICES ] 빌드 및 실행 중...${NC}"
-docker-compose up -d --build $BUILD_OPTS $SERVICES
+docker compose up -d --build $BUILD_OPTS $SERVICES
 
 # 6. 상태 모니터링 및 로그 제안
 echo -e "${GREEN}🔍 Health Check: 서비스 가동 상태 확인...${NC}"
 sleep 3
-docker-compose ps
+docker compose ps
 
 echo -e "${GREEN}✅ 배포가 성공적으로 완료되었습니다!${NC}"
 if [ "$DEPLOY_UI" = true ] && [ "$DEPLOY_APP" = false ]; then
