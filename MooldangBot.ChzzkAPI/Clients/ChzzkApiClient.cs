@@ -2,7 +2,6 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
-using MooldangBot.Application.Models.Chzzk;
 
 namespace MooldangBot.ChzzkAPI.Clients;
 

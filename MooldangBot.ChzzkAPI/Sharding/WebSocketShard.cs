@@ -29,6 +29,7 @@ public class WebSocketShard : IWebSocketShard
     private readonly int _shardId;
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, KstClock> _lastActivityList = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
     private readonly ConcurrentDictionary<string, string> _accessTokens = new();
     private readonly ConcurrentDictionary<string, string?> _clientIds = new();
     private readonly ConcurrentDictionary<string, string?> _clientSecrets = new();
