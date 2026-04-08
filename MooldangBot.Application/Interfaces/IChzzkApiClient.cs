@@ -1,10 +1,14 @@
-using MooldangBot.ChzzkAPI.Models;
+using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MooldangBot.ChzzkAPI.Interfaces;
+namespace MooldangBot.Application.Interfaces;
 
+/// <summary>
+/// [외교관의 계약]: 치지직 API와의 통신을 위한 공용 인터페이스입니다.
+/// MooldangBot.ChzzkAPI 프로젝트에서 이 인터페이스를 실제 구현하여 전문성을 발휘합니다.
+/// </summary>
 public interface IChzzkApiClient
 {
     Task<string> GetChannelInfoAsync(string channelId);

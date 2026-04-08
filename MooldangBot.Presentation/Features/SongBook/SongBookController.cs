@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
@@ -187,6 +186,7 @@ namespace MooldangBot.Presentation.Features.SongBook
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             await mediator.Publish(new ChatMessageReceivedEvent(
+                Guid.NewGuid(),
                 profile, 
                 "시뮬레이터", 
                 message, 

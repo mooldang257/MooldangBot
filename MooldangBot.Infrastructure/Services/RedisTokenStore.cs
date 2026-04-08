@@ -36,7 +36,7 @@ public class RedisTokenStore : IChzzkTokenStore
 
         try
         {
-            return JsonSerializer.Deserialize<ChzzkTokenInfo>(data!, _jsonOptions);
+            return JsonSerializer.Deserialize<ChzzkTokenInfo>((string)data!, _jsonOptions);
         }
         catch (Exception ex)
         {

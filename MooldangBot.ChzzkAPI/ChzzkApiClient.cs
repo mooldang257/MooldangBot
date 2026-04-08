@@ -5,9 +5,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MooldangBot.ChzzkAPI.Interfaces;
-using MooldangBot.ChzzkAPI.Models;
-using MooldangBot.ChzzkAPI.Serialization;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 

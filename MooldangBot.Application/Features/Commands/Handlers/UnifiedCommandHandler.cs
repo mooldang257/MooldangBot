@@ -1,4 +1,5 @@
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using MediatR;

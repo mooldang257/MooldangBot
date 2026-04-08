@@ -12,10 +12,11 @@ using RedLockNet;
 using StackExchange.Redis;
 using System.Threading;
 
-namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
+namespace MooldangBot.ChzzkAPI.Sharding;
 
 /// <summary>
 /// [파동의 지휘자]: 부하 분산을 위해 여러 개의 WebSocketShard를 관리하는 총괄 매니저입니다.
+/// 전문가(ChzzkAPI) 프로젝트 내부에서 작동하며, Application 계층의 IChzzkChatClient 인터페이스를 구현합니다.
 /// </summary>
 public class ShardedWebSocketManager : IChzzkChatClient
 {
@@ -173,7 +174,6 @@ public class ShardedWebSocketManager : IChzzkChatClient
         {
             if (!redLock.IsAcquired) return false;
             
-            // [N8 해결]: 특정 샤드에 개별 API 정보를 그대로 주입
             return await GetShard(chzzkUid).ConnectAsync(chzzkUid, accessToken, clientId, clientSecret);
         }
     }
@@ -185,7 +185,6 @@ public class ShardedWebSocketManager : IChzzkChatClient
 
     public async Task<bool> SendMessageAsync(string chzzkUid, string message)
     {
-        // [v2.0] 수평 확장을 고려하여, 이 인스턴스가 해당 스트리머를 담당하고 있는지 확인
         if (!IsMyResponsibility(chzzkUid)) return false;
         
         return await GetShard(chzzkUid).SendMessageAsync(chzzkUid, message);
@@ -222,7 +221,6 @@ public class ShardedWebSocketManager : IChzzkChatClient
 
         if (_shards != null)
         {
-            // [오시리스의 병렬 회귀] 모든 샤드 비동기 직렬 해제 (순차 해제가 더 안전함)
             foreach (var shard in _shards)
             {
                 try { await shard.DisposeAsync(); } catch { }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
-using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.Application.Models.Chzzk;
 
 namespace MooldangBot.Infrastructure.Services.Engines
 {

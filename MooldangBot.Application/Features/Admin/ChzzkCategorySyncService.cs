@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using MooldangBot.Domain.Common;
-using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Application.Features.Admin;
 

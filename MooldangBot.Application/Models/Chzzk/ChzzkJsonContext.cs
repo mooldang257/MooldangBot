@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.ChzzkAPI.Models;
+using MooldangBot.Application.Models.Chzzk;
 
-namespace MooldangBot.ChzzkAPI.Serialization;
+namespace MooldangBot.Application.Models.Chzzk;
 
 /// <summary>
 /// [오시리스의 인장]: 치지직 API 및 보트 시스템의 모든 주요 모델들에 대한 고성능 JSON Source Generator 컨텍스트입니다.
+/// Application 계층으로 이동하여 모든 외부 시스템(Api, Bot, Worker)이 동일한 직렬화 규격을 공유합니다.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, 

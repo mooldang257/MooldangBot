@@ -15,10 +15,11 @@ using System.Linq;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Common.Metrics;
 
-namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
+namespace MooldangBot.ChzzkAPI.Sharding;
 
 /// <summary>
 /// [파동의 분할]: 전체 WebSocket 연결 중 일부(Shard)를 책임지고 관리하는 심장 조각입니다.
+/// 전문가(ChzzkAPI) 프로젝트 내부에서 동작합니다.
 /// </summary>
 public class WebSocketShard : IWebSocketShard
 {
@@ -29,7 +30,7 @@ public class WebSocketShard : IWebSocketShard
     private readonly ConcurrentDictionary<string, WebsocketClient> _clients = new();
     private readonly ConcurrentDictionary<string, KstClock> _lastActivityList = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pingCtsList = new();
-    private readonly ConcurrentDictionary<string, bool> _authErrors = new(); // [v16.3.2.4] 인증 에러 상태 추적
+    private readonly ConcurrentDictionary<string, bool> _authErrors = new(); 
     private bool _isDisposed;
 
     public int ShardId => _shardId;
@@ -69,18 +70,17 @@ public class WebSocketShard : IWebSocketShard
             await DisconnectAsync(chzzkUid);
 
             using var scope = _scopeFactory.CreateScope();
-            var chzzkApi = scope.ServiceProvider.GetRequiredService<MooldangBot.ChzzkAPI.Interfaces.IChzzkApiClient>();
+            // [DIP 적용]: Application 계층의 인터페이스를 사용하여 전문가의 알맹이를 획득합니다.
+            var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
             
-            // [v10.1] 통합 클라이언트를 사용하여 세션 인증 정보 획득
             var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken);
             if (sessionAuth == null || string.IsNullOrEmpty(sessionAuth.Content?.Url))
             {
                 _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심)", chzzkUid);
-                _authErrors[chzzkUid] = true; // [v16.3.2.4] 인증 에러 기록
+                _authErrors[chzzkUid] = true;
                 return false;
             }
             
-            // 성공 시 에러 상태 클리어
             _authErrors.TryRemove(chzzkUid, out _);
 
             string socketUrl = sessionAuth.Content.Url;
@@ -104,8 +104,8 @@ public class WebSocketShard : IWebSocketShard
             var client = new WebsocketClient(new Uri(socketUrl), factory)
             {
                 Name = $"Chzzk-{chzzkUid}",
-                ReconnectTimeout = TimeSpan.FromSeconds(60), // [v16.5] 오직 이 값만 60초로 상향하여 인내심 확보
-                ErrorReconnectTimeout = TimeSpan.FromSeconds(5) // 원복
+                ReconnectTimeout = TimeSpan.FromSeconds(60),
+                ErrorReconnectTimeout = TimeSpan.FromSeconds(5)
             };
 
             client.MessageReceived.Subscribe(msg => 
@@ -132,10 +132,8 @@ public class WebSocketShard : IWebSocketShard
             _clients[chzzkUid] = client;
             _lastActivityList[chzzkUid] = KstClock.Now;
 
-            // [v2.4.1] 활성 소켓 연결 수 증가 지표 반영
             FleetMetrics.ActiveShardsConnections.Inc();
 
-            // [오시리스의 각성]: 적극적 핑 루프 가동 (10초 주기로 "2" 전송)
             var cts = new CancellationTokenSource();
             _pingCtsList[chzzkUid] = cts;
             _ = StartActivePingLoopAsync(chzzkUid, client, cts.Token);
@@ -159,13 +157,12 @@ public class WebSocketShard : IWebSocketShard
                 
                 if (client.IsRunning)
                 {
-                    // Engine.IO 표준 핑 메시지 "2" 전송
                     client.Send("2");
                     _logger.LogDebug("[파동의 선제] {ChzzkUid} 채널에 적극적 핑(2) 전송 완료", chzzkUid);
                 }
             }
         }
-        catch (OperationCanceledException) { /* 정상 종료 */ }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
             _logger.LogWarning("[파동의 균열] {ChzzkUid} 핑 루프 중 오류 발생: {Message}", chzzkUid, ex.Message);
@@ -178,31 +175,25 @@ public class WebSocketShard : IWebSocketShard
         if (message == "3") return;
         if (message.StartsWith("0")) { client.Send("40"); return; }
         
-        // [v16.4] 소켓 연결 후 실제 인증 거절 메시지를 감지합니다. (Prefix "44"는 Engine.IO의 에러 이벤트 규격)
-        // [N8 해결]: 단순 Contains("auth fail")은 사용자의 채팅 내용 등에 의한 오탐 가능성이 농후하여 Prefix 체크 강화
         if (message.StartsWith("44") && (message.Contains("\"error\",\"auth fail\"") || message.Contains("auth fail")))
         {
-            _logger.LogCritical("🛑 [파동의 붕괴] {ChzzkUid} 채팅 서버로부터 실제 인증 실패(44) 수신! 무시할 수 없는 정합성 결여입니다. [메시지: {Payload}]", chzzkUid, message);
+            _logger.LogCritical("🛑 [파동의 붕괴] {ChzzkUid} 채팅 서버로부터 실제 인증 실패(44) 수신! [메시지: {Payload}]", chzzkUid, message);
             _authErrors[chzzkUid] = true;
             return;
         }
 
         if (message.StartsWith("42"))
         {
-            // [v2.4.1] 메시지 관류량 카운팅
             FleetMetrics.MessagesReceivedTotal.WithLabels(_shardId.ToString()).Inc();
 
             string json = message.Substring(2);
-            // [v2.2] 메시지마다 고유 ID 생성 (CorrelationId의 근원)
             var messageId = Guid.NewGuid();
             var item = new ChatEventItem(messageId, chzzkUid, json, KstClock.Now);
             
-            // [v2.3] 통계 집계: 봇 엔진 내부에서 즉시 기록 (분산 환경 대응)
             using (var scope = _scopeFactory.CreateScope())
             {
                 var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
                 
-                // 간단한 파싱으로 메시지 텍스트 추출 (Scribe의 로직 활용)
                 using var doc = System.Text.Json.JsonDocument.Parse(json);
                 var root = doc.RootElement;
                 if (root[0].GetString() == "CHAT")
@@ -214,10 +205,7 @@ public class WebSocketShard : IWebSocketShard
                 }
             }
 
-            // [v2.0] RabbitMQ Topic 발행 (streamer.{chzzkUid}.{type})
             await _rabbitMqService.PublishAsync(item, $"streamer.{chzzkUid}.chat", RabbitMqExchanges.ChatEvents);
-            
-            // 하위 호환을 위한 Legacy 익스체인지 발행 병행
             await _rabbitMqService.PublishChatEventAsync(item);
         }
     }
@@ -225,9 +213,8 @@ public class WebSocketShard : IWebSocketShard
     public Task DisconnectAsync(string chzzkUid)
     {
         _lastActivityList.TryRemove(chzzkUid, out _);
-        _authErrors.TryRemove(chzzkUid, out _); // 연결 종료 시 에러 상태 초기화
+        _authErrors.TryRemove(chzzkUid, out _); 
 
-        // [오시리스의 침묵]: 핑 루프 중단
         if (_pingCtsList.TryRemove(chzzkUid, out var cts))
         {
             cts.Cancel();
@@ -236,7 +223,6 @@ public class WebSocketShard : IWebSocketShard
 
         if (_clients.TryRemove(chzzkUid, out var client))
         {
-            // [v2.4.1] 활성 소켓 연결 수 감소 지표 반영
             FleetMetrics.ActiveShardsConnections.Dec();
 
             try
@@ -255,7 +241,7 @@ public class WebSocketShard : IWebSocketShard
             return false;
 
         using var scope = _scopeFactory.CreateScope();
-        var chzzkApi = scope.ServiceProvider.GetRequiredService<MooldangBot.ChzzkAPI.Interfaces.IChzzkApiClient>();
+        var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
         var tokenStore = scope.ServiceProvider.GetRequiredService<IChzzkTokenStore>();
 
         var tokenInfo = await tokenStore.GetTokenAsync(chzzkUid);

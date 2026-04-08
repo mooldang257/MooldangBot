@@ -2,8 +2,11 @@ using System;
 using System.Threading.Tasks;
 using MooldangBot.Application.Interfaces;
 
-namespace MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
+namespace MooldangBot.ChzzkAPI.Sharding;
 
+/// <summary>
+/// [샤드 인터페이스]: 개별 WebSocket 샤드를 제어하는 내부 인터페이스입니다.
+/// </summary>
 public interface IWebSocketShard : IAsyncDisposable
 {
     int ShardId { get; }

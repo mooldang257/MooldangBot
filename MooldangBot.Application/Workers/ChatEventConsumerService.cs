@@ -4,10 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Domain.Events;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models;
-using MooldangBot.Domain.Events;
-using MooldangBot.ChzzkAPI.Interfaces;
 
 public sealed class ChatEventConsumerService : BackgroundService
 {
@@ -111,11 +110,11 @@ public sealed class ChatEventConsumerService : BackgroundService
         }
         else if (eventName == "CHAT")
         {
-            await HandleChatEventAsync(item.ChzzkUid, root, identityCache, mediatr, ct);
+            await HandleChatEventAsync(item.ChzzkUid, root, identityCache, mediatr, item.MessageId, ct);
         }
         else if (eventName == "DONATION")
         {
-            await HandleDonationEventAsync(item.ChzzkUid, root, identityCache, mediatr, ct);
+            await HandleDonationEventAsync(item.ChzzkUid, root, identityCache, mediatr, item.MessageId, ct);
         }
     }
 
@@ -145,7 +144,7 @@ public sealed class ChatEventConsumerService : BackgroundService
         }
     }
 
-    private async Task HandleChatEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, CancellationToken ct)
+    private async Task HandleChatEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, Guid correlationId, CancellationToken ct)
     {
         var payloadString = root[1].GetString() ?? "{}";
         using var payloadDoc = JsonDocument.Parse(payloadString);
@@ -170,11 +169,11 @@ public sealed class ChatEventConsumerService : BackgroundService
             // [데이터 정합성 보존]: 원본 emojis 데이터를 그대로 추출하여 전달
             JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, emojis, 0), ct);
+            await mediatr.Publish(new ChatMessageReceivedEvent(correlationId, profile, nickname, msg, userRole, senderId, emojis, 0), ct);
         }
     }
 
-    private async Task HandleDonationEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, CancellationToken ct)
+    private async Task HandleDonationEventAsync(string chzzkUid, JsonElement root, IIdentityCacheService identityCache, MediatR.IMediator mediatr, Guid correlationId, CancellationToken ct)
     {
         var payloadString = root[1].GetString() ?? "{}";
         using var payloadDoc = JsonDocument.Parse(payloadString);
@@ -217,7 +216,7 @@ public sealed class ChatEventConsumerService : BackgroundService
             string userRole = "donation_user";
             JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(profile, nickname, msg, userRole, senderId, emojis, cheeseAmount), ct);
+            await mediatr.Publish(new ChatMessageReceivedEvent(correlationId, profile, nickname, msg, userRole, senderId, emojis, cheeseAmount), ct);
         }
     }
 }

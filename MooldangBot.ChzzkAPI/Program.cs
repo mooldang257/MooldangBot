@@ -1,8 +1,13 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
 using MooldangBot.Application;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.ChzzkAPI.Workers;
+using MooldangBot.ChzzkAPI.Clients;
+using MooldangBot.ChzzkAPI.Sharding;
+using MooldangBot.Application.Models.Chzzk;
 using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 using Prometheus;
 
 // [오시리스의 인장]: 봇 전용 호스트 로깅 설정
@@ -21,6 +26,17 @@ try
     // 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    // [v2.4.5] 치지직 전문가(Implementation) 수동 등록
+    builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
+        .AddStandardResilienceHandler(options =>
+        {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.UseJitter = true;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+        });
+    builder.Services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();
+
     // 2. 비즈니스 로직 주입
     builder.Services.AddApplicationServices();
 
@@ -32,13 +48,14 @@ try
     builder.Services.AddHostedService<ChzzkCommandConsumer>();
 
     // 5. 로깅 설정 (Loki/Serilog)
-    builder.Host.UseSerilog((context, services, configuration) => {
-        var lokiUrl = context.Configuration["LOKI_URL"] ?? "http://localhost:3100";
-        var instanceId = context.Configuration["INSTANCE_ID"] ?? "chzzk-bot-1";
-        var env = context.Configuration["DOTNET_ENVIRONMENT"] ?? "Production";
+    // [v2.4.5] HostApplicationBuilder에서는 Services.AddSerilog를 사용합니다.
+    builder.Services.AddSerilog((services, configuration) => {
+        var lokiUrl = builder.Configuration["LOKI_URL"] ?? "http://localhost:3100";
+        var instanceId = builder.Configuration["INSTANCE_ID"] ?? "chzzk-bot-1";
+        var env = builder.Configuration["DOTNET_ENVIRONMENT"] ?? "Production";
 
         configuration
-            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Configuration(builder.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Service", "MooldangBot.ChzzkAPI")

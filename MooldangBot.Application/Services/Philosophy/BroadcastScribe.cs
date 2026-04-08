@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Domain.Common;
-using MooldangBot.ChzzkAPI.Interfaces;
 
 namespace MooldangBot.Application.Services.Philosophy;
 

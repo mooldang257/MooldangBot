@@ -26,8 +26,7 @@ public class RabbitMqService : IRabbitMqService, IDisposable
 
     static RabbitMqService()
     {
-        // Chzzk 전용 소스 생성 컨텍스트 및 기본 리졸버 체인 구성
-        _jsonOptions.TypeInfoResolverChain.Insert(0, MooldangBot.ChzzkAPI.Serialization.ChzzkJsonContext.Default);
+        // [v2.4.5] 인프라 계층은 특정 도메인 컨텍스트에 의존하지 않도록 일반 리졸버만 사용합니다.
         _jsonOptions.TypeInfoResolverChain.Add(new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());
     }
 

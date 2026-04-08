@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Infrastructure.Services;

@@ -52,5 +52,3 @@ public record CommandExecutionEvent(
     int? DonationAmount,
     DateTime OccurredAt
 );
-
-);

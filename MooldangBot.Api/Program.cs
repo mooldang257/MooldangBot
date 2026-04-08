@@ -1,6 +1,8 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
-using MooldangBot.ChzzkAPI.Serialization;
+using MooldangBot.ChzzkAPI.Clients;
+using MooldangBot.ChzzkAPI.Sharding;
+using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
 using MooldangBot.Presentation;
@@ -36,6 +38,7 @@ using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Api.Health;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
+using Prometheus;
 // [오시리스의 인장]: 애플리케이션 수명 주기 동안 로깅 보장
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -78,6 +81,30 @@ try
     });
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+
+    // [v2.4.5] 치지직 전문가(Implementation) 수동 등록 (순환 참조 방지 및 전문가 보존)
+    builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
+        .AddStandardResilienceHandler(options =>
+        {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            options.Retry.UseJitter = true;
+            options.Retry.Delay = TimeSpan.FromSeconds(2);
+            options.Retry.ShouldHandle = args => ValueTask.FromResult(
+                args.Outcome.Exception is HttpRequestException ||
+                (args.Outcome.Result != null && 
+                    ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500))
+            );
+            options.CircuitBreaker.MinimumThroughput = 5;
+            options.CircuitBreaker.FailureRatio = 0.3;
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+            options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(
+                args.Outcome.Result != null && 
+                    ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500)
+            );
+        });
+    builder.Services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();
 
     // [v4.0] 수호자의 지문: 데이터 보호 서비스 등록 및 EF Core 키 저장소 설정
     builder.Services.AddDataProtection()

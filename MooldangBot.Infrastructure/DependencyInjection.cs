@@ -10,9 +10,6 @@ using MooldangBot.Infrastructure.ApiClients;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Messaging;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
-using MooldangBot.Infrastructure.ApiClients.Philosophy.Sharding;
-using MooldangBot.ChzzkAPI; 
-using MooldangBot.ChzzkAPI.Interfaces;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Infrastructure.Services;
 using MooldangBot.Application.Workers;
@@ -95,41 +92,14 @@ namespace MooldangBot.Infrastructure
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-            // Api Clients — [v10.0] "심연의 도서관" 치지직 전용 모듈 연동
-            services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
-                .AddStandardResilienceHandler(options =>
-                {
-                    // [오시리스의 인내]: 지수 백오프 기반 재시도 전략 (2s, 4s, 8s) + 지터(무작위성) 추가
-                    options.Retry.MaxRetryAttempts = 3;
-                    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-                    options.Retry.UseJitter = true; // [물멍의 팁]: 재시도 폭풍 방지용 지터 활성화
-                    options.Retry.Delay = TimeSpan.FromSeconds(2);
-                    
-                    // [오시리스의 각성]: 429(Too Many Requests) 및 5xx 에러에만 재시도 수행
-                    options.Retry.ShouldHandle = args => ValueTask.FromResult(
-                        args.Outcome.Exception is HttpRequestException ||
-                        (args.Outcome.Result != null && 
-                            ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500))
-                    );
-
-                    // [오시리스의 방패]: 429 발생 시 서킷을 더 빨리 닫아 IP 차단 방지
-                    options.CircuitBreaker.MinimumThroughput = 5;
-                    options.CircuitBreaker.FailureRatio = 0.3; // 30% 실패 시 차단
-                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
-                    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-                    options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(
-                        args.Outcome.Result != null && 
-                            ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500)
-                    );
-                });
+            // [v2.4.5] IChzzkApiClient 및 IChzzkChatClient 등록은 각 호스트(Api/ChzzkAPI) 레벨로 이관되었습니다.
             // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
             // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
             
             // AI 기능 호출 시 무응답(Silence) 처리를 위해 Mock 서비스를 등록합니다.
             services.AddSingleton<ILlmService, LlmServiceMock>();
 
-            // [피닉스의 심장]: 실전 채팅 클라이언트 (샤드 분할 관리형)
-            services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();
+            // [v2.4.5] ShardedWebSocketManager 등록 이관
 
             // [오시리스의 기록관]: 방송 통계 및 세션 관리
             services.AddSingleton<IBroadcastScribe, BroadcastScribe>();

@@ -6,23 +6,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Domain.Entities;
+using MooldangBot.Application.Models;
+using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Common;
-using MooldangBot.ChzzkAPI.Interfaces;
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Services;
 
+public class ChzzkBotService : IChzzkBotService
+{
     private readonly IRabbitMqService _rabbitMq;
     private readonly IDynamicQueryEngine _dynamicEngine; 
+    private readonly ITokenRenewalService _renewalService;
     private readonly ILogger<ChzzkBotService> _logger;
 
     public ChzzkBotService(
         IRabbitMqService rabbitMq, 
         IDynamicQueryEngine dynamicEngine, 
+        ITokenRenewalService renewalService,
         ILogger<ChzzkBotService> logger)
     {
         _rabbitMq = rabbitMq;
         _dynamicEngine = dynamicEngine;
+        _renewalService = renewalService;
         _logger = logger;
     }
 
@@ -61,11 +67,11 @@ namespace MooldangBot.Application.Services;
                 profile.ChzzkUid, 
                 BotCommandType.SendMessage, 
                 processedMessage, 
-                isNotice);
+                KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
 
             await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
 
-            return true; // 발행 성공 시 일단 true 반환 (비동기 처리)
+            return true;
         }
         catch (Exception ex)
         {
@@ -82,29 +88,28 @@ namespace MooldangBot.Application.Services;
 
     public async Task EnsureConnectionAsync(string chzzkUid, bool forceFresh = false)
     {
-        // [v2.3] 원격 제어: Api 서버는 상태를 직접 관리하지 않고 봇 엔진에 재연결 명령만 전달합니다.
         _logger.LogInformation($"🔄 [인드라의 명령] {chzzkUid} 채널에 대한 재연결 명령을 발행합니다.");
         
         var command = new ChzzkBotCommand(
             Guid.NewGuid(), 
             chzzkUid, 
             BotCommandType.Reconnect, 
-            null);
+            null,
+            KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
 
         await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
     }
 
     public async Task HandleAuthFailureAsync(string chzzkUid)
     {
-        // [v2.3] 자가 치유는 이제 봇 엔진(ChzzkAPI)의 책임입니다. 
-        // Api 서버는 갱신 명령만 전달합니다.
         _logger.LogWarning($"🚨 [자가 치유 요청] {chzzkUid} 채널에 대한 토큰 새로고침 명령을 발행합니다.");
         
         var command = new ChzzkBotCommand(
             Guid.NewGuid(), 
             chzzkUid, 
             BotCommandType.RefreshSettings, 
-            null);
+            null,
+            KstClock.Now); // [v2.4.5] 누락된 타임스탬프 보강
 
         await _rabbitMq.PublishAsync(command, "", RabbitMqExchanges.BotCommands);
     }

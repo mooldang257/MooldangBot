@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
-using MooldangBot.ChzzkAPI.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
