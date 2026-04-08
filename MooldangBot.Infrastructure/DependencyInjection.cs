@@ -40,6 +40,10 @@ namespace MooldangBot.Infrastructure
             // API 환경에서는 Presentation 레이어에서 등록된 실제 UserSession으로 덮어씌워집니다.
             services.TryAddScoped<IUserSession, BotUserSession>();
 
+            // [v2.4.8] 오시리스의 전령: 백그라운드 환경용 더미 알림 서비스 등록
+            // API 환경에서는 Presentation 레이어에서 등록된 실제 OverlayNotificationService로 덮어씌워집니다.
+            services.TryAddScoped<IOverlayNotificationService, NullOverlayNotificationService>();
+
             // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록 (열쇠 전역 공유)
             // 봇 엔진(ChzzkAPI)에서도 API가 저장한 암호화 토큰을 읽을 수 있도록 DB에 키를 저장합니다.
             services.AddDataProtection()
