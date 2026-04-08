@@ -220,8 +220,13 @@ public class WebSocketShard : IWebSocketShard
                 // [오시리스의 정석]: SYSTEM 메시지 처리 (sessionKey 획득 및 구독)
                 if (eventName.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payload = root[1];
-                    if (payload.TryGetProperty("sessionKey", out var keyProp))
+                    // [v1.0.1] 이중 파싱: 공식 규격상 payload가 문자열로 직렬화되어 옴
+                    var payloadString = root[1].GetString() ?? "{}";
+                    using var payloadDoc = System.Text.Json.JsonDocument.Parse(payloadString);
+                    var payloadRoot = payloadDoc.RootElement;
+
+                    if (payloadRoot.TryGetProperty("data", out var dataProp) && 
+                        dataProp.TryGetProperty("sessionKey", out var keyProp))
                     {
                         string sessionKey = keyProp.GetString() ?? "";
                         _logger.LogInformation("📥 [SYSTEM 메시지] {ChzzkUid} 세션 키 획득 완료: {SessionKey}", chzzkUid, sessionKey);
