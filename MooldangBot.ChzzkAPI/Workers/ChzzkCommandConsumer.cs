@@ -7,6 +7,7 @@ using MooldangBot.Application.Models;
 using MooldangBot.Infrastructure.Messaging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.ChzzkAPI.Workers;
 
