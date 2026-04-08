@@ -67,16 +67,17 @@ public class WebSocketShard : IWebSocketShard
     {
         try
         {
+            _logger.LogInformation("🌊 [파동의 시작] {ChzzkUid} 채널에 대한 연결 시도를 시작합니다.", chzzkUid);
             await DisconnectAsync(chzzkUid);
 
             using var scope = _scopeFactory.CreateScope();
-            // [DIP 적용]: Application 계층의 인터페이스를 사용하여 전문가의 알맹이를 획득합니다.
             var chzzkApi = scope.ServiceProvider.GetRequiredService<IChzzkApiClient>();
             
+            _logger.LogDebug("[파동의 인증] {ChzzkUid} 세션 인증 정보 요청 중...", chzzkUid);
             var sessionAuth = await chzzkApi.GetSessionAuthAsync(accessToken);
             if (sessionAuth == null || string.IsNullOrEmpty(sessionAuth.Content?.Url))
             {
-                _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심)", chzzkUid);
+                _logger.LogError("[파동의 오류] {ChzzkUid} 인증 정보 획득 실패 (401 의심). 응답이 null이거나 URL이 없습니다.", chzzkUid);
                 _authErrors[chzzkUid] = true;
                 return false;
             }
@@ -84,6 +85,8 @@ public class WebSocketShard : IWebSocketShard
             _authErrors.TryRemove(chzzkUid, out _);
 
             string socketUrl = sessionAuth.Content.Url;
+            _logger.LogInformation("🔗 [파동의 경로] {ChzzkUid} 소켓 URL 획득 완료: {Url}", chzzkUid, socketUrl);
+
             if (!socketUrl.Contains("transport=websocket"))
             {
                 var uriBuilder = new UriBuilder(socketUrl) { Scheme = "wss" };
@@ -91,6 +94,7 @@ public class WebSocketShard : IWebSocketShard
                 string extraQuery = "transport=websocket&EIO=3";
                 uriBuilder.Query = string.IsNullOrEmpty(uriBuilder.Query) ? extraQuery : uriBuilder.Query.Substring(1) + "&" + extraQuery;
                 socketUrl = uriBuilder.ToString();
+                _logger.LogDebug("🔄 [파동의 변환] URL 재구성 완료: {Url}", socketUrl);
             }
 
             var factory = new Func<ClientWebSocket>(() =>
@@ -119,15 +123,16 @@ public class WebSocketShard : IWebSocketShard
 
             client.ReconnectionHappened.Subscribe(info => 
             {
-                _logger.LogInformation("[파동의 공명] {ChzzkUid} 채널 연결 상태 변경: {Type}", chzzkUid, info.Type);
+                _logger.LogInformation("❇️ [파동의 공명] {ChzzkUid} 채널 연결 성공! (유형: {Type})", chzzkUid, info.Type);
             });
 
             client.DisconnectionHappened.Subscribe(info => 
             {
                 if (info.Type != DisconnectionType.Exit)
-                    _logger.LogWarning("[파동의 고립] {ChzzkUid} 채널 연결 끊김 ({Type})", chzzkUid, info.Type);
+                    _logger.LogWarning("🚩 [파동의 고립] {ChzzkUid} 채널 연결 끊김! (원인: {Type})", chzzkUid, info.Type);
             });
 
+            _logger.LogInformation("🚀 [파동의 가동] {ChzzkUid} 소켓 엔진을 시작합니다...", chzzkUid);
             await client.Start();
             _clients[chzzkUid] = client;
             _lastActivityList[chzzkUid] = KstClock.Now;
@@ -138,6 +143,7 @@ public class WebSocketShard : IWebSocketShard
             _pingCtsList[chzzkUid] = cts;
             _ = StartActivePingLoopAsync(chzzkUid, client, cts.Token);
 
+            _logger.LogInformation("✅ [파동의 안착] {ChzzkUid} 채널 연결 프로세스가 완료되었습니다.", chzzkUid);
             return true;
         }
         catch (Exception ex)
