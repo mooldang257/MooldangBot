@@ -1,4 +1,4 @@
-version: '3.8'
+# [오시리스의 함대]: MooldangBot 통합 인프라 서비스 시트
 
 services:
   db:
