@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
-    <ProjectReference Include="..\MooldangBot.ChzzkAPI\MooldangBot.ChzzkAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,7 +10,7 @@ namespace MooldangBot.Infrastructure.Persistence;
 public class DbInitializer(
     AppDbContext db, 
     IConfiguration config,
-    IChzzkChatClient chatClient,
+    MooldangBot.Application.Interfaces.IChzzkChatClient chatClient,
     ILogger<DbInitializer> logger) : IDbInitializer
 {
     public async Task InitializeAsync()

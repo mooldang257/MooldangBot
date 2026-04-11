@@ -109,7 +109,27 @@ namespace MooldangBot.Infrastructure
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-            // [v2.4.5] IChzzkApiClient 및 IChzzkChatClient 등록은 각 호스트(Api/ChzzkAPI) 레벨로 이관되었습니다.
+            // [v2.4.5] 치지직 게이트웨이(ChzzkAPI) 통신용 전용 클라이언트 구성
+            services.AddHttpClient("ChzzkGateway", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                var gatewayUrl = config["ChzzkApi:GatewayUrl"] ?? "http://chzzk-bot:8080";
+                client.BaseAddress = new Uri(gatewayUrl);
+                
+                // 내부 API 보안 헤더 주입
+                var secret = config["INTERNAL_API_SECRET"];
+                if (!string.IsNullOrEmpty(secret))
+                {
+                    client.DefaultRequestHeaders.Add("X-Internal-Secret", secret);
+                }
+            });
+
+            // [오시리스의 영혼]: 실제 치지직 API 클라이언트 등록 (게이트웨이 위임 방식)
+            services.AddSingleton<IChzzkApiClient, ChzzkApiClient>();
+
+            // [피닉스의 심장]: 실전 채팅 클라이언트 (게이트웨이 프록시 기반으로 전환 - 1단계)
+            // [네임스페이스 명시]: Application.Interfaces의 규격을 구현한 프록시를 주입합니다.
+            services.AddSingleton<MooldangBot.Application.Interfaces.IChzzkChatClient, GatewayChatClientProxy>();
             // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
             // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
             

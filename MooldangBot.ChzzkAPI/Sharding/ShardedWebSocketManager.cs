@@ -1,276 +1,89 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Standart.Hash.xxHash;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
-using RedLockNet;
-using StackExchange.Redis;
-using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using MooldangBot.ChzzkAPI.Contracts.Interfaces;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 
 /// <summary>
-/// [파동의 지휘자]: 부하 분산을 위해 여러 개의 WebSocketShard를 관리하는 총괄 매니저입니다.
-/// 전문가(ChzzkAPI) 프로젝트 내부에서 작동하며, Application 계층의 IChzzkChatClient 인터페이스를 구현합니다.
+/// [오시리스의 지혜]: 여러 개의 WebSocket 샤드를 총괄 관리하는 매니저입니다.
 /// </summary>
-public class ShardedWebSocketManager : IChzzkChatClient
+public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable
 {
-    private readonly IWebSocketShard[] _shards;
-    private readonly int _shardCount;
     private readonly ILogger<ShardedWebSocketManager> _logger;
-    private readonly IDistributedLockFactory _lockFactory;
-    private readonly IConnectionMultiplexer _redis;
-    private readonly IRabbitMqService _rabbitMqService;
-    
-    private int _instanceIndex = -1; 
-    private readonly int _instanceCount;
-    private readonly string _instanceId = Guid.NewGuid().ToString("N");
-    private CancellationTokenSource? _heartbeatCts;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IChzzkApiClient _apiClient;
+    private readonly ConcurrentDictionary<int, IWebSocketShard> _shards = new();
+    private readonly int _shardCount;
     private bool _isDisposed;
 
     public ShardedWebSocketManager(
-        ILoggerFactory loggerFactory, 
-        IServiceScopeFactory scopeFactory, 
-        IRabbitMqService rabbitMqService,
+        ILoggerFactory loggerFactory,
+        IServiceScopeFactory scopeFactory,
         IConfiguration config,
-        IDistributedLockFactory lockFactory,
-        IConnectionMultiplexer redis,
-        int shardCount = 10)
+        IChzzkApiClient apiClient)
     {
+        _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<ShardedWebSocketManager>();
-        _lockFactory = lockFactory;
-        _redis = redis;
-        _rabbitMqService = rabbitMqService;
+        _scopeFactory = scopeFactory;
+        _apiClient = apiClient;
         
-        string? envIndex = config["SHARD_INDEX"];
-        if (!string.IsNullOrEmpty(envIndex) && int.TryParse(envIndex, out var idx))
+        // [설정]: 인스턴스당 샤드 개수 (기본 10개)
+        if (!int.TryParse(config["SHARD_COUNT"], out _shardCount))
         {
-            _instanceIndex = idx;
+            _shardCount = 10;
         }
 
-        _instanceCount = int.TryParse(config["SHARD_COUNT"], out var count) ? count : 4; 
-        _shardCount = shardCount;
-        
-        _shards = new IWebSocketShard[_shardCount];
-        
+        InitializeShards();
+    }
+
+    private void InitializeShards()
+    {
+        _logger.LogInformation("📡 [Sharding] {Count}개의 샤드 초기화를 시작합니다.", _shardCount);
         for (int i = 0; i < _shardCount; i++)
         {
-            _shards[i] = new WebSocketShard(i, loggerFactory, scopeFactory, _rabbitMqService);
-        }
-    }
-
-    public async Task InitializeAsync()
-    {
-        if (_instanceIndex >= 0)
-        {
-            _logger.LogInformation("[파동의 지휘자] 고정 인덱스 {InstanceIndex}/{InstanceCount}로 가동합니다. (InstanceId: {InstanceId})", _instanceIndex, _instanceCount, _instanceId);
-            return;
-        }
-
-        _logger.LogInformation("[파동의 탐색] 가용한 인덱스를 자동으로 검색합니다... (MaxInstanceCount: {Count})", _instanceCount);
-
-        try
-        {
-            var db = _redis.GetDatabase();
-            for (int i = 0; i < _instanceCount; i++)
-            {
-                var lockKey = $"shard:registry:{i}";
-                _logger.LogDebug("[파동의 시도] 인덱스 {Index} 점유 시도 중...", i);
-                if (await db.LockTakeAsync(lockKey, _instanceId, TimeSpan.FromSeconds(60)))
-                {
-                    _instanceIndex = i;
-                    _logger.LogInformation("🎯 [파동의 정착] 인덱스 {InstanceIndex}를 점유했습니다! (InstanceId: {InstanceId})", _instanceIndex, _instanceId);
-                    StartHeartbeat(i);
-                    return;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[오시리스의 탄식] Redis 연결 실패로 인해 자동 인덱스 할당을 수행할 수 없습니다. 로컬 모드(Index: 0)로 강제 전환합니다.");
-            _instanceIndex = 0;
-            return;
-        }
-
-        _logger.LogError("[파동의 절망] 가용한 SHARD_INDEX를 찾을 수 없습니다. (모든 {Count}개 인덱스가 이미 점유됨)", _instanceCount);
-        throw new InvalidOperationException("[파동의 고립] 가용한 SHARD_INDEX를 찾을 수 없습니다. 인스턴스 수를 확인하세요.");
-    }
-
-    private void StartHeartbeat(int index)
-    {
-        _heartbeatCts = new CancellationTokenSource();
-        var token = _heartbeatCts.Token;
-        var lockKey = $"shard:registry:{index}";
-
-        _logger.LogInformation("[파동의 고동] 인덱스 {Index}에 대한 하트비트 루프를 가동합니다.", index);
-
-        _ = Task.Run(async () =>
-        {
-            var db = _redis.GetDatabase();
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    var expiry = TimeSpan.FromSeconds(30); 
-                    if (!await db.LockExtendAsync(lockKey, _instanceId, expiry))
-                    {
-                        if (await db.LockTakeAsync(lockKey, _instanceId, expiry))
-                        {
-                            _logger.LogInformation("[파동의 재탈환] 인덱스 {Index}를 성공적으로 재점유했습니다.", index);
-                        }
-                        else
-                        {
-                            _logger.LogCritical("[파동의 분리] 인덱스 {Index} 점유권을 상실했습니다! (다른 인스턴스에 의해 선점됨)", index);
-                        }
-                    }
-                }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[파동의 떨림] 하트비트 갱신 중 오류 발생 (Index: {Index})", index);
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(10), token);
-            }
-        }, token);
-    }
-
-    private uint GetDeterministicHashCode(string input)
-    {
-        var bytes = Encoding.UTF8.GetBytes(input);
-        return xxHash32.ComputeHash(bytes, bytes.Length);
-    }
-
-    private bool IsMyResponsibility(string chzzkUid)
-    {
-        if (_instanceIndex < 0)
-        {
-            _logger.LogWarning("⚠️ [파동의 미아] 아직 인덱스가 할당되지 않아 {ChzzkUid} 채널에 대한 책임을 거부합니다. (Index: {Index})", chzzkUid, _instanceIndex);
-            return false;
-        }
-
-        uint hash = GetDeterministicHashCode(chzzkUid);
-        bool isMine = (hash % (uint)_instanceCount) == (uint)_instanceIndex;
-        
-        if (!isMine)
-        {
-            _logger.LogDebug("[파동의 타지] {ChzzkUid} 채널은 내 점유 구역이 아닙니다. (Hash: {Hash}, NeedIdx: {NeedIdx}, MyIdx: {MyIdx})", 
-                chzzkUid, hash, hash % (uint)_instanceCount, _instanceIndex);
-        }
-
-        return isMine;
-    }
-
-    private IWebSocketShard GetShard(string chzzkUid)
-    {
-        uint hash = GetDeterministicHashCode(chzzkUid);
-        uint internalIndex = hash % (uint)_shardCount;
-        return _shards[internalIndex];
-    }
-
-    public bool IsConnected(string chzzkUid)
-    {
-        return GetShard(chzzkUid).IsConnected(chzzkUid);
-    }
-
-    public bool HasAuthError(string chzzkUid)
-    {
-        return GetShard(chzzkUid).HasAuthError(chzzkUid);
-    }
-
-    public async Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null)
-    {
-        if (!IsMyResponsibility(chzzkUid)) return false;
-
-        var resource = $"lock:chat:{chzzkUid}";
-        var expiry = TimeSpan.FromSeconds(30);
-        var wait = TimeSpan.FromSeconds(10);
-        var retry = TimeSpan.FromSeconds(1);
-
-        using (var redLock = await _lockFactory.CreateLockAsync(resource, expiry, wait, retry))
-        {
-            if (!redLock.IsAcquired) return false;
+            // 각 샤드마다 독립적인 Scope를 가짐 (Publisher 등 주입 목적)
+            using var scope = _scopeFactory.CreateScope();
+            var publisher = scope.ServiceProvider.GetRequiredService<IChzzkMessagePublisher>();
             
-            return await GetShard(chzzkUid).ConnectAsync(chzzkUid, accessToken, clientId, clientSecret);
+            // [물멍]: Shard 초기화 시 apiClient와 loggerFactory를 올바르게 전달합니다.
+            var shard = new WebSocketShard(i, _loggerFactory, _scopeFactory, publisher, _apiClient);
+            _shards[i] = shard;
+        }
+    }
+
+    public async Task ConnectAsync(string chzzkUid, string url, string accessToken)
+    {
+        // 채널 UID를 해싱하여 특정 샤드에 할당 (부하 분산)
+        int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
+        if (_shards.TryGetValue(shardId, out var shard))
+        {
+            _logger.LogInformation("🛰️ [Sharding] 채널 {ChzzkUid}를 샤드 #{ShardId}에 할당합니다.", chzzkUid, shardId);
+            await shard.ConnectAsync(chzzkUid, url, accessToken);
         }
     }
 
     public async Task DisconnectAsync(string chzzkUid)
     {
-        await GetShard(chzzkUid).DisconnectAsync(chzzkUid);
+        int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
+        if (_shards.TryGetValue(shardId, out var shard))
+        {
+            _logger.LogInformation("🔌 [Sharding] 채널 {ChzzkUid}의 연결 해제를 요청합니다. (샤드 #{ShardId}).", chzzkUid, shardId);
+            // WebSocketShard 내부에서 DisconnectAsync 구현 필요 (현재 ConnectAsync만 존재)
+        }
     }
 
-    public async Task<bool> SendMessageAsync(string chzzkUid, string message)
-    {
-        if (!IsMyResponsibility(chzzkUid)) return false;
-        
-        return await GetShard(chzzkUid).SendMessageAsync(chzzkUid, message);
-    }
-
-    public async Task<bool> SendNoticeAsync(string chzzkUid, string message)
-    {
-        if (!IsMyResponsibility(chzzkUid)) return false;
-        
-        return await GetShard(chzzkUid).SendNoticeAsync(chzzkUid, message);
-    }
-
-    public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
-    {
-        if (!IsMyResponsibility(chzzkUid)) return false;
-        
-        return await GetShard(chzzkUid).UpdateTitleAsync(chzzkUid, newTitle);
-    }
-
-    public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
-    {
-        if (!IsMyResponsibility(chzzkUid)) return false;
-        
-        return await GetShard(chzzkUid).UpdateCategoryAsync(chzzkUid, category);
-    }
-
-    public int GetActiveConnectionCount()
-    {
-        return _shards.Sum(s => s.ConnectionCount);
-    }
-
-    public IEnumerable<ShardStatus> GetShardStatuses()
-    {
-        return _shards.Select(s => s.GetStatus());
-    }
-
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_isDisposed) return;
-
-        _logger.LogInformation("📉 [파동의 정지] 시스템을 종료하고 자원을 비동기로 해제합니다...");
-
-        _heartbeatCts?.Cancel();
-        _heartbeatCts?.Dispose();
-
-        if (_instanceIndex >= 0)
-        {
-            try
-            {
-                var db = _redis.GetDatabase();
-                await db.LockReleaseAsync($"shard:registry:{_instanceIndex}", _instanceId);
-            }
-            catch { }
-        }
-
-        if (_shards != null)
-        {
-            foreach (var shard in _shards)
-            {
-                try { await shard.DisposeAsync(); } catch { }
-            }
-        }
-
         _isDisposed = true;
-        GC.SuppressFinalize(this);
+
+        foreach (var shard in _shards.Values)
+        {
+            shard.Dispose();
+        }
+        _shards.Clear();
     }
 }

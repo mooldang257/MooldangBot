@@ -23,8 +23,8 @@ namespace MooldangBot.Presentation.Features.Auth
 
     [ApiController]
     [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}")] // 새로운 버전 명시 경로
-    [Route("api")]                       // 레거시 하위 호환 경로
+    [Route("api")]
+    [Route("api/v{version:apiVersion}")]
     public class AuthController(
         IAppDbContext _db, 
         IConfiguration _configuration, 
@@ -229,6 +229,49 @@ namespace MooldangBot.Presentation.Features.Auth
             }
             
             return Ok(Result<object>.Success(new { chzzkUid }));
+        }
+
+        [HttpGet("auth/validate-access/by-slug/{slug}")]
+        [Authorize]
+        public async Task<IActionResult> ValidateStreamerAccessBySlug(string slug)
+        {
+            if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[오시리스의 거절] 유효하지 않은 주소입니다."));
+
+            // 1. [이지스]: 슬러그를 통한 UID 조회 (단일 홉 최적화)
+            var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
+            if (string.IsNullOrEmpty(chzzkUid))
+            {
+                _logger.LogWarning($"[RBAC] 존재하지 않는 슬러그 접근 시도: {slug}");
+                return Ok(Result<object>.Failure("[오시리스의 거절] 존재하지 않는 함교 주소입니다."));
+            }
+
+            // 2. 현재 사용자 권한 확인 (Claims 기반 RBAC)
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            var currentUserId = User.FindFirstValue("StreamerId");
+
+            // [Type A]: 마스터(Global Admin)는 모든 함교 프리패스
+            if (userRole == "master")
+            {
+                _logger.LogInformation($"[RBAC] 마스터 권한 승인: {currentUserId} -> {slug}({chzzkUid})");
+                return Ok(Result<object>.Success(new { chzzkUid }));
+            }
+
+            // [Type B]: 스트리머 본인 확인
+            if (currentUserId?.ToLower() == chzzkUid.ToLower())
+            {
+                return Ok(Result<object>.Success(new { chzzkUid }));
+            }
+
+            // [Type C]: 매니저 권한 확인 (AllowedChannelId 클레임 목록 교차 검증)
+            var allowedChannels = User.FindAll("AllowedChannelId").Select(c => c.Value.ToLower()).ToList();
+            if (allowedChannels.Contains(chzzkUid.ToLower()))
+            {
+                _logger.LogInformation($"[RBAC] 매니저 권한 승인: {currentUserId} -> {slug}({chzzkUid})");
+                return Ok(Result<object>.Success(new { chzzkUid }));
+            }
+
+            _logger.LogWarning($"[RBAC] 접근 거부: {currentUserId} (Role: {userRole}) -> {slug}({chzzkUid})");
+            return Ok(Result<object>.Failure("[오시리스의 거절] 해당 함교의 관리 권한이 없습니다."));
         }
 
         [HttpGet("auth/logout")]

@@ -1,31 +1,32 @@
-# [v2.4.4] 함대 전개 안정화: ChzzkAPI 전 전용 Dockerfile
+# 1. Runtime Base Image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+# [오시리스의 보철]: 헬스체크용 curl 설치 및 캐시 정리
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Build Environment
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# 1. 프로젝트 파일 복사
+# Copy csproj and Restore
 COPY ["MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj", "MooldangBot.ChzzkAPI/"]
-COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
-COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
-COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
-
-# 2. 패키지 복원
+COPY ["MooldangBot.ChzzkAPI.Contracts/MooldangBot.ChzzkAPI.Contracts.csproj", "MooldangBot.ChzzkAPI.Contracts/"]
 RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
 
-# 3. 소스 코드 복사 및 빌드
+# Copy source and build
 COPY . .
 WORKDIR "/src/MooldangBot.ChzzkAPI"
 RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build
 
-# 4. 게시
+# 3. Publish
 FROM build AS publish
 RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# 5. 런타임 이미지
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# 4. Final Image
+FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-
-# 메트릭 서버용 포트 개방
-EXPOSE 8080
-
 ENTRYPOINT ["dotnet", "MooldangBot.ChzzkAPI.dll"]

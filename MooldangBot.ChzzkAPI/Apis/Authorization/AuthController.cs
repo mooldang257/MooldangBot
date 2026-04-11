@@ -1,0 +1,56 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using MooldangBot.ChzzkAPI.Contracts.Interfaces;
+using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Authorization;
+
+namespace MooldangBot.ChzzkAPI.Apis.Authorization;
+
+/// <summary>
+/// [?ㅼ떆由ъ뒪???쒖빟]: 移섏?吏?OAuth2 ?몄쬆 諛??좏겙 愿由щ? ?대떦?섎뒗 而⑦듃濡ㅻ윭?낅땲??
+/// </summary>
+[ApiController]
+[Route("apis/chzzk/auth")]
+public class AuthController : ControllerBase
+{
+    private readonly IChzzkApiClient _apiClient;
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(IChzzkApiClient apiClient, ILogger<AuthController> logger)
+    {
+        _apiClient = apiClient;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// [?좏겙 援먰솚]: ?몄쬆 肄붾뱶瑜??ъ슜?섏뿬 ?≪꽭???좏겙??諛쒓툒諛쏆뒿?덈떎.
+    /// </summary>
+    [HttpPost("token/exchange")]
+    public async Task<IActionResult> ExchangeToken([FromQuery] string code, [FromQuery] string state = "mooldang")
+    {
+        var token = await _apiClient.GetTokenAsync(code, state);
+        if (token == null) return BadRequest("?좏겙 諛쒓툒???ㅽ뙣?섏??듬땲??");
+
+        return Ok(token);
+    }
+
+    /// <summary>
+    /// [?좏겙 媛깆떊]: 由ы봽?덉떆 ?좏겙???ъ슜?섏뿬 ?≪꽭???좏겙??媛깆떊?⑸땲??
+    /// </summary>
+    [HttpPost("token/refresh")]
+    public async Task<IActionResult> RefreshToken([FromQuery] string refreshToken)
+    {
+        var token = await _apiClient.RefreshTokenAsync(refreshToken);
+        if (token == null) return BadRequest("?좏겙 媛깆떊???ㅽ뙣?섏??듬땲??");
+
+        return Ok(token);
+    }
+
+    /// <summary>
+    /// [?좏겙 ?먭린]: ?ъ슜 以묒씤 ?좏겙??臾댄슚?뷀빀?덈떎.
+    /// </summary>
+    [HttpPost("token/revoke")]
+    public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenRequest request)
+    {
+        var success = await _apiClient.RevokeTokenAsync(request.Token, request.TokenTypeHint);
+        return Ok(new { success });
+    }
+}

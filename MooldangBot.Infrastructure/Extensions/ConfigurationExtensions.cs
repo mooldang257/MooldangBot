@@ -105,34 +105,48 @@ public static class ConfigurationExtensions
             "RABBITMQ_PASS"
         ];
 
-        // 3. 누락된 키 필터링 (Case-Insensitive 체크)
+        // 3. 누락된 키 필터링 (심층 방어적 검증 적용)
         var missingKeys = new List<string>();
         foreach (var key in requiredKeys)
         {
-            // Case-Insensitive Dictionary에서 먼저 시도
+            // [Step 1]: 표준 매핑 시도 (Case-Insensitive)
             if (configDict.TryGetValue(key, out var val) && !string.IsNullOrWhiteSpace(val)) continue;
 
-            // [물멍]: PascalCase 섹션이 없는 경우 ALL_CAPS 매핑도 시도 (예: ChzzkApi:ClientId -> CHZZK_API:CLIENT_ID)
-            var upperKey = key.Replace(":", "_").ToUpper();
-            var colonUpperKey = key.ToUpper(); // 중간에 : 이 있는 경우 (예: CHZZKAPI:CLIENTID)
+            // [Step 2]: [방어적 검증] 섹션 구분자(:) 및 단어 구분자(_)를 제거하고 비교
+            var normalizedTarget = key.Replace(":", "").Replace("_", "").ToUpper();
             
             bool foundFallback = false;
             foreach (var kvp in configDict)
             {
-                var normKey = kvp.Key.Replace(":", "_").ToUpper();
-                if (normKey == upperKey && !string.IsNullOrWhiteSpace(kvp.Value)) { foundFallback = true; break; }
-                if (kvp.Key.ToUpper() == colonUpperKey && !string.IsNullOrWhiteSpace(kvp.Value)) { foundFallback = true; break; }
+                // 환경 변수 및 설정 키에서 모든 특수 구분자 제거 후 비교
+                var normalizedConfigKey = kvp.Key.Replace(":", "").Replace("_", "").ToUpper();
+                
+                if (normalizedConfigKey == normalizedTarget && !string.IsNullOrWhiteSpace(kvp.Value)) 
+                { 
+                    foundFallback = true; 
+                    // [오시리스의 조언]: 실제 매핑된 이름을 출력하여 디버깅을 돕습니다.
+                    Console.WriteLine($"⚖️ [오시리스의 저울]: 키 매핑 보정 - '{key}' -> '{kvp.Key}' (Match Found)");
+                    break; 
+                }
             }
 
-            if (!foundFallback) missingKeys.Add(key);
+            if (!foundFallback) 
+            {
+                missingKeys.Add(key);
+            }
         }
 
         if (missingKeys.Any())
         {
             var missingKeysString = string.Join("\n - ", missingKeys);
+            
+            // 보유 중인 모든 설정 키의 목록을 시각화 (디버깅 지원)
+            var availableKeys = string.Join(", ", configDict.Keys.Take(20));
+            
             throw new InvalidOperationException(
-                $"🔥 [오시리스의 저울 - 검증 실패]: 필수 설정값이 하나 이상 누락되었습니다. 애플리케이션 실행을 중단합니다.\n" +
+                $"🔥 [오시리스의 저울 - 검증 실패]: 필수 설정값이 하나 이상 누락되었습니다.\n" +
                 $"[누락된 키 목록]:\n - {missingKeysString}\n\n" +
+                $"[현재 로드된 키 예시]: {availableKeys}...\n\n" +
                 "💡 조치 방법: .env 파일 또는 Docker 환경 변수에 해당 키가 올바르게 설정되었는지 확인하십시오."
             );
         }

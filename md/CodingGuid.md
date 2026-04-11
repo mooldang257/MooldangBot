@@ -107,5 +107,24 @@ public async Task<string?> ExchangeCodeForTokenAsync(string code) { ... }
 
 ---
 
+## 6. 치지직 공식 Open API 연동 지침 (A군 규격)
+
+치지직 Open API 전환에 따라 모든 외부 통신 클라이언트는 본 지침을 엄격히 준수해야 합니다.
+
+### 📦 공통 응답 구조 (Envelope Pattern)
+- **A군(봉투형) 준수**: 네이버 공식 API는 반드시 `code`, `message`, `content` 구조를 가집니다. (Reference: `참고사항.md`)
+- **구조**: `{ "code": 200, "message": null, "content": { ... } }`
+- **매핑**: 반드시 `ChzzkApiResponse<T>` 래퍼 모델을 사용하여 데이터를 추출합니다.
+
+### 🆔 식별자 전략 (Identity Strategy)
+- **Channel ID 최우선**: `userIdHash`(레거시) 대신 `users/me` API가 반환하는 정식 **`channelId` (32자 해시)**를 시스템의 주 식별자(`ChzzkUid`)로 사용합니다.
+- **정합성**: 채널ID는 채널과 유저를 식별하는 공식 고유 식별자이며, Open API 호출 시(live-detail 등) 필수값입니다.
+
+### 🛡️ 방어적 연동 (Resilience)
+- **Safe Invocation**: 외부 API 호출 실패(404 등)가 전체 시스템(대시보드 등)의 크래시로 이어지지 않도록 반드시 `SafeGetAsync`와 같은 예외 처리 패턴을 사용합니다.
+- **Gateway Proxy**: 모든 치지직 API 호출은 `ChzzkAPI` 게이트웨이를 경유하며, 게이트웨이는 내부 보안 키(`X-Internal-Secret-Key`)를 통해 인증됩니다.
+
+---
+
 **지혜는 정적이지 않으며, 변화를 통해 완성됩니다.**
 본 가이드는 프로젝트의 성장에 따라 세피로스의 통찰을 거쳐 지속적으로 업데이트될 것입니다.

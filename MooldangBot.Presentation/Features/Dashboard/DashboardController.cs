@@ -52,6 +52,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
 
             var summary = new DashboardSummaryDto
             {
+                // [물멍]: liveStatus가 null이거나 Content가 null인 경우 안전하게 false 처리
                 IsLive = liveStatus?.Content?.Status == "OPEN",
                 TodaySongs = todaySongs,
                 PendingSongs = pendingSongs,

@@ -1,7 +1,5 @@
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Extensions;
-using MooldangBot.ChzzkAPI.Clients;
-using MooldangBot.ChzzkAPI.Sharding;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
@@ -82,29 +80,17 @@ try
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    // [v2.4.5] 치지직 전문가(Implementation) 수동 등록 (순환 참조 방지 및 전문가 보존)
-    builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
-        .AddStandardResilienceHandler(options =>
-        {
-            options.Retry.MaxRetryAttempts = 3;
-            options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-            options.Retry.UseJitter = true;
-            options.Retry.Delay = TimeSpan.FromSeconds(2);
-            options.Retry.ShouldHandle = args => ValueTask.FromResult(
-                args.Outcome.Exception is HttpRequestException ||
-                (args.Outcome.Result != null && 
-                    ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500))
-            );
-            options.CircuitBreaker.MinimumThroughput = 5;
-            options.CircuitBreaker.FailureRatio = 0.3;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
-            options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-            options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(
-                args.Outcome.Result != null && 
-                    ((int)args.Outcome.Result.StatusCode == 429 || (int)args.Outcome.Result.StatusCode >= 500)
-            );
-        });
-    builder.Services.AddSingleton<IChzzkChatClient, ShardedWebSocketManager>();
+    // [오시리스의 검사]: 런타임 DI 정합성 최종 확인 가드
+    // 만약 인프라 서비스 등록 과정에서 누락되었다면 여기서 강제로 계통을 연결합니다.
+    if (!builder.Services.Any(x => x.ServiceType == typeof(MooldangBot.Application.Interfaces.IChzzkChatClient)))
+    {
+        Log.Warning("⚠️ [DI Guard] IChzzkChatClient was missing from Infrastructure services. Forcing registration...");
+        builder.Services.AddSingleton<MooldangBot.Application.Interfaces.IChzzkChatClient, MooldangBot.Infrastructure.ApiClients.GatewayChatClientProxy>();
+    }
+
+    // [v2.4.5] 치지직 전문가 등록은 Infrastructure 레이어의 AddInfrastructureServices에서 통합 관리됩니다.
+    // [중복 제거]: builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>() 로직이 인프라로 이동함
+    // [v4.5.3] 채팅 클라이언트 관리 주체는 Infrastructure 레이어로 격리됨 (GatewayChatClientProxy 사용)
 
 
 

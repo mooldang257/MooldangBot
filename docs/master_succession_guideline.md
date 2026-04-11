@@ -25,39 +25,41 @@
 
 ## 2. 오시리스의 설계도 (Technical Blueprint)
 
-### 🏗️ 시스템 아키텍처 (Clean Architecture)
-- **Backend**: C# .NET 10 (최신 문법 적극 활용).
+### 🏗️ 시스템 아키텍처 (Hybrid Microservices & Clean Architecture)
+- **Backend**: C# .NET 10 (최신 문법 및 소스 생성기 적극 활용).
+- **Architecture**: **v2.0 현대화 아키텍처** (게이트웨이 기반 격리 체계).
+    - **Chzzk Gateway**: 소켓 및 외부 API 통신 전담 마이크로서비스 (격리 및 전문성).
+    - **Physical Isolation**: Contracts 라이브러리를 통한 인터페이스 위임 및 부패 방지 계층(ACL) 구축.
 - **Frontend (Admin)**: SvelteKit v2 (SSR Guard, Tailwind CSS).
 - **Frontend (Overlay)**: Svelte + Vite + PixiJS + GSAP (고성능 GPU 가속 위젯).
 - **Database**: MariaDB (Dapper + EF Core 혼용).
-- **Infrastructure**: Cloudflare Tunnel (Zero Trust) + Nginx (리버스 프록시).
+- **Infrastructure**: Docker Compose 기반 오케스트레이션 + Nginx 리버스 프록시.
 
 ### 🗄️ 핵심 데이터 스키마 및 거버넌스
 - **테이블 접두어 규칙**: `CORE_` (핵심), `FUNC_` (기능), `VIEW_` (조회/표현), `SYS_` (인프라).
 - **전역 거버넌스**:
     - **Soft Delete**: `ISoftDeletable` 인터페이스 (IsDeleted 필드 관리).
     - **Audit**: `IAuditable` 인터페이스 (CreatedAt, UpdatedAt 자동 추적).
-    - **Encryption**: `IDataProtector`를 활용하여 민감 정보(Token 등) 암호화 저장.
+    - **Secret Hiding**: 토큰 등 민감 정보는 오직 게이트웨이만 보관하며, 내부 통신은 `INTERNAL_API_SECRET` 증표로 위임.
 
 ### 🔐 주요 클래스 구조 (Class Structure)
 - **`AppDbContext`**: 전역 필터 및 감사 로직이 집약된 데이터 통제 센터.
-- **`UnifiedCommand`**: 텍스트 답변, 공지, 기능 실행 등을 하나로 통합한 명령어 처리 엔진.
+- **`ChzzkApiClient (Infrastructure)`**: 게이트웨이로 업무를 위임하는 프록시 클라이언트 (ACL 패턴).
+- **`InternalTokenController (Gateway)`**: 보안 증표 검증 및 네이버 토큰 교환 대행(Proxy) 수행 부서.
 - **`SignalR Hub (OverlayHub)`**: JWT 권한 검증 및 실시간 데이터 스트리밍 허브.
-- **`signalrStore.ts` (Svelte)**: SignalR 연결을 Svelte Readable Store로 래핑하여 전역 반응형 상태 관리.
 
 ---
 
 ## 3. 안티그래비티의 고동 (Work Snapshot)
 
-### 🚀 최근 성과 (Phase 10 & 11 완료)
-- **함교의 시각화 (Phase 10)**: SignalR 기반 양방향 맥박(Heartbeat) 시스템 및 Svelte Admin ECG 실시간 차트 구축.
-- **천상의 장부 (Phase 11)**: Dapper 기반 고성능 통계 집계 엔진 및 주간 디스코드 리포트 시스템 통합.
-- **데이터 거버넌스 강화**: 포인트 상세 이력(30일 TTL) 및 룰렛 확률 감사(Audit) 시스템 구축.
-- **Git 형상 관리**: 모든 코드는 `MooldangBot.Api` 및 관련 모듈에 안전하게 병합되어 있음.
+### 🚀 최근 성과 (Phase 12: 현대화 아키텍처 완성)
+- **부패 방지 계층 구축 (Phase 12)**: 거대한 치지직 소켓 엔진과 API 통신을 게이트웨이로 완전히 격리하고, 인터페이스 위임 체계를 완성했습니다.
+- **보안 프록시 체계**: 메인 앱의 보안 노출을 최소화하기 위해 전용 보안 증표(`X-Internal-Secret-Key`)와 게이트웨이 대행(Auth Proxy) 방식을 도입했습니다.
+- **인프라 강건성**: Docker 헬스체크 표준화 및 환경 변수 명명법(`__`) 통일을 통해 시스템의 예측 가능성을 극대화했습니다.
 
 ### 🔍 직전 마주한 해결 이슈
-- **Real IP 추출**: 클라우드플레어 터널 환경에서 내부망 IP 문제를 Docker Subnet 신뢰 설정으로 해결.
-- **GSAP 메모리 누수**: `gsap.context()`를 통해 오버레이 위젯의 자원 점유 최적화.
+- **Response Started 이슈**: 미들웨어에서 응답 시작 후 헤더 수정 시도를 `OnStarting` 콜백 패턴으로 해결하여 안정성을 확보했습니다.
+- **FQCN 모호성**: 마이크로서비스 간 인터페이스 충돌을 Full Qualified Class Name 명시를 통해 컴파일 레벨에서 해결했습니다.
 
 ---
 

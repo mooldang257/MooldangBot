@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { fade, fly } from 'svelte/transition';
-    import { Music, CheckCircle2, Radio, Waves, Play, Pause, ListMusic, Languages, RotateCcw, RotateCw, Subtitles, Volume2, VolumeX } from 'lucide-svelte';
+    import { Music, Radio, Waves, Play, Pause, ListMusic, Languages, RotateCcw, RotateCw, Subtitles, Volume2, VolumeX } from 'lucide-svelte';
 
     // [Osiris]: 현재 재생 중인 곡 상태 공유
     let { 
@@ -389,9 +389,8 @@
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Requester</span>
                             <span class="text-xs font-bold text-slate-700">{currentSong.requester || "System"}</span>
                         </div>
-                        <button onclick={handleComplete} class="px-8 py-4 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-2xl font-black flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
-                            <CheckCircle2 size={24} />
-                            <span>재생 완료</span>
+                        <button onclick={handleComplete} class="px-8 py-4 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-2xl font-black flex items-center justify-center shadow-xl hover:-translate-y-1 transition-all min-w-[120px]">
+                            <span>완료</span>
                         </button>
                     </div>
                 </div>

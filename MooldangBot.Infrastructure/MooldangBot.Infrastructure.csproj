@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
+    <ProjectReference Include="..\MooldangBot.ChzzkAPI.Contracts\MooldangBot.ChzzkAPI.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

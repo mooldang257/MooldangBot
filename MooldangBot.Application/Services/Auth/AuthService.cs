@@ -51,8 +51,9 @@ public class AuthService(
         // 2. State 생성 (PKCE 제거)
         string state = Guid.NewGuid().ToString("N");
 
-        // 3. 인증 URL 구성
-        string redirectUri = $"{BaseDomain}/Auth/callback";
+        // 3. 인증 URL 구성 (전용 리다이렉트 URL이 있으면 우선 사용)
+        string redirectBase = _configuration["ChzzkApi:RedirectBaseUrl"] ?? BaseDomain;
+        string redirectUri = $"{redirectBase.TrimEnd('/')}/Auth/callback";
         string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
         
         // 치지직 표준 AUTH URL (PKCE 파라미터 제거)
@@ -162,15 +163,22 @@ public class AuthService(
 
     private async Task<AuthResult> SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)
     {
+        // [물멍]: 네이버 공식 Channel ID를 기반으로 프로필을 색인합니다.
         var streamer = await _db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        
         if (streamer == null)
         {
+            // [오시리스의 자비]: 만약 새로운 Channel ID로 검색이 안 된다면, 
+            // 혹시 기존에 Slug로만 등록되어 있거나 다른 연동 정보가 있는지 확인하는 로직을 추가할 수 있으나,
+            // 현재는 정식 채널 ID 기반의 Greenfield/정형화 원칙에 따라 신규 생성을 우선합니다.
+            _logger.LogInformation("📡 [인증] 신규 스트리머 채널 등록 시작 (ChannelId: {ChannelId})", chzzkUid);
             streamer = new StreamerProfile 
             { 
                 ChzzkUid = chzzkUid,
-                Slug = chzzkUid, // [v6.2.7] 신규 생성 시 UID를 기본 슬러그로 할당
+                Slug = chzzkUid, 
                 IsActive = true,
                 IsMasterEnabled = true,
+                CreatedAt = KstClock.Now
             };
             _db.StreamerProfiles.Add(streamer);
 
@@ -182,21 +190,21 @@ public class AuthService(
             });
         }
 
+        // [오시리스의 인장]: 항상 최신 ChannelName과 프로필 이미지를 반영합니다.
         streamer.ChannelName = channelName;
         streamer.ProfileImageUrl = profileImageUrl;
         streamer.ChzzkAccessToken = accessToken;
         streamer.ChzzkRefreshToken = refreshToken;
         streamer.TokenExpiresAt = expireDate;
 
-        // [물멍]: 슬러그 유기적 중복 체크 및 할당 (기본값: ChzzkUid)
+        // [물멍]: 슬러그가 비어있는 경우 채널 ID를 기본값으로 할당합니다.
         if (string.IsNullOrEmpty(streamer.Slug))
         {
-            var isSlugTaken = await _db.StreamerProfiles.AnyAsync(p => p.Slug == chzzkUid);
-            streamer.Slug = isSlugTaken ? $"{chzzkUid}-{Guid.NewGuid().ToString("N")[..4]}" : chzzkUid;
+            streamer.Slug = chzzkUid;
         }
 
-        await _db.SaveChangesAsync(); // [물멍의 제언]: 원자적 저장
-        _logger.LogInformation($"[인증] 스트리머 프로필 동기화 완료 (UID: {chzzkUid}, Slug: {streamer.Slug})");
+        await _db.SaveChangesAsync();
+        _logger.LogInformation($"✅ [인증] 스트리머 프로필 동기화 완료 (ChannelId: {chzzkUid}, Slug: {streamer.Slug})");
 
         return new AuthResult { IsSuccess = true, ChzzkUid = chzzkUid, ChannelName = channelName, Slug = streamer.Slug };
     }

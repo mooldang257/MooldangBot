@@ -1,0 +1,136 @@
+﻿services:
+  # --- [1. Infrastructure Layer: 이계의 보급소] ---
+  db:
+    image: mariadb:11.4
+    container_name: mooldang-db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - mooldang-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: mooldang-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - mooldang-net
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: mooldang_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - mooldang-net
+
+  # --- [2. Backend Layer: 지휘 및 정보국] ---
+  chzzkapi:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.ChzzkAPI/Dockerfile
+    image: mooldang-chzzkapi:latest
+    container_name: mooldang-chzzkapi
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - mooldang-net
+
+  bot-engine:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Api/Dockerfile
+    container_name: mooldang-bot-engine
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+      - ChzzkGateway__BaseUrl=http://chzzkapi:8080
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@rabbitmq:5672/
+      - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};User=${MARIADB_USER};Password=${MARIADB_PASSWORD};
+    depends_on:
+      - db
+      - rabbitmq
+      - chzzkapi
+    networks:
+      - mooldang-net
+
+  # --- [3. Frontend Layer: 시각 및 조정석] ---
+  studio:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Studio/Dockerfile
+    image: mooldang-studio:latest
+    container_name: mooldang-studio
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - ORIGIN=http://localhost:3000
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - bot-engine
+    networks:
+      - mooldang-net
+
+#  overlay:
+#    build:
+#      context: .
+#      dockerfile: ./MooldangBot.Overlay/Dockerfile
+#    container_name: mooldang-overlay
+#    restart: always
+#    ports:
+#      - "5173:5173"
+#    environment:
+#      - VITE_API_URL=http://localhost:8080
+#    depends_on:
+#      - bot-engine
+#    networks:
+      - mooldang-net
+
+  admin:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Admin/Dockerfile
+    image: mooldang-admin:latest
+    container_name: mooldang-admin
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - ORIGIN=http://localhost:3001
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - bot-engine
+    networks:
+      - mooldang-net
+
+networks:
+  mooldang-net:
+    driver: bridge
+
+volumes:
+  mariadb-data:

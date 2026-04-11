@@ -75,7 +75,7 @@ services:
       - MARIADB_USER=${MARIADB_USER}
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
       - BASE_DOMAIN=${BASE_DOMAIN}
-      - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
     entrypoint: [ "dotnet", "MooldangBot.Cli.dll" ]
     depends_on:
       db:
@@ -106,8 +106,11 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASS=${RABBITMQ_PASS:-guest}
       - BASE_DOMAIN=${BASE_DOMAIN}
-      - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
     depends_on:
+      chzzk-bot:
+        condition: service_started
       db:
         condition: service_healthy
       redis:
@@ -131,6 +134,7 @@ services:
     environment:
       - NODE_ENV=production
       - ORIGIN=${BASE_DOMAIN}
+      - INTERNAL_API_URL=http://app:8080
     depends_on:
       - app
 
@@ -162,7 +166,11 @@ services:
       - SHARD_COUNT=${SHARD_COUNT:-1}
       - INSTANCE_ID=chzzk-bot-${SHARD_INDEX:-0}
       - LOKI_URL=http://loki:3100
-      - ConnectionStrings__DefaultConnection=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
+      - ASPNETCORE_URLS=http://+:8080
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
+      - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
+      - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
     depends_on:
       db:
         condition: service_healthy
@@ -172,6 +180,12 @@ services:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # [v2.4] 함대 사령부: 관리자 전용 대시보드
   admin:
