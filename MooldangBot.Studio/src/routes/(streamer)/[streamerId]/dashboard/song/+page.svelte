@@ -119,6 +119,21 @@
         }
     };
 
+    // [물멍]: 국소 리프레시 함수 (재생 중인 곡에 영향을 주지 않고 대기열만 갱신)
+    const refreshQueueOnly = async () => {
+        try {
+            const targetUid = streamerId;
+            if (!targetUid) return;
+            
+            const pendingData = await apiFetch<any>(`/api/song/queue/${targetUid}?status=Pending`);
+            queue = pendingData.items || [];
+            
+            console.log("🌊 [국소 갱신] 대기열 리스트 업데이트 완료");
+        } catch (err) {
+            console.error("[Osiris] 국소 갱신 실패:", err);
+        }
+    };
+
     // [v6.3.0]: 유저 정보가 확정되면 자동으로 데이터 로딩 개시
     $effect(() => {
         if (streamerId && !isLoaded) {
@@ -144,8 +159,9 @@
                     .withAutomaticReconnect()
                     .build();
 
+                // [물멍]: 실시간 알림 수신 시 이제 전체 새로고침이 아닌 국소 갱신(Queue Only)을 수행합니다.
                 hubConnection.on("NotifySongQueueChanged", async () => {
-                    await refreshData();
+                    await refreshQueueOnly();
                 });
 
                 await hubConnection.start();
@@ -183,7 +199,7 @@
         queue = queue.filter((s) => s.id !== song.id);
 
         try {
-            await apiFetch(`/api/song/${userState.uid}/${song.id}/status?status=Playing`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Playing`, { method: "PUT" });
         } catch (err) {
             // 실패 시 롤백
             queue = previousQueue;
@@ -201,7 +217,7 @@
         currentSong = null;
 
         try {
-            await apiFetch(`/api/song/${userState.uid}/${song.id}/status?status=Completed`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Completed`, { method: "PUT" });
         } catch (err) {
             completed = previousCompleted;
             currentSong = previousCurrent;
@@ -216,7 +232,7 @@
         queue = queue.filter((s) => !ids.includes(s.id));
 
         try {
-         const result = await apiFetch<any>(`/api/song/delete/${$page.params.streamerId}`, {
+         const result = await apiFetch<any>(`/api/song/delete/${streamerId}`, {
             method: 'DELETE',
             body: JSON.stringify(ids)
         });
@@ -245,7 +261,7 @@
         queue = [...queue, tempSong];
 
         try {
-            await apiFetch(`/api/song/add/${userState.uid}`, {
+            await apiFetch(`/api/song/add/${streamerId}`, {
                 method: "POST",
                 body: JSON.stringify({
                     title: song.title,
@@ -284,7 +300,7 @@
         }
 
         try {
-            await apiFetch(`/api/song/${userState.uid}/${updatedSong.id}/edit`, {
+            await apiFetch(`/api/song/${streamerId}/${updatedSong.id}/edit`, {
                 method: "PUT",
                 body: JSON.stringify({
                     title: updatedSong.title,
@@ -343,10 +359,10 @@
 
         // [낙관적 업데이트]
         completed = completed.filter(s => s.id !== song.id);
-        queue = [song, ...queue];
+        queue = [...queue, song].sort((a, b) => a.id - b.id);
 
         try {
-            await apiFetch(`/api/song/${userState.uid}/${song.id}/status?status=Pending`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Pending`, { method: "PUT" });
         } catch (err) {
             queue = previousQueue;
             completed = previousCompleted;
@@ -362,8 +378,8 @@
         completed = completed.filter(s => s.id !== id);
 
         try {
-            await apiFetch(`/api/song/delete/${userState.uid}`, {
-                method: "POST",
+            await apiFetch(`/api/song/delete/${streamerId}`, {
+                method: "DELETE",
                 body: JSON.stringify([id])
             });
         } catch (err) {
@@ -376,7 +392,7 @@
     const handleClearHistory = async () => {
         if (!confirm("정말로 모든 완료 기록을 삭제하시겠습니까? (복구 불가능)")) return;
         
-        const result = await apiFetch<any>(`/api/song/clear/${$page.params.streamerId}/Completed`, {
+        const result = await apiFetch<any>(`/api/song/clear/${streamerId}/Completed`, {
             method: 'DELETE'
         });
 
@@ -412,14 +428,14 @@
             <!-- (나머지 UI 섹션 원본 유지) -->
             <div style="isolation: isolate;">
                 <AdminHeader 
-                    bind:isSonglistActive 
-                    bind:isOmakaseActive 
-                    bind:isCommandActive 
+                    bind:isSonglistActive={isSonglistActive} 
+                    bind:isOmakaseActive={isOmakaseActive} 
+                    bind:isCommandActive={isCommandActive} 
                 />
             </div>
 
             {#if isCommandActive}
-                <div style="isolation: isolate;" in:fade out:fade>
+                <div class="relative z-20">
                     <CommandManagement 
                         bind:commands={commandList} 
                         onSync={handleSyncSettings}
@@ -428,7 +444,7 @@
             {/if}
 
             {#if isOmakaseActive}
-                <div style="isolation: isolate;" in:fade out:fade>
+                <div class="relative z-10">
                     <OmakaseManagement omakases={visibleOmakases} bind:selectedOmakase />
                 </div>
             {/if}

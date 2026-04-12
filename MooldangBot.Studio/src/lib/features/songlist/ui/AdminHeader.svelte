@@ -2,11 +2,11 @@
     import { fade, fly } from "svelte/transition";
     import { Copy, Check, Waves, ToggleLeft, ToggleRight, Terminal } from "lucide-svelte";
 
-    // [Osiris]: 상태 관리를 위한 룬 (Svelte 5)
+    // [Osiris]: Svelte 5 $bindable 룬을 사용한 양방향 상태 동기화
     let {
         isSonglistActive = $bindable(true),
         isOmakaseActive = $bindable(true),
-        isCommandActive = $bindable(false), // [물멍]: 명령어 관리 활성화 상태 추가
+        isCommandActive = $bindable(false),
         obsUrl = "https://mooldang.tv/overlay/songlist",
     } = $props();
 

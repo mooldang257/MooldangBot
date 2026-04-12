@@ -54,6 +54,10 @@ namespace MooldangBot.Domain.Entities
         public bool IsDeleted { get; set; } = false;
         public KstClock? DeletedAt { get; set; }
 
+        public string? RequesterNickname { get; set; } // [v14.2] 신청 시점 닉네임 (스냅샷)
+        public int? Cost { get; set; } // [v14.1] 후원 금액
+        public CommandCostType? CostType { get; set; } // [v14.1] 후원 수단 (치즈/포인트)
+
         public KstClock CreatedAt { get; set; } = KstClock.Now; 
         public KstClock? UpdatedAt { get; set; }
     }

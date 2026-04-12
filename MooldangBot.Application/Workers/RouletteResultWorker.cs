@@ -29,7 +29,7 @@ public class RouletteResultWorker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            int nextDelayMs = 2000; // 활성 상태 기본 2초
+            int nextDelayMs = 10000; // [오시리스의 인내]: 부하 및 로그 소음 감소를 위해 10초로 상향 (v2.2.1)
 
             try
             {
@@ -39,8 +39,8 @@ public class RouletteResultWorker : BackgroundService
                 // [v2.2.0] 지능형 타임아웃 처리 위임
                 await rouletteService.ProcessTimeoutSpinsAsync(stoppingToken);
                 
-                // 유휴 상태 확인은 서비스 내에서 쿼리 최적화가 되어 있으므로 단순 2초 주기로 유지
-                nextDelayMs = 2000;
+                // 유휴 상태 확인은 서비스 내에서 쿼리 최적화가 되어 있으므로 단순 10초 주기로 유지
+                nextDelayMs = 10000;
             }
             catch (Exception ex)
             {

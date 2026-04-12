@@ -60,11 +60,16 @@ namespace MooldangBot.Presentation.Features.SongQueue
 
             if (request.Cursor.HasValue)
             {
-                query = query.Where(s => s.Id < request.Cursor.Value);
+                // [물멍]: 대기열(Pending)은 신청순(오름차순)이므로 커서보다 큰 ID를 찾고, 나머지는 최신순(내림차순)이므로 작은 ID를 찾습니다.
+                if (status == SongStatus.Pending)
+                    query = query.Where(s => s.Id > request.Cursor.Value);
+                else
+                    query = query.Where(s => s.Id < request.Cursor.Value);
             }
 
-            var items = await query
-                .OrderByDescending(s => s.Id)
+            var items = await (status == SongStatus.Pending 
+                ? query.OrderBy(s => s.Id) 
+                : query.OrderByDescending(s => s.Id))
                 .Take(effectiveLimit + 1)
                 .Select(s => new SongQueueViewDto
                 {
@@ -72,9 +77,11 @@ namespace MooldangBot.Presentation.Features.SongQueue
                     Title = s.Title,
                     Artist = s.Artist ?? string.Empty,
                     Status = s.Status,
+                    Cost = s.Cost,
+                    CostType = s.CostType,
                     CreatedAt = s.CreatedAt,
                     GlobalViewer = s.GlobalViewer,
-                    Requester = s.GlobalViewer != null ? s.GlobalViewer.Nickname : "익명",
+                    Requester = s.RequesterNickname ?? (s.GlobalViewer != null ? s.GlobalViewer.Nickname : "익명"),
                     Url = db.MasterSongStagings
                             .Where(l => l.SongLibraryId == s.SongLibraryId)
                             .Select(l => l.YoutubeUrl)
@@ -140,6 +147,9 @@ namespace MooldangBot.Presentation.Features.SongQueue
                 Artist = request.Artist,
                 SongLibraryId = songLibraryId, 
                 Status = SongStatus.Pending,
+                Cost = request.Cost,
+                CostType = request.CostType,
+                RequesterNickname = request.RequesterNickname, // [물멍] 수동 추가 시 전달된 닉네임 저장
                 CreatedAt = KstClock.Now
             };
             

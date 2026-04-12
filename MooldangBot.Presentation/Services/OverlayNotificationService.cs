@@ -33,7 +33,7 @@ namespace MooldangBot.Presentation.Services
 
         public async Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("NotifySongQueueChanged", cancellationToken: token);
         }
 
         public async Task NotifyPointChangedAsync(string chzzkUid, CancellationToken token = default)

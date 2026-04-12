@@ -31,13 +31,12 @@ public class PointTransactionService : IPointTransactionService
         var jobList = items.ToList();
         if (jobList.Count == 0) return;
 
-        // [오시리스의 지혜]: 동일 시청자 포인트 합산 및 정렬 (데드락 방지)
+        // [오시리스의 지혜]: 동일 시청자 포인트 합산 및 정렬 (데드락 방지 및 DB 왕복 감소)
         var sortedJobs = jobList
             .GroupBy(j => (j.StreamerUid, j.ViewerUid))
             .Select(g => new { 
                 g.Key.StreamerUid, 
                 g.Key.ViewerUid, 
-                Hash = g.Key.ViewerUid.GetHashCode(), 
                 Nickname = g.First().Nickname,
                 Total = g.Sum(x => x.Amount),
                 ViewerHash = Sha256Hasher.ComputeHash(g.Key.ViewerUid)
@@ -51,24 +50,26 @@ public class PointTransactionService : IPointTransactionService
         {
             var connection = _db.Database.GetDbConnection();
 
-            // 1. [오시리스의 기억]: 스트리머 ID 사전 매핑
-            var streamerUids = sortedJobs.Select(j => j.StreamerUid).Distinct().ToList();
-            var streamerMap = await _db.StreamerProfiles
-                .AsNoTracking()
-                .Where(s => streamerUids.Contains(s.ChzzkUid))
-                .ToDictionaryAsync(s => s.ChzzkUid, s => s.Id, ct);
+            // 1. [오시리스의 기억]: Dapper를 사용한 스트리머 ID 사전 매핑 (EF 추적 배제)
+            var streamerUids = sortedJobs.Select(j => j.StreamerUid).Distinct().ToArray();
+            var streamerProfiles = await connection.QueryAsync<(string ChzzkUid, int Id)>(
+                "SELECT chzzk_uid, id FROM core_streamer_profiles WHERE chzzk_uid IN @Uids", 
+                new { Uids = streamerUids }, 
+                transaction.GetDbTransaction());
+            var streamerMap = streamerProfiles.ToDictionary(x => x.ChzzkUid, x => x.Id);
 
-            // 2. [오시리스의 수거]: 글로벌 시청자 ID 배치 페치
-            var viewerHashes = sortedJobs.Select(j => j.ViewerHash).Distinct().ToList();
-            var viewerMap = await _db.GlobalViewers
-                .AsNoTracking()
-                .Where(g => viewerHashes.Contains(g.ViewerUidHash))
-                .ToDictionaryAsync(g => g.ViewerUidHash, g => g.Id, ct);
+            // 2. [오시리스의 수거]: Dapper를 사용한 글로벌 시청자 ID 배치 페치
+            var viewerHashes = sortedJobs.Select(j => j.ViewerHash).Distinct().ToArray();
+            var globalViewers = await connection.QueryAsync<(string ViewerUidHash, int Id)>(
+                "SELECT viewer_uid_hash, id FROM core_global_viewers WHERE viewer_uid_hash IN @Hashes", 
+                new { Hashes = viewerHashes }, 
+                transaction.GetDbTransaction());
+            var viewerMap = globalViewers.ToDictionary(x => x.ViewerUidHash, x => x.Id);
 
             // 3. [오시리스의 조각]: 벌크 파라미터 생성
-            var valuesList = new List<string>();
+            var valuesList = new List<string>(sortedJobs.Count);
             var parameters = new DynamicParameters();
-            var validJobs = new List<dynamic>();
+            var validJobs = new List<dynamic>(sortedJobs.Count);
 
             for (int i = 0; i < sortedJobs.Count; i++)
             {
@@ -87,17 +88,17 @@ public class PointTransactionService : IPointTransactionService
 
             if (valuesList.Count > 0)
             {
-                // [오시리스의 일격]: 순수 ID 기반 최적화된 벌크 인서트
+                // [오시리스의 일격]: 순수 ID 기반 최적화된 벌크 인서트 (ON DUPLICATE KEY UPDATE)
                 var sql = $@"
-                    INSERT INTO view_streamer_viewers (StreamerProfileId, GlobalViewerId, Points)
+                    INSERT INTO view_streamer_viewers (streamer_profile_id, global_viewer_id, points)
                     VALUES {string.Join(",", valuesList)}
-                    ON DUPLICATE KEY UPDATE Points = GREATEST(0, Points + VALUES(Points));";
+                    ON DUPLICATE KEY UPDATE points = GREATEST(0, points + VALUES(points));";
 
                 await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction: transaction.GetDbTransaction(), cancellationToken: ct));
 
-                // 4. [천상의 장부]: 트랜잭션 내 로그 기록 (Atomicity 보장)
+                // 4. [천상의 장부]: 트랜잭션 내 로그 기록 (Dapper를 이용한 대량 삽입)
                 var logSql = @"
-                    INSERT INTO log_point_transactions (StreamerProfileId, GlobalViewerId, Amount, Type, Reason, CreatedAt)
+                    INSERT INTO log_point_transactions (streamer_profile_id, global_viewer_id, amount, type, reason, created_at)
                     VALUES (@StreamerId, @ViewerId, @Amount, @Type, @Reason, NOW());";
                 
                 var logParams = validJobs.Select(j => new {
@@ -105,14 +106,14 @@ public class PointTransactionService : IPointTransactionService
                     ViewerId = j.ViewerId,
                     Amount = (int)j.Amount,
                     Type = (int)j.Amount > 0 ? PointTransactionType.Earn : PointTransactionType.Spend,
-                    Reason = "Chat Resonance (Atomic Batch)"
+                    Reason = "Chat Resonance (10k RPS Optimized)"
                 });
 
                 await connection.ExecuteAsync(logSql, logParams, transaction: transaction.GetDbTransaction());
             }
 
             await transaction.CommitAsync(ct);
-            _logger.LogInformation("🌊 [공명 업데이트 완결] {Count}명의 시청자 포인트가 트랜잭션 내에서 안전하게 적재되었습니다.", validJobs.Count);
+            _logger.LogInformation("🌊 [공명 업데이트 완결] {Count}명의 시청자 포인트가 Dapper 고속 경로로 적재되었습니다.", validJobs.Count);
 
             // [물멍]: 함교 대시보드 실시간 업데이트 전파
             foreach (var uid in streamerUids)
@@ -123,8 +124,8 @@ public class PointTransactionService : IPointTransactionService
         catch (Exception ex)
         {
             await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "❌ [Point Bulk Update 실패] 트랜잭션 롤백됨: {Message}", ex.Message);
-            throw; // 워커에서 로깅하도록 던짐
+            _logger.LogError(ex, "❌ [Point Dapper Bulk Update 실패] {Message}", ex.Message);
+            throw; 
         }
     }
 

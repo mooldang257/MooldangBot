@@ -100,7 +100,7 @@
     };
 </script>
 
-<div class="glass-card rounded-[2.5rem] h-full flex flex-col overflow-hidden min-h-[600px] relative z-0 border border-white/40 shadow-sm">
+<div class="glass-card rounded-[2.5rem] h-full flex flex-col overflow-hidden min-h-0 relative z-0 border border-white/40 shadow-sm lg:max-h-[650px]">
     {#if !showCompleted}
         <!-- 1. 대기열 모드 -->
         <div class="p-5 border-b border-white/40 flex items-center justify-between bg-white/20">
@@ -167,7 +167,17 @@
                                     {/if}
                                 </div>
                             </div>
-                            <p class="text-[10px] font-black text-slate-500 truncate">{song.artist} • <span class="text-primary/70">{song.globalViewer?.nickname || '시청자'}</span></p>
+                            <p class="text-[10px] font-black text-slate-500 flex items-center gap-1.5 truncate">
+                                <span class="truncate">{song.artist}</span>
+                                <span class="text-slate-300">•</span>
+                                <span class="text-primary/70 truncate">{song.requester || song.globalViewer?.nickname || '시청자'}</span>
+                                {#if (song.cost || 0) > 0}
+                                    <span class="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black shadow-sm {song.costType === 1 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 'bg-sky-100 text-sky-600 border border-sky-200'}">
+                                        <span>{song.costType === 1 ? '🧀' : '💎'}</span>
+                                        <span>{song.cost?.toLocaleString()}</span>
+                                    </span>
+                                {/if}
+                            </p>
                         </div>
     
                         <!-- 액션 버튼들 -->

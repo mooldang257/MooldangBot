@@ -66,16 +66,16 @@ try
             .Enrich.WithProperty("InstanceId", instanceId) // [v16.0] 인스턴스 식별
             .Enrich.WithProperty("Environment", env)
             .Enrich.WithProperty("Version", version)
-            .WriteTo.Console()
-            .WriteTo.File("logs/mooldangbot-.log", rollingInterval: RollingInterval.Day)
-            .WriteTo.GrafanaLoki(lokiUrl, new[] 
+            .WriteTo.Async(a => a.Console())
+            .WriteTo.Async(a => a.File("logs/mooldangbot-.log", rollingInterval: RollingInterval.Day))
+            .WriteTo.Async(a => a.GrafanaLoki(lokiUrl, new[] 
             { 
                 new LokiLabel { Key = "app", Value = "mooldangbot" },
                 new LokiLabel { Key = "instance", Value = instanceId },
                 new LokiLabel { Key = "machine", Value = Environment.MachineName },
                 new LokiLabel { Key = "env", Value = env },
                 new LokiLabel { Key = "version", Value = version }
-            });
+            }));
     });
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -96,6 +96,9 @@ try
 
     builder.Services.AddApplicationServices();
     builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
+    
+    // [v4.5.3] 고부하 대응을 위한 이집트 브릿지 인프라 사전 등록
+    builder.Services.AddEgyptianBridge();
     
     // [v3.7] 봇 엔진(Gateway)으로부터 RabbitMQ를 통해 전달되는 이벤트를 수신하는 소비자 워커 가동
     builder.Services.AddChzzkEventConsumer(); 
@@ -333,6 +336,7 @@ try
     // ---------------------------------------------------------
     app.MapControllers();
     app.MapMetrics(); // /metrics 엔드포인트 매핑
+    app.MapHealthChecks("/health"); // [오시리스의 박동]: 컨테이너 상태 감시 전용 엔드포인트
     app.MapHub<OverlayHub>("/overlayHub");
 
     // [v4.9] Swagger UI 활성화 (보안을 위해 개발 환경 또는 명시적 설정 시에만 노출)

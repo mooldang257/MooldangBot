@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Security;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
@@ -14,7 +15,7 @@ namespace MooldangBot.Application.Services;
 /// </summary>
 public class IdentityCacheService(
     IDistributedCache cache,
-    IAppDbContext db,
+    IServiceScopeFactory scopeFactory,
     IChaosManager chaos, // [Phase 9] 심연의 맥박 연동
     ILogger<IdentityCacheService> logger) : IIdentityCacheService
 {
@@ -37,6 +38,9 @@ public class IdentityCacheService(
         }
 
         // Cache Miss: DB 조회
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
         var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
         if (profile != null)
         {
@@ -59,6 +63,9 @@ public class IdentityCacheService(
         }
 
         // Cache Miss: DB 조회 (없을 경우 생성)
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
         var viewer = await db.GlobalViewers.FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
         if (viewer == null)
         {
@@ -83,6 +90,9 @@ public class IdentityCacheService(
         }
 
         // Cache Miss: DB 조회 (지목한 슬러그를 가진 스트리머 검색)
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
         var uid = await db.StreamerProfiles
             .AsNoTracking()
             .Where(p => p.Slug == slug)

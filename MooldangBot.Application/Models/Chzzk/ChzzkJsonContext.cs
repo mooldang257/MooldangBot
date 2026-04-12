@@ -42,6 +42,8 @@ namespace MooldangBot.Application.Models.Chzzk;
 [JsonSerializable(typeof(UnifiedCommandDto))]
 [JsonSerializable(typeof(SaveUnifiedCommandRequest))]
 [JsonSerializable(typeof(ChatOverlayDto))]
+[JsonSerializable(typeof(ChzzkChatEventPayload))]
+[JsonSerializable(typeof(ChzzkChatProfile))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {
 }

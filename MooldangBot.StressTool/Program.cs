@@ -23,15 +23,39 @@ class Program
         Console.WriteLine("====================================================");
 
         // 1. 환경 설정 로드 (.env)
+        var envPaths = new[] 
+        { 
+            Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+            Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", ".env") // IDE 실행 대비
+        };
+
+        bool envLoaded = false;
+        foreach (var path in envPaths)
+        {
+            if (File.Exists(path))
+            {
+                Env.Load(path);
+                Console.WriteLine($"✅ Environment loaded from: {path}");
+                envLoaded = true;
+                break;
+            }
+        }
+
+        if (!envLoaded) Console.WriteLine("⚠️ Warning: .env file not found. Falling back to defaults.");
+
         try
         {
-            Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"));
             _rabbitHost = Env.GetString("RABBITMQ_HOST", "localhost");
+            if (_rabbitHost == "rabbitmq") _rabbitHost = "localhost";
+            
             _rabbitUser = Env.GetString("RABBITMQ_USER", "guest");
             _rabbitPass = Env.GetString("RABBITMQ_PASS", "guest");
             _chzzkUid = Env.GetString("TEST_CHZZK_UID", "");
+
+            Console.WriteLine($"🔹 Config: Host={_rabbitHost}, User={_rabbitUser}, TargetUID={_chzzkUid}");
         }
-        catch { /* .env 없을 경우 기본값 사용 */ }
+        catch { /* Fallback to defaults */ }
 
         // 2. 대상 채널 입력
         Console.Write($"🔹 대상 Chzzk UID (기본값: {_chzzkUid}): ");
@@ -207,16 +231,23 @@ class Program
 
     private static string CreateChatPayload(string chzzkUid, string content, string senderId = "stress_test_bot", string nickname = "스트레스정찰기")
     {
-        // 치지직 원본 JSON 규격 시뮬레이션 (최소 필수 데이터)
+        // [v2.4.6] 최신 치지직 원본 JSON 규격 시뮬레이션
+        // 핸들러가 기대하는 ChzzkChatEventPayload 필드: content, senderChannelId, profile(JSON)
+        var profileJson = JsonConvert.SerializeObject(new
+        {
+            nickname = nickname,
+            userRoleCode = "common_user"
+        });
+
         var payload = new object[]
         {
             "CHAT",
             JsonConvert.SerializeObject(new
             {
                 content = content,
-                senderId = senderId,
-                nickname = nickname,
-                userRole = "viewer"
+                senderChannelId = senderId,
+                channelId = chzzkUid,
+                profile = profileJson
             })
         };
         return JsonConvert.SerializeObject(payload);

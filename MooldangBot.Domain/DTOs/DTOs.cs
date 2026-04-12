@@ -72,6 +72,15 @@ namespace MooldangBot.Domain.DTOs
         
         [JsonPropertyName("sortOrder")]
         public int SortOrder { get; set; }
+
+        [JsonPropertyName("requesterNickname")]
+        public string? RequesterNickname { get; set; }
+
+        [JsonPropertyName("cost")]
+        public int? Cost { get; set; }
+
+        [JsonPropertyName("costType")]
+        public CommandCostType? CostType { get; set; }
     }
 
     // [v12.5] 메타데이터가 통합된 대기열 뷰 DTO
@@ -175,7 +184,16 @@ namespace MooldangBot.Domain.DTOs
     public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? Lyrics);
 
     // 🎵 대기열 곡 추가를 위한 DTO
-    public record SongAddRequest(string Title, string? Artist, string? Url, string? Lyrics, int? GlobalViewerId = null);
+    public record SongAddRequest(
+        string Title, 
+        string? Artist, 
+        string? Url, 
+        string? Lyrics, 
+        int? GlobalViewerId = null,
+        string? RequesterNickname = null,
+        int? Cost = null,
+        CommandCostType? CostType = null
+    );
 
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);

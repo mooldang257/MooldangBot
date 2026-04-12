@@ -33,7 +33,7 @@ namespace MooldangBot.Infrastructure
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
             services.AddMemoryCache();
             services.AddDistributedMemoryCache();
-            services.AddScoped<IIdentityCacheService, IdentityCacheService>();
+            services.AddSingleton<IIdentityCacheService, IdentityCacheService>();
             services.AddSingleton<INotificationService, NotificationService>();
 
             // [v2.4.6] 오시리스의 세션: 봇 엔진 등 백그라운드 환경용 기본 세션 등록
@@ -94,12 +94,12 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<IChatLogBufferService, ChatLogBufferService>();
             services.AddHostedService<ChatLogBatchWorker>();
 
-            // Database — [Phase4] AddDbContextPool 상향 (poolSize: 1024)
+            // Database — [v10.11] AddPooledDbContextFactory 전환 (poolSize: 1024)
+            // [오시리스의 영속]: 고부하 환경에서 컨텍스트 객체 자체를 풀링하여 재사용함으로써 메모리 할당 비용을 극한으로 낮춥니다.
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            // [파로스]: 실 서비스 기동 시에도 DB 응답 대기 없이 즉시 설정을 완료하도록 버전을 고정합니다.
             var serverVersion = ServerVersion.Parse("10.11-mariadb");
             
-            services.AddDbContextPool<AppDbContext>(options =>
+            services.AddPooledDbContextFactory<AppDbContext>(options =>
                 options.UseMySql(connectionString, serverVersion, mysqlOptions =>
                 {
                     mysqlOptions.MigrationsHistoryTable("__EFMigrationsHistory");
@@ -111,6 +111,8 @@ namespace MooldangBot.Infrastructure
                 })
                 .UseSnakeCaseNamingConvention(), poolSize: 1024);
             
+            // 기존 Scoped 요청 및 concrete 클래스 주입을 위해 팩토리로부터 컨텍스트를 생성하는 브릿지 등록
+            services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             // [v2.4.5] 치지직 게이트웨이(ChzzkAPI) 통신용 전용 클라이언트 구성

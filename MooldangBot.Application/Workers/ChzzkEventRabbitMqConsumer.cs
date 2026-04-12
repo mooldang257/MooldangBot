@@ -8,6 +8,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.ChzzkAPI.Contracts;
 using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 using MooldangBot.Domain.Common;
+using MooldangBot.Application.Models.Chat;
 
 namespace MooldangBot.Application.Workers;
 
@@ -17,80 +18,86 @@ namespace MooldangBot.Application.Workers;
 public sealed class ChzzkEventRabbitMqConsumer : BackgroundService
 {
     private readonly IRabbitMqService _rabbitMq;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IChatEventChannel _bridge;
     private readonly ILogger<ChzzkEventRabbitMqConsumer> _logger;
 
     private const string QueueName = "mooldang.app.chzzk.events";
 
     public ChzzkEventRabbitMqConsumer(
         IRabbitMqService rabbitMq,
-        IServiceScopeFactory scopeFactory,
+        IChatEventChannel bridge,
         ILogger<ChzzkEventRabbitMqConsumer> logger)
     {
         _rabbitMq = rabbitMq;
-        _scopeFactory = scopeFactory;
+        _bridge = bridge;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("🚀 [이벤트 소비자] RabbitMQ 구독 개시: {QueueName}", QueueName);
+        _logger.LogInformation("🚀 [이벤트 수집기] RabbitMQ 구독 개시 (Bridge 채널 연결 완료): {QueueName}", QueueName);
 
         try
         {
             await _rabbitMq.SubscribeAsync(
                 RabbitMqExchanges.ChatEvents,
                 QueueName,
-                "streamer.#", // 모든 스트리머의 채팅/후원 이벤트 수신
+                "streamer.#", 
                 OnMessageReceivedAsync,
                 stoppingToken);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "💀 [이벤트 소비자] 구독 중 치명적 오류 발생");
+            _logger.LogCritical(ex, "💀 [이벤트 수집기] 구독 중 치명적 오류 발생");
         }
     }
 
     private async Task OnMessageReceivedAsync(string message, string routingKey)
     {
+        // [오시리스의 Bridge]: Singleton 환경에서 최소한의 파싱만 수행하여 즉시 Channel로 넘깁니다.
         try
         {
-            // [오시리스의 직렬화]: 소스 생성기 기반의 고속 역직렬화 수행
-            var envelope = JsonSerializer.Deserialize<ChzzkEventEnvelope>(message, ChzzkJsonContext.Default.ChzzkEventEnvelope);
-            
-            if (envelope == null)
+            // 1. [고속 메타데이터 추출]: 전체 역직렬화 대신 필요한 필드만 신속 탐색
+            using var doc = JsonDocument.Parse(message);
+            var root = doc.RootElement;
+
+            // [오시리스의 눈]: 발행자(ChzzkAPI)의 PascalCase 규격에 맞춰 추출 (CamelCase 대비용 Fallback 포함)
+            if (!root.TryGetProperty("MessageId", out var idProp) && !root.TryGetProperty("messageId", out idProp))
             {
-                _logger.LogWarning("⚠️ [이벤트 소비자] 빈 봉투가 수신되었습니다. (RoutingKey: {RoutingKey})", routingKey);
+                _logger.LogWarning("⚠️ [이벤트 수집기] MessageId 프로퍼티를 찾을 수 없습니다. (RoutingKey: {RoutingKey})", routingKey);
                 return;
             }
 
-            using var scope = _scopeFactory.CreateScope();
-            var mediatr = scope.ServiceProvider.GetRequiredService<IMediator>();
-            var identityCache = scope.ServiceProvider.GetRequiredService<IIdentityCacheService>();
-
-            // 1. [파로스의 자각]: 캐시에서 스트리머 프로필 확인
-            var profile = await identityCache.GetStreamerProfileAsync(envelope.ChzzkUid);
-            if (profile == null)
+            if (!root.TryGetProperty("ChzzkUid", out var uidProp) && !root.TryGetProperty("chzzkUid", out uidProp))
             {
-                _logger.LogWarning("⚠️ [이벤트 소비자] 알 수 없는 스트리머의 이벤트입니다: {ChzzkUid}", envelope.ChzzkUid);
+                _logger.LogWarning("⚠️ [이벤트 수집기] ChzzkUid 프로퍼티를 찾을 수 없습니다. (RoutingKey: {RoutingKey})", routingKey);
                 return;
             }
 
-            // 2. [오시리스의 중재]: MediatR을 통해 도메인 이벤트로 전파
-            _logger.LogInformation("📨 [이벤트 소비자] {Type} 수신: {ChzzkUid} (MessageId: {MessageId})", 
-                envelope.Payload.GetType().Name, envelope.ChzzkUid, envelope.MessageId);
+            if (!root.TryGetProperty("Payload", out var payloadProp) && !root.TryGetProperty("payload", out payloadProp))
+            {
+                _logger.LogWarning("⚠️ [이벤트 수집기] Payload 프로퍼티를 찾을 수 없습니다. (RoutingKey: {RoutingKey})", routingKey);
+                return;
+            }
 
-            await mediatr.Publish(new ChzzkEventReceived(
-                envelope.MessageId,
-                profile,
-                envelope.Payload,
-                envelope.ReceivedAt
-            ));
+            // 2. [오시리스의 패킷]: record struct로 변환하여 힙 할당 없이 복사
+            var packet = new ChatEventPacket(
+                idProp.GetGuid(),
+                uidProp.GetString() ?? "",
+                "UNKNOWN", // 처리 레이어에서 구체화 가능
+                payloadProp.Clone(), // JsonDocument가 Dispose되므로 Clone 필요 (할당은 발생하지만 JsonDocument 전체보다는 작음)
+                DateTime.UtcNow
+            );
+
+            if (!_bridge.TryWrite(packet))
+            {
+                _logger.LogWarning("⚠️ [Bridge 포화] 메시지 {MessageId}를 드랍합니다.", packet.CorrelationId);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ [이벤트 소비자] 메시지 처리 실패: {RoutingKey}", routingKey);
+            _logger.LogDebug(ex, "❌ [이벤트 수집기] 메시지 파싱 실패 (RoutingKey: {RoutingKey})", routingKey);
         }
     }
 }
