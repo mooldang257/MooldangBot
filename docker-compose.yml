@@ -4,7 +4,13 @@ services:
   db:
     image: mariadb:11.4
     container_name: mooldang-db
-    command: --local-infile=1 --innodb-flush-method=fsync
+    command: 
+      - --local-infile=1 
+      - --innodb-flush-method=O_DIRECT
+      - --max-connections=2048
+      - --innodb-buffer-pool-size=4G
+      - --innodb-log-file-size=512M
+      - --innodb-flush-log-at-trx-commit=2
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}

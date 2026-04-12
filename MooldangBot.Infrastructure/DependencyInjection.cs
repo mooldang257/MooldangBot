@@ -90,7 +90,11 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<MooldangBot.Application.State.OverlayState>();
             services.AddSingleton<MooldangBot.Application.Features.SongBook.SongBookState>();
 
-            // Database — [Phase4] AddDbContextPool 상향 (poolSize: 256)
+            // [오시리스의 서판]: 채팅 로그 벌크 처리 서비스 등록
+            services.AddSingleton<IChatLogBufferService, ChatLogBufferService>();
+            services.AddHostedService<ChatLogBatchWorker>();
+
+            // Database — [Phase4] AddDbContextPool 상향 (poolSize: 1024)
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             // [파로스]: 실 서비스 기동 시에도 DB 응답 대기 없이 즉시 설정을 완료하도록 버전을 고정합니다.
             var serverVersion = ServerVersion.Parse("10.11-mariadb");
@@ -105,7 +109,7 @@ namespace MooldangBot.Infrastructure
                         errorNumbersToAdd: null);
                     mysqlOptions.CommandTimeout(10);
                 })
-                .UseSnakeCaseNamingConvention(), poolSize: 256);
+                .UseSnakeCaseNamingConvention(), poolSize: 1024);
             
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 

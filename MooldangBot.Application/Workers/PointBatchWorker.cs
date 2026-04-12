@@ -18,8 +18,8 @@ public class PointBatchWorker(
     IChaosManager chaosManager,
     ILogger<PointBatchWorker> logger) : BackgroundService
 {
-    private readonly TimeSpan _flushInterval = TimeSpan.FromSeconds(5);
-    private const int MaxBatchSize = 2000;
+    private readonly TimeSpan _flushInterval = TimeSpan.FromSeconds(1); // 5초 -> 1초로 단축
+    private const int MaxBatchSize = 10000; // 2000 -> 10000으로 상향
     private const string BackupFileName = "data/temp_point_queue.json";
     
     // [익산 보험]: DB 적재 실패 시 임시 대기하는 버퍼

@@ -9,8 +9,8 @@ namespace MooldangBot.Application.Services;
 /// </summary>
 public class PointBatchService : IPointBatchService
 {
-    // BoundedChannel을 사용하여 메모리 폭주 방지 (최대 1만 건 대기 가능)
-    private readonly Channel<PointJob> _channel = Channel.CreateBounded<PointJob>(new BoundedChannelOptions(10000)
+    // BoundedChannel을 사용하여 메모리 폭주 방지 (10k RPS 폭주 대응: 최대 10만 건 대기 가능)
+    private readonly Channel<PointJob> _channel = Channel.CreateBounded<PointJob>(new BoundedChannelOptions(100000)
     {
         FullMode = BoundedChannelFullMode.Wait,
         SingleReader = true, // PointBatchWorker만 읽음

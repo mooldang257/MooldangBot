@@ -4,6 +4,7 @@ using MooldangBot.Application.Events;
 using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,7 +14,7 @@ namespace MooldangBot.Application.Features.Chat.Handlers;
 /// [서기의 기록]: 모든 채팅 상호작용을 감사(Audit)하고 기록하며, 명령어 여부를 판별하는 핸들러입니다.
 /// </summary>
 public class ChatInteractionHandler(
-    IAppDbContext db,
+    IChatLogBufferService bufferService,
     ICommandCacheService commandCache,
     IBroadcastScribe scribe, // [v3.7] 기존 통계 엔진 유지
     ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChzzkEventReceived>
@@ -51,18 +52,18 @@ public class ChatInteractionHandler(
         // 2. [명령어 판별 로직]: DB 키워드 대조 (키워드 + ' ' 또는 키워드 단독)
         bool isCommand = await DetermineIfCommandAsync(profile.ChzzkUid, message);
 
-        // 3. [영속성 기록]: ChatInteractionLog 테이블에 저장
+        // 3. [영속성 위임]: 버퍼 서비스를 통해 벌크 적재 요청 (Non-blocking)
         var log = new ChatInteractionLog
         {
             StreamerProfileId = profile.Id,
             SenderNickname = senderNickname,
             Message = message,
             IsCommand = isCommand,
-            MessageType = messageType
+            MessageType = messageType,
+            CreatedAt = KstClock.Now
         };
 
-        db.ChatInteractionLogs.Add(log);
-        await db.SaveChangesAsync(ct);
+        bufferService.Enqueue(log);
 
         // 4. [기존 통계 연동]: BroadcastScribe에도 전달 (기존Keywords/Emotes 수집용)
         scribe.AddChatMessage(profile.ChzzkUid, message);
