@@ -16,6 +16,7 @@ COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.App
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Presentation/MooldangBot.Presentation.csproj", "MooldangBot.Presentation/"]
 COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
+COPY ["MooldangBot.ChzzkAPI.Contracts/MooldangBot.ChzzkAPI.Contracts.csproj", "MooldangBot.ChzzkAPI.Contracts/"]
 COPY ["MooldangAPI.sln", "./"]
 
 # 2. 패키지 복원
@@ -27,20 +28,20 @@ RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj
 # 3. 소스 코드 전체 복사 및 빌드
 COPY . .
 WORKDIR "/src/MooldangBot.Api"
-RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
+RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build/api
 WORKDIR "/src/MooldangBot.ChzzkAPI"
-RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build
+RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build/chzzk
 WORKDIR "/src/MooldangBot.Cli"
-RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build
+RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build/cli
 
 # 5. 게시(Publish)
 FROM build AS publish
 WORKDIR "/src/MooldangBot.Api"
-RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish/api /p:UseAppHost=false
 WORKDIR "/src/MooldangBot.ChzzkAPI"
-RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish/chzzk /p:UseAppHost=false
 WORKDIR "/src/MooldangBot.Cli"
-RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish/cli /p:UseAppHost=false
 
 # ------------------------------------------
 # 🚀 Runtime Stage
@@ -56,4 +57,4 @@ RUN mkdir -p /app/wwwroot/images/avatars && \
     chmod -R 777 /app/wwwroot/images/avatars
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "MooldangBot.Api.dll"]
+ENTRYPOINT ["dotnet", "api/MooldangBot.Api.dll"]

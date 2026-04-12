@@ -174,8 +174,9 @@ namespace MooldangBot.Infrastructure
                 };
             });
 
-            services.AddSingleton<RabbitMQPersistentConnection>();
+             services.AddSingleton<RabbitMQPersistentConnection>();
             services.AddSingleton<IRabbitMqService, RabbitMqService>();
+            services.AddSingleton<IChzzkRpcClient, ChzzkRpcClient>();
 
             // [v16.0] 지휘관 선호도 전용 기억 장치 (Redis Preference)
             services.AddSingleton<IPreferenceCacheService, PreferenceCacheService>();
@@ -190,7 +191,7 @@ namespace MooldangBot.Infrastructure
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             // [v2.0] 영겁의 저장소: 분산 토큰 저장소 및 멱등성 가드 등록
-            services.AddSingleton<IChzzkTokenStore, RedisTokenStore>();
+            services.AddSingleton<IChzzkAccessCredentialStore, RedisTokenStore>();
             services.AddSingleton<IIdempotencyService, IdempotencyService>();
 
             // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
@@ -200,11 +201,12 @@ namespace MooldangBot.Infrastructure
         }
 
         /// <summary>
-        /// [v2.0] RabbitMQ 이벤트 컨슈머 등록 (API 전용)
+        /// [v3.7] 치지직 이벤트 소비자 등록 (메인 API 전용)
+        /// RabbitMQ에서 이벤트를 수신하여 MediatR로 전파합니다.
         /// </summary>
-        public static IServiceCollection AddRabbitMqConsumer(this IServiceCollection services)
+        public static IServiceCollection AddChzzkEventConsumer(this IServiceCollection services)
         {
-            services.AddHostedService<RabbitMqConsumerService>();
+            services.AddHostedService<ChzzkEventRabbitMqConsumer>();
             return services;
         }
     }

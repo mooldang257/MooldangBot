@@ -48,6 +48,7 @@ namespace MooldangBot.Application.Interfaces
         DbSet<PointDailySummary> PointDailySummaries { get; set; }
         DbSet<RouletteStatsAggregated> RouletteStatsAggregated { get; set; }
         DbSet<CommandExecutionLog> CommandExecutionLogs { get; set; }
+        DbSet<ChatInteractionLog> ChatInteractionLogs { get; set; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

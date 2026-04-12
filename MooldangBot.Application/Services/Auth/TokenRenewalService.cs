@@ -24,7 +24,7 @@ public class TokenRenewalService : ITokenRenewalService
     private readonly IAppDbContext _db;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _config;
-    private readonly IChzzkTokenStore _tokenStore;
+    private readonly IChzzkAccessCredentialStore _tokenStore;
     private readonly ILogger<TokenRenewalService> _logger;
     private readonly AsyncRetryPolicy<bool> _retryPolicy;
     private static AsyncCircuitBreakerPolicy<bool>? _circuitBreaker; // [제너릭 전환]
@@ -34,7 +34,7 @@ public class TokenRenewalService : ITokenRenewalService
         IAppDbContext db,
         IHttpClientFactory httpClientFactory,
         IConfiguration config,
-        IChzzkTokenStore tokenStore,
+        IChzzkAccessCredentialStore tokenStore,
         ILogger<TokenRenewalService> logger)
     {
         _db = db;

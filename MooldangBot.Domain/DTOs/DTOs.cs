@@ -248,7 +248,8 @@ namespace MooldangBot.Domain.DTOs
         string Nickname,
         string UserRole,     // streamer, manager 등
         string Message,      // content 대응
-        JsonElement? Emojis  // 이모티콘 지원
+        JsonElement? Emojis, // 이모티콘 지원
+        int? PayAmount = null // 후원 금액 (v3.7 추가)
     );
 
     // 🔐 [오시리스의 인장]: 인증 세션 관리를 위한 실시간 DTO (JSON 직렬화 최적화)

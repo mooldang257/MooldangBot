@@ -185,7 +185,7 @@ namespace MooldangBot.Presentation.Features.SongBook
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            await mediator.Publish(new ChatMessageReceivedEvent(
+            await mediator.Publish(new ChatMessageReceivedEvent_Legacy(
                 Guid.NewGuid(),
                 profile, 
                 "시뮬레이터", 

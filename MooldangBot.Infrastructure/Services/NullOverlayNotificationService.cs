@@ -23,5 +23,5 @@ public class NullOverlayNotificationService : IOverlayNotificationService
     
     public Task NotifyPointChangedAsync(string chzzkUid, CancellationToken token = default) => Task.CompletedTask;
     
-    public Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, JsonElement? emojis = null, CancellationToken token = default) => Task.CompletedTask;
+    public Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, JsonElement? emojis = null, int? payAmount = null, CancellationToken token = default) => Task.CompletedTask;
 }

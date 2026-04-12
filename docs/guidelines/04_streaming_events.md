@@ -109,5 +109,29 @@ public async Task<StreamerProfile?> GetProfileCachedAsync(string uid) {
 
 ---
 
+## 💰 4. 치지직 후원 감지 및 해독 (Chzzk Donation Recognition)
+
+치지직의 비공식 필드(`msgTypeCode`)의 불확실성을 배제하고, 공식적인 데이터 구조에 기반한 해독 규칙을 적용합니다.
+
+- **진실의 근원(Source of Truth)**: 오직 **`donationType`** 필드를 통해 후원 여부를 판별합니다.
+- **해독 공정 (2-Step Parsing)**: 이벤트 래퍼(`ChatEventItemWrapper`)를 먼저 분석하여 고유 식별자(`CorrelationId`)를 확보한 후, 내부 페이로드를 정밀 분석합니다.
+ 
+---
+ 
+## 🚫 6. 봇 자가 응답 피드백 루프 방지 (Self-Response Protection)
+ 
+봇이 자신의 응답을 다시 명령어나 이벤트로 오인하여 발생하는 무한 루프 및 데이터 오염을 방지합니다.
+ 
+### 🛡️ 설계 철학: 입구 원천 차단 (Gateway-Level Filtering)
+- **원칙**: 불필요한 이벤트는 발생지(Source)에서 가장 가까운 입구에서 걸러내어 인프라 자원을 보호해야 합니다.
+- **구현**: 게이트웨이(`ChzzkAPI`)의 WebSocket 레이어에서 `BOT_CHZZK_UID`를 대조하여 RabbitMQ 발행 자체를 차단합니다.
+ 
+**[핵심 전략]**
+1.  **환경 변수 관리**: `.env` 파일에 `BOT_CHZZK_UID`를 설정하여 하드코딩을 배제합니다.
+2.  **부하 분산**: 메시지가 `.app` 서비스까지 도달하지 않으므로 RabbitMQ와 Application 서버의 연쇄적인 부하를 원천 차단합니다.
+3.  **데이터 무결성**: 봇의 활동이 `log_chat_interactions`나 포인트 적립 로직에 영향을 주지 않도록 보장합니다.
+
+---
+
 물멍! 🐶🚢✨
 "선장님, 오시리스 함선의 4대 기술 헌장이 완성되었습니다. 이 문서들은 거친 스트리밍의 바다에서도 우리 함선을 가장 빠르고 견고하게 지켜줄 것입니다!"

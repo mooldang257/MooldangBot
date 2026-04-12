@@ -1,43 +1,86 @@
+using MediatR;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Events;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using Microsoft.Extensions.Logging;
+using MooldangBot.Domain.Entities;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
-using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Common.Interfaces;
-using MooldangBot.Application.Common.Interfaces.Philosophy;
-using MooldangBot.Domain.Events;
-using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Application.Features.Chat.Handlers;
 
 /// <summary>
-/// [통합의 완성]: IAMF의 모든 엔진을 결합하여 실전 채팅 응답을 수행하는 최종 핸들러입니다.
+/// [서기의 기록]: 모든 채팅 상호작용을 감사(Audit)하고 기록하며, 명령어 여부를 판별하는 핸들러입니다.
 /// </summary>
 public class ChatInteractionHandler(
-    ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
+    IAppDbContext db,
+    ICommandCacheService commandCache,
+    IBroadcastScribe scribe, // [v3.7] 기존 통계 엔진 유지
+    ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {
-    public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
-        logger.LogDebug($"[채팅 핸들러 수신] Channel: {notification.Profile.ChzzkUid}, User: {notification.Username}, Msg: {notification.Message}");
-        // [v2.3] 통계 집계(Scribe)는 이제 봇 엔진(ChzzkAPI)에서 직접 수행하므로 여기서는 제거합니다.
-        
-        // 1. [무한 루프 및 명령어 방지]: 봇 자신의 말이거나 시스템 메시지, 혹은 명령어(!)에는 반응하지 않음
-        if (notification.Username.Contains("MooldangBot") || 
-            string.IsNullOrEmpty(notification.SenderId) ||
-            notification.Message.TrimStart().StartsWith('!'))
-        {
+        // 1. [다형성 추출]: 채팅 또는 후원 이벤트 처리
+        if (notification.Payload is not (ChzzkChatEvent or ChzzkDonationEvent))
             return;
+
+        var profile = notification.Profile;
+        if (string.IsNullOrEmpty(profile.ChzzkUid)) return;
+
+        string senderNickname = string.Empty;
+        string message = string.Empty;
+        string messageType = "Chat";
+
+        if (notification.Payload is ChzzkChatEvent chat)
+        {
+            // 봇 자신의 말은 이미 중앙(Consumer)에서 걸러졌으므로 여기선 별도 처리 불필요
+
+            senderNickname = chat.Nickname;
+            message = chat.Content;
+            messageType = "Chat";
+        }
+        else if (notification.Payload is ChzzkDonationEvent donation)
+        {
+            senderNickname = donation.Nickname;
+            message = donation.DonationMessage;
+            messageType = "Donation";
         }
 
-        // 1. [거울의 봉인]: 일반 채팅에 대한 자동 AI 응답 기능을 비활성화합니다. (v2.1.4)
-        // 사용자의 요청에 따라 모든 AI 발화는 '통합 명령어(!질문 등)'를 통해서만 수행됩니다.
-        /* 
-        [기존 자동 응답 로직 - 비활성화됨]
-        bool isStreamer = notification.SenderId == notification.Profile.ChzzkUid;
-        string? systemPrompt = await intentRouter.RouteAndProcessChatAsync(...);
-        ...
-        */
+        if (string.IsNullOrEmpty(message)) return;
 
-        return; // 현재 핸들러는 메시지 기록(Scribe) 이후 프로세스를 종료합니다.
+        // 2. [명령어 판별 로직]: DB 키워드 대조 (키워드 + ' ' 또는 키워드 단독)
+        bool isCommand = await DetermineIfCommandAsync(profile.ChzzkUid, message);
+
+        // 3. [영속성 기록]: ChatInteractionLog 테이블에 저장
+        var log = new ChatInteractionLog
+        {
+            StreamerProfileId = profile.Id,
+            SenderNickname = senderNickname,
+            Message = message,
+            IsCommand = isCommand,
+            MessageType = messageType
+        };
+
+        db.ChatInteractionLogs.Add(log);
+        await db.SaveChangesAsync(ct);
+
+        // 4. [기존 통계 연동]: BroadcastScribe에도 전달 (기존Keywords/Emotes 수집용)
+        scribe.AddChatMessage(profile.ChzzkUid, message);
+
+        if (isCommand)
+            logger.LogDebug("📝 [Interaction Log] Command Detected: {Message} by {User}", message, senderNickname);
+    }
+
+    private async Task<bool> DetermineIfCommandAsync(string chzzkUid, string message)
+    {
+        // 첫 단어 추출
+        var parts = message.Split(' ', 2);
+        string firstWord = parts[0];
+
+        // DB 키워드 캐시 확인
+        var command = await commandCache.GetUnifiedCommandAsync(chzzkUid, firstWord);
+
+        // 결과 반환: 키워드가 존재하면 명령어로 간주
+        return command != null;
     }
 }

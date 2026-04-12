@@ -1,20 +1,19 @@
-﻿using System;
-using System.Threading.Tasks;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 
 namespace MooldangBot.ChzzkAPI.Contracts.Interfaces;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???명룷]: 媛쒕퀎 移섏?吏?梨꾨꼸怨쇱쓽 WebSocket ?곌껐 諛??듭떊???대떦?섎뒗 ?명꽣?섏씠?ㅼ엯?덈떎.
+/// [파동의 파편]: 개별 채널의 WebSocket 연결을 관리하는 단위입니다.
 /// </summary>
 public interface IWebSocketShard : IDisposable
 {
-    /// <summary>
-    /// ?ㅻ뱶??怨좎쑀 ?몃뜳?ㅼ엯?덈떎.
-    /// </summary>
     int ShardId { get; }
+    
+    // [맥박의 측정]: 현재 가동 중인 연결 수를 반환합니다.
+    int GetActiveConnectionCount();
 
-    /// <summary>
-    /// ?뱀젙 梨꾨꼸??????ㅼ떆媛??곌껐???섑뻾?⑸땲??
-    /// </summary>
+    // [연결 상태 확인]: 특정 채널이 이 샤드에 연결되어 있는지 확인합니다.
+    bool IsConnected(string chzzkUid);
+
     Task ConnectAsync(string chzzkUid, string url, string accessToken);
 }

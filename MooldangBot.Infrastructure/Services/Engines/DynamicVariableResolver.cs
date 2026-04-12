@@ -55,7 +55,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkAccessToken);
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
             var title = result?.Content?.DefaultLiveTitle;
 
             if (title != null)
@@ -77,7 +77,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
-            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkAccessToken);
+            var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
             var category = result?.Content?.Category?.CategoryValue;
 
             if (category != null)

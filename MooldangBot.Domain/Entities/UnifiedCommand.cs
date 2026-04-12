@@ -10,7 +10,7 @@ namespace MooldangBot.Domain.Entities;
 /// [파로스의 통합 - v4.3 정문화]: 시스템의 모든 유료/무료 명령어를 통합 관리하는 엔티티입니다.
 /// [v6.1] 정규화: ISoftDeletable, IAuditable 상속 및 명칭 통합.
 /// </summary>
-[Index(nameof(StreamerProfileId), nameof(Keyword), IsUnique = true)]
+[Index(nameof(StreamerProfileId), nameof(Keyword), nameof(FeatureType), IsUnique = true)]
 public class UnifiedCommand : ISoftDeletable, IAuditable
 {
     [Key]

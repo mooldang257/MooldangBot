@@ -96,7 +96,10 @@ try
 
     builder.Services.AddApplicationServices();
     builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
-    builder.Services.AddRabbitMqConsumer(); // [v2.0] 봇 엔진 이벤트 수신을 위한 컨슈머 등록
+    
+    // [v3.7] 봇 엔진(Gateway)으로부터 RabbitMQ를 통해 전달되는 이벤트를 수신하는 소비자 워커 가동
+    builder.Services.AddChzzkEventConsumer(); 
+    
     builder.Services.AddPresentationServices();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IUserSession, UserSession>();

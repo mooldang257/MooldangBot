@@ -11,6 +11,8 @@ using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Session;
 using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Restrictions;
 using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Drops;
 using MooldangBot.ChzzkAPI.Contracts.Models.Internal;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.ChzzkAPI.Contracts.Models.Commands;
 
 namespace MooldangBot.ChzzkAPI.Contracts;
 
@@ -64,6 +66,23 @@ namespace MooldangBot.ChzzkAPI.Contracts;
 [JsonSerializable(typeof(UpdateTokenRequest))]
 [JsonSerializable(typeof(ExchangeTokenRequest))]
 [JsonSerializable(typeof(ChannelBatchRequest))]
+[JsonSerializable(typeof(InjectEventRequest))]
+[JsonSerializable(typeof(ChzzkEventEnvelope))]
+[JsonSerializable(typeof(ChzzkEventBase))]
+[JsonSerializable(typeof(ChzzkChatEvent))]
+[JsonSerializable(typeof(ChzzkDonationEvent))]
+[JsonSerializable(typeof(ChzzkSubscriptionEvent))]
+[JsonSerializable(typeof(ChzzkCommandBase))]
+[JsonSerializable(typeof(SendMessageCommand))]
+[JsonSerializable(typeof(SendChatNoticeCommand))]
+[JsonSerializable(typeof(UpdateTitleCommand))]
+[JsonSerializable(typeof(UpdateCategoryCommand))]
+[JsonSerializable(typeof(ReconnectCommand))]
+[JsonSerializable(typeof(DisconnectCommand))]
+[JsonSerializable(typeof(RefreshSettingsCommand))]
+[JsonSerializable(typeof(CommandResponseBase))]
+[JsonSerializable(typeof(StandardCommandResponse))]
+[JsonSerializable(typeof(object))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {
     /// <summary>

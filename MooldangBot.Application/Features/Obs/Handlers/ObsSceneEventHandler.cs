@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MooldangBot.Application.Features.Obs.Handlers;
 
-public class ObsSceneEventHandler : INotificationHandler<ChatMessageReceivedEvent>
+public class ObsSceneEventHandler : INotificationHandler<ChatMessageReceivedEvent_Legacy>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ObsSceneEventHandler> _logger;
@@ -21,7 +21,7 @@ public class ObsSceneEventHandler : INotificationHandler<ChatMessageReceivedEven
         _obsService = obsService;
     }
 
-    public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ChatMessageReceivedEvent_Legacy notification, CancellationToken cancellationToken)
     {
         string msg = notification.Message.Trim();
         string chzzkUid = notification.Profile.ChzzkUid;

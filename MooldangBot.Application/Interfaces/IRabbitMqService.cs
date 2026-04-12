@@ -27,11 +27,16 @@ public interface IRabbitMqService
     /// [New] 제네릭 이벤트를 발행합니다. (Topic 기반 고도의 관제 지원)
     /// </summary>
     Task PublishAsync<T>(T eventData, string? routingKey = null, string? exchangeName = null) where T : class;
+
+    /// <summary>
+    /// [v3.7] 특정 익스체인지와 큐를 구독하여 메시지를 수신합니다.
+    /// </summary>
+    Task SubscribeAsync(string exchangeName, string queueName, string routingKey, Func<string, string, Task> onMessageReceived, CancellationToken ct);
 }
 
 public static class RabbitMqExchanges
 {
-    public const string ChatEvents = "mooldang.chzzk.events"; // v2.0 고성능 토픽 익스체인지
+    public const string ChatEvents = "mooldang.chzzk.chat"; // v3.7 고성능 토픽 익스체인지 (Gateway & App 통일)
     public const string BotCommands = "mooldang.chzzk.commands"; // Outbound 명령용 (Api -> Bot)
     public const string LegacyChat = "mooldang.chat.events"; // 하위 호환
     public const string SystemLogs = "mooldang.bot.events";

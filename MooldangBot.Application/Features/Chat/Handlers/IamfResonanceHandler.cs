@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -18,10 +18,10 @@ public class IamfResonanceHandler(
     IPhoenixRecorder phoenix,
     IResonanceService resonance,
     IChatTrafficAnalyzer trafficAnalyzer,
-    ILogger<IamfResonanceHandler> logger) : INotificationHandler<ChatMessageReceivedEvent>
+    ILogger<IamfResonanceHandler> logger) : INotificationHandler<ChatMessageReceivedEvent_Legacy>
 {
 
-    public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ChatMessageReceivedEvent_Legacy notification, CancellationToken cancellationToken)
     {
         // 1. [오시리스의 규율] 파동 검증
         var (isValid, message) = await regulation.ValidateRegulationAsync(notification.Message, "Sephiroth");

@@ -1,4 +1,4 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,7 @@ public class AiResponseStrategy(
 {
     public string FeatureType => "AI";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
     {
         // ... (생략된 로직)
         string fullMessage = notification.Message.Trim();

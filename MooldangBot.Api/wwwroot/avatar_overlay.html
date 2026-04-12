@@ -368,7 +368,24 @@
                 createAvatar(data.senderId, data.nickname, data.userRole);
             }
             resetDestroyTimer(data.senderId);
-            if (settings.showChat) showChatBubble(data.senderId, data.message, data.emojis);
+
+            // [v3.7] 후원 금액 표시 로직 추가
+            let displayMsg = data.message;
+            if (data.payAmount && data.payAmount > 0) {
+                displayMsg = `💰 ${data.payAmount.toLocaleString()}치즈: ${data.message}`;
+                
+                // 후원 시 아바타 이미지 한시적 변경 (Interaction)
+                const av = avatars[data.senderId];
+                if (av) {
+                    av.imgEl.src = getAvatarImg('interaction');
+                    setTimeout(() => {
+                        if (av.state === 'walking') av.imgEl.src = getAvatarImg('walking');
+                        else if (av.state === 'stop') av.imgEl.src = getAvatarImg('stop');
+                    }, 5000);
+                }
+            }
+
+            if (settings.showChat) showChatBubble(data.senderId, displayMsg, data.emojis);
         });
 
         connection.on("ReceiveAvatarCommand", (jsonRaw) => {

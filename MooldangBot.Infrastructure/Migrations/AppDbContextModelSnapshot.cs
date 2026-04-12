@@ -101,6 +101,56 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("overlay_avatar_settings", (string)null);
                 });
 
+            modelBuilder.Entity("MooldangBot.Domain.Entities.ChatInteractionLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsCommand")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_command");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("message_type");
+
+                    b.Property<string>("SenderNickname")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("sender_nickname");
+
+                    b.Property<int>("StreamerProfileId")
+                        .HasColumnType("int")
+                        .HasColumnName("streamer_profile_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_log_chat_interactions");
+
+                    b.HasIndex("IsCommand", "CreatedAt")
+                        .HasDatabaseName("ix_log_chat_interactions_is_command_created_at");
+
+                    b.HasIndex("StreamerProfileId", "CreatedAt")
+                        .HasDatabaseName("ix_log_chat_interactions_streamer_profile_id_created_at");
+
+                    b.ToTable("log_chat_interactions", (string)null);
+                });
+
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategory", b =>
                 {
                     b.Property<string>("CategoryId")
@@ -1940,7 +1990,7 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.Property<string>("FeatureType")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("feature_type");
 
                     b.Property<string>("Icon")
@@ -2000,6 +2050,10 @@ namespace MooldangBot.Infrastructure.Migrations
 
                     b.HasIndex("StreamerProfileId", "TargetId")
                         .HasDatabaseName("ix_func_cmd_unified_streamer_profile_id_target_id");
+
+                    b.HasIndex("StreamerProfileId", "Keyword", "FeatureType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_func_cmd_unified_streamer_profile_id_keyword_feature_type");
 
                     b.ToTable("func_cmd_unified", (string)null);
                 });
@@ -2089,6 +2143,18 @@ namespace MooldangBot.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_overlay_avatar_settings_streamer_profiles_streamer_profile_id");
+
+                    b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.ChatInteractionLog", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                        .WithMany()
+                        .HasForeignKey("StreamerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_log_chat_interactions_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("StreamerProfile");
                 });

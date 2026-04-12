@@ -14,3 +14,4 @@ API Scope는 `유저 정보 조회`입니다.
 **Response Body**
 
 <table><thead><tr><th width="182">Key</th><th width="174">Type</th><th>Example</th></tr></thead><tbody><tr><td>channelId</td><td>String</td><td>909501f048b44cf0d5c1d28XXXXXXXX</td></tr><tr><td>channelName</td><td>String</td><td>치지직유저 3121</td></tr><tr><td></td><td></td><td></td></tr></tbody></table>
+

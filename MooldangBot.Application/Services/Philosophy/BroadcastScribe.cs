@@ -150,7 +150,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         {
             if (string.IsNullOrEmpty(profile.ChzzkAccessToken)) return session.Id;
 
-            var liveResult = await _chzzkApi.GetLiveSettingAsync(profile.ChzzkAccessToken);
+            var liveResult = await _chzzkApi.GetLiveSettingAsync(profile.ChzzkUid, profile.ChzzkAccessToken);
             var liveSetting = liveResult?.Content;
             
             if (liveSetting != null)

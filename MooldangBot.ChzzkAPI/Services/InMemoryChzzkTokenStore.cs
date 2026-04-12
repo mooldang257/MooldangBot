@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using MooldangBot.ChzzkAPI.Contracts.Interfaces;
 
 namespace MooldangBot.ChzzkAPI.Services;
@@ -6,7 +6,7 @@ namespace MooldangBot.ChzzkAPI.Services;
 /// <summary>
 /// [?ㅼ떆由ъ뒪???댁뇿 蹂닿???: 移섏?吏??몄쬆 ?좏겙?ㅼ쓣 硫붾え由ъ긽?먯꽌 愿由ы븯???ㅻ젅???몄씠????μ냼?낅땲??
 /// </summary>
-public class InMemoryChzzkTokenStore : IChzzkTokenStore
+public class InMemoryChzzkTokenStore : IChzzkGatewayTokenStore
 {
     private readonly ConcurrentDictionary<string, (string SessionCookie, string AuthCookie)> _tokens = new();
 

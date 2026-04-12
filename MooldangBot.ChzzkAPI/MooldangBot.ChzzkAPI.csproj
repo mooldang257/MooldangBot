@@ -27,6 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
+    <ProjectReference Include="..\MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj" />
     <ProjectReference Include="..\MooldangBot.ChzzkAPI.Contracts\MooldangBot.ChzzkAPI.Contracts.csproj" />
   </ItemGroup>
 

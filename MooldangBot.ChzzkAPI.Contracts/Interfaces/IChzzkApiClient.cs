@@ -38,10 +38,10 @@ public interface IChzzkApiClient
     Task<List<ChannelProfile>> GetChannelsAsync(IEnumerable<string> uids);
     Task<ChzzkPagedResponse<CategorySearchItem>?> SearchCategoryAsync(string categoryName);
     Task<ChzzkPagedResponse<ChannelManager>?> GetManagersAsync(string chzzkUid, string accessToken);
-    Task<ChzzkPagedResponse<ChannelFollower>?> GetFollowersAsync(string chzzkUid, string accessToken, int size = 20, string? cursor = null);
-    Task<ChzzkPagedResponse<ChannelSubscriber>?> GetSubscribersAsync(string chzzkUid, string accessToken, int size = 20, string? cursor = null);
+    Task<ChzzkPagedResponse<ChannelFollower>?> GetFollowersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0);
+    Task<ChzzkPagedResponse<ChannelSubscriber>?> GetSubscribersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0);
 
     // 6. Session
     Task<SessionUrlResponse?> GetSessionUrlAsync(string chzzkUid, string accessToken);
-    Task<bool> SubscribeSessionEventAsync(string chzzkUid, string sessionKey, string accessToken);
+    Task<bool> SubscribeSessionEventAsync(string chzzkUid, string sessionKey, string eventType, string accessToken);
 }

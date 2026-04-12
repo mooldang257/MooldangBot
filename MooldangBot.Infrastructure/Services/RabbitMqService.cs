@@ -5,6 +5,7 @@ using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Infrastructure.Messaging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace MooldangBot.Infrastructure.Services;
 
@@ -126,6 +127,39 @@ public class RabbitMqService : IRabbitMqService, IDisposable
             _logger.LogError(ex, "❌ [전령] 이벤트 발행 중 오류 발생 (Ex: {Exchange}): {Message}", exchangeName, ex.Message);
             _channel = null; 
         }
+    }
+
+    public async Task SubscribeAsync(string exchangeName, string queueName, string routingKey, Func<string, string, Task> onMessageReceived, CancellationToken ct)
+    {
+        // [v3.2.5] 소비자 전용 독립 채널 개설 (발행 채널과의 간섭 차단)
+        var channel = await _connection.CreateModelAsync();
+
+        await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Topic, true, cancellationToken: ct);
+        await channel.QueueDeclareAsync(queueName, true, false, false, cancellationToken: ct);
+        await channel.QueueBindAsync(queueName, exchangeName, routingKey, cancellationToken: ct);
+
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        consumer.ReceivedAsync += async (model, ea) =>
+        {
+            try
+            {
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                
+                // 대리자 호출: 비즈니스 로직(Application)으로 제어권 이양
+                await onMessageReceived(message, ea.RoutingKey);
+
+                await channel.BasicAckAsync(ea.DeliveryTag, false, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [수신 엔진] 메시지 처리 중 오류 발생 (Nack): {Message}", ex.Message);
+                await channel.BasicNackAsync(ea.DeliveryTag, false, true, ct);
+            }
+        };
+
+        await channel.BasicConsumeAsync(queueName, false, consumer, ct);
+        _logger.LogInformation("📡 [수신 엔진] 안테나가 정식으로 가동되었습니다. (Queue: {Queue})", queueName);
     }
 
     public void Dispose()

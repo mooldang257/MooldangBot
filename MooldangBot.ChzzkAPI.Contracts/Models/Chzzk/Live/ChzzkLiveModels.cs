@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live;
@@ -87,6 +87,9 @@ public class UpdateLiveSettingRequest
 {
     [JsonPropertyName("defaultLiveTitle")]
     public string? DefaultLiveTitle { get; set; }
+
+    [JsonPropertyName("liveTitle")]
+    public string? LiveTitle { get; set; }
 
     [JsonPropertyName("categoryType")]
     public string? CategoryType { get; set; }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.ChzzkAPI.Contracts.Interfaces;
 using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Session;
 
@@ -40,7 +40,7 @@ public class SessionController : ControllerBase
     public async Task<IActionResult> SubscribeSession(string chzzkUid, [FromBody] SubscribeEventRequest request, [FromHeader(Name = "Authorization")] string authHeader)
     {
         var accessToken = authHeader.Replace("Bearer ", "");
-        var success = await _apiClient.SubscribeSessionEventAsync(chzzkUid, request.SessionKey, accessToken);
+        var success = await _apiClient.SubscribeSessionEventAsync(chzzkUid, request.SessionKey, "chat", accessToken);
         return Ok(new { success });
     }
 }

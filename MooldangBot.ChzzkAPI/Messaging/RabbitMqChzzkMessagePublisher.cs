@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.ChzzkAPI.Contracts.Interfaces;
@@ -52,7 +52,7 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher, IDisposable
 
             _channel = await _connection!.CreateChannelAsync();
             
-            // Exchange 선언
+            // Exchange 선언 (명시적인 mooldang.chzzk.chat으로 지휘관 권고 반영)
             await _channel.ExchangeDeclareAsync("mooldang.chzzk.chat", ExchangeType.Topic, true);
             await _channel.ExchangeDeclareAsync("mooldang.legacy.chat", ExchangeType.Fanout, true);
             await _channel.ExchangeDeclareAsync("mooldang.chzzk.status", ExchangeType.Topic, true);
@@ -65,36 +65,41 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher, IDisposable
         }
     }
 
-    public async Task PublishChatEventAsync(object chatEvent)
+    public async Task PublishEventAsync(MooldangBot.ChzzkAPI.Contracts.Models.Events.ChzzkEventEnvelope envelope)
     {
         try
         {
             var channel = await GetChannelAsync();
-            var json = JsonSerializer.Serialize(chatEvent);
-            var body = Encoding.UTF8.GetBytes(json);
+            
+            // [v3.7] 다형성 직렬화를 사용하여 RabbitMQ 본체를 구성합니다.
+            // ChzzkJsonContext.Default.ChzzkEventEnvelope을 사용하여 Source Generation 성능을 활용합니다.
+            var body = JsonSerializer.SerializeToUtf8Bytes(envelope, MooldangBot.ChzzkAPI.Contracts.ChzzkJsonContext.Default.ChzzkEventEnvelope);
 
+            // [물멍]: 명시적인 채팅용 익스체인지(mooldang.chzzk.chat)를 사용합니다.
+            // 라우팅 키: streamer.{chzzkUid}.chat
+            var routingKey = $"streamer.{envelope.ChzzkUid}.chat";
+            
             var props = new BasicProperties
             {
                 Persistent = true,
-                ContentType = "application/json",
-                Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                ContentType = "application/json"
             };
 
-            // RabbitMQ v7.x 비동기 발행 규격 준수
             await channel.BasicPublishAsync(
                 exchange: "mooldang.chzzk.chat",
-                routingKey: "chzzk.chat.event",
-                mandatory: false,
+                routingKey: routingKey,
+                mandatory: true,
                 basicProperties: props,
-                body: (ReadOnlyMemory<byte>)body,
-                cancellationToken: CancellationToken.None);
+                body: body);
 
-            _logger.LogDebug("[Publisher] 채팅 이벤트 발행 완료");
+            // [v3.7] 다형성 이벤트 타입 로깅
+            var eventType = envelope.Payload.GetType().Name.Replace("Chzzk", "").Replace("Event", "");
+            _logger.LogDebug("📤 [RabbitMQ] {Event} 발행 완료 (v3.7): {RoutingKey}", eventType, routingKey);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Publisher] 채팅 이벤트 발행 중 오류 발생");
-            _channel = null;
+            _logger.LogError(ex, "[Publisher] 이벤트 발행 중 오류 발생 (v3.7)");
+            _channel = null; // 재연결 유도
         }
     }
 
@@ -107,7 +112,6 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher, IDisposable
             var json = JsonSerializer.Serialize(payload);
             var body = Encoding.UTF8.GetBytes(json);
 
-            // 규격에 맞게 빈 속성(BasicProperties) 생성
             var props = new BasicProperties();
 
             await channel.BasicPublishAsync(

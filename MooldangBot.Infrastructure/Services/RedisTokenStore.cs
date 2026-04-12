@@ -8,7 +8,7 @@ namespace MooldangBot.Infrastructure.Services;
 /// <summary>
 /// [영겁의 파수꾼 - 실체]: StackExchange.Redis를 사용하여 토큰을 중앙 집중식으로 관리합니다.
 /// </summary>
-public class RedisTokenStore : IChzzkTokenStore
+public class RedisTokenStore : IChzzkAccessCredentialStore
 {
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisTokenStore> _logger;

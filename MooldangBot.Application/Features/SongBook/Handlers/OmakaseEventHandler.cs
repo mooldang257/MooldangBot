@@ -1,6 +1,7 @@
 using MediatR;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Domain.Events;
+using MooldangBot.Application.Events;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
@@ -8,132 +9,143 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
-
+using System.Linq;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Features.SongBook.Handlers;
 
-public class OmakaseEventHandler : INotificationHandler<ChatMessageReceivedEvent>
+/// <summary>
+/// [서기의 노래]: 신청곡 및 오마카세 메뉴를 처리하는 최종 핸들러입니다. (v3.7)
+/// </summary>
+public class OmakaseEventHandler(
+    IServiceProvider serviceProvider,
+    IPointTransactionService pointService,
+    IChzzkBotService botService,
+    ILogger<OmakaseEventHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<OmakaseEventHandler> _logger;
-    private readonly IChzzkBotService _botService;
-
-    public OmakaseEventHandler(IServiceProvider serviceProvider, ILogger<OmakaseEventHandler> logger, IChzzkBotService botService)
+    public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-        _botService = botService;
-    }
+        // 1. [다형성 파라미터화]: 채팅과 후원 이벤트를 통합 파라미터로 추출
+        if (notification.Payload is not (ChzzkChatEvent or ChzzkDonationEvent))
+            return;
 
-    public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
-    {
-        string msg = notification.Message.Trim();
-        if (string.IsNullOrEmpty(msg)) return;
+        var profile = notification.Profile;
+        if (!profile.IsActive || !profile.IsMasterEnabled) return;
 
-        // 1. [영적 정합성]: 봇 활성화 및 마스터 킬 스위치 확인 (v6.1.6)
-        if (!notification.Profile.IsActive || !notification.Profile.IsMasterEnabled) return;
+        bool isDonation = notification.Payload is ChzzkDonationEvent;
+        var chat = notification.Payload as ChzzkChatEvent;
+        var donation = notification.Payload as ChzzkDonationEvent;
 
-        // 2. [오시리스의 저울]: 가격 정책 및 세션 상태 확인
-        using var scope = _serviceProvider.CreateScope();
+        string message = (isDonation ? donation!.DonationMessage : chat!.Content).Trim();
+        int payAmount = isDonation ? donation!.PayAmount : 0;
+        string senderNickname = isDonation ? donation!.Nickname : chat!.Nickname;
+        string senderId = isDonation ? donation!.SenderId : chat!.SenderId;
+
+        if (string.IsNullOrEmpty(message)) return;
+
+        // 2. [명령어 대조]: 긴 단어 우선순위 키워드 매칭
+        using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        // 1. [검색 엔진]: 메시지 시작 부분과 일치하는 통합 명령어 조회 (v4.3 정문화 반영)
-        // [물멍의 지리]: 복합 인덱스 효율을 위해 DB에서는 스트리머 필터링만 수행하고, 
-        // 키워드 매칭은 긴 단어 우선순위 및 대소문자 구분을 위해 애플리케이션 레이어에서 처리합니다.
         var allActiveCommands = await db.UnifiedCommands
             .AsNoTracking()
-            .Where(c => c.StreamerProfileId == notification.Profile.Id && c.IsActive) // [v6.1.5] 기능 활성 상태(IsActive) 필터 명시
-            .ToListAsync(cancellationToken);
+            .Where(c => c.StreamerProfileId == profile.Id && c.IsActive)
+            .ToListAsync(ct);
 
         var triggerCmd = allActiveCommands
             .OrderByDescending(c => c.Keyword.Length)
-            .FirstOrDefault(c => msg.StartsWith(c.Keyword, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(c => message.StartsWith(c.Keyword, StringComparison.OrdinalIgnoreCase));
 
-        if (triggerCmd == null) return; 
+        if (triggerCmd == null) return;
 
-        var featureType = triggerCmd.FeatureType.ToString();
-        bool isSongRequestFeature = featureType == CommandFeatureTypes.SongRequest;
-        bool isOmakaseFeature = featureType == CommandFeatureTypes.Omakase;
+        var featureType = triggerCmd.FeatureType;
+        bool isSongRequestFeature = featureType == CommandFeatureType.SongRequest;
+        bool isOmakaseFeature = featureType == CommandFeatureType.Omakase;
 
         if (!isSongRequestFeature && !isOmakaseFeature) return;
 
-        _logger.LogInformation($"[노래 신청 감지] {notification.Username}: {msg} (Type: {featureType})");
+        // 3. [결제 보안]: CostType에 따른 실질적 검증 및 차감
+        int requiredPrice = triggerCmd.Cost;
 
+        if (triggerCmd.CostType == CommandCostType.Cheese)
+        {
+            // 치즈 후원 명령어는 반드시 후원 이벤트를 통해서만 실행 가능
+            if (!isDonation || payAmount < requiredPrice) return;
+        }
+        else if (triggerCmd.CostType == CommandCostType.Point)
+        {
+            // 포인트 명령어는 시청자 잔액 차감 시도
+            var (success, _) = await pointService.AddPointsAsync(
+                profile.ChzzkUid!, senderId, senderNickname, -requiredPrice, ct);
+
+            if (!success)
+            {
+                await botService.SendReplyChatAsync(profile, 
+                    $"❌ @{senderNickname}님, 포인트가 부족합니다. (필요: {requiredPrice}P)", senderId, ct);
+                return;
+            }
+        }
+
+        // 4. [신청곡 세션 확인]: 일반 노래 신청의 경우 영업 중인지 확인
         if (isSongRequestFeature)
         {
             var activeSession = await db.SonglistSessions
                 .AsNoTracking()
-                .Include(s => s.StreamerProfile)
-                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, cancellationToken); // [v6.1.5] 세션 활성 피아 식별
+                .FirstOrDefaultAsync(s => s.StreamerProfileId == profile.Id && s.IsActive, ct);
                 
-            if (activeSession == null)
-            {
-                var hasAnySession = await db.SonglistSessions
-                    .Include(s => s.StreamerProfile)
-                    .AnyAsync(s => s.StreamerProfileId == notification.Profile.Id, cancellationToken);
-                if (hasAnySession) return;
-            }
+            if (activeSession == null) return;
         }
 
-        // 2. [금액 로직 SSOT]: 명령어 관리의 Cost를 최우선으로 사용
-        int requiredPrice = triggerCmd.Cost;
-        
-        if (requiredPrice > 0 && notification.DonationAmount < requiredPrice) return;
-
-        // 3. [서기의 기록]: 신청 곡 제목 추출 (오마카세의 경우 랜덤 선택)
-        string command = triggerCmd.Keyword;
-        string songTitle = "";
+        // 5. [데이터 가공]: 곡 제목 추출
+        string songTitle = string.Empty;
 
         if (isSongRequestFeature)
         {
-            songTitle = msg.Substring(command.Length).Trim();
+            songTitle = message.Substring(triggerCmd.Keyword.Length).Trim();
             if (string.IsNullOrEmpty(songTitle))
             {
-                await _botService.SendReplyChatAsync(notification.Profile, $"@{notification.Username}님, 신청하실 곡 제목을 입력해주세요! (예: {command} 곡제목)", notification.SenderId, cancellationToken);
+                await botService.SendReplyChatAsync(profile, 
+                    $"@{senderNickname}님, 신청하실 곡 제목을 입력해주세요! (예: {triggerCmd.Keyword} 곡제목)", senderId, ct);
                 return;
             }
         }
         else if (isOmakaseFeature)
         {
-            // [v1.5-Refine] MenuId 대신 PK(Id) 기반 1:1 매핑으로 단순화
-            int targetId = triggerCmd.TargetId ?? 0;
-            var selected = await db.StreamerOmakases
-                .FirstOrDefaultAsync(o => o.StreamerProfileId == notification.Profile.Id && o.Id == targetId && o.IsActive, cancellationToken); // [v6.1.5] 메뉴 활성 체크
+            var selectedMenu = await db.StreamerOmakases
+                .FirstOrDefaultAsync(o => o.StreamerProfileId == profile.Id && o.Id == triggerCmd.TargetId && o.IsActive, ct);
 
-            if (selected == null)
-            {
-                await _botService.SendReplyChatAsync(notification.Profile, $"@{notification.Username}님, 등록된 오마카세 메뉴가 없습니다. (ID: {targetId})", notification.SenderId, cancellationToken);
-                return;
-            }
+            if (selectedMenu == null) return;
 
-            songTitle = $"{selected.Icon} {triggerCmd.ResponseText}";
-            selected.Count++;
+            // ResponseText는 설명용으로만 사용 (곡 제목 구성 요소)
+            songTitle = $"{selectedMenu.Icon} {triggerCmd.ResponseText}";
+            selectedMenu.Count++;
         }
 
-        // 4. [피닉스의 재건]: SongQueue에 저장
+        // 6. [최종 집행]: SongQueue 저장 (성공 시 침묵 정책 유지)
         try
         {
+            var queueCount = await db.SongQueues
+                .Where(q => q.StreamerProfileId == profile.Id)
+                .CountAsync(ct);
+
             var newRequest = new MooldangBot.Domain.Entities.SongQueue
             {
-                StreamerProfileId = notification.Profile.Id,
+                StreamerProfileId = profile.Id,
                 Title = songTitle,
                 Status = SongStatus.Pending,
                 CreatedAt = KstClock.Now,
-                SortOrder = await db.SongQueues
-                    .Include(q => q.StreamerProfile)
-                    .Where(q => q.StreamerProfileId == notification.Profile.Id).CountAsync(cancellationToken) + 1
+                SortOrder = queueCount + 1
             };
 
             db.SongQueues.Add(newRequest);
-            await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(ct);
 
-            string typeName = isOmakaseFeature ? $"🍱 {triggerCmd.ResponseText}" : "🎵 노래";
-            await _botService.SendReplyChatAsync(notification.Profile, $"✅ @{notification.Username}님의 {typeName} 신청이 완료되었습니다: {songTitle}", notification.SenderId, cancellationToken);
+            logger.LogInformation("✅ [Song Request Success] {Nickname} -> {Title} (CostType: {CostType})", 
+                senderNickname, songTitle, triggerCmd.CostType);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "[노래 신청 실패] DB 저장 중 오류 발생");
+            logger.LogError(ex, "❌ [Song Request Failed] DB 저장 중 오류 발생");
         }
     }
 }

@@ -1,36 +1,48 @@
 using MediatR;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Domain.Events;
+using MooldangBot.Application.Events;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MooldangBot.Application.Features.Chat.Handlers;
 
-public class ChatBroadcastEventHandler : INotificationHandler<ChatMessageReceivedEvent>
+/// <summary>
+/// [오버레이의 전령]: 채팅 및 후원 이벤트를 실시간으로 방송하여 오버레이 화면에 표시하는 핸들러입니다.
+/// </summary>
+public class ChatBroadcastEventHandler(
+    ILogger<ChatBroadcastEventHandler> logger, 
+    IOverlayNotificationService overlayService) : INotificationHandler<ChzzkEventReceived>
 {
-    private readonly ILogger<ChatBroadcastEventHandler> _logger;
-    private readonly IOverlayNotificationService _overlayService;
-
-    public ChatBroadcastEventHandler(ILogger<ChatBroadcastEventHandler> logger, IOverlayNotificationService overlayService)
+    public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
-        _logger = logger;
-        _overlayService = overlayService;
-    }
-
-    public async Task Handle(ChatMessageReceivedEvent notification, CancellationToken cancellationToken)
-    {
-        // [오버레이의 메아리]: 수신된 채팅을 해당 스트리머의 오버레이 그룹으로 즉시 전송합니다.
-        if (notification.Profile != null && !string.IsNullOrEmpty(notification.Profile.ChzzkUid))
+        // 1. [다형성 분기]: 이벤트 타입에 따라 적절한 데이터 추출 및 전파
+        if (notification.Payload is ChzzkChatEvent chat)
         {
-            await _overlayService.NotifyChatReceivedAsync(
-                notification.Profile.ChzzkUid,
-                notification.SenderId,
-                notification.Username,
-                notification.Message,
-                notification.UserRole,
-                notification.Emojis,
-                cancellationToken);
+            logger.LogInformation("📢 [{ChannelId}] 채팅 오버레이 송신: {Nickname}", notification.Profile.ChzzkUid, chat.Nickname);
+            await overlayService.NotifyChatReceivedAsync(
+                notification.Profile.ChzzkUid!,
+                chat.SenderId,
+                chat.Nickname,
+                chat.Content,
+                chat.UserRoleCode ?? "common_user",
+                chat.Emojis,
+                null, // 일반 채팅은 금액 없음
+                ct);
+        }
+        else if (notification.Payload is ChzzkDonationEvent donation)
+        {
+            logger.LogInformation("💰 [{ChannelId}] 후원 오버레이 송신: {Nickname} ({Amount}치즈)", notification.Profile.ChzzkUid, donation.Nickname, donation.PayAmount);
+            await overlayService.NotifyChatReceivedAsync(
+                notification.Profile.ChzzkUid!,
+                donation.SenderId,
+                donation.Nickname,
+                donation.DonationMessage,
+                "donation_user",
+                null,
+                donation.PayAmount, // 후원 금액 전달
+                ct);
         }
     }
 }

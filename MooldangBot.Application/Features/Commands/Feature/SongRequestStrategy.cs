@@ -1,4 +1,4 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -20,7 +20,7 @@ public class SongRequestStrategy(
 {
     public string FeatureType => "SongRequest";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
     {
         // 1. [정수 추출]: 명령어 키워드 이후의 텍스트를 신청곡 명칭으로 인식
         string msg = notification.Message.Trim();

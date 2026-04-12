@@ -1,6 +1,5 @@
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
-using MooldangBot.Application.Common.Interfaces;
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
 

@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -38,10 +39,10 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         public int GetActiveConnectionCount() => 0; 
 
-        public IEnumerable<MooldangBot.Application.Interfaces.ShardStatus> GetShardStatuses()
+        public IEnumerable<ShardStatus> GetShardStatuses()
         {
             _logger.LogWarning("[Gateway Proxy] GetShardStatuses is not yet implemented in Gateway. Returning empty list.");
-            return Enumerable.Empty<MooldangBot.Application.Interfaces.ShardStatus>();
+            return Enumerable.Empty<ShardStatus>();
         }
 
         public async Task<bool> SendMessageAsync(string chzzkUid, string message)

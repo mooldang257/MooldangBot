@@ -71,6 +71,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
     public DbSet<PointDailySummary> PointDailySummaries { get; set; }
     public DbSet<RouletteStatsAggregated> RouletteStatsAggregated { get; set; }
     public DbSet<CommandExecutionLog> CommandExecutionLogs { get; set; }
+    public DbSet<ChatInteractionLog> ChatInteractionLogs { get; set; }
 
     // DataProtectionKey 저장소 (Microsoft.AspNetCore.DataProtection.EntityFrameworkCore)
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
@@ -183,6 +184,14 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             .WithMany()
             .HasForeignKey(c => c.StreamerProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ChatInteractionLog>(entity => {
+            entity.ToTable("log_chat_interactions");
+            entity.HasOne(c => c.StreamerProfile)
+                  .WithMany()
+                  .HasForeignKey(c => c.StreamerProfileId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<PeriodicMessage>(entity => {
             entity.ToTable("view_periodic_messages");

@@ -14,7 +14,11 @@ WORKDIR /src
 # Copy csproj and Restore
 COPY ["MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj", "MooldangBot.ChzzkAPI/"]
 COPY ["MooldangBot.ChzzkAPI.Contracts/MooldangBot.ChzzkAPI.Contracts.csproj", "MooldangBot.ChzzkAPI.Contracts/"]
+COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
+COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
+COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
 RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
+
 
 # Copy source and build
 COPY . .

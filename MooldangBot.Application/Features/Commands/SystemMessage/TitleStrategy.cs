@@ -1,4 +1,4 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -16,12 +16,12 @@ public class TitleStrategy(
 {
     public string FeatureType => CommandFeatureTypes.Title;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.Keyword, command.ResponseText, ct);
     }
 
-    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent notification, string keyword, string responseTemplate, CancellationToken ct)
+    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent_Legacy notification, string keyword, string responseTemplate, CancellationToken ct)
     {
         // 1. [정수 추출]: 명령어 키워드 이후의 텍스트를 새로운 방제로 인식
         string msg = notification.Message.Trim();

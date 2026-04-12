@@ -1,5 +1,8 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -83,21 +86,27 @@ namespace MooldangBot.Infrastructure.ApiClients
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> UpdateLiveSettingAsync(string accessToken, object updateData)
+        public async Task<bool> UpdateLiveSettingAsync(string channelId, string accessToken, object updateData)
         {
-            var response = await _gateway.PostAsJsonAsync("/api/internal/channels/live-settings", new { Token = accessToken, Data = updateData });
+            // [v3.1.3] 게이트웨이의 실제 경로 규격(apis/chzzk/live/{id}/settings)으로 복구합니다.
+            var response = await _gateway.PatchAsJsonAsync($"/apis/chzzk/live/{channelId}/settings?token={accessToken}", updateData);
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> UpdateLiveSettingAsync(string accessToken, string? title, string? categoryId, string? categoryType = null)
+        public async Task<bool> UpdateLiveSettingAsync(string channelId, string accessToken, string? title, string? categoryId, string? categoryType = null, List<string>? tags = null)
         {
-            var response = await _gateway.PostAsJsonAsync("/api/internal/channels/live-settings", new { Token = accessToken, Title = title, CategoryId = categoryId, CategoryType = categoryType });
+            var response = await _gateway.PatchAsJsonAsync($"/apis/chzzk/live/{channelId}/settings?token={accessToken}", new { 
+                DefaultLiveTitle = title, 
+                CategoryId = categoryId, 
+                CategoryType = categoryType,
+                Tags = tags
+            });
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse?> GetLiveSettingAsync(string accessToken)
+        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse?> GetLiveSettingAsync(string channelId, string accessToken)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse>($"/api/internal/channels/live-settings?token={accessToken}");
+            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse>($"/apis/chzzk/live/{channelId}/settings?token={accessToken}");
         }
 
         public async Task<MooldangBot.Application.Models.Chzzk.ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword)

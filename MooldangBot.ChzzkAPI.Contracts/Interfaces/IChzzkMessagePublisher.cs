@@ -1,19 +1,20 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace MooldangBot.ChzzkAPI.Contracts.Interfaces;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???꾨졊]: 移섏?吏?寃뚯씠?몄썾?댁뿉??諛쒖깮???대깽?몃? 硫붿떆吏 釉뚮줈而?RabbitMQ)濡?諛쒗뻾?섍린 ?꾪븳 ?명꽣?섏씠?ㅼ엯?덈떎.
+/// [오시리스의 명령]: 치지직 게이트웨이에서 발생한 이벤트를 메시지 브로커(RabbitMQ)로 발행하기 위한 인터페이스입니다.
 /// </summary>
 public interface IChzzkMessagePublisher
 {
     /// <summary>
-    /// 移섏?吏?梨꾪똿 ?대깽?몃? 諛쒗뻾?⑸땲??
+    /// [v3.7] 현대화된 다형성 치지직 이벤트를 발행합니다.
     /// </summary>
-    Task PublishChatEventAsync(object chatEvent);
+    /// <param name="envelope">다형성 페이로드가 포함된 이벤트 봉투</param>
+    Task PublishEventAsync(MooldangBot.ChzzkAPI.Contracts.Models.Events.ChzzkEventEnvelope envelope);
 
     /// <summary>
-    /// 寃뚯씠?몄썾???곹깭 蹂寃??대깽?몃? 諛쒗뻾?⑸땲??
+    /// 게이트웨이 상태 변경 이벤트를 발행합니다.
     /// </summary>
     Task PublishStatusEventAsync(string chzzkUid, string status);
 }

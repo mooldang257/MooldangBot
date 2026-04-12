@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.ChzzkAPI.Contracts.Interfaces;
 using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Channels;
 using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Shared;
@@ -48,10 +48,10 @@ public class ChannelsController : ControllerBase
     /// [?붾줈??紐⑸줉 議고쉶]: 梨꾨꼸 ?붾줈??紐⑸줉???섏씠吏 ?⑥쐞濡?議고쉶?⑸땲??
     /// </summary>
     [HttpGet("{chzzkUid}/followers")]
-    public async Task<IActionResult> GetFollowers(string chzzkUid, [FromHeader(Name = "Authorization")] string authHeader, [FromQuery] int size = 20, [FromQuery] string? cursor = null)
+    public async Task<IActionResult> GetFollowers(string chzzkUid, [FromHeader(Name = "Authorization")] string authHeader, [FromQuery] int size = 20, [FromQuery] int page = 0)
     {
         var accessToken = authHeader.Replace("Bearer ", "");
-        var followers = await _apiClient.GetFollowersAsync(chzzkUid, accessToken, size, cursor);
+        var followers = await _apiClient.GetFollowersAsync(chzzkUid, accessToken, size, page);
         return Ok(followers);
     }
 }

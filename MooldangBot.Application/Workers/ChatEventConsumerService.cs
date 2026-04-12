@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Channels;
@@ -169,7 +169,7 @@ public sealed class ChatEventConsumerService : BackgroundService
             // [데이터 정합성 보존]: 원본 emojis 데이터를 그대로 추출하여 전달
             JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(correlationId, profile, nickname, msg, userRole, senderId, emojis, 0), ct);
+            await mediatr.Publish(new ChatMessageReceivedEvent_Legacy(correlationId, profile, nickname, msg, userRole, senderId, emojis, 0), ct);
         }
     }
 
@@ -216,7 +216,7 @@ public sealed class ChatEventConsumerService : BackgroundService
             string userRole = "donation_user";
             JsonElement? emojis = payload.TryGetProperty("emojis", out var e) ? e : null;
 
-            await mediatr.Publish(new ChatMessageReceivedEvent(correlationId, profile, nickname, msg, userRole, senderId, emojis, cheeseAmount), ct);
+            await mediatr.Publish(new ChatMessageReceivedEvent_Legacy(correlationId, profile, nickname, msg, userRole, senderId, emojis, cheeseAmount), ct);
         }
     }
 }

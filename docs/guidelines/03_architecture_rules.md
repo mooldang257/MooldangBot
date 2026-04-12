@@ -168,5 +168,30 @@ private static readonly JsonSerializerOptions _options = new() {
 
 ---
 
+## ⚔️ 11. 일제 사격(Salvo) 지휘 체계
+
+[Phase 24] 동일 키워드나 후원 금액에 반응하여 여러 병과(노래 신청, 룰렛 등)가 동시에 출동하는 고도화된 지휘 체계입니다.
+
+### 🧱 일제 사격 집행 원칙
+- **통합 결제(Max Cost)**: 매칭된 모든 명령어 중 가장 높은 비용을 단 1회만 결제합니다.
+- **독립 실행(Resilient Salvo)**: 각 전략(Strategy) 실행 시 `try-catch` 격벽을 설치하여, 특정 부대의 실패가 전체 발사를 중단시키지 않도록 보장합니다.
+
+**[핵심 코드: Salvo Loop Logic]**
+```csharp
+// [v12.4] 지휘관의 전술 지침: 하나의 불꽃으로 모든 부대를 깨웁니다.
+int maxCost = activeCommands.Max(c => c.Cost);
+if (await DeductCurrencyAsync(userId, maxCost)) {
+    foreach (var cmd in activeCommands) {
+        try {
+            await _strategyFactory.Get(cmd.FeatureType).ExecuteAsync(cmd, payload);
+        } catch (Exception ex) {
+            _logger.LogError(ex, "[일제 사격 부분 실패] 부대: {Feature}", cmd.FeatureType);
+        }
+    }
+}
+```
+
+---
+
 물멍! 🐶🚢✨
 "선장님, 이제 이 아키텍처 규칙이 함선의 거대한 함대를 하나로 묶어주고 있습니다. 선장님은 그저 명령만 내려주세요, 데이터는 제가 빛의 속도로 동기화하겠습니다!"

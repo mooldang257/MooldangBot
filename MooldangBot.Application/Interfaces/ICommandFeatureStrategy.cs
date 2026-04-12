@@ -1,4 +1,4 @@
-using MooldangBot.Domain.Entities;
+﻿using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 
 namespace MooldangBot.Application.Interfaces;
@@ -16,5 +16,5 @@ public interface ICommandFeatureStrategy
     /// <summary>
     /// 명령어를 실제로 실행합니다.
     /// </summary>
-    Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct);
+    Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct);
 }

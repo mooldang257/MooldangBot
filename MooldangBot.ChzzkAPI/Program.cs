@@ -14,40 +14,53 @@ using MooldangBot.ChzzkAPI.Contracts;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using MooldangBot.ChzzkAPI.Extensions;
+using MooldangBot.Application;
+using MooldangBot.Application.Interfaces;
+using MooldangBot.Infrastructure;
+using MooldangBot.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddCustomDotEnv(args);
 
-// 1. 인프라 설정 (RabbitMQ)
-builder.Services.AddSingleton<IConnectionFactory>(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var host = config["RABBITMQ_HOST"] ?? "rabbitmq";
-    var user = config["RABBITMQ_USER"] ?? "guest";
-    var pass = config["RABBITMQ_PASS"] ?? "guest";
-    
-    return new ConnectionFactory 
-    { 
-        HostName = host,
-        UserName = user,
-        Password = pass
-    };
-});
-
-// 1.1 헬스체크 등록
+// 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHealthChecks();
 
-// 2. 핵심 서비스 등록 (독립형 게이트웨이)
-builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>()
+// [v2.4.5] 치지직 전문가(Implementation) 수동 등록 (인프라의 프록시 설정을 덮어씁니다)
+// [v2.4.5] 치지직 전문가(Implementation) 수동 등록
+builder.Services.AddHttpClient<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>(client => 
+    {
+        // [오시리스의 위장]: 봇 탐지 회피를 위해 브라우저 기반 User-Agent 주입
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+    })
     .AddStandardResilienceHandler();
 
-builder.Services.AddSingleton<IChzzkTokenStore, InMemoryChzzkTokenStore>();
-builder.Services.AddSingleton<IChzzkMessagePublisher, RabbitMqChzzkMessagePublisher>();
-builder.Services.AddSingleton<IShardedWebSocketManager, ShardedWebSocketManager>();
+// 🤖 게이트웨이 핵심 서비스 등록 (Shards, TokenStore, CommandConsumer)
+builder.Services.AddSingleton<IChzzkGatewayTokenStore, MooldangBot.ChzzkAPI.Services.HybridChzzkTokenStore>();
+builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkMessagePublisher, MooldangBot.ChzzkAPI.Messaging.RabbitMqChzzkMessagePublisher>();
 
-// 3. 백그라운드 워커 등록
-builder.Services.AddHostedService<ChzzkCommandConsumer>();
-builder.Services.AddHostedService<ChzzkGatewayWorker>();
+// [v2.4.6] 시니어 가이드: 단일 싱글톤 인스턴스를 여러 인터페이스에 매핑
+builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>();
+
+builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Contracts.Interfaces.IShardedWebSocketManager>(sp => 
+    sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
+
+builder.Services.AddSingleton<MooldangBot.Application.Interfaces.IChzzkChatClient>(sp => 
+    sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
+
+builder.Services.AddTransient<MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkApiClient>(sp => 
+    sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
+builder.Services.AddTransient<MooldangBot.Application.Interfaces.IChzzkApiClient>(sp => 
+    sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
+
+// 2. 비즈니스 로직 및 봇 엔진 주입
+builder.Services.AddApplicationServices();
+builder.Services.AddBotEngineServices();
+
+// 4. 아웃바운드 제어 컨슈머 및 게이트웨이 워커 등록
+builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.CommandRpcWorker>();
+builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.GatewayWorker>();
 
 // 4. API 컨트롤러 및 Swagger 설정
 builder.Services.AddControllers(options =>

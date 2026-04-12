@@ -76,7 +76,7 @@ services:
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
       - BASE_DOMAIN=${BASE_DOMAIN}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
-    entrypoint: [ "dotnet", "MooldangBot.Cli.dll" ]
+    entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
     depends_on:
       db:
         condition: service_healthy
@@ -153,6 +153,8 @@ services:
       dockerfile: MooldangBot.ChzzkAPI/Dockerfile
     container_name: mooldang-chzzk-bot
     restart: always
+    ports:
+      - "8081:8080"
     env_file:
       - .env
     environment:

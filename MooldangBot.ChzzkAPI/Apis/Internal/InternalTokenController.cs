@@ -12,7 +12,7 @@ namespace MooldangBot.ChzzkAPI.Apis.Internal;
 [Route("api/internal/auth")]
 public class InternalTokenController : ControllerBase
 {
-    private readonly IChzzkTokenStore _tokenStore;
+    private readonly IChzzkGatewayTokenStore _tokenStore;
     private readonly IShardedWebSocketManager _shardManager;
     private readonly IChzzkApiClient _apiClient;
     private readonly ILogger<InternalTokenController> _logger;
@@ -21,7 +21,7 @@ public class InternalTokenController : ControllerBase
     private const string InternalSecretHeader = "X-Internal-Secret-Key";
 
     public InternalTokenController(
-        IChzzkTokenStore tokenStore, 
+        IChzzkGatewayTokenStore tokenStore, 
         IShardedWebSocketManager shardManager,
         IChzzkApiClient apiClient,
         ILogger<InternalTokenController> logger,

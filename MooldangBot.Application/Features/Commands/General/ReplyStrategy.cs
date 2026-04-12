@@ -1,4 +1,4 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -14,12 +14,12 @@ public class ReplyStrategy(
 {
     public string FeatureType => CommandFeatureTypes.Reply;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.ResponseText, ct);
     }
 
-    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent notification, string responseTemplate, CancellationToken ct)
+    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent_Legacy notification, string responseTemplate, CancellationToken ct)
     {
         string processedReply = await dynamicEngine.ProcessMessageAsync(
             responseTemplate, 
