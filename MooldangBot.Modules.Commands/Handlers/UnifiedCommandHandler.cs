@@ -1,5 +1,7 @@
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -13,7 +15,7 @@ using MooldangBot.Modules.Commands.General;
 using MooldangBot.Contracts.Security;
 // MooldangBot.Application.Common.Metrics
 using MooldangBot.Contracts.Events; // v3.7 신규 이벤트
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events; // v3.7 다형성 모델
+using MooldangBot.Contracts.Chzzk.Models.Events; // v3.7 다형성 모델
 using MooldangBot.Contracts.Events; // v4.0 신규 계약서 (CommandExecutionEvent 등)
 using MassTransit;
 

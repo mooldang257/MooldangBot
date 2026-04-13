@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.DataProtection;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using DotNetEnv;
 
 namespace MooldangBot.Infrastructure.Persistence;

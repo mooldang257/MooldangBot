@@ -1,8 +1,8 @@
-﻿using MooldangBot.Contracts.Extensions;
+﻿using MooldangBot.Contracts.SongBook.Interfaces;
+using MooldangBot.Contracts.Extensions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Modules.SongBookModule.Persistence;
 

@@ -1,5 +1,5 @@
+﻿using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Modules.Roulette.State;
 

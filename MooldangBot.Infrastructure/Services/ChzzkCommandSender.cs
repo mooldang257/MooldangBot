@@ -1,8 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Chzzk.Models.Commands;
 
 namespace MooldangBot.Infrastructure.Services;
 

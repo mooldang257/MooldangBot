@@ -1,6 +1,5 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Interfaces;
 using RedLockNet;
 using StackExchange.Redis;
 using System;

@@ -1,14 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MooldangBot.Contracts.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 using Dapper;
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Requests.Point.Commands;
+using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Point.Requests.Commands;
 using MooldangBot.Contracts.Security;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Contracts.Requests.Point.Models;
+using MooldangBot.Contracts.Point.Requests.Models;
+using MooldangBot.Contracts.Point.Interfaces;
 
 namespace MooldangBot.Modules.Point.Features.Commands.BulkUpdatePoints;
 
@@ -33,7 +34,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
         var jobList = request.Jobs.ToList();
         if (jobList.Count == 0) return;
 
-        // [?ㅼ떆由ъ뒪??吏??: ?숈씪 ?쒖껌???ъ씤???⑹궛 諛??뺣젹 (?곕뱶??諛⑹? 諛?DB ?뺣났 媛먯냼)
+        // [오시리스의 지혜]: 동일 시청자의 포인트 합산 및 정렬 (데드락 방지 및 DB 왕복 감소)
         var sortedJobs = jobList
             .GroupBy(j => (j.StreamerUid, j.ViewerUid))
             .Select(g => new { 
@@ -52,7 +53,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
         {
             var connection = _db.Database.GetDbConnection();
 
-            // 1. [?ㅼ떆由ъ뒪??湲곗뼲]: Dapper瑜??ъ슜???ㅽ듃由щ㉧ ID ?ъ쟾 留ㅽ븨 (EF 異붿쟻 諛곗젣)
+            // 1. [오시리스의 기억]: Dapper를 사용하여 스트리머 ID 사전 매핑 (EF 추적 배제)
             var streamerUids = sortedJobs.Select(j => j.StreamerUid).Distinct().ToArray();
             var streamerProfiles = await connection.QueryAsync<(string ChzzkUid, int Id)>(
                 "SELECT chzzk_uid, id FROM core_streamer_profiles WHERE chzzk_uid IN @Uids", 
@@ -60,7 +61,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
                 transaction.GetDbTransaction());
             var streamerMap = streamerProfiles.ToDictionary(x => x.ChzzkUid, x => x.Id);
 
-            // 2. [?ㅼ떆由ъ뒪???섍굅]: Dapper瑜??ъ슜??湲濡쒕쾶 ?쒖껌??ID 諛곗튂 ?섏튂
+            // 2. [오시리스의 수거]: Dapper를 사용하여 글로벌 시청자 ID 배치 수취
             var viewerHashes = sortedJobs.Select(j => j.ViewerHash).Distinct().ToArray();
             var globalViewers = await connection.QueryAsync<(string ViewerUidHash, int Id)>(
                 "SELECT viewer_uid_hash, id FROM core_global_viewers WHERE viewer_uid_hash IN @Hashes", 
@@ -68,7 +69,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
                 transaction.GetDbTransaction());
             var viewerMap = globalViewers.ToDictionary(x => x.ViewerUidHash, x => x.Id);
 
-            // 3. [?ㅼ떆由ъ뒪??議곌컖]: 踰뚰겕 ?뚮씪誘명꽣 ?앹꽦
+            // 3. [오시리스의 조각]: 벌크 파라미터 생성
             var valuesList = new List<string>(sortedJobs.Count);
             var parameters = new DynamicParameters();
             var validJobs = new List<dynamic>(sortedJobs.Count);
@@ -90,7 +91,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
 
             if (valuesList.Count > 0)
             {
-                // [?ㅼ떆由ъ뒪???쇨꺽]: ?쒖닔 ID 湲곕컲 理쒖쟻?붾맂 踰뚰겕 ?몄꽌??(ON DUPLICATE KEY UPDATE)
+                // [오시리스의 일격]: 정수 ID 기반 최적화된 벌크 인서트 (ON DUPLICATE KEY UPDATE)
                 var sql = $@"
                     INSERT INTO view_streamer_viewers (streamer_profile_id, global_viewer_id, points)
                     VALUES {string.Join(",", valuesList)}
@@ -98,7 +99,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
 
                 await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction: transaction.GetDbTransaction(), cancellationToken: ct));
 
-                // 4. [泥쒖긽???λ?]: ?몃옖??뀡 ??濡쒓렇 湲곕줉 (Dapper瑜??댁슜??????쎌엯)
+                // 4. [천상의 장부]: 트랜잭션 내 로그 기록 (Dapper를 이용한 대량 삽입)
                 var logSql = @"
                     INSERT INTO log_point_transactions (streamer_profile_id, global_viewer_id, amount, type, reason, created_at)
                     VALUES (@StreamerId, @ViewerId, @Amount, @Type, @Reason, NOW());";
@@ -107,7 +108,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
                     StreamerId = j.StreamerId,
                     ViewerId = j.ViewerId,
                     Amount = (int)j.Amount,
-                    Type = (int)j.Amount > 0 ? PointTransactionType.Earn : PointTransactionType.Spend,
+                    Type = (int)j.Amount > 0 ? (int)PointTransactionType.Earn : (int)PointTransactionType.Spend,
                     Reason = "Chat Resonance (10k RPS Optimized)"
                 });
 
@@ -115,9 +116,9 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
             }
 
             await transaction.CommitAsync(ct);
-            _logger.LogInformation("?뙄 [怨듬챸 ?낅뜲?댄듃 ?꾧껐] {Count}紐낆쓽 ?쒖껌???ъ씤?멸? Dapper 怨좎냽 寃쎈줈濡??곸옱?섏뿀?듬땲??", validJobs.Count);
+            _logger.LogInformation("✅ [공명 업데이트 완결] {Count}명의 시청자 포인트가 Dapper 고속 경로로 적재되었습니다.", validJobs.Count);
 
-            // [臾쇰찉]: ?④탳 ??쒕낫???ㅼ떆媛??낅뜲?댄듃 ?꾪뙆
+            // [물멍]: 전교 대시보드 실시간 업데이트 전파
             foreach (var uid in streamerUids)
             {
                 _ = _notificationService.NotifyPointChangedAsync(uid);
@@ -126,7 +127,7 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
         catch (Exception ex)
         {
             await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "??[Point Dapper Bulk Update ?ㅽ뙣] {Message}", ex.Message);
+            _logger.LogError(ex, "❌ [Point Dapper Bulk Update 실패] {Message}", ex.Message);
             throw; 
         }
     }

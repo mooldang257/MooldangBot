@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Integrations.Chzzk.Models;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Chzzk.Models;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -9,7 +9,7 @@ namespace MooldangBot.Infrastructure.ApiClients
     /// [GatewayChatClientProxy]: 기존 IChzzkChatClient 인터페이스를 유지하며 게이트웨이로 위임합니다.
     /// 네임스페이스 모호성 해결을 위해 FQCN을 사용합니다.
     /// </summary>
-    public class GatewayChatClientProxy(IHttpClientFactory httpClientFactory, ILogger<GatewayChatClientProxy> logger) : MooldangBot.Application.Interfaces.IChzzkChatClient
+    public class GatewayChatClientProxy(IHttpClientFactory httpClientFactory, ILogger<GatewayChatClientProxy> logger) : MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly ILogger<GatewayChatClientProxy> _logger = logger;

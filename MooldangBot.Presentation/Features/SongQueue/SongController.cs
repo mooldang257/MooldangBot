@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Common.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;

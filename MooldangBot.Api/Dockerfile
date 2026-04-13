@@ -1,4 +1,4 @@
-﻿# [臾쇰찉]: 李⑥꽭? MooldangBot ?붿쭊 鍮뚮뱶 ?ㅽ뀒?댁뀡 (net10.0 + Alpine)
+# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net10.0 + Alpine)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
@@ -6,7 +6,7 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
-# [?ㅼ떆由ъ뒪???댁뇿]: ?섏〈???덉씠??理쒖쟻??
+# [오시리스의 가호]: 의존성 레이어 최적화
 COPY ["MooldangBot.Api/MooldangBot.Api.csproj", "MooldangBot.Api/"]
 COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
 COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
@@ -22,7 +22,7 @@ COPY ["MooldangBot.Modules.Commands/MooldangBot.Modules.Commands.csproj", "Moold
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
 COPY . .
 
-# Verifier 鍮뚮뱶 異붽? (?꾩슂 ???댁쁺 ?섍꼍?먯꽌 ?먭?吏꾨떒 媛?ν븯?꾨줉)
+# Verifier 빌드 추가 (필요 시 운영 환경에서 자가진단 가능하도록)
 WORKDIR "/src/MooldangBot.Verifier"
 RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 

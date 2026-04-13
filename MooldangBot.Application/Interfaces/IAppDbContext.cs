@@ -2,7 +2,7 @@
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Entities.Philosophy;
 
-namespace MooldangBot.Application.Interfaces
+namespace MooldangBot.Contracts.Common.Interfaces
 {
     public interface IAppDbContext
     {

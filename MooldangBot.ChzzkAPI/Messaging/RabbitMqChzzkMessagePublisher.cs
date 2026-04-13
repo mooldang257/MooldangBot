@@ -1,5 +1,5 @@
-﻿using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
-using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+﻿using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MassTransit;
 
 namespace MooldangBot.ChzzkAPI.Messaging;
@@ -21,7 +21,7 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher
 
     // [v4.0.0] 수동 채널 관리 로직 제거됨
 
-    public async Task PublishEventAsync(MooldangBot.Contracts.Integrations.Chzzk.Models.Events.ChzzkEventEnvelope envelope)
+    public async Task PublishEventAsync(MooldangBot.Contracts.Chzzk.Models.Events.ChzzkEventEnvelope envelope)
     {
         try
         {

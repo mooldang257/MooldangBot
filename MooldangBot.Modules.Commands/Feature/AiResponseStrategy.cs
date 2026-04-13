@@ -1,10 +1,9 @@
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using System;
 using MooldangBot.Domain.Common;
 using System.Threading;

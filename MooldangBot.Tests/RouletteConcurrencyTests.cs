@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.Roulette;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.State;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;

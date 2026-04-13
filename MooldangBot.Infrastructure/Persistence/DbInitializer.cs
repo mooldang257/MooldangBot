@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using System.Threading.Tasks;
 
@@ -11,7 +10,7 @@ namespace MooldangBot.Infrastructure.Persistence;
 public class DbInitializer(
     AppDbContext db, 
     IConfiguration config,
-    MooldangBot.Application.Interfaces.IChzzkChatClient chatClient,
+    MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient chatClient,
     ILogger<DbInitializer> logger) : IDbInitializer
 {
     public async Task InitializeAsync()

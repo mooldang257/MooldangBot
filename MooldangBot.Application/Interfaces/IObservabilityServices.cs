@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Application.Interfaces;
+﻿namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [맥박의 복구]: 모든 백그라운드 워커의 생존 신호를 관리하는 서비스입니다.

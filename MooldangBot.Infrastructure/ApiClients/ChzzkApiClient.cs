@@ -1,7 +1,7 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Models.Chzzk;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.ApiClients
@@ -10,7 +10,7 @@ namespace MooldangBot.Infrastructure.ApiClients
     /// [ChzzkApiClient]: 치지직 API 위임 클라이언트입니다.
     /// 모든 요청에 내부 보안 키(X-Internal-Secret-Key)를 포함하여 게이트웨이와 통신합니다.
     /// </summary>
-    public class ChzzkApiClient : MooldangBot.Application.Interfaces.IChzzkApiClient
+    public class ChzzkApiClient : MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient
     {
         private readonly HttpClient _gateway;
         private readonly ILogger<ChzzkApiClient> _logger;
@@ -40,9 +40,9 @@ namespace MooldangBot.Infrastructure.ApiClients
             return await response.Content.ReadAsStringAsync();
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken)
         {
-            var response = await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkUserProfileResponse>($"/api/internal/user/profile?token={accessToken}");
+            var response = await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileResponse>($"/api/internal/user/profile?token={accessToken}");
             return response?.Content;
         }
 
@@ -75,9 +75,9 @@ namespace MooldangBot.Infrastructure.ApiClients
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkSessionAuthResponse>($"/api/internal/chat/session-auth?token={accessToken}");
+            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse>($"/api/internal/chat/session-auth?token={accessToken}");
         }
 
         public async Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null)
@@ -104,17 +104,17 @@ namespace MooldangBot.Infrastructure.ApiClients
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse?> GetLiveSettingAsync(string channelId, string accessToken)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse?> GetLiveSettingAsync(string channelId, string accessToken)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkLiveSettingResponse>($"/apis/chzzk/live/{channelId}/settings?token={accessToken}");
+            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse>($"/apis/chzzk/live/{channelId}/settings?token={accessToken}");
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkCategorySearchResponse>($"/api/internal/categories/search?keyword={keyword}");
+            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse>($"/api/internal/categories/search?keyword={keyword}");
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
         {
             // [오시리스의 대행]: 이제 직접 네이버로 쏘지 않고, 게이트웨이의 프록시 엔드포인트를 호출합니다.
             var response = await _gateway.PostAsJsonAsync("/api/internal/auth/exchange-token", new { Code = code, State = state });
@@ -128,7 +128,7 @@ namespace MooldangBot.Infrastructure.ApiClients
 
             try 
             {
-                return await response.Content.ReadFromJsonAsync<MooldangBot.Application.Models.Chzzk.ChzzkTokenResponse>();
+                return await response.Content.ReadFromJsonAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkTokenResponse>();
             }
             catch (Exception ex)
             {
@@ -138,12 +138,12 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkUserMeResponse?> GetUserMeAsync(string accessToken)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserMeResponse?> GetUserMeAsync(string accessToken)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkUserMeResponse>($"/api/internal/user/me?token={accessToken}");
+            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkUserMeResponse>($"/api/internal/user/me?token={accessToken}");
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds)
         {
             var response = await _gateway.PostAsJsonAsync("/api/internal/channels/batch", new { ChannelIds = channelIds });
             
@@ -156,7 +156,7 @@ namespace MooldangBot.Infrastructure.ApiClients
 
             try
             {
-                return await response.Content.ReadFromJsonAsync<MooldangBot.Application.Models.Chzzk.ChzzkChannelsResponse>();
+                return await response.Content.ReadFromJsonAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkChannelsResponse>();
             }
             catch (Exception ex)
             {
@@ -166,9 +166,9 @@ namespace MooldangBot.Infrastructure.ApiClients
             }
         }
 
-        public async Task<MooldangBot.Application.Models.Chzzk.ChzzkLiveDetailResponse?> GetLiveDetailAsync(string channelId)
+        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveDetailResponse?> GetLiveDetailAsync(string channelId)
         {
-            return await SafeGetAsync<MooldangBot.Application.Models.Chzzk.ChzzkLiveDetailResponse>($"/api/internal/channels/{channelId}/live-detail");
+            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveDetailResponse>($"/api/internal/channels/{channelId}/live-detail");
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace MooldangBot.Application.Interfaces
+namespace MooldangBot.Contracts.Common.Interfaces
 {
     /// <summary>
     /// [v4.4.0] 챗봇의 동적 변수를 내부 메서드 호출로 해석하는(Resolve) 인터페이스

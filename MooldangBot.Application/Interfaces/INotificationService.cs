@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Application.Interfaces;
+﻿namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [이지스의 신호탄]: 시스템의 이상 징후나 상태 보고를 외부(Discord, Chzzk 등)로 전송하는 서비스입니다.

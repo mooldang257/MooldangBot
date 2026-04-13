@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Application.Interfaces;
+﻿namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [v13.1] Snowflake 알고리즘 기반의 전역 유일 ID 생성기 인터페이스입니다.

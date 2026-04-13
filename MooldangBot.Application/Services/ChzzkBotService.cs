@@ -1,3 +1,4 @@
+﻿using MooldangBot.Contracts.Chzzk.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -5,14 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Models;
 using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
+using MooldangBot.Contracts.Chzzk.Models.Commands;
 
 namespace MooldangBot.Application.Services;
 

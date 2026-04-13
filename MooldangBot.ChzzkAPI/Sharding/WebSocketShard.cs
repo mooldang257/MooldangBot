@@ -5,11 +5,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
-using MooldangBot.Contracts.Integrations.Chzzk.Models;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Enums;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Contracts.Chzzk.Models;
+using MooldangBot.Contracts.Chzzk.Models.Enums;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 

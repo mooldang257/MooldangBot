@@ -1,4 +1,4 @@
-using MooldangBot.Modules.Commands;
+﻿using MooldangBot.Modules.Commands;
 using MooldangBot.Infrastructure;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Contracts.Extensions;
@@ -21,8 +21,10 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.Security;
 using MooldangBot.Presentation.Security;
 using MooldangBot.Presentation.Extensions;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Infrastructure.Extensions;
 using MooldangBot.Application.Common.Security;
 using MooldangBot.Application.Services.Auth;
@@ -45,7 +47,9 @@ using MooldangBot.Api.Health;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using Prometheus;
-// [?ㅼ떆由ъ뒪???몄옣]: ?좏뵆由ъ??댁뀡 ?섎챸 二쇨린 ?숈븞 濡쒓퉭 蹂댁옣
+using MooldangBot.Contracts.Chzzk;
+
+// [오시리스의 인장]: 애플리케이션 수명 주기 동안 로깅 보장
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
@@ -54,11 +58,11 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // ?뽳툘 [?ㅼ떆由ъ뒪?????: .env 濡쒕뱶 諛??꾩닔 ?ㅼ젙媛?寃利?(Fail-Fast)
+    // 🛡️ [오시리스의 가호]: .env 로드 및 필수 설정값 검증 (Fail-Fast)
     builder.Configuration.AddCustomDotEnv(args).AddEnvironmentVariables();
     builder.Configuration.ValidateMandatorySecrets();
 
-    // ?썳截?[?ㅼ떆由ъ뒪???뺤씤]: ?꾩닔 ?곌껐 臾몄옄??理쒖쥌 ?뺤씤 (?대? ??몄뿉??寃利앸맖)
+    // 🔒 [오시리스의 확인]: 필수 연결 문자열 최종 확인 (이미 가호에서 검증됨)
 
     builder.Host.UseSerilog((context, services, configuration) => {
         var lokiUrl = context.Configuration["LOKI_URL"] ?? "http://localhost:3100";
@@ -70,8 +74,8 @@ try
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
-            .Enrich.WithMachineName() // [v16.0] ?⑤? ?꾩튂 媛곸씤
-            .Enrich.WithProperty("InstanceId", instanceId) // [v16.0] ?몄뒪?댁뒪 ?앸퀎
+            .Enrich.WithMachineName() // [v16.0] 장비 위치 각인
+            .Enrich.WithProperty("InstanceId", instanceId) // [v16.0] 인스턴스 식별
             .Enrich.WithProperty("Environment", env)
             .Enrich.WithProperty("Version", version)
             .WriteTo.Async(a => a.Console())
@@ -90,35 +94,33 @@ try
     builder.Services.AddSongBookModule();
     builder.Services.AddRouletteModule();
 
-    // [v4.0.0] ?ㅼ떆由ъ뒪???꾨졊: MassTransit 湲곕컲 怨좉??⑹꽦 硫붿떆吏??명봽??援ъ텞
-    // Application ?꾨줈?앺듃??Consumer?ㅼ쓣 ?먮룞?쇰줈 ?ㅼ틪?섏뿬 ?깅줉?⑸땲??
+    // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시지 인프라 구축
+    // Application 프로젝트의 Consumer들을 자동으로 스캔하여 등록합니다.
     builder.Services.AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly);
 
-    // [?ㅼ떆由ъ뒪??寃??: ?고???DI ?뺥빀??理쒖쥌 ?뺤씤 媛??
-    // 留뚯빟 ?명봽???쒕퉬???깅줉 怨쇱젙?먯꽌 ?꾨씫?섏뿀?ㅻ㈃ ?ш린??媛뺤젣濡?怨꾪넻???곌껐?⑸땲??
-    if (!builder.Services.Any(x => x.ServiceType == typeof(MooldangBot.Application.Interfaces.IChzzkChatClient)))
+    // [오시리스의 검증]: 인프라 DI 통합성 최종 확인 가드
+    // 만약 인프라 서비스 등록 과정에서 누락되었다면 여기에서 강제로 계통을 연결합니다.
+    if (!builder.Services.Any(x => x.ServiceType == typeof(MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient)))
     {
-        Log.Warning("?좑툘 [DI Guard] IChzzkChatClient was missing from Infrastructure services. Forcing registration...");
-        builder.Services.AddSingleton<MooldangBot.Application.Interfaces.IChzzkChatClient, MooldangBot.Infrastructure.ApiClients.GatewayChatClientProxy>();
+        Log.Warning("⚠️ [DI Guard] IChzzkChatClient was missing from Infrastructure services. Forcing registration...");
+        builder.Services.AddSingleton<MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient, MooldangBot.Infrastructure.ApiClients.GatewayChatClientProxy>();
     }
 
-    // [v2.4.5] 移섏?吏??꾨Ц媛 ?깅줉? Infrastructure ?덉씠?댁쓽 AddInfrastructureServices?먯꽌 ?듯빀 愿由щ맗?덈떎.
-    // [以묐났 ?쒓굅]: builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>() 濡쒖쭅???명봽?쇰줈 ?대룞??
-    // [v4.5.3] 梨꾪똿 ?대씪?댁뼵??愿由?二쇱껜??Infrastructure ?덉씠?대줈 寃⑸━??(GatewayChatClientProxy ?ъ슜)
-
-
+    // [v2.4.5] 치지직 전문가 등록은 Infrastructure 레이어의 AddInfrastructureServices에서 통합 관리됩니다.
+    // [중복 제거]: builder.Services.AddHttpClient<IChzzkApiClient, ChzzkApiClient>() 로직은 인프라로 이동됨
+    // [v4.5.3] 채팅 클라이언트 관리 주체는 Infrastructure 레이어로 격리됨 (GatewayChatClientProxy 사용)
 
     builder.Services.AddApplicationServices();
-    builder.Services.AddWebApiWorkers(); // [v2.0] API ?꾩슜 ?뚯빱 ?깅줉 (Roulette, Zeroing ??
+    builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
     
-    // [v4.5.3] 10k TPS 怨좊?????묒쓣 ?꾪븳 MassTransit ?뚮퉬???뚯씠?꾨씪?몄씠 媛?숇릺?덉뒿?덈떎. (釉뚮┸吏 ?덉씠???쒓굅)
-    // [v3.7] MassTransit Consumer媛 ????븷???泥댄븯誘濡??덇굅???섏쭛湲곕뒗 ?쒓굅?섏뿀?듬땲??
+    // [v4.5.3] 10k TPS 고밀도 대응을 위한 MassTransit 소비 파이프라인이 가동되었습니다. (브릿지 레이어 제거)
+    // [v3.7] MassTransit Consumer가 모든 역할을 대체하므로 매거진 수집기는 제거되었습니다.
     
     builder.Services.AddPresentationServices();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IUserSession, UserSession>();
 
-    // ?뱻 [吏?ν삎 愿묐????뚮굹]: MooldangBot 愿??紐⑤뱺 ?댁뀍釉붾━瑜?媛먯??섏뿬 MediatR ?몃뱾?щ? ?먮룞 ?깅줉?⑸땲?? (?ш컖吏? 諛⑹? 濡쒖쭅 ?ы븿)
+    // 🔍 [지능형 광역 소나]: MooldangBot 관련 모든 어셈블리를 감지하여 MediatR 핸들러를 자동 등록합니다. (사각지대 방지 로직 포함)
     var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
     var executionPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     if (executionPath != null)
@@ -147,7 +149,7 @@ try
     builder.Services.AddSingleton<SongQueueState>();
     builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
 
-    var redisUrl = builder.Configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets???섑빐 蹂댁옣??
+    var redisUrl = builder.Configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets에 의해 보장됨
     builder.Services.AddSignalR(options => {
         options.KeepAliveInterval = TimeSpan.FromSeconds(10);
         options.ClientTimeoutInterval = TimeSpan.FromSeconds(20);
@@ -160,7 +162,7 @@ try
             options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
         });
 
-    // [?ㅼ떆由ъ뒪???쒕룞]: 寃利앸맂 ?곌껐 臾몄옄?댁쓣 ?ъ슜?섏뿬 媛?숈쓣 以鍮꾪빀?덈떎.
+    // [오시리스의 기동]: 검증된 연결 문자열을 사용하여 가동을 준비합니다.
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
 
     builder.Services.AddStackExchangeRedisCache(options => {
@@ -174,7 +176,7 @@ try
         options.SerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
     });
 
-    // [?섎え?덉쓽 議곗쑉]: API ?띾룄 ?쒗븳 ?쒕퉬???깅줉
+    // [하모니의 조율]: API 속도 제한 서비스 등록
     builder.Services.AddMooldangRateLimiter();
 
     builder.Services.AddCors(options => {
@@ -182,35 +184,35 @@ try
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
         });
 
-        // [?ㅼ떆由ъ뒪??以묎퀎]: Studio ?꾨줎?몄뿏???곕룞???꾪븳 ?꾩슜 CORS ?뺤콉
+        // [오시리스의 중계]: Studio 프론트엔드 연동을 위한 전용 CORS 정책
         options.AddPolicy("StudioCorsPolicy", policy => {
-            policy.WithOrigins("http://localhost:3000", "https://www.mooldang.store") // 濡쒖뺄 諛??댁쁺 ?꾨찓???덉슜
+            policy.WithOrigins("http://localhost:3000", "https://www.mooldang.store") // 로컬 및 운영 도메인 허용
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .AllowCredentials(); // ??以묒슂: ?몄쬆 荑좏궎(?몄뀡) 怨듭쑀瑜??꾪빐 ?꾩닔
+                  .AllowCredentials(); // 최중요: 인증 쿠키(세션) 공유를 위해 필수
         });
     });
 
     builder.Services.AddScoped<IAuthorizationHandler, OverlayTokenVersionHandler>();
 
-    // ?뙥截?[Aegis Bridge]: ?꾨줉??Vite/Nginx) ?섍꼍?먯꽌???먮낯 IP 諛??꾨줈?좎퐳 ?꾨떖 ?ㅼ젙
+    // 🌉 [Aegis Bridge]: 프록시(Vite/Nginx) 환경에서의 원본 IP 및 프로토콜 전달 설정
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        // 濡쒖뺄 媛쒕컻 ?섍꼍(localhost)?먯꽌???꾨줉?쒕뒗 ?좊ː?섎룄濡??ㅼ젙
+        // 로컬 개발 환경(localhost)에서의 프록시는 신뢰하도록 설정
         options.KnownNetworks.Clear();
         options.KnownProxies.Clear();
     });
 
-    // ?썳截?[?댁??ㅼ쓽 諛⑺뙣]: API 踰꾩쟾 愿由??깅줉
+    // 🛡️ [이지스의 방패]: API 버전 관리 등록
     builder.Services.AddApiVersioning(options =>
     {
         options.DefaultApiVersion = new ApiVersion(1, 0);
-        options.AssumeDefaultVersionWhenUnspecified = true; // 踰꾩쟾 紐낆떆 ?????덇굅???붿껌? 1.0?쇰줈 媛꾩＜
-        options.ReportApiVersions = true; // ?묐떟 ?ㅻ뜑??吏?먰븯??踰꾩쟾 紐낆떆
+        options.AssumeDefaultVersionWhenUnspecified = true; // 버전 명시 없을 시 기본 요청은 1.0으로 간주
+        options.ReportApiVersions = true; // 응답 헤더에 지원하는 버전 명시
         options.ApiVersionReader = ApiVersionReader.Combine(
             new UrlSegmentApiVersionReader(),
-            new HeaderApiVersionReader("X-Api-Version") // ?ㅻ뜑 諛⑹떇???덈퉬濡?吏??
+            new HeaderApiVersionReader("X-Api-Version") // 헤더 방식도 예비로 지정
         );
     })
     .AddMvc()
@@ -220,9 +222,9 @@ try
         options.SubstituteApiVersionInUrl = true;
     });
 
-    // ?㏈ [?댁??ㅼ쓽 ?뺥솕]: FluentValidation ?먮룞 寃利??깅줉
+    // ✨ [이지스의 정화]: FluentValidation 자동 검증 등록
     builder.Services.AddFluentValidationAutoValidation();
-    builder.Services.AddValidatorsFromAssembly(typeof(MooldangBot.Application.Interfaces.IAppDbContext).Assembly);
+    builder.Services.AddValidatorsFromAssembly(typeof(MooldangBot.Contracts.Common.Interfaces.IAppDbContext).Assembly);
 
     builder.Services.AddControllers()
         .AddApplicationPart(typeof(MooldangBot.Presentation.DependencyInjection).Assembly)
@@ -231,7 +233,7 @@ try
             options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
         });
 
-    // ?뱰 [?ㅼ떆由ъ뒪???쒓퀬]: Swagger/OpenAPI ?ㅼ쟾 臾몄꽌???ㅼ젙
+    // 📜 [오시리스의 선고]: Swagger/OpenAPI 상세 문서화 설정
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -239,10 +241,10 @@ try
         { 
             Title = "MooldangBot API", 
             Version = "v1.1",
-            Description = "[?섎え?덉쓽 ?꾪솕吏]: 臾쇰뙐遊?諛깆뿏???듯빀 API 紐낆꽭?쒖엯?덈떎."
+            Description = "[하모니의 조화지]: 물댕봇 백엔드 통합 API 명세서입니다."
         });
 
-        // JWT ?몄쬆 UI 異붽?
+        // JWT 인증 UI 추가
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -252,19 +254,19 @@ try
             Scheme = "Bearer"
         });
 
-        // OpenAPI 2.x (OAS 3.x) ?뚮떎 湲곕컲 蹂댁븞 ?붽뎄?ы빆 洹쒓꺽 ?곸슜
+        // OpenAPI 2.x (OAS 3.x) 보다 기반 보안 요구사항 규격 적용
         options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
         {
             [new OpenApiSecuritySchemeReference("Bearer", null, null)] = new List<string>()
         });
     });
 
-    // [v4.0] ?ㅼ떆由ъ뒪???댁뇿: JWT ?쒗겕由???寃利?(?꾩슜 寃利앹? ValidateMandatorySecrets?먯꽌 ?섑뻾??
+    // [v4.0] 오시리스의 검침: JWT 시크릿키 검증 (가호에서 수행됨)
     var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
     
     if (Encoding.UTF8.GetBytes(jwtSecret).Length < 32)
     {
-        throw new InvalidOperationException("?뵦 [Security Error]: JWT ?쒗겕由??ㅺ? ?덈Т 吏㏃뒿?덈떎. 理쒖냼 32諛붿씠??256鍮꾪듃) ?댁긽???ㅻ? ?ъ슜?섏떗?쒖삤.");
+        throw new InvalidOperationException("❌ [Security Error]: JWT 시크릿 키가 너무 짧습니다. 최소 32바이트(256비트) 이상의 키를 사용하십시오.");
     }
     var issuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
@@ -276,12 +278,12 @@ try
         options.LoginPath = "/api/auth/chzzk-login"; 
         options.Cookie.Name = builder.Configuration["AUTH_COOKIE_NAME"] ?? ".MooldangBot.Session";
         
-        // [Aegis 濡쒖뺄 ?⑥뒪]: 濡쒖뺄/HTTP ?섍꼍?먯꽌???몄뀡???좎??섎룄濡?蹂댁븞 ?뺤콉 議곗젙
+        // [Aegis 로컬 패스]: 로컬/HTTP 환경에서의 세션을 유지하도록 보안 정책 조정
         var isDev = builder.Environment.IsDevelopment();
         options.Cookie.SecurePolicy = isDev ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Lax; // [v22.2] ?숈씪 ?꾨찓???섍꼍?먯꽌???몄뀡 ?좎???媛뺥솕 (Lax 沅뚯옣)
+        options.Cookie.SameSite = SameSiteMode.Lax; // [v22.2] 동일 도메인 환경에서의 세션 유지력 강화 (Lax 권장)
         options.Cookie.HttpOnly = true;
-        options.Cookie.IsEssential = true; // [v22.1] ?꾩닔 荑좏궎濡?吏?뺥븯???쒖뒪??媛?⑹꽦 蹂댁옣
+        options.Cookie.IsEssential = true; // [v22.1] 필수 쿠키로 지정하여 시스템 가용성 보장
     })
     .AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -299,7 +301,7 @@ try
         {
             OnMessageReceived = context =>
             {
-                // SignalR? 荑쇰━ ?ㅽ듃留?"access_token")?쇰줈 ?좏겙??蹂대궪 ???덉쑝誘濡??대? ?싳븘梨뺣땲??
+                // SignalR은 쿼리 스트링("access_token")으로 토큰을 보내올 수 있으므로 이를 잡아챕니다.
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/overlayHub"))
@@ -312,7 +314,7 @@ try
     });
 
     builder.Services.AddAuthorization(options => {
-        // [?ㅼ떆由ъ뒪???듯빀 ?뺤콉]: 荑좏궎? JWT ?몄쬆??紐⑤몢 ?덉슜?섎뒗 湲곕낯 ?멸? ?뺤콉
+        // [오시리스의 통합 정책]: 쿠키와 JWT 인증을 모두 허용하는 기본 인가 정책
         options.DefaultPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
@@ -323,20 +325,20 @@ try
             policy.Requirements.Add(new ChannelManagerRequirement());
         });
 
-        // [?ㅼ떆由ъ뒪??怨듬챸]: ?ㅻ쾭?덉씠 ?꾩슜 (JWT 沅뚯옣 + 踰꾩쟾 寃利? ?뺤콉
+        // [오시리스의 공명]: 오버레이 전용 (JWT 권장 + 버전 검증) 정책
         options.AddPolicy("OverlayAuth", policy => {
             policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new OverlayTokenVersionRequirement()); // ?뵍 踰꾩쟾 ?ㅼ떆媛?寃利?
+            policy.Requirements.Add(new OverlayTokenVersionRequirement()); // 🔍 버전 실시간 검증
         });
     });
 
     var app = builder.Build();
 
-    // 1. [?ㅼ떆由ъ뒪???ы뙋]: 媛??癒쇱? ?덉쇅瑜??싳븘梨꾧린 ?꾪빐 理쒖긽?⑥뿉 諛곗튂
+    // 1. [오시리스의 심판]: 가장 먼저 예외를 잡아채기 위해 최상단에 배치
     app.UseMiddleware<ExceptionMiddleware>();
 
-    // 2. ?ъ뒪泥댄겕 濡쒓렇 ?ㅽ뙵 諛⑹? (?뺤긽????Verbose, ?먮윭????Error)
+    // 2. 헬스체크 로그 스팸 방지 (정상시에는 Verbose, 에러시에는 Error)
     app.UseSerilogRequestLogging(options =>
     {
         options.GetLevel = (ctx, _, ex) => 
@@ -346,33 +348,33 @@ try
     });
 
     app.UseForwardedHeaders();
-    app.UseStaticFiles(); // [?섎え?덉쓽 ?붾옉]: ?낅줈?쒕맂 ?대?吏 ???뺤쟻 ?뚯씪 ?쒕튃 ?쒖꽦??
+    app.UseStaticFiles(); // [하모니의 화랑]: 업로드된 이미지 등 정적 파일 서비스 활성화
     app.UseRouting();
 
-    // ?썳截?[?ㅼ떆由ъ뒪???댁뇿]: ?띾룄 ?쒗븳? ?쇱슦??吏곹썑, CORS? ?④퍡 諛곗튂
+    // 🔒 [오시리스의 전송]: 속도 제한은 라우팅 직후, CORS와 함께 배치
     app.UseRateLimiter();
-    // [?ㅼ떆由ъ뒪??以묎퀎]: 二?議고???Studio)???꾪븳 ?먭꺽 利앸챸 ?덉슜 ?뺤콉 ?곗꽑 ?곸슜
+    // [오시리스의 중계]: 주요 조력자(Studio)를 위한 자격 증명 허용 정책 우선 적용
     app.UseCors("StudioCorsPolicy"); 
-    app.UseCors("IamfOverlayPolicy"); // [v6.2] ?덇굅???ㅻ쾭?덉씠 ?명솚???좎?
+    app.UseCors("IamfOverlayPolicy"); // [v6.2] 레거시 오버레이 호환성 유지
 
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // 3. ?렧 [?섎え?덉쓽 湲곕줉]: 諛섎뱶???몄쬆(Authorization) 吏곹썑??諛곗튂?댁빞 User ?뺣낫媛 議댁옱??
+    // 3. ✍️ [하모니의 기록]: 반드시 인증(Authorization) 직후에 배치해야 User 정보가 존재함
     app.UseMiddleware<LogEnrichmentMiddleware>();
 
-    // app.MapGet("/", () => Results.Redirect("/swagger")); // [v2.4.1] Prometheus 硫뷀듃由?誘몃뱾?⑥뼱 諛??붾뱶?ъ씤???몄텧
+    // app.MapGet("/", () => Results.Redirect("/swagger")); // [v2.4.1] Prometheus 메트릭 미들웨어 및 엔드포인트 노출
     app.UseHttpMetrics();
 
     // ---------------------------------------------------------
-    // [理쒗썑??蹂대（]: ?좏뵆由ъ??댁뀡 ?쒖옉
+    // [최후의 보루]: 애플리케이션 시작
     // ---------------------------------------------------------
     app.MapControllers();
-    app.MapMetrics(); // /metrics ?붾뱶?ъ씤??留ㅽ븨
-    app.MapHealthChecks("/health"); // [?ㅼ떆由ъ뒪??諛뺣룞]: 而⑦뀒?대꼫 ?곹깭 媛먯떆 ?꾩슜 ?붾뱶?ъ씤??
+    app.MapMetrics(); // /metrics 엔드포인트 매핑
+    app.MapHealthChecks("/health"); // [오시리스의 박동]: 컨테이너 상태 감시 전용 엔드포인트
     app.MapHub<OverlayHub>("/overlayHub");
 
-    // [v4.9] Swagger UI ?쒖꽦??(蹂댁븞???꾪빐 媛쒕컻 ?섍꼍 ?먮뒗 紐낆떆???ㅼ젙 ?쒖뿉留??몄텧)
+    // [v4.9] Swagger UI 활성화 (보안을 위해 개발 환경 또는 명시적 설정 시에만 노출)
     if (app.Environment.IsDevelopment() || app.Configuration["EnableSwagger"] == "true")
     {
         app.UseSwagger();
@@ -382,7 +384,7 @@ try
         });
     }
 
-    // [?ㅼ떆由ъ뒪???쒕룞]: ?쒖뒪??珥덇린??(DB ?쒕뵫 諛??쒕퉬??湲곕룞)
+    // [오시리스의 시동]: 시스템 초기화 (DB 시딩 및 서비스 기동)
     using (var scope = app.Services.CreateScope())
     {
         await scope.ServiceProvider.GetRequiredService<IDbInitializer>().InitializeAsync();
@@ -392,11 +394,11 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "?뵦 [?ш컖???ㅻ쪟 諛쒖깮]: ?좏뵆由ъ??댁뀡 湲곕룞 以?蹂듦뎄 遺덇??ν븳 ?덉쇅媛 諛쒖깮?덉뒿?덈떎.");
+    Log.Fatal(ex, "❌ [심각한 오류 발생]: 애플리케이션 기동 중 복구 불가능한 예외가 발생했습니다.");
     throw;
 }
 finally
 {
-    Log.Information("?몝 [?ㅼ떆由ъ뒪???됱삩]: ?좏뵆由ъ??댁뀡???덉쟾?섍쾶 醫낅즺?⑸땲??");
+    Log.Information("🕊️ [오시리스의 평온]: 애플리케이션이 안전하게 종료됩니다.");
     Log.CloseAndFlush();
 }

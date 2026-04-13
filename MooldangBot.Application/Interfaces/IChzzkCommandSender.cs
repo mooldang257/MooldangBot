@@ -1,6 +1,6 @@
-﻿using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
+﻿using MooldangBot.Contracts.Chzzk.Models.Commands;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [오시리스의 인장]: 결과를 기다리지 않고 치지직 명령을 비동기로 송신하는 인터페이스입니다.

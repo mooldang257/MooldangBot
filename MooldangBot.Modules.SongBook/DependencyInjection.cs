@@ -1,8 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.SongBookModule.Persistence;
 using MooldangBot.Modules.SongBookModule.Strategies;
 using MooldangBot.Modules.SongBookModule.State;
-using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Modules.SongBookModule;
 

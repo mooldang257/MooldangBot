@@ -1,6 +1,6 @@
 ﻿using MooldangBot.Contracts.Requests.Point.Models;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [?ㅻ쾭?쒕씪?대툕 ?섏쭛湲?: ?ㅼ떆媛꾩쑝濡??잛븘吏???ъ씤???곷┰ ?붿껌???섏쭛?섎뒗 ?명꽣?섏씠?ㅼ엯?덈떎.

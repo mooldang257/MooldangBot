@@ -1,11 +1,11 @@
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Events;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Events;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Chzzk.Models.Events;
 
 namespace MooldangBot.Application.Consumers;
 

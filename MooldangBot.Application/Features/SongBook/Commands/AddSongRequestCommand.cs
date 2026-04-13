@@ -1,6 +1,6 @@
-﻿using MediatR;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Common.Interfaces;
+using MediatR;
+using MooldangBot.Contracts.Common.Interfaces;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 

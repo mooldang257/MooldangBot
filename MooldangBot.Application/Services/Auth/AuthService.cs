@@ -1,9 +1,9 @@
+﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Security;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;

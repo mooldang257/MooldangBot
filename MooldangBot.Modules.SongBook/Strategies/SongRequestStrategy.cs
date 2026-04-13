@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;

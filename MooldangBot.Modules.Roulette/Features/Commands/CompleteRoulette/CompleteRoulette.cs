@@ -1,5 +1,5 @@
+﻿using MooldangBot.Contracts.Roulette.Interfaces;
 using MediatR;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Modules.Roulette.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

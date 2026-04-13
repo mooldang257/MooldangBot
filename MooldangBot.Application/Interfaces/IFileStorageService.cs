@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace MooldangBot.Application.Interfaces
+namespace MooldangBot.Contracts.Common.Interfaces
 {
     /// <summary>
     /// [하모니의 창고]: 파일을 시스템(로컬/클라우드)에 저장하고 경로를 관리하는 인터페이스입니다.

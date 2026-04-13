@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Application.Interfaces;
+﻿namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [오시리스의 기억]: 사용자의 전술적 설정(Preference)을 Redis에 임시 보관하고 조회하는 서비스입니다.

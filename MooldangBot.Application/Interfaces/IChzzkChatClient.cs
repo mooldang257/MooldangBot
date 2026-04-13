@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MooldangBot.Contracts.Integrations.Chzzk.Models;
+using MooldangBot.Contracts.Chzzk.Models;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [끊기지 않는 소통]: 치지직 WebSocket 채팅 서버와의 실제 통신을 담당하는 저수준 인터페이스입니다.

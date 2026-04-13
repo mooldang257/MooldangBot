@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [오시리스의 기록관]: 실시간 방송 데이터를 집계하고 기록하는 서기 인터페이스입니다.

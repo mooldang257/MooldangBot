@@ -1,12 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using MooldangBot.Contracts.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 using Dapper;
-using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Contracts.Requests.Point.Commands;
 using MooldangBot.Contracts.Security;
+using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Contracts.Point.Requests.Commands;
+using MooldangBot.Contracts.Commands.Interfaces;
 
 namespace MooldangBot.Modules.Point.Features.Commands.DeductDonationPoints;
 
@@ -40,7 +40,7 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
 
             var connection = _db.Database.GetDbConnection();
             
-            // ?썳截?[?ㅼ떆由ъ뒪??泥좏눜]: ?붿븸??遺議깊븯硫?李④컧?섏? ?딅뒗 ?먯옄??荑쇰━
+            // 🔒 [오시리스의 철퇴]: 잔액이 부족하면 차감하지 않는 원자적 쿼리
             var sql = @"
                 UPDATE view_streamer_viewers 
                 SET donation_points = donation_points - @Amount 
@@ -60,16 +60,16 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
 
             if (affectedRows == 0) 
             {
-                _logger.LogWarning("?좑툘 [?꾩썝 ?ъ씤??李④컧 ?ㅽ뙣] ?붿븸 遺議? {Uid} (Req: {Amount})", request.ViewerUid, request.Amount);
+                _logger.LogWarning("⚠️ [후원 포인트 차감 실패] 잔액 부족: {Uid} (Req: {Amount})", request.ViewerUid, request.Amount);
                 return (false, currentBalance);
             }
 
-            _ = _notificationService.NotifyPointChangedAsync(request.StreamerUid); // [臾쇰찉]: ?ㅼ떆媛??듦퀎 諛섏쁺
+            _ = _notificationService.NotifyPointChangedAsync(request.StreamerUid); // [물멍]: 실시간 통계 반영
             return (true, currentBalance);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"??[DonationPoints 李④컧 ?ㅻ쪟] {request.ViewerUid}: {ex.Message}");
+            _logger.LogError(ex, $"❌ [DonationPoints 차감 오류] {request.ViewerUid}: {ex.Message}");
             return (false, 0);
         }
     }

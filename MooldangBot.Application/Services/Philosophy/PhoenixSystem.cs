@@ -1,7 +1,6 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Contracts.Common.Interfaces;
 using System;
 using System.Threading.Tasks;
-using MooldangBot.Contracts.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using MooldangBot.Domain.Entities.Philosophy;

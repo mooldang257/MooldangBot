@@ -1,8 +1,7 @@
-using System.Threading.Channels;
-using MooldangBot.Application.Interfaces;
+﻿using System.Threading.Channels;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Requests.Point.Models;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 
 namespace MooldangBot.Application.Services;
 

@@ -1,6 +1,8 @@
+﻿using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
@@ -96,7 +98,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
         entity.UpdatedAt = KstClock.Now;
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default); // [v6.2] CancellationToken 보강
 
         // 라이프사이클 사후 처리
         bool isNew = (!req.Id.HasValue || req.Id <= 0);
@@ -104,7 +106,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         if (req.FeatureType == CommandFeatureTypes.Roulette && req.RouletteData != null)
         {
             await HandleUnifiedRouletteSave(entity, req.RouletteData, targetUid);
-            await _db.SaveChangesAsync(); 
+            await _db.SaveChangesAsync(default); 
         }
         else
         {
@@ -130,7 +132,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         // [물멍]: 자식 엔티티(오마카세 등)는 연쇄 삭제하지 않고 보존합니다. (선장님 피드백 반영: 데이터 영속성 유지)
 
         _db.UnifiedCommands.Remove(entity);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
         await _cacheService.RefreshUnifiedAsync(targetUid, default);
     }
 
@@ -170,10 +172,10 @@ public class UnifiedCommandService : IUnifiedCommandService
     {
         var newItem = new StreamerOmakaseItem { StreamerProfileId = entity.StreamerProfileId, Icon = "🍣", Count = 0 };
         _db.StreamerOmakases.Add(newItem);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
 
         entity.TargetId = newItem.Id;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
     }
 
     private async Task HandleRouletteAfterSave(UnifiedCommand entity, string targetUid)
@@ -189,10 +191,10 @@ public class UnifiedCommandService : IUnifiedCommandService
         newRoulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
 
         _db.Roulettes.Add(newRoulette);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
 
         entity.TargetId = newRoulette.Id;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
     }
 
     private async Task HandleUnifiedRouletteSave(UnifiedCommand entity, RouletteSaveDto rouletteData, string targetUid)
@@ -234,7 +236,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             roulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
             roulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
         }
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(default);
         entity.TargetId = roulette.Id;
     }
 
@@ -250,7 +252,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         {
             entity.IsActive = !entity.IsActive; // [v6.1.5] 토글은 활동 상태(Active)를 반전
             entity.UpdatedAt = KstClock.Now;
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(default);
             await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
     }
@@ -291,7 +293,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (addedCount > 0)
         {
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(default);
             _logger.LogInformation("✅ [CommandSeeder]: {Count}개의 기본 명령어가 생성되었습니다.", addedCount);
             
             // 캐시 갱신

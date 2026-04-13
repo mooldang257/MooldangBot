@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 public interface IUserSession
 {

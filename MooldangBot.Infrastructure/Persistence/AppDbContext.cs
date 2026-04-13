@@ -1,7 +1,10 @@
+using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.SongBook.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Domain.Common;
@@ -10,7 +13,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext, IRouletteDbContext, MooldangBot.Contracts.Interfaces.IPointDbContext, MooldangBot.Contracts.Interfaces.ICommandDbContext
+public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext
 {
     private readonly IUserSession _userSession;
     private readonly IDataProtector _protector;

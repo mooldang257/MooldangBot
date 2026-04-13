@@ -1,10 +1,10 @@
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Commands.Cache;
 using MooldangBot.Modules.Commands.General;
 using MooldangBot.Modules.Commands.Feature;
 using MooldangBot.Modules.Commands.SystemMessage;
-using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Modules.Commands;
 

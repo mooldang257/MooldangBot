@@ -1,9 +1,9 @@
-﻿using MediatR;
+﻿using MooldangBot.Contracts.Point.Requests.Queries;
+using MooldangBot.Contracts.Point.Interfaces;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Contracts.Requests.Point.Queries;
 using MooldangBot.Contracts.Security;
-using MooldangBot.Contracts.Enums;
 
 namespace MooldangBot.Modules.Point.Features.Queries.GetBalance;
 

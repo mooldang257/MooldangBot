@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [v12.0] 중앙 병기창 및 중계 연동 인터페이스

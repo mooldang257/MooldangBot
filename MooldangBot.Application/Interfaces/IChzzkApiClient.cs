@@ -1,9 +1,9 @@
-using MooldangBot.Contracts.Models.Chzzk;
+﻿using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [외교관의 계약]: 치지직 API와의 통신을 위한 공용 인터페이스입니다.

@@ -1,6 +1,6 @@
+﻿using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Roulette.Strategies;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Modules.Roulette.State;
 
 namespace MooldangBot.Modules.Roulette;
