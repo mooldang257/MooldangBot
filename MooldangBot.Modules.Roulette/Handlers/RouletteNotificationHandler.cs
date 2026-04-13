@@ -1,17 +1,16 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Contracts.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Features.Roulette.Notifications;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.Modules.Roulette.Notifications;
 using MooldangBot.Domain.Common;
 
-namespace MooldangBot.Application.Features.Roulette.Handlers;
+namespace MooldangBot.Modules.Roulette.Handlers;
 
 /// <summary>
 /// [오시리스의 전달자]: 룰렛의 각 단계별 이벤트를 받아 실제 채팅 및 오버레이 알림을 수행합니다.
-/// (Decoupling): RouletteService로부터 알림 로직을 완전히 분리하여 순수 비즈니스 로직을 보호합니다.
+/// (Decoupling): 가로질러 오는 이벤트를 바탕으로 외부 시스템(봇 서비스, 오버레이)과 통신합니다.
 /// </summary>
 public class RouletteNotificationHandler : 
     INotificationHandler<RouletteSpinInitiatedNotification>,
@@ -87,7 +86,7 @@ public class RouletteNotificationHandler :
             
             // 룰렛 이름 조회를 위해 Scope 확보
             using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var db = scope.ServiceProvider.GetRequiredService<IRouletteDbContext>();
             var roulette = await db.Roulettes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == notification.RouletteId, ct);
             
             string rouletteName = roulette?.Name ?? "룰렛";
@@ -122,7 +121,7 @@ public class RouletteNotificationHandler :
     private async Task SendChatMessageAsync(string chzzkUid, string message, string? viewerUid, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<IRouletteDbContext>();
         var botService = scope.ServiceProvider.GetRequiredService<IChzzkBotService>();
 
         var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);

@@ -1,8 +1,7 @@
-﻿using MooldangBot.Domain.Common;
-using MooldangBot.Application.Interfaces;
+using MooldangBot.Domain.Common;
 using MooldangBot.Contracts.Interfaces;
 
-namespace MooldangBot.Application.State;
+namespace MooldangBot.Modules.Roulette.State;
 
 /// <summary>
 /// [하모니의 조율]: 특정 채널(chzzkUid)의 룰렛 애니메이션이 끝날 것으로 예상되는 시각을 Redis에서 전역적으로 관리합니다.

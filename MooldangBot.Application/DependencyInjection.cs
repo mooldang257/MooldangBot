@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
@@ -7,7 +7,6 @@ using MooldangBot.Application.Workers;
 using MooldangBot.Application.Features.Admin;
 using MooldangBot.Application.Features.Commands;
 using MooldangBot.Application.Features.ChatPoints;
-using MooldangBot.Application.Features.Roulette;
 using MooldangBot.Application.Features.Overlay;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
@@ -30,7 +29,7 @@ namespace MooldangBot.Application
             services.AddScoped<IChzzkBotService, ChzzkBotService>();
             // [Phase 2] ISongBookService는 SongBook 모듈에서 등록됩니다.
             services.AddScoped<ISongLibraryService, SongLibraryService>();
-            services.AddScoped<IRouletteService, RouletteService>();
+            // [Phase 3] IRouletteService 및 관련 로직은 Roulette 모듈로 적출되었습니다.
             services.AddScoped<IPointTransactionService, PointTransactionService>();
             services.AddSingleton<ICommandCacheService, CommandCacheService>();
             services.AddScoped<ChzzkCategorySyncService>();
@@ -45,8 +44,7 @@ namespace MooldangBot.Application
             services.AddScoped<ICommandFeatureStrategy, SonglistToggleStrategy>();
             services.AddScoped<ICommandFeatureStrategy, TitleStrategy>();
             services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
-            // [Phase 2] SongRequestStrategy는 SongBook 모듈에서 등록됩니다.
-            services.AddScoped<ICommandFeatureStrategy, RouletteStrategy>();
+            // [Phase 3] RouletteStrategy는 Roulette 모듈에서 등록됩니다.
             services.AddScoped<ICommandFeatureStrategy, AttendanceStrategy>();
             services.AddScoped<ICommandFeatureStrategy, OmakaseStrategy>();
             
@@ -96,7 +94,6 @@ namespace MooldangBot.Application
         /// </summary>
         public static IServiceCollection AddWebApiWorkers(this IServiceCollection services)
         {
-            services.AddHostedService<MooldangBot.Application.Workers.RouletteResultWorker>();
             services.AddHostedService<MooldangBot.Application.Workers.ZeroingWorker>();
             
             // [v2.0] RabbitMQ를 통한 이벤트 소비가 여기서 이루어져야 함 (별도 구현)

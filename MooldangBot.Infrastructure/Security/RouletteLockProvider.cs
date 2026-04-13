@@ -1,6 +1,5 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 using RedLockNet;
 using StackExchange.Redis;

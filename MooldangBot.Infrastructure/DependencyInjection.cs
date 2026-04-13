@@ -87,11 +87,9 @@ namespace MooldangBot.Infrastructure
             });
             services.AddSingleton<IRouletteLockProvider, MooldangBot.Infrastructure.Security.RouletteLockProvider>();
 
-            // [v13.0] 파로스의 등대: 분산 상태 관리 서비스 등록
-            services.AddSingleton<ILuaScriptProvider, LuaScriptProvider>();
-            services.AddSingleton<MooldangBot.Application.State.RouletteState>();
-            services.AddSingleton<MooldangBot.Application.State.OverlayState>();
-            services.AddSingleton<MooldangBot.Application.Features.SongBook.SongBookState>();
+            // [v13.0] 파수꾼의 통합: 분산 상태 관리 및 오버레이 상태 등록
+            services.AddSingleton<ILuaScriptProvider, MooldangBot.Infrastructure.Services.LuaScriptProvider>();
+            services.AddSingleton<IOverlayState, MooldangBot.Infrastructure.State.OverlayState>();
 
             // [오시리스의 서판]: 채팅 로그 벌크 처리 서비스 등록
             services.AddSingleton<IChatLogBufferService, ChatLogBufferService>();
@@ -118,6 +116,7 @@ namespace MooldangBot.Infrastructure
             services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<ISongBookDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IRouletteDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             // [v2.4.5] 치지직 게이트웨이(ChzzkAPI) 통신용 전용 클라이언트 구성
             services.AddHttpClient("ChzzkGateway", (sp, client) =>

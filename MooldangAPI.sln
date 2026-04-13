@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Contracts", "Mo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Verifier", "MooldangBot.Verifier\MooldangBot.Verifier.csproj", "{E71E3C8E-FA87-4611-9039-BE782BD09E6A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Modules.Roulette", "MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj", "{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{E71E3C8E-FA87-4611-9039-BE782BD09E6A}.Release|x64.Build.0 = Release|Any CPU
 		{E71E3C8E-FA87-4611-9039-BE782BD09E6A}.Release|x86.ActiveCfg = Release|Any CPU
 		{E71E3C8E-FA87-4611-9039-BE782BD09E6A}.Release|x86.Build.0 = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|x64.Build.0 = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|x64.ActiveCfg = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|x64.Build.0 = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

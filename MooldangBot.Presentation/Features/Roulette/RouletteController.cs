@@ -1,15 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Features.Roulette;
-using Microsoft.Extensions.Caching.Memory;
 using MooldangBot.Application.Common.Models;
+using MediatR;
+using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
+using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 
 namespace MooldangBot.Presentation.Features.Roulette
 {
@@ -18,8 +19,7 @@ namespace MooldangBot.Presentation.Features.Roulette
     [Route("api/v{version:apiVersion}/admin/roulette")]
     [Route("api/admin/roulette")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
-    public class RouletteController(IAppDbContext db, IRouletteService rouletteService) : ControllerBase
+    public class RouletteController(IAppDbContext db, IMediator mediator) : ControllerBase
     {
         private string? GetChzzkUid()
         {
@@ -191,7 +191,7 @@ namespace MooldangBot.Presentation.Features.Roulette
         [AllowAnonymous]
         public async Task<IActionResult> CompleteAnimation([FromBody] CompleteRequest Request, CancellationToken ct)
         {
-            var success = await rouletteService.CompleteRouletteAsync(Request.SpinId, ct);
+            var success = await mediator.Send(new CompleteRouletteCommand(Request.SpinId), ct);
             
             if (success)
             {
@@ -293,17 +293,13 @@ namespace MooldangBot.Presentation.Features.Roulette
         [HttpPost("{chzzkUid}/{Id}/test")]
         public async Task<IActionResult> TestSpin(string chzzkUid, int Id, [FromQuery] bool Is10x = false)
         {
-            if (Is10x)
-            {
-                var Results = await rouletteService.SpinRoulette10xAsync(chzzkUid, Id, "admin_test");
-                return Ok(Result<object>.Success(Results));
-            }
-            else
-            {
-                var ResultObj = await rouletteService.SpinRouletteAsync(chzzkUid, Id, "admin_test");
-                if (ResultObj == null) return NotFound(Result<string>.Failure("룰렛을 찾을 수 없거나 활성화된 아이템이 없습니다."));
-                return Ok(Result<object>.Success(ResultObj));
-            }
+            int count = Is10x ? 10 : 1;
+            var results = await mediator.Send(new SpinRouletteCommand(chzzkUid, Id, "admin_test", count, "관리자"));
+            
+            if (results == null || !results.Any()) 
+                return NotFound(Result<string>.Failure("룰렛을 찾을 수 없거나 활성화된 아이템이 없습니다."));
+                
+            return Ok(Result<object>.Success(results));
         }
     }
 }

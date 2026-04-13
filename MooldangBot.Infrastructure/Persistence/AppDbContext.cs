@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext
+public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext, IRouletteDbContext
 {
     private readonly IUserSession _userSession;
     private readonly IDataProtector _protector;

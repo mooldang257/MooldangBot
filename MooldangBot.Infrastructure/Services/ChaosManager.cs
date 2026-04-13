@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Interfaces;
+using Microsoft.Extensions.Logging;
+using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services;
 

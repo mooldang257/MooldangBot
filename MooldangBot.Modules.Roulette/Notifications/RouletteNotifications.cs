@@ -1,8 +1,8 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Application.Features.Roulette.Notifications;
+namespace MooldangBot.Modules.Roulette.Notifications;
 
 /// <summary>
 /// [오시리스의 전조]: 룰렛 추첨이 시작되었음을 알리는 이벤트 (주로 채팅 메시지용)

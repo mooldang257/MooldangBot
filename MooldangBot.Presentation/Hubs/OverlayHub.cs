@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using MooldangBot.Application.State;
+using MediatR;
+using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 
 namespace MooldangBot.Presentation.Hubs;
 
@@ -14,17 +16,18 @@ namespace MooldangBot.Presentation.Hubs;
 [Authorize(AuthenticationSchemes = "Bearer,Cookies")]
 [EnableRateLimiting("overlay-high")]
 public class OverlayHub(
-    IRouletteService rouletteService, 
-    IPulseService pulseService, // [Phase 10] 맥박 서비스 연동
+    IMediator mediator,
+    IPulseService pulseService,
     ILogger<OverlayHub> logger, 
-    OverlayState overlayState) : Hub
+    IOverlayState overlayState) : Hub
 {
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 시 서버에 결과를 알립니다.
+    /// [Pure Vertical Slice]: 메디에이터를 통해 모듈의 핸들러에 위임합니다.
     /// </summary>
     public async Task CompleteRouletteAsync(string spinId)
     {
-        await rouletteService.CompleteRouletteAsync(spinId);
+        await mediator.Send(new CompleteRouletteCommand(spinId));
     }
 
     // [v2.1.0] OBS 브라우저 소스 클라이언트가 연결될 때 호출 (JWT 클레임 전용)

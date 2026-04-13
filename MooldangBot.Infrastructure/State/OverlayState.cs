@@ -1,16 +1,15 @@
-﻿using StackExchange.Redis;
+using StackExchange.Redis;
 using System.Collections.Concurrent;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 
-namespace MooldangBot.Application.State;
+namespace MooldangBot.Infrastructure.State;
 
 /// <summary>
 /// [오시리스의 출입부]: 스트리머별 오버레이(SignalR) 접속자 수를 Redis 및 로컬 메모리에서 동시에 관리합니다.
 /// [v14.0] 듀얼 트래킹을 통해 다중 인스턴스 환경의 '영점 조절'을 지원합니다.
 /// </summary>
-public class OverlayState(IConnectionMultiplexer redis, ILuaScriptProvider luaProvider)
+public class OverlayState(IConnectionMultiplexer redis, ILuaScriptProvider luaProvider) : IOverlayState
 {
     private readonly IDatabase _db = redis.GetDatabase();
     private readonly ConcurrentDictionary<string, int> _localCounts = new();
@@ -39,7 +38,6 @@ public class OverlayState(IConnectionMultiplexer redis, ILuaScriptProvider luaPr
         catch (Exception)
         {
             // Redis 장애 시 로컬 카운트만이라도 유지하여 기동 보장
-            // [심연의 시련] 룰에 따라 무시함
         }
     }
 

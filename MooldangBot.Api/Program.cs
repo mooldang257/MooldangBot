@@ -5,6 +5,7 @@ using MooldangBot.Application.Models.Chzzk;
 using System.Reflection;
 using System.IO;
 using MooldangBot.Application;
+using MooldangBot.Modules.Roulette;
 using MooldangBot.Api.Middleware;
 using MooldangBot.Presentation;
 using MooldangBot.Presentation.Hubs;
@@ -86,6 +87,7 @@ try
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
     builder.Services.AddSongBookModule();
+    builder.Services.AddRouletteModule();
 
     // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축
     // Application 프로젝트의 Consumer들을 자동으로 스캔하여 등록합니다.

@@ -1,7 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.State;
+using MooldangBot.Contracts.Interfaces;
 using RedLockNet;
 using StackExchange.Redis;
 using System;
@@ -16,7 +15,7 @@ namespace MooldangBot.Application.Workers;
 /// [v14.0] 6시간마다 동작하며, 리셋 시점의 오차(Drift)를 기록하여 로직 결함을 추적합니다.
 /// </summary>
 public class ZeroingWorker(
-    OverlayState overlayState,
+    IOverlayState overlayState,
     IConnectionMultiplexer redis,
     IDistributedLockFactory lockFactory,
     ILogger<ZeroingWorker> logger) : BackgroundService
@@ -101,9 +100,6 @@ public class ZeroingWorker(
 
             // 전역 카운트 리셋 (영점 조절)
             await db.StringSetAsync(globalKey, totalNewCount, TimeSpan.FromDays(7));
-            
-            // 6시간이 지난 개인 보고 키(Hash)는 정리 (자동 소멸 대기 또는 명시적 삭제)
-            // 여기서는 Hash 전체가 아니라, 너무 오래된 필드만 정리하거나 그냥 둡니다.
         }
 
         logger.LogInformation("✅ [ZeroingWorker] 전 함대 영점 조절 완료. ({Count}개 채널)", keys.Count);
