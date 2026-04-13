@@ -212,7 +212,18 @@ namespace MooldangBot.Infrastructure
         {
             // [오시리스의 수리]: 다형성 메시징을 위한 글로벌 엔드포인트 컨벤션 설정.
             // 모든 ChzzkCommandBase 파생 명령들이 통합 큐(chzzk-commands-rpc)로 라우팅되도록 강제합니다.
-            EndpointConvention.Map<MooldangBot.Contracts.Integrations.Chzzk.Models.Commands.ChzzkCommandBase>(new Uri("queue:chzzk-commands-rpc"));
+            // [시니어 팁]: 구체적 타입을 명시하지 않으면 MassTransit은 발송 시 큐를 찾지 못할 수 있으므로, 리플렉션으로 모든 파생 타입을 등록합니다.
+            var commandBaseType = typeof(MooldangBot.Contracts.Integrations.Chzzk.Models.Commands.ChzzkCommandBase);
+            var chzzkCommandTypes = commandBaseType.Assembly.GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract && commandBaseType.IsAssignableFrom(t));
+            
+            var rpcQueueUri = new Uri("queue:chzzk-commands-rpc");
+            var mapMethod = typeof(EndpointConvention).GetMethod("Map", [typeof(Uri)]);
+            
+            foreach (var type in chzzkCommandTypes)
+            {
+                mapMethod?.MakeGenericMethod(type).Invoke(null, [rpcQueueUri]);
+            }
 
             services.AddMassTransit(x =>
             {

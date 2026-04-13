@@ -22,6 +22,7 @@ namespace MooldangBot.Contracts.Integrations.Chzzk;
 /// 紐⑤뱺 ?ш굔??DTO 諛??쒕꼫由??섏씠吏?紐⑤뜽?ㅼ씠 ?깅줉?섏뿀?듬땲??
 /// </summary>
 [JsonSerializable(typeof(ChzzkApiResponse<TokenResponse>))]
+[JsonSerializable(typeof(ChzzkApiResponse<object>))]
 [JsonSerializable(typeof(ChzzkApiResponse<string>))]
 [JsonSerializable(typeof(ChzzkApiResponse<UserMeResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<ChannelProfile>))]

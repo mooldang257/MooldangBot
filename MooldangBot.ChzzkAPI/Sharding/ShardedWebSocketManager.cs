@@ -21,7 +21,9 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
     private readonly MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkGatewayTokenStore _tokenStore;
     private readonly IConfiguration _configuration;
     private readonly ConcurrentDictionary<int, IWebSocketShard> _shards = new();
+    private readonly SemaphoreSlim _initializeSemaphore = new(1, 1);
     private int _shardCount;
+    private bool _isInitialized;
     private bool _isDisposed;
 
     public ShardedWebSocketManager(
@@ -46,39 +48,65 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
     /// </summary>
     public async Task StartAsync(int initialShardCount = 1)
     {
-        _shardCount = initialShardCount;
-        _logger.LogInformation("🚀 [Sharding] 샤드 매니저 초기화를 시작합니다... (목표 샤드 수: {Count})", _shardCount);
-
-        for (int i = 0; i < _shardCount; i++)
+        // [시니어 가이드]: 원자적 초기화(InitializeOnce) 패턴을 적용하여 중복 초기화 경쟁 조건을 방지합니다.
+        await _initializeSemaphore.WaitAsync();
+        try
         {
-            // 각 샤드마다 독립적인 Scope를 가짐 (Publisher 등 주입 목적)
-            using var scope = _scopeFactory.CreateScope();
-            var publisher = scope.ServiceProvider.GetRequiredService<IChzzkMessagePublisher>();
-            
-            // [v3.7.2] WebSocketShard 생성 시 IConfiguration 명시적 전달
-            var shard = new WebSocketShard(
-                shardId: i, 
-                loggerFactory: _loggerFactory, 
-                scopeFactory: _scopeFactory, 
-                publisher: publisher, 
-                apiClient: _apiClient, 
-                configuration: _configuration);
-                
-            _shards[i] = shard;
-        }
+            if (_isInitialized)
+            {
+                _logger.LogInformation("ℹ️ [Sharding] 샤드 매니저가 이미 초기화되었습니다. 추가 초기화를 건너뜁니다.");
+                return;
+            }
 
-        _logger.LogInformation("✅ [Sharding] {Count}개의 샤드가 준비되었습니다.", _shardCount);
+            _shardCount = initialShardCount;
+            _logger.LogInformation("🚀 [Sharding] 샤드 매니저 초기화를 시작합니다... (목표 샤드 수: {Count})", _shardCount);
+
+            for (int i = 0; i < _shardCount; i++)
+            {
+                // 각 샤드마다 독립적인 Scope를 가짐 (Publisher 등 주입 목적)
+                using var scope = _scopeFactory.CreateScope();
+                var publisher = scope.ServiceProvider.GetRequiredService<IChzzkMessagePublisher>();
+                
+                // [v3.7.2] WebSocketShard 생성 시 IConfiguration 명시적 전달
+                var shard = new WebSocketShard(
+                    shardId: i, 
+                    loggerFactory: _loggerFactory, 
+                    scopeFactory: _scopeFactory, 
+                    publisher: publisher, 
+                    apiClient: _apiClient, 
+                    configuration: _configuration);
+                    
+                _shards[i] = shard;
+            }
+
+            _isInitialized = true;
+            _logger.LogInformation("✅ [Sharding] {Count}개의 샤드가 초기화 완료되었습니다.", _shardCount);
+        }
+        finally
+        {
+            _initializeSemaphore.Release();
+        }
         await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("🔌 [Sharding] 모든 샤드를 안전하게 종료합니다.");
-        foreach (var shard in _shards.Values)
+        await _initializeSemaphore.WaitAsync(cancellationToken);
+        try
         {
-            shard.Dispose();
+            _logger.LogInformation("🔌 [Sharding] 모든 샤드를 안전하게 종료합니다.");
+            foreach (var shard in _shards.Values)
+            {
+                shard.Dispose();
+            }
+            _shards.Clear();
+            _shardCount = 0;
+            _isInitialized = false;
         }
-        _shards.Clear();
+        finally
+        {
+            _initializeSemaphore.Release();
+        }
         await Task.CompletedTask;
     }
 
