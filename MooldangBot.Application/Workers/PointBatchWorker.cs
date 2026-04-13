@@ -40,9 +40,10 @@ public class PointBatchWorker(
                 await Task.Delay(_flushInterval, stoppingToken);
                 await FlushAsync(stoppingToken);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
-                break;
+                // [오시리스의 은신]: 정중한 작별 인사
+                logger.LogInformation("👋 [포인트 공명 워커] 포인트 전송을 완료하고 안전하게 중단합니다.");
             }
             catch (Exception ex)
             {

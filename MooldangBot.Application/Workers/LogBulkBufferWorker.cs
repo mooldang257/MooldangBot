@@ -32,7 +32,8 @@ public class LogBulkBufferWorker(
             }
             catch (OperationCanceledException)
             {
-                break;
+                // [오시리스의 은신]: 정중한 종료
+                logger.LogInformation("👋 [기록관의 수레] 잔여 데이터를 모두 쏟아내고 안전하게 종료합니다.");
             }
             catch (Exception ex)
             {

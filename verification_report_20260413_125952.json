@@ -1,0 +1,15 @@
+{
+  "IsSuccess": true,
+  "ErrorMessage": null,
+  "PassedChecks": [
+    "OK: ChzzkEventEnvelope - IEvent compliance verified.",
+    "OK: ChzzkChatEvent - IEvent compliance verified.",
+    "OK: ChzzkDonationEvent - IEvent compliance verified.",
+    "OK: ChzzkSubscriptionEvent - IEvent compliance verified.",
+    "OK: ChzzkVerifiedEvent - IEvent compliance verified.",
+    "OK: ChatReceivedEvent - IEvent compliance verified.",
+    "OK: ChatReceivedEvent serialization verified."
+  ],
+  "VerifiedAt": "2026-04-13T03:59:52.6138956Z",
+  "Environment": "VM-KJY"
+}

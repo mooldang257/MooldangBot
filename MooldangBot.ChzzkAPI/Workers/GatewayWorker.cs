@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 
@@ -34,9 +34,16 @@ public class GatewayWorker : BackgroundService
         }
 
         // 서비스 유지
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("👋 [GatewayWorker] 게이트웨이 루프를 안전하게 종료합니다.");
         }
     }
 

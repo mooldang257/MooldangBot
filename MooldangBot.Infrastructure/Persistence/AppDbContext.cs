@@ -131,6 +131,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasOne(o => o.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(o => o.StreamerProfileId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -140,6 +141,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasOne(r => r.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(r => r.StreamerProfileId)
+                  .IsRequired(false) // [오시리스의 자애]: 주인이 필터링되어도 경고 없이 처리
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(r => r.StreamerProfileId);
@@ -151,6 +153,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasOne(a => a.StreamerProfile)
                   .WithOne()
                   .HasForeignKey<AvatarSetting>(a => a.StreamerProfileId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(a => a.StreamerProfileId).IsUnique();
         });
@@ -170,6 +173,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             .HasOne(p => p.StreamerProfile)
             .WithMany()
             .HasForeignKey(p => p.StreamerProfileId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<PointDailySummary>()
@@ -183,6 +187,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             .HasOne(c => c.StreamerProfile)
             .WithMany()
             .HasForeignKey(c => c.StreamerProfileId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ChatInteractionLog>(entity => {
@@ -254,6 +259,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasOne(m => m.GlobalViewer)
                   .WithMany()
                   .HasForeignKey(m => m.GlobalViewerId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -505,6 +511,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
             entity.HasOne(b => b.StreamerProfile)
                   .WithMany()
                   .HasForeignKey(b => b.StreamerProfileId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

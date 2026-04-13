@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
@@ -127,7 +127,11 @@ public class CommandRpcWorker : BackgroundService
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            // [오시리스의 은신]: 서비스 종료 시 발생하는 정상적인 취소 신호입니다.
+            _logger.LogInformation("👋 [RPC 워커] 서비스 종료 신호를 수신하여 안전하게 중단합니다.");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ [RPC 워커] RabbitMQ 연결 오류");

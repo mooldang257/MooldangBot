@@ -40,9 +40,10 @@ public class ChatLogBatchWorker(
                 await Task.Delay(_flushInterval, stoppingToken);
                 await FlushAsync(stoppingToken);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
-                break;
+                // [오시리스의 은신]: 정중한 종료
+                logger.LogInformation("👋 [채팅 로그 워커] 기록을 안전하게 저장하고 중단합니다.");
             }
             catch (Exception ex)
             {

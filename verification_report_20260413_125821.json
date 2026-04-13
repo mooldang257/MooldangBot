@@ -1,0 +1,7 @@
+{
+  "IsSuccess": false,
+  "ErrorMessage": "System.Exception: [Audit Failure] ShardStatus \uD074\uB798\uC2A4\uAC00 IEvent \uC778\uD130\uD398\uC774\uC2A4\uB97C \uAD6C\uD604\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.\r\n   at MooldangBot.Verifier.Inspectors.ContractInspector.Audit(Assembly assembly) in c:\\webapi\\MooldangAPI\\MooldangBot\\MooldangBot.Verifier\\Inspectors\\ContractInspector.cs:line 22\r\n   at MooldangBot.Verifier.Program.Main(String[] args) in c:\\webapi\\MooldangAPI\\MooldangBot\\MooldangBot.Verifier\\Program.cs:line 31",
+  "PassedChecks": [],
+  "VerifiedAt": "2026-04-13T03:58:21.1706923Z",
+  "Environment": "VM-KJY"
+}

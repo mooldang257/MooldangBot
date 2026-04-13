@@ -47,6 +47,11 @@ public class WeeklyStatsReporter(
 
                 await Task.Delay(_checkInterval, stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                // [오시리스의 은신]: 서비스 종료 시 발생하는 정상적인 취소 신호입니다.
+                logger.LogInformation("👋 [천상의 전령] 주간 리포트 서비스를 안전하게 종료합니다.");
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "❌ [천상의 전령] 리포트 생성 중 오류 발생");
