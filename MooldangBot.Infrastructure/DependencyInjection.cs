@@ -210,6 +210,10 @@ namespace MooldangBot.Infrastructure
             IConfiguration config, 
             params Assembly[] consumerAssemblies)
         {
+            // [오시리스의 수리]: 다형성 메시징을 위한 글로벌 엔드포인트 컨벤션 설정.
+            // 모든 ChzzkCommandBase 파생 명령들이 통합 큐(chzzk-commands-rpc)로 라우팅되도록 강제합니다.
+            EndpointConvention.Map<MooldangBot.Contracts.Integrations.Chzzk.Models.Commands.ChzzkCommandBase>(new Uri("queue:chzzk-commands-rpc"));
+
             services.AddMassTransit(x =>
             {
                 // 1. Consumer 자동 등록 (전달받은 어셈블리 기준)
