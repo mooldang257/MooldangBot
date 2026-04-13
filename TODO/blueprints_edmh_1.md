@@ -1,4 +1,4 @@
-# 🔱 [오시리스의 전령]: MassTransit 인프라 최종 집도 계획 (EDMH)
+# [IN-PROGRESS] 🔱 [오시리스의 전령]: MassTransit 인프라 최종 집도 계획 (EDMH)
 
 본 계획은 지휘관님(mooldang)의 최종 교정안을 반영하여, 어셈블리 스캐닝 함정을 피한 완성된 MassTransit 인프라를 구축하고 기존의 `IRabbitMqService`를 제거하여 시스템을 순수 EDMH 아키텍처로 전환하는 것을 목표로 합니다.
 

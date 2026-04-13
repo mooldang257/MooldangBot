@@ -152,7 +152,7 @@ try
 
         // [오시리스의 중계]: Studio 프론트엔드 연동을 위한 전용 CORS 정책
         options.AddPolicy("StudioCorsPolicy", policy => {
-            policy.WithOrigins("http://localhost:3000") // 로컬 SvelteKit 포트
+            policy.WithOrigins("http://localhost:3000", "https://www.mooldang.store") // 로컬 및 운영 도메인 허용
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials(); // ★ 중요: 인증 쿠키(세션) 공유를 위해 필수

@@ -147,9 +147,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
         }
     }
 
-    public int GetActiveConnectionCount() => _shards.Values.Sum(s => s.GetActiveConnectionCount());
-
-    public IEnumerable<ShardStatus> GetShardStatuses() => _shards.Values.Select(s => new ShardStatus(s.ShardId, s.GetActiveConnectionCount(), true));
+    public Task<IEnumerable<ShardStatus>> GetShardStatusesAsync() => Task.FromResult(_shards.Values.Select(s => new ShardStatus(s.ShardId, s.GetActiveConnectionCount(), true)));
 
     public async Task<bool> SendMessageAsync(string chzzkUid, string message)
     {

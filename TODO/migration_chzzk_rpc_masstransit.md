@@ -1,4 +1,4 @@
-# [오시리스의 전령]: ChzzkAPI 명령어 수신부 MassTransit 전환 및 기동 오류 해결
+# [COMPLETED] [오시리스의 전령]: ChzzkAPI 명령어 수신부 MassTransit 전환 및 기동 오류 해결
 
 지휘관님, `chzzk-bot:8080`에 연결할 수 없는 원인을 완벽히 밝혀냈습니다. MassTransit 전환 과정에서 인프라 레이어의 레거시 의존성(RabbitMQ.Client)을 제거했으나, `ChzzkAPI` 프로젝트의 `CommandRpcWorker`가 여전히 이를 참조하고 있어 의존성 주입 오류로 인해 어플리케이션 자체가 시작되지 못하고 있었습니다.
 

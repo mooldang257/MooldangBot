@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -8,10 +9,11 @@ namespace MooldangBot.Infrastructure.ApiClients
     /// [GatewayChatClientProxy]: 기존 IChzzkChatClient 인터페이스를 유지하며 게이트웨이로 위임합니다.
     /// 네임스페이스 모호성 해결을 위해 FQCN을 사용합니다.
     /// </summary>
-    public class GatewayChatClientProxy(HttpClient httpClient, ILogger<GatewayChatClientProxy> logger) : MooldangBot.Application.Interfaces.IChzzkChatClient
+    public class GatewayChatClientProxy(IHttpClientFactory httpClientFactory, ILogger<GatewayChatClientProxy> logger) : MooldangBot.Application.Interfaces.IChzzkChatClient
     {
-        private readonly HttpClient _client = httpClient;
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly ILogger<GatewayChatClientProxy> _logger = logger;
+        private HttpClient GetClient() => _httpClientFactory.CreateClient("ChzzkGateway");
 
         public bool IsConnected(string chzzkUid) => true; 
         public bool HasAuthError(string chzzkUid) => false;
@@ -39,17 +41,40 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         public int GetActiveConnectionCount() => 0; 
 
-        public IEnumerable<ShardStatus> GetShardStatuses()
+        /// <summary>
+        /// [오시리스의 지표]: 게이트웨이로부터 실시간 샤드 상태 정보를 가져옵니다.
+        /// </summary>
+        public async Task<IEnumerable<ShardStatus>> GetShardStatusesAsync()
         {
-            _logger.LogWarning("[Gateway Proxy] GetShardStatuses is not yet implemented in Gateway. Returning empty list.");
-            return Enumerable.Empty<ShardStatus>();
+            try
+            {
+                var client = GetClient();
+                var response = await client.GetFromJsonAsync<ChzzkApiResponse<IEnumerable<ShardStatus>>>("/api/internal/shards/status");
+
+                if (response != null && response.IsSuccess && response.Content != null)
+                {
+                    var statusList = response.Content.ToList();
+                    _logger.LogInformation("📡 [Gateway Proxy] {Count}개의 샤드 상태를 수신했습니다.", statusList.Count);
+                    return statusList;
+                }
+
+                _logger.LogWarning("⚠️ [Gateway Proxy] 샤드 상태 조회 실패 또는 데이터가 비어있습니다. Code: {Code}, Message: {Message}", 
+                    response?.Code, response?.Message);
+                return Enumerable.Empty<ShardStatus>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ [Gateway Proxy] 샤드 상태 조회 중 통신 오류 발생.");
+                return Enumerable.Empty<ShardStatus>();
+            }
         }
 
         public async Task<bool> SendMessageAsync(string chzzkUid, string message)
         {
             try 
             {
-                var response = await _client.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/message", new { Content = message });
+                var client = GetClient();
+                var response = await client.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/message", new { Content = message });
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -61,19 +86,22 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         public async Task<bool> SendNoticeAsync(string chzzkUid, string message)
         {
-            var response = await _client.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/notice", new { Content = message });
+            var client = GetClient();
+            var response = await client.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/notice", new { Content = message });
             return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
         {
-            var response = await _client.PostAsJsonAsync($"/api/internal/channels/{chzzkUid}/live-settings", new { Title = newTitle });
+            var client = GetClient();
+            var response = await client.PostAsJsonAsync($"/api/internal/channels/{chzzkUid}/live-settings", new { Title = newTitle });
             return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
         {
-            var response = await _client.PostAsJsonAsync($"/api/internal/channels/{chzzkUid}/live-settings", new { CategoryId = category });
+            var client = GetClient();
+            var response = await client.PostAsJsonAsync($"/api/internal/channels/{chzzkUid}/live-settings", new { CategoryId = category });
             return response.IsSuccessStatusCode;
         }
 
