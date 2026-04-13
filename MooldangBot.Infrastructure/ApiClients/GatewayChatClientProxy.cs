@@ -1,6 +1,6 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {

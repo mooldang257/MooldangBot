@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 
@@ -11,8 +12,12 @@ namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 [JsonDerivedType(typeof(ChzzkChatEvent), "chat")]
 [JsonDerivedType(typeof(ChzzkDonationEvent), "donation")]
 [JsonDerivedType(typeof(ChzzkSubscriptionEvent), "subscription")]
-public abstract record ChzzkEventBase
+public abstract record ChzzkEventBase : IEvent
 {
+    // IEvent 구현
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTime OccurredOn => Timestamp;
+
     public required string ChannelId { get; init; }
     public required string SenderId { get; init; }
     public required string Nickname { get; init; }

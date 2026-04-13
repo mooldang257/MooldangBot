@@ -15,8 +15,9 @@ class Program
     static void Main(string[] args)
     {
         Console.WriteLine("====================================================");
-        Console.WriteLine("🔱 [MooldangBot Contract Verifier v1.0.0]");
-        Console.WriteLine("함대의 새로운 혈관망 정합성을 검증합니다.");
+        Console.WriteLine("🔱 [MooldangBot Contract Verifier v1.1.0]");
+        Console.WriteLine("함대의 새로운 혈관망 정합성을 정밀 검증합니다.");
+        Console.WriteLine("[Mode: Standalone / EDMH Phase 0]");
         Console.WriteLine("====================================================");
 
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -25,9 +26,20 @@ class Program
 
         try 
         {
-            VerifyChatReceivedEvent(results);
+            // 1. 계약 준수 자가 진단 (Reflection Audit)
+            Console.WriteLine("\n[1/2] 계약 준수 사항 전수 조사 중...");
+            var auditLogs = Inspectors.ContractInspector.Audit(typeof(ChatReceivedEvent).Assembly);
+            results.PassedChecks.AddRange(auditLogs);
+            Console.WriteLine("  - 완료: 모든 계약이 IEvent 인터페이스를 준수함.");
+
+            // 2. 직렬화 정합성 테스트 (Serialization Test)
+            Console.WriteLine("\n[2/2] 데이터 직렬화 정합성 테스트 중...");
+            var serializationLogs = Inspectors.SerializationTester.TestCoreEvents();
+            results.PassedChecks.AddRange(serializationLogs);
+            Console.WriteLine("  - 완료: 핵심 이벤트의 데이터 유실 없음.");
+
             results.IsSuccess = true;
-            Console.WriteLine("\n✅ 모든 계약 정합성 검토 완료!");
+            Console.WriteLine("\n✅ 모든 계약 및 데이터 정합성 검증 성공!");
         }
         catch (Exception ex)
         {
@@ -44,38 +56,6 @@ class Program
         Console.WriteLine("----------------------------------------------------");
         Console.WriteLine($"📝 검증 보고서 추출 완료: {reportPath}");
         Console.WriteLine("====================================================");
-    }
-
-    static void VerifyChatReceivedEvent(VerificationResults results)
-    {
-        Console.WriteLine("🔹 [ChatReceivedEvent] 검증 시작...");
-        
-        var @event = new ChatReceivedEvent
-        {
-            ChannelId = "mooldang_channel_id",
-            PlatformUserId = "viewer_hash_1234",
-            Nickname = "물멍_정찰기",
-            Content = "!공진 지표 확인",
-            PayAmount = 3000,
-            UserRole = "streamer",
-            IsSubscriber = true,
-            SubscriptionTier = 2,
-            EmojisJson = "{\"smile\": \"link_to_emoji\"}",
-            CorrelationId = Guid.NewGuid().ToString()
-        };
-
-        if (@event.EventId == Guid.Empty) throw new Exception("IEvent 제약 위반: EventId가 비어있습니다.");
-        if (@event.OccurredOn > DateTime.UtcNow.AddSeconds(5)) throw new Exception("IEvent 제약 위반: 발생 시간이 미래입니다.");
-
-        var json = JsonSerializer.Serialize(@event);
-        var deserialized = JsonSerializer.Deserialize<ChatReceivedEvent>(json);
-
-        if (deserialized == null) throw new Exception("Serialization Failure: 역직렬화 결과가 null입니다.");
-        if (deserialized.Nickname != @event.Nickname || deserialized.PayAmount != @event.PayAmount)
-            throw new Exception("Data Loss: 직렬화 과정에서 데이터가 유실되었습니다.");
-
-        results.PassedChecks.Add("ChatReceivedEvent: Compliance & Serialization OK");
-        Console.WriteLine("  - OK: 직렬화 및 인터페이스 제약 통과");
     }
 }
 

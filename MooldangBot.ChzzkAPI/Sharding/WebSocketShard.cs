@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Enums;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Session;
 

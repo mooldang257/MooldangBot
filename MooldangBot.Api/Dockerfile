@@ -1,4 +1,4 @@
-﻿# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net10.0 + Alpine)
+# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net10.0 + Alpine)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
@@ -12,10 +12,16 @@ COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.App
 COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Presentation/MooldangBot.Presentation.csproj", "MooldangBot.Presentation/"]
-COPY ["MooldangBot.ChzzkAPI.Contracts/MooldangBot.ChzzkAPI.Contracts.csproj", "MooldangBot.ChzzkAPI.Contracts/"]
+COPY ["MooldangBot.Contracts/MooldangBot.Contracts.csproj", "MooldangBot.Contracts/"]
+COPY ["MooldangBot.Verifier/MooldangBot.Verifier.csproj", "MooldangBot.Verifier/"]
 
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
 COPY . .
+
+# Verifier 빌드 추가 (필요 시 운영 환경에서 자가진단 가능하도록)
+WORKDIR "/src/MooldangBot.Verifier"
+RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
+
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
 

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using MooldangBot.Contracts.Abstractions;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Enums;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
@@ -7,8 +8,12 @@ namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 /// [오시리스의 인장]: ChzzkAPI에서 검증 및 정제가 완료된 규격화된 이벤트 데이터 모델입니다.
 /// 이 모델은 치지직 원시 데이터의 복잡성을 제거하고 .API에서 즉시 사용 가능한 정보만 포함합니다.
 /// </summary>
-public record ChzzkVerifiedEvent
+public record ChzzkVerifiedEvent : IEvent
 {
+    // IEvent 구현
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTime OccurredOn => MessageTime;
+
     /// <summary>
     /// [타입 안전성] 이벤트 분류 (Enum)
     /// </summary>

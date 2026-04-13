@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models;
 using StackExchange.Redis;
 using System.Collections.Generic;
 using System.Linq;

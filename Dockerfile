@@ -16,7 +16,8 @@ COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.App
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Presentation/MooldangBot.Presentation.csproj", "MooldangBot.Presentation/"]
 COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
-COPY ["MooldangBot.ChzzkAPI.Contracts/MooldangBot.ChzzkAPI.Contracts.csproj", "MooldangBot.ChzzkAPI.Contracts/"]
+COPY ["MooldangBot.Contracts/MooldangBot.Contracts.csproj", "MooldangBot.Contracts/"]
+COPY ["MooldangBot.Verifier/MooldangBot.Verifier.csproj", "MooldangBot.Verifier/"]
 COPY ["MooldangAPI.sln", "./"]
 
 # 2. 패키지 복원
@@ -24,6 +25,7 @@ RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
 RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
 RUN dotnet restore "MooldangBot.Cli/MooldangBot.Cli.csproj"
 RUN dotnet restore "MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj"
+RUN dotnet restore "MooldangBot.Verifier/MooldangBot.Verifier.csproj"
 
 # 3. 소스 코드 전체 복사 및 빌드
 COPY . .
@@ -33,6 +35,8 @@ WORKDIR "/src/MooldangBot.ChzzkAPI"
 RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build/chzzk
 WORKDIR "/src/MooldangBot.Cli"
 RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/build/cli
+WORKDIR "/src/MooldangBot.Verifier"
+RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/build/verifier
 
 # 5. 게시(Publish)
 FROM build AS publish
@@ -42,6 +46,8 @@ WORKDIR "/src/MooldangBot.ChzzkAPI"
 RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish/chzzk /p:UseAppHost=false
 WORKDIR "/src/MooldangBot.Cli"
 RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish/cli /p:UseAppHost=false
+WORKDIR "/src/MooldangBot.Verifier"
+RUN dotnet publish "MooldangBot.Verifier.csproj" -c Release -o /app/publish/verifier /p:UseAppHost=false
 
 # ------------------------------------------
 # 🚀 Runtime Stage

@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 
@@ -11,4 +12,8 @@ public record ChzzkEventEnvelope(
     ChzzkEventBase Payload,
     DateTime ReceivedAt,
     string Version = "3.7"
-);
+) : IEvent
+{
+    public Guid EventId => MessageId;
+    public DateTime OccurredOn => ReceivedAt;
+}
