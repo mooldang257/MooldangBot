@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext
+public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext
 {
     private readonly IUserSession _userSession;
     private readonly IDataProtector _protector;

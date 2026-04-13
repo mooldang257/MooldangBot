@@ -1,10 +1,9 @@
-﻿using Polly;
+using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Services;
@@ -118,6 +117,7 @@ namespace MooldangBot.Infrastructure
             // 기존 Scoped 요청 및 concrete 클래스 주입을 위해 팩토리로부터 컨텍스트를 생성하는 브릿지 등록
             services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+            services.AddScoped<ISongBookDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             // [v2.4.5] 치지직 게이트웨이(ChzzkAPI) 통신용 전용 클라이언트 구성
             services.AddHttpClient("ChzzkGateway", (sp, client) =>
