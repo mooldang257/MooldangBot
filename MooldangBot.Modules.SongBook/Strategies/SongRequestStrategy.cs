@@ -1,22 +1,20 @@
-﻿using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
-using MooldangBot.Modules.SongBookModule.Persistence;
+using MediatR;
+using MooldangBot.Modules.SongBookModule.Features.Commands.RequestSong;
 
 namespace MooldangBot.Modules.SongBookModule.Strategies;
 
 /// <summary>
-/// [오르페우스의 조율]: 곡 신청(Song) 명령어를 처리하는 전략입니다.
+/// [오르페우스의 조율]: 곡 신청(Song) 명령어를 처리하는 전략입니다. (Thin Orchestrator)
 /// </summary>
 public class SongRequestStrategy(
-    IServiceProvider serviceProvider,
+    IMediator mediator,
     IChzzkBotService botService,
-    IDynamicQueryEngine dynamicEngine,
-    IOverlayNotificationService notificationService,
     ILogger<SongRequestStrategy> logger) : ICommandFeatureStrategy
 {
     public string FeatureType => "SongRequest";
@@ -35,76 +33,15 @@ public class SongRequestStrategy(
         
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ISongBookDbContext>();
-
-            var activeSession = await db.SonglistSessions
-                .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, ct);
-
-            if (activeSession == null)
-            {
-                await botService.SendReplyChatAsync(notification.Profile, "현재 플레이리스트가 비활성화 상태입니다. 🔒", notification.SenderId, ct);
-                return CommandExecutionResult.Failure("플레이리스트 비활성화 상태", shouldRefund: true);
-            }
-
-            var viewerHash = MooldangBot.Contracts.Security.Sha256Hasher.ComputeHash(notification.SenderId);
-            var viewer = await db.GlobalViewers
-                .FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
-
-            if (viewer == null)
-            {
-                viewer = new GlobalViewer 
-                { 
-                    ViewerUid = notification.SenderId, 
-                    ViewerUidHash = viewerHash,
-                    Nickname = notification.Username
-                };
-                db.GlobalViewers.Add(viewer);
-            }
-            else if (viewer.Nickname != notification.Username && !string.Equals(notification.Username, "TEST", StringComparison.OrdinalIgnoreCase))
-            {
-                viewer.Nickname = notification.Username;
-                viewer.UpdatedAt = KstClock.Now;
-            }
-            await db.SaveChangesAsync(ct);
-
-            var song = new SongQueue
-            {
-                StreamerProfileId = notification.Profile.Id,
-                GlobalViewerId = viewer?.Id,
-                RequesterNickname = notification.Username,
-                Title = songTitle,
-                Status = SongStatus.Pending,
-                Cost = command.Cost,
-                CostType = command.CostType,
-                CreatedAt = KstClock.Now
-            };
-            db.SongQueues.Add(song);
-            await db.SaveChangesAsync(ct);
-
-            await notificationService.NotifySongQueueChangedAsync(notification.Profile.ChzzkUid, ct);
-
-            logger.LogInformation($"🎵 [곡 신청 완료] {notification.Username}: {songTitle}");
-
-            string responseTemplate = string.IsNullOrEmpty(command.ResponseText)
-                ? "{username}님의 '{songTitle}' 신청이 완료되었습니다! 🎵"
-                : command.ResponseText;
-
-            string processedReply = await dynamicEngine.ProcessMessageAsync(
-                responseTemplate.Replace("{songTitle}", songTitle, StringComparison.OrdinalIgnoreCase),
-                notification.Profile.ChzzkUid,
-                notification.SenderId,
-                notification.Username
-            );
-
-            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
-            return CommandExecutionResult.Success();
+            // 🚀 [수직 분할 집도]: 비즈니스 로직을 직접 처리하지 않고 MediatR를 통해 위임합니다.
+            return await mediator.Send(new RequestSongCommand(notification, command, songTitle), ct);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"❌ [SongRequestStrategy] 오류: {ex.Message}");
+            logger.LogError(ex, $"❌ [SongRequestStrategy] 위임 오류: {ex.Message}");
             await botService.SendReplyChatAsync(notification.Profile, "⚠️ 곡 신청 처리 중 서버 오류가 발생했습니다.", notification.SenderId, ct);
             return CommandExecutionResult.Failure("곡 신청 서버 오류", shouldRefund: true);
         }
     }
 }
+

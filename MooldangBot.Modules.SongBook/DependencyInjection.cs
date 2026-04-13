@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.SongBookModule.Persistence;
-using MooldangBot.Modules.SongBookModule.Services;
 using MooldangBot.Modules.SongBookModule.Strategies;
 using MooldangBot.Modules.SongBookModule.State;
 using MooldangBot.Contracts.Interfaces;
@@ -13,9 +12,6 @@ public static class SongBookModuleExtensions
     {
         // Persistence
         services.AddScoped<ISongBookRepository, SongBookRepository>();
-
-        // Services
-        services.AddScoped<ISongBookService, SongBookService>();
 
         // State (Singleton for memory queue)
         services.AddSingleton<SongBookState>();
