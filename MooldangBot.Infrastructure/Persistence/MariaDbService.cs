@@ -1,8 +1,7 @@
-﻿
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using Dapper;
 using MySqlConnector;
 using System;

@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;

@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 

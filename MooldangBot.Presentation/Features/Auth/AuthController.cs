@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;

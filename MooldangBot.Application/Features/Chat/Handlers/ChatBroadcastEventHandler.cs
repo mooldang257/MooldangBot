@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Events;

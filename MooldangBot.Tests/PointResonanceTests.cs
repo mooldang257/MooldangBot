@@ -1,9 +1,8 @@
-﻿using System.Threading.Channels;
+using System.Threading.Channels;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.ChatPoints.Handlers;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Application.Workers;
 using MooldangBot.Domain.Entities;

@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using System.Collections.Generic;
 using System.Linq;

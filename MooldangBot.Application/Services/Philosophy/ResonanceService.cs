@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models.Philosophy;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities.Philosophy;

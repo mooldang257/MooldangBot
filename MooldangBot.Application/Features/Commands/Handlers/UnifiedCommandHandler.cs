@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Features.Commands.SystemMessage;
 using MooldangBot.Application.Features.Commands.Feature;
 using MooldangBot.Application.Features.Commands.General;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Application.Common.Security;
 using MooldangBot.Application.Common.Metrics;
 using MooldangBot.Application.Events; // v3.7 신규 이벤트
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events; // v3.7 다형성 모델
