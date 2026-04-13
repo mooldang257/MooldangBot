@@ -116,6 +116,7 @@ try
     builder.Services.AddMediatR(cfg => {
         cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Application.DependencyInjection).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Modules.SongBookModule.SongBookModuleExtensions).Assembly);
     });
     builder.Services.AddSingleton<SongQueueState>();
     builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
