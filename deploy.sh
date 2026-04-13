@@ -77,9 +77,13 @@ echo -e "${GREEN}🔍 Health Check: 서비스 가동 상태 확인...${NC}"
 sleep 3
 docker compose ps
 
-echo -e "${GREEN}✅ 배포가 성공적으로 완료되었습니다!${NC}"
+# [v3.0.0] EDMH Phase 0: 계약 정합성 자가진단 수행
+echo -e "${GREEN}⚖️ Verifier: 함대 혈관(Contracts) 정합성 검증 중...${NC}"
+docker compose run --rm chzzk-bot dotnet verifier/MooldangBot.Verifier.dll
+
+echo -e "${GREEN}✅ 배포 및 자가진단이 성공적으로 완료되었습니다!${NC}"
 if [ "$DEPLOY_UI" = true ] && [ "$DEPLOY_APP" = false ]; then
-    echo "UI 로그 확인: docker-compose logs -f studio"
+    echo "UI 로그 확인: docker compose logs -f studio"
 else
-    echo "백엔드 로그 확인: docker-compose logs -f app"
+    echo "백엔드 로그 확인: docker compose logs -f app"
 fi
