@@ -26,8 +26,9 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher
         try
         {
             // [오시리스의 전령]: MassTransit을 통한 타입 기반 발행
-            // 봉투(Envelope)가 아닌 실제 페이로드(Payload)의 런타임 타입을 기반으로 익스체인지가 자동 결정됩니다.
-            await _publishEndpoint.Publish(envelope.Payload);
+            // 봉투(Envelope)가 아닌 실제 페이로드(Payload)의 런타임 타입을 명시적으로 지정하여 
+            // 다형성 익스체인지(Derived -> Base)가 정상적으로 전파되도록 합니다.
+            await _publishEndpoint.Publish(envelope.Payload, envelope.Payload.GetType());
 
             var eventType = envelope.Payload.GetType().Name.Replace("Chzzk", "").Replace("Event", "");
             _logger.LogDebug("📤 [MassTransit] {Event} 발행 완료 : Type-based Fanout", eventType);
