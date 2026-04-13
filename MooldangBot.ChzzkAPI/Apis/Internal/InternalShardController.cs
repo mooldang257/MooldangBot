@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Internal;
 
 namespace MooldangBot.ChzzkAPI.Apis.Internal;
@@ -26,13 +27,13 @@ public class InternalShardController : ControllerBase
     /// [오시리스의 지표]: 현재 가동 중인 모든 샤드의 상태 리스트를 반환합니다.
     /// </summary>
     [HttpGet("status")]
-    public IActionResult GetStatuses()
+    public async Task<IActionResult> GetStatuses()
     {
         if (!IsAuthorized()) return Unauthorized();
 
         _logger.LogInformation("📡 [Gateway] 샤드 상태 정보 요청 수신.");
         
-        var statuses = _shardManager.GetShardStatuses();
+        var statuses = await _shardManager.GetShardStatusesAsync();
         
         return Ok(new ChzzkApiResponse<IEnumerable<ShardStatus>>
         {

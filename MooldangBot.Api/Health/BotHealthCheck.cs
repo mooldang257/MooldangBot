@@ -23,7 +23,7 @@ public class BotHealthCheck(
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var shardStatuses = chatClient.GetShardStatuses().ToList();
+        var shardStatuses = (await chatClient.GetShardStatusesAsync()).ToList();
         var totalConnections = shardStatuses.Sum(s => s.ConnectionCount);
         var unhealthyShards = shardStatuses.Count(s => !s.IsHealthy);
         

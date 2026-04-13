@@ -36,6 +36,11 @@ public interface IChzzkChatClient : IAsyncDisposable
     Task DisconnectAsync(string chzzkUid);
 
     /// <summary>
+    /// [맥박의 집계]: 현재 연결된 활성 소켓의 총 개수를 반환합니다.
+    /// </summary>
+    int GetActiveConnectionCount();
+
+    /// <summary>
     /// [파동의 전수조사]: 모든 샤드의 상세 상태 정보를 반환합니다.
     /// </summary>
     Task<IEnumerable<ShardStatus>> GetShardStatusesAsync();

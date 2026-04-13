@@ -41,7 +41,7 @@ public interface IShardedWebSocketManager
     /// <summary>
     /// 모든 샤드의 상세 상태 목록을 반환합니다.
     /// </summary>
-    IEnumerable<ShardStatus> GetShardStatuses();
+    Task<IEnumerable<ShardStatus>> GetShardStatusesAsync();
 
     // 4. 제어 명령 (치지직 API 연동)
     Task<bool> SendMessageAsync(string chzzkUid, string message);
