@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -40,30 +40,23 @@ public class TitleStrategy(
             newTitle = newTitle[..40];
         }
 
-        // 2. [명령 하달]: 봇 엔진에게 방제 변경 명령 송출
         try
         {
-            logger.LogInformation($"📡 [방제 변경 오더] {notification.Profile.ChzzkUid} -> {newTitle}");
-            
-            bool success = await botService.UpdateTitleAsync(notification.Profile, newTitle, notification.SenderId, ct);
+            // 2. [명령 하달]: 봇 엔진에게 방제 변경 명령 송출 (비동기 발행)
+            await botService.UpdateTitleAsync(notification.Profile, newTitle, notification.SenderId, ct);
 
-            if (success)
-            {
-                string template = string.IsNullOrEmpty(responseTemplate) 
-                    ? "✅ 방송 제목 변경 명령이 전달되었습니다! {내용} 🖋️" 
-                    : responseTemplate;
-                
-                string processedReply = await dynamicEngine.ProcessMessageAsync(
-                    template.Replace("{내용}", newTitle), 
-                    notification.Profile.ChzzkUid, 
-                    notification.SenderId
-                );
-
-                await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
-                return CommandExecutionResult.Success();
-            }
+            string template = string.IsNullOrEmpty(responseTemplate) 
+                ? "✅ 방송 제목 변경 명령이 전달되었습니다! {내용} 🖋️" 
+                : responseTemplate;
             
-            return CommandExecutionResult.Failure("방제 변경 명령 발행에 실패했습니다.", shouldRefund: true);
+            string processedReply = await dynamicEngine.ProcessMessageAsync(
+                template.Replace("{내용}", newTitle), 
+                notification.Profile.ChzzkUid, 
+                notification.SenderId
+            );
+
+            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            return CommandExecutionResult.Success();
         }
         catch (Exception ex)
         {

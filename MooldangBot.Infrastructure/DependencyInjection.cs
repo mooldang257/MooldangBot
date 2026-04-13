@@ -165,7 +165,10 @@ namespace MooldangBot.Infrastructure
             // [Migration]: Messaging infrastructure is now explicitly called in Program.cs of each host
             // services.AddMessagingInfrastructure(configuration);
 
-            // [v4.0] RPC 클라이언트는 이제 MassTransit IRequestClient를 사용합니다.
+            // [v4.0] COMMAND 엔드포인트 송신기는 이제 발신 전용(Fire & Forget)을 지향합니다.
+            services.AddSingleton<IChzzkCommandSender, ChzzkCommandSender>();
+            
+            // [DEPRECATED v4.0] RPC 클라이언트는 차후 제거 예정입니다.
             services.AddSingleton<IChzzkRpcClient, ChzzkRpcClient>();
 
             // [v16.0] 지휘관 선호도 전용 기억 장치 (Redis Preference)

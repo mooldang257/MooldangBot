@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -52,37 +52,29 @@ public class CategoryStrategy(
 
             logger.LogInformation($"🚀 [카테고리 변경 명령 발행] {notification.Username} -> 키워드: {searchKeyword}");
             
-            // 3. [명령 하달]: 봇 엔진에게 수색 및 반영을 일임합니다. (v2.6 아키텍처 전환)
-            bool success = await botService.UpdateCategoryAsync(notification.Profile, searchKeyword, notification.SenderId, token: ct);
+            // 3. [명령 하달]: 봇 엔진에게 수색 및 반영을 일임합니다. (비동기 발행)
+            await botService.UpdateCategoryAsync(notification.Profile, searchKeyword, notification.SenderId, token: ct);
 
-            if (success)
-            {
-                string template = string.IsNullOrEmpty(responseTemplate) 
-                    ? "✅ 카테고리를 [{내용}](으)로 변경 요청했습니다! 🎈" 
-                    : responseTemplate;
-                
-                // [v2.7] 템플릿 변수 치환 정밀화: {내용}, ${내용}, $(내용) 등 모든 규격 지원
-                string processedReply = System.Text.RegularExpressions.Regex.Replace(
-                    template, 
-                    @"[\$]?[\{\(](내용|카테고리)[\}\)]", 
-                    searchKeyword, 
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
-                );
+            string template = string.IsNullOrEmpty(responseTemplate) 
+                ? "✅ 카테고리를 [{내용}](으)로 변경 요청했습니다! 🎈" 
+                : responseTemplate;
+            
+            // [v2.7] 템플릿 변수 치환 정밀화: {내용}, ${내용}, $(내용) 등 모든 규격 지원
+            string processedReply = System.Text.RegularExpressions.Regex.Replace(
+                template, 
+                @"[\$]?[\{\(](내용|카테고리)[\}\)]", 
+                searchKeyword, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
 
-                processedReply = await dynamicEngine.ProcessMessageAsync(
-                    processedReply, 
-                    notification.Profile.ChzzkUid, 
-                    notification.SenderId
-                );
+            processedReply = await dynamicEngine.ProcessMessageAsync(
+                processedReply, 
+                notification.Profile.ChzzkUid, 
+                notification.SenderId
+            );
 
-                await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
-                return CommandExecutionResult.Success();
-            }
-            else
-            {
-                logger.LogWarning($"⚠️ [명령 발행 실패] {notification.Profile.ChzzkUid} RabbitMQ 송신 오류");
-                return CommandExecutionResult.Failure("카테고리 변경 명령 발행에 실패했습니다.", shouldRefund: true);
-            }
+            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            return CommandExecutionResult.Success();
         }
         catch (Exception ex)
         {

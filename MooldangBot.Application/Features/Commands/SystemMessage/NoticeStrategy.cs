@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -39,15 +39,10 @@ public class NoticeStrategy(
                 notification.Username
             );
             
-            // 치지직 플랫폼 상단 공지 등록 시도
-            bool success = await botService.SendReplyNoticeAsync(notification.Profile, noticeMessage, notification.SenderId, ct);
+            // 치지직 플랫폼 상단 공지 등록 시도 (비동기 발행)
+            await botService.SendReplyNoticeAsync(notification.Profile, noticeMessage, notification.SenderId, ct);
             
-            if (success)
-            {
-                return CommandExecutionResult.Success();
-            }
-            
-            return CommandExecutionResult.Failure("치지직 상단 공지 등록에 실패했습니다. (권한 부족 또는 API 제한)", shouldRefund: true);
+            return CommandExecutionResult.Success();
         }
         catch (Exception ex)
         {

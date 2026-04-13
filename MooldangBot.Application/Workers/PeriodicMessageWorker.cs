@@ -61,17 +61,13 @@ public class PeriodicMessageWorker : BackgroundService
                             // 설정된 주기가 지났는지 확인 (타임존 독립적 비교)
                             if (now >= lastSent.AddMinutes(msg.IntervalMinutes))
                             {
-                                _logger.LogInformation($"📢 [주기적 메시지] {profile.ChzzkUid} 채널 송출 시작: {msg.Message.Substring(0, Math.Min(msg.Message.Length, 20))}...");
+                                // 메시지 송출 명령 발행 (Fire & Forget)
+                                await botService.SendReplyChatAsync(profile, msg.Message, "", stoppingToken);
                                 
-                                var success = await botService.SendReplyChatAsync(profile, msg.Message, "", stoppingToken);
-                                
-                                if (success)
-                                {
-                                    msg.LastSentAt = now;
-                                    // 즉시 저장하여 워커 재시작 시 중복 발송 방지
-                                    await db.SaveChangesAsync(stoppingToken);
-                                    _logger.LogInformation($"✅ [주기적 메시지] {profile.ChzzkUid} 송출 완료 및 시간 갱신");
-                                }
+                                msg.LastSentAt = now;
+                                // 즉시 저장하여 워커 재시작 시 중복 발송 방지
+                                await db.SaveChangesAsync(stoppingToken);
+                                _logger.LogInformation($"✅ [주기적 메시지] {profile.ChzzkUid} 송출 완료 및 시간 갱신");
                             }
                         }
                     }
