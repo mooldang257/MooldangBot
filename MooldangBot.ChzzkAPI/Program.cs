@@ -4,6 +4,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
 using MooldangBot.ChzzkAPI.Clients;
 using MooldangBot.ChzzkAPI.Messaging;
+using MooldangBot.ChzzkAPI.Messaging.Consumers;
 using MooldangBot.ChzzkAPI.Sharding;
 using MooldangBot.ChzzkAPI.Workers;
 using MooldangBot.ChzzkAPI.Services;
@@ -25,8 +26,8 @@ builder.Configuration.AddCustomDotEnv(args);
 // 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 전용)
-builder.Services.AddMessagingInfrastructure(builder.Configuration);
+// [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 및 수신)
+builder.Services.AddMessagingInfrastructure(builder.Configuration, typeof(SendMessageCommandConsumer).Assembly);
 
 builder.Services.AddHealthChecks();
 
@@ -64,7 +65,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddBotEngineServices();
 
 // 4. 아웃바운드 제어 컨슈머 및 게이트웨이 워커 등록
-builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.CommandRpcWorker>();
+// [Migration]: CommandRpcWorker는 이제 개별 MassTransit Consumer들로 대체되었습니다.
 builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.GatewayWorker>();
 
 // 4. API 컨트롤러 및 Swagger 설정
