@@ -1,4 +1,4 @@
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using MooldangBot.ChzzkAPI.Apis.Internal;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
@@ -17,6 +17,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MooldangBot.ChzzkAPI.Extensions;
 using MooldangBot.Application;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Services;
 

@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 

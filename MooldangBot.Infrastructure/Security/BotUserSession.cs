@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Infrastructure.Security;
 

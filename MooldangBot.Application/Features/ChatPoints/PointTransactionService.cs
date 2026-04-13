@@ -1,11 +1,12 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Dapper;
-using MooldangBot.Application.Common.Security;
+using MooldangBot.Contracts.Security;
 using MooldangBot.Application.Common.Metrics;
 
 namespace MooldangBot.Application.Features.ChatPoints;

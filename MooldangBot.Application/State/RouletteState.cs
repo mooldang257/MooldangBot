@@ -1,5 +1,6 @@
-using MooldangBot.Domain.Common;
+﻿using MooldangBot.Domain.Common;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Application.State;
 

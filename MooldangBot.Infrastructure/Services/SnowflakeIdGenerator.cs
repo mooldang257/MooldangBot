@@ -1,5 +1,6 @@
-using IdGen;
+﻿using IdGen;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services;
 

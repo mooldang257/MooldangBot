@@ -2,7 +2,7 @@ using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Application.Interfaces;
+namespace MooldangBot.Modules.SongBookModule.Services;
 
 public interface ISongBookService
 {

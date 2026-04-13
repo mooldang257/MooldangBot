@@ -1,12 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MooldangBot.Application.Common.Security;
+namespace MooldangBot.Contracts.Security;
 
-/// <summary>
-/// [v4.0] 수호자의 인장: 원본 데이터를 노출하지 않고 검색 가능한 해시값을 생성합니다.
-/// Application 레이어에서 공통으로 사용됩니다.
-/// </summary>
 public static class Sha256Hasher
 {
     private const string Salt = "MooldangBot_Secure_Salt_2026";

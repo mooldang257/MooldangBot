@@ -1,10 +1,11 @@
-using System.Data;
+﻿using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Workers;

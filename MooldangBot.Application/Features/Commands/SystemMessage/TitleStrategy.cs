@@ -1,4 +1,5 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;

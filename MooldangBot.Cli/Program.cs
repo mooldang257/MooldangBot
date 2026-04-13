@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using DotNetEnv;
 using Microsoft.AspNetCore.DataProtection;
 

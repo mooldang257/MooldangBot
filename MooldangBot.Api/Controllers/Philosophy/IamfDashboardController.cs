@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models.Philosophy;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Domain.Common;

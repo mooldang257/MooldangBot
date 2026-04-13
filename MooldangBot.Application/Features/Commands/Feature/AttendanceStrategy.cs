@@ -1,4 +1,5 @@
 ﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Common.Security;
+using MooldangBot.Contracts.Security;
 
 namespace MooldangBot.Application.Features.Commands.Feature;
 

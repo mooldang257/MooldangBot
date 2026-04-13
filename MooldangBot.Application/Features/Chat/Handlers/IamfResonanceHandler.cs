@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Common;

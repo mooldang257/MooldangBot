@@ -1,5 +1,6 @@
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Services;

@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,7 +11,7 @@ using MooldangBot.Application.State;
 
 using System.Collections.Concurrent;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Common.Security; // [v4.0] 추가
+using MooldangBot.Contracts.Security; // [v4.0] 추가
 using System.Diagnostics; // [v6.0] observability 추가
 
 namespace MooldangBot.Application.Features.Roulette;

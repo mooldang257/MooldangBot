@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Infrastructure.Persistence;
 using StackExchange.Redis;

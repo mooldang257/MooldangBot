@@ -1,9 +1,10 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;
 
 namespace MooldangBot.ChzzkAPI.Sharding;

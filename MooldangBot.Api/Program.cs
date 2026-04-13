@@ -1,5 +1,6 @@
 using MooldangBot.Infrastructure;
-using MooldangBot.Infrastructure.Extensions;
+using MooldangBot.Modules.SongBookModule;
+using MooldangBot.Contracts.Extensions;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
@@ -17,8 +18,11 @@ using MooldangBot.Infrastructure.Security;
 using MooldangBot.Presentation.Security;
 using MooldangBot.Presentation.Extensions;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Application.Services.Auth;
+using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Infrastructure.Extensions;
 using MooldangBot.Application.Common.Security;
+using MooldangBot.Application.Services.Auth;
+using MooldangBot.Contracts.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using MooldangBot.Application.State;
@@ -79,6 +83,7 @@ try
     });
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+    builder.Services.AddSongBookModule();
 
     // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축
     // Application 프로젝트의 Consumer들을 자동으로 스캔하여 등록합니다.

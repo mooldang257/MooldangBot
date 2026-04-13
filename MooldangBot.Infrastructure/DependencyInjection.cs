@@ -1,9 +1,11 @@
-using Polly;
+﻿using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.ApiClients;
@@ -154,7 +156,7 @@ namespace MooldangBot.Infrastructure
             services.AddScoped<ICommandMasterCacheService, CommandMasterCacheService>();
 
             // [v13.1] 리포지토리 등록
-            services.AddScoped<ISongBookRepository, MooldangBot.Infrastructure.Persistence.Repositories.SongBookRepository>();
+            // [Phase 2] ISongBookRepository는 SongBook 모듈에서 등록됩니다.
 
             // [v1.8] Safe Dynamic Query Engine 등록
             services.AddScoped<IDynamicQueryEngine, MooldangBot.Infrastructure.Services.Engines.DynamicQueryEngine>();

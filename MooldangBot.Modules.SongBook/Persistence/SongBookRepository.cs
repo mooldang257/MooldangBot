@@ -1,25 +1,22 @@
-using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.Infrastructure.Extensions;
+using MooldangBot.Contracts.Extensions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Contracts.Interfaces;
 
-namespace MooldangBot.Infrastructure.Persistence.Repositories;
+namespace MooldangBot.Modules.SongBookModule.Persistence;
 
 public class SongBookRepository : ISongBookRepository
 {
-    private readonly AppDbContext _context;
+    private readonly ISongBookDbContext _context;
 
-    public SongBookRepository(AppDbContext context)
+    public SongBookRepository(ISongBookDbContext context)
     {
         _context = context;
     }
 
     public async Task<PagedResponse<SongBook>> GetPagedSongsAsync(string streamerChzzkUid, PagedRequest request)
     {
-        // [오시리스의 영호]: 마스킹 키 (현재 미사용으로 주석 처리)
-        // private static readonly byte Mask = 0x07;
         var query = _context.SongBooks
             .AsNoTracking()
             .Include(s => s.StreamerProfile)
@@ -30,7 +27,6 @@ public class SongBookRepository : ISongBookRepository
             query = query.Where(s => s.Title.Contains(request.Search) || (s.Artist != null && s.Artist.Contains(request.Search)));
         }
 
-        // Keyset Pagination: LastId 보다 작은 데이터만 조회 (ID DESC 정렬 기준)
         if (request.LastId > 0)
         {
             query = query.Where(s => s.Id < request.LastId);

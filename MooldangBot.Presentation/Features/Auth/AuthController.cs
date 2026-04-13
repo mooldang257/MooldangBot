@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
@@ -191,7 +192,7 @@ namespace MooldangBot.Presentation.Features.Auth
                     }
                     else
                     {
-                        var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
+                        var viewerHash = MooldangBot.Contracts.Security.Sha256Hasher.ComputeHash(chzzkUid);
                         var viewer = await _db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == viewerHash);
                         if (viewer != null)
                         {
@@ -442,7 +443,7 @@ namespace MooldangBot.Presentation.Features.Auth
                 }
                 else
                 {
-                    var viewerHash = MooldangBot.Application.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
+                    var viewerHash = MooldangBot.Contracts.Security.Sha256Hasher.ComputeHash(chzzkUid);
                     var managedChannels = await _db.StreamerManagers
                         .Include(m => m.StreamerProfile)
                         .Include(m => m.GlobalViewer)

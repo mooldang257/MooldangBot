@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MediatR;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Events;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 

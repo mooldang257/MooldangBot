@@ -1,10 +1,11 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MySqlConnector;
-using MooldangBot.Application.Common.Security;
+using MooldangBot.Contracts.Security;
 
 namespace MooldangBot.Infrastructure.Services.Engines
 {

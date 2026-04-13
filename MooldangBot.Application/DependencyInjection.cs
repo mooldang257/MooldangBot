@@ -1,6 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Interfaces;
+using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Application.Workers;
 using MooldangBot.Application.Features.Admin;
@@ -27,7 +29,7 @@ namespace MooldangBot.Application
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<IChzzkBotService, ChzzkBotService>();
-            services.AddScoped<ISongBookService, SongBookService>();
+            // [Phase 2] ISongBookService는 SongBook 모듈에서 등록됩니다.
             services.AddScoped<ISongLibraryService, SongLibraryService>();
             services.AddScoped<IRouletteService, RouletteService>();
             services.AddScoped<IPointTransactionService, PointTransactionService>();
@@ -44,7 +46,7 @@ namespace MooldangBot.Application
             services.AddScoped<ICommandFeatureStrategy, SonglistToggleStrategy>();
             services.AddScoped<ICommandFeatureStrategy, TitleStrategy>();
             services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, SongRequestStrategy>();
+            // [Phase 2] SongRequestStrategy는 SongBook 모듈에서 등록됩니다.
             services.AddScoped<ICommandFeatureStrategy, RouletteStrategy>();
             services.AddScoped<ICommandFeatureStrategy, AttendanceStrategy>();
             services.AddScoped<ICommandFeatureStrategy, OmakaseStrategy>();
