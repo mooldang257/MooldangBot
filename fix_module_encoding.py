@@ -1,4 +1,8 @@
-﻿using MooldangBot.Contracts.Interfaces;
+import os
+
+# Define files and content carefully
+files_to_restore = {
+    r"MooldangBot.Modules.SongBook\Strategies\SongRequestStrategy.cs": """using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -108,3 +112,60 @@ public class SongRequestStrategy(
         }
     }
 }
+""",
+    r"MooldangBot.Modules.SongBook\Features\AddSongRequestCommand.cs": """using MediatR;
+using MooldangBot.Contracts.Interfaces;
+using MooldangBot.Modules.SongBookModule.State;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+
+namespace MooldangBot.Modules.SongBookModule.Features;
+
+public record AddSongRequestCommand(
+    [property: JsonPropertyName("username")] string Username, 
+    [property: JsonPropertyName("songTitle")] string SongTitle) : IRequest<bool>;
+
+public class AddSongRequestCommandHandler : IRequestHandler<AddSongRequestCommand, bool>
+{
+    private readonly SongBookState _songBook;
+    private readonly ILogger<AddSongRequestCommandHandler> _logger;
+    private readonly IOverlayNotificationService _overlayService;
+
+    public AddSongRequestCommandHandler(
+        SongBookState songBook, 
+        ILogger<AddSongRequestCommandHandler> logger,
+        IOverlayNotificationService overlayService)
+    {
+        _songBook = songBook;
+        _logger = logger;
+        _overlayService = overlayService;
+    }
+
+    public async Task<bool> Handle(AddSongRequestCommand request, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("{Username}님이 노래 '{SongTitle}'를 신청했습니다.", request.Username, request.SongTitle);
+        
+        var isAdded = _songBook.AddSong(request.Username, request.SongTitle);
+
+        if (isAdded)
+        {
+            await _overlayService.NotifyRefreshAsync(null, cancellationToken);
+            return true;
+        }
+
+        return false;
+    }
+}
+"""
+}
+
+for path, content in files_to_restore.items():
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8-sig") as f:
+            f.write(content)
+        print(f"Restored with BOM: {path}")
+    except Exception as e:
+        print(f"Error restoring {path}: {e}")

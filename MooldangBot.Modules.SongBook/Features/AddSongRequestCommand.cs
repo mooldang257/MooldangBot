@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Modules.SongBookModule.State;
 using System.Text.Json.Serialization;
@@ -28,7 +28,7 @@ public class AddSongRequestCommandHandler : IRequestHandler<AddSongRequestComman
 
     public async Task<bool> Handle(AddSongRequestCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("{Username}?�이 ?�래 '{SongTitle}'�??�청?�습?�다.", request.Username, request.SongTitle);
+        _logger.LogInformation("{Username}님이 노래 '{SongTitle}'를 신청했습니다.", request.Username, request.SongTitle);
         
         var isAdded = _songBook.AddSong(request.Username, request.SongTitle);
 
