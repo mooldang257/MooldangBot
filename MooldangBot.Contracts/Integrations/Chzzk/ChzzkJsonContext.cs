@@ -14,13 +14,19 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Internal;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;
+using MooldangBot.Contracts.Models.Chzzk; // Added
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???쒗뙋]: 移섏?吏?API??怨좎꽦??JSON 吏곷젹?붾? ?꾪븳 ?뚯뒪 ?앹꽦湲?而⑦뀓?ㅽ듃?낅땲??
-/// 紐⑤뱺 ?ш굔??DTO 諛??쒕꼫由??섏씠吏?紐⑤뜽?ㅼ씠 ?깅줉?섏뿀?듬땲??
+/// [오시리스의 성판]: 치지직 API 및 보트 시스템의 모든 주요 모델들에 대한 고성능 JSON Source Generator 컨텍스트입니다.
+/// 모든 외부 시스템(Api, Bot, Worker)이 동일한 직렬화 규격을 공유합니다.
 /// </summary>
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, 
+    GenerationMode = JsonSourceGenerationMode.Default,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ChzzkApiResponse<TokenResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<object>))]
 [JsonSerializable(typeof(ChzzkApiResponse<string>))]
@@ -91,6 +97,38 @@ namespace MooldangBot.Contracts.Integrations.Chzzk;
 [JsonSerializable(typeof(RefreshSettingsCommand))]
 [JsonSerializable(typeof(CommandResponseBase))]
 [JsonSerializable(typeof(StandardCommandResponse))]
+// Chzzk API Responses (Migrated)
+[JsonSerializable(typeof(ChzzkTokenResponse))]
+[JsonSerializable(typeof(ChzzkUserProfileResponse))]
+[JsonSerializable(typeof(ChzzkUserProfileContent))]
+[JsonSerializable(typeof(ChzzkSessionAuthResponse))]
+[JsonSerializable(typeof(ChzzkCategorySearchResponse))]
+[JsonSerializable(typeof(ChzzkUserMeResponse))]
+[JsonSerializable(typeof(ChzzkLiveSettingResponse))]
+[JsonSerializable(typeof(ChzzkChannelsResponse))]
+[JsonSerializable(typeof(ChzzkLiveDetailResponse))]
+// Domain DTOs (from Domain project)
+[JsonSerializable(typeof(SetupRequest))]
+[JsonSerializable(typeof(SonglistSettingsUpdateRequest))]
+[JsonSerializable(typeof(SongRequestCommandDto))]
+[JsonSerializable(typeof(OmakaseDto))]
+[JsonSerializable(typeof(SongQueueDto))]
+[JsonSerializable(typeof(SonglistDataDto))]
+[JsonSerializable(typeof(PeriodicMessageDto))]
+[JsonSerializable(typeof(OverlayPresetDto))]
+[JsonSerializable(typeof(SharedComponentDto))]
+[JsonSerializable(typeof(CombinedCommandDto))]
+[JsonSerializable(typeof(SongUpdateRequest))]
+[JsonSerializable(typeof(RouletteResultDto))]
+[JsonSerializable(typeof(RouletteSummaryDto))]
+[JsonSerializable(typeof(SpinRouletteResponse))]
+[JsonSerializable(typeof(RouletteSaveDto))]
+[JsonSerializable(typeof(RouletteItemSaveDto))]
+[JsonSerializable(typeof(UnifiedCommandDto))]
+[JsonSerializable(typeof(SaveUnifiedCommandRequest))]
+[JsonSerializable(typeof(ChatOverlayDto))]
+[JsonSerializable(typeof(ChzzkChatEventPayload))]
+[JsonSerializable(typeof(MooldangBot.Contracts.Models.Chzzk.ChzzkChatProfile))]
 [JsonSerializable(typeof(object))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {

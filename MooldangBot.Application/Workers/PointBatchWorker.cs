@@ -1,11 +1,13 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
-
+using MooldangBot.Contracts.Requests.Point.Models;
+using MediatR;
+using MooldangBot.Contracts.Requests.Point.Commands;
 namespace MooldangBot.Application.Workers;
 
 /// <summary>
@@ -103,9 +105,9 @@ public class PointBatchWorker(
         try
         {
             using var scope = scopeFactory.CreateScope();
-            var pointService = scope.ServiceProvider.GetRequiredService<IPointTransactionService>();
+            var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
             
-            await pointService.BulkUpdatePointsAsync(jobs, ct);
+            await mediator.Send(new BulkUpdatePointsCommand(jobs), ct);
             
             if (_retryBuffer.IsEmpty == false)
             {

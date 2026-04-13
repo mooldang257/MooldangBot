@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
-using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

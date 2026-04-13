@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Models;
-using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 

@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Interfaces;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Interfaces;
 
 namespace MooldangBot.Application.Services.Philosophy;

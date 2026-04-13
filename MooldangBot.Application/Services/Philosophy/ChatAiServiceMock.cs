@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+using MooldangBot.Contracts.Interfaces;
+using System.Threading.Tasks;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using Microsoft.Extensions.Logging;
 

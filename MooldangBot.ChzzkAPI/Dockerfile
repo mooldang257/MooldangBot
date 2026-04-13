@@ -1,5 +1,5 @@
-# ------------------------------------------
-# 🏗️ Build Stage
+﻿# ------------------------------------------
+# ?룛截?Build Stage
 # ------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
 WORKDIR /app
@@ -15,13 +15,17 @@ COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.App
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
 COPY ["MooldangBot.Verifier/MooldangBot.Verifier.csproj", "MooldangBot.Verifier/"]
+COPY ["MooldangBot.Modules.SongBook/MooldangBot.Modules.SongBook.csproj", "MooldangBot.Modules.SongBook/"]
+COPY ["MooldangBot.Modules.Roulette/MooldangBot.Modules.Roulette.csproj", "MooldangBot.Modules.Roulette/"]
+COPY ["MooldangBot.Modules.Point/MooldangBot.Modules.Point.csproj", "MooldangBot.Modules.Point/"]
+COPY ["MooldangBot.Modules.Commands/MooldangBot.Modules.Commands.csproj", "MooldangBot.Modules.Commands/"]
 
 RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
 
 # Copy source and build
 COPY . .
 
-# Verifier 빌드 추가 (필요 시 운영 환경에서 자기진단 가능하도록)
+# Verifier 鍮뚮뱶 異붽? (?꾩슂 ???댁쁺 ?섍꼍?먯꽌 ?먭린吏꾨떒 媛?ν븯?꾨줉)
 WORKDIR "/src/MooldangBot.Verifier"
 RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 

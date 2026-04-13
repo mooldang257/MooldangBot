@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using MooldangBot.Domain.Common;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
-using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.Contracts.Models.Chzzk;
 
 namespace MooldangBot.Application.Services.Auth;
 

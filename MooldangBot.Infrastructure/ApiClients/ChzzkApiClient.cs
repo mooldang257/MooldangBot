@@ -1,6 +1,6 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 

@@ -32,6 +32,8 @@
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
     <ProjectReference Include="..\MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj" />
     <ProjectReference Include="..\MooldangBot.Contracts\MooldangBot.Contracts.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Commands\MooldangBot.Modules.Commands.csproj" />
   </ItemGroup>
 
 </Project>

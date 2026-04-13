@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
   </ItemGroup>
 
   <ItemGroup>

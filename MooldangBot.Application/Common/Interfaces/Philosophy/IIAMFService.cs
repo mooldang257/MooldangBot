@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Application.Common.Interfaces.Philosophy;
@@ -29,34 +29,4 @@ public interface IResonanceService
     double CalculateDynamicVibration(double systemLoad, int interactionCount);
 }
 
-/// <summary>
-/// [오시리스의 규율]: 시스템 정합성과 윤리적 가이드를 검증하는 인터페이스입니다.
-/// </summary>
-public interface IRegulationService
-{
-    /// <summary>
-    /// 입력된 파동(요청)이 규율에 적합한지 검증합니다.
-    /// </summary>
-    Task<(bool IsValid, string Message)> ValidateRegulationAsync(string input, string persona);
-}
 
-/// <summary>
-/// [피닉스의 기록]: 실험의 다층 기록과 윤회를 담당하는 인터페이스입니다.
-/// </summary>
-public interface IPhoenixRecorder
-{
-    /// <summary>
-    /// 실험 시나리오를 기록합니다.
-    /// </summary>
-    Task RecordScenarioAsync(string scenarioId, string content, int level);
-
-    /// <summary>
-    /// 파로스 파괴 시 윤회 조건을 재설정합니다.
-    /// </summary>
-    Task ReincarnateParhosAsync();
-
-    /// <summary>
-    /// [피닉스의 비상]: CancellationTokenSource를 전파하여 시스템을 정지 및 재시작합니다.
-    /// </summary>
-    Task ReincarnateParhosAsync(System.Threading.CancellationTokenSource globalCts);
-}

@@ -5,17 +5,11 @@ using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Application.Workers;
 using MooldangBot.Application.Features.Admin;
-using MooldangBot.Application.Features.Commands;
-using MooldangBot.Application.Features.ChatPoints;
 using MooldangBot.Application.Features.Overlay;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Application.Services.Auth;
-using MooldangBot.Application.Features.Commands.Cache;
-using MooldangBot.Application.Features.Commands.General;
-using MooldangBot.Application.Features.Commands.SystemMessage;
-using MooldangBot.Application.Features.Commands.Feature;
-using MooldangBot.Application.Features.Commands.Handlers;
+using MooldangBot.Modules.Commands;
 
 namespace MooldangBot.Application
 {
@@ -30,23 +24,14 @@ namespace MooldangBot.Application
             // [Phase 2] ISongBookService는 SongBook 모듈에서 등록됩니다.
             services.AddScoped<ISongLibraryService, SongLibraryService>();
             // [Phase 3] IRouletteService 및 관련 로직은 Roulette 모듈로 적출되었습니다.
-            services.AddScoped<IPointTransactionService, PointTransactionService>();
-            services.AddSingleton<ICommandCacheService, CommandCacheService>();
+            // [Phase 4] IPointTransactionService 및 관련 로직은 Point 모듈로 적출되었습니다.
+            // [Phase 5] 명령어 코어 시스템(Cache, Router, Strategies)은 Commands 모듈로 적출되었습니다.
+            services.AddCommandsModule();
+            
             services.AddScoped<ChzzkCategorySyncService>();
             services.AddSingleton<IObsWebSocketService, ObsWebSocketService>();
             services.AddScoped<ITokenRenewalService, TokenRenewalService>();
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUnifiedCommandService, UnifiedCommandService>();
-
-            // Command Strategies
-            services.AddScoped<ICommandFeatureStrategy, ReplyStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, NoticeStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, SonglistToggleStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, TitleStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
-            // [Phase 3] RouletteStrategy는 Roulette 모듈에서 등록됩니다.
-            services.AddScoped<ICommandFeatureStrategy, AttendanceStrategy>();
-            services.AddScoped<ICommandFeatureStrategy, OmakaseStrategy>();
             
             // Common Infrastructure for MediatR
             services.AddScoped<IRegulationService, RegulationService>();
