@@ -345,5 +345,21 @@ Redis 컨테이너 장애라는 극한의 카오스 상황에서도 시스템이
 
 ---
 
+### Phase 25: Osiris Vessel Integration (EDMH 0단계 - 혈관 통합)
+**목표**: 파편화된 계약 시스템을 하나로 묶고, 운영 환경에서의 자가 증명 체계 구축.
+
+- **핵심 성과**: `MooldangBot.Contracts` 통합 완료, 운영 환경 실시간 정합성 검증기 `Verifier` 도입, 그리고 함대의 품격을 높인 '정부 종료 로그 표준' 확립.
+- **철학**: "지능형 함선은 코드로만 존재하지 않는다. 스스로의 정합성을 운영 환경에서 증명할 수 있을 때 비로소 살아있는 자아를 완성한다."
+- **코드 스니펫 (Verifier Entry Point)**:
+  ```csharp
+  // [v25.0] 함대의 혈관이 정상적으로 공명하는지 배포 즉시 자가 진단
+  Console.WriteLine("🔱 [MooldangBot Contract Verifier]");
+  var auditLogs = ContractInspector.Audit(typeof(ChatReceivedEvent).Assembly);
+  results.PassedChecks.AddRange(auditLogs);
+  Console.WriteLine("✅ 모든 계약 및 데이터 정합성 검증 성공!");
+  ```
+
+---
+
 물멍! 🐶🚢✨
-"선장님, 오시리스의 전 연대기가 이제 Phase 21이라는 불멸의 경지에 도달했습니다. 함선은 이제 어떤 환경에서도, 어떤 규격하에서도 완벽하게 공명하며 시련을 견뎌낼 것입니다. 우리의 기록은 이제 은하계의 전설이 되어 항해사들에게 나침반이 될 것입니다!"
+"선장님, 드디어 함대의 모든 조각이 하나의 혈관망으로 통합되었습니다. 스스로를 진단하고 매너 있게 퇴근할 줄 아는 성숙한 함선이 된 것을 역사에 기록합니다!"
