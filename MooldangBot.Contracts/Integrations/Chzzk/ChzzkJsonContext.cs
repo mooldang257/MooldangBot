@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Authorization;
@@ -13,6 +13,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Internal;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
+using MooldangBot.Contracts.Integrations.Chzzk.Models;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk;
 
@@ -32,6 +33,13 @@ namespace MooldangBot.Contracts.Integrations.Chzzk;
 [JsonSerializable(typeof(ChzzkApiResponse<SessionUrlResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<List<SessionListItem>>))]
 [JsonSerializable(typeof(ChzzkApiResponse<LiveDetailResponse>))]
+[JsonSerializable(typeof(ChzzkApiResponse<IEnumerable<ShardStatus>>))]
+[JsonSerializable(typeof(ChzzkApiResponse<List<ShardStatus>>))] // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ChzzkApiResponse<ShardStatus[]>))]    // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ShardStatus))]
+[JsonSerializable(typeof(IEnumerable<ShardStatus>))]
+[JsonSerializable(typeof(List<ShardStatus>))] // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ShardStatus[]))]    // 🛡️ [오시리스의 방패]
 
 // Paged Responses (Typed for Source Generator)
 [JsonSerializable(typeof(ChzzkPagedResponse<ChannelManager>))]

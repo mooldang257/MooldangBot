@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Application.Models.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Models;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.Application.Models.Chzzk;
 
@@ -22,6 +24,14 @@ namespace MooldangBot.Application.Models.Chzzk;
 [JsonSerializable(typeof(ChzzkLiveSettingResponse))]
 [JsonSerializable(typeof(ChzzkChannelsResponse))]
 [JsonSerializable(typeof(ChzzkLiveDetailResponse))]
+// [오시리스의 수리]: 게이트웨이 샤드 상태 조회를 위한 직렬화 정보 추가
+[JsonSerializable(typeof(ChzzkApiResponse<IEnumerable<ShardStatus>>))]
+[JsonSerializable(typeof(ChzzkApiResponse<List<ShardStatus>>))] // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ChzzkApiResponse<ShardStatus[]>))]    // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ShardStatus))]
+[JsonSerializable(typeof(IEnumerable<ShardStatus>))]
+[JsonSerializable(typeof(List<ShardStatus>))] // 🛡️ [오시리스의 방패]
+[JsonSerializable(typeof(ShardStatus[]))]    // 🛡️ [오시리스의 방패]
 // Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
 [JsonSerializable(typeof(SonglistSettingsUpdateRequest))]
