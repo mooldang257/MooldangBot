@@ -161,7 +161,8 @@ namespace MooldangBot.Infrastructure
             // [v4.4.0] Dynamic Variable Resolver 등록
             services.AddScoped<IDynamicVariableResolver, MooldangBot.Infrastructure.Services.Engines.DynamicVariableResolver>();
 
-            services.AddMessagingInfrastructure(configuration);
+            // [Migration]: Messaging infrastructure is now explicitly called in Program.cs of each host
+            // services.AddMessagingInfrastructure(configuration);
 
             // [v4.0] RPC 클라이언트는 이제 MassTransit IRequestClient를 사용합니다.
             services.AddSingleton<IChzzkRpcClient, ChzzkRpcClient>();
