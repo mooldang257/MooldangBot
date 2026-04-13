@@ -130,7 +130,8 @@ namespace MooldangBot.Infrastructure
                 {
                     client.DefaultRequestHeaders.Add("X-Internal-Secret", secret);
                 }
-            });
+            })
+            .AddStandardResilienceHandler(); // 🔥 [오시리스의 방패]: 일시적 네트워크 오류 및 타임아웃 대응
 
             // [오시리스의 영혼]: 실제 치지직 API 클라이언트 등록 (게이트웨이 위임 방식)
             services.AddSingleton<IChzzkApiClient, ChzzkApiClient>();
