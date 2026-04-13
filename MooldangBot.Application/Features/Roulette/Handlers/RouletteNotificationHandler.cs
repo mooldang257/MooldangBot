@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using MooldangBot.Contracts.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

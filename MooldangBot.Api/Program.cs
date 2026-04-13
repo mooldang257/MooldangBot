@@ -1,4 +1,4 @@
-using MooldangBot.Infrastructure;
+﻿using MooldangBot.Infrastructure;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Contracts.Extensions;
 using MooldangBot.Infrastructure.Extensions;

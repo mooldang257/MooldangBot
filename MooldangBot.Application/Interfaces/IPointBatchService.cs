@@ -1,4 +1,4 @@
-namespace MooldangBot.Application.Interfaces;
+﻿namespace MooldangBot.Application.Interfaces;
 
 /// <summary>
 /// [오버드라이브 수집기]: 실시간으로 쏟아지는 포인트 적립 요청을 수집하는 인터페이스입니다.

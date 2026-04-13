@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+﻿using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MassTransit;
 

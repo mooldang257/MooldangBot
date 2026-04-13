@@ -1,4 +1,4 @@
-namespace MooldangAPI.Features.Roulette;
+﻿namespace MooldangAPI.Features.Roulette;
 
 public class RouletteState
 {

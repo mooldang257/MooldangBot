@@ -1,4 +1,4 @@
-namespace MooldangAPI.Security;
+﻿namespace MooldangAPI.Security;
 
 public interface IAuthorizedRequest
 {

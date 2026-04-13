@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;

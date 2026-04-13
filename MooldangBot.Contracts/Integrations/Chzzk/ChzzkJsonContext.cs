@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Authorization;

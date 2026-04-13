@@ -1,4 +1,4 @@
-using MooldangBot.Domain.Entities;
+﻿using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Modules.SongBookModule.Persistence;

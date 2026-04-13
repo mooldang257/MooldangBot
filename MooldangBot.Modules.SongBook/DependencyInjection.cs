@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.SongBookModule.Persistence;
 using MooldangBot.Modules.SongBookModule.Services;
 using MooldangBot.Modules.SongBookModule.Strategies;

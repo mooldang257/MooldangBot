@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using FuzzySharp;
 using MooldangBot.Application.Common.Utils;
 using MooldangBot.Application.Interfaces;

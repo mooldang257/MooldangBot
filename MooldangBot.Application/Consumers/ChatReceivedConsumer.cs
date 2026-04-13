@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Events;

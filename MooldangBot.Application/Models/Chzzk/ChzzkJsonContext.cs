@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Contracts.Integrations.Chzzk.Models;

@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Verifier.Inspectors;

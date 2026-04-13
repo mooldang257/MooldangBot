@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Interfaces;
+﻿using MooldangBot.Contracts.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using MooldangBot.Modules.SongBookModule.Persistence;

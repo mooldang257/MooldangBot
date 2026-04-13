@@ -1,4 +1,4 @@
-namespace MooldangBot.Domain.Entities;
+﻿namespace MooldangBot.Domain.Entities;
 
 /// <summary>
 /// [세피로스의 증명]: 명령어 실행 결과를 담는 레코드입니다.

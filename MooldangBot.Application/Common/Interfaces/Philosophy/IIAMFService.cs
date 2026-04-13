@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Application.Common.Interfaces.Philosophy;

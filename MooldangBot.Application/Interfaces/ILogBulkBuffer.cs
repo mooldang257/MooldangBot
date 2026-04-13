@@ -1,4 +1,4 @@
-using MooldangBot.Domain.Entities.Philosophy;
+﻿using MooldangBot.Domain.Entities.Philosophy;
 using System.Collections.Concurrent;
 
 namespace MooldangBot.Application.Interfaces;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Models;

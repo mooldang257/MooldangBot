@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Events;

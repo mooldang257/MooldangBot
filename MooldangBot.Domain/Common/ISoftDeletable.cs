@@ -1,4 +1,4 @@
-using MooldangBot.Domain.Common;
+﻿using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Common;
 

@@ -1,4 +1,4 @@
-namespace MooldangBot.Domain.Entities;
+﻿namespace MooldangBot.Domain.Entities;
 
 /// <summary>
 /// [세피로스의 각인]: 명령어 액션 타입을 문자열 리터럴이 아닌 강타입 상수로 관리합니다.

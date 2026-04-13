@@ -1,4 +1,4 @@
-namespace MooldangBot.Contracts.Interfaces;
+﻿namespace MooldangBot.Contracts.Interfaces;
 
 public interface IDynamicQueryEngine
 {

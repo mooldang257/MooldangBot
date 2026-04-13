@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Application.Validators.Roulette;

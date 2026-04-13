@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

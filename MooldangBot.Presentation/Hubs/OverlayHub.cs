@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;

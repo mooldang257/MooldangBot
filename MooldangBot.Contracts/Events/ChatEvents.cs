@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Abstractions;
+﻿using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Events;
 

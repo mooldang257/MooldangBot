@@ -1,4 +1,4 @@
-using MooldangBot.Domain.Entities;
+﻿using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Application.Interfaces;
