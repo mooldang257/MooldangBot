@@ -79,7 +79,8 @@ docker compose ps
 
 # [v3.0.0] EDMH Phase 0: 계약 정합성 자가진단 수행
 echo -e "${GREEN}⚖️ Verifier: 함대 혈관(Contracts) 정합성 검증 중...${NC}"
-docker compose run --rm chzzk-bot dotnet verifier/MooldangBot.Verifier.dll
+mkdir -p ./data/app/reports
+docker compose run --rm -v ./data/app/reports:/app/verifier/reports chzzk-bot dotnet verifier/MooldangBot.Verifier.dll
 
 echo -e "${GREEN}✅ 배포 및 자가진단이 성공적으로 완료되었습니다!${NC}"
 if [ "$DEPLOY_UI" = true ] && [ "$DEPLOY_APP" = false ]; then

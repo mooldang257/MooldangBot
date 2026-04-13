@@ -20,8 +20,11 @@ class Program
         Console.WriteLine("[Mode: Standalone / EDMH Phase 0]");
         Console.WriteLine("====================================================");
 
+        var reportDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "reports");
+        if (!Directory.Exists(reportDir)) Directory.CreateDirectory(reportDir);
+
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var reportPath = $"verification_report_{timestamp}.json";
+        var reportPath = Path.Combine(reportDir, $"verification_report_{timestamp}.json");
         var results = new VerificationResults();
 
         try 
