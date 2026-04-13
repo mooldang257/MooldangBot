@@ -10,9 +10,9 @@
 - [x] `MooldangBot.ChzzkAPI`의 참조 수정 (Application -> Contracts)
 
 ## 🥇 [1순위] 가장 치명적인 위험 제거 : ChzzkAPI 통신 개편
-- [ ] RabbitMQ 통신 패턴 변경 (RPC -> Fire & Forget Publish)
-- [ ] `ChzzkCommandConsumer`의 응답 대기 로직 제거 및 비동기 처리 도입
-- [ ] API 게이트웨이 측의 이벤트 핸들러(Subscriber) 구현
+- [x] RabbitMQ 통신 패턴 변경 (RPC -> Fire & Forget Send)
+- [x] `ChzzkCommandConsumer`의 응답 대기 로직 제거 및 비동기 처리 도입
+- [x] API 게이트웨이 측의 이벤트 핸들러(Subscriber) 구현
 - [ ] 10k TPS 부하 테스트 및 스레드 블로킹 여부 검증
 
 ## 🥈 [2순위] 쉬운 도메인부터 분리 (Vertical Slicing)
