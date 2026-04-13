@@ -227,6 +227,13 @@ namespace MooldangBot.Infrastructure
 
             services.AddMassTransit(x =>
             {
+                // [오시리스의 영명]: 모든 파생 명령 타입을 RequestClient로 등록하여 
+                // ChzzkRpcClient에서 IServiceProvider를 통해 동적으로 꺼내 쓸 수 있게 합니다.
+                foreach (var type in chzzkCommandTypes)
+                {
+                    x.AddRequestClient(type);
+                }
+
                 // 1. Consumer 자동 등록 (전달받은 어셈블리 기준)
                 if (consumerAssemblies.Length > 0)
                 {
