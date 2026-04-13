@@ -2,21 +2,21 @@
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
 
-// [?ㅼ떆由ъ뒪??諛쒗솕]: 梨꾪똿 ?꾩넚 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스??諛쒗솕]: 梨꾪똿 전송 ?붿껌 紐⑤뜽?낅땲??
 public class SendChatRequest
 {
     [JsonPropertyName("message")]
     public string Message { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪???꾩뼵]: 梨꾪똿 ?꾩넚 ?깃났 ?묐떟 紐⑤뜽?낅땲??
+// [오시리스???꾩뼵]: 梨꾪똿 전송 ?깃났 ?묐떟 紐⑤뜽?낅땲??
 public class SendChatResponse
 {
     [JsonPropertyName("messageId")]
     public string MessageId { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪??怨듯몴]: 梨꾪똿 怨듭? ?ㅼ젙 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스??怨듯몴]: 梨꾪똿 공지 설정 ?붿껌 紐⑤뜽?낅땲??
 public class SetChatNoticeRequest
 {
     [JsonPropertyName("message")]
@@ -26,7 +26,7 @@ public class SetChatNoticeRequest
     public string? MessageId { get; set; }
 }
 
-// [?ㅼ떆由ъ뒪??洹쒖쑉]: 梨꾨꼸 梨꾪똿 ?ㅼ젙(?붾줈???꾩슜 ?? 紐⑤뜽?낅땲??
+// [오시리스??洹쒖쑉]: 梨꾨꼸 梨꾪똿 설정(?붾줈???꾩슜 ?? 紐⑤뜽?낅땲??
 public class ChatSettings
 {
     [JsonPropertyName("chatAvailableCondition")]
@@ -48,7 +48,7 @@ public class ChatSettings
     public bool ChatEmojiMode { get; set; }
 }
 
-// [?ㅼ떆由ъ뒪???뺥솕]: ?뱀젙 硫붿떆吏瑜?釉붾씪?몃뱶 泥섎━?섍린 ?꾪븳 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스???뺥솕]: 특정 硫붿떆吏瑜?블라인드 泥섎━?섍린 ?꾪븳 ?붿껌 紐⑤뜽?낅땲??
 public class BlindMessageRequest
 {
     [JsonPropertyName("chatChannelId")]

@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Restrictions;
 
-// [?ㅼ떆由ъ뒪???쒖젣]: 梨꾨꼸 ?쒕룞 ?쒗븳(諛?裕ㅽ듃) ?붿껌 紐⑤뜽?낅땲??
+// [오시리스???쒖젣]: 梨꾨꼸 ?쒕룞 ?쒗븳(諛?裕ㅽ듃) ?붿껌 紐⑤뜽?낅땲??
 public class ChannelRestrictionRequest
 {
     [JsonPropertyName("targetChannelId")]
     public string TargetChannelId { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪???좎삁]: ?꾩떆 ?쒕룞 ?쒗븳 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스???좎삁]: ?꾩떆 ?쒕룞 ?쒗븳 ?붿껌 紐⑤뜽?낅땲??
 public class TemporaryRestrictionRequest
 {
     [JsonPropertyName("targetChannelId")]
@@ -20,7 +20,7 @@ public class TemporaryRestrictionRequest
     public string ChatChannelId { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪??紐낅?]: ?쒗븳??梨꾨꼸 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스??紐낅?]: ?쒗븳??梨꾨꼸 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class RestrictedChannel
 {
     [JsonPropertyName("restrictedChannelId")]

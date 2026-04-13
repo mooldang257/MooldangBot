@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 
-// [?ㅼ떆由ъ뒪???섏궗]: ?쒕∼??蹂댁긽 ?섎졊 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스???섏궗]: ?쒕∼??蹂댁긽 ?섎졊 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class RewardClaim
 {
     [JsonPropertyName("claimId")]
@@ -34,7 +34,7 @@ public class RewardClaim
     public string UpdatedDate { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪??吏묓뻾]: ?쒕∼??蹂댁긽 ?곹깭 ?낅뜲?댄듃 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스??吏묓뻾]: ?쒕∼??蹂댁긽 ?곹깭 ?낅뜲?댄듃 ?붿껌 紐⑤뜽?낅땲??
 public class UpdateRewardClaimRequest
 {
     [JsonPropertyName("claimIds")]
@@ -44,7 +44,7 @@ public class UpdateRewardClaimRequest
     public string FulfillmentState { get; set; } = string.Empty;
 }
 
-// [?ㅼ떆由ъ뒪??怨듯몴]: ?쒕∼???낅뜲?댄듃 泥섎━ 寃곌낵 紐⑤뜽?낅땲??
+// [오시리스??怨듯몴]: ?쒕∼???낅뜲?댄듃 泥섎━ 寃곌낵 紐⑤뜽?낅땲??
 public class UpdateRewardClaimResult
 {
     [JsonPropertyName("status")]

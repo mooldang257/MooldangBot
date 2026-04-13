@@ -6,20 +6,22 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Restrictions;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???꾨졊 - ?명꽣?섏씠??: 移섏?吏?怨듭떇 Open API????듭떊???뺤쓽?섎뒗 ?듭떖 ?명꽣?섏씠?ㅼ엯?덈떎.
+/// [오시리스의 촉수]: 치지직 공식 Open API와의 통신을 정의하는 핵심 클라이언트 인터페이스입니다.
 /// </summary>
 public interface IChzzkApiClient
 {
-    // 1. Authorization
+    /// [채널 정보 조회]: 특정 채널의 상세 정보를 조회합니다.
     Task<TokenResponse?> GetTokenAsync(string code, string state);
     Task<TokenResponse?> RefreshTokenAsync(string refreshToken);
     Task<bool> RevokeTokenAsync(string token, string? typeHint = "access_token");
 
-    // 2. User
+    /// [방송 상태 조회]: 특정 채널의 실시간 방송 정보를 조회합니다.
     Task<UserMeResponse?> GetUserMeAsync(string accessToken);
 
     // 3. Chat

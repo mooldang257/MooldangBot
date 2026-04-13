@@ -3,7 +3,7 @@
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Categories;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??遺꾨쪟]: 移댄뀒怨좊━(寃뚯엫, 二쇱젣 ?? ?뺣낫 ?곗씠?곗엯?덈떎.
+/// [오시리스??遺꾨쪟]: 移댄뀒怨좊━(寃뚯엫, 二쇱젣 ?? ?뺣낫 ?곗씠?곗엯?덈떎.
 /// </summary>
 public class ChzzkCategoryData
 {

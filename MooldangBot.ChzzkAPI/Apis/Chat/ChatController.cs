@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
 namespace MooldangBot.ChzzkAPI.Apis.Chat;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???꾨졊 - 梨꾪똿]: 移섏?吏?梨꾪똿 硫붿떆吏 諛쒖넚 諛?愿由щ? ?대떦?섎뒗 而⑦듃濡ㅻ윭?낅땲??
+/// [오시리스의 사령부 - 채팅]: 치지직 채팅 메시지 전송 및 관리를 수행하는 컨트롤러입니다.
 /// </summary>
 [ApiController]
 [Route("apis/chzzk/chat")]
@@ -21,20 +21,20 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// [硫붿떆吏 諛쒖넚]: ?뱀젙 梨꾨꼸??梨꾪똿 硫붿떆吏瑜??꾩넚?⑸땲??
+    /// [메시지 발송]: 특정 채널에 채팅 메시지를 전송합니다.
     /// </summary>
     [HttpPost("{chzzkUid}/send")]
     public async Task<IActionResult> SendMessage(string chzzkUid, [FromBody] SendChatRequest request, [FromHeader(Name = "Authorization")] string authHeader)
     {
         var accessToken = authHeader.Replace("Bearer ", "");
         var result = await _apiClient.SendChatMessageAsync(chzzkUid, request.Message, accessToken);
-        if (result == null) return BadRequest("硫붿떆吏 ?꾩넚???ㅽ뙣?섏??듬땲??");
+        if (result == null) return BadRequest("메시지 전송에 실패했습니다");
 
         return Ok(result);
     }
 
     /// <summary>
-    /// [怨듭? ?ㅼ젙]: 梨꾪똿諛??곷떒 怨듭?瑜??깅줉?섍굅???댁젣?⑸땲??
+    /// [공지 설정]: 채팅방 상단 공지를 등록하거나 해제합니다.
     /// </summary>
     [HttpPost("{chzzkUid}/notice")]
     public async Task<IActionResult> SetNotice(string chzzkUid, [FromBody] SetChatNoticeRequest request, [FromHeader(Name = "Authorization")] string authHeader)
@@ -45,7 +45,7 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// [硫붿떆吏 釉붾씪?몃뱶]: ?뱀젙 硫붿떆吏瑜?蹂댁씠吏 ?딄쾶 泥섎━?⑸땲??
+    /// [메시지 블라인드]: 특정 메시지를 보이지 않게 처리합니다.
     /// </summary>
     [HttpPost("{chzzkUid}/blind")]
     public async Task<IActionResult> BlindMessage(string chzzkUid, [FromBody] BlindMessageRequest request, [FromHeader(Name = "Authorization")] string authHeader)
@@ -56,7 +56,7 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// [梨꾪똿諛??ㅼ젙 議고쉶]: ?꾩옱 梨꾪똿諛⑹쓽 ?꾪꽣留?諛??낆옣 ?쒗븳 ?ㅼ젙??議고쉶?⑸땲??
+    /// [채팅방 설정 조회]: 현재 채팅방의 필터링 및 입장 제한 설정을 조회합니다.
     /// </summary>
     [HttpGet("{chzzkUid}/settings")]
     public async Task<IActionResult> GetSettings(string chzzkUid, [FromHeader(Name = "Authorization")] string authHeader)

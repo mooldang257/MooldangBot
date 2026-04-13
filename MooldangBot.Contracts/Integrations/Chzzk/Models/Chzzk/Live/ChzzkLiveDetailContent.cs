@@ -3,7 +3,7 @@
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???몃?]: 諛⑹넚 ?곸꽭 ?뺣낫 紐⑤뜽?낅땲??
+/// [오시리스???몃?]: 諛⑹넚 ?곸꽭 ?뺣낫 紐⑤뜽?낅땲??
 /// </summary>
 public class ChzzkLiveDetailContent
 {

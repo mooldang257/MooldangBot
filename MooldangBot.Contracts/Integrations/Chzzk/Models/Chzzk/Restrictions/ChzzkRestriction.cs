@@ -3,7 +3,7 @@
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Restrictions;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??援ъ냽]: ?쒕룞 ?쒗븳(李⑤떒) 異붽? 諛???젣瑜??꾪븳 ?붿껌 紐⑤뜽?낅땲??
+/// [오시리스??援ъ냽]: ?쒕룞 ?쒗븳(李⑤떒) 異붽? 諛???젣瑜??꾪븳 ?붿껌 紐⑤뜽?낅땲??
 /// </summary>
 public class ChzzkRestrictionRequest
 {
@@ -12,7 +12,7 @@ public class ChzzkRestrictionRequest
 }
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??二꾩닔]: ?쒕룞 ?쒗븳 ?곸꽭 ?뺣낫 ?곗씠?곗엯?덈떎.
+/// [오시리스??二꾩닔]: ?쒕룞 ?쒗븳 ?곸꽭 ?뺣낫 ?곗씠?곗엯?덈떎.
 /// </summary>
 public class ChzzkRestrictionData
 {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??紐⑸줉]: ?ㅼ쨷 梨꾨꼸 議고쉶 ?묐떟??蹂몃Ц?낅땲??
+/// [오시리스??紐⑸줉]: ?ㅼ쨷 梨꾨꼸 조회 ?묐떟??蹂몃Ц?낅땲??
 /// </summary>
 public class ChzzkChannelsContent
 {

@@ -2,7 +2,7 @@
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Categories;
 
-// [?ㅼ떆由ъ뒪???섏깋]: 移댄뀒怨좊━ 寃??寃곌낵 ??ぉ???대뒗 紐⑤뜽?낅땲??
+// [오시리스???섏깋]: 移댄뀒怨좊━ 寃??寃곌낵 ??ぉ???대뒗 紐⑤뜽?낅땲??
 public class CategorySearchItem
 {
     [JsonPropertyName("categoryType")]

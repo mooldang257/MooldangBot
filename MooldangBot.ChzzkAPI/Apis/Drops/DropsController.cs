@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 namespace MooldangBot.ChzzkAPI.Apis.Drops;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???섏궗??: 移섏?吏??쒕∼??由ъ썙??愿由щ? ?대떦?섎뒗 而⑦듃濡ㅻ윭?낅땲??
+/// [오시리스???섏궗??: 치지직?쒕∼??由ъ썙??愿由щ? 담당하는 컨트롤러?낅땲??
 /// </summary>
 [ApiController]
 [Route("apis/chzzk/drops")]
@@ -21,7 +21,7 @@ public class DropsController : ControllerBase
     }
 
     /// <summary>
-    /// [由ъ썙??紐⑸줉 議고쉶]: ?꾩옱 ?ъ슜?먭? ?띾뱷 媛?ν븳 ?쒕∼??由ъ썙??紐⑸줉??議고쉶?⑸땲??
+    /// [由ъ썙??紐⑸줉 조회]: 현재 ?ъ슜?먭? ?띾뱷 媛?ν븳 ?쒕∼??由ъ썙??紐⑸줉??조회?⑸땲??
     /// </summary>
     [HttpGet("claims")]
     public async Task<IActionResult> GetClaims([FromHeader(Name = "Authorization")] string authHeader)

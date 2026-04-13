@@ -3,7 +3,7 @@
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??洹쒖튃]: 梨꾨꼸??梨꾪똿 ?ㅼ젙 紐⑤뜽?낅땲??
+/// [오시리스??洹쒖튃]: 梨꾨꼸??梨꾪똿 설정 紐⑤뜽?낅땲??
 /// </summary>
 public class ChzzkChatSettings
 {

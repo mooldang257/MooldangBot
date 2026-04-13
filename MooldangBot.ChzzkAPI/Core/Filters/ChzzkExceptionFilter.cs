@@ -5,8 +5,8 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 namespace MooldangBot.ChzzkAPI.Core.Filters;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??以묒옱]: 寃뚯씠?몄썾???대??먯꽌 諛쒖깮?섎뒗 ?덉쇅瑜?移섏?吏??쒖? ?묐떟 洹쒓꺽?쇰줈 蹂?섑빀?덈떎.
-/// ?꾨찓???덉씠???섏〈?깆쓣 ?꾩쟾???쒓굅?섏??듬땲??
+/// [오시리스??以묒옱]: 寃뚯씠?몄썾???대??먯꽌 諛쒖깮?섎뒗 ?덉쇅瑜?치지직?쒖? ?묐떟 洹쒓꺽?쇰줈 蹂?섑빀?덈떎.
+/// ?꾨찓???덉씠???섏〈?깆쓣 ?꾩쟾???쒓굅?섏?입니다
 /// </summary>
 public class ChzzkExceptionFilter : IExceptionFilter
 {
@@ -32,10 +32,10 @@ public class ChzzkExceptionFilter : IExceptionFilter
         else if (context.Exception is UnauthorizedAccessException)
         {
             statusCode = 401;
-            message = "?몄쬆???ㅽ뙣?섏??듬땲??";
+            message = "?몄쬆??실패하입니다";
         }
 
-        // [v3.3] 移섏?吏?怨듯넻 ?묐떟 遊됲닾(Shared) 洹쒓꺽??留욎떠 ?먮윭 諛섑솚
+        // [v3.3] 치지직怨듯넻 ?묐떟 遊됲닾(Shared) 洹쒓꺽??留욎떠 ?먮윭 諛섑솚
         var errorResponse = new ChzzkApiResponse<string>
         {
             Code = statusCode,

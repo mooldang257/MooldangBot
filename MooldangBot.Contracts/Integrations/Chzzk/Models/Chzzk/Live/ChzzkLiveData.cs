@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪??以묎퀎]: ?꾩옱 吏꾪뻾 以묒씤 ?쇱씠釉?諛⑹넚 ?뺣낫?낅땲??
+/// [오시리스??以묎퀎]: 현재 吏꾪뻾 以묒씤 ?쇱씠釉?諛⑹넚 ?뺣낫?낅땲??
 /// </summary>
 public class ChzzkLiveData
 {

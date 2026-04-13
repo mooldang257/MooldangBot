@@ -3,7 +3,7 @@
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???몄옣]: 梨꾨꼸 援щ룆???뺣낫 ?곗씠?곗엯?덈떎.
+/// [오시리스???몄옣]: 梨꾨꼸 援щ룆???뺣낫 ?곗씠?곗엯?덈떎.
 /// </summary>
 public class ChzzkSubscriberData
 {

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
 
-// [?ㅼ떆由ъ뒪???곸?]: 梨꾨꼸 ?꾨줈??諛??뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스???곸?]: 梨꾨꼸 ?꾨줈??諛??뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class ChannelProfile
 {
     [JsonPropertyName("channelId")]
@@ -22,7 +22,7 @@ public class ChannelProfile
     public bool VerifiedMark { get; set; }
 }
 
-// [?ㅼ떆由ъ뒪??蹂댁쥖]: 梨꾨꼸 愿由ъ옄 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스??蹂댁쥖]: 梨꾨꼸 愿由ъ옄 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class ChannelManager
 {
     [JsonPropertyName("managerChannelId")]
@@ -38,7 +38,7 @@ public class ChannelManager
     public DateTime CreatedDate { get; set; }
 }
 
-// [?ㅼ떆由ъ뒪??異붿쥌]: 梨꾨꼸 ?붾줈???뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스??異붿쥌]: 梨꾨꼸 ?붾줈???뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class ChannelFollower
 {
     [JsonPropertyName("channelId")]
@@ -51,7 +51,7 @@ public class ChannelFollower
     public DateTime CreatedDate { get; set; }
 }
 
-// [?ㅼ떆由ъ뒪??議곌났]: 梨꾨꼸 援щ룆??諛??곗뼱 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스??議곌났]: 梨꾨꼸 援щ룆??諛??곗뼱 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
 public class ChannelSubscriber
 {
     [JsonPropertyName("channelId")]

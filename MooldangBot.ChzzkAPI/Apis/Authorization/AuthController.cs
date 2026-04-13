@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Authorization;
 namespace MooldangBot.ChzzkAPI.Apis.Authorization;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???쒖빟]: 移섏?吏?OAuth2 ?몄쬆 諛??좏겙 愿由щ? ?대떦?섎뒗 而⑦듃濡ㅻ윭?낅땲??
+/// [오시리스의 관문 - 인증]: 치지직 OAuth2 인증 요청 및 토큰 관리를 처리합니다.
 /// </summary>
 [ApiController]
 [Route("apis/chzzk/auth")]
@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ExchangeToken([FromQuery] string code, [FromQuery] string state = "mooldang")
     {
         var token = await _apiClient.GetTokenAsync(code, state);
-        if (token == null) return BadRequest("?좏겙 諛쒓툒???ㅽ뙣?섏??듬땲??");
+        if (token == null) return BadRequest("?좏겙 諛쒓툒??실패하입니다");
 
         return Ok(token);
     }
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RefreshToken([FromQuery] string refreshToken)
     {
         var token = await _apiClient.RefreshTokenAsync(refreshToken);
-        if (token == null) return BadRequest("?좏겙 媛깆떊???ㅽ뙣?섏??듬땲??");
+        if (token == null) return BadRequest("?좏겙 媛깆떊??실패하입니다");
 
         return Ok(token);
     }

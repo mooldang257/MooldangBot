@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Categories;
 namespace MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???ㅼ젙]: 諛⑹넚 ?ㅼ젙 ?뺣낫 紐⑤뜽?낅땲??
+/// [오시리스??설정]: 諛⑹넚 설정 ?뺣낫 紐⑤뜽?낅땲??
 /// </summary>
 public class ChzzkLiveSetting
 {
