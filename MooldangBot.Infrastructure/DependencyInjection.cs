@@ -271,22 +271,26 @@ namespace MooldangBot.Infrastructure
 
                     // 🛡️ [오시리스의 수리] 3. Chzzk 전용 RPC 엔드포인트 설정
                     // 7개의 분리된 컨슈머를 하나의 'chzzk-commands-rpc' 큐로 통합하여 다형성 요청(Base -> Sub)이 정상 작동하도록 합니다.
-                    cfg.ReceiveEndpoint("chzzk-commands-rpc", e => 
-                    {
-                        // 전달된 어셈블리 내 모든 Consumer 중 ChzzkCommandBase 관련 소비자들만 필터링하여 이 큐에 할당
-                        foreach (var assembly in consumerAssemblies)
-                        {
-                            var chzzkConsumers = assembly.GetTypes()
-                                .Where(t => t.IsClass && !t.IsAbstract && t.GetInterfaces()
-                                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConsumer<>) 
-                                              && typeof(MooldangBot.Contracts.Integrations.Chzzk.Models.Commands.ChzzkCommandBase).IsAssignableFrom(i.GetGenericArguments()[0])));
+                    // [시니어 팁]: 해당 Consumer들이 존재할 때만(즉, ChzzkAPI 프로젝트일 때만) 전용 큐를 생성하여 메시지 가로채기(Competition)를 방지합니다.
+                    var chzzkCommandConsumers = consumerAssemblies
+                        .SelectMany(assembly => assembly.GetTypes())
+                        .Where(t => t.IsClass && !t.IsAbstract)
+                        .Where(t => t.GetInterfaces().Any(i => 
+                            i.IsGenericType && 
+                            i.GetGenericTypeDefinition() == typeof(IConsumer<>) && 
+                            typeof(MooldangBot.Contracts.Integrations.Chzzk.Models.Commands.ChzzkCommandBase).IsAssignableFrom(i.GetGenericArguments()[0])))
+                        .ToList();
 
-                            foreach (var consumerType in chzzkConsumers)
+                    if (chzzkCommandConsumers.Any())
+                    {
+                        cfg.ReceiveEndpoint("chzzk-commands-rpc", e => 
+                        {
+                            foreach (var consumerType in chzzkCommandConsumers)
                             {
                                 e.ConfigureConsumer(context, consumerType);
                             }
-                        }
-                    });
+                        });
+                    }
 
                     // 4. 엔드포인트 자동 구성 (이미 수동 구성된 컨슈머는 건너뜁니다)
                     cfg.ConfigureEndpoints(context);
