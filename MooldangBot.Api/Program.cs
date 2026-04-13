@@ -2,6 +2,8 @@ using MooldangBot.Infrastructure;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Contracts.Extensions;
 using MooldangBot.Application.Models.Chzzk;
+using System.Reflection;
+using System.IO;
 using MooldangBot.Application;
 using MooldangBot.Api.Middleware;
 using MooldangBot.Presentation;
@@ -113,10 +115,31 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IUserSession, UserSession>();
 
+    // 📡 [지능형 광대역 소나]: MooldangBot 관련 모든 어셈블리를 감지하여 MediatR 핸들러를 자동 등록합니다. (사각지대 방지 로직 포함)
+    var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+    var executionPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    if (executionPath != null)
+    {
+        foreach (var dll in Directory.GetFiles(executionPath, "MooldangBot.*.dll"))
+        {
+            try
+            {
+                var assemblyName = AssemblyName.GetAssemblyName(dll);
+                if (loadedAssemblies.All(a => a.FullName != assemblyName.FullName))
+                {
+                    loadedAssemblies.Add(Assembly.Load(assemblyName));
+                }
+            }
+            catch { /* Ignore load errors */ }
+        }
+    }
+
+    var finalAssemblies = loadedAssemblies
+        .Where(a => a.FullName != null && a.FullName.StartsWith("MooldangBot"))
+        .ToArray();
+
     builder.Services.AddMediatR(cfg => {
-        cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
-        cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Application.DependencyInjection).Assembly);
-        cfg.RegisterServicesFromAssembly(typeof(MooldangBot.Modules.SongBookModule.SongBookModuleExtensions).Assembly);
+        cfg.RegisterServicesFromAssemblies(finalAssemblies);
     });
     builder.Services.AddSingleton<SongQueueState>();
     builder.Services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
