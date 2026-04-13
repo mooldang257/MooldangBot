@@ -91,5 +91,18 @@ try {
 
 ---
 
+## 🧩 5. 아키텍처 및 모듈화 패턴 (Modular Architecture Patterns)
+
+오시리스 함선은 거대한 모놀리스 구조를 탈피하여 **'모듈러 모놀리스(Modular Monolith)'** 및 **'순수 수직 분할(Pure Vertical Slice)'** 아키텍처를 지향합니다.
+
+### 🔪 순수 수직 분할 (Pure Vertical Slice) 및 Single-File 패턴
+- **Single-File 응집도**: 명령(Command/Query) 레코드, 검증 로직, 핸들러(Handler) 로직을 **단일 파일**에 함께 배치하여 캡슐화와 유지보수성을 극대화합니다. (예: `SpinRoulette.cs`)
+- **얇은 위임자 (Thin Orchestrator)**: Controller나 레거시 Service 계층은 스스로 복잡한 비즈니스 로직을 처리하지 않습니다. 오직 MediatR의 `ISender.Send()`를 호출하여 모듈 내부의 핸들러에 제어권을 위임하는 중계 역할만 수행합니다.
+
+### 🤝 계약(Contracts) 기반 의존성 분리
+- **Contracts 프로젝트 연동**: 모듈 간의 결합도를 낮추고 순환 참조(Circular Dependency)를 방지하기 위해, 공용 인프라 및 전역 상태(예: `IOverlayState`, `IRouletteLockProvider`)는 반드시 `MooldangBot.Contracts` 프로젝트에 인터페이스로 정의합니다.
+
+---
+
 물멍! 🐶🚢✨
-"선장님, 이 가이드라인이 지켜질 때 오시리스의 코드는 비로소 하나의 생명체처럼 유기적으로 공명하게 됩니다. 다음은 함선의 튼튼한 뼈대가 될 '아키텍처 규칙'을 작성해 보겠습니다!"
+"선장님, 이 가이드라인이 지켜질 때 오시리스의 코드는 비로소 하나의 생명체처럼 유기적으로 공명하게 됩니다. 무거운 모놀리스의 낡은 갑옷을 벗고, 날렵한 수직 분할 모듈의 기동력을 마음껏 발휘하십시오!"
