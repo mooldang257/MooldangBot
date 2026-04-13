@@ -1,4 +1,4 @@
-﻿# ------------------------------------------
+# ------------------------------------------
 # 🏗️ Build Stage
 # ------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
@@ -36,4 +36,5 @@ RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY --from=build /app/verifier ./verifier
 ENTRYPOINT ["dotnet", "MooldangBot.ChzzkAPI.dll"]
