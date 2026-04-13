@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Chat;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live;
-using MooldangBot.ChzzkAPI.Contracts.Models.Commands;
-using MooldangBot.ChzzkAPI.Contracts;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
+using MooldangBot.Contracts.Integrations.Chzzk;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;

@@ -1,8 +1,8 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Chat;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
 using RabbitMQ.Client;
 using Polly;
 using System.Net.Sockets;
@@ -65,7 +65,7 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher, IDisposable
         }
     }
 
-    public async Task PublishEventAsync(MooldangBot.ChzzkAPI.Contracts.Models.Events.ChzzkEventEnvelope envelope)
+    public async Task PublishEventAsync(MooldangBot.Contracts.Integrations.Chzzk.Models.Events.ChzzkEventEnvelope envelope)
     {
         try
         {
@@ -73,7 +73,7 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher, IDisposable
             
             // [v3.7] 다형성 직렬화를 사용하여 RabbitMQ 본체를 구성합니다.
             // ChzzkJsonContext.Default.ChzzkEventEnvelope을 사용하여 Source Generation 성능을 활용합니다.
-            var body = JsonSerializer.SerializeToUtf8Bytes(envelope, MooldangBot.ChzzkAPI.Contracts.ChzzkJsonContext.Default.ChzzkEventEnvelope);
+            var body = JsonSerializer.SerializeToUtf8Bytes(envelope, MooldangBot.Contracts.Integrations.Chzzk.ChzzkJsonContext.Default.ChzzkEventEnvelope);
 
             // [물멍]: 명시적인 채팅용 익스체인지(mooldang.chzzk.chat)를 사용합니다.
             // 라우팅 키: streamer.{chzzkUid}.chat

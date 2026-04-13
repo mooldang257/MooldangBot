@@ -1,4 +1,4 @@
-using MooldangBot.Application.Interfaces;
+﻿using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -12,7 +12,7 @@ using MooldangBot.Application.Features.Commands.General;
 using MooldangBot.Application.Common.Security;
 using MooldangBot.Application.Common.Metrics;
 using MooldangBot.Application.Events; // v3.7 신규 이벤트
-using MooldangBot.ChzzkAPI.Contracts.Models.Events; // v3.7 다형성 모델
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events; // v3.7 다형성 모델
 
 namespace MooldangBot.Application.Features.Commands.Handlers;
 

@@ -1,12 +1,12 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Events;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Models.Chat;
 

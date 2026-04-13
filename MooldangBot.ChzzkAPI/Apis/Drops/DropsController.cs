@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Drops;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 
 namespace MooldangBot.ChzzkAPI.Apis.Drops;
 

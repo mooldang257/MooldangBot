@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 
 namespace MooldangBot.Application.Interfaces;
 

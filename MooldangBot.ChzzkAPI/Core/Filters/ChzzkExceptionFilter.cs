@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.ChzzkAPI.Core.Filters;
 

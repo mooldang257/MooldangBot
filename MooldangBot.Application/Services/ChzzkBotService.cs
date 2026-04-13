@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using MooldangBot.Application.Models.Chzzk;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 
-using MooldangBot.ChzzkAPI.Contracts.Models.Commands;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
 
 namespace MooldangBot.Application.Services;
 

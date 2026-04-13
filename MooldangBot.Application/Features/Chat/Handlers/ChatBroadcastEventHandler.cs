@@ -1,7 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Events;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;

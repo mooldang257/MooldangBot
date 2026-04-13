@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Channels;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Shared;
-using MooldangBot.ChzzkAPI.Contracts.Models.Internal;
+﻿using Microsoft.AspNetCore.Mvc;
+using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Internal;
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
 

@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Internal;
+﻿using Microsoft.AspNetCore.Mvc;
+using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Internal;
 
 namespace MooldangBot.ChzzkAPI.Apis.Internal;
 
@@ -54,7 +54,7 @@ public class InternalTokenController : ControllerBase
             return StatusCode(500, "API Credentials missing in Gateway");
         }
 
-        var tokenRequest = new MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Authorization.TokenRequest
+        var tokenRequest = new MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Authorization.TokenRequest
         {
             ClientId = clientId,
             ClientSecret = clientSecret,

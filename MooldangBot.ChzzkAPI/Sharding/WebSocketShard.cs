@@ -1,14 +1,14 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
-using MooldangBot.ChzzkAPI.Contracts.Models.Enums;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Session;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Enums;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Session;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 

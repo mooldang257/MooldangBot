@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MediatR;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Events;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 
 namespace MooldangBot.Application.Features.ChatPoints.Handlers;
 

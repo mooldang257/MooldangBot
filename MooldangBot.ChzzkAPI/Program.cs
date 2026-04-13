@@ -1,6 +1,6 @@
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using MooldangBot.ChzzkAPI.Apis.Internal;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
 using MooldangBot.ChzzkAPI.Clients;
 using MooldangBot.ChzzkAPI.Messaging;
@@ -10,7 +10,7 @@ using MooldangBot.ChzzkAPI.Services;
 using RabbitMQ.Client;
 using Serilog;
 using System.Text.Json.Serialization;
-using MooldangBot.ChzzkAPI.Contracts;
+using MooldangBot.Contracts.Integrations.Chzzk;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using MooldangBot.ChzzkAPI.Extensions;
@@ -38,18 +38,18 @@ builder.Services.AddHttpClient<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>(clie
 
 // 🤖 게이트웨이 핵심 서비스 등록 (Shards, TokenStore, CommandConsumer)
 builder.Services.AddSingleton<IChzzkGatewayTokenStore, MooldangBot.ChzzkAPI.Services.HybridChzzkTokenStore>();
-builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkMessagePublisher, MooldangBot.ChzzkAPI.Messaging.RabbitMqChzzkMessagePublisher>();
+builder.Services.AddSingleton<MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkMessagePublisher, MooldangBot.ChzzkAPI.Messaging.RabbitMqChzzkMessagePublisher>();
 
 // [v2.4.6] 시니어 가이드: 단일 싱글톤 인스턴스를 여러 인터페이스에 매핑
 builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>();
 
-builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Contracts.Interfaces.IShardedWebSocketManager>(sp => 
+builder.Services.AddSingleton<MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IShardedWebSocketManager>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
 
 builder.Services.AddSingleton<MooldangBot.Application.Interfaces.IChzzkChatClient>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
 
-builder.Services.AddTransient<MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkApiClient>(sp => 
+builder.Services.AddTransient<MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkApiClient>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
 builder.Services.AddTransient<MooldangBot.Application.Interfaces.IChzzkApiClient>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());

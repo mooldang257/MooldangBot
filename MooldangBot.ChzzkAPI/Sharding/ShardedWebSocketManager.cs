@@ -1,10 +1,10 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 
@@ -17,8 +17,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
     private readonly ILogger<ShardedWebSocketManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkApiClient _apiClient;
-    private readonly MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkGatewayTokenStore _tokenStore;
+    private readonly MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkApiClient _apiClient;
+    private readonly MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkGatewayTokenStore _tokenStore;
     private readonly IConfiguration _configuration;
     private readonly ConcurrentDictionary<int, IWebSocketShard> _shards = new();
     private int _shardCount;
@@ -27,8 +27,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
     public ShardedWebSocketManager(
         ILoggerFactory loggerFactory,
         IServiceScopeFactory scopeFactory,
-        MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkApiClient apiClient,
-        MooldangBot.ChzzkAPI.Contracts.Interfaces.IChzzkGatewayTokenStore tokenStore,
+        MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkApiClient apiClient,
+        MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkGatewayTokenStore tokenStore,
         IConfiguration configuration)
     {
         _loggerFactory = loggerFactory;
@@ -165,7 +165,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
         var token = await _tokenStore.GetTokenAsync(chzzkUid);
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
-        return await _apiClient.SetChatNoticeAsync(chzzkUid, new Contracts.Models.Chzzk.Chat.SetChatNoticeRequest { Message = message }, token.AuthCookie);
+        return await _apiClient.SetChatNoticeAsync(chzzkUid, new MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat.SetChatNoticeRequest { Message = message }, token.AuthCookie);
     }
 
     public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
@@ -174,7 +174,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
         // [v3.1.7] 공식 명세에 따른 DefaultLiveTitle 필드를 사용하여 방제 변경을 수행합니다.
-        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live.UpdateLiveSettingRequest { DefaultLiveTitle = newTitle }, token.AuthCookie);
+        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { DefaultLiveTitle = newTitle }, token.AuthCookie);
     }
 
     public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
@@ -183,7 +183,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.App
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
         // [v2.7.2] 카테고리가 텍스트가 아닌 ID 규격임을 확인하여 업데이트합니다.
-        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live.UpdateLiveSettingRequest { CategoryId = category }, token.AuthCookie);
+        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { CategoryId = category }, token.AuthCookie);
     }
 
     public async Task<bool> InjectEventAsync(string chzzkUid, string eventName, string rawJson)

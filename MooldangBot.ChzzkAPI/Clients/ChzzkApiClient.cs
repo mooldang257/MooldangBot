@@ -1,21 +1,21 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Shared;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Authorization;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Users;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Categories;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Channels;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Live;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Chat;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Session;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Restrictions;
-using MooldangBot.ChzzkAPI.Contracts.Models.Chzzk.Drops;
+using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Authorization;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Users;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Categories;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Channels;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Live;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Chat;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Restrictions;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Chzzk.Drops;
 
 namespace MooldangBot.ChzzkAPI.Clients;
 

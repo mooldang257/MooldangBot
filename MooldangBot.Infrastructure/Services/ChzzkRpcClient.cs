@@ -1,10 +1,10 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Models.Commands;
+using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Commands;
 using MooldangBot.Infrastructure.Messaging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;

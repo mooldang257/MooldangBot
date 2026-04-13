@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
-using MooldangBot.ChzzkAPI.Contracts.Interfaces;
+﻿using System.Collections.Concurrent;
+using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 
 namespace MooldangBot.ChzzkAPI.Services;
 

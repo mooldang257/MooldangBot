@@ -1,5 +1,5 @@
-using MooldangBot.ChzzkAPI.Contracts;
-using MooldangBot.ChzzkAPI.Contracts.Models.Events;
+﻿using MooldangBot.Contracts.Integrations.Chzzk;
+using MooldangBot.Contracts.Integrations.Chzzk.Models.Events;
 using System.Text.Json;
 using MooldangBot.Application.Interfaces;
 using MooldangBot.Application.Models.Chat;
