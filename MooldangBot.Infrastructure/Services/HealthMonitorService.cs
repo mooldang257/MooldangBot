@@ -2,20 +2,20 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Interfaces;
-using MooldangBot.Infrastructure.Messaging;
 using MooldangBot.Infrastructure.Persistence;
 using StackExchange.Redis;
+using MassTransit;
 
 namespace MooldangBot.Infrastructure.Services;
 
 /// <summary>
 /// [심연의 눈 실구현체]: DB, Redis, RabbitMQ 그리고 내부 워커의 상태를 종합 점검합니다.
-/// [v13.0] 싱글톤으로 전환되어 모든 워커에서 즉시 접근 가능합니다.
+/// [v4.0] RabbitMQ 연결 확인은 MassTransit 버스 컨트롤 상태를 통해 수행됩니다.
 /// </summary>
 public class HealthMonitorService(
     IServiceScopeFactory scopeFactory,
     IConnectionMultiplexer redis,
-    RabbitMQPersistentConnection rabbitConn,
+    IBusControl busControl, // 🔥 MassTransit 버스 컨트롤 주입
     IPulseService pulseService,
     ILogger<HealthMonitorService> logger) : IHealthMonitorService
 {
@@ -39,7 +39,10 @@ public class HealthMonitorService(
 
         // 2. [Redis/Messaging 점검]
         report.Redis = redis.IsConnected;
-        report.RabbitMQ = rabbitConn.IsConnected;
+        
+        // [오시리스의 전령]: MassTransit 건강 상태 확인
+        var busHealth = busControl.CheckHealth();
+        report.RabbitMQ = busHealth.Status == BusHealthStatus.Healthy;
 
         // 3. [함대 전체 맥박 수집]: Redis Hash에서 모든 인스턴스의 정보 취합
         try

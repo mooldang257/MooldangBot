@@ -65,21 +65,8 @@ namespace MooldangBot.Application
             return services;
         }
 
-        /// <summary>
-        /// [v2.0] 봇 전용 서비스: ChzzkAPI(Bot 호스트)에서만 호출되어야 하는 백그라운드 워커들입니다.
-        /// </summary>
-        /// <summary>
-        /// [Egyptian Bridge]: 10k RPS 고부하 환경을 견디기 위한 차세대 이벤트 채널 및 처리기 등록
-        /// </summary>
-        public static IServiceCollection AddEgyptianBridge(this IServiceCollection services)
-        {
-            services.AddSingleton<IChatEventChannel, ChatEventChannel>();
-            
-            // [Egyptian Bridge]: 수집된 패킷을 Scoped 환경으로 전달하는 처리 전용 워커
-            services.AddHostedService<ChzzkEventProcessingWorker>();
-            
-            return services;
-        }
+        // [DEPRECATED]: Egyptian Bridge (ChatEventChannel + ConsumerWorker) is no longer needed.
+        // MassTransit provides better decoupling and performance.
 
         public static IServiceCollection AddBotEngineServices(this IServiceCollection services)
         {
@@ -93,8 +80,7 @@ namespace MooldangBot.Application
             services.AddHostedService<TokenRenewalBackgroundService>();
             services.AddHostedService<SystemWatchdogService>();
             
-            // [v2.0] 이집트 브릿지 인프라 통합 가동
-            services.AddEgyptianBridge();
+            // [v2.0] 이집트 브릿지는 MassTransit으로 대체되었습니다.
             
             services.AddHostedService<LogBulkBufferWorker>();
             services.AddHostedService<PointBatchWorker>();

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using MassTransit;
 
 namespace MooldangBot.Api.Health;
 
@@ -17,7 +18,7 @@ namespace MooldangBot.Api.Health;
 public class BotHealthCheck(
     IChzzkChatClient chatClient, 
     IConnectionMultiplexer redis,
-    IRabbitMqService rabbitMq,
+    IBusControl busControl, // 🔥 MassTransit 버스 컨트롤 주입
     IServiceScopeFactory scopeFactory) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -27,7 +28,10 @@ public class BotHealthCheck(
         var unhealthyShards = shardStatuses.Count(s => !s.IsHealthy);
         
         var isRedisConnected = redis.IsConnected;
-        var isRabbitMqConnected = await rabbitMq.CheckConnectionAsync();
+        
+        // [오시리스의 전령]: MassTransit 버스 건강 상태 확인
+        var busHealth = busControl.CheckHealth();
+        var isRabbitMqConnected = busHealth.Status == BusHealthStatus.Healthy;
         
         // 🛡️ [오시리스의 방패]: Scoped DbContext를 안전하게 조회하기 위해 직접 Scope를 생성합니다.
         bool isDbConnected;

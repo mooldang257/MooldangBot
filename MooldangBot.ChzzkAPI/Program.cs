@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models;
 using MooldangBot.ChzzkAPI.Apis.Internal;
 using MooldangBot.Contracts.Integrations.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
@@ -24,6 +24,10 @@ builder.Configuration.AddCustomDotEnv(args);
 
 // 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 전용)
+builder.Services.AddMessagingInfrastructure(builder.Configuration);
+
 builder.Services.AddHealthChecks();
 
 // [v2.4.5] 치지직 전문가(Implementation) 수동 등록 (인프라의 프록시 설정을 덮어씁니다)
@@ -38,6 +42,7 @@ builder.Services.AddHttpClient<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>(clie
 
 // 🤖 게이트웨이 핵심 서비스 등록 (Shards, TokenStore, CommandConsumer)
 builder.Services.AddSingleton<IChzzkGatewayTokenStore, MooldangBot.ChzzkAPI.Services.HybridChzzkTokenStore>();
+// [Migration]: RabbitMqChzzkMessagePublisher는 이제 내부적으로 IPublishEndpoint를 사용하도록 리팩토링됩니다.
 builder.Services.AddSingleton<MooldangBot.Contracts.Integrations.Chzzk.Interfaces.IChzzkMessagePublisher, MooldangBot.ChzzkAPI.Messaging.RabbitMqChzzkMessagePublisher>();
 
 // [v2.4.6] 시니어 가이드: 단일 싱글톤 인스턴스를 여러 인터페이스에 매핑

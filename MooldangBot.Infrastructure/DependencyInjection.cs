@@ -8,7 +8,7 @@ using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.ApiClients;
 using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.Infrastructure.Messaging;
+// [Migration]: Legacy Messaging namespace removed in favor of MassTransit
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Infrastructure.Services;
@@ -22,6 +22,8 @@ using MooldangBot.Infrastructure.Services.Background;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MooldangBot.Infrastructure.Security;
+using MassTransit;
+using System.Reflection;
 
 namespace MooldangBot.Infrastructure
 {
@@ -159,29 +161,9 @@ namespace MooldangBot.Infrastructure
             // [v4.4.0] Dynamic Variable Resolver 등록
             services.AddScoped<IDynamicVariableResolver, MooldangBot.Infrastructure.Services.Engines.DynamicVariableResolver>();
 
-            // [v1.9.9] 전문 로그 모니터링을 위한 RabbitMQ 인프라 구성
-            services.AddSingleton<IConnectionFactory>(sp => 
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                var host = configuration["RABBITMQ_HOST"]!;
-                var port = int.TryParse(configuration["RABBITMQ_PORT"], out var p) ? p : 5672;
-                var user = configuration["RABBITMQ_USER"]!;
-                var pass = configuration["RABBITMQ_PASS"]!;
+            services.AddMessagingInfrastructure(configuration);
 
-                return new ConnectionFactory
-                {
-                    HostName = host,
-                    Port = port,
-                    UserName = user,
-                    Password = pass,
-                    AutomaticRecoveryEnabled = true,
-                    NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
-                    RequestedHeartbeat = TimeSpan.FromSeconds(10)
-                };
-            });
-
-             services.AddSingleton<RabbitMQPersistentConnection>();
-            services.AddSingleton<IRabbitMqService, RabbitMqService>();
+            // [v4.0] RPC 클라이언트는 이제 MassTransit IRequestClient를 사용합니다.
             services.AddSingleton<IChzzkRpcClient, ChzzkRpcClient>();
 
             // [v16.0] 지휘관 선호도 전용 기억 장치 (Redis Preference)
@@ -212,7 +194,62 @@ namespace MooldangBot.Infrastructure
         /// </summary>
         public static IServiceCollection AddChzzkEventConsumer(this IServiceCollection services)
         {
-            services.AddHostedService<ChzzkEventRabbitMqConsumer>();
+            // [DEPRECATED]: MassTransit 도입으로 인해 ChzzkEventRabbitMqConsumer는 더 이상 필요하지 않습니다.
+            // 서비스 안정화 기간 동안 주석 처리 후 제거 예정입니다.
+            // services.AddHostedService<ChzzkEventRabbitMqConsumer>();
+            return services;
+        }
+
+        /// <summary>
+        /// [오시리스의 전령]: MassTransit 기반의 고가용성 메시징 인프라를 설정합니다.
+        /// </summary>
+        public static IServiceCollection AddMessagingInfrastructure(
+            this IServiceCollection services, 
+            IConfiguration config, 
+            params Assembly[] consumerAssemblies)
+        {
+            services.AddMassTransit(x =>
+            {
+                // 1. Consumer 자동 등록 (전달받은 어셈블리 기준)
+                if (consumerAssemblies.Length > 0)
+                {
+                    x.AddConsumers(consumerAssemblies);
+                }
+
+                // 2. RabbitMQ 트랜스포트 설정
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    // 환경 변수 연동
+                    var host = config["RABBITMQ_HOST"] ?? "localhost";
+                    var portStr = config["RABBITMQ_PORT"] ?? "5672";
+                    var port = ushort.TryParse(portStr, out var p) ? p : (ushort)5672;
+                    var virtualHost = config["RABBITMQ_VIRTUAL_HOST"] ?? "/";
+                    var username = config["RABBITMQ_USER"] ?? "guest";
+                    var password = config["RABBITMQ_PASS"] ?? "guest";
+
+                    cfg.Host(host, port, virtualHost, h => 
+                    {
+                        h.Username(username);
+                        h.Password(password);
+                    });
+
+                    // 🛡️ [오시리스의 방패 1] 글로벌 재시도 정책
+                    cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(1)));
+
+                    // 🛡️ [오시리스의 방패 2] 서킷 브레이커
+                    cfg.UseCircuitBreaker(cb =>
+                    {
+                        cb.TrackingPeriod = TimeSpan.FromMinutes(1);
+                        cb.ActiveThreshold = 10;
+                        cb.TripThreshold = 15;
+                        cb.ResetInterval = TimeSpan.FromMinutes(5);
+                    });
+
+                    // 3. 엔드포인트 자동 구성
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
+
             return services;
         }
     }

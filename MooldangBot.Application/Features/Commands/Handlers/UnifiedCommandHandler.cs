@@ -1,4 +1,4 @@
-﻿using MooldangBot.Application.Interfaces;
+using MooldangBot.Application.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -13,6 +13,8 @@ using MooldangBot.Application.Common.Security;
 using MooldangBot.Application.Common.Metrics;
 using MooldangBot.Application.Events; // v3.7 신규 이벤트
 using MooldangBot.Contracts.Integrations.Chzzk.Models.Events; // v3.7 다형성 모델
+using MooldangBot.Contracts.Events; // v4.0 신규 계약서 (CommandExecutionEvent 등)
+using MassTransit;
 
 namespace MooldangBot.Application.Features.Commands.Handlers;
 
@@ -25,7 +27,7 @@ public class UnifiedCommandHandler(
     IEnumerable<ICommandFeatureStrategy> strategies,
     IPointTransactionService pointService,
     IIdentityCacheService identityCache,
-    IRabbitMqService rabbitMq,
+    IPublishEndpoint publishEndpoint, // 🔥 IRabbitMqService 대신 MassTransit 발행 엔드포인트 사용
     IIdempotencyService idempotency,
     ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {
@@ -69,7 +71,8 @@ public class UnifiedCommandHandler(
         {
             if (!string.IsNullOrEmpty(keyword) && keyword.StartsWith("!"))
             {
-                await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                // ✅ MassTransit 기반 타입 발행
+                await publishEndpoint.Publish(new CommandExecutionEvent(
                     legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
                     false, "명령어를 찾을 수 없음", currentDonation, KstClock.Now));
             }
@@ -92,7 +95,7 @@ public class UnifiedCommandHandler(
                     try
                     {
                         await strategy.ExecuteAsync(legacyEvent, command, ct);
-                        await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                        await publishEndpoint.Publish(new CommandExecutionEvent(
                             legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
                             true, null, legacyEvent.DonationAmount, KstClock.Now));
                     }
@@ -100,7 +103,7 @@ public class UnifiedCommandHandler(
                     {
                         logger.LogError(ex, "❌ [UnifiedCommandHandler] 전략 실행 중 오류: {FeatureType}.", featureType);
                         await CompensateRequirementAsync(legacyEvent, command, currentDonation, ct);
-                        await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                        await publishEndpoint.Publish(new CommandExecutionEvent(
                             legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
                             false, $"서버 내부 오류: {ex.Message}", legacyEvent.DonationAmount, KstClock.Now));
                     }
@@ -108,7 +111,7 @@ public class UnifiedCommandHandler(
             }
             else
             {
-                await rabbitMq.PublishAsync(new CommandExecutionEvent(
+                await publishEndpoint.Publish(new CommandExecutionEvent(
                     legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
                     false, "권한 또는 재화 부족", legacyEvent.DonationAmount, KstClock.Now));
             }

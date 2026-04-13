@@ -80,6 +80,10 @@ try
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축
+    // Application 프로젝트의 Consumer들을 자동으로 스캔하여 등록합니다.
+    builder.Services.AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly);
+
     // [오시리스의 검사]: 런타임 DI 정합성 최종 확인 가드
     // 만약 인프라 서비스 등록 과정에서 누락되었다면 여기서 강제로 계통을 연결합니다.
     if (!builder.Services.Any(x => x.ServiceType == typeof(MooldangBot.Application.Interfaces.IChzzkChatClient)))
@@ -97,11 +101,8 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
     
-    // [v4.5.3] 고부하 대응을 위한 이집트 브릿지 인프라 사전 등록
-    builder.Services.AddEgyptianBridge();
-    
-    // [v3.7] 봇 엔진(Gateway)으로부터 RabbitMQ를 통해 전달되는 이벤트를 수신하는 소비자 워커 가동
-    builder.Services.AddChzzkEventConsumer(); 
+    // [v4.5.3] 10k TPS 고부하 대응을 위한 MassTransit 소비자 파이프라인이 가동되었습니다. (브릿지 레이어 제거)
+    // [v3.7] MassTransit Consumer가 이 역할을 대체하므로 레거시 수집기는 제거되었습니다.
     
     builder.Services.AddPresentationServices();
     builder.Services.AddHttpContextAccessor();
