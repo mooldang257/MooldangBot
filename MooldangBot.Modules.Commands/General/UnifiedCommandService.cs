@@ -75,7 +75,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         if (Enum.TryParse<CommandMatchType>(req.MatchType, true, out var matchType))
             entity.MatchType = matchType;
         else
-            entity.MatchType = CommandMatchType.Exact;
+            entity.MatchType = CommandMatchType.Prefix;
 
         entity.RequiresSpace = req.RequiresSpace;
         entity.FeatureType = masterFeature.Type;

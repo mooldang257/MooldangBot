@@ -260,7 +260,7 @@ namespace MooldangBot.Domain.DTOs
         bool IsActive,
         string RequiredRole,
         RouletteSaveDto? RouletteData = null,
-        string MatchType = "Exact",
+        string MatchType = "Prefix",
         bool RequiresSpace = true
     );
 

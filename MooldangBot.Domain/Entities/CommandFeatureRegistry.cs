@@ -45,7 +45,7 @@ public record CommandFeatureMetadata(
 public static class CommandFeatureRegistry
 {
     private static readonly ImmutableList<CommandFeatureMetadata> _features = ImmutableList.Create(
-        new CommandFeatureMetadata(CommandFeatureType.Reply, 1, "Reply", "텍스트 답변", 0, CommandRole.Viewer),
+        new CommandFeatureMetadata(CommandFeatureType.Reply, 1, "Reply", "명령어", 0, CommandRole.Viewer),
         new CommandFeatureMetadata(CommandFeatureType.Notice, 2, "Notice", "공지", 0, CommandRole.Manager),
         new CommandFeatureMetadata(CommandFeatureType.Title, 2, "Title", "방제", 0, CommandRole.Manager),
         new CommandFeatureMetadata(CommandFeatureType.Category, 2, "Category", "카테고리", 0, CommandRole.Manager),
