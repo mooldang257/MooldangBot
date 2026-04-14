@@ -275,10 +275,10 @@ public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRoule
             entity.HasIndex(p => p.Slug).IsUnique();
         });
  
-        // [v4.0] 수호자의 암호: 암호화 필드 설정 및 길이 확장
+        // [v4.0] 수호자의 암호: 암호화 필드 설정 및 길이 확장 (Nullable 지원)
         modelBuilder.Entity<StreamerProfile>(entity => {
-            entity.Property(e => e.ChzzkAccessToken).HasConversion(converter);
-            entity.Property(e => e.ChzzkRefreshToken).HasConversion(converter);
+            entity.Property(e => e.ChzzkAccessToken).HasConversion<string?>(converter);
+            entity.Property(e => e.ChzzkRefreshToken).HasConversion<string?>(converter);
         });
  
         // [v4.2] 글로벌 시청자 암호화 설정

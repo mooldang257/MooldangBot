@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MooldangBot.Infrastructure.Persistence.Converters;
@@ -6,18 +6,17 @@ namespace MooldangBot.Infrastructure.Persistence.Converters;
 /// <summary>
 /// [v4.0] 수호자의 장막: EF Core 수준에서 민감 데이터를 암호화/복호화하는 컨버터입니다.
 /// </summary>
-public class EncryptedValueConverter : ValueConverter<string, string>
+public class EncryptedValueConverter : ValueConverter<string?, string?>
 {
     private const string Prefix = "ENC:";
 
     public EncryptedValueConverter(IDataProtector protector) 
         : base(
-            // [최적화]: null 체크 후 암호화 연산 1회만 수행
-            v => v == null ? null! : $"{Prefix}{protector.Protect(v)}",
+            v => string.IsNullOrEmpty(v) ? v : $"{Prefix}{protector.Protect(v)}",
             v => Decrypt(v, protector))
     { }
 
-    private static string Decrypt(string value, IDataProtector protector)
+    private static string? Decrypt(string? value, IDataProtector protector)
     {
         if (string.IsNullOrEmpty(value)) return value;
 
