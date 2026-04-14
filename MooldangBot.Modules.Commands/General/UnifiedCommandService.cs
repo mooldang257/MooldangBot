@@ -65,13 +65,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             _db.UnifiedCommands.Add(entity);
         }
 
-        // 중복 키워드 및 이름 검사
-        int currentId = req.Id ?? 0;
-        bool isDuplicateKeyword = await _db.UnifiedCommands
-            .IgnoreQueryFilters()
-            .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.Keyword == req.Keyword && c.Id != currentId);
-
-        if (isDuplicateKeyword) throw new InvalidOperationException("이미 존재하는 명령어 키워드입니다.");
+        // [물멍]: 다중 타격(Multicasting) 전술을 위해 동일 키워드로 여러 명령 중복 등록을 허용합니다. (키워드 중복 검사 제거)
 
         // [물멍]: 다중 타격(Multicasting) 전술을 위해 메시지의 중복은 허용합니다. (중복 이름 검사 제거)
 

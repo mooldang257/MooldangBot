@@ -441,8 +441,8 @@ public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRoule
                   .HasConversion<string>()
                   .HasColumnName("feature_type");
 
-            // [Index] 복합 인덱스: (StreamerProfileId, Keyword) 유니크 조합
-            entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword }).IsUnique();
+            // [Index] 복합 인텍스: (StreamerProfileId, Keyword) - 다중 타격(Salvo) 지원을 위해 유니크 제약 해제
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword });
             entity.HasIndex(e => new { e.StreamerProfileId, e.TargetId });
 
             // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
