@@ -260,9 +260,29 @@ public class ChzzkApiClient : IChzzkApiClient
             return default;
         }
 
-        var envelopeInfo = ChzzkJsonContext.CreateEnvelopeInfo(typeInfo);
-        var envelope = await response.Content.ReadFromJsonAsync(envelopeInfo);
-        return envelope != null && envelope.IsSuccess ? envelope.Content : default;
+        // [오시리스의 유연함]: 봉투 구조(ChzzkApiResponse)와 평면 구조(Flat)를 모두 수용하도록 지휘관님의 지침에 따라 통합합니다.
+        var rawJson = await response.Content.ReadAsStringAsync();
+        
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            
+            // 공용 응답 봉투 규정(code, content 존재 여부) 확인
+            if (doc.RootElement.TryGetProperty("code", out _) && doc.RootElement.TryGetProperty("content", out _))
+            {
+                var envelopeInfo = ChzzkJsonContext.CreateEnvelopeInfo(typeInfo);
+                var envelope = JsonSerializer.Deserialize(rawJson, envelopeInfo);
+                return envelope != null && envelope.IsSuccess ? envelope.Content : default;
+            }
+
+            // 봉투가 없는 경우 (예: 토큰 API 등 표준 OAuth2 응답)
+            return JsonSerializer.Deserialize(rawJson, typeInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ [ChzzkAPI Serialization Error] 응답 파싱 중 예외 발생. JSON: {Raw}", rawJson);
+            return default;
+        }
     }
 
     #endregion

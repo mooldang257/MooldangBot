@@ -136,7 +136,18 @@ namespace MooldangBot.Infrastructure.ApiClients
             try
             {
                 _logger.LogDebug("[ゲートウェイ通信] GET: {Url}", url);
-                return await _gateway.GetFromJsonAsync<T>(url);
+                
+                // [오시리스의 지혜]: 소스 생성기 컨텍스트를 사용하여 안전하게 봉투를 엽니다.
+                var typeInfo = (System.Text.Json.Serialization.Metadata.JsonTypeInfo<ChzzkApiResponse<T>>)ChzzkJsonContext.Default.GetTypeInfo(typeof(ChzzkApiResponse<T>))!;
+                var response = await _gateway.GetFromJsonAsync(url, typeInfo);
+                
+                if (response == null || !response.IsSuccess)
+                {
+                    _logger.LogWarning("[ゲートウェイ通信 경고] GET 응답 실패 또는 비정상 코드: {Url}", url);
+                    return null;
+                }
+
+                return response.Content;
             }
             catch (Exception ex)
             {
@@ -151,12 +162,25 @@ namespace MooldangBot.Infrastructure.ApiClients
             {
                 _logger.LogDebug("[ゲートウェイ通信] POST: {Url}", url);
                 var response = await _gateway.PostAsJsonAsync(url, body);
+                
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<T>();
+                    // [오시리스의 지혜]: 소스 생성기 컨텍스트를 사용하여 안전하게 봉투를 엽니다.
+                    var typeInfo = (System.Text.Json.Serialization.Metadata.JsonTypeInfo<ChzzkApiResponse<T>>)ChzzkJsonContext.Default.GetTypeInfo(typeof(ChzzkApiResponse<T>))!;
+                    var result = await response.Content.ReadFromJsonAsync(typeInfo);
+                    
+                    if (result == null || !result.IsSuccess)
+                    {
+                        var errorMsg = result?.Message ?? "응답 봉투 파싱 실패 또는 Logic Error";
+                        _logger.LogWarning("[ゲートウェイ通信 경고] POST 로직 실패: {Error}", errorMsg);
+                        return null;
+                    }
+
+                    return result.Content;
                 }
+                
                 var error = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("[ゲートウェイ通信 경고] POST 실패 ({StatusCode}): {Error}", response.StatusCode, error);
+                _logger.LogWarning("[ゲートウェイ通信 경고] POST HTTP 실패 ({StatusCode}): {Error}", response.StatusCode, error);
                 return null;
             }
             catch (Exception ex)

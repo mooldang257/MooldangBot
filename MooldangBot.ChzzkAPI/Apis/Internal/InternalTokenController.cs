@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Chzzk;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Internal;
@@ -16,24 +16,18 @@ public class InternalTokenController : ControllerBase
     private readonly IShardedWebSocketManager _shardManager;
     private readonly IChzzkApiClient _apiClient;
     private readonly ILogger<InternalTokenController> _logger;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _config;
     private const string InternalSecretHeader = "X-Internal-Secret-Key";
 
     public InternalTokenController(
         IChzzkGatewayTokenStore tokenStore, 
         IShardedWebSocketManager shardManager,
         IChzzkApiClient apiClient,
-        ILogger<InternalTokenController> logger,
-        IHttpClientFactory httpClientFactory,
-        IConfiguration config)
+        ILogger<InternalTokenController> logger)
     {
         _tokenStore = tokenStore;
         _shardManager = shardManager;
         _apiClient = apiClient;
         _logger = logger;
-        _httpClientFactory = httpClientFactory;
-        _config = config;
     }
 
     /// <summary>
@@ -44,35 +38,23 @@ public class InternalTokenController : ControllerBase
     {
         if (!IsAuthorized()) return Unauthorized();
 
-        var client = _httpClientFactory.CreateClient();
-        var clientId = _config["ChzzkApi:ClientId"];
-        var clientSecret = _config["ChzzkApi:ClientSecret"];
+        _logger.LogInformation("📡 [Gateway] 통합 클라이언트를 통한 토큰 교환 시도... (State: {State})", request.State);
 
-        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+        // [오시리스의 통합]: 지휘관님의 지침에 따라 통합 클라이언트(_apiClient)로 호출을 일원화합니다.
+        // ChzzkApiClient 내부에서 이제 봉투 유무를 자동으로 판단하여 처리합니다.
+        var tokenResponse = await _apiClient.ExchangeTokenAsync(request.Code, state: request.State);
+
+        if (tokenResponse == null)
         {
-            _logger.LogError("⚠️ [Gateway] 치지직 API 클라이언트 정보가 누락되었습니다.");
-            return StatusCode(500, "API Credentials missing in Gateway");
+            _logger.LogError("❌ [Gateway] 통합 클라이언트를 통한 토큰 교환 실패");
+            return StatusCode(500, "Failed to exchange token via integrated client");
         }
 
-        var tokenRequest = new MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenRequest
+        return Ok(new ChzzkApiResponse<MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
         {
-            ClientId = clientId,
-            ClientSecret = clientSecret,
-            GrantType = "authorization_code",
-            Code = request.Code,
-            State = request.State
-        };
-
-        var response = await client.PostAsJsonAsync("https://openapi.chzzk.naver.com/auth/v1/token", tokenRequest, ChzzkJsonContext.Default.TokenRequest);
-        var content = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogError("❌ [Gateway] 네이버 토큰 교환 실패: Status: {Status}", response.StatusCode);
-            return StatusCode((int)response.StatusCode, content);
-        }
-
-        return Content(content, "application/json");
+            Code = 200,
+            Content = tokenResponse
+        });
     }
 
     [HttpPost("update-tokens")]
