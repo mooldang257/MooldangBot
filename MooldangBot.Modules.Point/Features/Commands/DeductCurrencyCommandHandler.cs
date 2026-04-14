@@ -8,18 +8,18 @@ using MooldangBot.Domain.Entities;
 namespace MooldangBot.Modules.Point.Features.Commands;
 
 /// <summary>
-/// [오시리스의 재판]: 통신사/포인트 통합 결제 핸들러입니다.
+/// [오시리스의 재판]: 명령어 실행 전용 통합 결제 핸들러입니다.
 /// </summary>
-public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyCommand, BillingResult>
+public class CommandBillingHandler : IRequestHandler<ProcessCommandBillingCommand, BillingResult>
 {
     private readonly ISender _mediator;
 
-    public DeductCurrencyCommandHandler(ISender mediator)
+    public CommandBillingHandler(ISender mediator)
     {
         _mediator = mediator;
     }
 
-    public async Task<BillingResult> Handle(DeductCurrencyCommand request, CancellationToken ct)
+    public async Task<BillingResult> Handle(ProcessCommandBillingCommand request, CancellationToken ct)
     {
         if (request.Cost <= 0) return new BillingResult(true);
 

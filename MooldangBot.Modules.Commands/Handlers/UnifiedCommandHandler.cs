@@ -76,7 +76,7 @@ public class UnifiedCommandHandler(
         var args = parser.Parse(msg, primary);
 
         // [3. Single Billing]: 통합 결제 (Primary 기준 1회 수행)
-        var billingResult = await mediator.Send(new DeductCurrencyCommand(
+        var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
             targetUid, legacyEvent.SenderId, primary.Cost, primary.CostType), ct);
 
         if (!billingResult.Success)

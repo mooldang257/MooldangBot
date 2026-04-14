@@ -7,7 +7,7 @@ namespace MooldangBot.Contracts.Commands.Requests;
 /// <summary>
 /// [오시리스의 재판]: 포인트 또는 후원 재화를 차감 요청하는 통합 명령입니다.
 /// </summary>
-public record DeductCurrencyCommand(
+public record ProcessCommandBillingCommand(
     string StreamerUid, 
     string ViewerUid, 
     int Cost, 
