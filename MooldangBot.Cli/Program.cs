@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -113,7 +113,7 @@ services.AddDbContext<AppDbContext>(options =>
 // 🔐 [보안 강화]: API 서버와 동일한 방식으로 데이터 보호 키 저장소 및 서비스 등록
 services.AddDataProtection()
     .SetApplicationName("MooldangBot")
-    .PersistKeysToDbContext<AppDbContext>();
+    .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
 var serviceProvider = services.BuildServiceProvider();
 var db = serviceProvider.GetRequiredService<AppDbContext>();
