@@ -29,6 +29,7 @@ public class ChzzkApiClient : IChzzkApiClient
     private readonly ILogger<ChzzkApiClient> _logger;
     private readonly string _clientId;
     private readonly string _clientSecret;
+    private readonly string? _redirectUri; // [오시리스의 항로]: 기본 리다이렉트 URL
 
     public ChzzkApiClient(HttpClient httpClient, IConfiguration configuration, ILogger<ChzzkApiClient> logger)
     {
@@ -38,6 +39,9 @@ public class ChzzkApiClient : IChzzkApiClient
         
         _clientId = configuration["ChzzkApi:ClientId"] ?? configuration["CHZZK_CLIENT_ID"] ?? string.Empty;
         _clientSecret = configuration["ChzzkApi:ClientSecret"] ?? configuration["CHZZK_CLIENT_SECRET"] ?? string.Empty;
+        
+        // [오시리스의 항로]: 전역 리다이렉트 URL 로드 (환경 변수 우선)
+        _redirectUri = configuration["CHZZK_REDIRECT_URI"] ?? configuration["ChzzkApi:RedirectUri"];
     }
 
     #region 1. Authorization
@@ -56,7 +60,7 @@ public class ChzzkApiClient : IChzzkApiClient
             ClientSecret = clientSecret ?? _clientSecret,
             Code = code,
             State = state ?? "",
-            RedirectUri = redirectUri,
+            RedirectUri = redirectUri ?? _redirectUri, // [오시리스의 폴백]: 주입된 값이 없으면 환경 변수 기본값 사용
             CodeVerifier = codeVerifier
         };
         return await PostRawAsync("auth/v1/token", request, ChzzkJsonContext.Default.TokenRequest, ChzzkJsonContext.Default.TokenResponse);

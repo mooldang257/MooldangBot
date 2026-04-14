@@ -52,9 +52,12 @@ public class AuthService(
         // 2. State 생성 (PKCE 제거)
         string state = Guid.NewGuid().ToString("N");
 
-        // 3. 인증 URL 구성 (전용 리다이렉트 URL이 있으면 우선 사용)
-        string redirectBase = _configuration["ChzzkApi:RedirectBaseUrl"] ?? BaseDomain;
-        string redirectUri = $"{redirectBase.TrimEnd('/')}/Auth/callback";
+        // 3. 인증 URL 구성 (전역 환경 변수 CHZZK_REDIRECT_URI 우선 사용)
+        string redirectUri = _configuration["CHZZK_REDIRECT_URI"] 
+                            ?? ( (!string.IsNullOrEmpty(_configuration["ChzzkApi:RedirectUri"])) 
+                                 ? $"{_configuration["ChzzkApi:RedirectUri"]?.TrimEnd('/')}/Auth/callback" 
+                                 : $"{BaseDomain.TrimEnd('/')}/Auth/callback" );
+        
         string encodedRedirect = System.Net.WebUtility.UrlEncode(redirectUri);
         
         // 치지직 표준 AUTH URL (PKCE 파라미터 제거)
@@ -69,8 +72,14 @@ public class AuthService(
     {
         try
         {
-            // 1. [오시리스 v10.1]: 통합 서비스를 통한 토큰 교환 (PKCE 제거 및 State 추가)
-            var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, state: cachedData.State);
+            // [오시리스 v10.5]: 전역 환경 변수에서 리다이렉트 URL 로드
+            string redirectUri = _configuration["CHZZK_REDIRECT_URI"] 
+                                ?? ( (!string.IsNullOrEmpty(_configuration["ChzzkApi:RedirectUri"])) 
+                                     ? $"{_configuration["ChzzkApi:RedirectUri"]?.TrimEnd('/')}/Auth/callback" 
+                                     : $"{BaseDomain.TrimEnd('/')}/Auth/callback" );
+
+            // 1. [오시리스 v10.5]: 통합 서비스를 통한 토큰 교환 (정규화된 RedirectUri 전달)
+            var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, state: cachedData.State, redirectUri: redirectUri);
             
             // [v2.6] 필수 토큰 유효성 검증 강화 (CS8604 대응)
             if (string.IsNullOrEmpty(tokenResult.AccessToken) || string.IsNullOrEmpty(tokenResult.RefreshToken))

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -13,6 +13,7 @@ using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
 using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 
 namespace MooldangBot.Application.Services.Auth;
 
@@ -22,24 +23,21 @@ namespace MooldangBot.Application.Services.Auth;
 public class TokenRenewalService : ITokenRenewalService
 {
     private readonly IAppDbContext _db;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _config;
+    private readonly IChzzkApiClient _chzzkApi; // [오시리스의 수리]: 통합 클라이언트로 교체
     private readonly IChzzkAccessCredentialStore _tokenStore;
     private readonly ILogger<TokenRenewalService> _logger;
     private readonly AsyncRetryPolicy<bool> _retryPolicy;
-    private static AsyncCircuitBreakerPolicy<bool>? _circuitBreaker; // [제너릭 전환]
-    private static readonly object _initLock = new(); // [v17.0] 초기화 경합 방지용 락 객체
+    private static AsyncCircuitBreakerPolicy<bool>? _circuitBreaker; 
+    private static readonly object _initLock = new(); 
 
     public TokenRenewalService(
         IAppDbContext db,
-        IHttpClientFactory httpClientFactory,
-        IConfiguration config,
+        IChzzkApiClient chzzkApi,
         IChzzkAccessCredentialStore tokenStore,
         ILogger<TokenRenewalService> logger)
     {
         _db = db;
-        _httpClientFactory = httpClientFactory;
-        _config = config;
+        _chzzkApi = chzzkApi;
         _tokenStore = tokenStore;
         _logger = logger;
 
@@ -70,9 +68,6 @@ public class TokenRenewalService : ITokenRenewalService
                     _logger.LogWarning($"[영겁의 열쇠] 갱신 실패. {timeSpan.TotalSeconds}초 후 {retryCount}회차 재시도합니다.");
                 });
     }
-
-    // 치지직 Open API 전역 토큰 엔드포인트
-    private const string TokenUrl = "https://openapi.chzzk.naver.com/auth/v1/token";
 
     public async Task<bool> RenewIfNeededAsync(string chzzkUid)
     {
@@ -105,7 +100,7 @@ public class TokenRenewalService : ITokenRenewalService
             return false;
         }
 
-        // 1. 스트리머 본인 토큰 갱신 (채팅 연결 핵심 - 실패 시 즉시 중단)
+        // 1. 스트리머 본인 토큰 갱신 (지휘관님의 지침에 따라 Gateway 위임)
         bool streamerSuccess = await RenewTokenInternalAsync(streamer, force: force);
         if (!streamerSuccess)
         {
@@ -121,95 +116,36 @@ public class TokenRenewalService : ITokenRenewalService
         var expiresAt = streamer.TokenExpiresAt;
         var refreshToken = streamer.ChzzkRefreshToken;
 
-        // [v13.1] 모든 비교를 KST 강제 (UTC+9)
         var kstNow = KstClock.Now;
         var isExpiringSoon = KstClock.IsExpiringSoon(expiresAt, TimeSpan.FromHours(1));
         if (!isExpiringSoon && !force) return true;
 
-        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} 스트리머 토큰 갱신 시도. (강제: {force}, 만료: {expiresAt})");
+        _logger.LogInformation($"[영겁의 열쇠] {streamer.ChzzkUid} 스트리머 토큰 갱신 시도 (Gateway 위임 방식).");
 
-        // [v6.2] 개별 앱 정보 필드 삭제에 따라 시스템 기본값만 사용
-        string clientId = _config["CHZZK_API:CLIENT_ID"] ?? _config["ChzzkApi:ClientId"] ?? "";
-        string clientSecret = _config["CHZZK_API:CLIENT_SECRET"] ?? _config["ChzzkApi:ClientSecret"] ?? "";
+        // [오시리스의 지혜]: 지휘관님의 지침에 따라 게이트웨이 통합 클라이언트에 갱신 전표를 위임합니다.
+        // 클라이언트 아이디, 시크릿 등 민감 정보는 이제 게이트웨이가 관리합니다.
+        var result = await _chzzkApi.RefreshTokenAsync(refreshToken!);
 
-        using var client = _httpClientFactory.CreateClient();
-        
-        // [v16.3.1] 치지직 API는 본문뿐만 아니라 HTTP 헤더에도 인증 정보를 강력하게 요구합니다.
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-        client.DefaultRequestHeaders.Add("Client-Id", clientId);
-        client.DefaultRequestHeaders.Add("Client-Secret", clientSecret);
-
-        var payload = new
+        if (result == null || string.IsNullOrEmpty(result.AccessToken))
         {
-            grantType = "refresh_token",
-            refreshToken = refreshToken,
-            clientId = clientId,
-            clientSecret = clientSecret
-        };
-
-        var response = await client.PostAsJsonAsync(TokenUrl, payload);
-        var errorDetail = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var statusCode = (int)response.StatusCode;
-
-            // 🔴 4xx 클라이언트 에러: 재시도 무의미 (헤더/값 오류)
-            if (statusCode is >= 400 and < 500)
-            {
-                // [v16.3.1] INVALID_TOKEN (401)은 리프레시 토큰이 영구적으로 죽었음을 의미합니다.
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && 
-                    errorDetail.Contains("INVALID_TOKEN"))
-                {
-                    _logger.LogCritical($"❌ [영겁의 열쇠] {streamer.ChzzkUid} 채널의 리프레시 토큰이 영구 무효화되었습니다.");
-                    throw new FatalTokenException("INVALID_TOKEN detected");
-                }
-
-                // [v17.2 / P1] 진단 로그 강화 (헤더 + 마스킹)
-                _logger.LogError(
-                    "[영겁의 열쇠] {ChzzkUid} 클라이언트 에러 (HTTP {StatusCode})\n" +
-                    "  Client-Id: {ClientId}\n" +
-                    "  RefreshToken: {TokenPrefix}...\n" +
-                    "  Response: {ErrorDetail}",
-                    streamer.ChzzkUid,
-                    statusCode,
-                    clientId.Length > 5 ? clientId[..5] + "***" : "EMPTY",
-                    refreshToken?.Length > 8 ? refreshToken[..8] + "***" : "EMPTY",
-                    errorDetail);
-                
-                return false;
-            }
-
-            // 🟡 5xx 서버 에러: 치지직 시스템 장애 등 일시적 현상
-            _logger.LogWarning(
-                "[영겁의 열쇠] {ChzzkUid} 서버 에러 (HTTP {StatusCode})\n" +
-                "  Polly 재시도 대상입니다.\n" +
-                "  Response: {ErrorDetail}",
-                streamer.ChzzkUid,
-                statusCode,
-                errorDetail);
+            _logger.LogError("❌ [영겁의 열쇠] {ChzzkUid} 게이트웨이를 통한 토큰 갱신 실패", streamer.ChzzkUid);
             return false;
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ChzzkTokenResponse>();
-        if (result == null || result.Content == null || string.IsNullOrEmpty(result.Content.AccessToken)) return false;
+        streamer.ChzzkAccessToken = result.AccessToken;
+        if (!string.IsNullOrEmpty(result.RefreshToken)) streamer.ChzzkRefreshToken = result.RefreshToken;
+        streamer.TokenExpiresAt = KstClock.Now.AddSeconds(result.ExpiresIn);
 
-        var content = result.Content;
-        streamer.ChzzkAccessToken = content.AccessToken;
-        if (!string.IsNullOrEmpty(content.RefreshToken)) streamer.ChzzkRefreshToken = content.RefreshToken;
-        streamer.TokenExpiresAt = KstClock.Now.AddSeconds(content.ExpiresIn);
-
-        // 🛡️ [v2.0] Redis 우선 갱신 (Write-Through/Behind 전략의 시작)
+        // 🛡️ [v2.0] Redis 우선 갱신
         await _tokenStore.SetTokenAsync(streamer.ChzzkUid, new ChzzkTokenInfo(
-            content.AccessToken,
+            result.AccessToken,
             streamer.ChzzkRefreshToken ?? "",
             streamer.TokenExpiresAt.Value,
             DateTime.UtcNow
         ));
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("✅ [영겁의 열쇠] {ChzzkUid} 토큰 갱신 및 동기화 완료 (Redis + DB)", streamer.ChzzkUid);
+        _logger.LogInformation("✅ [영겁의 열쇠] {ChzzkUid} 토큰 갱신 및 동기화 완료 (Gateway -> Redis + DB)", streamer.ChzzkUid);
         return true;
     }
 

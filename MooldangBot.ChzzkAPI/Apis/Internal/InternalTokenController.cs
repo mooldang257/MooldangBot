@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Chzzk;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Internal;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.ChzzkAPI.Apis.Internal;
 
@@ -42,12 +43,37 @@ public class InternalTokenController : ControllerBase
 
         // [오시리스의 통합]: 지휘관님의 지침에 따라 통합 클라이언트(_apiClient)로 호출을 일원화합니다.
         // ChzzkApiClient 내부에서 이제 봉투 유무를 자동으로 판단하여 처리합니다.
-        var tokenResponse = await _apiClient.ExchangeTokenAsync(request.Code, state: request.State);
+        var tokenResponse = await _apiClient.ExchangeTokenAsync(request.Code, state: request.State, redirectUri: request.RedirectUri);
 
         if (tokenResponse == null)
         {
             _logger.LogError("❌ [Gateway] 통합 클라이언트를 통한 토큰 교환 실패");
             return StatusCode(500, "Failed to exchange token via integrated client");
+        }
+
+        return Ok(new ChzzkApiResponse<MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
+        {
+            Code = 200,
+            Content = tokenResponse
+        });
+    }
+
+    /// <summary>
+    /// [오시리스의 대행]: 네이버 서버와 직접 통신하여 리프레시 토큰을 통해 새로운 토큰을 발급받습니다.
+    /// </summary>
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        if (!IsAuthorized()) return Unauthorized();
+
+        _logger.LogInformation("📡 [Gateway] 통합 클라이언트를 통한 토큰 갱신 시도...");
+
+        var tokenResponse = await _apiClient.RefreshTokenAsync(request.RefreshToken);
+
+        if (tokenResponse == null)
+        {
+            _logger.LogError("❌ [Gateway] 통합 클라이언트를 통한 토큰 갱신 실패");
+            return StatusCode(500, "Failed to refresh token via integrated client");
         }
 
         return Ok(new ChzzkApiResponse<MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
