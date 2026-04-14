@@ -15,6 +15,7 @@ public interface IPointDbContext
     DbSet<ViewerPoint> ViewerPoints { get; set; }
     DbSet<ViewerDonation> ViewerDonations { get; set; }
     DbSet<ViewerDonationHistory> ViewerDonationHistories { get; set; }
+    DbSet<PointTransactionHistory> PointTransactionHistories { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

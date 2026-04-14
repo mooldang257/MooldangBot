@@ -3,9 +3,11 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Modules.Point.Features.Commands.RefundCurrency;
 
@@ -34,36 +36,38 @@ public class RefundCurrencyCommandHandler(
     {
         try
         {
-            // [v7.0] Wallet Architecture: 포인트/치즈 환불 처리
-            // 포인트(Point)와 치즈(Cheese)는 관리 방식이 동일하므로 통합 처리합니다.
+            // 0. 기반 정보 조회 (오시리스의 탐색): Uid를 통해 실제 ProfileId와 GlobalViewerId를 확보합니다.
+            var streamerProfile = await dbContext.StreamerProfiles
+                .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
             
-            // 1. DB 로그 기록 (사후 증거 확보 - PointLog 대신 PointTransactionHistory 사용)
+            var globalViewer = await dbContext.GlobalViewers
+                .FirstOrDefaultAsync(v => v.Nickname == request.ViewerNickname, ct); // 닉네임 또는 UID 해시 기반 조회 필요
+
+            if (streamerProfile == null || globalViewer == null)
+            {
+                logger.LogWarning("⚠️ [자율 복구 실패] 대상 프로필 또는 시청자를 찾을 수 없습니다. (Viewer: {Viewer})", request.ViewerNickname);
+                return false;
+            }
+
+            // [v7.0] Wallet Architecture: 포인트/치즈 환불 처리
+            
+            // 1. DB 로그 기록 (천상의 장부 기입)
+            // PointTransactionHistory의 실제 규격(StreamerProfileId, GlobalViewerId, KstClock)을 준수합니다.
             var log = new PointTransactionHistory
             {
-                StreamerUid = request.StreamerUid,
-                ViewerUid = request.ViewerUid,
-                ViewerNickname = request.ViewerNickname,
-                Amount = request.Amount, // 환불이므로 양수(+)로 기록
-                Category = "Refund",
-                Description = $"[자율복구] {request.Reason} (ID: {request.CorrelationId})",
-                OccurredOn = DateTime.UtcNow
+                StreamerProfileId = streamerProfile.Id,
+                GlobalViewerId = globalViewer.Id,
+                Amount = request.Amount,
+                Type = PointTransactionType.Refund, // [v7.2] 전용 거래 타입 사용
+                Reason = $"[자율복구] {request.Reason} (ID: {request.CorrelationId})",
+                CreatedAt = KstClock.Now
             };
             
             dbContext.PointTransactionHistories.Add(log);
 
-            // 2. 캐시 메모리 복구 (즉각적인 전장 복구)
-            // 지휘관의 지침에 따라 캐시는 즉시 업데이트하여 사용자가 환불을 바로 체감하게 합니다.
-            // IPointCacheService 인터페이스 규격(AddPointAsync 단수형 등)을 엄격히 준수합니다.
-            if (request.CostType.Equals("Point", StringComparison.OrdinalIgnoreCase))
-            {
-                await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
-            }
-            else if (request.CostType.Equals("Cheese", StringComparison.OrdinalIgnoreCase))
-            {
-                // 치즈 환불 처리는 현재 캐시 서비스 규격에 따라 포인트로 통합하거나 전용 메서드 확인 필요
-                // (현재 인터페이스에 명시된 AddPointAsync를 활용하거나 실제 구현체 확인)
-                await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
-            }
+            // 2. 캐시 메모리 복구
+            // IPointCacheService 인터페이스 규격(AddPointAsync)을 사용합니다.
+            await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
 
             await dbContext.SaveChangesAsync(ct);
 
