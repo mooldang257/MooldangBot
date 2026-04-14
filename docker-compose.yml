@@ -129,7 +129,7 @@ services:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
       - ${UPLOAD_DATA_PATH}:/app/wwwroot/uploads
       - ${APP_DATA_PATH}:/app/data
-      - ${KEYS_DATA_PATH}:/root/.aspnet/DataProtection-Keys
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
 
   # [오시리스의 대시보드]: SvelteKit Studio
   studio:
@@ -181,7 +181,7 @@ services:
       - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;AllowUserVariables=True;
     volumes:
-      - ${KEYS_DATA_PATH}:/root/.aspnet/DataProtection-Keys
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
     depends_on:
       db:
         condition: service_healthy
