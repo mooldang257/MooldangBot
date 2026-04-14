@@ -22,6 +22,11 @@ public record CommandExecutedEvent(
 ) : IDomainEvent
 {
     /// <summary>
+    /// [v4.1] 이벤트 고유 식별자 (IEvent 규격 준수)
+    /// </summary>
+    public Guid EventId { get; init; } = Guid.NewGuid();
+
+    /// <summary>
     /// 이벤트 발생 시각 (순수 UTC)
     /// </summary>
     public DateTime OccurredOn { get; init; } = DateTime.UtcNow;

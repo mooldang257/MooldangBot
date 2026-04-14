@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.Roulette.Interfaces;
 using MediatR;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
@@ -94,13 +94,18 @@ public class SpinRouletteHandler(
                         .Select(g => new RouletteSpinSummaryDto(g.Key, g.Count(), g.First().IsMission, g.First().Color))
                         .ToList();
 
+                    // [v4.1] 지휘관 지시: 물리 애니메이션 시간 정밀 산출 (T-total)
+                    // T_total = T_start(1500) + (N * T_rotation(1000)) + T_deceleration(2000)
+                    int totalDurationMs = 1500 + (count * 1000) + 2000;
+
                     var response = new SpinRouletteResponse(
                         spinId,
                         roulette.Id,
                         roulette.Name,
                         viewerNickname,
                         results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
-                        summary
+                        summary,
+                        totalDurationMs
                     );
 
                     // 시작 및 결과 이벤트 발행 (비결합)
