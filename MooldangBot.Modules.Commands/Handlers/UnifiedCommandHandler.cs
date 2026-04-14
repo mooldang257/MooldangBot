@@ -26,7 +26,7 @@ public class UnifiedCommandHandler(
     ICommandCache cache,
     IChzzkBotService botService,
     IEnumerable<ICommandFeatureStrategy> strategies,
-    ISender mediator,
+    IMediator mediator,
     IIdentityCacheService identityCache,
     IPublishEndpoint publishEndpoint,
     IIdempotencyService idempotency,
@@ -75,7 +75,7 @@ public class UnifiedCommandHandler(
         var primary = matches.First();
         var args = parser.Parse(msg, primary);
 
-        // [3. Single Billing]: 통합 결제 (Primary 기준 1회 수행)
+        // [3. Single Billing]: 통합 결제 (지휘관 지침: 하이브리드 동기 방식 유지)
         var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
             targetUid, legacyEvent.SenderId, primary.Cost, primary.CostType), ct);
 
@@ -88,53 +88,21 @@ public class UnifiedCommandHandler(
             return;
         }
 
-        // [4. Multicast Dispatch]: 매칭된 모든 전략을 순차적으로 실행
-        var responses = new List<string>();
-        bool isPrimary = true;
+        // 📡 [4. Event Choreography Dispatch]: 직접 호출 대신 전사적 신경망으로 사건을 전파합니다.
+        // 모든 전략(Strategy) 실행과 부수 효과는 이제 각 모듈의 INotificationHandler에서 자율적으로 처리됩니다.
+        await mediator.Publish(new CommandExecutedEvent(
+            legacyEvent.CorrelationId,
+            targetUid,
+            legacyEvent.SenderId,
+            legacyEvent.Username,
+            primary,
+            matches,
+            args,
+            msg, // [지휘관 지시]: 원본 메시지(RawMessage) 포함
+            legacyEvent.DonationAmount
+        ), ct);
 
-        foreach (var cmd in matches)
-        {
-            try
-            {
-                var strategy = strategies.FirstOrDefault(s => s.FeatureType == cmd.FeatureType.ToString());
-                if (strategy != null)
-                {
-                    // 레거시 호환을 위해 Entity로 변환하여 전달
-                    var mockEntity = new UnifiedCommand { 
-                        Id = cmd.Id, Keyword = cmd.Keyword, FeatureType = cmd.FeatureType, 
-                        ResponseText = cmd.ResponseText, Cost = cmd.Cost, CostType = cmd.CostType,
-                        StreamerProfileId = cmd.StreamerProfileId, TargetId = cmd.TargetId
-                    };
-
-                    var result = await strategy.ExecuteAsync(legacyEvent, mockEntity, ct);
-                    if (result != null && !string.IsNullOrEmpty(result.Message))
-                    {
-                        responses.Add(result.Message);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "❌ [Multicast] {FeatureType} 실행 중 오류.", cmd.FeatureType);
-                
-                if (isPrimary)
-                {
-                    // Primary 실패 시 즉시 환불 및 중단
-                    await CompensatePrimaryAsync(legacyEvent, primary, ct);
-                    await botService.SendReplyChatAsync(legacyEvent.Profile, "⚠️ 명령어 처리 중 오류가 발생하여 재화가 환불되었습니다.", legacyEvent.SenderId, ct);
-                    break;
-                }
-            }
-            isPrimary = false;
-        }
-
-        // [5. Output Aggregation]: 응답 메시지 통합 전송
-        if (responses.Any())
-        {
-            var combinedResponse = string.Join("\n", responses);
-            await botService.SendReplyChatAsync(legacyEvent.Profile, combinedResponse, legacyEvent.SenderId, ct);
-        }
-
+        // [v4.0] 기존 로그 사울 로직 유지 (외부 관측용)
         await publishEndpoint.Publish(new CommandExecutionEvent(
             legacyEvent.CorrelationId, targetUid, primary.Keyword, legacyEvent.SenderId, legacyEvent.Username,
             true, null, legacyEvent.DonationAmount, KstClock.Now), ct);

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
@@ -37,6 +37,17 @@ public class CommandExecutionLog
     public string? ErrorMessage { get; set; }
 
     public int DonationAmount { get; set; }
+
+    /// <summary>
+    /// [v4.0] 정제된 인자값 (명령어 키워드 제외)
+    /// </summary>
+    [MaxLength(1000)]
+    public string? Arguments { get; set; }
+
+    /// <summary>
+    /// [v4.0] [지휘관 지시]: 원본 메시지 전체 보존 (AI 분석 및 정밀 문맥 파악용)
+    /// </summary>
+    public string? RawMessage { get; set; }
 
     public KstClock CreatedAt { get; set; } = KstClock.Now;
 }
