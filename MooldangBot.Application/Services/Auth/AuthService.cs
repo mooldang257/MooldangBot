@@ -32,6 +32,7 @@ public class AuthService(
     IChzzkBotService _botService,
     IDistributedCache _cache,
     IDataProtectionProvider _protectionProvider,
+    IChzzkAccessCredentialStore _tokenStore, // [오시리스의 영겁]: Redis 토큰 저장소 추가
     IMediator _mediator, // [오시리스의 지혜]: 이벤트 발행을 위한 메디에이터 추가
     ILogger<AuthService> _logger) : IAuthService
 {
@@ -208,6 +209,14 @@ public class AuthService(
         }
 
         await _db.SaveChangesAsync();
+
+        // 🛡️ [v2.4.7] 오시리스의 실시간 동기화: DB 저장 직후 Redis 캐시를 강제로 갱신하여 봇 엔진(Gateway)과 동기화합니다.
+        await _tokenStore.SetTokenAsync(chzzkUid, new ChzzkTokenInfo(
+            accessToken,
+            refreshToken,
+            expireDate?.Value ?? DateTime.UtcNow.AddHours(1),
+            DateTime.UtcNow
+        ));
 
         // [오시리스의 축복]: 신규 스트리머 등록 이벤트 발행 (비동기 명령어/룰렛 시딩 트리거)
         // [지휘관님의 지침]: DB 커밋이 완료된 후 핸들러를 가동하여 데이터 정합성을 보장합니다.
