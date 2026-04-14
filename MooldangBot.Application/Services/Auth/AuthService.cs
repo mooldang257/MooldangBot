@@ -14,6 +14,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Caching.Distributed;
 using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Events;
+using MediatR;
 
 using Microsoft.AspNetCore.DataProtection;
 
@@ -30,6 +32,7 @@ public class AuthService(
     IChzzkBotService _botService,
     IDistributedCache _cache,
     IDataProtectionProvider _protectionProvider,
+    IMediator _mediator, // [오시리스의 지혜]: 이벤트 발행을 위한 메디에이터 추가
     ILogger<AuthService> _logger) : IAuthService
 {
     private const string CacheKeyPrefix = "OverlayTokenVersion:";
@@ -184,6 +187,11 @@ public class AuthService(
             };
             _db.StreamerProfiles.Add(streamer);
 
+            // [오시리스의 축복]: 신규 스트리머 등록 이벤트 발행 (비동기 명령어/룰렛 시딩 트리거)
+            // SaveChangesAsync 이후에 실행되도록 하여 데이터 무결성을 보장할 수도 있으나, 
+            // 현재는 핸들러에서 별도로 조회하므로 발행 후 DB 저장을 일괄 수행합니다.
+            await _mediator.Publish(new StreamerRegisteredEvent(chzzkUid, channelName));
+            
             _db.SonglistSessions.Add(new SonglistSession 
             { 
                 StreamerProfile = streamer, 
