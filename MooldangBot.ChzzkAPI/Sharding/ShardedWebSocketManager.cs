@@ -76,6 +76,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
                     scopeFactory: _scopeFactory, 
                     publisher: publisher, 
                     apiClient: _apiClient, 
+                    tokenStore: _tokenStore,
                     configuration: _configuration,
                     redis: _redis);
                     

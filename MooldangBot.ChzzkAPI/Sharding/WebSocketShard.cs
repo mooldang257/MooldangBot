@@ -25,6 +25,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IChzzkMessagePublisher _publisher;
     private readonly IChzzkApiClient _apiClient;
+    private readonly IChzzkGatewayTokenStore _tokenStore;
     private readonly IConfiguration _configuration;
     private readonly IDatabase _redis;
     
@@ -43,6 +44,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         IServiceScopeFactory scopeFactory, 
         IChzzkMessagePublisher publisher,
         IChzzkApiClient apiClient,
+        IChzzkGatewayTokenStore tokenStore,
         IConfiguration configuration,
         IConnectionMultiplexer redis)
     {
@@ -51,6 +53,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         _scopeFactory = scopeFactory;
         _publisher = publisher;
         _apiClient = apiClient;
+        _tokenStore = tokenStore;
         _configuration = configuration;
         _redis = redis.GetDatabase();
     }
@@ -546,6 +549,27 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         _logger.LogWarning("🔄 [Shard {Id}] {ChzzkUid} 재연결 시도 ({Count}회차, {Sec}초 후)", _shardId, chzzkUid, retryCount, delaySeconds);
         
         await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+
+        // [v2.4.7] 지휘관 지침: 재연결 전 최신 토큰 및 세션 URL 보급 시도
+        try 
+        {
+            var tokenResult = await _tokenStore.GetTokenAsync(chzzkUid);
+            if (!string.IsNullOrEmpty(tokenResult.AuthCookie))
+            {
+                var sessionResult = await _apiClient.GetSessionUrlAsync(chzzkUid, tokenResult.AuthCookie);
+                if (sessionResult != null && !string.IsNullOrEmpty(sessionResult.Url))
+                {
+                    _logger.LogInformation("✅ [Shard {Id}] {ChzzkUid} 최신 토큰 및 URL 보급 성공. 새 정보로 연결을 시도합니다.", _shardId, chzzkUid);
+                    await ConnectAsync(chzzkUid, sessionResult.Url, tokenResult.AuthCookie);
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "⚠️ [Shard {Id}] {ChzzkUid} 재연결 전 정보 갱신 실패. 기존 정보를 유지합니다.", _shardId, chzzkUid);
+        }
+
         await ConnectAsync(chzzkUid, url, accessToken);
     }
 
