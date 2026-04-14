@@ -99,6 +99,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         else
             entity.RequiredRole = CommandRole.Viewer;
 
+        entity.Priority = req.Priority;
         entity.UpdatedAt = KstClock.Now;
 
         await _db.SaveChangesAsync(default); // [v6.2] CancellationToken 보강

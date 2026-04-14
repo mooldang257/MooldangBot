@@ -42,6 +42,11 @@ public class UnifiedCommand : ISoftDeletable, IAuditable
     public string ResponseText { get; set; } = string.Empty;
 
     public int? TargetId { get; set; }
+    
+    /// <summary>
+    /// [v6.3] 실행 우선순위 (낮을수록 먼저 실행되며, 최우선 항목이 결제 주체가 됨)
+    /// </summary>
+    public int Priority { get; set; } = 0;
 
     /// <summary>
     /// [v6.2.2] 명령어 매칭 방식 (Exact, Prefix, Contains, Regex)

@@ -261,7 +261,8 @@ namespace MooldangBot.Domain.DTOs
         string RequiredRole,
         RouletteSaveDto? RouletteData = null,
         string MatchType = "Prefix",
-        bool RequiresSpace = true
+        bool RequiresSpace = true,
+        int Priority = 0
     );
 
     // [v4.5.3] 팩트 체크 완료: 오버레이 채팅 전송을 위한 100% 정합성 DTO

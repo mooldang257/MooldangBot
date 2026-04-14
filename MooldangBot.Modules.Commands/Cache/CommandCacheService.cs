@@ -37,11 +37,13 @@ public class CommandCacheService : ICommandCache
             if (!_unifiedCache.TryGetValue(normalizedUid, out commands)) return Enumerable.Empty<CommandMetadata>();
         }
 
-        // [v3.0]: 4가지 패턴 매칭 (Exact, Prefix, Contains, Regex) 및 정렬
+        // [v3.0]: 3단계 정밀 필터링 (Priority -> MatchWeight -> Cost)
         var matches = commands.Values
             .Where(c => c.IsActive && IsMatch(message, c))
-            .OrderByDescending(c => GetMatchPriority(c.MatchType))
-            .ThenByDescending(c => c.Cost)
+            .OrderBy(c => c.Priority)                    // 1. 지휘관의 의도 (우선순위)
+            .ThenByDescending(c => GetMatchWeight(c.MatchType)) // 2. 매칭의 정밀도
+            .ThenByDescending(c => c.Cost)               // 3. 자원 가치 (비용)
+            .ThenBy(c => c.Id)                           // 4. 타이브레이커 (생성순)
             .ToList();
 
         return matches;
@@ -88,7 +90,8 @@ public class CommandCacheService : ICommandCache
                     ResponseText = c.ResponseText,
                     FeatureType = c.FeatureType,
                     IsActive = c.IsActive,
-                    TargetId = c.TargetId
+                    TargetId = c.TargetId,
+                    Priority = c.Priority
                 };
             }
 
@@ -124,7 +127,7 @@ public class CommandCacheService : ICommandCache
         return message.Length == keyword.Length || char.IsWhiteSpace(message[keyword.Length]);
     }
 
-    private int GetMatchPriority(CommandMatchType type) => type switch
+    private int GetMatchWeight(CommandMatchType type) => type switch
     {
         CommandMatchType.Exact => 100,
         CommandMatchType.Regex => 80,

@@ -18,4 +18,5 @@ public record CommandMetadata
     public CommandFeatureType FeatureType { get; init; }
     public bool IsActive { get; init; }
     public int? TargetId { get; init; }
+    public int Priority { get; init; }
 }

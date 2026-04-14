@@ -441,8 +441,11 @@ public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRoule
                   .HasConversion<string>()
                   .HasColumnName("feature_type");
 
-            // [Index] 복합 인텍스: (StreamerProfileId, Keyword) - 다중 타격(Salvo) 지원을 위해 유니크 제약 해제
-            entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword });
+            // [Index] 복합 인텍스: (StreamerProfileId, Keyword, IsActive, IsDeleted) - 지능형 매칭 최적화
+            entity.HasIndex(e => new { e.StreamerProfileId, e.Keyword, e.IsActive, e.IsDeleted })
+                  .HasDatabaseName("IX_Command_Search");
+
+            entity.Property(e => e.Priority).HasDefaultValue(0);
             entity.HasIndex(e => new { e.StreamerProfileId, e.TargetId });
 
             // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
