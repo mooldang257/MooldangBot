@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Events;
@@ -15,5 +15,6 @@ public record ChzzkEventEnvelope(
 ) : IEvent
 {
     public Guid EventId => MessageId;
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
     public DateTime OccurredOn => ReceivedAt;
 }

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MooldangBot.Contracts.Abstractions;
 using MooldangBot.Contracts.Chzzk.Models.Enums;
 
@@ -12,6 +12,7 @@ public record ChzzkVerifiedEvent : IEvent
 {
     // IEvent 구현
     public Guid EventId { get; init; } = Guid.NewGuid();
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
     public DateTime OccurredOn => MessageTime;
 
     /// <summary>

@@ -17,6 +17,7 @@ public record ChzzkEventReceived(
 {
     // [v4.1] Audit: IEvent 인터페이스 강제 구현 (MessageId 및 ReceivedAt 매핑)
     public Guid EventId => MessageId;
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
     public DateTime OccurredOn => ReceivedAt.UtcDateTime;
 }
 

@@ -16,6 +16,7 @@ public abstract record ChzzkEventBase : IEvent
 {
     // IEvent 구현
     public Guid EventId { get; init; } = Guid.NewGuid();
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
     public DateTime OccurredOn => Timestamp;
 
     public required string ChannelId { get; init; }
@@ -45,7 +46,7 @@ public record ChzzkDonationEvent : ChzzkEventBase
     public bool IsVideoDonation { get; init; }
     
     /// <summary>
-    /// [v7.1] 게이트웨이의 幂등성 검증을 통과한 안전한 이벤트 식별자 (Hash + MicroLock 기반)
+    /// [v7.1] 게이트웨이의 롤링 검증을 통과한 안전한 이벤트 식별자 (Hash + MicroLock 기반)
     /// </summary>
     public string? SafeEventId { get; init; }
 }

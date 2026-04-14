@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Contracts.Abstractions;
 
 namespace MooldangBot.Contracts.Events;
 
@@ -21,5 +21,5 @@ public sealed record ChatReceivedEvent : IEvent
     public int SubscriptionTier { get; init; }
     public int PayAmount { get; init; }
     public string? EmojisJson { get; init; }
-    public string? CorrelationId { get; init; }
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
 }
