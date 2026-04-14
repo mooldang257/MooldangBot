@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -65,8 +65,10 @@ public static class CommandFeatureRegistry
     public static CommandFeatureMetadata? GetByType(CommandFeatureType type) 
         => _features.FirstOrDefault(f => f.Type == type);
 
-    public static CommandFeatureMetadata? GetByTypeName(string typeName) 
-        => _features.FirstOrDefault(f => string.Equals(f.TypeName, typeName, StringComparison.OrdinalIgnoreCase));
+    public static CommandFeatureMetadata? GetByTypeName(string name) 
+        => _features.FirstOrDefault(f => 
+            string.Equals(f.TypeName, name, StringComparison.OrdinalIgnoreCase) || 
+            string.Equals(f.DisplayName, name, StringComparison.OrdinalIgnoreCase));
 
     public static CommandFeatureType FromId(int id) => (CommandFeatureType)id;
 }

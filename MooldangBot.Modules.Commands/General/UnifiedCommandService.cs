@@ -75,21 +75,36 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         // [물멍]: 다중 타격(Multicasting) 전술을 위해 메시지의 중복은 허용합니다. (중복 이름 검사 제거)
 
-        // 데이터 매핑
+        // [v2.4.7] 오시리스의 관용: Enum 파싱 시 규격 외 값이 들어와도 안전한 기본값으로 폴백합니다.
         entity.Keyword = req.Keyword.Trim();
-        entity.MatchType = Enum.Parse<CommandMatchType>(req.MatchType ?? "Exact", true);
+        
+        if (Enum.TryParse<CommandMatchType>(req.MatchType, true, out var matchType))
+            entity.MatchType = matchType;
+        else
+            entity.MatchType = CommandMatchType.Exact;
+
         entity.RequiresSpace = req.RequiresSpace;
-        entity.FeatureType = masterFeature.Type; // [v4.3] 정문화된 기능 Enum 할당
-        entity.CostType = Enum.Parse<CommandCostType>(req.CostType, true);
+        entity.FeatureType = masterFeature.Type;
+
+        if (Enum.TryParse<CommandCostType>(req.CostType, true, out var costType))
+            entity.CostType = costType;
+        else
+            entity.CostType = CommandCostType.None;
+
         entity.Cost = req.Cost;
         entity.ResponseText = req.ResponseText;
 
         // 라이프사이클 사전 처리
         await OnBeforeSaveAsync(entity, req, targetUid);
 
-        entity.IsActive = req.IsActive; // [v6.1.5] 기능 활성화 (토글)
-        entity.IsDeleted = false; // [v6.1.5] 저장/수정 시 존재 상태 보장
-        entity.RequiredRole = Enum.Parse<CommandRole>(req.RequiredRole, true);
+        entity.IsActive = req.IsActive;
+        entity.IsDeleted = false;
+
+        if (Enum.TryParse<CommandRole>(req.RequiredRole, true, out var role))
+            entity.RequiredRole = role;
+        else
+            entity.RequiredRole = CommandRole.Viewer;
+
         entity.UpdatedAt = KstClock.Now;
 
         await _db.SaveChangesAsync(default); // [v6.2] CancellationToken 보강
