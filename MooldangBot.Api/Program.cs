@@ -1,4 +1,4 @@
-﻿using MooldangBot.Modules.Commands;
+using MooldangBot.Modules.Commands;
 using MooldangBot.Infrastructure;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Contracts.Extensions;
@@ -93,9 +93,7 @@ try
     builder.Services.AddInfrastructureServices(builder.Configuration);
     builder.Services.AddSongBookModule();
     builder.Services.AddRouletteModule();
-
-    // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시지 인프라 구축
-    // Application 프로젝트의 Consumer들을 자동으로 스캔하여 등록합니다.
+    builder.Services.AddCommandsModule();
     builder.Services.AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly);
 
     // [오시리스의 검증]: 인프라 DI 통합성 최종 확인 가드
