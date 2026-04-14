@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Chzzk.Users;
 
@@ -10,4 +10,7 @@ public class UserMeResponse
 
     [JsonPropertyName("channelName")]
     public string ChannelName { get; set; } = string.Empty;
+
+    [JsonPropertyName("channelImageUrl")]
+    public string? ChannelImageUrl { get; set; }
 }

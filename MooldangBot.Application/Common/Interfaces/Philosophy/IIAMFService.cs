@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using MooldangBot.Domain.Entities.Philosophy;
+using MooldangBot.Contracts.AI.Models;
 
 namespace MooldangBot.Application.Common.Interfaces.Philosophy;
 
@@ -16,7 +17,7 @@ public interface IResonanceService
     /// <summary>
     /// 현재 특정 스트리머 파로스의 상태를 수신합니다.
     /// </summary>
-    Task<Parhos> GetCurrentParhosStateAsync(string chzzkUid);
+    Task<MooldangBot.Contracts.AI.Models.Parhos> GetCurrentParhosStateAsync(string chzzkUid);
 
     /// <summary>
     /// 현재 특정 스트리머의 안정도(Stability)에 따른 페르소나의 정의(Tone)를 수신합니다.

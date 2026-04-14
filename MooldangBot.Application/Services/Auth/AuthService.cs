@@ -1,4 +1,3 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -73,23 +72,15 @@ public class AuthService(
             // 1. [오시리스 v10.1]: 통합 서비스를 통한 토큰 교환 (PKCE 제거 및 State 추가)
             var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, state: cachedData.State);
             
-            if (tokenResult?.Content == null)
-            {
-                _logger.LogError("[인증] 토큰 교환 실패: 응답 데이터가 없거나 형식이 잘못되었습니다.");
-                return new AuthResult { IsSuccess = false, ErrorMessage = "토큰 교환 실패 또는 응답 데이터 없음" };
-            }
-
-            var content = tokenResult.Content;
-            
             // [v2.6] 필수 토큰 유효성 검증 강화 (CS8604 대응)
-            if (string.IsNullOrEmpty(content.AccessToken) || string.IsNullOrEmpty(content.RefreshToken))
+            if (string.IsNullOrEmpty(tokenResult.AccessToken) || string.IsNullOrEmpty(tokenResult.RefreshToken))
             {
                 _logger.LogError("[인증] 토큰 교환 성공했으나 필수 토큰 정보가 누락되었습니다.");
                 return new AuthResult { IsSuccess = false, ErrorMessage = "인증 토큰 정보가 불완전합니다." };
             }
 
-            _logger.LogInformation($"[인증] 토큰 교환 성공 (ExpiresIn: {content.ExpiresIn})");
-            var expireDate = KstClock.Now.AddSeconds(content.ExpiresIn);
+            _logger.LogInformation($"[인증] 토큰 교환 성공 (ExpiresIn: {tokenResult.ExpiresIn})");
+            var expireDate = KstClock.Now.AddSeconds(tokenResult.ExpiresIn);
 
             // 2. 봇 설정 흐름 처리 (v17.0 이후 레거시 대응: 개별 스트리머 프로필로 통합됨)
             if (cachedData.State.StartsWith("bot_setup_") || !string.IsNullOrEmpty(cachedData.TargetUid))
@@ -100,23 +91,23 @@ public class AuthService(
             }
 
             // 3. [오시리스 v10.1]: 통합 서비스를 통한 사용자 정보 조회
-            var userMeResult = await _chzzkApi.GetUserMeAsync(content.AccessToken);
-            if (userMeResult?.Content == null)
+            var userMeResult = await _chzzkApi.GetUserMeAsync(tokenResult.AccessToken);
+            if (userMeResult == null)
             {
                 return new AuthResult { IsSuccess = false, ErrorMessage = "사용자 정보 조회 실패 또는 응답 데이터 없음" };
             }
 
-            string chzzkUid = userMeResult.Content.EffectiveChannelId.ToLower();
-            string channelName = userMeResult.Content.EffectiveChannelName ?? "알 수 없음";
+            string chzzkUid = userMeResult.ChannelId.ToLower();
+            string channelName = userMeResult.ChannelName ?? "알 수 없음";
 
             // 4. 역할별 동기화 분기 (v6.2.3)
             if (cachedData.LoginType == "viewer")
             {
-                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeResult.Content.ChannelImageUrl);
+                return await SyncGlobalViewerAsync(chzzkUid, channelName, userMeResult.ChannelImageUrl);
             }
             else
             {
-                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeResult.Content.ChannelImageUrl, content.AccessToken, content.RefreshToken, expireDate);
+                var result = await SyncStreamerProfileAsync(chzzkUid, channelName, userMeResult.ChannelImageUrl, tokenResult.AccessToken, tokenResult.RefreshToken, expireDate);
                 
                 // [v17.0] 봇 서비스 복구 락 해제
                 _botService.CleanupRecoveryLock(chzzkUid);

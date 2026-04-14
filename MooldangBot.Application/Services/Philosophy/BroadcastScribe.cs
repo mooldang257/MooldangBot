@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Domain.Common;
 
@@ -151,7 +152,7 @@ public partial class BroadcastScribe : IBroadcastScribe
             if (string.IsNullOrEmpty(profile.ChzzkAccessToken)) return session.Id;
 
             var liveResult = await _chzzkApi.GetLiveSettingAsync(profile.ChzzkUid, profile.ChzzkAccessToken);
-            var liveSetting = liveResult?.Content;
+            var liveSetting = liveResult;
             
             if (liveSetting != null)
             {
@@ -265,7 +266,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         try
         {
             var liveResult = await _chzzkApi.GetLiveDetailAsync(chzzkUid);
-            bool isLive = liveResult?.Content?.Status == "OPEN";
+            bool isLive = liveResult?.Status == "OPEN";
             if (isLive)
             {
                 // [회귀의 시작]: 라이브임이 확인되면 하트비트를 통해 세션 공식 시작

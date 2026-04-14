@@ -1,18 +1,24 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Channels;
+using MooldangBot.Contracts.Security;
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Common;
+using MooldangBot.Application.Common.Models;
+using MooldangBot.Application.Services.Auth;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Common.Models;
@@ -175,7 +181,7 @@ namespace MooldangBot.Presentation.Features.Auth
                     
                     bool isLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken);
 
-                    if (channelRes?.Content?.Data?.FirstOrDefault() is { } channelData)
+                    if (channelRes?.FirstOrDefault() is { } channelData)
                     {
                         if (!string.IsNullOrEmpty(channelData.ChannelName)) profile.ChannelName = channelData.ChannelName;
                         if (!string.IsNullOrEmpty(channelData.ChannelImageUrl)) profile.ProfileImageUrl = channelData.ChannelImageUrl;
@@ -301,9 +307,9 @@ namespace MooldangBot.Presentation.Features.Auth
                     var chunk = uids.Skip(i).Take(20).ToList();
                     var channelRes = await _chzzkApi.GetChannelsAsync(chunk);
 
-                    if (channelRes?.Content?.Data != null)
+                    if (channelRes != null)
                     {
-                        foreach (var channelData in channelRes.Content.Data)
+                        foreach (var channelData in channelRes)
                         {
                             var target = streamersInDb.FirstOrDefault(s => s.ChzzkUid == channelData.ChannelId);
                             if (target != null)

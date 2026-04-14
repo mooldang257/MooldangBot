@@ -1,4 +1,5 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;

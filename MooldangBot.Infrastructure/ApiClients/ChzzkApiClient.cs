@@ -1,194 +1,167 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Models.Chzzk;
-using MooldangBot.Contracts.Chzzk.Models.Events;
-using MooldangBot.Domain.Entities;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Users;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Categories;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Channels;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Live;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Chat;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Restrictions;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Drops;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
-    /// <summary>
-    /// [ChzzkApiClient]: 치지직 API 위임 클라이언트입니다.
-    /// 모든 요청에 내부 보안 키(X-Internal-Secret-Key)를 포함하여 게이트웨이와 통신합니다.
-    /// </summary>
-    public class ChzzkApiClient : MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient
+    public class ChzzkApiClient(IHttpClientFactory httpClientFactory, ILogger<ChzzkApiClient> logger) : IChzzkApiClient
     {
-        private readonly HttpClient _gateway;
-        private readonly ILogger<ChzzkApiClient> _logger;
+        private readonly HttpClient _gateway = httpClientFactory.CreateClient("ChzzkGateway");
+        private readonly ILogger<ChzzkApiClient> _logger = logger;
         private const string InternalSecretHeader = "X-Internal-Secret-Key";
 
-        public ChzzkApiClient(IHttpClientFactory httpClientFactory, ILogger<ChzzkApiClient> logger)
+        public async Task<TokenResponse?> GetTokenAsync(string code, string state)
         {
-            _gateway = httpClientFactory.CreateClient("ChzzkGateway");
-            _logger = logger;
-
-            // [오시리스의 인장]: 게이트웨이 인증용 보안 키를 헤더에 주입합니다.
-            var secret = Environment.GetEnvironmentVariable("INTERNAL_API_SECRET") ?? "mooldang_osiris_secret_2026";
-            if (!_gateway.DefaultRequestHeaders.Contains(InternalSecretHeader))
-            {
-                _gateway.DefaultRequestHeaders.Add(InternalSecretHeader, secret);
-            }
+            return await SafePostAsync<TokenResponse>("/api/internal/auth/token", new { Code = code, State = state });
         }
 
-        public async Task<string> GetChannelInfoAsync(string channelId)
+        public async Task<TokenResponse?> RefreshTokenAsync(string refreshToken)
         {
-            return await _gateway.GetStringAsync($"/api/internal/channels/{channelId}/info");
+            return await SafePostAsync<TokenResponse>("/api/internal/auth/refresh", new { RefreshToken = refreshToken });
         }
 
-        public async Task<string?> ExchangeCodeForTokenAsync(string code, string? state)
+        public async Task<bool> RevokeTokenAsync(string token, string? typeHint = "access_token")
         {
-            var response = await _gateway.PostAsJsonAsync("/api/internal/auth/token", new { Code = code, State = state });
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileContent?> GetUserProfileAsync(string accessToken)
-        {
-            var response = await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileResponse>($"/api/internal/user/profile?token={accessToken}");
-            return response?.Content;
-        }
-
-        public async Task<string?> GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId)
-        {
-            return await _gateway.GetStringAsync($"/api/internal/user/follow-date?token={accessToken}&viewerId={viewerId}");
-        }
-
-        public async Task<bool> IsLiveAsync(string channelId, string? accessToken = null)
-        {
-            var detail = await GetLiveDetailAsync(channelId);
-            return detail?.Content?.Status == "OPEN";
-        }
-
-        public async Task<bool> SendChatMessageAsync(string accessToken, string channelId, string message)
-        {
-            var response = await _gateway.PostAsJsonAsync($"/api/internal/chat/{channelId}/message", new { Token = accessToken, Content = message });
+            var response = await _gateway.PostAsJsonAsync("/api/internal/auth/revoke", new { Token = token, TypeHint = typeHint });
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> SendChatNoticeAsync(string accessToken, string channelId, string message)
+        public async Task<UserMeResponse?> GetUserMeAsync(string accessToken)
         {
-            var response = await _gateway.PostAsJsonAsync($"/api/internal/chat/{channelId}/notice", new { Token = accessToken, Content = message });
+            return await SafeGetAsync<UserMeResponse>($"/api/internal/user/me?token={accessToken}");
+        }
+
+        public async Task<TokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
+        {
+            return await SafePostAsync<TokenResponse>("/api/internal/auth/exchange-token", new { Code = code, State = state });
+        }
+
+        public async Task<SendChatResponse?> SendChatMessageAsync(string chzzkUid, string message, string accessToken)
+        {
+            return await SafePostAsync<SendChatResponse>($"/api/internal/chat/{chzzkUid}/message", new { Token = accessToken, Content = message });
+        }
+
+        public async Task<bool> SetChatNoticeAsync(string chzzkUid, SetChatNoticeRequest request, string accessToken)
+        {
+            var response = await _gateway.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/notice?token={accessToken}", request);
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> SendChatAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix = true)
+        public async Task<ChatSettings?> GetChatSettingsAsync(string chzzkUid, string accessToken)
         {
-            var response = await _gateway.PostAsJsonAsync($"/api/internal/chat/{channelId}/{endpoint}", new { Token = accessToken, Content = message, Prefix = addPrefix });
+            return await SafeGetAsync<ChatSettings>($"/api/internal/chat/{chzzkUid}/settings?token={accessToken}");
+        }
+
+        public async Task<bool> BlindMessageAsync(string chzzkUid, BlindMessageRequest request, string accessToken)
+        {
+            var response = await _gateway.PostAsJsonAsync($"/api/internal/chat/{chzzkUid}/blind?token={accessToken}", request);
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse?> GetSessionAuthAsync(string accessToken, string? clientId = null, string? clientSecret = null)
+        public async Task<LiveSettingResponse?> GetLiveSettingAsync(string chzzkUid, string accessToken)
         {
-            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse>($"/api/internal/chat/session-auth?token={accessToken}");
+            return await SafeGetAsync<LiveSettingResponse>($"/api/internal/channels/{chzzkUid}/live-settings?token={accessToken}");
         }
 
-        public async Task<bool> SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId = null, string? clientSecret = null)
+        public async Task<bool> UpdateLiveSettingAsync(string chzzkUid, UpdateLiveSettingRequest request, string accessToken)
         {
-            var response = await _gateway.PostAsJsonAsync("/api/internal/events/subscribe", new { Token = accessToken, SessionKey = sessionKey, EventType = eventType, ChannelId = channelId });
+            var response = await _gateway.PatchAsJsonAsync($"/api/internal/channels/{chzzkUid}/live-settings?token={accessToken}", request);
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> UpdateLiveSettingAsync(string channelId, string accessToken, object updateData)
+        public async Task<StreamKeyResponse?> GetStreamKeyAsync(string chzzkUid, string accessToken)
         {
-            // [v3.1.3] 게이트웨이의 실제 경로 규격(apis/chzzk/live/{id}/settings)으로 복구합니다.
-            var response = await _gateway.PatchAsJsonAsync($"/apis/chzzk/live/{channelId}/settings?token={accessToken}", updateData);
+            return await SafeGetAsync<StreamKeyResponse>($"/api/internal/channels/{chzzkUid}/stream-key?token={accessToken}");
+        }
+
+        public async Task<LiveDetailResponse?> GetLiveDetailAsync(string chzzkUid)
+        {
+            return await SafeGetAsync<LiveDetailResponse>($"/api/internal/channels/{chzzkUid}/live-detail");
+        }
+
+        public async Task<ChannelProfile?> GetChannelProfileAsync(string chzzkUid)
+        {
+            return await SafeGetAsync<ChannelProfile>($"/api/internal/channels/{chzzkUid}/profile");
+        }
+
+        public async Task<List<ChannelProfile>> GetChannelsAsync(IEnumerable<string> uids)
+        {
+            var response = await SafePostAsync<List<ChannelProfile>>("/api/internal/channels/batch", new { ChannelIds = uids });
+            return response ?? new List<ChannelProfile>();
+        }
+
+        public async Task<ChzzkPagedResponse<CategorySearchItem>?> SearchCategoryAsync(string categoryName)
+        {
+            return await SafeGetAsync<ChzzkPagedResponse<CategorySearchItem>>($"/api/internal/categories/search?keyword={categoryName}");
+        }
+
+        public async Task<ChzzkPagedResponse<ChannelManager>?> GetManagersAsync(string chzzkUid, string accessToken)
+        {
+            return await SafeGetAsync<ChzzkPagedResponse<ChannelManager>>($"/api/internal/channels/{chzzkUid}/managers?token={accessToken}");
+        }
+
+        public async Task<ChzzkPagedResponse<ChannelFollower>?> GetFollowersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0)
+        {
+            return await SafeGetAsync<ChzzkPagedResponse<ChannelFollower>>($"/api/internal/channels/{chzzkUid}/followers?token={accessToken}&size={size}&page={page}");
+        }
+
+        public async Task<ChzzkPagedResponse<ChannelSubscriber>?> GetSubscribersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0)
+        {
+            return await SafeGetAsync<ChzzkPagedResponse<ChannelSubscriber>>($"/api/internal/channels/{chzzkUid}/subscribers?token={accessToken}&size={size}&page={page}");
+        }
+
+        public async Task<SessionUrlResponse?> GetSessionUrlAsync(string chzzkUid, string accessToken)
+        {
+            return await SafeGetAsync<SessionUrlResponse>($"/api/internal/chat/{chzzkUid}/session-url?token={accessToken}");
+        }
+
+        public async Task<bool> SubscribeSessionEventAsync(string chzzkUid, string sessionKey, string eventType, string accessToken)
+        {
+            var response = await _gateway.PostAsJsonAsync("/api/internal/events/subscribe", new { ChzzkUid = chzzkUid, SessionKey = sessionKey, EventType = eventType, Token = accessToken });
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> UpdateLiveSettingAsync(string channelId, string accessToken, string? title, string? categoryId, string? categoryType = null, List<string>? tags = null)
-        {
-            var response = await _gateway.PatchAsJsonAsync($"/apis/chzzk/live/{channelId}/settings?token={accessToken}", new { 
-                DefaultLiveTitle = title, 
-                CategoryId = categoryId, 
-                CategoryType = categoryType,
-                Tags = tags
-            });
-            return response.IsSuccessStatusCode;
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse?> GetLiveSettingAsync(string channelId, string accessToken)
-        {
-            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse>($"/apis/chzzk/live/{channelId}/settings?token={accessToken}");
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse?> SearchCategoryAsync(string keyword)
-        {
-            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse>($"/api/internal/categories/search?keyword={keyword}");
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkTokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
-        {
-            // [오시리스의 대행]: 이제 직접 네이버로 쏘지 않고, 게이트웨이의 프록시 엔드포인트를 호출합니다.
-            var response = await _gateway.PostAsJsonAsync("/api/internal/auth/exchange-token", new { Code = code, State = state });
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                _logger.LogError("❌ [ChzzkApiClient] 토큰 교환 실패. Status: {StatusCode}, Body: {Content}", response.StatusCode, errorBody);
-                return null;
-            }
-
-            try 
-            {
-                return await response.Content.ReadFromJsonAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkTokenResponse>();
-            }
-            catch (Exception ex)
-            {
-                var raw = await response.Content.ReadAsStringAsync();
-                _logger.LogError(ex, "❌ [ChzzkApiClient] 토큰 교환 응답 파싱 실패. Raw Body: {Raw}", raw);
-                return null;
-            }
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserMeResponse?> GetUserMeAsync(string accessToken)
-        {
-            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkUserMeResponse>($"/api/internal/user/me?token={accessToken}");
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkChannelsResponse?> GetChannelsAsync(IEnumerable<string> channelIds)
-        {
-            var response = await _gateway.PostAsJsonAsync("/api/internal/channels/batch", new { ChannelIds = channelIds });
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                _logger.LogError("❌ [ChzzkApiClient] 채널 정보 배치 조회 실패. Status: {StatusCode}, Body: {Content}", response.StatusCode, errorBody);
-                return null;
-            }
-
-            try
-            {
-                return await response.Content.ReadFromJsonAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkChannelsResponse>();
-            }
-            catch (Exception ex)
-            {
-                var raw = await response.Content.ReadAsStringAsync();
-                _logger.LogError(ex, "❌ [ChzzkApiClient] 채널 배치 조회 응답 파싱 실패. Raw Body: {Raw}", raw);
-                return null;
-            }
-        }
-
-        public async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveDetailResponse?> GetLiveDetailAsync(string channelId)
-        {
-            return await SafeGetAsync<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveDetailResponse>($"/api/internal/channels/{channelId}/live-detail");
-        }
-
-        /// <summary>
-        /// [오시리스의 방패]: HTTP 호출 중 발생하는 예외(404 등)를 포착하여 시스템 중단을 방지합니다.
-        /// </summary>
         private async Task<T?> SafeGetAsync<T>(string url) where T : class
         {
             try
             {
-                var response = await _gateway.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("⚠️ [ChzzkApiClient] API 호출 실패 (Status: {StatusCode}, URL: {Url})", response.StatusCode, url);
-                    return null;
-                }
-                return await response.Content.ReadFromJsonAsync<T>();
+                _logger.LogDebug("[ゲートウェイ通信] GET: {Url}", url);
+                return await _gateway.GetFromJsonAsync<T>(url);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ [ChzzkApiClient] API 비동기 통신 중 예외 발생 (URL: {Url})", url);
+                _logger.LogError(ex, "[ゲートウェイ通信 오류] GET 실패: {Url}", url);
+                return null;
+            }
+        }
+
+        private async Task<T?> SafePostAsync<T>(string url, object body) where T : class
+        {
+            try
+            {
+                _logger.LogDebug("[ゲートウェイ通信] POST: {Url}", url);
+                var response = await _gateway.PostAsJsonAsync(url, body);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<T>();
+                }
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("[ゲートウェイ通信 경고] POST 실패 ({StatusCode}): {Error}", response.StatusCode, error);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ゲートウェイ通信 오류] POST 실패: {Url}", url);
                 return null;
             }
         }

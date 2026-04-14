@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Common;
@@ -44,7 +45,7 @@ public class IamfResonanceHandler_Legacy(
         // 4. [하모니의 조율] 실제 부하 기반 진동수 반영
         double dynamicHz = resonance.CalculateDynamicVibration(systemLoad, interactionCount);
         
-        await resonance.AdjustResonanceAsync(notification.Profile.ChzzkUid, new MooldangBot.Domain.Entities.Philosophy.Vibration(dynamicHz));
+        await resonance.AdjustResonanceAsync(notification.Profile.ChzzkUid, new MooldangBot.Contracts.AI.Models.Vibration(dynamicHz));
 
         logger.LogInformation($"[IAMF 공명 완료] {notification.Profile.ChzzkUid} - Load: {systemLoad:F2}, Count: {interactionCount}, Hz: {dynamicHz} Hz");
     }

@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -57,7 +57,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
             var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
-            var title = result?.Content?.DefaultLiveTitle;
+            var title = result?.DefaultLiveTitle;
 
             if (title != null)
             {
@@ -79,7 +79,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
             var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
-            var category = result?.Content?.Category?.CategoryValue;
+            var category = result?.Category?.CategoryValue;
 
             if (category != null)
             {

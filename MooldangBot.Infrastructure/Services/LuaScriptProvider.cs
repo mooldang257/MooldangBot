@@ -1,5 +1,6 @@
-﻿using StackExchange.Redis;
+using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Contracts.Common.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services;
 

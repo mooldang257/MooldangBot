@@ -1,4 +1,4 @@
-﻿using MooldangBot.Modules.Commands;
+using MooldangBot.Modules.Commands;
 using Microsoft.OpenApi.Models;
 using MooldangBot.ChzzkAPI.Apis.Internal;
 using MooldangBot.Contracts.Chzzk.Interfaces;
@@ -47,18 +47,12 @@ builder.Services.AddSingleton<IChzzkGatewayTokenStore, MooldangBot.ChzzkAPI.Serv
 // [Migration]: RabbitMqChzzkMessagePublisher는 이제 내부적으로 IPublishEndpoint를 사용하도록 리팩토링됩니다.
 builder.Services.AddSingleton<MooldangBot.Contracts.Chzzk.Interfaces.IChzzkMessagePublisher, MooldangBot.ChzzkAPI.Messaging.RabbitMqChzzkMessagePublisher>();
 
-// [v2.4.6] 시니어 가이드: 단일 싱글톤 인스턴스를 여러 인터페이스에 매핑
 builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>();
 
 builder.Services.AddSingleton<MooldangBot.Contracts.Chzzk.Interfaces.IShardedWebSocketManager>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
 
-builder.Services.AddSingleton<MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient>(sp => 
-    sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
-
 builder.Services.AddTransient<MooldangBot.Contracts.Chzzk.Interfaces.IChzzkApiClient>(sp => 
-    sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
-builder.Services.AddTransient<MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
 
 // 2. 비즈니스 로직 및 봇 엔진 주입

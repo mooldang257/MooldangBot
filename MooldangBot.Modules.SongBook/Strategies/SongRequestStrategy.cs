@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Domain.Common;
 using MediatR;
 using MooldangBot.Modules.SongBookModule.Features.Commands.RequestSong;
+using MooldangBot.Contracts.Commands.Interfaces;
 
 namespace MooldangBot.Modules.SongBookModule.Strategies;
 

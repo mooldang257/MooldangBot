@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Users;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Categories;
@@ -23,6 +23,7 @@ public interface IChzzkApiClient
 
     /// [방송 상태 조회]: 특정 채널의 실시간 방송 정보를 조회합니다.
     Task<UserMeResponse?> GetUserMeAsync(string accessToken);
+    Task<TokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null);
 
     // 3. Chat
     Task<SendChatResponse?> SendChatMessageAsync(string chzzkUid, string message, string accessToken);
@@ -34,6 +35,7 @@ public interface IChzzkApiClient
     Task<LiveSettingResponse?> GetLiveSettingAsync(string chzzkUid, string accessToken);
     Task<bool> UpdateLiveSettingAsync(string chzzkUid, UpdateLiveSettingRequest request, string accessToken);
     Task<StreamKeyResponse?> GetStreamKeyAsync(string chzzkUid, string accessToken);
+    Task<LiveDetailResponse?> GetLiveDetailAsync(string chzzkUid);
 
     // 5. Channel & Category
     Task<ChannelProfile?> GetChannelProfileAsync(string chzzkUid);

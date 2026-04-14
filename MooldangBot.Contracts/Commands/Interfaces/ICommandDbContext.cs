@@ -18,6 +18,8 @@ public interface ICommandDbContext
     DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
     DbSet<MooldangBot.Domain.Entities.Roulette> Roulettes { get; set; }
     DbSet<MooldangBot.Domain.Entities.RouletteItem> RouletteItems { get; set; }
+    DbSet<SongQueue> SongQueues { get; set; }
+    DbSet<SonglistSession> SonglistSessions { get; set; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

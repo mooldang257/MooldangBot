@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Entities.Philosophy;
 
@@ -16,7 +16,7 @@ namespace MooldangBot.Contracts.Common.Interfaces
         DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
         DbSet<GlobalViewer> GlobalViewers { get; set; }
         DbSet<View_StreamerViewer> StreamerViewers { get; set; }
-        DbSet<Roulette> Roulettes { get; set; }
+        DbSet<MooldangBot.Domain.Entities.Roulette> Roulettes { get; set; }
         DbSet<RouletteItem> RouletteItems { get; set; }
         DbSet<PeriodicMessage> PeriodicMessages { get; set; }
         DbSet<SonglistSession> SonglistSessions { get; set; }
@@ -36,7 +36,7 @@ namespace MooldangBot.Contracts.Common.Interfaces
 
         DbSet<SharedComponent> SharedComponents { get; set; }
         DbSet<StreamerManager> StreamerManagers { get; set; }
-        DbSet<SongBook> SongBooks { get; set; }
+        DbSet<MooldangBot.Domain.Entities.SongBook> SongBooks { get; set; }
         DbSet<Master_SongLibrary> MasterSongLibraries { get; set; }
         DbSet<Streamer_SongLibrary> StreamerSongLibraries { get; set; } // [v12.5] 스트리머 전용 라이브러리
         DbSet<Master_SongStaging> MasterSongStagings { get; set; }

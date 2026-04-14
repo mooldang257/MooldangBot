@@ -1,4 +1,4 @@
-namespace MooldangBot.Contracts.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [심연의 서기관]: Redis에서 실행할 전역 Lua 스크립트를 제공하는 서비스 인터페이스입니다.

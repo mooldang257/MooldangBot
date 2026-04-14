@@ -1,7 +1,9 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using RedLockNet;
 using StackExchange.Redis;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Roulette.Interfaces;
 
 namespace MooldangBot.Infrastructure.Security;
 

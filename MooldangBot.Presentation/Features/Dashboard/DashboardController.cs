@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Models;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
@@ -52,8 +52,8 @@ namespace MooldangBot.Presentation.Features.Dashboard
 
             var summary = new DashboardSummaryDto
             {
-                // [물멍]: liveStatus가 null이거나 Content가 null인 경우 안전하게 false 처리
-                IsLive = liveStatus?.Content?.Status == "OPEN",
+                // [물멍]: liveStatus가 null인 경우 안전하게 false 처리
+                IsLive = liveStatus?.Status == "OPEN",
                 TodaySongs = todaySongs,
                 PendingSongs = pendingSongs,
                 TodayPoints = todayPoints,

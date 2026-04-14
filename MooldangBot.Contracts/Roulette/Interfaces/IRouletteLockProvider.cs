@@ -1,4 +1,4 @@
-namespace MooldangBot.Contracts.Interfaces;
+namespace MooldangBot.Contracts.Roulette.Interfaces;
 
 /// <summary>
 /// [오시리스의 열쇠지기]: 룰렛의 동시 실행을 제어하는 락 제공자 인터페이스입니다.

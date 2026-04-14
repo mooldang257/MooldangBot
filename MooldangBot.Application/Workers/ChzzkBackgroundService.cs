@@ -1,4 +1,3 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using Microsoft.Extensions.Hosting;
 using MooldangBot.Contracts.Common.Interfaces;
@@ -100,7 +99,7 @@ public class ChzzkBackgroundService : BackgroundService
                                 {
                                     // [v10.1] IChzzkApiClient를 통한 라이브 상태 확인
                                     var liveResult = await chzzkApi.GetLiveDetailAsync(chzzkUid);
-                                    bool isLiveNow = liveResult?.Content?.Status == "OPEN";
+                                    bool isLiveNow = liveResult?.Status == "OPEN";
                                     if (isLiveNow)
                                     {
                                         _logger.LogInformation($"📡 [라이브 감지 성공] {chzzkUid} 채널 방송 중.");

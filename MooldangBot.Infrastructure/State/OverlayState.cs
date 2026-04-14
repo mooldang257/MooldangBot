@@ -1,6 +1,7 @@
-﻿using StackExchange.Redis;
+using StackExchange.Redis;
 using System.Collections.Concurrent;
 using MooldangBot.Domain.Common;
+using MooldangBot.Contracts.Common.Interfaces;
 
 namespace MooldangBot.Infrastructure.State;
 

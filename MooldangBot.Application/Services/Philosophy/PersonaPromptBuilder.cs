@@ -1,5 +1,6 @@
-﻿using MooldangBot.Application.Common.Interfaces.Philosophy;
+using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,10 +1,11 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models;
+using MooldangBot.Contracts.Chzzk.Models.Events;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 
@@ -12,7 +13,7 @@ namespace MooldangBot.ChzzkAPI.Sharding;
 /// [오시리스의 지혜]: 여러 개의 WebSocket 샤드를 총괄 관리하는 매니저입니다.
 /// Application 레이어의 IChzzkChatClient를 구현하여 백그라운드 서비스와 연동됩니다.
 /// </summary>
-public class ShardedWebSocketManager : IShardedWebSocketManager, MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient, IDisposable, IAsyncDisposable
+public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IAsyncDisposable
 {
     private readonly ILogger<ShardedWebSocketManager> _logger;
     private readonly ILoggerFactory _loggerFactory;

@@ -1,12 +1,12 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Requests.Point.Models;
+using MooldangBot.Contracts.Point.Requests.Models;
 using MediatR;
-using MooldangBot.Contracts.Requests.Point.Commands;
+using MooldangBot.Contracts.Point.Requests.Commands;
 namespace MooldangBot.Application.Workers;
 
 /// <summary>

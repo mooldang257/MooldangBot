@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
@@ -78,13 +78,13 @@ public class UnifiedCommandHandler_Legacy(
         {
             if (currentDonation >= c.Cost) return (true, currentDonation - c.Cost);
             int neededFromBalance = c.Cost - currentDonation;
-            var (success, _) = await mediator.Send(new MooldangBot.Contracts.Requests.Point.Commands.DeductDonationPointsCommand(n.Profile.ChzzkUid, n.SenderId, neededFromBalance), ct);
+            var (success, _) = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.DeductDonationPointsCommand(n.Profile.ChzzkUid, n.SenderId, neededFromBalance), ct);
             if (!success) return (false, currentDonation);
             return (true, 0);
         }
         else if (c.CostType == CommandCostType.Point)
         {
-            var (success, _) = await mediator.Send(new MooldangBot.Contracts.Requests.Point.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, -c.Cost, MooldangBot.Contracts.Requests.Point.Models.PointCurrencyType.ChatPoint), ct);
+            var (success, _) = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, -c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
             if (!success) return (false, currentDonation);
             return (true, currentDonation);
         }
@@ -103,9 +103,9 @@ public class UnifiedCommandHandler_Legacy(
         try
         {
             if (c.CostType == CommandCostType.Cheese && c.Cost > 0)
-                await mediator.Send(new MooldangBot.Contracts.Requests.Point.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Requests.Point.Models.PointCurrencyType.DonationPoint), ct);
+                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint), ct);
             else if (c.CostType == CommandCostType.Point && c.Cost > 0)
-                await mediator.Send(new MooldangBot.Contracts.Requests.Point.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Requests.Point.Models.PointCurrencyType.ChatPoint), ct);
+                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
 
             await idempotency.MarkAsCompletedAsync(compKey, TimeSpan.FromMinutes(30));
         }

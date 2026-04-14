@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -23,7 +23,7 @@ namespace MooldangBot.ChzzkAPI.Clients;
 /// [오시리스의 전령]: 치지직 공식 Open API와 통신하는 핵심 클라이언트 클래스입니다.
 /// Gateway 내부용 인터페이스와 Application 레이어용 인터페이스를 모두 구현하여 호환성을 보장합니다.
 /// </summary>
-public class ChzzkApiClient : IChzzkApiClient, MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient
+public class ChzzkApiClient : IChzzkApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ChzzkApiClient> _logger;
@@ -44,13 +44,20 @@ public class ChzzkApiClient : IChzzkApiClient, MooldangBot.Contracts.Common.Inte
 
     public async Task<TokenResponse?> GetTokenAsync(string code, string state)
     {
+        return await ExchangeTokenAsync(code, state: state);
+    }
+
+    public async Task<TokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
+    {
         var request = new TokenRequest
         {
             GrantType = "authorization_code",
-            ClientId = _clientId,
-            ClientSecret = _clientSecret,
+            ClientId = clientId ?? _clientId,
+            ClientSecret = clientSecret ?? _clientSecret,
             Code = code,
-            State = state
+            State = state ?? "",
+            RedirectUri = redirectUri,
+            CodeVerifier = codeVerifier
         };
         return await PostRawAsync("auth/v1/token", request, ChzzkJsonContext.Default.TokenRequest, ChzzkJsonContext.Default.TokenResponse);
     }
@@ -137,6 +144,12 @@ public class ChzzkApiClient : IChzzkApiClient, MooldangBot.Contracts.Common.Inte
     {
         // [v3.1.6] 공식 OpenAPI 규격: open/v1/streams/key
         return await GetAsync("open/v1/streams/key", accessToken, ChzzkJsonContext.Default.StreamKeyResponse);
+    }
+
+    public async Task<LiveDetailResponse?> GetLiveDetailAsync(string chzzkUid)
+    {
+        // [v3.1.6] 공식 OpenAPI 규격: open/v1/lives
+        return await GetAsync($"open/v1/lives", null, ChzzkJsonContext.Default.LiveDetailResponse);
     }
 
     #endregion
@@ -286,133 +299,4 @@ public class ChzzkApiClient : IChzzkApiClient, MooldangBot.Contracts.Common.Inte
         return response.IsSuccessStatusCode;
     }
 
-    #region Implementation of MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient
-
-    async Task<string> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetChannelInfoAsync(string channelId)
-    {
-        var profile = await GetChannelProfileAsync(channelId);
-        return profile?.ChannelName ?? "Unknown";
-    }
-
-    async Task<string?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.ExchangeCodeForTokenAsync(string code, string? state)
-    {
-        var res = await GetTokenAsync(code, state ?? "");
-        return res?.AccessToken;
-    }
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileContent?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetUserProfileAsync(string accessToken)
-    {
-        var res = await GetUserMeAsync(accessToken);
-        if (res == null) return null;
-        
-        // [물멍] Application 레이어의 ChzzkUserProfileContent 프로퍼티 명칭(ChannelId, ChannelName)에 맞게 매핑
-        return new MooldangBot.Contracts.Chzzk.Models.ChzzkUserProfileContent 
-        { 
-            ChannelId = res.ChannelId, 
-            ChannelName = res.ChannelName 
-        };
-    }
-
-    async Task<string?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetViewerFollowDateAsync(string accessToken, string clientId, string clientSecret, string viewerId) => null;
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.IsLiveAsync(string channelId, string? accessToken) => true;
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.SendChatMessageAsync(string accessToken, string channelId, string message)
-    {
-        var res = await SendChatMessageAsync(channelId, message, accessToken);
-        return res != null;
-    }
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.SendChatNoticeAsync(string accessToken, string channelId, string message)
-    {
-        return await SetChatNoticeAsync(channelId, new SetChatNoticeRequest { Message = message }, accessToken);
-    }
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.SendChatAsync(string accessToken, string channelId, string endpoint, string message, bool addPrefix) => false;
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetSessionAuthAsync(string accessToken, string? clientId, string? clientSecret)
-    {
-        // channelId가 필요한데 인터페이스 상에는 없음. 일단 빈 값으로 시도하거나 세션 URL 정책 확인 필요
-        var res = await GetSessionUrlAsync("", accessToken); 
-        if (res == null) return null;
-        
-        return new MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthResponse 
-        { 
-            Code = 200,
-            Content = new MooldangBot.Contracts.Chzzk.Models.ChzzkSessionAuthContent
-            {
-                Url = res.Url
-            }
-        };
-    }
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.SubscribeEventAsync(string accessToken, string sessionKey, string eventType, string channelId, string? clientId, string? clientSecret)
-    {
-        return await SubscribeSessionEventAsync(channelId, sessionKey, eventType, accessToken);
-    }
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.UpdateLiveSettingAsync(string channelId, string accessToken, object updateData)
-    {
-        // [v3.1.2] 파라미터로 받은 channelId를 즉시 사용하여 추가 조회를 생략합니다.
-        if (updateData is UpdateLiveSettingRequest req)
-            return await UpdateLiveSettingAsync(channelId, req, accessToken);
-            
-        return false;
-    }
-
-    async Task<bool> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.UpdateLiveSettingAsync(string channelId, string accessToken, string? title, string? categoryId, string? categoryType, List<string>? tags)
-    {
-        return await UpdateLiveSettingAsync(channelId, new UpdateLiveSettingRequest { DefaultLiveTitle = title, CategoryId = categoryId, Tags = tags }, accessToken);
-    }
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetLiveSettingAsync(string channelId, string accessToken)
-    {
-        var res = await GetLiveSettingAsync(channelId, accessToken);
-        if (res == null) return null;
-
-        return new MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingResponse
-        {
-            Code = 200,
-            Content = new MooldangBot.Contracts.Chzzk.Models.ChzzkLiveSettingContent
-            {
-                DefaultLiveTitle = res.DefaultLiveTitle,
-                Category = res.Category != null ? new MooldangBot.Contracts.Chzzk.Models.ChzzkCategoryData
-                {
-                    CategoryId = res.Category.CategoryId,
-                    CategoryType = res.Category.CategoryType,
-                    CategoryValue = res.Category.CategoryValue
-                } : null
-            }
-        };
-    }
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.SearchCategoryAsync(string keyword)
-    {
-        // [v3.1.2] 꺼져있던 카테고리 검색 레이더를 공식 API로 가동합니다.
-        var res = await SearchCategoryAsync(keyword);
-        if (res?.Data == null) return null;
-
-        var dataList = new List<MooldangBot.Contracts.Chzzk.Models.ChzzkCategoryData>();
-        foreach (var item in res.Data)
-        {
-            dataList.Add(new MooldangBot.Contracts.Chzzk.Models.ChzzkCategoryData
-            {
-                CategoryId = item.CategoryId,
-                CategoryType = item.CategoryType,
-                CategoryValue = item.CategoryValue
-            });
-        }
-
-        return new MooldangBot.Contracts.Chzzk.Models.ChzzkCategorySearchResponse { Data = dataList };
-    }
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkTokenResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.ExchangeTokenAsync(string code, string? clientId, string? clientSecret, string? state, string? redirectUri, string? codeVerifier) => null;
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkUserMeResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetUserMeAsync(string accessToken) => null;
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkChannelsResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetChannelsAsync(IEnumerable<string> channelIds) => null;
-
-    async Task<MooldangBot.Contracts.Chzzk.Models.ChzzkLiveDetailResponse?> MooldangBot.Contracts.Common.Interfaces.IChzzkApiClient.GetLiveDetailAsync(string channelId) => null;
-
-    #endregion
 }

@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;
 
@@ -22,6 +22,12 @@ public class TokenRequest
 
     [JsonPropertyName("refreshToken")]
     public string? RefreshToken { get; set; }
+
+    [JsonPropertyName("redirectUri")]
+    public string? RedirectUri { get; set; }
+
+    [JsonPropertyName("codeVerifier")]
+    public string? CodeVerifier { get; set; }
 }
 
 // [오시리스???몄옣]: 諛쒓툒???좏겙 ?뺣낫瑜??대뒗 ?묐떟 紐⑤뜽?낅땲??
@@ -37,7 +43,7 @@ public class TokenResponse
     public string TokenType { get; set; } = string.Empty;
 
     [JsonPropertyName("expiresIn")]
-    public string ExpiresIn { get; set; } = string.Empty; // 臾몄꽌??臾몄옄?대줈 紐낆떆??
+    public int ExpiresIn { get; set; }
     [JsonPropertyName("scope")]
     public string? Scope { get; set; }
 }

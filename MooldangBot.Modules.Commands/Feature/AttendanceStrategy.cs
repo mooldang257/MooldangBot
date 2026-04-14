@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities;
@@ -74,12 +74,12 @@ public class AttendanceStrategy(
             if (command.Cost > 0)
             {
                 var mediator = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
-                await mediator.Send(new MooldangBot.Contracts.Requests.Point.Commands.AddPointsCommand(
+                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(
                     StreamerUid: notification.Profile.ChzzkUid,
-                    SponsorUid: notification.SenderId,
-                    SponsorNickname: notification.Username,
+                    ViewerUid: notification.SenderId,
+                    Nickname: notification.Username,
                     Amount: command.Cost,
-                    JobType: MooldangBot.Contracts.Requests.Point.Models.PointJobType.Manual
+                    CurrencyType: MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint
                 ), ct);
             }
 

@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Requests.Point.Models;
+using MooldangBot.Contracts.Point.Requests.Models;
 
 namespace MooldangBot.Contracts.Common.Interfaces;
 
