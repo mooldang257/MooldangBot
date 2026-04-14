@@ -74,7 +74,8 @@ namespace MooldangBot.Presentation.Features.Commands
                     c.IsActive,
                     c.RequiredRole.ToString(),
                     c.MatchType.ToString(),
-                    c.RequiresSpace
+                    c.RequiresSpace,
+                    c.Priority
                 );
             }).ToList();
 

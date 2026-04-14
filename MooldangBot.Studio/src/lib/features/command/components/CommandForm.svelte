@@ -111,6 +111,42 @@
             <input type="number" bind:value={cmdForm.cost} class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all" />
         </div>
 
+        <!-- ⚓ [v4.2] 조종석 개조: 정밀 타격 설정 (Priority, MatchType, RequiresSpace) -->
+        <div class="col-span-1 md:col-span-2 lg:col-span-6 grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-primary/5 rounded-[2.5rem] border border-primary/10 mb-2">
+            <!-- P: 우선순위 -->
+            <div class="space-y-2 text-left">
+                <div class="flex items-center gap-2 ml-1">
+                    <label class="text-[11px] font-black text-primary uppercase tracking-widest">실행 우선순위</label>
+                    <div class="group/tip relative cursor-help">
+                        <AlertTriangle size={12} class="text-primary/40" />
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-800 text-white text-[10px] font-bold rounded-xl opacity-0 group-hover/tip:opacity-100 transition-opacity z-50 pointer-events-none shadow-2xl leading-relaxed">
+                            ⚓ [지휘관 지침]: 숫자가 낮을수록 먼저 사격됩니다 (0이 최우선). 동일 키워드 다중 발사 시 순서를 결정합니다.
+                        </div>
+                    </div>
+                </div>
+                <input type="number" bind:value={cmdForm.priority} min="0" max="99" class="w-full bg-white border border-primary/10 rounded-xl p-3 text-sm font-black text-primary outline-none focus:ring-4 focus:ring-primary/10 transition-all" />
+            </div>
+
+            <!-- M: 매칭 방식 -->
+            <div class="space-y-2 text-left">
+                <label class="text-[11px] font-black text-primary uppercase tracking-widest ml-1">정밀 매칭 방식</label>
+                <select bind:value={cmdForm.matchType} class="w-full bg-white border border-primary/10 rounded-xl p-3 text-sm font-black text-primary outline-none focus:ring-4 focus:ring-primary/10 transition-all">
+                    <option value="Exact">정확히 일치 (Exact)</option>
+                    <option value="Prefix">접두사 일치 (Prefix)</option>
+                    <option value="Regex">정규표현식 (Regex)</option>
+                </select>
+            </div>
+
+            <!-- S: 공백 여부 -->
+            <div class="space-y-2 text-left flex flex-col justify-end">
+                <label class="flex items-center gap-3 cursor-pointer group/toggle p-3 bg-white border border-primary/10 rounded-xl hover:bg-primary/5 transition-colors">
+                    <input type="checkbox" bind:checked={cmdForm.requiresSpace} class="sr-only peer" />
+                    <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-primary relative transition-colors after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-transform peer-checked:after:translate-x-5 shadow-inner"></div>
+                    <span class="text-[11px] font-black text-slate-600 uppercase tracking-widest">접두사 공백 대기</span>
+                </label>
+            </div>
+        </div>
+
         <!-- 6. 발동 키워드 -->
         <div class="col-span-1 md:col-span-2 lg:col-span-6 space-y-2 mt-2 text-left">
             <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">발동 키워드</label>

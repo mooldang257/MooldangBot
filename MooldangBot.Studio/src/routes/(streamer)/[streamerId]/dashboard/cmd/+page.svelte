@@ -39,6 +39,9 @@
         responseText: "",
         requiredRole: "Viewer",
         isActive: true,
+        priority: 0,
+        matchType: "Exact",
+        requiresSpace: true,
     };
 
     async function loadMasterData() {
@@ -77,7 +80,10 @@
                 costType: c.costType ?? c.CostType ?? "None",
                 responseText: c.responseText ?? c.ResponseText ?? "",
                 requiredRole: c.requiredRole ?? c.RequiredRole ?? "Viewer",
-                isActive: c.isActive ?? c.IsActive ?? true
+                isActive: c.isActive ?? c.IsActive ?? true,
+                priority: c.priority ?? c.Priority ?? 0,
+                matchType: c.matchType ?? c.MatchType ?? "Exact",
+                requiresSpace: c.requiresSpace ?? c.RequiresSpace ?? true
             }));
         } catch (e) {
             console.error("[물멍] 명령어 목록 로드 실패:", e);

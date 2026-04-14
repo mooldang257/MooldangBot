@@ -100,7 +100,10 @@
                     <th on:click={() => toggleSort('keyword')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group">
                         <div class="flex items-center gap-2">키워드 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
-                    <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">응답 내용</th>
+                    <th on:click={() => toggleSort('priority')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
+                        <div class="flex items-center justify-center gap-2">우선순위 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
+                    </th>
+                    <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">응답 및 부가설정</th>
                     <th on:click={() => toggleSort('cost')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
                         <div class="flex items-center justify-center gap-2">비용 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
@@ -131,13 +134,25 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="p-6 whitespace-nowrap">
-                            <span class="text-sm font-black text-primary bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
-                                {cmd.keyword}
+                        <td class="p-6 whitespace-nowrap text-center">
+                            <span class="text-[10px] font-black {cmd.priority === 0 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-100 text-slate-400'} px-2.5 py-1 rounded-lg border border-primary/5">
+                                P:{cmd.priority}
                             </span>
                         </td>
-                        <td class="p-6">
-                            <p class="text-sm font-bold text-slate-600 line-clamp-1 max-w-sm group-hover/row:line-clamp-none transition-all">{cmd.responseText || '-'}</p>
+                        <td class="p-6 min-w-[200px]">
+                            <div class="flex flex-col gap-1.5">
+                                <p class="text-sm font-bold text-slate-600 line-clamp-1 group-hover/row:line-clamp-none transition-all">{cmd.responseText || '-'}</p>
+                                <div class="flex gap-1">
+                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md {cmd.matchType === 'Exact' ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : cmd.matchType === 'Regex' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-sky-50 text-sky-500 border border-sky-100'} uppercase tracking-tight">
+                                        MATCH: {cmd.matchType}
+                                    </span>
+                                    {#if cmd.requiresSpace && cmd.matchType === 'Prefix'}
+                                        <span class="text-[9px] font-black px-1.5 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded-md uppercase tracking-tight">
+                                            SPACE REQ
+                                        </span>
+                                    {/if}
+                                </div>
+                            </div>
                         </td>
                         <td class="p-6 text-center">
                             <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black {cmd.cost > 0 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-300 border border-slate-100'} shadow-sm">

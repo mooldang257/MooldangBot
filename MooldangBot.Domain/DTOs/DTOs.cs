@@ -242,7 +242,8 @@ namespace MooldangBot.Domain.DTOs
         bool IsActive,
         string RequiredRole,
         string MatchType = "Exact",
-        bool RequiresSpace = true
+        bool RequiresSpace = true,
+        int Priority = 0
     );
 
     /// <summary>
