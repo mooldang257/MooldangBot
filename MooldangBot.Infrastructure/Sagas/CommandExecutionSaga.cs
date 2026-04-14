@@ -1,7 +1,7 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Commands.Events;
-using MooldangBot.Modules.Point.Features.Commands.RefundCurrency;
+using MooldangBot.Contracts.Point.Commands;
 using System;
 
 namespace MooldangBot.Infrastructure.Sagas;
@@ -67,6 +67,11 @@ public class CommandExecutionSaga : MassTransitStateMachine<CommandExecutionSaga
         // [오시리스의 인장]: 최종 상태에 도달하면 상태 보존 없이 제거 (Completing the cycle)
         SetCompletedWhenFinalized();
     }
+
+    // [v6.0] 자율 복구 상태 머신
+    public MassTransit.State? CurrentState { get; private set; }
+    public MassTransit.State? Processing { get; private set; }
+    public MassTransit.State? Faulted { get; private set; }
 
     // States (함선의 상태)
     public State AwaitingFeature { get; private set; } = null!;

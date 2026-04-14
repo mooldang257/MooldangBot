@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Contracts.Point.Commands; // [v7.4] 성지로 이전된 규격 참조
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using System;
@@ -10,19 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Modules.Point.Features.Commands.RefundCurrency;
-
-/// <summary>
-/// [오시리스의 자율 복구]: 명령어 실행 실패 시 차감된 재화를 원래대로 되돌리는 환불 명령입니다.
-/// </summary>
-public record RefundCurrencyCommand(
-    string StreamerUid,
-    string ViewerUid,
-    string ViewerNickname,
-    int Amount,
-    string CostType,
-    string Reason,
-    Guid CorrelationId
-) : IRequest<bool>;
 
 /// <summary>
 /// [오시리스의 치유사]: RefundCurrencyCommand를 수신하여 재화를 안전하게 복구합니다.
