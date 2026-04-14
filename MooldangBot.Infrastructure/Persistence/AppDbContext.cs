@@ -429,6 +429,7 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
             }
             entity.Property(e => e.CostType).HasConversion<string>();
             entity.Property(e => e.RequiredRole).HasConversion<string>();
+            entity.Property(e => e.MatchType).HasConversion<string>();
 
             // 1. 스트리머 삭제 시 해당 채널의 명령어도 연쇄 삭제 (Cascade)
             entity.HasOne(c => c.StreamerProfile)
