@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
@@ -19,6 +19,14 @@ public class DbInitializer(
 
         try
         {
+            // [v7.1-Fix] 오시리스의 세척: RESET_DATABASE 환경변수가 true일 경우 DB를 완전히 초기화합니다.
+            if (config.GetValue<bool>("RESET_DATABASE"))
+            {
+                logger.LogWarning("⚠️ [오시리스의 시동] RESET_DATABASE=true 감지. 데이터베이스를 초기화(EnsureDeleted)합니다.");
+                await db.Database.EnsureDeletedAsync();
+                logger.LogInformation("✅ [오시리스의 시동] 데이터베이스가 완전히 삭제되었습니다.");
+            }
+
             // 1. 데이터베이스 마이그레이션 적용 (스키마 자동 생성/변경)
             logger.LogInformation("🛠️ [오시리스의 시동] 데이터베이스 마이그레이션을 적용 중...");
             await db.Database.MigrateAsync();

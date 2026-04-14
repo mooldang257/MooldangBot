@@ -12,8 +12,8 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260414022408_Initial_v7_WalletArchitecture")]
-    partial class Initial_v7_WalletArchitecture
+    [Migration("20260414043505_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
