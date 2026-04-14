@@ -55,11 +55,11 @@ namespace MooldangBot.Infrastructure
             // API 환경에서는 Presentation 레이어에서 등록된 실제 OverlayNotificationService로 덮어씌워집니다.
             services.TryAddScoped<IOverlayNotificationService, NullOverlayNotificationService>();
 
-            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록 (열쇠 전역 공유)
-            // 봇 엔진(ChzzkAPI)에서도 API가 저장한 암호화 토큰을 읽을 수 있도록 DB에 키를 저장합니다.
+            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록 (열쇠 파일 영속화)
+            // [물멍]: DB 초기화의 영향을 받지 않도록 전용 볼륨 경로(/keys)에 열쇠를 보관합니다.
             services.AddDataProtection()
                 .SetApplicationName("MooldangBot")
-                .PersistKeysToDbContext<AppDbContext>();
+                .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
             
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();

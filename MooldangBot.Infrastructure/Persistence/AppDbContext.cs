@@ -8,12 +8,11 @@ using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Domain.Common;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext
+public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext
 {
     private readonly IUserSession _userSession;
     private readonly IDataProtector _protector;
@@ -83,8 +82,8 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
     public DbSet<CommandExecutionLog> CommandExecutionLogs { get; set; }
     public DbSet<ChatInteractionLog> ChatInteractionLogs { get; set; }
 
-    // DataProtectionKey 저장소 (Microsoft.AspNetCore.DataProtection.EntityFrameworkCore)
-    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+    // [v13.1] 리포지토리 및 장부용 DbSet들 생략...
+    // (DataProtectionKey DbSet 제거됨 - [v2.4.7] 파일 시스템 영속화로 전환)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
