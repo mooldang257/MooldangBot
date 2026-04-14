@@ -46,7 +46,7 @@ public class UnifiedCommand : ISoftDeletable, IAuditable
     /// <summary>
     /// [v6.2.2] 명령어 매칭 방식 (Exact, Prefix, Contains, Regex)
     /// </summary>
-    public CommandMatchType MatchType { get; set; } = CommandMatchType.Exact;
+    public CommandMatchType MatchType { get; set; } = CommandMatchType.Prefix;
 
     /// <summary>
     /// [v6.2.2] 키워드 뒤에 공백이 필요한지 여부 (Prefix 매칭용)
