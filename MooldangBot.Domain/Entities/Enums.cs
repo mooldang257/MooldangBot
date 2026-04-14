@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.Entities
+namespace MooldangBot.Domain.Entities
 {
     public enum RouletteLogStatus
     {
@@ -68,5 +68,16 @@
         Admin = 0,
         Streamer = 1,
         Viewer = 2
+    }
+
+    /// <summary>
+    /// [오시리스의 눈]: 명령어 매칭 정밀도를 정의합니다.
+    /// </summary>
+    public enum CommandMatchType
+    {
+        Exact = 0,    // 정확히 일치
+        Prefix = 1,   // 키워드로 시작
+        Contains = 2, // 키워드 포함
+        Regex = 3     // 정규식 매칭
     }
 }

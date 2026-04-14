@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
@@ -240,7 +240,9 @@ namespace MooldangBot.Domain.DTOs
         string ResponseText,
         int? TargetId,
         bool IsActive,
-        string RequiredRole // 추가: Viewer, Manager, Streamer
+        string RequiredRole,
+        string MatchType = "Exact",
+        bool RequiresSpace = true
     );
 
     /// <summary>
@@ -257,7 +259,9 @@ namespace MooldangBot.Domain.DTOs
         int? TargetId,
         bool IsActive,
         string RequiredRole,
-        RouletteSaveDto? RouletteData = null // 🎰 룰렛 데이터 포함 가능
+        RouletteSaveDto? RouletteData = null,
+        string MatchType = "Exact",
+        bool RequiresSpace = true
     );
 
     // [v4.5.3] 팩트 체크 완료: 오버레이 채팅 전송을 위한 100% 정합성 DTO

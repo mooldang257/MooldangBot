@@ -1,107 +1,149 @@
-﻿using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
-using System.Collections.Concurrent;
-using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Domain.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace MooldangBot.Modules.Commands.Cache;
 
-public class CommandCacheService : ICommandCacheService
+/// <summary>
+/// [파로스의 등대 - v3.0]: 고성능 멀티캐스팅 명령어 매칭 엔진 구현체입니다.
+/// </summary>
+public class CommandCacheService : ICommandCache
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ICommandDbContext _db;
     private readonly ILogger<CommandCacheService> _logger;
-    
-    private readonly ConcurrentDictionary<string, Dictionary<string, UnifiedCommand>> _unifiedCache = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, CommandMetadata>> _unifiedCache = new();
+    private readonly ConcurrentDictionary<string, Regex> _regexCache = new();
 
-    public CommandCacheService(IServiceProvider serviceProvider, ILogger<CommandCacheService> logger)
+    public CommandCacheService(ICommandDbContext db, ILogger<CommandCacheService> logger)
     {
-        _serviceProvider = serviceProvider;
+        _db = db;
         _logger = logger;
     }
 
-    public async Task RefreshUnifiedAsync(string chzzkUid, CancellationToken ct)
+    public async Task<IEnumerable<CommandMetadata>> GetMatchesAsync(string chzzkUid, string message)
     {
-        try
+        var normalizedUid = (chzzkUid ?? "").Trim().ToLower();
+        if (string.IsNullOrEmpty(normalizedUid)) return Enumerable.Empty<CommandMetadata>();
+
+        if (!_unifiedCache.TryGetValue(normalizedUid, out var commands))
         {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
-
-            // [v4.3] 정문화된 스키마 탐색: StreamerProfile 로드
-            var commands = await db.UnifiedCommands
-                .AsNoTracking()
-                .Include(c => c.StreamerProfile)
-                .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid)
-                .ToListAsync(ct);
-
-            var commandDict = commands.ToDictionary(
-                c => c.Keyword, 
-                c => {
-                    // [v2.1.7] 하모니의 강제 교정: !질문 키워드는 무조건 AI 모드로 작동하도록 자동 변환
-                    // [v4.3] 정문화된 FeatureType 정보를 검사 및 교정 (메모리상에서만 반영)
-                    var featureType = c.FeatureType.ToString();
-                    if (c.Keyword.Equals("!질문", StringComparison.OrdinalIgnoreCase) && featureType != "AI")
-                    {
-                        _logger.LogWarning($"⚠️ [CommandCache] {chzzkUid}의 '!질문' 명령어가 {featureType}에서 AI로 자동 교정되었습니다.");
-                        // 주의: 실제 DB는 바꾸지 않고 캐시 상의 타입만 AI로 리졸브되도록 유도 (필요시 DB 업데이트 로직 추가 가능)
-                    }
-                    return c;
-                }, 
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            // [물멍의 지리]: 대소문자가 혼용된 UID가 들어오더라도 일관되게 매칭될 수 있도록 모든 캐시 키를 소문자로 강제 정규화합니다.
-            string normalizedUid = (chzzkUid ?? "").ToLower();
-            _unifiedCache[normalizedUid] = commandDict;
-            _logger.LogInformation($"🧠 [UnifiedCache] {normalizedUid}의 명령어 {commandDict.Count}개를 메모리에 로드했습니다.");
+            await RefreshUnifiedAsync(normalizedUid, default);
+            if (!_unifiedCache.TryGetValue(normalizedUid, out commands)) return Enumerable.Empty<CommandMetadata>();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError($"❌ [UnifiedCache] {chzzkUid} 캐시 갱신 중 에러: {ex.Message}");
-        }
+
+        // [v3.0]: 4가지 패턴 매칭 (Exact, Prefix, Contains, Regex) 및 정렬
+        var matches = commands.Values
+            .Where(c => c.IsActive && IsMatch(message, c))
+            .OrderByDescending(c => GetMatchPriority(c.MatchType))
+            .ThenByDescending(c => c.Cost)
+            .ToList();
+
+        return matches;
     }
 
-    public async Task<UnifiedCommand?> GetUnifiedCommandAsync(string chzzkUid, string keyword)
+    public async Task<CommandMetadata?> GetAutoMatchDonationCommandAsync(string chzzkUid, string featureType)
     {
-        // [파로스의 눈]: 조회 시에도 호출 단위를 소문자로 정규화하여 대소문자 미스매치를 근본적으로 차단합니다.
-        string normalizedUid = (chzzkUid ?? "").ToLower();
-        if (_unifiedCache.TryGetValue(normalizedUid, out var commands))
-        {
-            if (commands.TryGetValue(keyword, out var command))
-            {
-                return command;
-            }
-        }
-        
-        // 캐시에 없으편 한 번 갱신 시도 (최초 1회)
-        await RefreshUnifiedAsync(normalizedUid, default);
-        
-        if (_unifiedCache.TryGetValue(normalizedUid, out var commandsRefreshed))
-        {
-            if (commandsRefreshed.TryGetValue(keyword, out var command))
-            {
-                return command;
-            }
-        }
-
-        return null;
-    }
-
-    public async Task<UnifiedCommand?> GetAutoMatchDonationCommandAsync(string chzzkUid, string featureType)
-    {
-        string normalizedUid = (chzzkUid ?? "").ToLower();
+        var normalizedUid = (chzzkUid ?? "").Trim().ToLower();
         if (!_unifiedCache.TryGetValue(normalizedUid, out var commands))
         {
             await RefreshUnifiedAsync(normalizedUid, default);
             if (!_unifiedCache.TryGetValue(normalizedUid, out commands)) return null;
         }
 
-        // [v1.9.7] 후원 룰렛 자동 매칭 (v4.3 정문화 반영)
         return commands.Values
             .FirstOrDefault(c => c.FeatureType.ToString() == featureType && 
                                c.CostType == CommandCostType.Cheese && 
                                c.IsActive);
+    }
+
+    public async Task RefreshUnifiedAsync(string chzzkUid, CancellationToken ct)
+    {
+        var normalizedUid = chzzkUid.Trim().ToLower();
+        try
+        {
+            var commandEntities = await _db.UnifiedCommands
+                .AsNoTracking()
+                .Include(c => c.StreamerProfile)
+                .Where(c => c.StreamerProfile!.ChzzkUid == normalizedUid)
+                .ToListAsync(ct);
+
+            var metadataDict = new ConcurrentDictionary<int, CommandMetadata>();
+            foreach (var c in commandEntities)
+            {
+                metadataDict[c.Id] = new CommandMetadata
+                {
+                    Id = c.Id,
+                    StreamerProfileId = c.StreamerProfileId,
+                    Keyword = c.Keyword,
+                    MatchType = c.MatchType,
+                    RequiresSpace = c.RequiresSpace,
+                    Cost = c.Cost,
+                    CostType = c.CostType,
+                    ResponseText = c.ResponseText,
+                    FeatureType = c.FeatureType,
+                    IsActive = c.IsActive,
+                    TargetId = c.TargetId
+                };
+            }
+
+            _unifiedCache[normalizedUid] = metadataDict;
+            _logger.LogInformation("✅ [CommandCache] {Count} commands cached for streamer: {Uid}", metadataDict.Count, normalizedUid);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ [CommandCache] Failed to refresh cache for: {Uid}", normalizedUid);
+        }
+    }
+
+    private bool IsMatch(string message, CommandMetadata command)
+    {
+        if (string.IsNullOrEmpty(message) || string.IsNullOrEmpty(command.Keyword)) return false;
+
+        return command.MatchType switch
+        {
+            CommandMatchType.Exact => message.Equals(command.Keyword, StringComparison.OrdinalIgnoreCase),
+            CommandMatchType.Prefix => MatchPrefix(message, command.Keyword, command.RequiresSpace),
+            CommandMatchType.Contains => message.Contains(command.Keyword, StringComparison.OrdinalIgnoreCase),
+            CommandMatchType.Regex => MatchRegex(message, command.Keyword),
+            _ => false
+        };
+    }
+
+    private bool MatchPrefix(string message, string keyword, bool requiresSpace)
+    {
+        if (!message.StartsWith(keyword, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!requiresSpace) return true;
+        
+        // 키워드 뒤에 공백이 있거나 문자열이 끝남
+        return message.Length == keyword.Length || char.IsWhiteSpace(message[keyword.Length]);
+    }
+
+    private int GetMatchPriority(CommandMatchType type) => type switch
+    {
+        CommandMatchType.Exact => 100,
+        CommandMatchType.Regex => 80,
+        CommandMatchType.Prefix => 60,
+        CommandMatchType.Contains => 40,
+        _ => 0
+    };
+
+    private bool MatchRegex(string message, string pattern)
+    {
+        try
+        {
+            var regex = _regexCache.GetOrAdd(pattern, p => new Regex(p, RegexOptions.Compiled | RegexOptions.IgnoreCase));
+            return regex.IsMatch(message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning($"⚠️ [RegexCache] 정규식 매칭 중 오류 (Pattern: {pattern}): {ex.Message}");
+            return false;
+        }
     }
 }

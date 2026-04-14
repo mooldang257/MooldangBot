@@ -17,7 +17,7 @@ namespace MooldangBot.Application.Features.Chat.Handlers;
 /// </summary>
 public class ChatInteractionHandler(
     IChatLogBufferService bufferService,
-    ICommandCacheService commandCache,
+    ICommandCache commandCache,
     IBroadcastScribe scribe, // [v3.7] 기존 통계 엔진 유지
     ILogger<ChatInteractionHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {
@@ -36,8 +36,6 @@ public class ChatInteractionHandler(
 
         if (notification.Payload is ChzzkChatEvent chat)
         {
-            // 봇 자신의 말은 이미 중앙(Consumer)에서 걸러졌으므로 여기선 별도 처리 불필요
-
             senderNickname = chat.Nickname;
             message = chat.Content;
             messageType = "Chat";
@@ -51,7 +49,7 @@ public class ChatInteractionHandler(
 
         if (string.IsNullOrEmpty(message)) return;
 
-        // 2. [명령어 판별 로직]: DB 키워드 대조 (키워드 + ' ' 또는 키워드 단독)
+        // 2. [명령어 판별 로직]: 신규 매칭 엔진(ICommandCache) 위임
         bool isCommand = await DetermineIfCommandAsync(profile.ChzzkUid, message);
 
         // 3. [영속성 위임]: 버퍼 서비스를 통해 벌크 적재 요청 (Non-blocking)
@@ -76,14 +74,8 @@ public class ChatInteractionHandler(
 
     private async Task<bool> DetermineIfCommandAsync(string chzzkUid, string message)
     {
-        // 첫 단어 추출
-        var parts = message.Split(' ', 2);
-        string firstWord = parts[0];
-
-        // DB 키워드 캐시 확인
-        var command = await commandCache.GetUnifiedCommandAsync(chzzkUid, firstWord);
-
-        // 결과 반환: 키워드가 존재하면 명령어로 간주
-        return command != null;
+        // 신규 매칭 엔진을 통해 해당 메시지가 어떤 명령어라도 트리거하는지 확인 (Exact, Prefix, Contains, Regex)
+        var matches = await commandCache.GetMatchesAsync(chzzkUid, message);
+        return matches.Any();
     }
 }

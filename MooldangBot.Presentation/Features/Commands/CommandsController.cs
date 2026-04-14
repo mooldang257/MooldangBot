@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +19,7 @@ namespace MooldangBot.Presentation.Features.Commands
     // [v10.1] Primary Constructor 적용
     public class CommandsController(
         IAppDbContext db, 
-        ICommandCacheService cacheService, 
+        ICommandCache cacheService, 
         IUnifiedCommandService unifiedCommandService,
         ICommandMasterCacheService masterCache, 
         IUserSession userSession,
@@ -72,7 +72,9 @@ namespace MooldangBot.Presentation.Features.Commands
                     c.ResponseText, 
                     c.TargetId, 
                     c.IsActive,
-                    c.RequiredRole.ToString()
+                    c.RequiredRole.ToString(),
+                    c.MatchType.ToString(),
+                    c.RequiresSpace
                 );
             }).ToList();
 

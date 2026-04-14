@@ -1,5 +1,3 @@
-﻿using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,12 +14,12 @@ namespace MooldangBot.Modules.Commands.General;
 public class UnifiedCommandService : IUnifiedCommandService
 {
     private readonly ICommandDbContext _db;
-    private readonly ICommandCacheService _cacheService;
+    private readonly ICommandCache _cacheService;
     private readonly ILogger<UnifiedCommandService> _logger;
 
     public UnifiedCommandService(
         ICommandDbContext db,
-        ICommandCacheService cacheService,
+        ICommandCache cacheService,
         ILogger<UnifiedCommandService> logger)
     {
         _db = db;
@@ -85,6 +83,8 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         // 데이터 매핑
         entity.Keyword = req.Keyword.Trim();
+        entity.MatchType = Enum.Parse<CommandMatchType>(req.MatchType ?? "Exact", true);
+        entity.RequiresSpace = req.RequiresSpace;
         entity.FeatureType = masterFeature.Type; // [v4.3] 정문화된 기능 Enum 할당
         entity.CostType = Enum.Parse<CommandCostType>(req.CostType, true);
         entity.Cost = req.Cost;
@@ -113,7 +113,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             await OnAfterSaveAsync(entity, req, targetUid, isNew);
         }
 
-        // 캐시 갱신
+        // 캐시 갱신 (ICommandCache 사용)
         await _cacheService.RefreshUnifiedAsync(targetUid, default);
 
         return entity;

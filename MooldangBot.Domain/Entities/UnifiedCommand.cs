@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +42,16 @@ public class UnifiedCommand : ISoftDeletable, IAuditable
     public string ResponseText { get; set; } = string.Empty;
 
     public int? TargetId { get; set; }
+
+    /// <summary>
+    /// [v6.2.2] 명령어 매칭 방식 (Exact, Prefix, Contains, Regex)
+    /// </summary>
+    public CommandMatchType MatchType { get; set; } = CommandMatchType.Exact;
+
+    /// <summary>
+    /// [v6.2.2] 키워드 뒤에 공백이 필요한지 여부 (Prefix 매칭용)
+    /// </summary>
+    public bool RequiresSpace { get; set; } = true;
 
     [Required]
     public CommandRole RequiredRole { get; set; } = CommandRole.Viewer;

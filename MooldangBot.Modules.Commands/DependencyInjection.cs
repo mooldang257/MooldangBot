@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Commands.Cache;
@@ -12,9 +12,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddCommandsModule(this IServiceCollection services)
     {
-        // 1. Core Services (Cache and Router)
-        services.AddSingleton<ICommandCacheService, CommandCacheService>();
+        // 1. Core Services (Multicasting Engine)
+        services.AddSingleton<ICommandCache, CommandCacheService>();
         services.AddScoped<IUnifiedCommandService, UnifiedCommandService>();
+        services.AddSingleton<CommandArgumentParser>();
+        services.AddScoped<ICommandResponseAggregator, CommandResponseAggregator>();
 
         // 2. Command Strategies
         services.AddScoped<ICommandFeatureStrategy, ReplyStrategy>();
