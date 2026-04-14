@@ -55,8 +55,9 @@ namespace MooldangBot.Infrastructure
             // API 환경에서는 Presentation 레이어에서 등록된 실제 OverlayNotificationService로 덮어씌워집니다.
             services.TryAddScoped<IOverlayNotificationService, NullOverlayNotificationService>();
 
-            // [v2.4.7] 수호자의 방패: 데이터 보호 서비스 등록 (열쇠 파일 영속화)
-            // [물멍]: DB 초기화의 영향을 받지 않도록 전용 볼륨 경로(/keys)에 열쇠를 보관합니다.
+            // [v2.4.7] 수호자의 방패 (Guardian's Shield): 데이터 보호 서비스 등록
+            // [물멍]: DB 초기화 스트레스에서 벗어나기 위해 암호화 키를 DB가 아닌 파일 시스템(/root/.aspnet/DataProtection-Keys)에 영속화합니다.
+            // Docker 환경에서 해당 경로를 볼륨 매핑하면 DB를 밀어도 기존 토큰 암호화(ChzzkAccessToken 등)가 깨지지 않고 유지됩니다.
             services.AddDataProtection()
                 .SetApplicationName("MooldangBot")
                 .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
