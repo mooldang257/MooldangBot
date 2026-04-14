@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models;
 using MooldangBot.Contracts.Chzzk.Models.Events;
+using StackExchange.Redis;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 
@@ -21,6 +21,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
     private readonly MooldangBot.Contracts.Chzzk.Interfaces.IChzzkApiClient _apiClient;
     private readonly MooldangBot.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore _tokenStore;
     private readonly IConfiguration _configuration;
+    private readonly IConnectionMultiplexer _redis;
     private readonly ConcurrentDictionary<int, IWebSocketShard> _shards = new();
     private readonly SemaphoreSlim _initializeSemaphore = new(1, 1);
     private int _shardCount;
@@ -32,7 +33,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         IServiceScopeFactory scopeFactory,
         MooldangBot.Contracts.Chzzk.Interfaces.IChzzkApiClient apiClient,
         MooldangBot.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore tokenStore,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IConnectionMultiplexer redis)
     {
         _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<ShardedWebSocketManager>();
@@ -40,8 +42,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         _apiClient = apiClient;
         _tokenStore = tokenStore;
         _configuration = configuration;
-        
-        // [물멍]: 생성자에서는 할당만 수행합니다. (시니어 가이드 준수)
+        _redis = redis;
     }
 
     /// <summary>
@@ -75,7 +76,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
                     scopeFactory: _scopeFactory, 
                     publisher: publisher, 
                     apiClient: _apiClient, 
-                    configuration: _configuration);
+                    configuration: _configuration,
+                    redis: _redis);
                     
                 _shards[i] = shard;
             }

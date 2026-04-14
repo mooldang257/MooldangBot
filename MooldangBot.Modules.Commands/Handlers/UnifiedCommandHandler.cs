@@ -127,7 +127,8 @@ public class UnifiedCommandHandler(
             if (autoAccumulate || keyword == "!적립")
             {
                 var (success, currentPoints) = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(
-                    targetUid, legacyEvent.SenderId, legacyEvent.Username, currentDonation, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint), ct);
+                    targetUid, legacyEvent.SenderId, legacyEvent.Username, currentDonation, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint,
+                    PlatformTransactionId: legacyEvent.SafeEventId), ct);
                 
                 if (success && keyword == "!적립")
                 {
@@ -163,7 +164,8 @@ public class UnifiedCommandHandler(
                 "donation_user",
                 donation.SenderId,
                 null, // [v3.7] 후원 모델에는 현재 Emojis 항목이 Contracts에 없음
-                donation.PayAmount
+                donation.PayAmount,
+                SafeEventId: donation.SafeEventId
             );
         }
         return null;

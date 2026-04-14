@@ -42,7 +42,13 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
     public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
     public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
     public DbSet<GlobalViewer> GlobalViewers { get; set; }
-    public DbSet<View_StreamerViewer> StreamerViewers { get; set; }
+
+    // [v7.0] Wallet Architecture 분산화 엔티티
+    public DbSet<ViewerRelation> ViewerRelations { get; set; }
+    public DbSet<ViewerPoint> ViewerPoints { get; set; }
+    public DbSet<ViewerDonation> ViewerDonations { get; set; }
+    public DbSet<ViewerDonationHistory> ViewerDonationHistories { get; set; }
+
     public DbSet<Roulette> Roulettes { get; set; }
     public DbSet<RouletteItem> RouletteItems { get; set; }
     public DbSet<PeriodicMessage> PeriodicMessages { get; set; }
@@ -220,9 +226,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
             entity.HasIndex(s => s.StreamerProfileId);
         });
 
-        modelBuilder.Entity<View_StreamerViewer>(entity => {
-            // [v6.2] 닉네임 필드 제거됨
-        });
 
         modelBuilder.Entity<RouletteLog>(entity => {
             entity.ToTable("func_roulette_logs");
@@ -297,19 +300,28 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
             entity.HasIndex(e => e.Nickname).HasDatabaseName("IX_GlobalViewer_Nickname");
         });
 
-        modelBuilder.Entity<View_StreamerViewer>(entity => {
-            entity.ToTable("view_streamer_viewers");
-            
-            // 스트리머가 탈퇴/삭제되면 해당 방의 시청자 기록도 연쇄 삭제 (DB 용량 확보)
-            entity.HasOne(v => v.StreamerProfile)
-                  .WithMany()
-                  .HasForeignKey(v => v.StreamerProfileId)
-                  .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ViewerRelation>(entity => {
+            entity.ToTable("viewer_relations");
+            entity.HasOne(v => v.StreamerProfile).WithMany().HasForeignKey(v => v.StreamerProfileId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.GlobalViewer).WithMany().HasForeignKey(v => v.GlobalViewerId).OnDelete(DeleteBehavior.Restrict);
+        });
 
-            entity.HasOne(v => v.GlobalViewer)
-                  .WithMany()
-                  .HasForeignKey(v => v.GlobalViewerId)
-                  .OnDelete(DeleteBehavior.Restrict); // 글로벌 정보는 수동 관리 권장
+        modelBuilder.Entity<ViewerPoint>(entity => {
+            entity.ToTable("viewer_points");
+            entity.HasOne(v => v.StreamerProfile).WithMany().HasForeignKey(v => v.StreamerProfileId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.GlobalViewer).WithMany().HasForeignKey(v => v.GlobalViewerId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ViewerDonation>(entity => {
+            entity.ToTable("viewer_donations");
+            entity.HasOne(v => v.StreamerProfile).WithMany().HasForeignKey(v => v.StreamerProfileId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.GlobalViewer).WithMany().HasForeignKey(v => v.GlobalViewerId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ViewerDonationHistory>(entity => {
+            entity.ToTable("viewer_donations_history");
+            entity.HasOne(v => v.StreamerProfile).WithMany().HasForeignKey(v => v.StreamerProfileId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.GlobalViewer).WithMany().HasForeignKey(v => v.GlobalViewerId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<RouletteSpin>(entity => {
@@ -448,7 +460,6 @@ public class AppDbContext : DbContext, IAppDbContext, IDataProtectionKeyContext,
         modelBuilder.Entity<AvatarSetting>().ToTable("overlay_avatar_settings");
         modelBuilder.Entity<ChzzkCategory>().ToTable("sys_chzzk_categories");
         modelBuilder.Entity<ChzzkCategoryAlias>().ToTable("sys_chzzk_category_aliases");
-        modelBuilder.Entity<View_StreamerViewer>().ToTable("view_streamer_viewers");
         modelBuilder.Entity<Roulette>().ToTable("func_roulette_main");
         modelBuilder.Entity<RouletteItem>(entity => {
             entity.ToTable("func_roulette_items");

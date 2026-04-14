@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -10,6 +10,8 @@ using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Contracts.Chzzk.Models;
 using MooldangBot.Contracts.Chzzk.Models.Enums;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
+using StackExchange.Redis;
+using System.Security.Cryptography;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
 
@@ -24,6 +26,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     private readonly IChzzkMessagePublisher _publisher;
     private readonly IChzzkApiClient _apiClient;
     private readonly IConfiguration _configuration;
+    private readonly IDatabase _redis;
     
     private readonly ConcurrentDictionary<string, ClientWebSocket> _clients = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _channelCts = new();
@@ -40,7 +43,8 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         IServiceScopeFactory scopeFactory, 
         IChzzkMessagePublisher publisher,
         IChzzkApiClient apiClient,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IConnectionMultiplexer redis)
     {
         _shardId = shardId;
         _logger = loggerFactory.CreateLogger($"WebSocketShard-{shardId}");
@@ -48,6 +52,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         _publisher = publisher;
         _apiClient = apiClient;
         _configuration = configuration;
+        _redis = redis.GetDatabase();
     }
 
     public async Task ConnectAsync(string chzzkUid, string url, string accessToken)
@@ -399,6 +404,16 @@ public class WebSocketShard : IWebSocketShard, IDisposable
             if (nickname == "Unknown" && (chatPayload.DonatorNickname != null))
                 nickname = chatPayload.DonatorNickname;
 
+            // [v7.1] 멱등성 보호막 (Idempotency Filter)
+            // 소켓 재전송 버그로 인한 수십ms 단위의 중복은 차단하고, 1초 이상의 광클 후원은 허용합니다.
+            if (await IsDuplicateDonationAsync(chzzkUid, senderId, amount, donationMsg))
+            {
+                _logger.LogWarning("🛡️ [Shard {Id}] 중복 후원 감지 및 차단: {Nickname}({Uid}) - {Amount}치즈", _shardId, nickname, senderId, amount);
+                return;
+            }
+
+            var safeEventId = Guid.NewGuid().ToString();
+
             eventPayload = new ChzzkDonationEvent
             {
                 ChannelId = chzzkUid,
@@ -408,11 +423,13 @@ public class WebSocketShard : IWebSocketShard, IDisposable
                 Timestamp = now,
                 PayAmount = amount,
                 DonationMessage = donationMsg,
-                IsVideoDonation = eventType == ChzzkEventType.VideoDonation
+                IsVideoDonation = eventType == ChzzkEventType.VideoDonation,
+                SafeEventId = safeEventId
             };
 
             var donationTypeName = eventType == ChzzkEventType.VideoDonation ? "영상후원" : "채팅후원";
-            _logger.LogInformation("💰 [Shard {Id}] {DonationType}: {Nickname}({Uid}) - {Amount}치즈", _shardId, donationTypeName, nickname, senderId, amount);
+            _logger.LogInformation("💰 [Shard {Id}] {DonationType}: {Nickname}({Uid}) - {Amount}치즈 (SafeId: {SafeId})", 
+                _shardId, donationTypeName, nickname, senderId, amount, safeEventId);
         }
         else if (eventType == ChzzkEventType.Subscription)
         {
@@ -555,5 +572,36 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     public int GetActiveConnectionCount()
     {
         return _clients.Count(c => c.Value.State == WebSocketState.Open);
+    }
+
+    /// <summary>
+    /// [v7.1] 페이로드 해시와 Redis SETNX를 결합한 1초 마이크로 락 멱등성 검증기
+    /// </summary>
+    private async Task<bool> IsDuplicateDonationAsync(string streamerId, string senderId, int amount, string message)
+    {
+        try
+        {
+            // 1. 후원의 핵심 식별 요소 결합 (메시지는 해시 처리하여 키 길이 최적화)
+            var rawKey = $"{streamerId}:{senderId}:{amount}:{ComputeHash(message)}";
+            var redisKey = $"idempotency:donation:{rawKey}";
+
+            // 2. Redis SETNX (1초 락)
+            // 성공(True) -> 처음 들어온 패킷 (통과)
+            // 실패(False) -> 1초 이내에 동일 패킷 존재 (차단)
+            var success = await _redis.StringSetAsync(redisKey, "LOCKED", expiry: TimeSpan.FromSeconds(1), when: When.NotExists);
+            return !success;
+        }
+        catch (Exception ex)
+        {
+            // [Fail-Open]: 인프라 장애 시 후원 누락 방지를 위해 무조건 통과
+            _logger.LogCritical(ex, "🚨 [Idempotency] Redis 연결 및 연산 실패! Fail-Open 정책에 따라 후원을 허용합니다.");
+            return false;
+        }
+    }
+
+    private string ComputeHash(string input)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(bytes)[..16]; // 16자만 사용해도 충돌 희박
     }
 }

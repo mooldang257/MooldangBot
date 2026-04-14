@@ -164,6 +164,10 @@ namespace MooldangBot.Infrastructure
             // [v1.2] 마스터 데이터 캐시 서비스 등록
             services.AddScoped<ICommandMasterCacheService, CommandMasterCacheService>();
 
+            // [v7.0] Wallet Architecture: 포인트 캐시 및 지연 쓰기 워커 등록
+            services.AddSingleton<IPointCacheService, PointCacheService>();
+            services.AddHostedService<PointWriteBackWorker>();
+
             // [v13.1] 리포지토리 등록
             // [Phase 2] ISongBookRepository는 SongBook 모듈에서 등록됩니다.
 

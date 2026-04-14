@@ -50,17 +50,17 @@ public class AttendanceStrategy(
         }
 
         // 2. 채널별 프로필 확보
-        var viewer = await db.StreamerViewers
+        var viewer = await db.ViewerRelations
             .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewer.Id, ct);
 
         if (viewer == null)
         {
-            viewer = new View_StreamerViewer 
+            viewer = new ViewerRelation 
             { 
                 StreamerProfileId = streamer.Id,
                 GlobalViewerId = globalViewer.Id
             };
-            db.StreamerViewers.Add(viewer);
+            db.ViewerRelations.Add(viewer);
         }
 
         bool isFirstToday = viewer.LastAttendanceAt?.Date != KstClock.Today;

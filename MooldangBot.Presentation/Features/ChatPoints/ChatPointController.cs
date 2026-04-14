@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -59,19 +59,24 @@ namespace MooldangBot.Presentation.Features.ChatPoints
         [HttpGet("{chzzkUid}/viewers")]
         public async Task<IActionResult> GetViewers(string chzzkUid)
         {
-            var viewers = await context.StreamerViewers
-                .IgnoreQueryFilters()
-                .Include(v => v.GlobalViewer)
-                .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
-                .OrderByDescending(v => v.Points) 
-                .Select(v => new {
-                    nickname = v.GlobalViewer!.Nickname,
-                    points = v.Points,
-                    donationPoints = v.DonationPoints, 
-                    attendanceCount = v.AttendanceCount,
-                    lastAttendanceAt = v.LastAttendanceAt
-                })
-                .ToListAsync();
+            // [v7.0] Wallet Architecture: 분산된 지갑 테이블들을 조인하여 통합 뷰 제공
+            var viewers = await (from r in context.ViewerRelations.IgnoreQueryFilters()
+                                 join p in context.ViewerPoints.IgnoreQueryFilters() 
+                                    on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points
+                                 from p in points.DefaultIfEmpty()
+                                 join d in context.ViewerDonations.IgnoreQueryFilters() 
+                                    on new { r.StreamerProfileId, r.GlobalViewerId } equals new { d.StreamerProfileId, d.GlobalViewerId } into donations
+                                 from d in donations.DefaultIfEmpty()
+                                 where r.StreamerProfile!.ChzzkUid == chzzkUid
+                                 orderby (p != null ? p.Points : 0) descending
+                                 select new {
+                                     nickname = r.GlobalViewer!.Nickname,
+                                     points = p != null ? p.Points : 0,
+                                     donationPoints = d != null ? d.Balance : 0,
+                                     attendanceCount = r.AttendanceCount,
+                                     lastAttendanceAt = r.LastAttendanceAt
+                                 })
+                                 .ToListAsync();
 
             return Ok(Result<object>.Success(viewers));
         }

@@ -12,7 +12,7 @@ public interface ICommandDbContext
     DbSet<UnifiedCommand> UnifiedCommands { get; set; }
     DbSet<StreamerProfile> StreamerProfiles { get; set; }
     DbSet<GlobalViewer> GlobalViewers { get; set; }
-    DbSet<View_StreamerViewer> StreamerViewers { get; set; }
+    DbSet<ViewerRelation> ViewerRelations { get; set; }
 
     // [v6.2] 명령어 모듈 자치권 확장을 위한 엔티티 추가
     DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }

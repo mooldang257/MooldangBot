@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MooldangBot.Contracts.Abstractions;
@@ -43,6 +43,11 @@ public record ChzzkDonationEvent : ChzzkEventBase
     public int PayAmount { get; init; }
     public required string DonationMessage { get; init; }
     public bool IsVideoDonation { get; init; }
+    
+    /// <summary>
+    /// [v7.1] 게이트웨이의 幂등성 검증을 통과한 안전한 이벤트 식별자 (Hash + MicroLock 기반)
+    /// </summary>
+    public string? SafeEventId { get; init; }
 }
 
 /// <summary>

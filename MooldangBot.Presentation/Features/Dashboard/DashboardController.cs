@@ -37,7 +37,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
                 .Where(t => t.StreamerProfileId == profile.Id && t.CreatedAt >= today)
                 .SumAsync(t => (long?)t.Amount) ?? 0;
 
-            var totalPoints = await db.StreamerViewers
+            var totalPoints = await db.ViewerPoints
                 .Where(v => v.StreamerProfileId == profile.Id)
                 .SumAsync(v => (long)v.Points);
 

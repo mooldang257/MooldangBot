@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 
@@ -12,5 +12,6 @@ public record ChatMessageReceivedEvent_Legacy(
     string UserRole,
     string SenderId,
     System.Text.Json.JsonElement? Emojis = null,
-    int DonationAmount = 0
+    int DonationAmount = 0,
+    string? SafeEventId = null // [v7.1] 멱등성 검증 통과 식별자
 ) : INotification;

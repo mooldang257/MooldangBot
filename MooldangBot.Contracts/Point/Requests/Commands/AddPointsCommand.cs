@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Contracts.Point.Enums;
 
 namespace MooldangBot.Contracts.Point.Requests.Commands;
@@ -12,4 +12,5 @@ public record AddPointsCommand(
     string ViewerUid, 
     string Nickname, 
     int Amount, 
-    PointCurrencyType CurrencyType) : IRequest<(bool Success, int CurrentBalance)>;
+    PointCurrencyType CurrencyType,
+    string? PlatformTransactionId = null) : IRequest<(bool Success, int CurrentBalance)>;

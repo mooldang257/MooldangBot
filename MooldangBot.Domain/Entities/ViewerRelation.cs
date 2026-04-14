@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using MooldangBot.Domain.Common;
@@ -6,29 +6,21 @@ using MooldangBot.Domain.Common;
 namespace MooldangBot.Domain.Entities;
 
 /// <summary>
-/// [v6.2] 스트리머 채널별 시청자 프로필: 개별 스트리머 채널에서의 시청자 포인트 및 스탯을 관리합니다.
-/// 공통 정보(Nickname 등)는 GlobalViewer로 이관되어 중복이 제거되었습니다.
+/// [v7.0] 시청자 관계 엔티티: 스트리머와 시청자 간의 관계 및 활동 정보(출석 등)를 관리합니다.
 /// </summary>
-[Table("view_streamer_viewers")]
+[Table("viewer_relations")]
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
-[Index(nameof(StreamerProfileId), nameof(Points))]
-public class View_StreamerViewer : ISoftDeletable, IAuditable
+public class ViewerRelation : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
 
-    /// <summary>
-    /// 부모 스트리머 프로필 ID
-    /// </summary>
     [Required]
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
     public virtual StreamerProfile? StreamerProfile { get; set; }
 
-    /// <summary>
-    /// 글로벌 시청자 마스터 ID (엔티티 중심축)
-    /// </summary>
     [Required]
     public int GlobalViewerId { get; set; }
 
@@ -36,21 +28,8 @@ public class View_StreamerViewer : ISoftDeletable, IAuditable
     public virtual GlobalViewer? GlobalViewer { get; set; }
 
     /// <summary>
-    /// 현재 보유 포인트 (동시성 제어 적용)
+    /// 총 출석 횟수
     /// </summary>
-    [ConcurrencyCheck]
-    public int Points { get; set; } = 0;
-
-    /// <summary>
-    /// 보유 후원 잔액 (DonationPoints)
-    /// </summary>
-    [ConcurrencyCheck]
-    public int DonationPoints { get; set; } = 0;
-
-    /// <summary>
-    /// 총 출석 횟수 (동시성 제어 적용)
-    /// </summary>
-    [ConcurrencyCheck]
     public int AttendanceCount { get; set; } = 0;
 
     /// <summary>
@@ -63,13 +42,20 @@ public class View_StreamerViewer : ISoftDeletable, IAuditable
     /// </summary>
     public KstClock? LastAttendanceAt { get; set; }
 
-    public bool IsActive { get; set; } = true; 
+    /// <summary>
+    /// 최초 방문 일시
+    /// </summary>
+    public KstClock FirstVisitAt { get; set; } = KstClock.Now;
 
-    public bool IsDeleted { get; set; } = false; 
+    /// <summary>
+    /// 마지막 채팅 일시
+    /// </summary>
+    public KstClock? LastChatAt { get; set; }
+
+    public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
     public KstClock? DeletedAt { get; set; }
 
     public KstClock CreatedAt { get; set; } = KstClock.Now;
-
-    [ConcurrencyCheck]
     public KstClock? UpdatedAt { get; set; }
 }
