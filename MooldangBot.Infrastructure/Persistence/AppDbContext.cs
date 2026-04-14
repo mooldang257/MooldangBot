@@ -81,6 +81,7 @@ public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRoule
     public DbSet<RouletteStatsAggregated> RouletteStatsAggregated { get; set; }
     public DbSet<CommandExecutionLog> CommandExecutionLogs { get; set; }
     public DbSet<ChatInteractionLog> ChatInteractionLogs { get; set; }
+    public DbSet<CommandExecutionSagaState> CommandExecutionSagaStates { get; set; }
 
     // [v13.1] 리포지토리 및 장부용 DbSet들 생략...
     // (DataProtectionKey DbSet 제거됨 - [v2.4.7] 파일 시스템 영속화로 전환)
@@ -564,6 +565,16 @@ public class AppDbContext : DbContext, IAppDbContext, ISongBookDbContext, IRoule
             
             // [오시리스의 인덱싱]: 사용자별 설정 키는 유니크해야 하며, 조회 성능을 위해 인덱싱함
             entity.HasIndex(p => new { p.StreamerProfileId, p.PreferenceKey }).IsUnique();
+        });
+
+        // 🧠 [v6.0] 자율 복구 신경망: Saga State Machine 영속성 매핑
+        modelBuilder.Entity<CommandExecutionSagaState>(entity => {
+            entity.ToTable("sys_saga_command_executions");
+            entity.HasKey(e => e.CorrelationId); // 추적 유전자를 PK로 사용
+            
+            // [이지스의 파수꾼]: 상태 및 생애 주기 최적화 인덱싱
+            entity.HasIndex(e => e.CurrentState);
+            entity.HasIndex(e => e.CreatedAt);
         });
 
 

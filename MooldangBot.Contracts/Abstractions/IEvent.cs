@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Abstractions;
+namespace MooldangBot.Contracts.Abstractions;
 
 /// <summary>
 /// [오시리스의 인장]: 분산 시스템 전역에서 통용되는 모든 이벤트의 기반 인터페이스입니다.
@@ -6,6 +6,7 @@
 /// </summary>
 public interface IEvent
 {
-    Guid EventId { get; }
-    DateTime OccurredOn { get; }
+    public Guid EventId { get; }
+    public Guid CorrelationId { get; }
+    public DateTime OccurredOn { get; }
 }

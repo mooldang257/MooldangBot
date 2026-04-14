@@ -104,6 +104,15 @@ public class RouletteExecutionHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "❌ [RouletteHandler] 통합 정밀 사격 중 오류 발생.");
+
+            // [오시리스의 조난 신호]: Saga 사령부에 실패 보고를 올립니다. 
+            // 이를 수신한 Saga는 자율적으로 재화 환불 작전을 개시합니다.
+            await mediator.Publish(new FeatureExecutionFailedEvent 
+            { 
+                CorrelationId = notification.CorrelationId,
+                FeatureType = "Roulette",
+                ErrorMessage = ex.Message
+            }, ct);
         }
     }
 }

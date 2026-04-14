@@ -311,9 +311,24 @@ namespace MooldangBot.Infrastructure
                         });
                     }
 
+                    // 🧠 [v6.0] 자율 복구 신경망: Saga 인프라 구성
+                    cfg.ReceiveEndpoint("command-execution-saga", e => 
+                    {
+                        e.ConfigureSaga<Sagas.CommandExecutionSagaState>(context);
+                    });
+
                     // 4. 엔드포인트 자동 구성 (이미 수동 구성된 컨슈머는 건너뜁니다)
                     cfg.ConfigureEndpoints(context);
                 });
+
+                // Saga State Machine 및 영속성 설정
+                x.AddSagaStateMachine<Sagas.CommandExecutionSaga, Sagas.CommandExecutionSagaState>()
+                    .EntityFrameworkRepository(r => 
+                    {
+                        r.ConcurrencyMode = ConcurrencyMode.Optimistic; // 낙관적 동시성 제어
+                        r.ExistingDbContext<Persistence.AppDbContext>();
+                        r.UseMySql(); // MariaDB 호환
+                    });
             });
 
             return services;

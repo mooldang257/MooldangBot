@@ -26,6 +26,8 @@ public record CommandExecutedEvent(
     /// </summary>
     public Guid EventId { get; init; } = Guid.NewGuid();
 
+    public Guid CorrelationId { get; init; }
+
     /// <summary>
     /// 이벤트 발생 시각 (순수 UTC)
     /// </summary>
