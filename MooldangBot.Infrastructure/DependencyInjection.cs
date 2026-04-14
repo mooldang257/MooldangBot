@@ -1,10 +1,12 @@
-﻿using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.Roulette.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.SongBook.Interfaces;
+using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Contracts.Commands.Interfaces;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -122,7 +124,9 @@ namespace MooldangBot.Infrastructure
             services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<ISongBookDbContext>(sp => sp.GetRequiredService<AppDbContext>());
-        services.AddScoped<IRouletteDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+            services.AddScoped<IRouletteDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+            services.AddScoped<IPointDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+            services.AddScoped<ICommandDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             // [v2.4.5] 치지직 게이트웨이(ChzzkAPI) 통신용 전용 클라이언트 구성
             services.AddHttpClient("ChzzkGateway", (sp, client) =>
