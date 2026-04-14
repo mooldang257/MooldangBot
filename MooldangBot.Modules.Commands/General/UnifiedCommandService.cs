@@ -73,13 +73,7 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (isDuplicateKeyword) throw new InvalidOperationException("이미 존재하는 명령어 키워드입니다.");
 
-        // [물멍]: 동일한 이름(ResponseText)의 명령어가 이미 존재하는지 체크 (무결성 강화)
-        bool isDuplicateName = await _db.UnifiedCommands
-            .IgnoreQueryFilters()
-            .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.ResponseText == req.ResponseText && c.Id != currentId 
-                      && c.FeatureType == masterFeature.Type); // 같은 기능 타입 내에서만 체크
-
-        if (isDuplicateName) throw new InvalidOperationException($"이미 '{req.ResponseText}' 이름의 명령어가 존재합니다.");
+        // [물멍]: 다중 타격(Multicasting) 전술을 위해 메시지의 중복은 허용합니다. (중복 이름 검사 제거)
 
         // 데이터 매핑
         entity.Keyword = req.Keyword.Trim();
