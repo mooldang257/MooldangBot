@@ -58,7 +58,7 @@ public class RefundCurrencyCommandHandler(
                 StreamerProfileId = streamerProfile.Id,
                 GlobalViewerId = globalViewer.Id,
                 Amount = request.Amount,
-                Type = PointTransactionType.Refund, // [v7.2] 전용 거래 타입 사용
+                Type = PointTransactionType.System, // [v7.3] 오시리스 규률: 환불은 시스템 보정 트랜잭션으로 취급합니다.
                 Reason = $"[자율복구] {request.Reason} (ID: {request.CorrelationId})",
                 CreatedAt = KstClock.Now
             };

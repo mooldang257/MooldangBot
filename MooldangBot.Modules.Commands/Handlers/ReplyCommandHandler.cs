@@ -19,6 +19,7 @@ namespace MooldangBot.Modules.Commands.Handlers;
 public class ReplyCommandHandler(
     IChzzkBotService botService,
     MooldangBot.Contracts.Commands.Interfaces.ICommandDbContext db,
+    IMediator mediator,
     ILogger<ReplyCommandHandler> logger) : INotificationHandler<CommandExecutedEvent>
 {
     public async Task Handle(CommandExecutedEvent notification, CancellationToken ct)
