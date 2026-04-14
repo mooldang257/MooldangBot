@@ -271,8 +271,8 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         int addedCount = 0;
 
-        // 1. [기능] 노래 신청 (치즈 1000)
-        addedCount += await EnsureCommandAsync(streamer, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.SongRequest, "신청곡 룰렛", CommandRole.Viewer);
+        // 1. [기능] 노래 신청 (치즈 1000) - 접두어 매칭
+        addedCount += await EnsureCommandAsync(streamer, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.SongRequest, "신청곡 룰렛", CommandRole.Viewer, CommandMatchType.Prefix, true);
         
         // 2. [기능] 룰렛 (치즈 1000)
         addedCount += await EnsureCommandAsync(streamer, "!룰렛", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.Roulette, "행운의 룰렛", CommandRole.Viewer);
@@ -286,10 +286,10 @@ public class UnifiedCommandService : IUnifiedCommandService
         // 5. [시스템] 송리스트 토글 (매니저)
         addedCount += await EnsureCommandAsync(streamer, "!송리스트", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.SonglistToggle, "송리스트 상태 변경", CommandRole.Manager);
 
-        // 6. [시스템] 방송 관리 3종 (매니저)
-        addedCount += await EnsureCommandAsync(streamer, "!공지", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Notice, "공지사항", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(streamer, "!방제", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Title, "제목 변경", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(streamer, "!카테고리", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Category, "카테고리 변경", CommandRole.Manager);
+        // 6. [시스템] 방송 관리 3종 (매니저) - 접두어 매칭
+        addedCount += await EnsureCommandAsync(streamer, "!공지", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Notice, "공지사항", CommandRole.Manager, CommandMatchType.Prefix, true);
+        addedCount += await EnsureCommandAsync(streamer, "!방제", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Title, "제목 변경", CommandRole.Manager, CommandMatchType.Prefix, true);
+        addedCount += await EnsureCommandAsync(streamer, "!카테고리", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Category, "카테고리 변경", CommandRole.Manager, CommandMatchType.Prefix, true);
 
         if (addedCount > 0)
         {
@@ -301,7 +301,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
     }
 
-    private async Task<int> EnsureCommandAsync(StreamerProfile streamer, string keyword, CommandCategory cat, CommandCostType costType, int cost, string feature, string response, CommandRole role)
+    private async Task<int> EnsureCommandAsync(StreamerProfile streamer, string keyword, CommandCategory cat, CommandCostType costType, int cost, string feature, string response, CommandRole role, CommandMatchType matchType = CommandMatchType.Exact, bool requiresSpace = false)
     {
         // 멱등성 보장: 이미 해당 키워드가 존재하면 스킵
         bool exists = await _db.UnifiedCommands
@@ -324,6 +324,8 @@ public class UnifiedCommandService : IUnifiedCommandService
             Cost = cost,
             ResponseText = response,
             RequiredRole = role,
+            MatchType = matchType,
+            RequiresSpace = requiresSpace,
             IsActive = true, // [v6.1.5] 신규 기본 명령어는 활성화 상태
             IsDeleted = false, 
             CreatedAt = KstClock.Now
@@ -332,7 +334,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         _db.UnifiedCommands.Add(entity);
 
         // 사후 처리 (오마카세/룰렛 초기화 등)
-        var req = new SaveUnifiedCommandRequest(null, keyword, cat.ToString(), costType.ToString(), cost, feature, response, null, true, role.ToString(), null);
+        var req = new SaveUnifiedCommandRequest(null, keyword, cat.ToString(), costType.ToString(), cost, feature, response, null, true, role.ToString(), null, matchType.ToString(), requiresSpace);
         await OnAfterSaveAsync(entity, req, streamer.ChzzkUid, true);
         
         return 1;
