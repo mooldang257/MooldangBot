@@ -170,12 +170,11 @@ public class AuthService(
     {
         // [물멍]: 네이버 공식 Channel ID를 기반으로 프로필을 색인합니다.
         var streamer = await _db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        bool isNewStreamer = false; // [오시리스의 눈]: 신입 대원 판별 플래그
         
         if (streamer == null)
         {
-            // [오시리스의 자비]: 만약 새로운 Channel ID로 검색이 안 된다면, 
-            // 혹시 기존에 Slug로만 등록되어 있거나 다른 연동 정보가 있는지 확인하는 로직을 추가할 수 있으나,
-            // 현재는 정식 채널 ID 기반의 Greenfield/정형화 원칙에 따라 신규 생성을 우선합니다.
+            isNewStreamer = true;
             _logger.LogInformation("📡 [인증] 신규 스트리머 채널 등록 시작 (ChannelId: {ChannelId})", chzzkUid);
             streamer = new StreamerProfile 
             { 
@@ -187,11 +186,6 @@ public class AuthService(
             };
             _db.StreamerProfiles.Add(streamer);
 
-            // [오시리스의 축복]: 신규 스트리머 등록 이벤트 발행 (비동기 명령어/룰렛 시딩 트리거)
-            // SaveChangesAsync 이후에 실행되도록 하여 데이터 무결성을 보장할 수도 있으나, 
-            // 현재는 핸들러에서 별도로 조회하므로 발행 후 DB 저장을 일괄 수행합니다.
-            await _mediator.Publish(new StreamerRegisteredEvent(chzzkUid, channelName));
-            
             _db.SonglistSessions.Add(new SonglistSession 
             { 
                 StreamerProfile = streamer, 
@@ -214,6 +208,14 @@ public class AuthService(
         }
 
         await _db.SaveChangesAsync();
+
+        // [오시리스의 축복]: 신규 스트리머 등록 이벤트 발행 (비동기 명령어/룰렛 시딩 트리거)
+        // [지휘관님의 지침]: DB 커밋이 완료된 후 핸들러를 가동하여 데이터 정합성을 보장합니다.
+        if (isNewStreamer)
+        {
+            await _mediator.Publish(new StreamerRegisteredEvent(chzzkUid, channelName));
+        }
+
         _logger.LogInformation($"✅ [인증] 스트리머 프로필 동기화 완료 (ChannelId: {chzzkUid}, Slug: {streamer.Slug})");
 
         return new AuthResult { IsSuccess = true, ChzzkUid = chzzkUid, ChannelName = channelName, Slug = streamer.Slug };
