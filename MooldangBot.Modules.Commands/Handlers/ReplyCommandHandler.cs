@@ -51,10 +51,10 @@ public class ReplyCommandHandler(
             // [4. Execution]: 채팅 전송 (지휘관 지침: 답장 형식으로 발송)
             await botService.SendReplyChatAsync(streamerProfile, mergedResponse, notification.ViewerUid, ct);
             
-            logger.LogInformation("✅ [ReplyHandler] {Count}개의 응답 발송 완료. (Target: {Viewer})", targets.Count, notification.ViewerNickname);
+            _logger.LogInformation("✅ [ReplyHandler] {Count}개의 응답 발송 완료. (Target: {Viewer})", targets.Count, notification.ViewerNickname);
 
             // 📡 [오시리스의 확인]: Saga 사령부에 실행 완료 보고를 올립니다.
-            await mediator.Publish(new FeatureExecutionCompletedEvent 
+            await _mediator.Publish(new FeatureExecutionCompletedEvent 
             { 
                 CorrelationId = notification.CorrelationId,
                 FeatureType = "Reply"
@@ -63,10 +63,10 @@ public class ReplyCommandHandler(
         catch (Exception ex)
         {
             // 🛡️ [격리 원칙]: 신경세포 내부의 장애가 함선 전체(허브)로 전이되지 않도록 방어막을 형성합니다.
-            logger.LogError(ex, "❌ [ReplyHandler] 응답 기동 중 오류 발생. (CorrelationId: {Id})", notification.CorrelationId);
+            _logger.LogError(ex, "❌ [ReplyHandler] 응답 기동 중 오류 발생. (CorrelationId: {Id})", notification.CorrelationId);
 
             // 📢 [오시리스의 조난 신호]: Saga 사령부에 실패 보고를 올려 자율 복구(환불)를 요청합니다.
-            await mediator.Publish(new FeatureExecutionFailedEvent 
+            await _mediator.Publish(new FeatureExecutionFailedEvent 
             { 
                 CorrelationId = notification.CorrelationId,
                 FeatureType = "Reply",

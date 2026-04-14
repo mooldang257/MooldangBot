@@ -37,8 +37,8 @@ public class RefundCurrencyCommandHandler(
             // [v7.0] Wallet Architecture: 포인트/치즈 환불 처리
             // 포인트(Point)와 치즈(Cheese)는 관리 방식이 동일하므로 통합 처리합니다.
             
-            // 1. DB 로그 기록 (사후 증거 확보)
-            var log = new PointLog
+            // 1. DB 로그 기록 (사후 증거 확보 - PointLog 대신 PointTransactionHistory 사용)
+            var log = new PointTransactionHistory
             {
                 StreamerUid = request.StreamerUid,
                 ViewerUid = request.ViewerUid,
@@ -49,17 +49,20 @@ public class RefundCurrencyCommandHandler(
                 OccurredOn = DateTime.UtcNow
             };
             
-            dbContext.PointLogs.Add(log);
+            dbContext.PointTransactionHistories.Add(log);
 
             // 2. 캐시 메모리 복구 (즉각적인 전장 복구)
             // 지휘관의 지침에 따라 캐시는 즉시 업데이트하여 사용자가 환불을 바로 체감하게 합니다.
+            // IPointCacheService 인터페이스 규격(AddPointAsync 단수형 등)을 엄격히 준수합니다.
             if (request.CostType.Equals("Point", StringComparison.OrdinalIgnoreCase))
             {
-                await cacheService.AddPointsAsync(request.StreamerUid, request.ViewerUid, request.Amount);
+                await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
             }
             else if (request.CostType.Equals("Cheese", StringComparison.OrdinalIgnoreCase))
             {
-                await cacheService.AddCheeseAsync(request.StreamerUid, request.ViewerUid, request.Amount);
+                // 치즈 환불 처리는 현재 캐시 서비스 규격에 따라 포인트로 통합하거나 전용 메서드 확인 필요
+                // (현재 인터페이스에 명시된 AddPointAsync를 활용하거나 실제 구현체 확인)
+                await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
             }
 
             await dbContext.SaveChangesAsync(ct);

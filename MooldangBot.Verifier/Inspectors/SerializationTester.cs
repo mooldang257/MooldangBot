@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MooldangBot.Contracts.Events;
 
 namespace MooldangBot.Verifier.Inspectors;
@@ -24,7 +24,7 @@ public static class SerializationTester
             IsSubscriber = true,
             SubscriptionTier = 1,
             EmojisJson = "{}",
-            CorrelationId = Guid.NewGuid().ToString()
+            CorrelationId = Guid.NewGuid()
         };
 
         VerifySerialization(chatEvent);
