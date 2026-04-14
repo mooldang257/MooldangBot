@@ -83,8 +83,8 @@ public class UnifiedCommandHandler(
             var featureType = command.FeatureType.ToString();
             logger.LogInformation($"🚀 [{targetUid}] 명령어 매칭 성공: {keyword} ({featureType})");
 
-            // 2. [오시리스의 검증]: 재화 및 권한 체크
-            var (valid, remainingDonation) = await ValidateRequirementAndConsumeAsync(legacyEvent, command, currentDonation, ct);
+            // 2. [오시리스의 검증]: 권한 및 재화 체크 (Billing Pipeline)
+            var (valid, remainingDonation, errorMsg) = await ConductBillingPipelineAsync(legacyEvent, command, currentDonation, ct);
             currentDonation = remainingDonation;
 
             if (valid)
@@ -103,7 +103,10 @@ public class UnifiedCommandHandler(
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "❌ [UnifiedCommandHandler] 전략 실행 중 오류: {FeatureType}.", featureType);
-                        await CompensateRequirementAsync(legacyEvent, command, currentDonation, ct);
+                        
+                        // 🚑 [Saga]: 유료 재화의 경우 기능 실행 실패 시 즉시 복구(환불)
+                        await HandleCompensationAsync(legacyEvent, command, ct);
+                        
                         await publishEndpoint.Publish(new CommandExecutionEvent(
                             legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
                             false, $"서버 내부 오류: {ex.Message}", legacyEvent.DonationAmount, KstClock.Now));
@@ -112,9 +115,15 @@ public class UnifiedCommandHandler(
             }
             else
             {
+                // 🛑 Short-circuit: 결제/권한 실패 시 응답 및 상호작용 종료
+                if (!string.IsNullOrEmpty(errorMsg))
+                {
+                    await botService.SendReplyChatAsync(legacyEvent.Profile, errorMsg, legacyEvent.SenderId, ct);
+                }
+
                 await publishEndpoint.Publish(new CommandExecutionEvent(
                     legacyEvent.CorrelationId, targetUid, keyword, legacyEvent.SenderId, legacyEvent.Username,
-                    false, "권한 또는 재화 부족", legacyEvent.DonationAmount, KstClock.Now));
+                    false, errorMsg ?? "권한 또는 재화 부족", legacyEvent.DonationAmount, KstClock.Now));
             }
         }
 
@@ -171,63 +180,88 @@ public class UnifiedCommandHandler(
         return null;
     }
 
-    private async Task<(bool Valid, int RemainingDonation)> ValidateRequirementAndConsumeAsync(ChatMessageReceivedEvent_Legacy n, UnifiedCommand c, int currentDonation, CancellationToken ct)
+    /// <summary>
+    /// [선결제 파이프라인]: 권한 검증 및 통합 결제 요청을 수행합니다.
+    /// </summary>
+    private async Task<(bool Valid, int RemainingDonation, string? ErrorMessage)> ConductBillingPipelineAsync(
+        ChatMessageReceivedEvent_Legacy n, UnifiedCommand c, int currentDonation, CancellationToken ct)
     {
-        if (c.CostType == CommandCostType.Cheese)
-        {
-            if (currentDonation >= c.Cost) return (true, currentDonation - c.Cost);
-            
-            int neededFromBalance = c.Cost - currentDonation;
-            var (success, _) = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.DeductDonationPointsCommand(n.Profile.ChzzkUid, n.SenderId, neededFromBalance), ct);
-            
-            if (!success)
-            {
-                int balance = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Queries.GetBalanceQuery(n.Profile.ChzzkUid, n.SenderId, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint), ct);
-                await botService.SendReplyChatAsync(n.Profile, $"⚠️ 후원 잔액이 부족합니다. (필요: {c.Cost}치즈 / 보유: {currentDonation + balance}치즈)", n.SenderId, ct);
-                return (false, currentDonation);
-            }
-            return (true, 0);
-        }
-        else if (c.CostType == CommandCostType.Point)
-        {
-            var (success, currentPoints) = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, -c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
-            if (!success)
-            {
-                await botService.SendReplyChatAsync(n.Profile, $"⚠️ 포인트가 부족합니다. (필요: {c.Cost}P / 보유: {currentPoints}P)", n.SenderId, ct);
-                return (false, currentDonation);
-            }
-            return (true, currentDonation);
-        }
-
+        // [Step 1] 권한 검증
         var userRole = MapToCommandRole(n.UserRole);
         if (userRole < c.RequiredRole)
         {
-            await botService.SendReplyChatAsync(n.Profile, $"⚠️ {GetRoleName(c.RequiredRole)} 이상의 권한이 필요한 명령어입니다. 🔒", n.SenderId, ct);
-            return (false, currentDonation);
+            return (false, currentDonation, $"⚠️ {GetRoleName(c.RequiredRole)} 이상의 권한이 필요한 명령어입니다. 🔒");
         }
 
-        return (true, currentDonation);
+        // [Step 2] 재화 결제 (선결제)
+        if (c.Cost > 0)
+        {
+            // 후원금(치즈) 우선 소모 로직
+            if (c.CostType == CommandCostType.Cheese)
+            {
+                if (currentDonation >= c.Cost)
+                {
+                    return (true, currentDonation - c.Cost, null);
+                }
+
+                // 부족분은 잔액에서 차감
+                int neededFromBalance = c.Cost - currentDonation;
+                var result = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.DeductCurrencyCommand(
+                    n.Profile.ChzzkUid, n.SenderId, neededFromBalance, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint), ct);
+
+                if (!result.Success)
+                {
+                    return (false, currentDonation, $"⚠️ 치즈 잔액이 부족합니다. (보유: {currentDonation + result.RemainingBalance} / 필요: {c.Cost}치즈)");
+                }
+
+                return (true, 0, null);
+            }
+            else if (c.CostType == CommandCostType.Point)
+            {
+                var result = await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.DeductCurrencyCommand(
+                    n.Profile.ChzzkUid, n.SenderId, c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
+
+                if (!result.Success)
+                {
+                    return (false, currentDonation, $"⚠️ 포인트가 부족합니다. (필요: {c.Cost}P / 보유: {result.RemainingBalance}P)");
+                }
+
+                return (true, currentDonation, null);
+            }
+        }
+
+        return (true, currentDonation, null);
     }
 
+    /// <summary>
+    /// [보상 트랜잭션]: 기능 실행 실패 시 차감된 재화를 복구합니다.
+    /// </summary>
     private async Task<StreamerProfile?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct) => await identityCache.GetStreamerProfileAsync(chzzkUid, ct);
 
-    private async Task CompensateRequirementAsync(ChatMessageReceivedEvent_Legacy n, UnifiedCommand c, int currentDonation, CancellationToken ct)
+    private async Task HandleCompensationAsync(ChatMessageReceivedEvent_Legacy n, UnifiedCommand c, CancellationToken ct)
     {
+        if (c.Cost <= 0) return;
+
         var compKey = $"comp:{n.CorrelationId}";
         if (!await idempotency.TryAcquireAsync(compKey, TimeSpan.FromMinutes(30))) return;
 
         try
         {
-            if (c.CostType == CommandCostType.Cheese && c.Cost > 0)
-                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint), ct);
-            else if (c.CostType == CommandCostType.Point && c.Cost > 0)
-                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
+            var currencyType = c.CostType == CommandCostType.Cheese 
+                ? MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint 
+                : MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint;
 
+            // [v7.0] AddPointsCommand를 통해 복구 (PlatformTransactionId를 사용하여 추적성 확보)
+            await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(
+                n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, currencyType, 
+                PlatformTransactionId: $"REFUND-{n.CorrelationId}"), ct);
+
+            await botService.SendReplyChatAsync(n.Profile, $"🚑 시스템 오류로 인해 {c.Cost}{(c.CostType == CommandCostType.Cheese ? "치즈" : "P")}가 정상 복구되었습니다.", n.SenderId, ct);
             await idempotency.MarkAsCompletedAsync(compKey, TimeSpan.FromMinutes(30));
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "💀 [CRITICAL] 보상 트랜잭션 실패! 수동 복구 필요. (Streamer: {StreamerUid}, Viewer: {ViewerUid})", n.Profile.ChzzkUid, n.SenderId);
+            logger.LogCritical(ex, "💀 [CRITICAL] 보상 트랜잭션 실패! 수동 복구 필요. (CorrelationId: {CorrId})", n.CorrelationId);
         }
     }
 

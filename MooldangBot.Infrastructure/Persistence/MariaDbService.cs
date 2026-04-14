@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 
 namespace MooldangBot.Infrastructure.Persistence
 {
-    public class MariaDbService(IConfiguration configuration)
+    public class MariaDbService(IConfiguration configuration) : IDbConnectionFactory
     {
         private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection") 
                                ?? throw new InvalidOperationException("DB 연결 문자열이 'DefaultConnection' 섹션에 정의되어 있지 않습니다.");
 
-        private IDbConnection CreateConnection()
+        public IDbConnection CreateConnection()
         {
             return new MySqlConnection(_connectionString);
         }
