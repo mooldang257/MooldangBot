@@ -1,17 +1,17 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
     import { fade, fly } from "svelte/transition";
-    import { Zap, Clock, AlertTriangle, RefreshCw } from "lucide-svelte"; // 아이콘 추가
+    import { Zap, Clock, AlertTriangle, RefreshCw } from "lucide-svelte"; 
     import ConfirmModal from "$lib/core/ui/ConfirmModal.svelte";
     import VariableBadge from "$lib/core/ui/VariableBadge.svelte";
 
     import CommandForm from "$lib/features/command/components/CommandForm.svelte";
     import CommandTable from "$lib/features/command/components/CommandTable.svelte";
     import PeriodicTab from "$lib/features/command/components/PeriodicTab.svelte";
-    import ECGChart from "$lib/features/system-pulse/components/ECGChart.svelte";
 
     import { apiFetch } from "$lib/api/client";
 
+    // [Osiris]: Svelte 5 Runes ($state) 기반의 현대적 상태 관리
     let isLoaded = $state(false);
     let chzzkUid = $state("");
     let activeTab: "commands" | "periodic" = $state("commands");
@@ -22,9 +22,9 @@
     let deleteTargetId: number | null = $state(null);
     let deleteTargetKeyword = $state("");
 
-    // [방어막]: 초기 데이터 구조는 유지하되, 로드 성공 여부를 체크할 변수 추가
+    // [방어막]: 초기 데이터 구조 견고화
     let masterData = $state({ categories: [], features: [], roles: [], variables: [] });
-    let isMasterDataValid = $state(true); // [v2.2] 완화: 명부 유효성과 상관없이 개방
+    let isMasterDataValid = $state(true); 
 
     let allCommands: any[] = $state([]);
     let periodicMessages: any[] = $state([]);
@@ -48,18 +48,13 @@
         try {
             const res = await apiFetch<any>("/api/commands/master");
             const raw = res || {};
-
-            // [물멍]: 실제 API 조사 결과(camelCase)를 바탕으로 데이터 규격을 100% 동기화합니다.
             masterData = {
                 categories: raw.categories || [],
                 features: raw.features || [],
                 roles: raw.roles || [],
                 variables: raw.variables || []
             };
-
-            // [물멍]: 데이터가 로드되었는지 최종 확인
-            isMasterDataValid = true; // [v2.2] 통신 성공 시 무조건 유효로 간주
-            console.log("[물멍] 함교 자재 명부 동기화 완료:", masterData);
+            isMasterDataValid = true;
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
         }
@@ -70,7 +65,6 @@
         try {
             const data = await apiFetch<any>(`/api/commands/unified/${chzzkUid}?limit=100`);
             const items = data.items || data.Items || [];
-            
             allCommands = items.map((c: any) => ({
                 id: c.id ?? c.Id ?? 0,
                 keyword: c.keyword ?? c.Keyword ?? "",
@@ -101,13 +95,14 @@
     }
 
     onMount(async () => {
-        // [물멍]: 서버와의 동기화 작업에 타임아웃 방어 로직을 추가합니다.
-        const syncTimeout = setTimeout(() => {
+        // [물멍]: 방어적 타임아웃 (SignalR 등으로 인한 요청 지연 대응)
+        const syncTimeout = setTimeout(async () => {
             if (!isLoaded) {
-                console.warn("[물멍] 함교 데스크 동기화가 지연되고 있습니다. 강제로 화면을 개방합니다.");
+                console.warn("[물멍] 동기화 지연으로 인한 강제 개방");
                 isLoaded = true;
+                await tick();
             }
-        }, 8000); // 8초 후 강제 개방
+        }, 5000);
 
         try {
             const profile = await apiFetch<any>("/api/auth/me");
@@ -115,7 +110,6 @@
 
             if (targetUid) {
                 chzzkUid = targetUid;
-                // [물멍]: 마스터 데이터와 명령어 목록 등을 병렬로 호출하여 로딩 속도를 극대화합니다.
                 await Promise.allSettled([
                     loadMasterData(),
                     loadCommands(),
@@ -125,21 +119,19 @@
                 try {
                     const data = await apiFetch<any>(`/api/Preference/temporary/${chzzkUid}/skipDeleteConfirm`);
                     if (data?.value === "true") skipDeleteConfirm = true;
-                } catch (e) {
-                    // [물멍]: 설정 로드 실패 시 기본값 유지
-                }
+                } catch (e) {}
             }
         } catch (e: any) {
             console.error("[물멍] 함교 데스크 동기화 실패:", e);
         } finally {
             clearTimeout(syncTimeout);
             isLoaded = true;
+            await tick();
         }
     });
 
     function handleEdit(cmd: any) {
         cmdForm = { ...cmd };
-        // [물멍]: 맨 위가 아닌 상세 수정 폼 위치로 정밀하게 스크롤합니다.
         const formElement = document.getElementById("command-form-section");
         if (formElement) {
             formElement.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -150,7 +142,6 @@
         const cmd = allCommands.find((c) => c.id === id);
         if (!cmd) return;
         if (skipDeleteConfirm) return await executeDelete(id);
-
         deleteTargetId = id;
         deleteTargetKeyword = cmd.keyword;
         showDeleteModal = true;
@@ -158,9 +149,7 @@
 
     async function executeDelete(id: number) {
         try {
-            await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, {
-                method: "DELETE",
-            });
+            await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, { method: "DELETE" });
             allCommands = allCommands.filter((c) => c.id !== id);
         } catch (err: any) {
             alert(err.message || "삭제 실패!");
@@ -194,138 +183,98 @@
     <header class="space-y-6">
         <div>
             <div class="flex items-center gap-2 mb-2">
-                <span
-                    class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest"
-                    >Osiris Command Center</span
-                >
+                <span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest">
+                    Osiris Command Center
+                </span>
             </div>
-            <h1
-                class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3"
-            >
+            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">
                 🛠️ 명령어 <span class="text-primary">관리소</span>
             </h1>
             <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">
-                함교의 모든 명령 체계와 정기 방송 메세지를 정교하게 조립하는
-                부품 공장입니다.
+                함교의 모든 명령 체계와 정기 방송 메세지를 정교하게 조립하는 부품 공장입니다.
             </p>
         </div>
 
-        <div
-            class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar"
-        >
+        <div class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar">
             {#each tabs as tab}
                 <button
-                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab ===
-                    tab
-                        ? 'text-primary'
-                        : 'text-slate-400 hover:text-slate-600'}"
+                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === tab ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
                     on:click={() => (activeTab = tab)}
                 >
                     <div class="flex items-center gap-2">
-                        <svelte:component
-                            this={tab === "commands" ? Zap : Clock}
-                            size={18}
-                        />
-                        <span
-                            >{tab === "commands"
-                                ? "명령어 관리"
-                                : "정기 메세지 배치"}</span
-                        >
+                        <svelte:component this={tab === "commands" ? Zap : Clock} size={18} />
+                        <span>{tab === "commands" ? "명령어 관리" : "정기 메세지 배치"}</span>
                     </div>
                     {#if activeTab === tab}
-                        <div
-                            class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]"
-                            in:fly={{ y: 5 }}
-                        ></div>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                     {/if}
                 </button>
             {/each}
         </div>
     </header>
 
-    {#if isLoaded}
-        {#if activeTab === "commands"}
-            {#if isMasterDataValid}
-                <div class="space-y-10" in:fade>
-                    <VariableBadge variables={masterData.variables} />
-                    <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
-                        <CommandForm
-                            bind:cmdForm
-                            {masterData}
-                            {chzzkUid}
-                            onSave={loadCommands}
-                        />
-                    </div>
-                    <CommandTable
-                        bind:allCommands
-                        {masterData}
+    {#if activeTab === "commands"}
+        {#if !isLoaded}
+            <div class="py-20 flex flex-col items-center justify-center text-slate-300" in:fade>
+                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p class="text-sm font-bold animate-pulse mb-6">함교 통신망 동기화 중...</p>
+                <button 
+                    on:click={() => { isLoaded = true; }}
+                    type="button"
+                    class="text-[10px] font-black tracking-widest uppercase px-5 py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 flex items-center gap-2"
+                >
+                    동기화 대기 건너뛰기 ⏩
+                </button>
+            </div>
+        {:else if isMasterDataValid}
+            <div class="space-y-10" in:fade>
+                <VariableBadge variables={masterData.variables || []} />
+                <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
+                    <CommandForm
+                        bind:cmdForm
+                        masterData={masterData || { categories: [], features: [], roles: [], variables: [] }}
                         {chzzkUid}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onSave={loadCommands}
                     />
                 </div>
-            {:else}
-                <div
-                    class="py-20 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200"
-                    in:fade
-                >
-                    <div class="p-4 bg-red-100 text-red-500 rounded-full mb-4">
-                        <AlertTriangle size={32} />
-                    </div>
-                    <h3 class="text-xl font-black text-slate-800 mb-2">
-                        {chzzkUid
-                            ? "시스템 동기화 오류"
-                            : "함교 인증 기록 유실"}
-                    </h3>
-                    <p class="text-slate-500 font-bold mb-6 text-center">
-                        {chzzkUid
-                            ? "함교 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
-                            : "선장님의 함교 기록(Profile)을 찾을 수 없습니다. DB 초기화 후에는 재로그인이 필요합니다."}
-                    </p>
-                    <div class="flex gap-4">
-                        <button
-                            on:click={() => window.location.reload()}
-                            class="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-full font-black shadow-lg shadow-slate-200 hover:scale-105 active:scale-95 transition-all text-sm"
-                        >
-                            <RefreshCw size={18} />
-                            다시 시도
-                        </button>
-                        <a
-                            href="/api/auth/chzzk-login?type=streamer"
-                            class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-sm"
-                        >
-                            🔐 함교 재로그인
-                        </a>
-                    </div>
+                <CommandTable
+                    bind:allCommands
+                    masterData={masterData || { categories: [], features: [], roles: [], variables: [] }}
+                    {chzzkUid}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
+            </div>
+        {:else}
+            <div class="py-20 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200" in:fade>
+                <div class="p-4 bg-red-100 text-red-500 rounded-full mb-4">
+                    <AlertTriangle size={32} />
                 </div>
-            {/if}
-        {:else if activeTab === "periodic"}
-            <PeriodicTab
-                bind:messages={periodicMessages}
-                {chzzkUid}
-                onRefresh={loadPeriodicMessages}
-            />
+                <h3 class="text-xl font-black text-slate-800 mb-2">
+                    {chzzkUid ? "시스템 동기화 오류" : "함교 인증 기록 유실"}
+                </h3>
+                <p class="text-slate-500 font-bold mb-6 text-center">
+                    {chzzkUid ? "함교 마스터 데이터를 불러오는 데 실패했습니다." : "선장님의 함교 기록을 찾을 수 없습니다."}
+                </p>
+                <button on:click={() => window.location.reload()} class="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-full font-black text-sm">
+                    <RefreshCw size={18} /> 다시 시도
+                </button>
+            </div>
         {/if}
-    {:else}
-        <div
-            class="py-20 flex flex-col items-center justify-center text-slate-300"
-        >
-            <div
-                class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"
-            ></div>
-            <p class="text-sm font-bold animate-pulse">
-                함교 통신망 동기화 중...
-            </p>
-        </div>
+    {:else if activeTab === "periodic"}
+        {#if !isLoaded}
+            <div class="py-20 flex flex-col items-center justify-center text-slate-300" in:fade>
+                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p class="text-sm font-bold animate-pulse">함교 통신망 동기화 중...</p>
+                <button on:click={() => { isLoaded = true; }} type="button" class="mt-4 text-[10px] font-black uppercase px-4 py-2 border border-slate-200 rounded-lg">동기화 건너뛰기</button>
+            </div>
+        {:else}
+            <PeriodicTab bind:messages={periodicMessages} {chzzkUid} onRefresh={loadPeriodicMessages} />
+        {/if}
     {/if}
 </div>
 
 <style>
-    :global(.no-scrollbar::-webkit-scrollbar) {
-        display: none;
-    }
-    :global(.no-scrollbar) {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+    :global(.no-scrollbar::-webkit-scrollbar) { display: none; }
+    :global(.no-scrollbar) { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
