@@ -32,6 +32,8 @@ namespace MooldangBot.Contracts.Chzzk;
 [JsonSerializable(typeof(ChzzkApiResponse<string>))]
 [JsonSerializable(typeof(ChzzkApiResponse<UserMeResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<ChannelProfile>))]
+[JsonSerializable(typeof(ChzzkApiResponse<List<ChannelProfile>>))]
+[JsonSerializable(typeof(ChzzkApiResponse<ChannelProfile[]>))]
 [JsonSerializable(typeof(ChzzkApiResponse<StreamKeyResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<LiveSettingResponse>))]
 [JsonSerializable(typeof(ChzzkApiResponse<List<LiveListDetail>>))]
@@ -56,6 +58,8 @@ namespace MooldangBot.Contracts.Chzzk;
 [JsonSerializable(typeof(ChzzkPagedResponse<RewardClaim>))]
 [JsonSerializable(typeof(ChzzkPagedResponse<RestrictedChannel>))]
 [JsonSerializable(typeof(ChzzkPagedResponse<ChannelProfile>))]
+[JsonSerializable(typeof(List<ChannelProfile>))]
+[JsonSerializable(typeof(ChannelProfile[]))]
 
 // Envelope Wrapped Paged Responses
 [JsonSerializable(typeof(ChzzkApiResponse<ChzzkPagedResponse<ChannelManager>>))]

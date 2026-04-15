@@ -266,60 +266,109 @@ public class UnifiedCommandService : IUnifiedCommandService
     /// </summary>
     public async Task InitializeDefaultCommandsAsync(string chzzkUid)
     {
-        // [물멍의 지리]: UID는 캐시 및 조회 일관성을 위해 항상 소문자로 정규화하여 처리합니다.
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
         _logger.LogInformation("🌱 [CommandSeeder]: 스트리머({Uid})를 위한 기본 명령어 생성을 시작합니다.", targetUid);
 
         var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
         if (streamer == null) return;
 
-        int addedCount = 0;
+        // [물멍의 지혜]: 존재 여부를 한 번의 쿼리로 대량 확인하여 N+1 문제를 방지합니다.
+        var existingKeywords = await _db.UnifiedCommands
+            .IgnoreQueryFilters()
+            .Where(c => c.StreamerProfileId == streamer.Id)
+            .Select(c => c.Keyword)
+            .ToListAsync();
 
-        // 1. [기능] 노래 신청 (치즈 1000) - 기본 접두어 매칭
-        addedCount += await EnsureCommandAsync(streamer, "!신청", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.SongRequest, "신청곡 룰렛", CommandRole.Viewer);
-        
-        // 2. [기능] 룰렛 (치즈 1000)
-        addedCount += await EnsureCommandAsync(streamer, "!룰렛", CommandCategory.Feature, CommandCostType.Cheese, 1000, CommandFeatureTypes.Roulette, "행운의 룰렛", CommandRole.Viewer);
+        var keywordsToSeed = new[] { "!신청", "!룰렛", "!출석", "!포인트", "!송리스트", "!공지", "!방제", "!카테고리" };
+        var missingKeywords = keywordsToSeed.Except(existingKeywords).ToList();
 
-        // 3. [기능] 출석 (무료, 보상 10P)
-        addedCount += await EnsureCommandAsync(streamer, "!출석", CommandCategory.Feature, CommandCostType.None, 10, CommandFeatureTypes.Attendance, "{닉네임}님 출석 고마워요! 현재 {출석일수}일차이며 {포인트}포인트를 보유 중입니다.", CommandRole.Viewer);
+        if (!missingKeywords.Any())
+        {
+            _logger.LogInformation("✅ [CommandSeeder]: 이미 모든 기본 명령어가 존재합니다.");
+            return;
+        }
 
-        // 4. [일반] 포인트 확인 (무료)
-        addedCount += await EnsureCommandAsync(streamer, "!포인트", CommandCategory.General, CommandCostType.None, 0, CommandFeatureTypes.Reply, "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)", CommandRole.Viewer);
+        var createdEntities = new List<(UnifiedCommand Entity, string Feature)>();
 
-        // 5. [시스템] 송리스트 토글 (매니저)
-        addedCount += await EnsureCommandAsync(streamer, "!송리스트", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.SonglistToggle, "송리스트 상태 변경", CommandRole.Manager);
+        foreach (var keyword in missingKeywords)
+        {
+            var entity = CreateDefaultCommandEntity(streamer, keyword);
+            if (entity != null)
+            {
+                _db.UnifiedCommands.Add(entity);
+                
+                // 어떤 기능인지 추후 사후 처리를 위해 보관
+                var feature = GetFeatureByKeyword(keyword);
+                createdEntities.Add((entity, feature));
+            }
+        }
 
-        // 6. [시스템] 방송 관리 3종 (매니저) - 기본 접두어 매칭
-        addedCount += await EnsureCommandAsync(streamer, "!공지", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Notice, "공지사항", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(streamer, "!방제", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Title, "제목 변경", CommandRole.Manager);
-        addedCount += await EnsureCommandAsync(streamer, "!카테고리", CommandCategory.System, CommandCostType.None, 0, CommandFeatureTypes.Category, "카테고리 변경", CommandRole.Manager);
+        // [1차 저장]: 명령어 엔티티들을 먼저 저장하여 ID를 확보합니다.
+        await _db.SaveChangesAsync(default);
 
-        if (addedCount > 0)
+        // [2차 처리]: 생성된 ID를 기반으로 룰렛/오마카세 등 연결 엔티티 생성
+        bool needsSecondSave = false;
+        foreach (var (entity, feature) in createdEntities)
+        {
+            if (feature == CommandFeatureTypes.Roulette)
+            {
+                var roulette = CreateDefaultRoulette(streamer.Id, entity.ResponseText);
+                _db.Roulettes.Add(roulette);
+                await _db.SaveChangesAsync(default); // 각 룰렛 ID가 필요하므로 어쩔 수 없이 저장
+                entity.TargetId = roulette.Id;
+                needsSecondSave = true;
+            }
+            else if (feature == CommandFeatureTypes.Omakase)
+            {
+                var omakase = new StreamerOmakaseItem { StreamerProfileId = streamer.Id, Icon = "🍣", Count = 0 };
+                _db.StreamerOmakases.Add(omakase);
+                await _db.SaveChangesAsync(default);
+                entity.TargetId = omakase.Id;
+                needsSecondSave = true;
+            }
+        }
+
+        if (needsSecondSave)
         {
             await _db.SaveChangesAsync(default);
-            _logger.LogInformation("✅ [CommandSeeder]: {Count}개의 기본 명령어가 생성되었습니다.", addedCount);
-            
-            // 캐시 갱신
-            await _cacheService.RefreshUnifiedAsync(targetUid, default);
         }
+
+        _logger.LogInformation("✅ [CommandSeeder]: {Count}개의 기본 명령어가 성공적으로 생성 및 연결되었습니다.", createdEntities.Count);
+        await _cacheService.RefreshUnifiedAsync(targetUid, default);
     }
 
-    private async Task<int> EnsureCommandAsync(StreamerProfile streamer, string keyword, CommandCategory cat, CommandCostType costType, int cost, string feature, string response, CommandRole role, CommandMatchType matchType = CommandMatchType.Prefix, bool requiresSpace = true)
+    private string GetFeatureByKeyword(string keyword) => keyword switch
     {
-        // 멱등성 보장: 이미 해당 키워드가 존재하면 스킵
-        bool exists = await _db.UnifiedCommands
-            .IgnoreQueryFilters()
-            .AnyAsync(c => c.StreamerProfileId == streamer.Id && c.Keyword == keyword);
+        "!신청" => CommandFeatureTypes.SongRequest,
+        "!룰렛" => CommandFeatureTypes.Roulette,
+        "!출석" => CommandFeatureTypes.Attendance,
+        "!송리스트" => CommandFeatureTypes.SonglistToggle,
+        "!공지" => CommandFeatureTypes.Notice,
+        "!방제" => CommandFeatureTypes.Title,
+        "!카테고리" => CommandFeatureTypes.Category,
+        _ => CommandFeatureTypes.Reply
+    };
 
-        if (exists) return 0;
-
-        // 마스터 기능 조회 (레지스트리 참조)
+    private UnifiedCommand? CreateDefaultCommandEntity(StreamerProfile streamer, string keyword)
+    {
+        string feature = GetFeatureByKeyword(keyword);
         var masterFeature = CommandFeatureRegistry.GetByTypeName(feature);
-        
-        if (masterFeature == null) return 0;
+        if (masterFeature == null) return null;
 
-        var entity = new UnifiedCommand
+        var (costType, cost, response, role) = keyword switch
+        {
+            "!신청" => (CommandCostType.Cheese, 1000, "신청곡 룰렛", CommandRole.Viewer),
+            "!룰렛" => (CommandCostType.Cheese, 1000, "행운의 룰렛", CommandRole.Viewer),
+            "!출석" => (CommandCostType.None, 10, "{닉네임}님 출석 고마워요! 현재 {출석일수}일차이며 {포인트}포인트를 보유 중입니다.", CommandRole.Viewer),
+            "!포인트" => (CommandCostType.None, 0, "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)", CommandRole.Viewer),
+            "!송리스트" => (CommandCostType.None, 0, "송리스트 상태 변경", CommandRole.Manager),
+            "!공지" => (CommandCostType.None, 0, "공지사항", CommandRole.Manager),
+            "!방제" => (CommandCostType.None, 0, "제목 변경", CommandRole.Manager),
+            "!카테고리" => (CommandCostType.None, 0, "카테고리 변경", CommandRole.Manager),
+            _ => (CommandCostType.None, 0, "", CommandRole.Viewer)
+        };
+
+        return new UnifiedCommand
         {
             StreamerProfileId = streamer.Id,
             Keyword = keyword,
@@ -328,19 +377,26 @@ public class UnifiedCommandService : IUnifiedCommandService
             Cost = cost,
             ResponseText = response,
             RequiredRole = role,
-            MatchType = matchType,
-            RequiresSpace = requiresSpace,
-            IsActive = true, // [v6.1.5] 신규 기본 명령어는 활성화 상태
-            IsDeleted = false, 
+            MatchType = CommandMatchType.Prefix,
+            RequiresSpace = true,
+            IsActive = true,
+            IsDeleted = false,
             CreatedAt = KstClock.Now
         };
+    }
 
-        _db.UnifiedCommands.Add(entity);
-
-        // 사후 처리 (오마카세/룰렛 초기화 등)
-        var req = new SaveUnifiedCommandRequest(null, keyword, cat.ToString(), costType.ToString(), cost, feature, response, null, true, role.ToString(), null, matchType.ToString(), requiresSpace);
-        await OnAfterSaveAsync(entity, req, streamer.ChzzkUid, true);
-        
-        return 1;
+    private MooldangBot.Domain.Entities.Roulette CreateDefaultRoulette(int streamerProfileId, string name)
+    {
+        var roulette = new MooldangBot.Domain.Entities.Roulette
+        {
+            StreamerProfileId = streamerProfileId,
+            Name = string.IsNullOrWhiteSpace(name) ? "행운의 룰렛" : name,
+            UpdatedAt = KstClock.Now
+        };
+        roulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
+        roulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
+        roulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
+        return roulette;
     }
 }
+

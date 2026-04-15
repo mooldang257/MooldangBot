@@ -107,8 +107,9 @@
 
             if (targetUid) {
                 chzzkUid = targetUid;
-                await loadMasterData();
+                // [물멍]: 마스터 데이터와 명령어 목록 등을 병렬로 호출하여 로딩 속도를 극대화합니다.
                 await Promise.allSettled([
+                    loadMasterData(),
                     loadCommands(),
                     loadPeriodicMessages()
                 ]);
