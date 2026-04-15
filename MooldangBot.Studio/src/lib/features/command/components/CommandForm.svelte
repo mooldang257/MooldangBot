@@ -8,6 +8,7 @@
     export let masterData: any;
     export let chzzkUid: string;
     export let onSave: () => Promise<void>;
+    export let loading: boolean = false; 
 
     $: availableFeatures = masterData.features.filter((f: any) => {
         const cat = masterData.categories.find((c: any) => c.name === cmdForm.category);
@@ -170,7 +171,11 @@
 
         <!-- 8. 저장 버튼 영역 -->
         <div class="col-span-1 md:col-span-2 lg:col-span-6 flex justify-end pt-6">
-            <button on:click={saveCommand} class="w-full lg:w-56 h-16 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/30 hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 group/save">
+            <button 
+                on:click={saveCommand} 
+                disabled={loading}
+                class="w-full lg:w-56 h-16 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/30 hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 group/save disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+            >
                 <Save size={24} class="group-hover/save:rotate-12 transition-transform" />
                 <span class="text-base tracking-tighter">{cmdForm.id === 0 ? '명령어 저장하기' : '수정 완료하기'}</span>
             </button>

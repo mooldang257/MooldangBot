@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
     import { fade, fly } from "svelte/transition";
-    import { Zap, Clock, AlertTriangle, RefreshCw } from "lucide-svelte"; 
+    import { Zap, Clock, AlertTriangle, RefreshCw, Loader2 } from "lucide-svelte"; 
     import ConfirmModal from "$lib/core/ui/ConfirmModal.svelte";
     import VariableBadge from "$lib/core/ui/VariableBadge.svelte";
 
@@ -57,6 +57,8 @@
             isMasterDataValid = true;
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
+            // [이지스]: 극심한 통신 장애 시에만 유효성 해제
+            if (!masterData.categories.length) isMasterDataValid = false;
         }
     }
 
@@ -95,10 +97,10 @@
     }
 
     onMount(async () => {
-        // [물멍]: 방어적 타임아웃 (SignalR 등으로 인한 요청 지연 대응)
+        // [물멍]: 비봉쇄형으로 전환하되, 5초 후에도 응답 없으면 로딩 마스크만 제거
         const syncTimeout = setTimeout(async () => {
             if (!isLoaded) {
-                console.warn("[물멍] 동기화 지연으로 인한 강제 개방");
+                console.warn("[물멍] 동기화 지연으로 인한 마스크 강제 제거");
                 isLoaded = true;
                 await tick();
             }
@@ -179,6 +181,27 @@
     on:confirm={onConfirmDelete}
 />
 
+<!-- 🌊 [물멍]: 신청곡 관리와 동일한 비봉쇄형 로딩 오버레이 (UI는 배경에 이미 렌더링됨) -->
+{#if !isLoaded}
+    <div class="fixed inset-0 bg-white/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-[100]" in:fade out:fade>
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-primary font-black text-xs animate-pulse">
+                OSIRIS
+            </div>
+        </div>
+        <p class="mt-4 text-sm font-black text-slate-500 tracking-tighter animate-pulse">함교 통신망 동기화 중...</p>
+        
+        <button 
+            on:click={() => { isLoaded = true; }}
+            type="button"
+            class="mt-8 text-[10px] font-black tracking-widest uppercase px-5 py-2.5 bg-white/80 border border-slate-200 rounded-xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-lg shadow-slate-200/50"
+        >
+            동기화 건너뛰기 ⏩
+        </button>
+    </div>
+{/if}
+
 <div class="space-y-12 pb-20 text-left">
     <header class="space-y-6">
         <div>
@@ -186,6 +209,11 @@
                 <span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest">
                     Osiris Command Center
                 </span>
+                {#if !isLoaded}
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-500 text-[10px] font-black rounded border border-amber-100 uppercase tracking-widest animate-pulse">
+                        <Loader2 size={10} class="animate-spin" /> Syncing
+                    </div>
+                {/if}
             </div>
             <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">
                 🛠️ 명령어 <span class="text-primary">관리소</span>
@@ -213,64 +241,47 @@
         </div>
     </header>
 
-    {#if activeTab === "commands"}
-        {#if !isLoaded}
-            <div class="py-20 flex flex-col items-center justify-center text-slate-300" in:fade>
-                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                <p class="text-sm font-bold animate-pulse mb-6">함교 통신망 동기화 중...</p>
-                <button 
-                    on:click={() => { isLoaded = true; }}
-                    type="button"
-                    class="text-[10px] font-black tracking-widest uppercase px-5 py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 flex items-center gap-2"
-                >
-                    동기화 대기 건너뛰기 ⏩
-                </button>
+    {#if !isMasterDataValid}
+        <!-- ⚠️ [이지스]: 마스터 데이터 로드 완벽 실패 시에만 표시되는 최소한의 에러 배너 -->
+        <div class="p-6 bg-rose-50 text-rose-500 rounded-3xl border border-rose-100 flex flex-col md:flex-row items-center justify-between gap-4" in:fade>
+            <div class="flex items-center gap-3">
+                <AlertTriangle size={20} />
+                <span class="font-black">함교 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요.</span>
             </div>
-        {:else if isMasterDataValid}
-            <div class="space-y-10" in:fade>
-                <VariableBadge variables={masterData.variables || []} />
-                <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
-                    <CommandForm
-                        bind:cmdForm
-                        masterData={masterData || { categories: [], features: [], roles: [], variables: [] }}
-                        {chzzkUid}
-                        onSave={loadCommands}
-                    />
-                </div>
-                <CommandTable
-                    bind:allCommands
-                    masterData={masterData || { categories: [], features: [], roles: [], variables: [] }}
+            <button on:click={() => window.location.reload()} class="flex items-center gap-2 px-4 py-2 bg-rose-500 text-white rounded-full font-black text-xs shadow-lg shadow-rose-200 transition-all active:scale-95">
+                <RefreshCw size={14} /> 다시 시도
+            </button>
+        </div>
+    {/if}
+
+    {#if activeTab === "commands"}
+        <div class="space-y-10" in:fade>
+            <VariableBadge variables={masterData.variables || []} />
+            <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
+                <CommandForm
+                    bind:cmdForm
+                    masterData={masterData}
                     {chzzkUid}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onSave={loadCommands}
+                    loading={!isLoaded}
                 />
             </div>
-        {:else}
-            <div class="py-20 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200" in:fade>
-                <div class="p-4 bg-red-100 text-red-500 rounded-full mb-4">
-                    <AlertTriangle size={32} />
-                </div>
-                <h3 class="text-xl font-black text-slate-800 mb-2">
-                    {chzzkUid ? "시스템 동기화 오류" : "함교 인증 기록 유실"}
-                </h3>
-                <p class="text-slate-500 font-bold mb-6 text-center">
-                    {chzzkUid ? "함교 마스터 데이터를 불러오는 데 실패했습니다." : "선장님의 함교 기록을 찾을 수 없습니다."}
-                </p>
-                <button on:click={() => window.location.reload()} class="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-full font-black text-sm">
-                    <RefreshCw size={18} /> 다시 시도
-                </button>
-            </div>
-        {/if}
+            <CommandTable
+                bind:allCommands
+                masterData={masterData}
+                {chzzkUid}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                loading={!isLoaded}
+            />
+        </div>
     {:else if activeTab === "periodic"}
-        {#if !isLoaded}
-            <div class="py-20 flex flex-col items-center justify-center text-slate-300" in:fade>
-                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                <p class="text-sm font-bold animate-pulse">함교 통신망 동기화 중...</p>
-                <button on:click={() => { isLoaded = true; }} type="button" class="mt-4 text-[10px] font-black uppercase px-4 py-2 border border-slate-200 rounded-lg">동기화 건너뛰기</button>
-            </div>
-        {:else}
-            <PeriodicTab bind:messages={periodicMessages} {chzzkUid} onRefresh={loadPeriodicMessages} />
-        {/if}
+        <PeriodicTab 
+            bind:messages={periodicMessages} 
+            {chzzkUid} 
+            onRefresh={loadPeriodicMessages} 
+            loading={!isLoaded} 
+        />
     {/if}
 </div>
 

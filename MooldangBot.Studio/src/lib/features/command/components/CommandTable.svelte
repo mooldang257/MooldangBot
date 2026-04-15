@@ -8,6 +8,7 @@
     export let chzzkUid: string;
     export let onEdit: (cmd: any) => void;
     export let onDelete: (id: number) => Promise<void>;
+    export let loading: boolean = false;
 
     let searchQuery = '';
     let sortColumn = 'keyword';
@@ -114,7 +115,11 @@
                 {#each filteredCommands as cmd (cmd.id)}
                     <tr class="border-t border-slate-50 hover:bg-sky-50/20 transition-all group/row" in:fade>
                         <td class="p-6 text-center">
-                            <button on:click={() => toggleCommand(cmd)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.isActive ? 'bg-emerald-500' : 'bg-slate-300'}">
+                            <button 
+                                on:click={() => toggleCommand(cmd)} 
+                                disabled={loading}
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.isActive ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {cmd.isActive ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
                             </button>
                         </td>
@@ -166,10 +171,18 @@
                         </td>
                         <td class="p-6">
                             <div class="flex items-center justify-center gap-2 transition-all">
-                                <button on:click={() => onEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
+                                <button 
+                                    on:click={() => onEdit(cmd)} 
+                                    disabled={loading}
+                                    class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-primary disabled:hover:shadow-none"
+                                >
                                     <Edit2 size={18} />
                                 </button>
-                                <button on:click={() => onDelete(cmd.id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm">
+                                <button 
+                                    on:click={() => onDelete(cmd.id)} 
+                                    disabled={loading}
+                                    class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-rose-500 disabled:hover:shadow-none"
+                                >
                                     <Trash2 size={18} />
                                 </button>
                             </div>
