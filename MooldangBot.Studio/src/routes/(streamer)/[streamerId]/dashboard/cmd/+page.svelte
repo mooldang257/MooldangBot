@@ -22,8 +22,13 @@
     let deleteTargetId: number | null = $state(null);
     let deleteTargetKeyword = $state("");
 
-    // [방어막]: 초기 데이터 구조 견고화
-    let masterData = $state({ categories: [], features: [], roles: [], variables: [] });
+    // [방어막]: 초기 데이터 구조 견고화 (초기값 보장)
+    let masterData = $state({ 
+        categories: [], 
+        features: [], 
+        roles: ["Viewer", "Manager", "Streamer"], 
+        variables: [] 
+    });
     let isMasterDataValid = $state(true); 
 
     let allCommands: any[] = $state([]);
@@ -47,17 +52,17 @@
     async function loadMasterData() {
         try {
             const res = await apiFetch<any>("/api/commands/master");
-            const raw = res || {};
-            masterData = {
-                categories: raw.categories || [],
-                features: raw.features || [],
-                roles: raw.roles || [],
-                variables: raw.variables || []
-            };
-            isMasterDataValid = true;
+            if (res) {
+                masterData = {
+                    categories: res.categories || [],
+                    features: res.features || [],
+                    roles: res.roles || ["Viewer", "Manager", "Streamer"],
+                    variables: res.variables || []
+                };
+                isMasterDataValid = true;
+            }
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
-            // [이지스]: 극심한 통신 장애 시에만 유효성 해제
             if (!masterData.categories.length) isMasterDataValid = false;
         }
     }
@@ -97,10 +102,8 @@
     }
 
     onMount(async () => {
-        // [물멍]: 비봉쇄형으로 전환하되, 5초 후에도 응답 없으면 로딩 마스크만 제거
         const syncTimeout = setTimeout(async () => {
             if (!isLoaded) {
-                console.warn("[물멍] 동기화 지연으로 인한 마스크 강제 제거");
                 isLoaded = true;
                 await tick();
             }
@@ -181,9 +184,8 @@
     on:confirm={onConfirmDelete}
 />
 
-<!-- 🌊 [물멍]: 신청곡 관리와 동일한 비봉쇄형 로딩 오버레이 (UI는 배경에 이미 렌더링됨) -->
 {#if !isLoaded}
-    <div class="fixed inset-0 bg-white/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-[100]" in:fade out:fade>
+    <div class="fixed inset-0 bg-white/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-[100]" out:fade>
         <div class="relative">
             <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
             <div class="absolute inset-0 flex items-center justify-center text-primary font-black text-xs animate-pulse">
@@ -191,7 +193,6 @@
             </div>
         </div>
         <p class="mt-4 text-sm font-black text-slate-500 tracking-tighter animate-pulse">함교 통신망 동기화 중...</p>
-        
         <button 
             on:click={() => { isLoaded = true; }}
             type="button"
@@ -242,20 +243,19 @@
     </header>
 
     {#if !isMasterDataValid}
-        <!-- ⚠️ [이지스]: 마스터 데이터 로드 완벽 실패 시에만 표시되는 최소한의 에러 배너 -->
-        <div class="p-6 bg-rose-50 text-rose-500 rounded-3xl border border-rose-100 flex flex-col md:flex-row items-center justify-between gap-4" in:fade>
+        <div class="p-6 bg-rose-50 text-rose-500 rounded-3xl border border-rose-100 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <AlertTriangle size={20} />
-                <span class="font-black">함교 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요.</span>
+                <span class="font-black">함교 마스터 데이터를 불러오는 데 실패했습니다.</span>
             </div>
-            <button on:click={() => window.location.reload()} class="flex items-center gap-2 px-4 py-2 bg-rose-500 text-white rounded-full font-black text-xs shadow-lg shadow-rose-200 transition-all active:scale-95">
-                <RefreshCw size={14} /> 다시 시도
+            <button on:click={() => window.location.reload()} class="px-4 py-2 bg-rose-500 text-white rounded-full font-black text-xs">
+                다시 시도
             </button>
         </div>
     {/if}
 
     {#if activeTab === "commands"}
-        <div class="space-y-10" in:fade>
+        <div class="space-y-10">
             <VariableBadge variables={masterData.variables || []} />
             <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
                 <CommandForm
@@ -276,12 +276,14 @@
             />
         </div>
     {:else if activeTab === "periodic"}
-        <PeriodicTab 
-            bind:messages={periodicMessages} 
-            {chzzkUid} 
-            onRefresh={loadPeriodicMessages} 
-            loading={!isLoaded} 
-        />
+        <div class="space-y-10">
+            <PeriodicTab 
+                bind:messages={periodicMessages} 
+                {chzzkUid} 
+                onRefresh={loadPeriodicMessages} 
+                loading={!isLoaded} 
+            />
+        </div>
     {/if}
 </div>
 
