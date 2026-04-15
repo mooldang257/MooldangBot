@@ -74,7 +74,7 @@ public class CommandExecutionSaga : MassTransitStateMachine<CommandExecutionSaga
     public MassTransit.State? Faulted { get; private set; }
 
     // States (함선의 상태)
-    public State AwaitingFeature { get; private set; } = null!;
+    public MassTransit.State AwaitingFeature { get; private set; } = null!;
 
     // Events (수신 신호)
     public Event<CommandExecutedEvent> CommandExecuted { get; private set; } = null!;

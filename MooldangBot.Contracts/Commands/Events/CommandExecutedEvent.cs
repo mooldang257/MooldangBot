@@ -1,5 +1,6 @@
 using MooldangBot.Contracts.Common.Events;
 using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System;
 
@@ -26,10 +27,12 @@ public record CommandExecutedEvent(
     /// </summary>
     public Guid EventId { get; init; } = Guid.NewGuid();
 
-    public Guid CorrelationId { get; init; } = CorrelationId;
-
     /// <summary>
     /// 이벤트 발생 시각 (순수 UTC)
     /// </summary>
     public DateTime OccurredOn { get; init; } = DateTime.UtcNow;
+
+    // Saga 및 로깅 편의를 위한 헬퍼 프로퍼티
+    public int ChargedAmount => PrimaryCommand?.Cost ?? 0;
+    public string CostType => PrimaryCommand?.CostType.ToString() ?? CommandCostType.None.ToString();
 }

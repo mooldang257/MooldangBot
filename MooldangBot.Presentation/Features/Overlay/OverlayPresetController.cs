@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Overlay
 {

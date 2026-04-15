@@ -11,109 +11,6 @@ namespace MooldangBot.Domain.DTOs
         public string ChzzkUid { get; set; } = "";
     }
 
-    public class SonglistSettingsUpdateRequest
-    {
-        [JsonPropertyName("songRequestCommands")]
-        public List<SongRequestCommandDto> SongRequestCommands { get; set; } = new();
-        
-        [JsonPropertyName("designSettingsJson")]
-        public string DesignSettingsJson { get; set; } = "{}";
-        
-        [JsonPropertyName("omakases")]
-        public List<OmakaseDto> Omakases { get; set; } = new();
-    }
-
-    public class SongRequestCommandDto
-    {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "노래 신청";
-
-        [JsonPropertyName("keyword")]
-        public string Keyword { get; set; } = "!신청";
-        
-        [JsonPropertyName("price")]
-        public int Price { get; set; } = 0;
-    }
-
-    public class OmakaseDto
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "새 오마카세";
-
-        [JsonPropertyName("icon")]
-        public string Icon { get; set; } = "🍣";
-
-        [JsonPropertyName("price")]
-        public int Price { get; set; } = 1000;
-
-        [JsonPropertyName("count")]
-        public int Count { get; set; }
-
-        [JsonPropertyName("command")]
-        public string Command { get; set; } = "";
-    }
-
-    public class SongQueueDto
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        [JsonPropertyName("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [JsonPropertyName("artist")]
-        public string Artist { get; set; } = string.Empty;
-
-        [JsonPropertyName("status")]
-        public SongStatus Status { get; set; }
-        
-        [JsonPropertyName("sortOrder")]
-        public int SortOrder { get; set; }
-
-        [JsonPropertyName("requesterNickname")]
-        public string? RequesterNickname { get; set; }
-
-        [JsonPropertyName("cost")]
-        public int? Cost { get; set; }
-
-        [JsonPropertyName("costType")]
-        public CommandCostType? CostType { get; set; }
-    }
-
-    // [v12.5] 메타데이터가 통합된 대기열 뷰 DTO
-    public class SongQueueViewDto : SongQueueDto
-    {
-        [JsonPropertyName("url")]
-        public string? Url { get; set; }
-
-        [JsonPropertyName("lyrics")]
-        public string? Lyrics { get; set; }
-
-        [JsonPropertyName("createdAt")]
-        public KstClock CreatedAt { get; set; }
-
-        [JsonPropertyName("globalViewer")]
-        public GlobalViewer? GlobalViewer { get; set; }
-
-        [JsonPropertyName("requester")]
-        public string Requester { get; set; } = "익명";
-    }
-
-    public class SonglistDataDto
-    {
-        [JsonPropertyName("memo")]
-        public string Memo { get; set; } = string.Empty;
-
-        [JsonPropertyName("omakases")]
-        public List<OmakaseDto> Omakases { get; set; } = new();
-
-        [JsonPropertyName("songs")]
-        public List<SongQueueDto> Songs { get; set; } = new();
-    }
-
     public class PeriodicMessageDto
     {
         [JsonPropertyName("id")]
@@ -179,21 +76,6 @@ namespace MooldangBot.Domain.DTOs
         [JsonPropertyName("requiredRole")]
         public string RequiredRole { get; set; } = "all";
     }
-
-    // 🎵 대기열 곡 정보 수정을 위한 DTO (.NET 10 record 활용)
-    public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? Lyrics);
-
-    // 🎵 대기열 곡 추가를 위한 DTO
-    public record SongAddRequest(
-        string Title, 
-        string? Artist, 
-        string? Url, 
-        string? Lyrics, 
-        int? GlobalViewerId = null,
-        string? RequesterNickname = null,
-        int? Cost = null,
-        CommandCostType? CostType = null
-    );
 
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);

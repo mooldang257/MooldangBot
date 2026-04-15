@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.SongLibrary;
 

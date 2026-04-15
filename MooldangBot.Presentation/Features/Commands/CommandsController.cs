@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Commands.Interfaces;
+﻿using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -10,13 +10,13 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Commands
 {
     [ApiController]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
+    // [v10.1] Primary Constructor ?곸슜
     public class CommandsController(
         IAppDbContext db, 
         ICommandCache cacheService, 
@@ -27,7 +27,7 @@ namespace MooldangBot.Presentation.Features.Commands
         IConfiguration config) : ControllerBase
     {
         /// <summary>
-        /// [v2.0] 통합 명령어 목록 조회 (커서 기반 페이지네이션 고도화)
+        /// [v2.0] ?듯빀 紐낅졊??紐⑸줉 議고쉶 (而ㅼ꽌 湲곕컲 ?섏씠吏?ㅼ씠??怨좊룄??
         /// </summary>
         [HttpGet("/api/commands/unified/{chzzkUid}")]
         public async Task<IActionResult> GetUnifiedCommands(
@@ -40,7 +40,7 @@ namespace MooldangBot.Presentation.Features.Commands
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
             if (streamer == null) 
-                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+                return NotFound(Result<string>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎."));
             
             var streamerId = streamer.Id;
             int maxLimit = config.GetValue<int>("Pagination:MaxLimit", 100);
@@ -88,7 +88,7 @@ namespace MooldangBot.Presentation.Features.Commands
         }
 
         /// <summary>
-        /// [v1.8] 통합 명령어 저장 또는 수정 (서비스 레이어 위임)
+        /// [v1.8] ?듯빀 紐낅졊??????먮뒗 ?섏젙 (?쒕퉬???덉씠???꾩엫)
         /// </summary>
         [HttpPost("/api/commands/unified/{chzzkUid}")]
         public async Task<IActionResult> UpsertUnifiedCommand(string chzzkUid, [FromBody] SaveUnifiedCommandRequest req)
@@ -96,7 +96,7 @@ namespace MooldangBot.Presentation.Features.Commands
             try
             {
                 var entity = await unifiedCommandService.UpsertCommandAsync(chzzkUid, req);
-                return Ok(Result<object>.Success(new { Message = req.Id > 0 ? "수정 완료" : "생성 완료", Id = entity.Id }));
+                return Ok(Result<object>.Success(new { Message = req.Id > 0 ? "?섏젙 ?꾨즺" : "?앹꽦 ?꾨즺", Id = entity.Id }));
             }
             catch (InvalidOperationException ex)
             {
@@ -127,7 +127,7 @@ namespace MooldangBot.Presentation.Features.Commands
         }
 
         /// <summary>
-        /// [v1.2] 마스터 데이터 조회 (24시간 인메모리 캐시 적용)
+        /// [v1.2] 留덉뒪???곗씠??議고쉶 (24?쒓컙 ?몃찓紐⑤━ 罹먯떆 ?곸슜)
         /// </summary>
         [HttpGet("/api/commands/master")]
         [AllowAnonymous] 
@@ -138,7 +138,7 @@ namespace MooldangBot.Presentation.Features.Commands
         }
 
         /// <summary>
-        /// [v1.2] 마스터 데이터 캐시 강제 갱신
+        /// [v1.2] 留덉뒪???곗씠??罹먯떆 媛뺤젣 媛깆떊
         /// </summary>
         [HttpPost("/api/commands/master/refresh")]
         public IActionResult RefreshMasterCache()

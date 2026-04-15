@@ -1,11 +1,11 @@
-﻿namespace MooldangBot.Application.Common.Models;
+﻿namespace MooldangBot.Contracts.Common.Models;
 
 public class Result<T>
 {
     public bool IsSuccess { get; set; }
     public T? Value { get; set; }
     public string? Error { get; set; }
-    public object? Errors { get; set; } // 추가: 상세 에러 정보 (v6.2.2)
+    public object? Errors { get; set; } // 異붽?: ?곸꽭 ?먮윭 ?뺣낫 (v6.2.2)
     public DateTime ResponseTime { get; set; } = DateTime.UtcNow;
 
     public static Result<T> Success(T value) => new() { IsSuccess = true, Value = value };

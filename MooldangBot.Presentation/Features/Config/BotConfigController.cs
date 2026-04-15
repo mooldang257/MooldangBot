@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Workers;
 using MooldangBot.Presentation.Hubs;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Config
 {

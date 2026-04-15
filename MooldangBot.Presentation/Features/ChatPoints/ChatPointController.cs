@@ -1,18 +1,18 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.ChatPoints
 {
     [ApiController]
     [Route("api/chatpoint")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
+    // [v10.1] Primary Constructor ?곸슜
     public class ChatPointController(IAppDbContext context, ILogger<ChatPointController> logger) : ControllerBase
     {
         [HttpGet("{chzzkUid}")]
@@ -24,7 +24,7 @@ namespace MooldangBot.Presentation.Features.ChatPoints
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             
             if (profile == null) 
-                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+                return NotFound(Result<string>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎."));
 
             return Ok(Result<object>.Success(new {
                 pointPerChat = profile.PointPerChat,
@@ -45,7 +45,7 @@ namespace MooldangBot.Presentation.Features.ChatPoints
             if (profile == null) 
             {
                 logger.LogWarning("Streamer not found for Uid: {Uid}", chzzkUid);
-                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+                return NotFound(Result<string>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎."));
             }
 
             profile.PointPerChat = dto.PointPerChat;
@@ -53,13 +53,13 @@ namespace MooldangBot.Presentation.Features.ChatPoints
             profile.IsAutoAccumulateDonation = dto.IsAutoAccumulateDonation;
 
             await context.SaveChangesAsync();
-            return Ok(Result<object>.Success(new { success = true, message = "포인트 설정이 저장되었습니다." }));
+            return Ok(Result<object>.Success(new { success = true, message = "?ъ씤???ㅼ젙????λ릺?덉뒿?덈떎." }));
         }
 
         [HttpGet("{chzzkUid}/viewers")]
         public async Task<IActionResult> GetViewers(string chzzkUid)
         {
-            // [v7.0] Wallet Architecture: 분산된 지갑 테이블들을 조인하여 통합 뷰 제공
+            // [v7.0] Wallet Architecture: 遺꾩궛??吏媛??뚯씠釉붾뱾??議곗씤?섏뿬 ?듯빀 酉??쒓났
             var viewers = await (from r in context.ViewerRelations.IgnoreQueryFilters()
                                  join p in context.ViewerPoints.IgnoreQueryFilters() 
                                     on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points

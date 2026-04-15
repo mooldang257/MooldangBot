@@ -1,44 +1,20 @@
-﻿using MooldangBot.Contracts.SongBook.Interfaces;
-using MooldangBot.Contracts.Extensions;
-using MooldangBot.Domain.Entities;
-using MooldangBot.Domain.Common;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Contracts.SongBook.Interfaces;
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Modules.SongBookModule.Persistence;
 
-public class SongBookRepository : ISongBookRepository
+public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
 {
-    private readonly ISongBookDbContext _context;
-
-    public SongBookRepository(ISongBookDbContext context)
+    public async Task<SongBook?> GetByStreamerIdAsync(string streamerUid)
     {
-        _context = context;
+        return await db.SongBooks
+            .FirstOrDefaultAsync(s => s.StreamerProfile != null && s.StreamerProfile.ChzzkUid == streamerUid);
     }
 
-    public async Task<PagedResponse<SongBook>> GetPagedSongsAsync(string streamerChzzkUid, PagedRequest request)
+    public async Task AddAsync(SongBook songBook)
     {
-        var query = _context.SongBooks
-            .AsNoTracking()
-            .Include(s => s.StreamerProfile)
-            .Where(s => s.StreamerProfile!.ChzzkUid == streamerChzzkUid);
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            query = query.Where(s => s.Title.Contains(request.Search) || (s.Artist != null && s.Artist.Contains(request.Search)));
-        }
-
-        if (request.LastId > 0)
-        {
-            query = query.Where(s => s.Id < request.LastId);
-        }
-
-        return await query
-            .OrderByDescending(s => s.Id)
-            .ToPagedListAsync(request.PageSize, s => s.Id);
-    }
-
-    public async Task<SongBook?> GetByIdAsync(int id)
-    {
-        return await _context.SongBooks.FindAsync(id);
+        db.SongBooks.Add(songBook);
+        await db.SaveChangesAsync(default);
     }
 }

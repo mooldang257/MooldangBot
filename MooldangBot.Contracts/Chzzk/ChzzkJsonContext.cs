@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;
@@ -109,16 +109,21 @@ namespace MooldangBot.Contracts.Chzzk;
 [JsonSerializable(typeof(ChzzkLiveDetailResponse))]
 // Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
-[JsonSerializable(typeof(SonglistSettingsUpdateRequest))]
-[JsonSerializable(typeof(SongRequestCommandDto))]
-[JsonSerializable(typeof(OmakaseDto))]
-[JsonSerializable(typeof(SongQueueDto))]
-[JsonSerializable(typeof(SonglistDataDto))]
+// SongBook Module DTOs (Contracts)
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SonglistDataDto))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongUpdateRequest))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SonglistSettingsUpdateRequest))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongRequestCommandDto))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.OmakaseDto))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongQueueDto))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongQueueViewDto))]
+[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongAddRequest))]
+
+// Domain DTOs
 [JsonSerializable(typeof(PeriodicMessageDto))]
 [JsonSerializable(typeof(OverlayPresetDto))]
 [JsonSerializable(typeof(SharedComponentDto))]
 [JsonSerializable(typeof(CombinedCommandDto))]
-[JsonSerializable(typeof(SongUpdateRequest))]
 [JsonSerializable(typeof(RouletteResultDto))]
 [JsonSerializable(typeof(RouletteSummaryDto))]
 [JsonSerializable(typeof(SpinRouletteResponse))]

@@ -9,7 +9,7 @@ using MooldangBot.Presentation.Hubs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Overlay
 {

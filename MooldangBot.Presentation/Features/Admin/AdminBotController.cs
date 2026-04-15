@@ -12,7 +12,7 @@ using System.Text;
 using MooldangBot.Application.Features.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Admin
 {

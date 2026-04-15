@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Common;
@@ -13,7 +13,6 @@ namespace MooldangBot.Presentation.Features.Dashboard
     [Authorize]
     [ApiController]
     [Route("api/dashboard")]
-    // [v10.1] Primary Constructor 적용
     public class DashboardController(IAppDbContext db, IChzzkApiClient chzzkApi) : ControllerBase
     {
         // 1. 대시보드 통계 요약 조회
@@ -29,7 +28,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
             // [물멍]: 방송 상태 확인 (치지직 API 실시간 연동)
             var liveStatus = await chzzkApi.GetLiveDetailAsync(targetUid);
             
-            // [이지스]: 대시보드 통합 지표 집계
+            // [데이터]: 대시보드 통합 지표 집계
             var todaySongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
             var pendingSongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
             
@@ -52,7 +51,6 @@ namespace MooldangBot.Presentation.Features.Dashboard
 
             var summary = new DashboardSummaryDto
             {
-                // [물멍]: liveStatus가 null인 경우 안전하게 false 처리
                 IsLive = liveStatus?.Status == "OPEN",
                 TodaySongs = todaySongs,
                 PendingSongs = pendingSongs,
@@ -73,7 +71,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
             var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            // [물멍]: 각 도메인 로그 유니온 (고성능 조회를 위해 최근 10개만 취합)
+            // [물멍]: 각 도메인 로그 유니온 (최근 5개씩 취합)
             var songs = await db.SongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
@@ -84,7 +82,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
                     Id = $"song_{s.Id}",
                     Type = "song",
                     User = s.GlobalViewer != null ? s.GlobalViewer.Nickname : "익명",
-                    Content = $"신청곡: {s.Title} - {s.Artist}",
+                    Content = $"곡 신청: {s.Title} - {s.Artist}",
                     CreatedAt = s.CreatedAt,
                     IconType = "Music"
                 }).ToListAsync();
@@ -92,7 +90,7 @@ namespace MooldangBot.Presentation.Features.Dashboard
             var points = await db.PointTransactionHistories
                 .AsNoTracking()
                 .Include(t => t.GlobalViewer)
-                .Where(t => t.StreamerProfileId == profile.Id && t.Amount < 0) // 포인트 소모 위주
+                .Where(t => t.StreamerProfileId == profile.Id && t.Amount < 0)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(5)
                 .Select(t => new DashboardActivityDto {
@@ -119,13 +117,11 @@ namespace MooldangBot.Presentation.Features.Dashboard
                     IconType = "Zap"
                 }).ToListAsync();
 
-            // 통합 및 정렬
             var activities = songs.Concat(points).Concat(roulettes)
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(10)
                 .ToList();
 
-            // [물멍]: 시간 표시 보정 (예: "2분 전")
             foreach (var act in activities)
             {
                 act.Time = GetRelativeTime(act.CreatedAt);

@@ -32,6 +32,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MooldangBot.Infrastructure.Security;
 using MassTransit;
+using MassTransit.EntityFrameworkCoreIntegration;
 using System.Reflection;
 
 namespace MooldangBot.Infrastructure

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 using System.Security.Claims;
 
 namespace MooldangBot.Presentation.Features.Shared;

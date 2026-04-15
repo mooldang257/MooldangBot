@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Common.Interfaces;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 
 namespace MooldangBot.Presentation.Features.Debug;
 

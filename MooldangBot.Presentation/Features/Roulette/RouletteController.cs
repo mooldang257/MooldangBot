@@ -6,7 +6,7 @@ using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
-using MooldangBot.Application.Common.Models;
+using MooldangBot.Contracts.Common.Models;
 using MediatR;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
