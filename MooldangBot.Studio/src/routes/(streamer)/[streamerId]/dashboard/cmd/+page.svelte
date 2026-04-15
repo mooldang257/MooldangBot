@@ -10,10 +10,13 @@
     import PeriodicTab from "$lib/features/command/components/PeriodicTab.svelte";
 
     import { apiFetch } from "$lib/api/client";
+    import { userState } from "$lib/core/state/user.svelte";
 
-    // [Osiris]: Svelte 5 Runes ($state) 기반의 현대적 상태 관리
+    // [Osiris]: 부모 레이아웃/데이터로부터 전달받은 상태 수신
+    let { data } = $props();
     let isLoaded = $state(false);
     let chzzkUid = $state("");
+    let errorMessage = $state("");
     let activeTab: "commands" | "periodic" = $state("commands");
     const tabs = ["commands", "periodic"] as const;
 
@@ -54,8 +57,6 @@
     });
 
     async function loadMasterData() {
-        // [데이터 단절]: UI 우선 렌더링을 위해 서버 호출 차단
-        /*
         try {
             const res = await apiFetch<any>("/api/commands/master");
             if (res) {
@@ -71,11 +72,10 @@
                 };
                 isMasterDataValid = true;
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
             if (!masterData.categories.length) isMasterDataValid = false;
         }
-        */
     }
 
     async function loadCommands() {
@@ -107,16 +107,59 @@
         try {
             const data = await apiFetch<any>(`/api/PeriodicMessage/list/${chzzkUid}`);
             periodicMessages = data || [];
-        } catch (e) {
+        } catch (e: any) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
         }
     }
 
+    // [Osiris]: 스트리머 식별자 반응성 확보
+    const streamerId = $derived(userState.uid || data?.userData?.chzzkUid || "");
+
+    // [물멍]: 데이터 초기화 및 수립 함수 (신청곡 관리와 로직 동기화)
+    const initPageData = async () => {
+        if (isLoaded) return;
+        try {
+            const targetUid = streamerId;
+            if (!targetUid) return;
+
+            // 1. 전술 정보(마스터 데이터) 수립
+            await loadMasterData();
+
+            // 2. 실전 데이터(명령어/정기메세지) 병렬 로드
+            chzzkUid = targetUid;
+            await Promise.allSettled([
+                loadCommands(),
+                loadPeriodicMessages(),
+                apiFetch<any>(`/api/Preference/temporary/${chzzkUid}/skipDeleteConfirm`)
+                    .then(res => { if (res?.value === "true") skipDeleteConfirm = true; })
+                    .catch(() => {}) 
+            ]);
+
+        } catch (e: any) {
+            errorMessage = "함교 통신 중 문제가 발생했습니다: " + (e.message || "알 수 없는 오류");
+            console.error("[물멍] 페이지 초기 로딩 실패:", e);
+        } finally {
+            isLoaded = true;
+        }
+    };
+
+    // [Osiris]: ID가 준비되는 즉시 데이터 로딩 트리거 가동
+    $effect(() => {
+        if (streamerId && !isLoaded) {
+            initPageData();
+        }
+    });
+
     onMount(async () => {
-        // [이지스의 방패]: UI 긴급 기동을 위해 모든 통신망을 일시 차단하고 화면부터 그립니다.
-        isLoaded = true;
-        console.log("[물멍] 긴급 UI 구제 모드 가동: 통신 수립 없이 함교를 개방합니다.");
-        await tick();
+        // [물멍]: UI 마운트 완료 신호를 남깁니다. (실제 데이터는 $effect에서 관리)
+        console.log("[물멍] 함교 명령어 관리소 렌더링 완료");
+
+        // 5초 후에도 ID가 없으면 경고 표시 (Fail-safe)
+        setTimeout(() => {
+            if (!streamerId && !isLoaded) {
+                errorMessage = "인증 정보가 준비되지 않았습니다. 다시 로그인하거나 페이지를 새로고침해 주세요.";
+            }
+        }, 5000);
     });
 
     function handleEdit(cmd: any) {
@@ -168,7 +211,22 @@
     on:confirm={onConfirmDelete}
 />
 
-{#if !isLoaded}
+{#if errorMessage}
+    <div class="fixed inset-0 bg-white/70 backdrop-blur-md flex flex-col items-center justify-center z-[110]" in:fade>
+        <div class="bg-rose-50 p-8 rounded-[3rem] border border-rose-100 shadow-2xl flex flex-col items-center gap-6 max-w-md text-center">
+            <div class="w-20 h-20 bg-rose-500 text-white rounded-3xl flex items-center justify-center shadow-lg shadow-rose-200">
+                <AlertTriangle size={40} />
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-black text-rose-600">함교 통신망 마비</h3>
+                <p class="text-sm font-bold text-slate-500 leading-relaxed">{errorMessage}</p>
+            </div>
+            <button on:click={() => window.location.reload()} class="w-full h-14 bg-rose-500 text-white font-black rounded-2xl hover:bg-rose-600 transition-all flex items-center justify-center gap-2">
+                <RefreshCw size={18} /> 함교 재진입
+            </button>
+        </div>
+    </div>
+{:else if !isLoaded}
     <div class="fixed inset-0 bg-white/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-[100]" out:fade>
         <div class="relative">
             <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
