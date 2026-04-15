@@ -8,7 +8,6 @@
     export let chzzkUid: string;
     export let onEdit: (cmd: any) => void;
     export let onDelete: (id: number) => Promise<void>;
-    export let loading: boolean = false;
 
     let searchQuery = '';
     let sortColumn = 'keyword';
@@ -101,10 +100,7 @@
                     <th on:click={() => toggleSort('keyword')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group">
                         <div class="flex items-center gap-2">키워드 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
-                    <th on:click={() => toggleSort('priority')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
-                        <div class="flex items-center justify-center gap-2">우선순위 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
-                    </th>
-                    <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">응답 및 부가설정</th>
+                    <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">응답 내용</th>
                     <th on:click={() => toggleSort('cost')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
                         <div class="flex items-center justify-center gap-2">비용 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
@@ -115,11 +111,7 @@
                 {#each filteredCommands as cmd (cmd.id)}
                     <tr class="border-t border-slate-50 hover:bg-sky-50/20 transition-all group/row" in:fade>
                         <td class="p-6 text-center">
-                            <button 
-                                on:click={() => toggleCommand(cmd)} 
-                                disabled={loading}
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.isActive ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
+                            <button on:click={() => toggleCommand(cmd)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.isActive ? 'bg-emerald-500' : 'bg-slate-300'}">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {cmd.isActive ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
                             </button>
                         </td>
@@ -139,25 +131,13 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="p-6 whitespace-nowrap text-center">
-                            <span class="text-[10px] font-black {cmd.priority === 0 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-100 text-slate-400'} px-2.5 py-1 rounded-lg border border-primary/5">
-                                P:{cmd.priority}
+                        <td class="p-6 whitespace-nowrap">
+                            <span class="text-sm font-black text-primary bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
+                                {cmd.keyword}
                             </span>
                         </td>
-                        <td class="p-6 min-w-[200px]">
-                            <div class="flex flex-col gap-1.5">
-                                <p class="text-sm font-bold text-slate-600 line-clamp-1 group-hover/row:line-clamp-none transition-all">{cmd.responseText || '-'}</p>
-                                <div class="flex gap-1">
-                                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md {cmd.matchType === 'Exact' ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : cmd.matchType === 'Regex' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-sky-50 text-sky-500 border border-sky-100'} uppercase tracking-tight">
-                                        MATCH: {cmd.matchType}
-                                    </span>
-                                    {#if cmd.requiresSpace && cmd.matchType === 'Prefix'}
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 bg-slate-50 text-slate-400 border border-slate-100 rounded-md uppercase tracking-tight">
-                                            SPACE REQ
-                                        </span>
-                                    {/if}
-                                </div>
-                            </div>
+                        <td class="p-6">
+                            <p class="text-sm font-bold text-slate-600 line-clamp-1 max-w-sm group-hover/row:line-clamp-none transition-all">{cmd.responseText || '-'}</p>
                         </td>
                         <td class="p-6 text-center">
                             <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black {cmd.cost > 0 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-300 border border-slate-100'} shadow-sm">
@@ -171,18 +151,10 @@
                         </td>
                         <td class="p-6">
                             <div class="flex items-center justify-center gap-2 transition-all">
-                                <button 
-                                    on:click={() => onEdit(cmd)} 
-                                    disabled={loading}
-                                    class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-primary disabled:hover:shadow-none"
-                                >
+                                <button on:click={() => onEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
                                     <Edit2 size={18} />
                                 </button>
-                                <button 
-                                    on:click={() => onDelete(cmd.id)} 
-                                    disabled={loading}
-                                    class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-rose-500 disabled:hover:shadow-none"
-                                >
+                                <button on:click={() => onDelete(cmd.id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm">
                                     <Trash2 size={18} />
                                 </button>
                             </div>

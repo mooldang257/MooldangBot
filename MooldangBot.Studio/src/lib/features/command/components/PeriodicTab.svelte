@@ -6,7 +6,6 @@
     export let messages: { id: number; intervalMinutes: number; message: string; isEnabled: boolean }[] = [];
     export let chzzkUid: string = '';
     export let onRefresh: () => Promise<void> = async () => {};
-    export let loading: boolean = false;
 
     let msgForm = { id: 0, intervalMinutes: 10, message: '', isEnabled: true };
 
@@ -86,11 +85,7 @@
                 <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">메세지 내용</label>
                 <textarea bind:value={msgForm.message} placeholder="광고나 홍보 멘트를 적어주세요..." class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 h-14 outline-none focus:ring-4 focus:ring-amber-400/10 focus:border-amber-400 transition-all shadow-sm resize-none"></textarea>
             </div>
-            <button 
-                on:click={savePeriodic} 
-                disabled={loading}
-                class="h-14 bg-amber-400 text-white font-black rounded-2xl shadow-xl shadow-amber-400/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
-            >
+            <button on:click={savePeriodic} class="h-14 bg-amber-400 text-white font-black rounded-2xl shadow-xl shadow-amber-400/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group">
                 <Save size={20} class="group-hover:rotate-12 transition-transform" />
                 {msgForm.id === 0 ? '메세지 등록' : '수정 완료'}
             </button>
@@ -108,11 +103,7 @@
                         </div>
                         <span class="text-lg font-black text-slate-700 font-mono tracking-tighter">{msg.intervalMinutes}분 주기</span>
                     </div>
-                    <button 
-                        on:click={() => togglePeriodic(msg)} 
-                        disabled={loading}
-                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {msg.isEnabled ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-slate-200'} disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button on:click={() => togglePeriodic(msg)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {msg.isEnabled ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-slate-200'}">
                         <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {msg.isEnabled ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
                     </button>
                 </div>
@@ -124,16 +115,8 @@
                 </div>
 
                 <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                        on:click={() => editPeriodic(msg)} 
-                        disabled={loading}
-                        class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-500 hover:text-primary hover:border-primary hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >수정</button>
-                    <button 
-                        on:click={() => deletePeriodic(msg.id)} 
-                        disabled={loading}
-                        class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-400 hover:text-rose-500 hover:border-rose-500 hover:shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button on:click={() => editPeriodic(msg)} class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-500 hover:text-primary hover:border-primary hover:shadow-md transition-all">수정</button>
+                    <button on:click={() => deletePeriodic(msg.id)} class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-400 hover:text-rose-500 hover:border-rose-500 hover:shadow-md transition-all flex items-center gap-1.5">
                         <Trash2 size={14} /> 삭제
                     </button>
                 </div>
