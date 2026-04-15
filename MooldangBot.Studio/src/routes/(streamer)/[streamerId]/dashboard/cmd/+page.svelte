@@ -12,24 +12,24 @@
 
     import { apiFetch } from "$lib/api/client";
 
-    let isLoaded = false;
-    let chzzkUid = "";
-    let activeTab: "commands" | "periodic" = "commands";
+    let isLoaded = $state(false);
+    let chzzkUid = $state("");
+    let activeTab: "commands" | "periodic" = $state("commands");
     const tabs = ["commands", "periodic"] as const;
 
-    let skipDeleteConfirm = false;
-    let showDeleteModal = false;
-    let deleteTargetId: number | null = null;
-    let deleteTargetKeyword = "";
+    let skipDeleteConfirm = $state(false);
+    let showDeleteModal = $state(false);
+    let deleteTargetId: number | null = $state(null);
+    let deleteTargetKeyword = $state("");
 
     // [방어막]: 초기 데이터 구조는 유지하되, 로드 성공 여부를 체크할 변수 추가
-    let masterData = { categories: [], features: [], roles: [], variables: [] };
-    let isMasterDataValid = false;
+    let masterData = $state({ categories: [], features: [], roles: [], variables: [] });
+    let isMasterDataValid = $state(true); // [v2.2] 완화: 명부 유효성과 상관없이 개방
 
-    let allCommands: any[] = [];
-    let periodicMessages: any[] = [];
+    let allCommands: any[] = $state([]);
+    let periodicMessages: any[] = $state([]);
 
-    let cmdForm = {
+    let cmdForm = $state({
         id: 0,
         keyword: "",
         category: "General",
@@ -42,7 +42,7 @@
         priority: 0,
         matchType: "Exact",
         requiresSpace: true,
-    };
+    });
 
     async function loadMasterData() {
         try {
@@ -58,7 +58,7 @@
             };
 
             // [물멍]: 데이터가 로드되었는지 최종 확인
-            isMasterDataValid = masterData.categories.length > 0;
+            isMasterDataValid = true; // [v2.2] 통신 성공 시 무조건 유효로 간주
             console.log("[물멍] 함교 자재 명부 동기화 완료:", masterData);
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
@@ -122,11 +122,12 @@
                     loadPeriodicMessages()
                 ]);
 
-                await apiFetch<any>("/api/Preference/temporary/skipDeleteConfirm")
-                    .then((data) => {
-                        if (data.value === "true") skipDeleteConfirm = true;
-                    })
-                    .catch(() => {});
+                try {
+                    const data = await apiFetch<any>(`/api/Preference/temporary/${chzzkUid}/skipDeleteConfirm`);
+                    if (data?.value === "true") skipDeleteConfirm = true;
+                } catch (e) {
+                    // [물멍]: 설정 로드 실패 시 기본값 유지
+                }
             }
         } catch (e: any) {
             console.error("[물멍] 함교 데스크 동기화 실패:", e);
@@ -169,7 +170,7 @@
     async function onConfirmDelete(event: any) {
         if (event.detail.dontAskAgain) {
             skipDeleteConfirm = true;
-            await apiFetch("/api/Preference/temporary/skipDeleteConfirm", {
+            await apiFetch(`/api/Preference/temporary/${chzzkUid}/skipDeleteConfirm`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ value: "true" }),

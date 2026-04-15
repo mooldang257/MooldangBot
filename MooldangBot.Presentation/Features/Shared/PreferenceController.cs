@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
@@ -25,11 +25,11 @@ public class PreferenceController(
     /// <summary>
     /// [임시] 특정 설정값을 Redis에서 조회합니다.
     /// </summary>
-    [HttpGet("/api/Preference/temporary/{key}")]
-    public async Task<IActionResult> GetTemporaryPreference(string key)
+    [HttpGet("/api/Preference/temporary/{chzzkUid}/{key}")]
+    public async Task<IActionResult> GetTemporaryPreference(string chzzkUid, string key)
     {
-        var chzzkUid = User.FindFirstValue("StreamerId");
-        if (string.IsNullOrEmpty(chzzkUid)) 
+        var sessionUid = User.FindFirstValue("StreamerId");
+        if (string.IsNullOrEmpty(sessionUid)) 
             return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
         var value = await cacheService.GetPreferenceAsync(chzzkUid, key);
@@ -39,11 +39,11 @@ public class PreferenceController(
     /// <summary>
     /// [임시] 특정 설정값을 Redis에 저장합니다. (기본 24시간 TTL)
     /// </summary>
-    [HttpPost("/api/Preference/temporary/{key}")]
-    public async Task<IActionResult> SetTemporaryPreference(string key, [FromBody] PreferenceRequest request)
+    [HttpPost("/api/Preference/temporary/{chzzkUid}/{key}")]
+    public async Task<IActionResult> SetTemporaryPreference(string chzzkUid, string key, [FromBody] PreferenceRequest request)
     {
-        var chzzkUid = User.FindFirstValue("StreamerId");
-        if (string.IsNullOrEmpty(chzzkUid)) 
+        var sessionUid = User.FindFirstValue("StreamerId");
+        if (string.IsNullOrEmpty(sessionUid)) 
             return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
         var expiry = request.TtlMinutes.HasValue 
