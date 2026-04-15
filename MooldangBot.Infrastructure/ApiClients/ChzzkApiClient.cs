@@ -12,6 +12,7 @@ using MooldangBot.Contracts.Chzzk.Models.Chzzk.Chat;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Restrictions;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Drops;
+using System.Linq;
 
 namespace MooldangBot.Infrastructure.ApiClients
 {
@@ -97,8 +98,19 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         public async Task<List<ChannelProfile>> GetChannelsAsync(IEnumerable<string> uids)
         {
-            var response = await SafePostAsync<List<ChannelProfile>>("/api/internal/channels/batch", new { ChannelIds = uids });
-            return response ?? new List<ChannelProfile>();
+            // [오시리스의 수선]: 게이트웨이는 ChzzkChannelsContent 구조로 응답하므로 이에 맞춰 파싱합니다.
+            // [v2.1] 정규화: 명확한 네임스페이스 경로를 지정하여 중복 정의 충돌을 방지합니다.
+            var response = await SafePostAsync<MooldangBot.Contracts.Models.Chzzk.ChzzkChannelsContent>("/api/internal/channels/batch", new { ChannelIds = uids });
+            
+            if (response?.Data == null) return new List<ChannelProfile>();
+
+            return response.Data.Select(d => new ChannelProfile
+            {
+                ChannelId = d.ChannelId,
+                ChannelName = d.ChannelName ?? string.Empty,
+                ChannelImageUrl = d.ChannelImageUrl,
+                VerifiedMark = d.VerifiedMark
+            }).ToList();
         }
 
         public async Task<ChzzkPagedResponse<CategorySearchItem>?> SearchCategoryAsync(string categoryName)

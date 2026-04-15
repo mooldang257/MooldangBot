@@ -101,6 +101,14 @@
     }
 
     onMount(async () => {
+        // [물멍]: 서버와의 동기화 작업에 타임아웃 방어 로직을 추가합니다.
+        const syncTimeout = setTimeout(() => {
+            if (!isLoaded) {
+                console.warn("[물멍] 함교 데스크 동기화가 지연되고 있습니다. 강제로 화면을 개방합니다.");
+                isLoaded = true;
+            }
+        }, 8000); // 8초 후 강제 개방
+
         try {
             const profile = await apiFetch<any>("/api/auth/me");
             const targetUid = profile.chzzkUid || profile.ChzzkUid;
@@ -123,6 +131,7 @@
         } catch (e: any) {
             console.error("[물멍] 함교 데스크 동기화 실패:", e);
         } finally {
+            clearTimeout(syncTimeout);
             isLoaded = true;
         }
     });
