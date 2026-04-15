@@ -22,11 +22,15 @@
     let deleteTargetId: number | null = $state(null);
     let deleteTargetKeyword = $state("");
 
-    // [방어막]: 초기 데이터 구조 견고화 (초기값 보장)
+    // [방어막]: 초기 데이터 구조 견고화 (초기값 보장 및 객체 규격 일치)
     let masterData = $state({ 
         categories: [], 
         features: [], 
-        roles: ["Viewer", "Manager", "Streamer"], 
+        roles: [
+            { name: "Viewer", displayName: "Viewer" },
+            { name: "Manager", displayName: "Manager" },
+            { name: "Streamer", displayName: "Streamer" }
+        ], 
         variables: [] 
     });
     let isMasterDataValid = $state(true); 
@@ -50,13 +54,19 @@
     });
 
     async function loadMasterData() {
+        // [데이터 단절]: UI 우선 렌더링을 위해 서버 호출 차단
+        /*
         try {
             const res = await apiFetch<any>("/api/commands/master");
             if (res) {
                 masterData = {
                     categories: res.categories || [],
                     features: res.features || [],
-                    roles: res.roles || ["Viewer", "Manager", "Streamer"],
+                    roles: res.roles || [
+                        { name: "Viewer", displayName: "Viewer" },
+                        { name: "Manager", displayName: "Manager" },
+                        { name: "Streamer", displayName: "Streamer" }
+                    ],
                     variables: res.variables || []
                 };
                 isMasterDataValid = true;
@@ -65,6 +75,7 @@
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
             if (!masterData.categories.length) isMasterDataValid = false;
         }
+        */
     }
 
     async function loadCommands() {
@@ -102,37 +113,10 @@
     }
 
     onMount(async () => {
-        const syncTimeout = setTimeout(async () => {
-            if (!isLoaded) {
-                isLoaded = true;
-                await tick();
-            }
-        }, 5000);
-
-        try {
-            const profile = await apiFetch<any>("/api/auth/me");
-            const targetUid = profile.chzzkUid || profile.ChzzkUid;
-
-            if (targetUid) {
-                chzzkUid = targetUid;
-                await Promise.allSettled([
-                    loadMasterData(),
-                    loadCommands(),
-                    loadPeriodicMessages()
-                ]);
-
-                try {
-                    const data = await apiFetch<any>(`/api/Preference/temporary/${chzzkUid}/skipDeleteConfirm`);
-                    if (data?.value === "true") skipDeleteConfirm = true;
-                } catch (e) {}
-            }
-        } catch (e: any) {
-            console.error("[물멍] 함교 데스크 동기화 실패:", e);
-        } finally {
-            clearTimeout(syncTimeout);
-            isLoaded = true;
-            await tick();
-        }
+        // [이지스의 방패]: UI 긴급 기동을 위해 모든 통신망을 일시 차단하고 화면부터 그립니다.
+        isLoaded = true;
+        console.log("[물멍] 긴급 UI 구제 모드 가동: 통신 수립 없이 함교를 개방합니다.");
+        await tick();
     });
 
     function handleEdit(cmd: any) {
