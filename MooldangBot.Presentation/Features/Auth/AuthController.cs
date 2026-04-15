@@ -331,6 +331,7 @@ namespace MooldangBot.Presentation.Features.Auth
 
         [HttpGet("/api/auth/callback")]
         [HttpGet("/api/v1/auth/callback")]
+        [HttpGet("/Auth/callback")] // 🌟 [Aegis Bridge]: Nginx 우회 경로 지원 (404 방지)
         [AllowAnonymous]
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
