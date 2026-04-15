@@ -1,8 +1,14 @@
-﻿using MediatR;
+using MediatR;
+using MooldangBot.Contracts.Abstractions;
+using System;
 
 namespace MooldangBot.Contracts.SongBook.Events;
 
 /// <summary>
-/// [?ㅼ떆由ъ뒪???뚮룞]: ?〓턿 ?뱀? ?ㅻ쭏移댁꽭 ?곹깭媛 蹂寃쎈릺???ㅻ쾭?덉씠 ?덈줈怨좎묠???꾩슂?⑥쓣 ?뚮┰?덈떎.
+/// [오시리스의 파동]: 송북 및 오마카세 상태가 변경되어 오버레이의 새로고침이 필요함을 알립니다.
 /// </summary>
-public record SongBookRefreshEvent(string ChzzkUid) : INotification;
+public record SongBookRefreshEvent(string ChzzkUid, Guid CorrelationId = default) : INotification, IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+    public DateTime OccurredOn { get; init; } = DateTime.UtcNow;
+}
