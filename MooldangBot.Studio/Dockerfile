@@ -31,5 +31,7 @@ RUN npm install --production --legacy-peer-deps
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
+# 👇 [핵심 추가]: Nginx가 도커 네트워크를 타고 들어올 수 있도록 모든 IP 대역 개방
+ENV HOST=0.0.0.0
 
 CMD ["node", "build"]
