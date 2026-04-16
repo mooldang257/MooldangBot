@@ -1,5 +1,5 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

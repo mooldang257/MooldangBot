@@ -1,7 +1,7 @@
-using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Point.Interfaces;
-using MooldangBot.Contracts.Roulette.Interfaces;
-using MooldangBot.Contracts.SongBook.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Point.Abstractions;
+using MooldangBot.Modules.Roulette.Abstractions;
+using MooldangBot.Modules.SongBookModule.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Common.Interfaces;

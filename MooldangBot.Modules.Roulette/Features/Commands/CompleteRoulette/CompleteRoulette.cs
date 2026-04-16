@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MediatR;
 using MooldangBot.Modules.Roulette.Notifications;
 using Microsoft.EntityFrameworkCore;

@@ -4,7 +4,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Dapper;
 using MooldangBot.Contracts.Security;
-using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Contracts.Point.Requests.Commands;
 using MooldangBot.Domain.Common;
 

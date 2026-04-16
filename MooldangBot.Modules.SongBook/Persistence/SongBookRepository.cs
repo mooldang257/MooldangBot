@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Modules.SongBookModule.Abstractions;
 using MooldangBot.Contracts.SongBook.Interfaces;
 using MooldangBot.Domain.Entities;
 

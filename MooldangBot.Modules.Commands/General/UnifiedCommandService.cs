@@ -1,3 +1,4 @@
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

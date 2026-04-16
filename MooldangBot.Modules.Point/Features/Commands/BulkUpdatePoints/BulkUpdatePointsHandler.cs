@@ -4,7 +4,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Point.Requests.Commands;
 using MooldangBot.Contracts.Point.Interfaces;
-
 namespace MooldangBot.Modules.Point.Features.Commands.BulkUpdatePoints;
 
 /// <summary>

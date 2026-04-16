@@ -4,7 +4,7 @@ using MooldangBot.Contracts.Commands.Events;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;
 using System;

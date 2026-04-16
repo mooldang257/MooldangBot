@@ -4,6 +4,7 @@ using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Commands.Events;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using System;
 using System.Linq;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace MooldangBot.Modules.Commands.Handlers;
 /// </summary>
 public class ReplyCommandHandler(
     IChzzkBotService botService,
-    MooldangBot.Contracts.Commands.Interfaces.ICommandDbContext db,
+    ICommandDbContext db,
     IMediator mediator,
     ILogger<ReplyCommandHandler> logger) : INotificationHandler<CommandExecutedEvent>
 {

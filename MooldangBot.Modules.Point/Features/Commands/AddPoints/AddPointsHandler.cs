@@ -1,4 +1,5 @@
 using MooldangBot.Contracts.Point.Requests.Commands;
+using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Contracts.Point.Enums;
 using MooldangBot.Contracts.Common.Interfaces;

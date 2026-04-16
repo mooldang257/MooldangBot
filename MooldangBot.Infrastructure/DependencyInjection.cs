@@ -1,11 +1,14 @@
+using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Contracts.Roulette.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.SongBook.Interfaces;
+using MooldangBot.Modules.SongBookModule.Abstractions;
+using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MediatR;

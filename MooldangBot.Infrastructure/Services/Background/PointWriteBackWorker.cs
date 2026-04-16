@@ -1,4 +1,5 @@
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
