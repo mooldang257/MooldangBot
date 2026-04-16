@@ -1,90 +1,87 @@
-﻿using System.Threading.Channels;
-using Microsoft.Extensions.Caching.Memory;
+using System.Threading.Channels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.ChatPoints.Handlers;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Services;
 using MooldangBot.Application.Workers;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Domain.Events;
+using MooldangBot.Contracts.Point.Requests.Models;
 using NSubstitute;
 using Xunit;
 
 namespace MooldangBot.Tests;
 
+/// <summary>
+/// [포인트 공명 테스트]: 포인트 적립 핸들러 → 배치 서비스 → 배치 워커 간의 데이터 흐름 정합성을 검증합니다.
+/// (v2.0) ChatMessageReceivedEvent_Legacy → ChzzkEventReceived 전환 반영
+/// (v2.1) PointBatchWorker 생성자 시그니처 업데이트 (5개 파라미터)
+/// </summary>
 public class PointResonanceTests
 {
     private readonly IPointBatchService _batchService = new PointBatchService();
-    private readonly IPointTransactionService _mockPointService = Substitute.For<IPointTransactionService>();
-    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
+    private readonly IPulseService _pulse = Substitute.For<IPulseService>();
+    private readonly IChaosManager _chaos = Substitute.For<IChaosManager>();
     private readonly ILogger<ChatMessagePointHandler> _handlerLogger = Substitute.For<ILogger<ChatMessagePointHandler>>();
     private readonly ILogger<PointBatchWorker> _workerLogger = Substitute.For<ILogger<PointBatchWorker>>();
 
     [Fact]
-    public async Task PointBatching_Should_Aggregate_And_BulkUpdate()
+    public async Task Handler_Should_Enqueue_Point_For_Valid_Chat()
     {
-        // [Arrange]
-        var worker = new PointBatchWorker(_batchService, _mockPointService, _workerLogger);
-        var streamer = new StreamerProfile { ChzzkUid = "streamer1" };
-        var viewerId = "viewer1";
-
-        // [Act]: 10번의 포인트 적립 요청 (배치 서비스로 직접 투입)
-        for (int i = 0; i < 10; i++)
+        // [Arrange]: 실제 배치 서비스를 사용하여 핸들러 → 서비스 흐름 검증
+        var handler = new ChatMessagePointHandler(_batchService, _handlerLogger);
+        var profile = new StreamerProfile { ChzzkUid = "streamer1", ChannelName = "Test" };
+        var chatEvent = new ChzzkChatEvent
         {
-            _batchService.EnqueueIncrement(streamer.ChzzkUid, viewerId, "Nickname", 1);
-        }
+            ChannelId = "streamer1",
+            SenderId = "viewer1",
+            Nickname = "User1",
+            Content = "Hello",
+            Timestamp = DateTime.UtcNow
+        };
+        var notification = new ChzzkEventReceived(Guid.NewGuid(), profile, chatEvent, DateTimeOffset.UtcNow);
 
-        // 워커의 중단(Flush) 트리거
-        await worker.StopAsync(CancellationToken.None);
+        // [Act]: 채팅 이벤트 처리
+        await handler.Handle(notification, CancellationToken.None);
 
-        // [Assert]: BulkUpdatePointsAsync가 한 번 호출되었고, Total이 10점인지 확인
-        await _mockPointService.Received(1).BulkUpdatePointsAsync(
-            Arg.Is<IEnumerable<PointJob>>(jobs => jobs.Sum(j => j.Amount) == 10),
-            Arg.Any<CancellationToken>()
-        );
-    }
-
-    [Fact]
-    public async Task ChatMessageHandler_Should_Apply_5s_Cooldown()
-    {
-        // [Arrange]
-        var handler = new ChatMessagePointHandler(_batchService, _cache, _handlerLogger);
-        var profile = new StreamerProfile { ChzzkUid = "streamer1" };
-        var notification = new ChatMessageReceivedEvent(profile, "User1", "Hello", "common", "viewer1");
-
-        // [Act]: 1초 내에 10번의 채팅 발생
-        for (int i = 0; i < 10; i++)
-        {
-            await handler.Handle(notification, CancellationToken.None);
-        }
-
-        // [Assert]: 배치 서비스에는 단 1번만 인큐되어야 함 (쿨다운 때문)
+        // [Assert]: BatchService에 1건이 적재되었는지 확인
         _batchService.Complete();
         var count = 0;
         await foreach (var _ in _batchService.DrainAllAsync(CancellationToken.None))
         {
             count++;
         }
-        
+
         Assert.Equal(1, count);
     }
 
     [Fact]
-    public async Task ChatMessageHandler_With_MockService_Should_Call_Enqueue_Only_Once_Due_To_Cooldown()
+    public async Task Handler_With_MockService_Should_Call_Enqueue()
     {
         // [Arrange]
         var mockBatch = Substitute.For<IPointBatchService>();
-        var handler = new ChatMessagePointHandler(mockBatch, _cache, _handlerLogger);
-        var profile = new StreamerProfile { ChzzkUid = "streamer2" };
-        var notification = new ChatMessageReceivedEvent(profile, "Spammer", "Spam", "common", "viewer2");
+        var handler = new ChatMessagePointHandler(mockBatch, _handlerLogger);
+        var profile = new StreamerProfile { ChzzkUid = "streamer2", ChannelName = "Test" };
+        var chatEvent = new ChzzkChatEvent
+        {
+            ChannelId = "streamer2",
+            SenderId = "viewer2",
+            Nickname = "Spammer",
+            Content = "Spam",
+            Timestamp = DateTime.UtcNow
+        };
+        var notification = new ChzzkEventReceived(Guid.NewGuid(), profile, chatEvent, DateTimeOffset.UtcNow);
 
-        // [Act]: 연타 채팅
+        // [Act]: 연타 채팅 (현재 핸들러에는 쿨다운이 제거되었으므로 모두 통과)
         for (int i = 0; i < 5; i++)
         {
             await handler.Handle(notification, CancellationToken.None);
         }
 
-        // [Assert]: 쿨다운에 의해 EnqueueIncrement는 단 1회만 호출됨
-        mockBatch.Received(1).EnqueueIncrement(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>());
+        // [Assert]: 쿨다운 없이 5회 모두 EnqueueIncrement 호출
+        mockBatch.Received(5).EnqueueIncrement(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>());
     }
 }

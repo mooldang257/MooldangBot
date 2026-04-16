@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Services;
@@ -15,17 +16,18 @@ namespace MooldangBot.Tests;
 public class AegisPipelineTests
 {
     private readonly IDistributedCache _cache = Substitute.For<IDistributedCache>();
-    private readonly IAppDbContext _db = Substitute.For<IAppDbContext>();
+    private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
+    private readonly IChaosManager _chaos = Substitute.For<IChaosManager>();
     private readonly ILogger<IdentityCacheService> _logger = Substitute.For<ILogger<IdentityCacheService>>();
 
     [Fact]
     public async Task IdentityCache_Should_Return_Cached_Profile_Without_DB_Hit()
     {
         // [Arrange]
-        var service = new IdentityCacheService(_cache, _db, _logger);
+        var service = new IdentityCacheService(_cache, _scopeFactory, _chaos, _logger);
         var streamerUid = "streamer123";
         var profile = new StreamerProfile { ChzzkUid = streamerUid, ChannelName = "TestChannel" };
-        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile);
+        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile, MooldangBot.Contracts.Chzzk.ChzzkJsonContext.Default.StreamerProfile);
 
         // 캐시에 데이터가 있다고 가정
         _cache.GetAsync($"Streamer:{streamerUid}", Arg.Any<CancellationToken>()).Returns(profileBytes);
@@ -52,8 +54,8 @@ public class AegisPipelineTests
 
         var variables = new List<DynamicVariableMetadata>
         {
-            new() { Keyword = "$(user)", QueryString = "METHOD:User", BadgeColor = "info", Description = "Test" },
-            new() { Keyword = "$(points)", QueryString = "METHOD:Points", BadgeColor = "success", Description = "Test" }
+            new(1, "$(user)", "Test", "info", "METHOD:User"),
+            new(2, "$(points)", "Test", "success", "METHOD:Points")
         };
 
         cache.GetFullVariablesAsync().Returns(variables);
