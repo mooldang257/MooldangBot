@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Contracts.Chzzk;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
@@ -127,7 +128,8 @@ public class PointBatchWorker(
         try
         {
             var data = _retryBuffer.ToArray();
-            var json = JsonSerializer.Serialize(data);
+            // [P0 Quick Win] Source Gen 경로: 리플렉션 제거로 GC 부하 감소
+            var json = JsonSerializer.Serialize(data, ChzzkJsonContext.Default.PointJobArray);
             await File.WriteAllTextAsync(BackupFileName, json);
             logger.LogCritical("💾 [익산 보험] {Count}건의 미처리 포인트를 안전하게 파일({File})로 저장했습니다.", data.Length, BackupFileName);
         }
@@ -148,7 +150,8 @@ public class PointBatchWorker(
         try
         {
             var json = await File.ReadAllTextAsync(BackupFileName);
-            var data = JsonSerializer.Deserialize<PointJob[]>(json);
+            // [P0 Quick Win] Source Gen 경로: 리플렉션 제거로 GC 부하 감소
+            var data = JsonSerializer.Deserialize(json, ChzzkJsonContext.Default.PointJobArray);
             if (data != null)
             {
                 foreach (var job in data) _retryBuffer.Enqueue(job);

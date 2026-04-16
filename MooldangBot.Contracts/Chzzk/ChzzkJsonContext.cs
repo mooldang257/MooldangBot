@@ -142,6 +142,12 @@ namespace MooldangBot.Contracts.Chzzk;
 [JsonSerializable(typeof(ChzzkChatEventPayload))]
 [JsonSerializable(typeof(MooldangBot.Contracts.Models.Chzzk.ChzzkChatProfile))]
 [JsonSerializable(typeof(object))]
+
+// ⚡ [P0 Quick Win] 핫패스 배치 워커 및 캐시 서비스에서 사용되는 타입 등록
+// (성능): Source Gen 경로를 통해 리플렉션 기반 직렬화를 제거하여 GC 부하를 줄입니다.
+[JsonSerializable(typeof(MooldangBot.Contracts.Point.Requests.Models.PointJob[]))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.ChatInteractionLog[]))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.StreamerProfile))]
 public partial class ChzzkJsonContext : JsonSerializerContext
 {
     /// <summary>

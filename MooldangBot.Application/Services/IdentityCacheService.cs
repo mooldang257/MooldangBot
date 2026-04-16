@@ -1,4 +1,5 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Chzzk;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -34,7 +35,8 @@ public class IdentityCacheService(
 
         if (raw != null)
         {
-            return JsonSerializer.Deserialize<StreamerProfile>(raw);
+            // [P0 Quick Win] Source Gen 경로: 10k TPS 핫패스 직렬화 최적화
+            return JsonSerializer.Deserialize(raw, ChzzkJsonContext.Default.StreamerProfile);
         }
 
         // Cache Miss: DB 조회
@@ -44,7 +46,8 @@ public class IdentityCacheService(
         var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
         if (profile != null)
         {
-            await cache.SetAsync(key, JsonSerializer.SerializeToUtf8Bytes(profile), _streamerOptions, ct);
+            // [P0 Quick Win] Source Gen 경로: 10k TPS 핫패스 직렬화 최적화
+            await cache.SetAsync(key, JsonSerializer.SerializeToUtf8Bytes(profile, ChzzkJsonContext.Default.StreamerProfile), _streamerOptions, ct);
             logger.LogDebug("🛡️ [이지스 캐시 로드] 스트리머 프로필: {ChzzkUid}", chzzkUid);
         }
 

@@ -11,6 +11,8 @@ services:
       - --innodb-buffer-pool-size=16G
       - --innodb-log-file-size=2G
       - --innodb-flush-log-at-trx-commit=2
+      - --innodb-autoinc-lock-mode=2
+      - --bulk_insert_buffer_size=268435456
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}

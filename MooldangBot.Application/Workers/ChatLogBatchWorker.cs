@@ -1,6 +1,7 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using System.Data;
 using System.Text.Json;
-using Dapper;
+using MooldangBot.Contracts.Chzzk;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,11 +9,13 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
+using MySqlConnector;
 
 namespace MooldangBot.Application.Workers;
 
 /// <summary>
-/// [오시리스의 서기 워커]: 버퍼링된 채팅 로그를 주기적으로 MariaDB에 벌크 인서트하는 파수꾼입니다.
+/// [오시리스의 서기 워커 v2.0]: 버퍼링된 채팅 로그를 MySqlBulkCopy(LOAD DATA LOCAL INFILE)로 초고속 적재합니다.
+/// (P0: 성능): Dapper 동적 SQL 생성 → MySqlBulkCopy 전환으로 GC 부하 및 SQL 파싱 오버헤드를 극한으로 제거했습니다.
 /// </summary>
 public class ChatLogBatchWorker(
     IChatLogBufferService bufferService,
@@ -28,7 +31,7 @@ public class ChatLogBatchWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("🚀 [채팅 로그 배치 워커] 가동 시작 (주기: 1초, 배치: {BatchSize})", MaxBatchSize);
+        logger.LogInformation("🚀 [채팅 로그 배치 워커 v2.0] 가동 시작 (주기: 1초, 배치: {BatchSize}, 엔진: MySqlBulkCopy)", MaxBatchSize);
 
         // 기동 시 백업 복구 시도
         await RestoreBackupAsync();
@@ -92,37 +95,79 @@ public class ChatLogBatchWorker(
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var connection = db.Database.GetDbConnection();
+            var dbConnection = db.Database.GetDbConnection();
 
-            // [오시리스의 일격]: Dapper를 사용한 벌크 인서트 SQL 생성
-            // MariaDB/MySQL 최적화 문법: INSERT INTO ... VALUES (...), (...);
-            var sqlHead = "INSERT INTO log_chat_interactions (streamer_profile_id, sender_nickname, message, is_command, message_type, created_at) VALUES ";
-            var valuesList = new List<string>();
-            var parameters = new DynamicParameters();
-
-            for (int i = 0; i < logs.Count; i++)
+            // [v2.0 오시리스의 일격]: MySqlBulkCopy — LOAD DATA LOCAL INFILE 프로토콜 사용
+            // 기존 Dapper 동적 SQL 대비:
+            //   - 5,000건 기준 ~100KB SQL 문자열 할당 제거 → GC Gen0 압력 대폭 감소
+            //   - DB 서버의 SQL 파서 부하 제거 → MariaDB CPU 절감
+            //   - MySqlConnector가 내부적으로 스트리밍 방식으로 전송하여 메모리 효율적
+            if (dbConnection is not MySqlConnection mysqlConn)
             {
-                var log = logs[i];
-                valuesList.Add($"(@S{i}, @N{i}, @M{i}, @C{i}, @T{i}, @A{i})");
-                parameters.Add($"S{i}", log.StreamerProfileId);
-                parameters.Add($"N{i}", log.SenderNickname);
-                parameters.Add($"M{i}", log.Message);
-                parameters.Add($"C{i}", log.IsCommand ? 1 : 0);
-                parameters.Add($"T{i}", log.MessageType);
-                parameters.Add($"A{i}", log.CreatedAt == default ? KstClock.Now : log.CreatedAt);
+                logger.LogError("❌ [채팅 로그 워커] 커넥션이 MySqlConnection이 아닙니다. 폴백 불가.");
+                foreach (var log in logs) _retryBuffer.Enqueue(log);
+                return;
             }
 
-            var finalSql = sqlHead + string.Join(", ", valuesList) + ";";
+            if (mysqlConn.State != ConnectionState.Open)
+                await mysqlConn.OpenAsync(ct);
 
-            await connection.ExecuteAsync(finalSql, parameters);
-            
-            logger.LogDebug("🌊 [채팅 로그 적재] {Count}건의 로그를 벌크 저장했습니다.", logs.Count);
+            // DataTable 구성: DB 테이블 컬럼 순서와 정확히 일치시킴
+            var dataTable = BuildDataTable(logs);
+
+            var bulkCopy = new MySqlBulkCopy(mysqlConn)
+            {
+                DestinationTableName = "log_chat_interactions",
+                BulkCopyTimeout = 30
+            };
+
+            // 컬럼 매핑: DataTable 컬럼 인덱스 → DB 테이블 컬럼명
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(0, "streamer_profile_id"));
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(1, "sender_nickname"));
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(2, "message"));
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(3, "is_command"));
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(4, "message_type"));
+            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(5, "created_at"));
+
+            var result = await bulkCopy.WriteToServerAsync(dataTable, ct);
+
+            logger.LogDebug("🌊 [채팅 로그 적재 v2.0] {Count}건을 MySqlBulkCopy로 적재 완료 (Warnings: {Warnings})",
+                logs.Count, result.Warnings?.Count ?? 0);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "❌ [채팅 로그 벌크 적재 실패] {Count}건을 메모리 버퍼로 대피시킵니다.", logs.Count);
             foreach (var log in logs) _retryBuffer.Enqueue(log);
         }
+    }
+
+    /// <summary>
+    /// [오시리스의 서판]: ChatInteractionLog 리스트를 DataTable로 변환합니다.
+    /// DataTable은 MySqlBulkCopy가 내부적으로 LOAD DATA INFILE 스트리밍에 사용하는 입력 형식입니다.
+    /// </summary>
+    private static DataTable BuildDataTable(List<ChatInteractionLog> logs)
+    {
+        var table = new DataTable();
+        table.Columns.Add("streamer_profile_id", typeof(int));
+        table.Columns.Add("sender_nickname", typeof(string));
+        table.Columns.Add("message", typeof(string));
+        table.Columns.Add("is_command", typeof(bool));
+        table.Columns.Add("message_type", typeof(string));
+        table.Columns.Add("created_at", typeof(DateTime));
+
+        foreach (var log in logs)
+        {
+            table.Rows.Add(
+                log.StreamerProfileId,
+                log.SenderNickname,
+                log.Message,
+                log.IsCommand,
+                log.MessageType,
+                log.CreatedAt == default ? (DateTime)KstClock.Now : (DateTime)log.CreatedAt
+            );
+        }
+
+        return table;
     }
 
     private async Task CreateBackupAsync()
@@ -133,7 +178,8 @@ public class ChatLogBatchWorker(
         {
             // [저우선순위 지침 반영]: RAM 가용량 확인 로직이 실현 불가능하므로, 일단 시도하되 실패 시 과감히 포기
             var data = _retryBuffer.ToArray();
-            var json = JsonSerializer.Serialize(data);
+            // [P0 Quick Win] Source Gen 경로: 리플렉션 제거로 GC 부하 감소
+            var json = JsonSerializer.Serialize(data, ChzzkJsonContext.Default.ChatInteractionLogArray);
             
             var dir = Path.GetDirectoryName(BackupFileName);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
@@ -155,7 +201,8 @@ public class ChatLogBatchWorker(
         try
         {
             var json = await File.ReadAllTextAsync(BackupFileName);
-            var data = JsonSerializer.Deserialize<ChatInteractionLog[]>(json);
+            // [P0 Quick Win] Source Gen 경로: 리플렉션 제거로 GC 부하 감소
+            var data = JsonSerializer.Deserialize(json, ChzzkJsonContext.Default.ChatInteractionLogArray);
             if (data != null)
             {
                 foreach (var log in data) _retryBuffer.Enqueue(log);

@@ -318,6 +318,12 @@ namespace MooldangBot.Infrastructure
                         e.ConfigureSaga<Sagas.CommandExecutionSagaState>(context);
                     });
 
+                    // ⚡ [P0 Quick Win] 10k TPS 대응: 동시 소비 한도 상향
+                    // - ConcurrentMessageLimit: Consumer가 동시에 처리할 수 있는 메시지 수 (기본값 16 → 64)
+                    // - PrefetchCount: RabbitMQ에서 Consumer로 미리 전달하는 메시지 수 (ConcurrentMessageLimit의 2배 권장)
+                    cfg.PrefetchCount = 128;
+                    cfg.ConcurrentMessageLimit = 64;
+
                     // 4. 엔드포인트 자동 구성 (이미 수동 구성된 컨슈머는 건너뜁니다)
                     cfg.ConfigureEndpoints(context);
                 });
