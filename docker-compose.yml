@@ -82,6 +82,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    # 👇 이 줄을 반드시 추가해야 합니다!
+    entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
     networks:
       - osiris_net
     depends_on:
