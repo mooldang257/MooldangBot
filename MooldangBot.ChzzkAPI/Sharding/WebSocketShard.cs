@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -33,6 +33,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _channelCts = new();
     private readonly ConcurrentDictionary<string, bool> _isSubscribed = new();
     private readonly ConcurrentDictionary<string, int> _retryCounts = new();
+    private readonly ConcurrentDictionary<string, bool> _isReconnecting = new();
     private bool _disposed;
 
     public int ShardId => _shardId;
@@ -542,35 +543,49 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     {
         if (_disposed) return;
 
-        int retryCount = _retryCounts.GetOrAdd(chzzkUid, 0) + 1;
-        _retryCounts[chzzkUid] = retryCount;
-
-        int delaySeconds = (int)Math.Min(Math.Pow(2, retryCount), 300);
-        _logger.LogWarning("🔄 [Shard {Id}] {ChzzkUid} 재연결 시도 ({Count}회차, {Sec}초 후)", _shardId, chzzkUid, retryCount, delaySeconds);
-        
-        await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
-
-        // [v2.4.7] 지휘관 지침: 재연결 전 최신 토큰 및 세션 URL 보급 시도
-        try 
+        // 🛡️ [핵심 방어막]: 이미 이 채널이 재연결 프로세스를 밟고 있다면, 중복 실행을 막습니다.
+        if (!_isReconnecting.TryAdd(chzzkUid, true))
         {
-            var tokenResult = await _tokenStore.GetTokenAsync(chzzkUid);
-            if (!string.IsNullOrEmpty(tokenResult.AuthCookie))
+            return; // 이미 누군가 대기 중이거나 연결 중이므로 조용히 돌아갑니다.
+        }
+
+        try
+        {
+            int retryCount = _retryCounts.GetOrAdd(chzzkUid, 0) + 1;
+            _retryCounts[chzzkUid] = retryCount;
+
+            int delaySeconds = (int)Math.Min(Math.Pow(2, retryCount), 300);
+            _logger.LogWarning("🔄 [Shard {Id}] {ChzzkUid} 재연결 시도 ({Count}회차, {Sec}초 후)", _shardId, chzzkUid, retryCount, delaySeconds);
+            
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+
+            // [v2.4.7] 지휘관 지침: 재연결 전 최신 토큰 및 세션 URL 보급 시도
+            try 
             {
-                var sessionResult = await _apiClient.GetSessionUrlAsync(chzzkUid, tokenResult.AuthCookie);
-                if (sessionResult != null && !string.IsNullOrEmpty(sessionResult.Url))
+                var tokenResult = await _tokenStore.GetTokenAsync(chzzkUid);
+                if (!string.IsNullOrEmpty(tokenResult.AuthCookie))
                 {
-                    _logger.LogInformation("✅ [Shard {Id}] {ChzzkUid} 최신 토큰 및 URL 보급 성공. 새 정보로 연결을 시도합니다.", _shardId, chzzkUid);
-                    await ConnectAsync(chzzkUid, sessionResult.Url, tokenResult.AuthCookie);
-                    return;
+                    var sessionResult = await _apiClient.GetSessionUrlAsync(chzzkUid, tokenResult.AuthCookie);
+                    if (sessionResult != null && !string.IsNullOrEmpty(sessionResult.Url))
+                    {
+                        _logger.LogInformation("✅ [Shard {Id}] {ChzzkUid} 최신 토큰 및 URL 보급 성공. 새 정보로 연결을 시도합니다.", _shardId, chzzkUid);
+                        await ConnectAsync(chzzkUid, sessionResult.Url, tokenResult.AuthCookie);
+                        return;
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "⚠️ [Shard {Id}] {ChzzkUid} 재연결 전 정보 갱신 실패. 기존 정보를 유지합니다.", _shardId, chzzkUid);
-        }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "⚠️ [Shard {Id}] {ChzzkUid} 재연결 전 정보 갱신 실패. 기존 정보를 유지합니다.", _shardId, chzzkUid);
+            }
 
-        await ConnectAsync(chzzkUid, url, accessToken);
+            await ConnectAsync(chzzkUid, url, accessToken);
+        }
+        finally
+        {
+            // 재연결 작업이 끝났거나 에러가 났으면 방어막을 해제하여 다음번 실패 시 다시 작동할 수 있게 합니다.
+            _isReconnecting.TryRemove(chzzkUid, out _);
+        }
     }
 
     private async Task SendRawAsync(ClientWebSocket client, string data, CancellationToken ct)
