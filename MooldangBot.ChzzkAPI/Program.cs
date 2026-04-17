@@ -16,6 +16,7 @@ using MooldangBot.Contracts.Chzzk;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using MooldangBot.ChzzkAPI.Extensions;
+using MooldangBot.ChzzkAPI.Configuration;
 using MooldangBot.Application;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Infrastructure;
@@ -90,6 +91,11 @@ builder.Host.UseSerilog((context, configuration) =>
 {
     configuration.ReadFrom.Configuration(context.Configuration);
 });
+// [추가] JSON 섹션을 C# 클래스와 1:1 바인딩
+builder.Services.Configure<GatewaySettings>(builder.Configuration.GetSection("GatewaySettings"));
+
+// (선택) 다른 섹션들도 클래스를 만들었다면 똑같이 바인딩
+// builder.Services.Configure<MessageBrokerSettings>(builder.Configuration.GetSection("MessageBroker"));
 
 var app = builder.Build();
 

@@ -178,7 +178,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
             _logger.LogInformation("🔌 [Sharding] 채널 {ChzzkUid}의 연결 해제를 요청합니다. (샤드 #{ShardId}).", chzzkUid, shardId);
         }
     }
-
+    
     public int GetActiveConnectionCount() => _shards.Values.Sum(s => s.GetActiveConnectionCount());
 
     public Task<IEnumerable<ShardStatus>> GetShardStatusesAsync() => Task.FromResult(_shards.Values.Select(s => new ShardStatus(s.ShardId, s.GetActiveConnectionCount(), true)));

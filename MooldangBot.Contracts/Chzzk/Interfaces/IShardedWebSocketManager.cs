@@ -35,6 +35,11 @@ public interface IShardedWebSocketManager
 
     // 3. 상태 모니터링
     /// <summary>
+    /// 특정 채널(ChzzkUid)이 현재 WebSocket에 정상적으로 연결되어 있는지 확인합니다.
+    /// </summary>
+    bool IsConnected(string chzzkUid); // 👈 [추가된 코드]
+
+    /// <summary>
     /// 현재 활성화된 모든 소켓 연결 수를 반환합니다.
     /// </summary>
     int GetActiveConnectionCount();

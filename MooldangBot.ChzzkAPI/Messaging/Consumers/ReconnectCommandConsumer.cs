@@ -17,6 +17,22 @@ public class ReconnectCommandConsumer(
     public async Task Consume(ConsumeContext<ReconnectCommand> context)
     {
         var command = context.Message;
+        
+        // 🛡️ [방패 장착]: 이미 연결되어 있는 채널이면 가볍게 무시하고 성공 응답만 보냅니다.
+        // (주의: shardManager에 IsConnected나 HasConnection 같은 메서드가 있다면 그 이름에 맞게 수정해주세요)
+        if (shardManager.IsConnected(command.ChzzkUid))
+        {
+            logger.LogDebug("ℹ️ [Consumer] 이미 세션이 연결되어 있습니다. 재연결을 건너뜁니다. - Channel: {ChzzkUid}", command.ChzzkUid);
+            
+            await context.RespondAsync(new StandardCommandResponse(
+                CorrelationId: context.CorrelationId ?? Guid.Empty,
+                IsSuccess: true,
+                ErrorMessage: null,
+                ProcessedAt: DateTimeOffset.UtcNow
+            ));
+            return;
+        }
+
         logger.LogInformation("🚀 [Consumer] 세션 재연결 시작 - Channel: {ChzzkUid}", command.ChzzkUid);
 
         try

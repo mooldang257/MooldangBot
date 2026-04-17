@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.ChzzkAPI.Configuration;
 
 namespace MooldangBot.ChzzkAPI.Workers;
 
@@ -11,11 +12,13 @@ public class GatewayWorker : BackgroundService
 {
     private readonly ILogger<GatewayWorker> _logger;
     private readonly IShardedWebSocketManager _shardManager;
+    private readonly GatewaySettings _settings; // [추가] 설정값을 담을 변수
 
-    public GatewayWorker(ILogger<GatewayWorker> logger, IShardedWebSocketManager shardManager)
+    public GatewayWorker(ILogger<GatewayWorker> logger, IShardedWebSocketManager shardManager, GatewaySettings settings)
     {
         _logger = logger;
         _shardManager = shardManager;
+        _settings = settings;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -24,8 +27,9 @@ public class GatewayWorker : BackgroundService
 
         try
         {
-            // 1개의 샤드(기본) 초기화 시작
-            await _shardManager.StartAsync(1);
+            // appsettings.json에서 읽어온 값 사용!
+            await _shardManager.StartAsync(_settings.InitialShardCount);
+
             _logger.LogInformation("✅ [Sharding] 1개의 샤드 초기화가 완료되었습니다.");
         }
         catch (Exception ex)
