@@ -90,6 +90,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
 
   app:
     build:
