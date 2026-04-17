@@ -49,3 +49,18 @@ public class SharedComponentConfiguration : IEntityTypeConfiguration<SharedCompo
         builder.HasIndex(s => s.StreamerProfileId);
     }
 }
+
+public class PeriodicMessageConfiguration : IEntityTypeConfiguration<PeriodicMessage>
+{
+    public void Configure(EntityTypeBuilder<PeriodicMessage> builder)
+    {
+        builder.ToTable("view_periodic_messages");
+
+        builder.HasOne(m => m.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(m => m.StreamerProfileId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(m => m.StreamerProfileId);
+    }
+}
