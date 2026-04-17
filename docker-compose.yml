@@ -259,6 +259,20 @@ services:
       - overlay
       - app
 
+  adminer:
+    image: adminer:latest
+    container_name: mooldang-adminer
+    restart: always
+    environment:
+      # 접속 시 서버 칸에 'db'만 입력하면 바로 연결되도록 기본값 설정
+      - ADMINER_DEFAULT_SERVER=db
+    networks:
+      - osiris_net
+    # 클라우드플레어 터널을 사용할 것이므로 호스트 포트는 필수는 아니지만, 
+    # 내부 테스트용으로 8080을 열어둘 수 있습니다.
+    ports:
+      - "8080:8080"
+
 networks:
   osiris_net:
     driver: bridge
