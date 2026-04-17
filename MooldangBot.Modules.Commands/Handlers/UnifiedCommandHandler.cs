@@ -25,7 +25,6 @@ namespace MooldangBot.Modules.Commands.Handlers;
 public class UnifiedCommandHandler(
     ICommandCache cache,
     IChzzkBotService botService,
-    IEnumerable<ICommandFeatureStrategy> strategies,
     IMediator mediator,
     IIdentityCacheService identityCache,
     IPublishEndpoint publishEndpoint,
