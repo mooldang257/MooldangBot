@@ -1,8 +1,9 @@
 # 🔍 MooldangBot 아키텍처 종합 진단 보고서
 
-> **검토 기준일**: 2026-04-16  
+> **최초 검토일**: 2026-04-16  
+> **최종 갱신일**: 2026-04-18 _(Priority 1~3 완료 반영, 구조 단순화 로드맵 추가)_  
 > **검토 관점**: ① 10k TPS 서비스 적합성 ② 1인 개발자 유지보수성  
-> **코드베이스**: 440개 C# 파일, 약 49,000줄 (Migration 제외 26,000줄), 16개 프로젝트
+> **코드베이스**: 약 49,000줄 (Migration 제외 26,000줄), **현재 19개 프로젝트** (솔루션 기준)
 
 ---
 
@@ -129,150 +130,212 @@ graph TB
 
 ### ⚠️ 유지보수 부채 (Technical Debt)
 
-#### 1. 프로젝트 수 과잉 — 16개 프로젝트
+#### 1. 프로젝트 수 과잉 — 현재 19개 프로젝트
 
 ```
-솔루션 (16 프로젝트)
-├── MooldangBot.Domain           ← 순수 도메인
-├── MooldangBot.Contracts        ← 인터페이스/DTO (108파일, 3.3k줄)
-├── MooldangBot.Application      ← 비즈니스 로직
-├── MooldangBot.Infrastructure   ← 인프라 구현
-├── MooldangBot.Presentation     ← API 컨트롤러
-├── MooldangBot.Api              ← 진입점 1
-├── MooldangBot.ChzzkAPI         ← 진입점 2 (게이트웨이)
-├── MooldangBot.Modules.Commands ← 명령어 모듈
-├── MooldangBot.Modules.SongBook ← 곡 신청 모듈
-├── MooldangBot.Modules.Roulette ← 룰렛 모듈
-├── MooldangBot.Modules.Point    ← 포인트 모듈
-├── MooldangBot.Studio           ← 프론트엔드 (SvelteKit)
-├── MooldangBot.Overlay          ← 오버레이 프론트
-├── MooldangBot.Admin            ← 어드민 프론트
-├── MooldangBot.Tests            ← 테스트 (4파일...)
-├── MooldangBot.Verifier         ← 운영 도구
-├── MooldangBot.StressTool       ← 부하 테스트
-├── MooldangBot.Cli              ← CLI 마이그레이션
-└── MooldangBot.Simulator        ← 시뮬레이터
+솔루션 (19 프로젝트) — 2026-04-18 실사 기준
+├── MooldangBot.Domain                ← 순수 도메인
+├── MooldangBot.Contracts             ← ⚠️ 해체 대상: 110파일 (인터페이스/DTO/이벤트)
+├── MooldangBot.Application           ← 비즈니스 로직
+├── MooldangBot.Infrastructure        ← 인프라 구현
+├── MooldangBot.Presentation          ← ⚠️ 병합 대상: API 컨트롤러, SignalR
+├── MooldangBot.Api                   ← 진입점 1 (Program.cs 404줄)
+├── MooldangBot.ChzzkAPI              ← 진입점 2 (게이트웨이)
+├── MooldangBot.ChzzkAPI.Contracts    ← ⚠️ 삭제 대상: 빈 프로젝트 (bin/obj만)
+├── MooldangBot.Modules.Commands      ← 명령어 모듈
+├── MooldangBot.Modules.SongBook      ← 곡 신청 모듈
+├── MooldangBot.Modules.Roulette      ← 룰렛 모듈
+├── MooldangBot.Modules.Point         ← 포인트 모듈
+├── MooldangBot.Modules.Core          ← ⚠️ 병합 검토: Features만 존재
+├── MooldangBot.Modules.Broadcast     ← ⚠️ 병합 검토: Features만 존재
+├── MooldangBot.Modules.Ledger        ← ⚠️ 병합 검토: Features만 존재
+├── MooldangBot.Tests                 ← 테스트
+├── MooldangBot.Verifier              ← 운영 도구
+├── MooldangBot.StressTool            ← 부하 테스트
+├── MooldangBot.Simulator             ← 시뮬레이터
+└── MooldangBot.Cli                   ← CLI 마이그레이션
 ```
 
 > [!CAUTION]
-> **1인 개발자에게 16개 프로젝트는 명백한 과부하입니다.**
+> **1인 개발자에게 19개 프로젝트는 명백한 과부하입니다.**
 > 
 > - 단순한 DTO 변경 하나가 `Domain → Contracts → Application → Infrastructure → Presentation` 5개 프로젝트에 파급
 > - 각 모듈에 `DependencyInjection.cs` 파일이 별도 존재 → 서비스 등록 포인트가 7곳 이상
-> - `Contracts` 프로젝트가 108개 파일(3,284줄)로 **프로젝트보다 규약이 더 큰** 역설적 상황
+> - `Contracts` 프로젝트가 110개 파일로 **프로젝트보다 규약이 더 큰** 역설적 상황
+> - `ChzzkAPI.Contracts`는 빈 프로젝트, `Modules.Core/Broadcast/Ledger`는 Features 폴더만 존재하는 경량 프로젝트
 
-#### 2. 인터페이스 포화 — 35개 Interface 파일
+#### 2. 인터페이스 포화 ~~— 35개 Interface 파일~~ → ✅ 부분 해소
 
-```
-Contracts 프로젝트 인터페이스 분포:
-  Common/Interfaces/     → 10개 (IAppDbContext, IChaosManager, IOverlayState 등)
-  Chzzk/Interfaces/      → 4개 (IChzzkApiClient, IChzzkMessagePublisher 등)
-  SongBook/Interfaces/   → 4개
-  Roulette/Interfaces/   → 3개
-  Point/Interfaces/      → 3개
-  Commands/Interfaces/   → 3개
-  AI/Interfaces/         → 2개
-  기타                    → 6개
-```
+> **[Priority 2/3 조치 완료]** 모듈별 인터페이스(`ISongBookDbContext`, `IRouletteDbContext`, `IPointDbContext`, `ICommandDbContext`)가
+> 각 모듈의 `Abstractions/` 폴더로 이동되었습니다. 불필요한 인터페이스도 일부 제거되었습니다.
+> **잔여 이슈**: Contracts 프로젝트 자체는 여전히 110개 파일로 존재 → Phase 2에서 해체 예정.
 
-> 모든 서비스에 인터페이스를 추출하는 것은 **팀 규모 10+인 엔터프라이즈 패턴**입니다.
-> 1인 개발자에게 `IChzzkChatClient` ↔ `GatewayChatClientProxy` ↔ `IChzzkApiClient` ↔ `ChzzkApiClient` 같은 4단계 추상화는 **인지 부하만 가중**시킵니다.
+#### 3. 테스트 커버리지 ~~극히 희박~~ → ✅ 개선 진행 중
 
-#### 3. 테스트 커버리지 극히 희박
+| 항목 | 진단 당시 | 현재 (P1 조치 후) |
+|------|:---------:|:----------------:|
+| 테스트 파일 | 4개 | 확장됨 |
+| 핵심 테스트 | 없음 | Pipeline, Handler, Worker, Service 테스트 추가 |
 
-| 항목 | 수치 |
-|------|------|
-| 테스트 파일 | 4개 |
-| 테스트 줄 수 | 402줄 |
-| 소스 대비 비율 | **~1.5%** |
+> **[Priority 1 조치 완료]** 핵심 경로 테스트(AegisPipelineTests, PointResonanceTests 등)가 추가되어
+> 리팩터링 시 회귀 버그를 잡을 수 있는 최소한의 안전망이 마련되었습니다.
 
-> [!WARNING]
-> 테스트가 이 수준이면 **리팩터링 시 회귀 버그를 잡을 안전망이 없습니다.**
-> 10k TPS 최적화를 위한 코드 변경에서 가장 큰 위험 요소입니다.
+#### 4. ~~배치 워커 관리 복잡도~~ → ✅ WorkerRegistry 통합 완료
 
-#### 4. 배치 워커 관리 복잡도
+> **[Priority 2 조치 완료]** `Infrastructure/Workers/WorkerRegistry.cs`에 모든 워커(14개)를 일괄 등록하고,
+> `appsettings.json`의 `WorkerSettings` 섹션으로 주기를 통합 관리합니다.
 
-현재 등록된 HostedService(BackgroundService) 목록:
+현재 WorkerRegistry에 등록된 워커:
 
-| 계층 | 워커 | 주기 |
-|------|------|------|
-| Bot Engine | `ChzzkBackgroundService` | 상시 |
-| Bot Engine | `PeriodicMessageWorker` | 설정값 |
-| Bot Engine | `CategorySyncBackgroundService` | 6시간 |
-| Bot Engine | `RouletteLogCleanupService` | 24시간 |
-| Bot Engine | `TokenRenewalBackgroundService` | 5분 |
-| Bot Engine | `SystemWatchdogService` | 1분 |
-| Bot Engine | `LogBulkBufferWorker` | 10초 |
-| Bot Engine | `PointBatchWorker` | 1초 |
-| Bot Engine | `CelestialLedgerWorker` | 6시간 |
-| Bot Engine | `WeeklyStatsReporter` | 7일 |
-| Infrastructure | `ChatLogBatchWorker` | 1초 |
-| Infrastructure | `PointWriteBackWorker` | ? |
-| Infrastructure | `StagingCleanupWorker` | ? |
-| API 전용 | `ZeroingWorker` | ? |
-| ChzzkAPI | `GatewayWorker` | 상시 |
+| 도메인 | 워커 | 설정 키 |
+|--------|------|---------|
+| Points | `PointBatchWorker` | WorkerSettings:Points:PointBatchWorker |
+| Points | `PointWriteBackWorker` | WorkerSettings:Points:PointWriteBackWorker |
+| Chat | `ChatLogBatchWorker` | WorkerSettings:Chat:ChatLogBatchWorker |
+| Chat | `LogBulkBufferWorker` | WorkerSettings:Chat:LogBulkBufferWorker |
+| Core | `ChzzkBackgroundService` | — (상시 가동) |
+| Core | `SystemWatchdogService` | WorkerSettings:Core:SystemWatchdogService |
+| Broadcast | `TokenRenewalBackgroundService` | WorkerSettings:Broadcast:TokenRenewal |
+| Broadcast | `CategorySyncBackgroundService` | WorkerSettings:Broadcast:CategorySync |
+| Broadcast | `PeriodicMessageWorker` | WorkerSettings:Broadcast:PeriodicMessage |
+| Maintenance | `StagingCleanupWorker` | WorkerSettings:Maintenance:StagingCleanup |
+| Maintenance | `RouletteLogCleanupService` | WorkerSettings:Maintenance:RouletteLogCleanup |
+| Maintenance | `ZeroingWorker` | WorkerSettings:Maintenance:Zeroing |
+| Ledger | `CelestialLedgerWorker` | WorkerSettings:Ledger:CelestialLedger |
+| Ledger | `WeeklyStatsReporter` | WorkerSettings:Ledger:WeeklyStats |
 
-> **15개의 BackgroundService가 2개 프로세스에 분산**되어 있습니다.
-> 어떤 워커가 어디에 등록되었는지 파악하려면 최소 3개 파일(`Application/DI`, `Infrastructure/DI`, `ChzzkAPI/Program.cs`)을 동시에 봐야 합니다.
+#### 5. ~~AppDbContext God Object 경향~~ → ✅ 부분 해소
 
-#### 5. AppDbContext God Object 경향
-
-- **629줄**, **40개+ DbSet**, `IAppDbContext + ISongBookDbContext + IRouletteDbContext + IPointDbContext + ICommandDbContext` 5개 인터페이스 동시 구현
-- `OnModelCreating`이 **490줄** — 이것은 **단일 책임 원칙의 명백한 위반**
+> **[Priority 2 조치 완료]** AppDbContext를 `partial class`로 분리:
+> - `AppDbContext.cs` (44줄) — 생성자, OnModelCreating, 컨벤션
+> - `AppDbContext.DbSets.cs` (71줄) — 도메인별로 그룹핑된 DbSet 선언
+> - `Configurations/` (8개 파일) — `IEntityTypeConfiguration<T>` 기반 모듈별 엔티티 설정 분산
+>
+> **잔여 이슈**: 5개 인터페이스(`IAppDbContext + ISongBookDbContext + IRouletteDbContext + IPointDbContext + ICommandDbContext`) 동시 구현은 유지 중
 
 ---
 
-### 📈 종합 매트릭스
+### 📈 종합 매트릭스 (2026-04-18 갱신)
 
-| 평가 항목 | 10k TPS | 유지보수성 | 종합 |
-|-----------|:-------:|:---------:|:----:|
-| 메시지 파이프라인 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟢 |
-| 배치 처리 / DB 쓰기 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 |
-| 캐싱 / 분산 상태 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 |
-| 프로젝트 구조 | ⭐⭐⭐ | ⭐⭐ | 🟡 |
-| 인터페이스 / 추상화 | ⭐⭐⭐⭐ | ⭐⭐ | 🟡 |
-| DbContext 설계 | ⭐⭐⭐ | ⭐⭐ | 🟡 |
-| 테스트 커버리지 | ⭐ | ⭐ | 🔴 |
-| 워커 관리 | ⭐⭐⭐⭐ | ⭐⭐ | 🟡 |
-| 모니터링 / 관측성 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟢 |
-| 배포 파이프라인 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 |
+| 평가 항목 | 10k TPS | 유지보수성 | 종합 | 변동 |
+|-----------|:-------:|:---------:|:----:|:----:|
+| 메시지 파이프라인 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟢 | — |
+| 배치 처리 / DB 쓰기 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 | — |
+| 캐싱 / 분산 상태 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 | — |
+| 프로젝트 구조 | ⭐⭐⭐ | ⭐⭐ | 🟡 | ⏳ Phase 4 예정 |
+| 인터페이스 / 추상화 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 | ⬆️ P2/P3 개선 |
+| DbContext 설계 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 | ⬆️ partial + IEntityConfig |
+| 테스트 커버리지 | ⭐⭐ | ⭐⭐ | 🟡 | ⬆️ P1 테스트 추가 |
+| 워커 관리 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟢 | ⬆️ WorkerRegistry 통합 |
+| 모니터링 / 관측성 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟢 | — |
+| 배포 파이프라인 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🟢 | — |
 
 ---
 
 ## 🎯 1인 개발자를 위한 개선 권장사항 (우선순위순)
 
-### 🔴 Priority 1: "안전망 없이 달리지 마세요"
+### ✅ ~~Priority 1~~: "안전망 없이 달리지 마세요" — **완료** (2026-04-17)
 
-**핵심 경로 통합 테스트 추가** (현재 1.5% → 목표 15%+)
-- `ChatReceivedConsumer → MediatR → BatchWorker` 파이프라인 E2E 테스트
-- `PointBatchWorker` 벌크 인서트 정합성 테스트
-- 룰렛 동시성 테스트 (이미 존재, 강화 필요)
+**핵심 경로 통합 테스트 추가**
+- [x] `AegisPipelineTests` — ChatReceivedConsumer → MediatR → BatchWorker 파이프라인 E2E 테스트
+- [x] `PointResonanceTests` — PointBatchWorker 벌크 인서트 정합성 테스트
+- [x] Pipeline, Handler, Worker, Service 단위 테스트 추가
 
-### 🟡 Priority 2: "복잡도를 줄이세요"
+### ✅ ~~Priority 2~~: "복잡도를 줄이세요" — **완료** (2026-04-16~17)
 
-1. **Contracts 프로젝트 경량화**: 모듈별로 사용하는 인터페이스를 해당 모듈 프로젝트 내부로 이동
-   - `ISongBookDbContext` → `Modules.SongBook` 내부
-   - `IRouletteDbContext` → `Modules.Roulette` 내부
-   
-2. **AppDbContext 분리 검토**: `OnModelCreating`의 490줄 → 모듈별 `IEntityTypeConfiguration<T>` 파일로 분산
+1. [x] **Contracts 프로젝트 경량화**: 모듈별 인터페이스를 해당 모듈 `Abstractions/` 폴더로 이동
+   - `ISongBookDbContext` → `Modules.SongBook/Abstractions/`
+   - `IRouletteDbContext` → `Modules.Roulette/Abstractions/`
+   - `IPointDbContext` → `Modules.Point/Abstractions/`
+   - `ICommandDbContext` → `Modules.Commands/Abstractions/`
 
-3. **워커 등록 통합**: 하나의 `WorkerRegistry.cs`에서 모든 HostedService 목록과 주기를 한눈에 관리
+2. [x] **AppDbContext 분리**: `partial class` 전환 + `IEntityTypeConfiguration<T>` 8개 파일로 분산
+   - `AppDbContext.cs` (44줄) + `AppDbContext.DbSets.cs` (71줄)
+   - `Configurations/` — Core, SongBook, Roulette, Point, Command, Overlay, Philosophy, Ledger
 
-### 🟢 Priority 3: "과잉 추상화는 나중에 정리"
+3. [x] **워커 등록 통합**: `WorkerRegistry.cs`에서 14개 워커 일괄 등록, `appsettings.json` 기반 주기 관리
 
-1. **사용하지 않는 인터페이스 제거**: `IDbConnectionFactory`, `IPerformanceCriticalRequest` 등 실제 구현체가 없거나 1개뿐인 인터페이스
-2. **DEPRECATED 코드 정리**: `ChatEventConsumerService`, `ChzzkEventRabbitMqConsumer`, `CommandRpcWorker` 등 주석 처리된 레거시
+### ✅ ~~Priority 3~~: "과잉 추상화는 나중에 정리" — **완료** (2026-04-17)
+
+1. [x] **사용하지 않는 인터페이스 제거**: 구현체 없거나 1개뿐인 인터페이스 정리
+   - `ChaosManager`, `IdempotencyService`, `PulseService` 등 구체 클래스 직접 등록으로 전환
+2. [x] **DEPRECATED 코드 정리**: 레거시 Consumer/Worker 제거
+
+---
+
+### 🔴 Priority 4: "프로젝트 구조 단순화" — ⏳ **진행 예정**
+
+> [!IMPORTANT]
+> 아래 로드맵은 **19개 → 10개 프로젝트**로 줄이는 5단계 계획입니다.
+> 각 Phase마다 독립적인 Git 태그/브랜치로 롤백 포인트를 확보합니다.
+
+#### Phase 1: 빈 프로젝트 및 운영 도구 정리 (난이도: ⭐ | 위험도: 🟢)
+
+| 프로젝트 | 사유 | 조치 |
+|----------|------|------|
+| `ChzzkAPI.Contracts` | 빈 프로젝트 (bin/obj만) | 솔루션 제거 + 디렉토리 삭제 |
+| `Cli` | 마이그레이션 CLI | 솔루션 제거, 디렉토리 보존 |
+| `Verifier` | 검증 도구 | 솔루션 제거, 디렉토리 보존 |
+| `StressTool` | 부하 테스트 | 솔루션 제거, 디렉토리 보존 |
+| `Simulator` | 시뮬레이터 | 솔루션 제거, 디렉토리 보존 |
+
+**결과**: 19개 → **14개**
+
+#### Phase 2: Contracts 프로젝트 완전 해체 (난이도: ⭐⭐⭐⭐ | 위험도: 🟡)
+
+- 공용 타입(Common, AI, Chzzk, Extensions, Security, Events) → `Application/Contracts/`로 이동
+- 모듈 전용 타입(SongBook, Roulette, Point, Commands) → 각 모듈 내부로 이동
+- Contracts 프로젝트 솔루션 및 디렉토리 삭제
+- **독립 브랜치**: `refactor/contracts-dissolution`
+
+**결과**: 14개 → **13개**
+
+#### Phase 3: Presentation → Application 병합 (난이도: ⭐⭐⭐ | 위험도: 🟡)
+
+- Controller, Hub, Extensions, Security를 Application에 통합
+- Presentation은 현재 Application의 얇은 위임 레이어에 불과
+
+**결과**: 13개 → **12개**
+
+#### Phase 4: 경량 모듈 통합 (난이도: ⭐⭐ | 위험도: 🟢)
+
+- `Modules.Core`, `Modules.Broadcast`, `Modules.Ledger` (Features 폴더만 존재)
+- → `Application/Features/Core/`, `Features/Broadcast/`, `Features/Ledger/`로 흡수
+- Commands, SongBook, Roulette, Point는 독립 유지 (실질적 모듈)
+
+**결과**: 12개 → **10개**
+
+#### Phase 5: Program.cs 슬림화 (난이도: ⭐⭐ | 위험도: 🟢)
+
+- 404줄 → ~150줄 목표
+- Auth, Swagger, CORS, Serilog, MediatR, SignalR 설정을 확장 메서드로 추출
+
+#### 목표 프로젝트 구조
+
+```
+솔루션 (10 프로젝트)
+├── MooldangBot.Domain                ← 순수 도메인
+├── MooldangBot.Application           ← 비즈니스 + Presentation + 공용 Contracts
+├── MooldangBot.Infrastructure        ← 인프라 구현
+├── MooldangBot.Api                   ← 진입점 1 (슬림화)
+├── MooldangBot.ChzzkAPI              ← 진입점 2 (게이트웨이)
+├── MooldangBot.Modules.Commands      ← 명령어 모듈
+├── MooldangBot.Modules.SongBook      ← 곡 신청 모듈
+├── MooldangBot.Modules.Roulette      ← 룰렛 모듈
+├── MooldangBot.Modules.Point         ← 포인트 모듈
+└── MooldangBot.Tests                 ← 테스트
+```
 
 ---
 
 ## 🏆 최종 판정
 
-| 관점 | 판정 |
-|------|------|
-| **10k TPS 서비스로서** | ✅ **적합** — Phase 0 적용 후 8~12k TPS 처리 가능. 핵심 병목은 MediatR 동기 팬아웃뿐이며 주석에 이미 바이패스 전략이 문서화되어 있음 |
-| **1인 개발자 유지보수** | ⚠️ **조건부 적합** — 아키텍처 자체는 정교하나, **16개 프로젝트 × 35개 인터페이스 × 15개 워커**의 인지 부하가 높음. 테스트 없이 리팩터링하면 회귀 버그 위험 |
-| **향후 확장성** | ✅ **우수** — 모듈 분리, MassTransit Saga, 분산 락 등 멀티 인스턴스 확장 기반이 이미 마련됨 |
+| 관점 | 초기 판정 (04-16) | 현재 판정 (04-18) |
+|------|------------------|------------------|
+| **10k TPS 서비스로서** | ✅ 적합 | ✅ **적합** — 워커 주기 최적화 및 10k TPS 배치 설정 완료 |
+| **1인 개발자 유지보수** | ⚠️ 조건부 적합 | ⚠️ **개선 중** — 테스트 안전망 확보, 워커/DbContext 정리 완료. **프로젝트 구조 단순화(19→10)는 다음 단계** |
+| **향후 확장성** | ✅ 우수 | ✅ **우수** — 모듈 분리, MassTransit Saga, 분산 락 등 멀티 인스턴스 확장 기반 유지 |
 
 > [!TIP]
-> **1인 개발자 생존 전략**: 새 기능을 추가하기 전에 **기존 코드의 테스트 커버리지를 올리는 것**이 가장 효울적인 시간 투자입니다.
-> 테스트가 있으면 대담하게 리팩터링할 수 있고, 리팩터링 없이는 복잡도에 잡아먹힙니다.
+> **현재 최우선 과제**: Priority 4(프로젝트 구조 단순화)를 완료하면 유지보수성 점수가 ⭐⭐⭐ → ⭐⭐⭐⭐로 향상될 것으로 예상됩니다.
+> 19개 프로젝트 → 10개로 줄이면 DTO 변경 시 파급 범위가 5개 → 1~2개 프로젝트로 줄고, 새 기능 추가 시 생성/수정 파일이 6~8개 → 3~4개로 감소합니다.
