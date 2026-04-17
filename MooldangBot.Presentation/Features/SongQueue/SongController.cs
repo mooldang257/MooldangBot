@@ -1,7 +1,6 @@
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;
@@ -21,7 +20,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
     public class SongController(
         IAppDbContext db, 
         IOverlayNotificationService notificationService,
-        IUserSession userSession,
         IConfiguration config,
         ISongLibraryService libraryService) : ControllerBase
     {
@@ -170,7 +168,6 @@ namespace MooldangBot.Presentation.Features.SongQueue
                     omakase.Count--;
                     if (omakase.Count < 0) omakase.Count = 0;
 
-                    const string query = "SELECT * FROM SonglistSessions WHERE ChzzkUid = {0} AND IsActive = 1";
                     var activeSession = await db.SonglistSessions
                         .Include(s => s.StreamerProfile)
                         .Where(s => s.StreamerProfile!.ChzzkUid.ToLower() == targetUid && s.IsActive && !s.IsDeleted)

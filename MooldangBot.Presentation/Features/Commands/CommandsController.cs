@@ -1,4 +1,3 @@
-﻿using MooldangBot.Contracts.Commands.Interfaces;
 using MooldangBot.Contracts.Commands.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -19,10 +18,8 @@ namespace MooldangBot.Presentation.Features.Commands
     // [v10.1] Primary Constructor ?곸슜
     public class CommandsController(
         IAppDbContext db, 
-        ICommandCache cacheService, 
         IUnifiedCommandService unifiedCommandService,
         ICommandMasterCacheService masterCache, 
-        IUserSession userSession,
         ILogger<CommandsController> logger,
         IConfiguration config) : ControllerBase
     {

@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -31,11 +31,8 @@ namespace MooldangBot.Presentation.Features.Admin
     [Authorize(Roles = "master")] // 🔐 마스터 및 봇 전용 보안 강화
     // [v10.1] Primary Constructor 적용
     public class AdminBotController(
-        IAppDbContext db, 
-        IConfiguration configuration, 
         IServiceScopeFactory scopeFactory, 
-        IChzzkCategorySyncService syncService, 
-        IChzzkBotService chzzkBotService) : ControllerBase
+        IChzzkCategorySyncService syncService) : ControllerBase
     {
         // 2. 카테고리 동기화 상태 조회
         [HttpGet("sync-status")]
