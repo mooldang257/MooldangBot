@@ -1,0 +1,126 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MooldangBot.Domain.Entities;
+
+namespace MooldangBot.Infrastructure.Persistence.Configurations;
+
+// [v4.5.1] 송북(노래책) 기본 매핑
+public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
+{
+    public void Configure(EntityTypeBuilder<SongBook> builder)
+    {
+        builder.ToTable("song_book_main");
+        
+        builder.HasIndex(s => new { s.StreamerProfileId, s.Id });
+    }
+}
+
+public class SongQueueConfiguration : IEntityTypeConfiguration<SongQueue>
+{
+    public void Configure(EntityTypeBuilder<SongQueue> builder)
+    {
+        builder.ToTable("song_list_queues");
+
+        builder.HasOne(s => s.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(s => s.StreamerProfileId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(s => s.GlobalViewer)
+               .WithMany()
+               .HasForeignKey(s => s.GlobalViewerId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        // [v6.2.2] 노래책 연동 (선택 사항)
+        builder.HasOne(s => s.SongBook)
+               .WithMany()
+               .HasForeignKey(s => s.SongBookId)
+               .OnDelete(DeleteBehavior.SetNull); // 노래책 항목이 삭제되어도 신청 기록은 유지
+ 
+        builder.HasIndex(e => e.StreamerProfileId);
+        
+        // [v13.1] Snowflake ID 검색 최적화
+        builder.HasIndex(e => e.SongLibraryId); 
+
+        // [v6.2.2] 상태값 Enum 변환
+        builder.Property(e => e.Status).HasConversion<int>();
+        
+        // 🚀 [Phase 2] 커서 기반 페이지네이션 최적화
+        builder.HasIndex(e => new { e.StreamerProfileId, e.Status, e.Id })
+               .IsDescending(false, false, true)
+               .HasDatabaseName("IX_SongQueue_Status_Cursor");
+    }
+}
+
+public class SonglistSessionConfiguration : IEntityTypeConfiguration<SonglistSession>
+{
+    public void Configure(EntityTypeBuilder<SonglistSession> builder)
+    {
+        builder.ToTable("song_list_sessions");
+
+        builder.HasOne(s => s.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(s => s.StreamerProfileId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(s => new { s.StreamerProfileId, s.IsActive });
+    }
+}
+
+public class StreamerOmakaseItemConfiguration : IEntityTypeConfiguration<StreamerOmakaseItem>
+{
+    public void Configure(EntityTypeBuilder<StreamerOmakaseItem> builder)
+    {
+        builder.ToTable("song_list_omakases");
+        
+        builder.HasOne(o => o.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(o => o.StreamerProfileId)
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+// 🎵 [v12.0] 중앙 병기창 (Media Library) 매핑
+public class MasterSongLibraryConfiguration : IEntityTypeConfiguration<Master_SongLibrary>
+{
+    public void Configure(EntityTypeBuilder<Master_SongLibrary> builder)
+    {
+        builder.ToTable("func_song_master_library");
+        
+        builder.HasIndex(e => e.SongLibraryId).IsUnique(); 
+        builder.HasIndex(e => e.YoutubeUrl);
+        builder.HasIndex(e => e.Title);
+        builder.HasIndex(e => e.Alias);
+        builder.HasIndex(e => e.TitleChosung);
+        builder.HasIndex(e => e.ArtistChosung);
+    }
+}
+
+// [v12.5] 스트리머 라이브러리
+public class StreamerSongLibraryConfiguration : IEntityTypeConfiguration<Streamer_SongLibrary>
+{
+    public void Configure(EntityTypeBuilder<Streamer_SongLibrary> builder)
+    {
+        builder.ToTable("func_song_streamer_library");
+        
+        builder.HasIndex(e => e.SongLibraryId).IsUnique();
+        builder.HasIndex(e => new { e.StreamerProfileId, e.SongLibraryId }).IsUnique();
+    }
+}
+
+public class MasterSongStagingConfiguration : IEntityTypeConfiguration<Master_SongStaging>
+{
+    public void Configure(EntityTypeBuilder<Master_SongStaging> builder)
+    {
+        builder.ToTable("func_song_master_staging");
+        
+        builder.HasIndex(e => e.SongLibraryId).IsUnique(); 
+        builder.HasIndex(e => e.CreatedAt); // [v13.1] 백그라운드 삭제 성능 향상
+        builder.HasIndex(e => e.YoutubeUrl);
+        builder.HasIndex(e => e.TitleChosung);
+        builder.HasIndex(e => e.ArtistChosung);
+        
+        builder.Property(e => e.SourceType).HasConversion<int>();
+    }
+}

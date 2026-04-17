@@ -1,0 +1,43 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MooldangBot.Domain.Entities;
+
+namespace MooldangBot.Infrastructure.Persistence.Configurations;
+
+// [v7.0] Wallet Architecture 분산화 엔티티 - 시청자 포인트 지갑
+public class ViewerPointConfiguration : IEntityTypeConfiguration<ViewerPoint>
+{
+    public void Configure(EntityTypeBuilder<ViewerPoint> builder)
+    {
+        builder.ToTable("viewer_points");
+        
+        builder.HasOne(v => v.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(v => v.StreamerProfileId)
+               .OnDelete(DeleteBehavior.Cascade);
+               
+        builder.HasOne(v => v.GlobalViewer)
+               .WithMany()
+               .HasForeignKey(v => v.GlobalViewerId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+// [v7.0] Wallet Architecture 분산화 엔티티 - 시청자 후원 상태/지갑
+public class ViewerDonationConfiguration : IEntityTypeConfiguration<ViewerDonation>
+{
+    public void Configure(EntityTypeBuilder<ViewerDonation> builder)
+    {
+        builder.ToTable("viewer_donations");
+        
+        builder.HasOne(v => v.StreamerProfile)
+               .WithMany()
+               .HasForeignKey(v => v.StreamerProfileId)
+               .OnDelete(DeleteBehavior.Cascade);
+               
+        builder.HasOne(v => v.GlobalViewer)
+               .WithMany()
+               .HasForeignKey(v => v.GlobalViewerId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
