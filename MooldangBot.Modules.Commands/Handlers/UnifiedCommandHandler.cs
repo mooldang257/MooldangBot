@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Modules.Commands.SystemMessage;
 using MooldangBot.Modules.Commands.Feature;
 using MooldangBot.Modules.Commands.General;
+using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Contracts.Security;
 using MooldangBot.Contracts.Events; 
 using MooldangBot.Contracts.Chzzk.Models.Events; 
@@ -28,7 +29,7 @@ public class UnifiedCommandHandler(
     IMediator mediator,
     IIdentityCacheService identityCache,
     IPublishEndpoint publishEndpoint,
-    IIdempotencyService idempotency,
+    IdempotencyService idempotency,
     CommandArgumentParser parser,
     ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {

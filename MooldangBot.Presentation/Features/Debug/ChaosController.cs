@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Application.Common.Interfaces;
 
 namespace MooldangBot.Presentation.Features.Debug;
 
@@ -10,7 +11,7 @@ namespace MooldangBot.Presentation.Features.Debug;
 /// </summary>
 [ApiController]
 [Route("api/chaos")]
-public class ChaosController(IChaosManager chaosManager, IChzzkChatService chatService) : ControllerBase
+public class ChaosController(ChaosManager chaosManager, IChzzkChatService chatService) : ControllerBase
 {
     /// <summary>
     /// [v18.0] 가상 Redis 장애(Panic)를 5분간 활성화합니다.

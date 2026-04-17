@@ -6,9 +6,10 @@ using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Commands.Events;
 using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Services;
-using MooldangBot.Application.Workers;
+using MooldangBot.Infrastructure.Workers.Points;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Point.Requests.Models;
+using MooldangBot.Contracts.Common.Services;
 using NSubstitute;
 using Xunit;
 
@@ -23,8 +24,8 @@ public class PointResonanceTests
 {
     private readonly IPointBatchService _batchService = new PointBatchService();
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
-    private readonly IPulseService _pulse = Substitute.For<IPulseService>();
-    private readonly IChaosManager _chaos = Substitute.For<IChaosManager>();
+    private readonly PulseService _pulse = new(Substitute.For<StackExchange.Redis.IConnectionMultiplexer>(), Substitute.For<ILogger<PulseService>>());
+    private readonly ChaosManager _chaos = new(Substitute.For<ILogger<ChaosManager>>());
     private readonly ILogger<ChatMessagePointHandler> _handlerLogger = Substitute.For<ILogger<ChatMessagePointHandler>>();
     private readonly ILogger<PointBatchWorker> _workerLogger = Substitute.For<ILogger<PointBatchWorker>>();
 

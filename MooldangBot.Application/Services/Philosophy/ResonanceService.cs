@@ -22,7 +22,7 @@ public class ResonanceService : IResonanceService
 {
     private readonly ILogger<ResonanceService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogBulkBuffer _buffer; 
+    private readonly LogBulkBuffer _buffer; 
 
     // [v4.9] 개별 스트리머 중심의 자율 지능 엔진 전환
     private readonly ConcurrentDictionary<int, ParhosState> _states = new();
@@ -35,7 +35,7 @@ public class ResonanceService : IResonanceService
         public double LastStability { get; set; } = 1.0;
     }
 
-    public ResonanceService(ILogger<ResonanceService> logger, IServiceProvider serviceProvider, ILogBulkBuffer buffer)
+    public ResonanceService(ILogger<ResonanceService> logger, IServiceProvider serviceProvider, LogBulkBuffer buffer)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;

@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Application.Workers;
 using MooldangBot.Domain.Common;
 using MooldangBot.Contracts.Common.Models;
 
@@ -9,8 +8,8 @@ namespace MooldangBot.Presentation.Features.Debug
 {
     [ApiController]
     [Route("api/debug")]
-    // [v10.1] Primary Constructor 적용
-    public class DebugController(IAppDbContext db, ChzzkBackgroundService chzzkService) : ControllerBase
+    // [v10.1] Primary Constructor 적용 - 미사용 워커 의존성 제거
+    public class DebugController(IAppDbContext db) : ControllerBase
     {
         [HttpGet("system-check")]
         public async Task<IActionResult> CheckSystem()

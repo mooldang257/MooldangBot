@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities.Philosophy;
 using System.Collections.Concurrent;
 
@@ -7,7 +7,7 @@ namespace MooldangBot.Application.Services.Philosophy;
 /// <summary>
 /// [오시리스의 항아리]: 실전 로그 데이터를 안전하게 수집하는 스레드 안전 버퍼 구현체입니다.
 /// </summary>
-public class LogBulkBuffer : ILogBulkBuffer
+public class LogBulkBuffer
 {
     private ConcurrentBag<IamfVibrationLog> _vibrationLogs = new();
     private ConcurrentBag<IamfScenario> _scenarios = new();

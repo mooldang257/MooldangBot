@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Infrastructure.Services;
+using MooldangBot.Contracts.Common.Services;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -16,8 +18,8 @@ namespace MooldangBot.Api.Controllers.Admin;
 public class AdminStatusController(
     IChzzkChatClient chatClient,
     ITokenRenewalService renewalService,
-    IHealthMonitorService healthMonitor,
-    IChaosManager chaos) : ControllerBase
+    HealthMonitorService healthMonitor,
+    ChaosManager chaos) : ControllerBase
 {
     [HttpGet]
     public IActionResult GetSystemHealth()

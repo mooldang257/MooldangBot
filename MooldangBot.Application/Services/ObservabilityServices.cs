@@ -1,7 +1,6 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -11,7 +10,7 @@ namespace MooldangBot.Application.Services;
 /// [맥박의 집결지]: 모든 워커의 생존 신호와 시스템 부하 정보를 Redis에서 통합 관리합니다.
 /// [v14.0] 다중 인스턴스 환경에서 어떤 컨테이너가 아픈지 전역적으로 감시할 수 있습니다.
 /// </summary>
-public class PulseService(IConnectionMultiplexer redis, ILogger<PulseService> logger) : IPulseService
+public class PulseService(IConnectionMultiplexer redis, ILogger<PulseService> logger)
 {
     private readonly IDatabase _db = redis.GetDatabase();
     private const string HashKey = "pulse:v1:fleet";

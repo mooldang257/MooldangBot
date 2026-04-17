@@ -1,4 +1,5 @@
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Contracts.Chzzk;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
@@ -17,7 +18,7 @@ namespace MooldangBot.Application.Services;
 public class IdentityCacheService(
     IDistributedCache cache,
     IServiceScopeFactory scopeFactory,
-    IChaosManager chaos, // [Phase 9] 심연의 맥박 연동
+    ChaosManager chaos, // [Phase 9] 심연의 맥박 연동
     ILogger<IdentityCacheService> logger) : IIdentityCacheService
 {
     private const string StreamerKeyPrefix = "Streamer:";

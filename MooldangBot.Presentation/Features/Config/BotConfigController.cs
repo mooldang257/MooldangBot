@@ -1,9 +1,7 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Application.Workers;
 using MooldangBot.Presentation.Hubs;
 using MooldangBot.Contracts.Common.Models;
 

@@ -1,5 +1,6 @@
 using MooldangBot.Modules.Commands;
 using MooldangBot.Infrastructure;
+using MooldangBot.Infrastructure.Workers;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Contracts.Extensions;
 using MooldangBot.Contracts.Models.Chzzk;
@@ -91,6 +92,7 @@ try
     });
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+    builder.Services.AddWorkerRegistry(builder.Configuration);
     builder.Services.AddSongBookModule();
     builder.Services.AddRouletteModule();
     builder.Services.AddCommandsModule();
@@ -109,7 +111,6 @@ try
     // [v4.5.3] 채팅 클라이언트 관리 주체는 Infrastructure 레이어로 격리됨 (GatewayChatClientProxy 사용)
 
     builder.Services.AddApplicationServices();
-    builder.Services.AddWebApiWorkers(); // [v2.0] API 전용 워커 등록 (Roulette, Zeroing 등)
     
     // [v4.5.3] 10k TPS 고밀도 대응을 위한 MassTransit 소비 파이프라인이 가동되었습니다. (브릿지 레이어 제거)
     // [v3.7] MassTransit Consumer가 모든 역할을 대체하므로 매거진 수집기는 제거되었습니다.

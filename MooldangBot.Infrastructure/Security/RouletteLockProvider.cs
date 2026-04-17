@@ -4,6 +4,7 @@ using RedLockNet;
 using StackExchange.Redis;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.Common.Services;
 
 namespace MooldangBot.Infrastructure.Security;
 
@@ -15,7 +16,7 @@ public class RouletteLockProvider : IRouletteLockProvider, IDisposable
 {
     private readonly IDistributedLockFactory _lockFactory;
     private readonly IConnectionMultiplexer _redis;
-    private readonly IChaosManager _chaos;
+    private readonly ChaosManager _chaos;
     private readonly ILogger<RouletteLockProvider> _logger;
 
     // [오시리스의 정원]: 좀비 세마포어를 방지하기 위한 시간 관리형 저장소
@@ -26,7 +27,7 @@ public class RouletteLockProvider : IRouletteLockProvider, IDisposable
     public RouletteLockProvider(
         IDistributedLockFactory lockFactory, 
         IConnectionMultiplexer redis,
-        IChaosManager chaos,
+        ChaosManager chaos,
         ILogger<RouletteLockProvider> logger)
     {
         _lockFactory = lockFactory;

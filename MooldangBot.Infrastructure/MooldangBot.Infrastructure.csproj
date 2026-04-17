@@ -9,6 +9,9 @@
     <ProjectReference Include="..\MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Commands\MooldangBot.Modules.Commands.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Ledger\MooldangBot.Modules.Ledger.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Broadcast\MooldangBot.Modules.Broadcast.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Core\MooldangBot.Modules.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

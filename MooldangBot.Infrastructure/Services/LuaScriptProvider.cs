@@ -1,13 +1,14 @@
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Services;
 
 namespace MooldangBot.Infrastructure.Services;
 
 /// <summary>
 /// [심연의 조율자]: Redis Lua 스크립트를 관리하고 실질적으로 실행하는 서비스입니다.
 /// </summary>
-public class LuaScriptProvider(IConnectionMultiplexer redis, IChaosManager chaosManager, ILogger<LuaScriptProvider> logger) : ILuaScriptProvider
+public class LuaScriptProvider(IConnectionMultiplexer redis, ChaosManager chaosManager, ILogger<LuaScriptProvider> logger) : ILuaScriptProvider
 {
     private readonly IDatabase _db = redis.GetDatabase();
     private const string KeyPrefix = "roulette:v1:last-end:";

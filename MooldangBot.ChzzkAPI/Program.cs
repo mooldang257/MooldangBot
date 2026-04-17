@@ -60,7 +60,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddBotEngineServices();
 
 // 4. 아웃바운드 제어 컨슈머 및 게이트웨이 워커 등록
-// [Migration]: CommandRpcWorker는 이제 개별 MassTransit Consumer들로 대체되었습니다.
+
 builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.GatewayWorker>();
 
 // 4. API 컨트롤러 및 Swagger 설정

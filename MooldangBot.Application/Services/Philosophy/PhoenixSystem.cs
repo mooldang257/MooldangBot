@@ -15,10 +15,10 @@ namespace MooldangBot.Application.Services.Philosophy;
 public class PhoenixSystem : IPhoenixRecorder
 {
     private readonly IAppDbContext _db;
-    private readonly ILogBulkBuffer _buffer; // [v3.6.3] 벌크 버퍼 추가
+    private readonly LogBulkBuffer _buffer; // [v3.6.3] 벌크 버퍼 추가
     private readonly ILogger<PhoenixSystem> _logger;
 
-    public PhoenixSystem(IAppDbContext db, ILogger<PhoenixSystem> logger, ILogBulkBuffer buffer)
+    public PhoenixSystem(IAppDbContext db, ILogger<PhoenixSystem> logger, LogBulkBuffer buffer)
     {
         _db = db;
         _logger = logger;

@@ -18,16 +18,13 @@ namespace MooldangBot.Modules.Point.Features.Commands.DeductCurrency;
 /// </summary>
 public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyCommand, DeductResult>
 {
-    private readonly IDbConnectionFactory _dbConnectionFactory;
     private readonly IPointDbContext _db; // Streamer/Viewer ID 조회를 위한 하이브리드 접근
     private readonly IPointCacheService _pointCache; // ChatPoint의 경우 Redis 증분값 포함 검증 필요
 
     public DeductCurrencyCommandHandler(
-        IDbConnectionFactory dbConnectionFactory,
         IPointDbContext db,
         IPointCacheService pointCache)
     {
-        _dbConnectionFactory = dbConnectionFactory;
         _db = db;
         _pointCache = pointCache;
     }
@@ -73,7 +70,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         }
 
         // 3. [유료 재화(DonationPoint) 원자적 처리]: Dapper를 통한 DB 직접 차감
-        using var conn = _dbConnectionFactory.CreateConnection();
+        var conn = _db.Database.GetDbConnection();
         
         // 🛡️ [철옹성 쿼리]: 잔액이 차감액보다 클 때만 업데이트하고, 영향받은 행 수를 통해 성공 여부 판단
         const string updateSql = @"

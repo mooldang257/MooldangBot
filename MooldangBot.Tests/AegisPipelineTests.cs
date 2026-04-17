@@ -2,12 +2,13 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Application.Services;
-using MooldangBot.Domain.Entities;
 using MooldangBot.Infrastructure.Services.Engines;
+using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Application.Services;
 using NSubstitute;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Entities;
 using System.Text.Json;
 using System.Text;
 
@@ -17,7 +18,7 @@ public class AegisPipelineTests
 {
     private readonly IDistributedCache _cache = Substitute.For<IDistributedCache>();
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
-    private readonly IChaosManager _chaos = Substitute.For<IChaosManager>();
+    private readonly ChaosManager _chaos = new(Substitute.For<ILogger<ChaosManager>>());
     private readonly ILogger<IdentityCacheService> _logger = Substitute.For<ILogger<IdentityCacheService>>();
 
     [Fact]

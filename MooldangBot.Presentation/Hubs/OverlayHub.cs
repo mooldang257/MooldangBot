@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,7 +17,7 @@ namespace MooldangBot.Presentation.Hubs;
 [EnableRateLimiting("overlay-high")]
 public class OverlayHub(
     IMediator mediator,
-    IPulseService pulseService,
+    PulseService pulseService,
     ILogger<OverlayHub> logger, 
     IOverlayState overlayState) : Hub
 {

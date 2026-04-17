@@ -1,10 +1,12 @@
 using System.Threading.Channels;
-using MooldangBot.Application.Workers;
+using MooldangBot.Infrastructure.Workers.Chat;
+using MooldangBot.Infrastructure.Workers;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 using FluentAssertions;
@@ -23,12 +25,24 @@ public class ChatLogBatchWorkerTests
     private readonly IChatLogBufferService _buffer = Substitute.For<IChatLogBufferService>();
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly ILogger<ChatLogBatchWorker> _logger = Substitute.For<ILogger<ChatLogBatchWorker>>();
+    private readonly IOptionsMonitor<WorkerSettings> _options = Substitute.For<IOptionsMonitor<WorkerSettings>>();
+
+    public ChatLogBatchWorkerTests()
+    {
+        // 기본 설정 Mock (활성화 및 1초 주기)
+        _options.Get(Arg.Any<string>()).Returns(new WorkerSettings 
+        { 
+            IsEnabled = true, 
+            IntervalSeconds = 1, 
+            MaxBatchSize = 1000 
+        });
+    }
 
     [Fact]
     public async Task StopAsync_Should_Call_Buffer_Complete()
     {
         // [Arrange]
-        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _logger);
+        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _options, _logger);
 
         // 빈 DrainAll 반환
         _buffer.DrainAllAsync(Arg.Any<CancellationToken>())
@@ -45,7 +59,7 @@ public class ChatLogBatchWorkerTests
     public async Task StopAsync_With_Empty_Buffer_Should_Not_Throw()
     {
         // [Arrange]
-        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _logger);
+        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _options, _logger);
 
         _buffer.DrainAllAsync(Arg.Any<CancellationToken>())
             .Returns(EmptyAsyncEnumerable());

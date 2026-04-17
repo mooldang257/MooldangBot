@@ -4,12 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Services;
-using MooldangBot.Application.Workers;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Features.Admin;
 using MooldangBot.Application.Features.Overlay;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Application.Services.Auth;
+using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Modules.Commands;
 
 namespace MooldangBot.Application
@@ -44,8 +45,14 @@ namespace MooldangBot.Application
             services.AddScoped<IChzzkChatService, ChzzkChatService>();
 
             // [v3.6.3] 로깅 버퍼 및 포인트 통계 (API측에서 집계용으로 사용할 수 있으므로 유지)
-            services.AddSingleton<ILogBulkBuffer, LogBulkBuffer>();
+            services.AddSingleton<LogBulkBuffer>();
             services.AddSingleton<IPointBatchService, PointBatchService>();
+
+            // [v4.1] 과잉 추상화 정리: 구체 클래스 전면 등록
+            services.AddSingleton<ChaosManager>();
+            services.AddSingleton<IdempotencyService>();
+            services.AddSingleton<PulseService>();
+            services.AddSingleton<CommandBackgroundTaskQueue>();
 
             return services;
         }
@@ -55,34 +62,6 @@ namespace MooldangBot.Application
 
         public static IServiceCollection AddBotEngineServices(this IServiceCollection services)
         {
-            // Background Workers (Bot 전용)
-            services.AddSingleton<ChzzkBackgroundService>();
-            services.AddHostedService(sp => sp.GetRequiredService<ChzzkBackgroundService>());
-            
-            services.AddHostedService<PeriodicMessageWorker>();
-            services.AddHostedService<CategorySyncBackgroundService>();
-            services.AddHostedService<RouletteLogCleanupService>();
-            services.AddHostedService<TokenRenewalBackgroundService>();
-            services.AddHostedService<SystemWatchdogService>();
-            
-            // [v2.0] 이집트 브릿지는 MassTransit으로 대체되었습니다.
-            
-            services.AddHostedService<LogBulkBufferWorker>();
-            services.AddHostedService<PointBatchWorker>();
-            services.AddHostedService<CelestialLedgerWorker>();
-            services.AddHostedService<WeeklyStatsReporter>();
-
-            return services;
-        }
-
-        /// <summary>
-        /// [v2.0] API 전용 서비스: MooldangBot.Api 웹 서버에서만 필요한 워커들입니다.
-        /// </summary>
-        public static IServiceCollection AddWebApiWorkers(this IServiceCollection services)
-        {
-            services.AddHostedService<MooldangBot.Application.Workers.ZeroingWorker>();
-            
-            // [v2.0] RabbitMQ를 통한 이벤트 소비가 여기서 이루어져야 함 (별도 구현)
             return services;
         }
     }

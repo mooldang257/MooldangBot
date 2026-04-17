@@ -1,5 +1,6 @@
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
@@ -24,13 +25,11 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Infrastructure.Services;
-using MooldangBot.Application.Workers;
 using StackExchange.Redis;
 using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using RabbitMQ.Client;
-using MooldangBot.Infrastructure.Services.Background;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MooldangBot.Infrastructure.Security;
@@ -68,15 +67,10 @@ namespace MooldangBot.Infrastructure
             
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
-            // [v13.1] 스테이징 데이터 수명 주기 관리 워커 등록
-            services.AddHostedService<StagingCleanupWorker>();
             
             // [Phase 9] 심연의 맥박: 건강 모니터링 및 알림용 서비스
-            services.AddSingleton<IPulseService, PulseService>();
             services.AddHttpClient();
-            services.AddSingleton<IHealthMonitorService, HealthMonitorService>();
-            // [Phase 18.5] 심연의 지배자 (Chaos) - 함대 전역 상태 일관성을 위해 반드시 Singleton
-            services.AddSingleton<IChaosManager, ChaosManager>();
+            services.AddSingleton<HealthMonitorService>();
 
             // [오시리스의 영속]: Redis 인프라 구성 (N3/M3: 동기 블로킹 방지 및 지연 연결 보장)
             var redisUrl = configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets에 의해 존재 보장됨
@@ -106,7 +100,6 @@ namespace MooldangBot.Infrastructure
 
             // [오시리스의 서판]: 채팅 로그 벌크 처리 서비스 등록
             services.AddSingleton<IChatLogBufferService, ChatLogBufferService>();
-            services.AddHostedService<ChatLogBatchWorker>();
 
             // Database — [v10.11] AddPooledDbContextFactory 전환 (poolSize: 1024)
             // [오시리스의 영속]: 고부하 환경에서 컨텍스트 객체 자체를 풀링하여 재사용함으로써 메모리 할당 비용을 극한으로 낮춥니다.
@@ -169,9 +162,8 @@ namespace MooldangBot.Infrastructure
             // [v1.2] 마스터 데이터 캐시 서비스 등록
             services.AddScoped<ICommandMasterCacheService, CommandMasterCacheService>();
 
-            // [v7.0] Wallet Architecture: 포인트 캐시 및 지연 쓰기 워커 등록
+            // [v7.0] Wallet Architecture: 포인트 캐시 등록 (워커는 WorkerRegistry에서 통합 관리)
             services.AddSingleton<IPointCacheService, PointCacheService>();
-            services.AddHostedService<PointWriteBackWorker>();
 
             // [v13.1] 리포지토리 등록
             // [Phase 2] ISongBookRepository는 SongBook 모듈에서 등록됩니다.
@@ -203,9 +195,8 @@ namespace MooldangBot.Infrastructure
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
-            // [v2.0] 영겁의 저장소: 분산 토큰 저장소 및 멱등성 가드 등록
+            // [v2.0] 영겁의 저장소: 분산 토큰 저장소 등록
             services.AddSingleton<IChzzkAccessCredentialStore, RedisTokenStore>();
-            services.AddSingleton<IIdempotencyService, IdempotencyService>();
 
             // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
             services.AddScoped<IDbInitializer, DbInitializer>();
@@ -213,17 +204,7 @@ namespace MooldangBot.Infrastructure
             return services;
         }
 
-        /// <summary>
-        /// [v3.7] 치지직 이벤트 소비자 등록 (메인 API 전용)
-        /// RabbitMQ에서 이벤트를 수신하여 MediatR로 전파합니다.
-        /// </summary>
-        public static IServiceCollection AddChzzkEventConsumer(this IServiceCollection services)
-        {
-            // [DEPRECATED]: MassTransit 도입으로 인해 ChzzkEventRabbitMqConsumer는 더 이상 필요하지 않습니다.
-            // 서비스 안정화 기간 동안 주석 처리 후 제거 예정입니다.
-            // services.AddHostedService<ChzzkEventRabbitMqConsumer>();
-            return services;
-        }
+
 
         /// <summary>
         /// [오시리스의 전령]: MassTransit 기반의 고가용성 메시징 인프라를 설정합니다.
