@@ -2,9 +2,12 @@
     import { onMount, onDestroy } from 'svelte';
     import gsap from 'gsap';
 
-    // [지휘관의 지침]: 부모로부터 큐와 연결 인스턴스를 직접 주입받습니다.
-    export let rouletteQueue: any[] = [];
-    export let connection: any = null;
+    // [지휘관의 지침]: 부모로부터 큐와 연결 인스턴스, 큐 소진 함수를 주입받습니다.
+    let { 
+        rouletteQueue = [], 
+        connection = null, 
+        popQueue = () => {} 
+    } = $props();
 
     let containerRef: HTMLDivElement;
     let mainCardRef: HTMLDivElement;

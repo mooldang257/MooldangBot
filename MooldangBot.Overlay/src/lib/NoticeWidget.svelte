@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from 'svelte';
     import gsap from 'gsap';
     
-    export let message = "새로운 후원이 도착했습니다!";
+    let { message = "새로운 후원이 도착했습니다!" } = $props();
     let widgetRef: HTMLDivElement;
     let ctx: gsap.Context;
 
