@@ -32,7 +32,9 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
     public async Task<DeductResult> Handle(DeductCurrencyCommand request, CancellationToken ct)
     {
         // 1. [하이브리드 조회]: 닉네임/ID 등을 기반으로 내부 정수형 ID 확보
-        var viewerHash = Sha256Hasher.ComputeHash(request.ViewerUid);
+        var cleanedUid = (request.ViewerUid ?? "").Trim();
+        var viewerHash = Sha256Hasher.ComputeHash(cleanedUid);
+        
         var streamer = await _db.StreamerProfiles.AsNoTracking()
             .Select(s => new { s.Id, s.ChzzkUid })
             .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
@@ -47,16 +49,29 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
 
         if (globalViewerId == 0)
         {
-            // [오시리스의 자비]: 지갑이 없는 신규 유저라면 즉석에서 개설합니다. (JIT Onboarding)
-            var newViewer = new GlobalViewer 
-            { 
-                ViewerUid = request.ViewerUid, 
-                ViewerUidHash = viewerHash, 
-                Nickname = request.ViewerNickname ?? "시청자" 
-            };
-            _db.GlobalViewers.Add(newViewer);
-            await _db.SaveChangesAsync(ct);
-            globalViewerId = newViewer.Id;
+            try
+            {
+                // [오시리스의 자비]: 지갑이 없는 신규 유저라면 즉석에서 개설합니다. (JIT Onboarding)
+                var newViewer = new GlobalViewer 
+                { 
+                    ViewerUid = cleanedUid, 
+                    ViewerUidHash = viewerHash, 
+                    Nickname = request.ViewerNickname ?? "시청자" 
+                };
+                _db.GlobalViewers.Add(newViewer);
+                await _db.SaveChangesAsync(ct);
+                globalViewerId = newViewer.Id;
+            }
+            catch (DbUpdateException)
+            {
+                // 🛡️ [동시성 방어]: 찰나의 순간에 다른 쓰레드가 생성했다면, 조용히 다시 조회합니다.
+                globalViewerId = await _db.GlobalViewers.AsNoTracking()
+                    .Where(g => g.ViewerUidHash == viewerHash)
+                    .Select(g => g.Id)
+                    .FirstOrDefaultAsync(ct);
+                
+                if (globalViewerId == 0) throw; // 진짜 알 수 없는 오류라면 상위로 전파
+            }
         }
 
         // 2. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
