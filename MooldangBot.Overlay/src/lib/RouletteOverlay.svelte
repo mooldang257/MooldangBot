@@ -183,7 +183,6 @@
 <style>
     .overlay-container {
         position: fixed; inset: 0; display: flex; justify-content: center; align-items: flex-start;
-        padding-top: 60px;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', -apple-system, sans-serif;
     }
     .glow-backdrop {
