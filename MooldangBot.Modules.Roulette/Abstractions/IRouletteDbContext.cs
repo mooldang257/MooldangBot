@@ -13,6 +13,7 @@ public interface IRouletteDbContext
     DbSet<MooldangBot.Domain.Entities.RouletteItem> RouletteItems { get; }
     DbSet<RouletteSpin> RouletteSpins { get; }
     DbSet<RouletteLog> RouletteLogs { get; }
+    DbSet<SoundAsset> SoundAssets { get; }
     
     // 핵심 엔티티
     DbSet<StreamerProfile> StreamerProfiles { get; }

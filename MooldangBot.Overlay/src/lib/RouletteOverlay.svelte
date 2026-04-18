@@ -26,6 +26,39 @@
     // [후보 거품]: Phase A에서 유영할 여러 개의 거품들
     let candidates: any[] = $state([]);
 
+    // [사운드 엔진]
+    const DEFAULT_SOUNDS: Record<string, string> = {
+        'Standard': '/assets/sounds/roulette/normal.mp3',
+        'Rare': '/assets/sounds/roulette/rare.mp3',
+        'Epic': '/assets/sounds/roulette/epic.mp3',
+        'Legendary': '/assets/sounds/roulette/legendary.mp3'
+    };
+    let audioCache: Map<string, HTMLAudioElement> = new Map();
+
+    function preloadSounds(results: any[]) {
+        const urls = new Set([
+            ...Object.values(DEFAULT_SOUNDS),
+            ...results.map(r => r.soundUrl).filter(url => url)
+        ]);
+        urls.forEach(url => {
+            if (!audioCache.has(url)) {
+                const audio = new Audio(url);
+                audio.load();
+                audioCache.set(url, audio);
+            }
+        });
+    }
+
+    function playResultSound(result: any) {
+        const url = (!result.useDefaultSound && result.soundUrl) 
+            ? result.soundUrl 
+            : DEFAULT_SOUNDS[result.template] || DEFAULT_SOUNDS['Standard'];
+            
+        const audio = audioCache.get(url) || new Audio(url);
+        audio.currentTime = 0;
+        audio.play().catch(e => console.warn("Sound play failed:", e));
+    }
+
     // [오시리스의 감시자]
     $effect(() => {
         const queue = props.rouletteQueue || [];
@@ -62,6 +95,7 @@
         if (ctx) ctx.revert();
         
         const results = data.results || [];
+        preloadSounds(results);
         
         ctx = gsap.context(async () => {
             // 초기 컨테이너 등장
@@ -136,26 +170,49 @@
 
                 // [Phase C]: POP & Reveal
                 triggerPopParticles();
+                playResultSound(result);
                 showCard = true;
                 candidates = [];
-
-                // 카드 등장
-                gsap.fromTo(mainCardRef,
-                    { scale: 0.3, opacity: 0, rotationY: 90 },
-                    { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.2)" }
-                );
-
-                // [v5.0] 등급별 특수 연출 (전설 등급 화면 흔들림 등)
-                if (result.template === 'Legendary') {
-                    // 화면 전체 흔들림 (Screen Shake)
+                
+                // 카드 등장 (기본: Flip)
+                const cardTl = gsap.timeline();
+                
+                // [v6.3] 등급별 특수 연출 (전설 등급 화면 흔들림 등)
+                const template = (result.template || 'Standard').toLowerCase();
+                
+                if (template === 'legendary') {
+                    // [전설]: 강력한 충격파 및 화면 흔들림
+                    cardTl.fromTo(mainCardRef,
+                        { scale: 0.1, opacity: 0, rotationY: 180, filter: "brightness(5) blur(10px)" },
+                        { scale: 1, opacity: 1, rotationY: 0, filter: "brightness(1) blur(0px)", duration: 0.8, ease: "elastic.out(1, 0.5)" }
+                    );
+                    
                     gsap.to(containerRef, {
-                        x: "random(-10, 10)",
-                        y: "random(-10, 10)",
+                        x: "random(-20, 20)",
+                        y: "random(-20, 20)",
                         duration: 0.05,
-                        repeat: 10,
+                        repeat: 15,
                         yoyo: true,
                         onComplete: () => gsap.set(containerRef, { x: 0, y: 0 })
                     });
+                } else if (template === 'epic') {
+                    // [영웅]: 우아한 회전과 스케일업
+                    cardTl.fromTo(mainCardRef,
+                        { scale: 0.3, opacity: 0, rotation: 360, rotationX: 90 },
+                        { scale: 1, opacity: 1, rotation: 0, rotationX: 0, duration: 0.6, ease: "back.out(1.7)" }
+                    );
+                } else if (template === 'rare') {
+                    // [희귀]: 통통 튀는 바운스
+                    cardTl.fromTo(mainCardRef,
+                        { scale: 0.5, opacity: 0, y: 100 },
+                        { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "back.out(2)" }
+                    );
+                } else {
+                    // [일반]: 기본 등장
+                    cardTl.fromTo(mainCardRef,
+                        { scale: 0.3, opacity: 0, rotationY: 90 },
+                        { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.2)" }
+                    );
                 }
 
                 if (result.isMission) {
@@ -190,32 +247,35 @@
         }, containerRef);
     }
 
-    function triggerPopParticles() {
-        if (!particleContainer) return;
-        for (let i = 0; i < 40; i++) {
-            const p = document.createElement('div');
-            p.className = 'droplet-v2';
-            const size = Math.random() * 10 + 5;
-            p.style.width = `${size}px`;
-            p.style.height = `${size}px`;
-            // 스튜디오 코랄 블루 혹은 아이템 색상
-            p.style.background = `linear-gradient(135deg, ${highlightedResult?.color || '#54BCD1'}, #ffffff99)`;
-            
-            particleContainer.appendChild(p);
+            // 등급에 따른 파티클 개수 조절
+            const template = (highlightedResult?.template || 'Standard').toLowerCase();
+            const count = template === 'legendary' ? 100 : template === 'epic' ? 60 : template === 'rare' ? 40 : 25;
 
-            const angle = Math.random() * Math.PI * 2;
-            const dist = Math.random() * 300 + 100;
-            gsap.to(p, {
-                x: Math.cos(angle) * dist,
-                y: Math.sin(angle) * dist,
-                opacity: 0,
-                scale: 0,
-                duration: 1,
-                ease: "power3.out",
-                onComplete: () => p.remove()
-            });
-        }
-    }
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'droplet-v2';
+                const size = Math.random() * (template === 'legendary' ? 15 : 10) + 5;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                
+                // 등급별 테마 색상 및 아이템 색상 혼합
+                const themeColor = template === 'legendary' ? '#FFD700' : template === 'epic' ? '#A07CFE' : highlightedResult?.color || '#54BCD1';
+                p.style.background = `linear-gradient(135deg, ${themeColor}, #ffffff)`;
+                
+                particleContainer.appendChild(p);
+    
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * (template === 'legendary' ? 500 : 300) + 100;
+                gsap.to(p, {
+                    x: Math.cos(angle) * dist,
+                    y: Math.sin(angle) * dist,
+                    opacity: 0,
+                    scale: 0,
+                    duration: template === 'legendary' ? 1.5 : 1,
+                    ease: "power3.out",
+                    onComplete: () => p.remove()
+                });
+            }
 
     async function finishAndNext(data: any) {
         if (props.connection) {

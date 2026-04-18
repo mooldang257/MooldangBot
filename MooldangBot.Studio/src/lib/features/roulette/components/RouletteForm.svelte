@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check } from "lucide-svelte";
+    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check, Volume2, Mic, Music, Trash2, Play, StopCircle } from "lucide-svelte";
     import { slide, fade, fly } from "svelte/transition";
 
     let { 
@@ -86,6 +86,88 @@
             console.error("Failed to copy: ", err);
         }
     };
+
+    // 🔊 [하모니의 성대]: 사운드 라이브러리 및 녹음 상태 관리
+    let soundLibrary: any[] = $state([]);
+    let isLibraryLoading = $state(false);
+    let activeSoundItemIndex: number | null = $state(null);
+    let isRecording = $state(false);
+    let mediaRecorder: MediaRecorder | null = null;
+    let audioChunks: Blob[] = [];
+
+    async function fetchSoundLibrary() {
+        isLibraryLoading = true;
+        try {
+            const res = await fetch('/api/admin/roulette/library');
+            const data = await res.json();
+            if (data.success) soundLibrary = data.data;
+        } catch (err) {
+            console.error("Library fetch failed:", err);
+        } finally {
+            isLibraryLoading = false;
+        }
+    }
+
+    async function startRecording() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            await uploadAudio(audioBlob, `녹음_${new Date().toLocaleString()}`, "Recording");
+        };
+        mediaRecorder.start();
+        isRecording = true;
+    }
+
+    function stopRecording() {
+        if (mediaRecorder) mediaRecorder.stop();
+        isRecording = false;
+    }
+
+    async function handleFileUpload(e: Event) {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) await uploadAudio(file, file.name, "Upload");
+    }
+
+    async function uploadAudio(blob: Blob | File, name: string, type: string) {
+        const formData = new FormData();
+        formData.append("file", blob, name.endsWith(".webm") || name.endsWith(".mp3") ? name : `${name}.webm`);
+        
+        try {
+            const res = await fetch(`/api/upload/audio?name=${encodeURIComponent(name)}&type=${type}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.url && activeSoundItemIndex !== null) {
+                rouletteForm.items[activeSoundItemIndex].soundUrl = data.url;
+                rouletteForm.items[activeSoundItemIndex].useDefaultSound = false;
+                await fetchSoundLibrary(); // 라이브러리 갱신
+            }
+        } catch (err) {
+            console.error("Audio upload failed:", err);
+        }
+    }
+
+    function selectFromLibrary(url: string) {
+        if (activeSoundItemIndex !== null) {
+            rouletteForm.items[activeSoundItemIndex].soundUrl = url;
+            rouletteForm.items[activeSoundItemIndex].useDefaultSound = false;
+            activeSoundItemIndex = null;
+        }
+    }
+
+    function removeCustomSound(index: number) {
+        rouletteForm.items[index].soundUrl = null;
+        rouletteForm.items[index].useDefaultSound = true;
+    }
+
+    function previewSound(url: string) {
+        const audio = new Audio(url);
+        audio.play();
+    }
 </script>
 
 <div class="bg-white rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-900/5 overflow-hidden">
@@ -253,6 +335,21 @@
                             </select>
                         </div>
                         <div class="col-span-1 space-y-1">
+                            <label class="text-[10px] font-black text-slate-400 uppercase">사운드</label>
+                            <div class="flex items-center justify-center">
+                                <button 
+                                    on:click={() => { 
+                                        activeSoundItemIndex = index;
+                                        fetchSoundLibrary();
+                                    }}
+                                    class="p-2 rounded-xl border border-slate-200 transition-all {item.useDefaultSound ? 'text-slate-300 hover:bg-slate-100' : 'text-primary bg-primary/5 border-primary/30 hover:bg-primary/10'}"
+                                    title={item.useDefaultSound ? "기본 사운드 사용 중" : "커스텀 사운드:" + item.soundUrl}
+                                >
+                                    <Volume2 size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-span-1 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">색상</label>
                             <div class="flex items-center justify-center">
                                 <input 
@@ -331,3 +428,115 @@
         </div>
     </div>
 </div>
+
+<!-- 🔊 사운드 설정 모달 (Glassmorphism Overlay) -->
+{#if activeSoundItemIndex !== null}
+<div class="fixed inset-0 z-[200] flex items-center justify-center p-4" transition:fade>
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" on:click={() => activeSoundItemIndex = null}></div>
+    <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100" in:fly={{ y: 20 }}>
+        <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary/10 text-primary rounded-xl">
+                    <Volume2 size={20} />
+                </div>
+                <h4 class="font-black text-slate-800 tracking-tight">당첨 사운드 설정</h4>
+            </div>
+            <button on:click={() => activeSoundItemIndex = null} class="p-2 text-slate-400 hover:text-slate-600 transition-all">
+                <X size={20} />
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 현재 상태 및 기본 전환 -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest">현재 사운드</span>
+                    {#if !rouletteForm.items[activeSoundItemIndex].useDefaultSound}
+                        <button on:click={() => removeCustomSound(activeSoundItemIndex!)} class="text-[10px] font-black text-red-500 hover:underline">기본으로 변경</button>
+                    {/if}
+                </div>
+                <div class="flex items-center gap-3">
+                    {#if rouletteForm.items[activeSoundItemIndex].useDefaultSound}
+                        <div class="p-2 bg-slate-200 text-slate-500 rounded-lg"><Music size={16} /></div>
+                        <span class="text-sm font-bold text-slate-600">등급별 기본 사운드</span>
+                    {:else}
+                        <div class="p-2 bg-primary/10 text-primary rounded-lg"><Volume2 size={16} /></div>
+                        <span class="text-sm font-bold text-primary truncate flex-1">{rouletteForm.items[activeSoundItemIndex].soundUrl?.split('/').pop()}</span>
+                        <button on:click={() => previewSound(rouletteForm.items[activeSoundItemIndex].soundUrl!)} class="p-2 bg-white text-primary rounded-lg shadow-sm border border-slate-100"><Play size={14}/></button>
+                    {/if}
+                </div>
+            </div>
+
+            <!-- 액션 섹션 -->
+            <div class="grid grid-cols-2 gap-3">
+                <button 
+                    on:mousedown={startRecording}
+                    on:mouseup={stopRecording}
+                    on:mouseleave={isRecording ? stopRecording : null}
+                    class="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-dashed {isRecording ? 'bg-red-50 border-red-300 text-red-500' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-primary/50 hover:text-primary'} transition-all group"
+                >
+                    {#if isRecording}
+                        <div class="relative">
+                            <StopCircle size={24} class="animate-pulse" />
+                            <div class="absolute -inset-2 bg-red-400/20 rounded-full animate-ping"></div>
+                        </div>
+                        <span class="text-xs font-black">녹음 중... (떼면 저장)</span>
+                    {:else}
+                        <Mic size={24} class="group-hover:scale-110 transition-transform" />
+                        <span class="text-xs font-black">누르고 녹음하기</span>
+                    {/if}
+                </button>
+                <label class="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-dashed bg-slate-50 border-slate-200 text-slate-400 hover:border-primary/50 hover:text-primary cursor-pointer transition-all group">
+                    <Music size={24} class="group-hover:scale-110 transition-transform" />
+                    <span class="text-xs font-black">파일 업로드</span>
+                    <input type="file" accept="audio/*" class="hidden" on:change={handleFileUpload} />
+                </label>
+            </div>
+
+            <!-- 보관함 리스트 -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-3 bg-primary rounded-full"></div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">사운드 보관함</span>
+                </div>
+                <div class="max-height-[200px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                    {#if isLibraryLoading}
+                        <div class="py-10 flex flex-col items-center gap-2 text-slate-300">
+                            <div class="w-6 h-6 border-2 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+                            <span class="text-[10px] font-black">불러오는 중...</span>
+                        </div>
+                    {:else if soundLibrary.length === 0}
+                        <div class="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+                            <p class="text-[10px] font-black text-slate-400">보관된 사운드가 없습니다.</p>
+                        </div>
+                    {:else}
+                        {#each soundLibrary as asset}
+                            <div class="group flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-sky-50 transition-all border border-transparent hover:border-sky-100">
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="p-1.5 bg-white rounded-lg text-slate-400 group-hover:text-primary shadow-sm"><Music size={14} /></div>
+                                    <button 
+                                        on:click={() => selectFromLibrary(asset.soundUrl)}
+                                        class="text-xs font-bold text-slate-600 group-hover:text-primary truncate"
+                                    >
+                                        {asset.name}
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button on:click={() => previewSound(asset.soundUrl)} class="p-1.5 text-slate-400 hover:text-primary transition-all"><Play size={14}/></button>
+                                </div>
+                            </div>
+                        {/each}
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{/if}
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+</style>

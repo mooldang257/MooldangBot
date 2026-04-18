@@ -48,6 +48,13 @@ public class RouletteItem : IAuditable
     [JsonPropertyName("template")]
     public string Template { get; set; } = "Standard";
 
+    [MaxLength(500)]
+    [JsonPropertyName("soundUrl")]
+    public string? SoundUrl { get; set; }
+
+    [JsonPropertyName("useDefaultSound")]
+    public bool UseDefaultSound { get; set; } = true;
+
     [JsonPropertyName("createdAt")]
     public KstClock CreatedAt { get; set; } = KstClock.Now;
 

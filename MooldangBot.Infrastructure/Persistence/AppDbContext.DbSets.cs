@@ -39,6 +39,7 @@ public partial class AppDbContext : IAppDbContext, ISongBookDbContext, IRoulette
     public DbSet<RouletteItem> RouletteItems { get; set; }
     public DbSet<RouletteLog> RouletteLogs { get; set; }
     public DbSet<RouletteSpin> RouletteSpins { get; set; }
+    public DbSet<SoundAsset> SoundAssets { get; set; }
 
     // ────────── [Point & Wallet] ──────────
     public DbSet<ViewerPoint> ViewerPoints { get; set; }
