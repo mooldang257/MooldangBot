@@ -46,7 +46,18 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
             .FirstOrDefaultAsync(ct);
 
         if (globalViewerId == 0)
-            return new DeductResult(false, 0, "시청자 지갑 정보가 존재하지 않습니다.");
+        {
+            // [오시리스의 자비]: 지갑이 없는 신규 유저라면 즉석에서 개설합니다. (JIT Onboarding)
+            var newViewer = new GlobalViewer 
+            { 
+                ViewerUid = request.ViewerUid, 
+                ViewerUidHash = viewerHash, 
+                Nickname = request.ViewerNickname ?? "시청자" 
+            };
+            _db.GlobalViewers.Add(newViewer);
+            await _db.SaveChangesAsync(ct);
+            globalViewerId = newViewer.Id;
+        }
 
         // 2. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
@@ -71,7 +82,15 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
 
         // 3. [유료 재화(DonationPoint) 원자적 처리]: Dapper를 통한 DB 직접 차감
         var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync(ct);
         
+        // ⚔️ [선제 타격]: 지갑 레코드가 아예 없는 경우 0원 잔액 행을 생성하여 차감 쿼리가 작동하도록 함
+        const string ensureWalletSql = @"
+            INSERT IGNORE INTO viewer_donations (streamer_profile_id, global_viewer_id, balance, total_donated, created_at, updated_at)
+            VALUES (@StreamerId, @GlobalId, 0, 0, NOW(), NOW());";
+        
+        await conn.ExecuteAsync(ensureWalletSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId });
+
         // 🛡️ [철옹성 쿼리]: 잔액이 차감액보다 클 때만 업데이트하고, 영향받은 행 수를 통해 성공 여부 판단
         const string updateSql = @"
             UPDATE viewer_donations 
