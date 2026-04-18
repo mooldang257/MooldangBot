@@ -1,5 +1,5 @@
 using System;
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Modules.Commands.Events;
 

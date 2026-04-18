@@ -1,5 +1,5 @@
 using MediatR;
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 using System;
 
 namespace MooldangBot.Modules.SongBook.Events;

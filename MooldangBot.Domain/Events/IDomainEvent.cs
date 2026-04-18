@@ -1,8 +1,8 @@
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 using MediatR;
 using System;
 
-namespace MooldangBot.Contracts.Common.Events;
+namespace MooldangBot.Domain.Events;
 
 /// <summary>
 /// [신경망의 근간]: 함선(시스템) 내에서 발생하는 모든 도메인 이벤트의 통합 인터페이스입니다.

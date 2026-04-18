@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.IO;
 using MooldangBot.Contracts.Events;
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Verifier;
 

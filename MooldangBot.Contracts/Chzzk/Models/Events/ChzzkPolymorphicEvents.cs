@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Events;
 

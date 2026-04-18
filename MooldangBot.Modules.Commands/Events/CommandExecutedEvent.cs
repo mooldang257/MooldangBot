@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Events;
+using MooldangBot.Domain.Events;
 using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;

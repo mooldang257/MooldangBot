@@ -1,5 +1,5 @@
 using System.Reflection;
-using MooldangBot.Contracts.Abstractions;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Verifier.Inspectors;
 
