@@ -36,14 +36,9 @@ public class RouletteStrategy(
             logger.LogInformation("🎰 [포인트 룰렛] {Username} -> 1회 실행", notification.Username);
         }
 
-        // 🚀 [순수 수직 분할]: 메인 로직은 독립 모듈의 핸들러에게 위임합니다.
-        await mediator.Send(new SpinRouletteCommand(
-            notification.Profile.ChzzkUid,
-            command.TargetId.Value,
-            notification.SenderId,
-            totalSpins,
-            notification.Username
-        ), ct);
+        // 🚀 [v4.3] 중복 실행 방지: 이제 직접 실행하지 않고 RouletteExecutionHandler(사후 이벤트 핸들러)에게 집행권을 전임합니다.
+        // mediator.Send(new SpinRouletteCommand(...))는 여기서 삭제됩니다.
+        logger.LogInformation("🎰 [RouletteStrategy] 명령어 승인 완료. 사후 이벤트 핸들러({Username})에 의해 집행 대기 중.", notification.Username);
 
         return CommandExecutionResult.Success();
     }
