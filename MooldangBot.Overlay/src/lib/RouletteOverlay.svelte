@@ -72,49 +72,61 @@
                 highlightedResult = result;
                 showCard = false;
                 
-                // [Phase A]: 후보 거품 생성 및 유영
-                candidates = Array.from({ length: 4 }).map((_, id) => ({
-                    id,
-                    x: (Math.random() - 0.5) * 400,
-                    y: (Math.random() - 0.5) * 200, // 카드가 나타나는 중앙 영역(0,0)과 일치시킴
-                    size: Math.random() * 40 + 80
-                }));
-                await tick();
+                // [Phase A]: 후보 거품 생성 및 유영 (1회차만 풀 연출, 2회차부턴 즉시 중앙 생성)
+                if (i === 0) {
+                    candidates = Array.from({ length: 4 }).map((_, id) => ({
+                        id,
+                        x: (Math.random() - 0.5) * 400,
+                        y: (Math.random() - 0.5) * 200,
+                        size: Math.random() * 40 + 80
+                    }));
+                    await tick();
 
-                // 거품들이 중앙으로 모여들며 유영 (Bouncing/Floating)
-                const candidateTl = gsap.timeline();
-                candidateTl.fromTo(".candidate-bubble", 
-                    { scale: 0, opacity: 0 },
-                    { scale: 1, opacity: 1, duration: 0.4, stagger: 0.1, ease: "back.out(1.7)" }
-                );
+                    // 거품들이 중앙으로 모여들며 유영 (Bouncing/Floating)
+                    const candidateTl = gsap.timeline();
+                    candidateTl.fromTo(".candidate-bubble", 
+                        { scale: 0, opacity: 0 },
+                        { scale: 1, opacity: 1, duration: 0.4, stagger: 0.1, ease: "back.out(1.7)" }
+                    );
 
-                // 1.5초간 서로 부딪히며 유영하는 연출 (속도 상향)
-                await new Promise(resolve => {
-                    gsap.to(".candidate-bubble", {
-                        x: "random(-150, 150)",
-                        y: "random(-100, 100)",
-                        duration: 1.5,
-                        repeat: 0, // 반복 제거로 속도 대폭 상향
-                        ease: "sine.inOut",
-                        onComplete: resolve
+                    // 1.5초간 서로 부딪히며 유영하는 연출 (속도 상향)
+                    await new Promise(resolve => {
+                        gsap.to(".candidate-bubble", {
+                            x: "random(-150, 150)",
+                            y: "random(-100, 100)",
+                            duration: 1.5,
+                            repeat: 0,
+                            ease: "sine.inOut",
+                            onComplete: resolve
+                        });
                     });
-                });
 
-                // [Phase B]: 최종 거품 선정 및 서스펜스
-                // 첫 번째 거품만 남기고 나머지는 물결 속으로
-                const winnerIndex = 0;
-                gsap.to(`.candidate-bubble:not(:nth-child(${winnerIndex + 1}))`, {
-                    scale: 0, opacity: 0, duration: 0.5, filter: "blur(10px)"
-                });
+                    // [Phase B]: 최종 거품 선정 및 서스펜스
+                    const winnerIndex = 0;
+                    gsap.to(`.candidate-bubble:not(:nth-child(${winnerIndex + 1}))`, {
+                        scale: 0, opacity: 0, duration: 0.5, filter: "blur(10px)"
+                    });
 
-                // 당첨 거품 중앙 정렬 및 진동 (속도 상향)
-                const winnerBubble = `.candidate-bubble:nth-child(${winnerIndex + 1})`;
-                await gsap.to(winnerBubble, {
-                    x: 0, y: 0, scale: 1.5, duration: 0.4, ease: "power2.inOut"
-                }).then();
+                    // 당첨 거품 중앙 정렬
+                    const winnerBubble = `.candidate-bubble:nth-child(${winnerIndex + 1})`;
+                    await gsap.to(winnerBubble, {
+                        x: 0, y: 0, scale: 1.5, duration: 0.4, ease: "power2.inOut"
+                    }).then();
+                } else {
+                    // 2회차 이후: 단일 거품 즉시 생성 및 중앙 배치
+                    candidates = [{ id: 0, x: 0, y: 0, size: 100 }];
+                    await tick();
+                    
+                    const winnerBubble = ".candidate-bubble:nth-child(1)";
+                    await gsap.fromTo(winnerBubble, 
+                        { scale: 0, opacity: 0 },
+                        { scale: 1.5, opacity: 1, duration: 0.3, ease: "back.out(1.7)" }
+                    ).then();
+                }
 
-                // 격렬한 진동 (서스펜스 - 더 빠르게)
-                await gsap.to(winnerBubble, {
+                // [Phase B-2]: 격렬한 진동 (모든 회차 공통 서스펜스)
+                const winnerBubbleRef = ".candidate-bubble:nth-child(1)";
+                await gsap.to(winnerBubbleRef, {
                     x: "random(-6, 6)",
                     rotation: "random(-4, 4)",
                     duration: 0.04,
@@ -125,15 +137,14 @@
                 // [Phase C]: POP & Reveal
                 triggerPopParticles();
                 showCard = true;
-                candidates = []; // 후보 거품 제거
+                candidates = [];
 
-                // 카드 등장 (스튜디오 스타일)
+                // 카드 등장
                 gsap.fromTo(mainCardRef,
                     { scale: 0.3, opacity: 0, rotationY: 90 },
                     { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.2)" }
                 );
 
-                // 코랄 강조색 펄스 (미션일 경우)
                 if (result.isMission) {
                     gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.3 });
                 }
