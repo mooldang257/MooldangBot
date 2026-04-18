@@ -96,28 +96,58 @@ namespace MooldangBot.Application.Controllers.Roulette
         }
 
         [HttpPost("{chzzkUid}")]
-        public async Task<IActionResult> CreateRoulette(string chzzkUid, [FromBody] Domain.Entities.Roulette RouletteObj)
+        public async Task<IActionResult> CreateRoulette(string chzzkUid, [FromBody] RouletteUpdateRequest req)
         {
-            RouletteObj.Id = 0;
-            
             var streamer = await db.StreamerProfiles.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            RouletteObj.StreamerProfileId = streamer.Id;
-            RouletteObj.UpdatedAt = KstClock.Now;
-            
-            if (!RouletteObj.Items.Any() || RouletteObj.Items.Sum(I => I.Probability) <= 0)
+            if (!req.Items.Any() || req.Items.Sum(I => I.Probability) <= 0)
             {
                 return BadRequest(Result<string>.Failure("최소 하나 이상의 아이템과 유효한 확률 정보가 필요합니다."));
             }
 
-            foreach (var I in RouletteObj.Items) I.Roulette = null;
+            // 1. 룰렛 엔티티 생성 및 저장
+            var RouletteObj = new Domain.Entities.Roulette
+            {
+                StreamerProfileId = streamer.Id,
+                Name = req.Name,
+                UpdatedAt = KstClock.Now,
+                Items = req.Items
+            };
+
+            foreach (var I in RouletteObj.Items) 
+            {
+                I.Id = 0;
+                I.Roulette = null;
+            }
 
             db.Roulettes.Add(RouletteObj);
             await db.SaveChangesAsync();
 
+            // 2. 연결된 통합 명령어(UnifiedCommand) 생성
+            var UnifiedCmd = new UnifiedCommand
+            {
+                StreamerProfileId = streamer.Id,
+                Keyword = req.Command ?? "!룰렛",
+                FeatureType = CommandFeatureType.Roulette,
+                TargetId = RouletteObj.Id,
+                Cost = req.CostPerSpin,
+                CostType = req.Type == RouletteType.Cheese ? CommandCostType.Cheese : CommandCostType.Point,
+                ResponseText = req.Name,
+                RequiredRole = CommandRole.Viewer,
+                MatchType = CommandMatchType.Prefix,
+                RequiresSpace = true,
+                IsActive = req.IsActive,
+                CreatedAt = KstClock.Now,
+                UpdatedAt = KstClock.Now
+            };
+
+            db.UnifiedCommands.Add(UnifiedCmd);
+            await db.SaveChangesAsync();
+
+            foreach (var I in RouletteObj.Items) I.Roulette = null;
             return Ok(Result<Domain.Entities.Roulette>.Success(RouletteObj));
         }
 
