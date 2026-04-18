@@ -279,7 +279,8 @@
     }
 
     .overlay-container {
-        position: fixed; inset: 0; display: flex; justify-content: center; align-items: flex-start;
+        position: fixed; inset: 0; display: flex; flex-direction: column; 
+        justify-content: flex-start; align-items: center;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
         overflow: hidden;
     }
@@ -292,7 +293,7 @@
 
     .content-wrapper { 
         display: flex; flex-direction: column; align-items: center; gap: 4vh; 
-        width: 100%; max-width: 95vw; padding-top: 5vh;
+        width: 100%; max-width: 100vw; padding: 0; /* 상단 여백 제거 */
     }
 
     .stage-area { 
@@ -319,6 +320,7 @@
     .studio-card { 
         position: relative; width: 90%; max-width: 540px; min-height: 300px; border-radius: 32px; 
         perspective: 1000px; transform-style: preserve-3d;
+        margin: 0 auto; /* 좌우 중앙 정렬 강제 */
     }
     .card-glass-body {
         position: relative; width: 100%; height: 100%; padding: 6%;
