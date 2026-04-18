@@ -321,17 +321,17 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         var chatPayload = element.Deserialize<ChzzkChatPayload>();
         if (chatPayload == null) return;
 
-        // [v3.1.8] 공식 규격 명세(Session.md)에 따른 필드 매핑 및 검증 수행
-        ChzzkEventType eventType = defaultEventName.ToUpper() switch
+        // [v3.8] 지휘관님 최종 조난 지침: 후원 데이터 중복 발행 원천 차단
+        // 치지직은 후원 시 "DONATION"과 "CHAT"을 동시에 보낼 수 있습니다.
+        // 우리는 "DONATION" 타입으로 들어온 것만 진짜 후원(DonationEvent)으로 인정하고, 
+        // "CHAT" 타입 안에 섞여 들어온 후원 정보 때문에 중복으로 후원 이벤트가 나가는 것을 막습니다.
+        if (defaultEventName.ToUpper() == "CHAT")
         {
-            "CHAT" => ChzzkEventType.Chat,
-            "DONATION" => ChzzkEventType.ChatDonation,
-            "SUBSCRIPTION" => ChzzkEventType.Subscription,
-            _ => ChzzkEventType.None
-        };
-
-        // [v3.2.9] 지휘관님 최종 지침: 어떤 이벤트이든 donationType 필드가 있다면 이를 최우선 진실로 채택
-        if (element.TryGetProperty("donationType", out var dtProp) || (!string.IsNullOrEmpty(chatPayload.DonationType)))
+            // [v7.2] 후원 정보가 섞인 채팅이 오더라도, 이미 "DONATION" 타입 소식이 오고 있으므로
+            // 여기서 강제로 Donation으로 업그레이드하지 않고 일반 채팅 처리를 따르거나 무시하게 합니다.
+            eventType = ChzzkEventType.Chat; 
+        }
+        else if (element.TryGetProperty("donationType", out var dtProp) || (!string.IsNullOrEmpty(chatPayload.DonationType)))
         {
             var dtValue = dtProp.ValueKind != JsonValueKind.Undefined ? dtProp.GetString() : chatPayload.DonationType;
             if (dtValue == "VIDEO") eventType = ChzzkEventType.VideoDonation;
