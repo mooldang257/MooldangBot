@@ -266,22 +266,22 @@
                     class="studio-card template-{highlightedResult.template?.toLowerCase() || 'standard'}" 
                     class:is-mission={highlightedResult.isMission}
                 >
-                    <div class="card-glow" style="background: {highlightedResult.color}"></div>
+                    <div class="card-glow" style="background: {highlightedResult.color}aa"></div>
                     <div class="card-glass-body" style="background: {highlightedResult.color}; color: {contrastColor}">
                         <div class="card-header">
                             <div class="studio-badge" style="background: {contrastColor}; color: {highlightedResult.color}">STUDIO EDITION</div>
-                            <div class="viewer-tag" style="color: {contrastColor}">@{activeSpin.viewerNickname}</div>
+                            <div class="viewer-tag" style="color: {contrastColor}; opacity: 0.8">@{activeSpin.viewerNickname}</div>
                         </div>
 
                         <div class="result-box">
-                            <span class="roulette-title" style="color: {contrastColor}; opacity: 0.7">{activeSpin.rouletteName}</span>
+                            <span class="roulette-title" style="color: {contrastColor}; opacity: 0.6">{activeSpin.rouletteName}</span>
                             <h2 class="result-text" style="color: {contrastColor}">{highlightedResult.itemName}</h2>
                             {#if highlightedResult.isMission}
-                                <div class="mission-badge">MISSION!!</div>
+                                <div class="mission-badge" style="border: 2px solid {contrastColor}; color: {contrastColor}">MISSION!!</div>
                             {/if}
                         </div>
 
-                        <div class="card-status" style="color: {contrastColor}; opacity: 0.6">
+                        <div class="card-status" style="color: {contrastColor}; opacity: 0.5">
                             <span class="progress-info">{historyResults.length} / {activeSpin.results.length}</span>
                             <span class="spin-id-tag">REF: {activeSpin.spinId.substring(0,8)}</span>
                         </div>
@@ -294,13 +294,14 @@
         <div class="history-tray">
             <div class="history-grid-v2">
                 {#each historyResults as res, i}
+                    {@const chipContrast = getContrastColor(res.color)}
                     <div 
                         bind:this={gridItems[i]} 
                         class="history-chip" 
                         class:chip-mission={res.isMission}
-                        style="border-left: 4px solid {res.color}"
+                        style="background: {res.color}; color: {chipContrast}; border: 1px solid rgba(255,255,255,0.2)"
                     >
-                        <span class="chip-text">{res.itemName}</span>
+                        <span class="chip-text" style="color: {chipContrast}">{res.itemName}</span>
                     </div>
                 {/each}
             </div>
@@ -455,11 +456,13 @@
         backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .history-chip { 
-        background: rgba(255, 255, 255, 0.12); padding: 8px 16px; border-radius: 12px; 
-        color: #fff; font-size: 0.875rem; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 16px; border-radius: 12px; 
+        font-size: 0.875rem; font-weight: 800;
         white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
-    .chip-mission { background: rgba(255, 127, 80, 0.15); border: 1px solid rgba(255, 127, 80, 0.3); }
+    .chip-mission { ring: 2px solid var(--studio-coral); }
 
     .particle-anchor { position: absolute; z-index: 10; }
     :global(.droplet-v2) { position: absolute; border-radius: 50%; pointer-events: none; border: 1px solid rgba(255, 255, 255, 0.4); }
