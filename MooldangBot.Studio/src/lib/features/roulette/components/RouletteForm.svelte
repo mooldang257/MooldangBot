@@ -86,13 +86,12 @@
             <div class="space-y-2">
                 <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1" for="r-cmd">명령어 키워드</label>
                 <div class="relative">
-                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black">!</span>
                     <input 
                         id="r-cmd"
                         type="text" 
                         bind:value={rouletteForm.command}
-                        placeholder="간식"
-                        class="w-full pl-8 pr-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary focus:bg-white outline-none transition-all font-black text-primary"
+                        placeholder="예: !간식 또는 간식"
+                        class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary focus:bg-white outline-none transition-all font-black text-primary"
                     />
                 </div>
             </div>
