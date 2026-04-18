@@ -30,15 +30,15 @@ namespace MooldangBot.Infrastructure.Services.Engines
             _logger = logger;
         }
 
-        public async Task<string> ProcessMessageAsync(string message, string streamerChzzkUid, string viewerUid, string? viewerName = null)
+        public async Task<string> ProcessMessageAsync(string template, string streamerChzzkUid, string? senderId = null, string? senderNickname = null)
         {
-            if (string.IsNullOrWhiteSpace(message)) return message;
+            if (string.IsNullOrWhiteSpace(template)) return template;
 
             // [v19.0] $(닉네임) 변수 통합 처리
-            string resultMessage = message;
-            if (!string.IsNullOrEmpty(viewerName))
+            string resultMessage = template;
+            if (!string.IsNullOrEmpty(senderNickname))
             {
-                resultMessage = resultMessage.Replace("$(닉네임)", viewerName, StringComparison.OrdinalIgnoreCase);
+                resultMessage = resultMessage.Replace("$(닉네임)", senderNickname, StringComparison.OrdinalIgnoreCase);
             }
 
             if (!resultMessage.Contains("$(") || !resultMessage.Contains(')')) return resultMessage;
@@ -66,19 +66,21 @@ namespace MooldangBot.Infrastructure.Services.Engines
                     if (queryString.StartsWith("METHOD:", StringComparison.OrdinalIgnoreCase))
                     {
                         string methodName = queryString.Substring(7).Trim();
-                        queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, viewerUid, viewerName);
+                        queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, senderId, senderNickname);
                     }
                     else if (queryString.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                     {
                         if (!IsQuerySafe(queryString)) return new { Keyword = keyword, Replacement = keyword };
 
-                        var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
+                        var viewerHash = string.IsNullOrEmpty(senderId) ? "" : Sha256Hasher.ComputeHash(senderId);
+                        var safeSenderId = senderId ?? "";
+
                         queryResult = await _db.Database.SqlQueryRaw<string>(
                             queryString,
                             new MySqlParameter("@streamerUid", streamerChzzkUid),
-                            new MySqlParameter("@viewerUid", viewerUid),
+                            new MySqlParameter("@viewerUid", safeSenderId),
                             new MySqlParameter("@viewerHash", viewerHash),
-                            new MySqlParameter("@uid", viewerUid)
+                            new MySqlParameter("@uid", safeSenderId)
                         ).FirstOrDefaultAsync();
                     }
 

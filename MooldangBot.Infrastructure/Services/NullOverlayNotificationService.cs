@@ -18,7 +18,7 @@ public class NullOverlayNotificationService : IOverlayNotificationService
     
     public Task NotifyRouletteResultAsync(string chzzkUid, SpinRouletteResponse response, CancellationToken token = default) => Task.CompletedTask;
     
-    public Task NotifyMissionReceivedAsync(string chzzkUid, RouletteLog missionLog, CancellationToken token = default) => Task.CompletedTask;
+    public Task NotifyMissionReceivedAsync(string chzzkUid, MooldangBot.Domain.DTOs.RouletteMissionOverlayDto missionDto, CancellationToken token = default) => Task.CompletedTask;
     
     public Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default) => Task.CompletedTask;
     
