@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Modules.Roulette.Notifications;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Modules.Roulette.Handlers;
 
