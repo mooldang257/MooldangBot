@@ -55,9 +55,9 @@ public class PointCacheService : IPointCacheService
         // [물멍의 지혜]: Lua 스크립트를 사용하여 조회와 초기화를 원자적으로 수행 (데이터 유실 차단)
         // GETSET 연산과 유사하지만 여러 키를 효율적으로 처리하기 위해 Lua를 활용합니다.
         const string extractScript = @"
-            local val = redis.call('GET', KEYS[1])
+            local val = redis.call('GET', @key)
             if val then
-                redis.call('DEL', KEYS[1])
+                redis.call('DEL', @key)
                 return val
             else
                 return nil

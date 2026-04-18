@@ -20,9 +20,9 @@ public class OverlayAuthController(IAuthService _authService) : ControllerBase
     [HttpPost("token")]
     public async Task<IActionResult> GenerateToken()
     {
-        // 1. 현재 로그인한 사용자의 ChzzkUid 추출 (쿠키 세션 기반)
-        var chzzkUid = User.FindFirst("ChzzkUid")?.Value;
-        if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized("ChzzkUid를 찾을 수 없습니다.");
+        // 1. 현재 로그인한 사용자의 StreamerId 추출 (쿠키 세션 기반)
+        var chzzkUid = User.FindFirst("StreamerId")?.Value;
+        if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized("StreamerId를 찾을 수 없습니다.");
 
         try
         {
@@ -47,7 +47,7 @@ public class OverlayAuthController(IAuthService _authService) : ControllerBase
     [HttpPost("revoke")]
     public async Task<IActionResult> RevokeTokens()
     {
-        var chzzkUid = User.FindFirst("ChzzkUid")?.Value;
+        var chzzkUid = User.FindFirst("StreamerId")?.Value;
         if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
         var result = await _authService.RevokeOverlayTokenAsync(chzzkUid);
