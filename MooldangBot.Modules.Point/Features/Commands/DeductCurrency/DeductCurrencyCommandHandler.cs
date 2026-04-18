@@ -107,19 +107,22 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         
         await conn.ExecuteAsync(ensureWalletSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId });
 
-        // 🛡️ [철옹성 쿼리]: 잔액이 차감액보다 클 때만 업데이트하고, 영향받은 행 수를 통해 성공 여부 판단
+        // 🛡️ [철옹성 쿼리]: 현장 결제 시스템(Real-time Donation Credit) 적용
+        // 지금 막 후원한 금액(DonationAmount)을 결제액에서 선제적으로 제하고, 남은 금액만 DB 잔액에서 깎습니다.
+        var actualDeductAmount = Math.Max(0, request.Amount - request.DonationAmount);
+
         const string updateSql = @"
             UPDATE viewer_donations 
-            SET balance = balance - @Amount, updated_at = NOW()
+            SET balance = balance - @DeductAmount, updated_at = NOW()
             WHERE streamer_profile_id = @StreamerId 
               AND global_viewer_id = @GlobalId 
-              AND balance >= @Amount"; // 마이너스 방지
+              AND balance >= @DeductAmount"; // 마이너스 방지
 
         var affectedRows = await conn.ExecuteAsync(updateSql, new 
         { 
             StreamerId = streamer.Id, 
             GlobalId = globalViewerId, 
-            Amount = request.Amount 
+            DeductAmount = actualDeductAmount 
         });
 
         if (affectedRows == 0)

@@ -77,7 +77,7 @@ public class UnifiedCommandHandler(
 
         // [3. Single Billing]: 통합 결제 (지휘관 지침: 하이브리드 동기 방식 유지)
         var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
-            targetUid, legacyEvent.SenderId, legacyEvent.Username, primary.Cost, primary.CostType), ct);
+            targetUid, legacyEvent.SenderId, legacyEvent.Username, primary.Cost, primary.CostType, (int)legacyEvent.DonationAmount), ct);
 
         if (!billingResult.Success)
         {

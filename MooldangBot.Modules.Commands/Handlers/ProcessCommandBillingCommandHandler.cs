@@ -34,7 +34,8 @@ public class ProcessCommandBillingCommandHandler(
             request.ViewerUid,
             request.ViewerNickname,
             request.Cost,
-            currencyType);
+            currencyType,
+            request.DonationAmount);
 
         var result = await mediator.Send(deductRequest, ct);
 

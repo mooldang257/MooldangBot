@@ -12,7 +12,8 @@ public record ProcessCommandBillingCommand(
     string ViewerUid, 
     string? ViewerNickname,
     int Cost, 
-    CommandCostType CostType
+    CommandCostType CostType,
+    int DonationAmount = 0
 ) : IRequest<BillingResult>;
 
 /// <summary>
