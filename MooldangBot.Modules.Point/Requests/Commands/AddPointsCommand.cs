@@ -1,7 +1,7 @@
 using MediatR;
-using MooldangBot.Contracts.Point.Enums;
+using MooldangBot.Modules.Point.Enums;
 
-namespace MooldangBot.Contracts.Point.Requests.Commands;
+namespace MooldangBot.Modules.Point.Requests.Commands;
 
 /// <summary>
 /// 시청자에게 일반/후원 포인트를 적립하거나 차감합니다. (트랜잭션 로그 기록 포함)

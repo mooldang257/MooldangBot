@@ -1,7 +1,7 @@
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Modules.Commands.Models;
-using MooldangBot.Modules.Commands.Requests;
+using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
@@ -111,9 +111,9 @@ public class UnifiedCommandHandler(
     private async Task CompensatePrimaryAsync(ChatMessageReceivedEvent_Legacy n, CommandMetadata c, CancellationToken ct)
     {
         // 보상 트랜잭션: 차감된 금액만큼 다시 충전 (재편성된 네임스페이스 반영)
-        await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(
+        await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
             n.Profile.ChzzkUid, n.SenderId, n.Username, c.Cost, 
-            c.CostType == CommandCostType.Cheese ? MooldangBot.Contracts.Point.Enums.PointCurrencyType.DonationPoint : MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint), ct);
+            c.CostType == CommandCostType.Cheese ? MooldangBot.Modules.Point.Enums.PointCurrencyType.DonationPoint : MooldangBot.Modules.Point.Enums.PointCurrencyType.ChatPoint), ct);
     }
 
     private ChatMessageReceivedEvent_Legacy? ConvertToLegacy(ChzzkEventReceived notification)

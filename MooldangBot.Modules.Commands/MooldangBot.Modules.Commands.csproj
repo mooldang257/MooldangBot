@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Contracts\MooldangBot.Contracts.csproj" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
   </ItemGroup>
 
 </Project>

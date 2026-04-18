@@ -1,7 +1,7 @@
 using MediatR;
-using MooldangBot.Contracts.Point.Enums;
+using MooldangBot.Modules.Point.Enums;
 
-namespace MooldangBot.Contracts.Point.Requests.Commands;
+namespace MooldangBot.Modules.Point.Requests.Commands;
 
 /// <summary>
 /// [v7.0] 통합 재화 차감 요청: 포인트 또는 치즈를 원자적으로 차감합니다.

@@ -1,7 +1,7 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Contracts.Point.Commands;
+using MooldangBot.Modules.Point.Commands;
 using System;
 
 namespace MooldangBot.Infrastructure.Sagas;

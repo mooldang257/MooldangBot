@@ -1,7 +1,7 @@
 using MediatR;
-using MooldangBot.Contracts.Point.Enums;
+using MooldangBot.Modules.Point.Enums;
 
-namespace MooldangBot.Contracts.Point.Requests.Queries;
+namespace MooldangBot.Modules.Point.Requests.Queries;
 
 /// <summary>
 /// 특정 시청자의 재화(일반 채팅 포인트 혹은 후원 치즈 포인트) 잔액을 조회합니다.

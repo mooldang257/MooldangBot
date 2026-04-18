@@ -8,9 +8,9 @@ using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Application.Contracts.Chzzk;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Point.Requests.Models;
+using MooldangBot.Modules.Point.Requests.Models;
 using MediatR;
-using MooldangBot.Contracts.Point.Requests.Commands;
+using MooldangBot.Modules.Point.Requests.Commands;
 
 // [수정] 네임스페이스를 Infrastructure.Workers로 통일
 namespace MooldangBot.Infrastructure.Workers.Points;

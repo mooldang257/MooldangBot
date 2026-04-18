@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Point.Interfaces;
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
 

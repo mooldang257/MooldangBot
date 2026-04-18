@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace MooldangBot.Contracts.Point.Requests.Commands;
+namespace MooldangBot.Modules.Point.Requests.Commands;
 
 /// <summary>
 /// 잔액 부족 시 결제를 거부하는 원자적 차감 트랜잭션을 수행합니다. (후원 재화 전용)

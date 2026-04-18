@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Modules.Point.Abstractions;
-using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Contracts.Common.Services; // PulseService, ChaosManager
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,9 +17,9 @@ using System.Collections.Concurrent;
 using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Services;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Point.Requests.Models;
+using MooldangBot.Modules.Point.Requests.Models;
 using MediatR;
-using MooldangBot.Contracts.Point.Requests.Commands;
+using MooldangBot.Modules.Point.Requests.Commands;
 
 namespace MooldangBot.Infrastructure.Workers.Points;
 

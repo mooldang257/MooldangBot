@@ -1,7 +1,7 @@
-using MooldangBot.Contracts.Point.Requests.Queries;
+using MooldangBot.Modules.Point.Requests.Queries;
 using MooldangBot.Modules.Point.Abstractions;
-using MooldangBot.Contracts.Point.Interfaces;
-using MooldangBot.Contracts.Point.Enums;
+using MooldangBot.Modules.Point.Interfaces;
+using MooldangBot.Modules.Point.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Security;

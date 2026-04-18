@@ -8,7 +8,7 @@ using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
-using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Modules.Commands.Abstractions;
 using Polly;

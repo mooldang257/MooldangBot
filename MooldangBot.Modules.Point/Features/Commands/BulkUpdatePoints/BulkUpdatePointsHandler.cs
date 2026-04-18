@@ -2,8 +2,8 @@ using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Point.Requests.Commands;
-using MooldangBot.Contracts.Point.Interfaces;
+using MooldangBot.Modules.Point.Requests.Commands;
+using MooldangBot.Modules.Point.Interfaces;
 namespace MooldangBot.Modules.Point.Features.Commands.BulkUpdatePoints;
 
 /// <summary>

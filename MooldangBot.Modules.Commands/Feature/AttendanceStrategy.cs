@@ -75,12 +75,12 @@ public class AttendanceStrategy(
             if (command.Cost > 0)
             {
                 var mediator = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
-                await mediator.Send(new MooldangBot.Contracts.Point.Requests.Commands.AddPointsCommand(
+                await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
                     StreamerUid: notification.Profile.ChzzkUid,
                     ViewerUid: notification.SenderId,
                     Nickname: notification.Username,
                     Amount: command.Cost,
-                    CurrencyType: MooldangBot.Contracts.Point.Enums.PointCurrencyType.ChatPoint
+                    CurrencyType: MooldangBot.Modules.Point.Enums.PointCurrencyType.ChatPoint
                 ), ct);
             }
 

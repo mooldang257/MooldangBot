@@ -1,4 +1,4 @@
-namespace MooldangBot.Contracts.Point.Interfaces;
+namespace MooldangBot.Modules.Point.Interfaces;
 
 /// <summary>
 /// [v7.0] 고성능 포인트 캐시 서비스: Redis를 활용하여 무료 포인트(ChatPoint)의 

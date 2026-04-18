@@ -8,7 +8,7 @@ using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.Workers.Points;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Contracts.Point.Requests.Models;
+using MooldangBot.Modules.Point.Requests.Models;
 using MooldangBot.Contracts.Common.Services;
 using NSubstitute;
 using Xunit;

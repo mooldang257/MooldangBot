@@ -1,4 +1,4 @@
-namespace MooldangBot.Contracts.Point.Requests.Models;
+namespace MooldangBot.Modules.Point.Requests.Models;
 
 /// <summary>
 /// 포인트 적립/차감 트랜잭션 수집 작업 단위
