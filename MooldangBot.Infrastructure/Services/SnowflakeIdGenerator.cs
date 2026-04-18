@@ -1,4 +1,4 @@
-﻿using IdGen;
+using IdGen;
 using MooldangBot.Contracts.Common.Interfaces;
 
 namespace MooldangBot.Infrastructure.Services;

@@ -11,7 +11,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
     [ApiController]
     [Route("api/PeriodicMessage")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor Àû¿ë
+    // [v10.1] Primary Constructor ì ìš©
     public class PeriodicMessageController(IAppDbContext db) : ControllerBase
     {
         [HttpGet("list/{chzzkUid}")]
@@ -44,7 +44,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
                     .FirstOrDefaultAsync(m => m.Id == req.Id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                     
                 if (existing == null)
-                    return NotFound(Result<string>.Failure("ÇØ´ç ¸Ş½ÃÁö¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                    return NotFound(Result<string>.Failure("í•´ë‹¹ ë©”ì‹œì§€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
                 existing.IntervalMinutes = req.IntervalMinutes;
                 existing.Message = req.Message;
@@ -54,7 +54,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             {
                 var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
                 if (profile == null) 
-                    return NotFound(Result<string>.Failure("½ºÆ®¸®¸Ó ÇÁ·ÎÇÊÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                    return NotFound(Result<string>.Failure("ìŠ¤íŠ¸ë¦¬ë¨¸ í”„ë¡œí•„ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
                 db.PeriodicMessages.Add(new PeriodicMessage
                 {
@@ -78,7 +78,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
             if (item == null)
-                return NotFound(Result<string>.Failure("ÇØ´ç ¸Ş½ÃÁö¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("í•´ë‹¹ ë©”ì‹œì§€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             db.PeriodicMessages.Remove(item);
             await db.SaveChangesAsync();
@@ -95,7 +95,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
                 
             if (item == null)
-                return NotFound(Result<string>.Failure("ÇØ´ç ¸Ş½ÃÁö¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("í•´ë‹¹ ë©”ì‹œì§€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             item.IsEnabled = !item.IsEnabled;
             await db.SaveChangesAsync();

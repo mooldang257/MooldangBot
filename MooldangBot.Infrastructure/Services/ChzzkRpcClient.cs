@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;

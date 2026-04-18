@@ -15,7 +15,7 @@ namespace MooldangBot.Application.Controllers.Overlay
 {
     [ApiController]
     [Route("api/overlay")]
-    // [v10.1] Primary Constructor Àû¿ë
+    // [v10.1] Primary Constructor ì ìš©
     public class MasterOverlayController(IAppDbContext db, IHubContext<OverlayHub> hubContext, IWebHostEnvironment env) : ControllerBase
     {
         // GET /api/overlay/layout/{chzzkUid}
@@ -39,16 +39,16 @@ namespace MooldangBot.Application.Controllers.Overlay
                 {
                     components = new[]
                     {
-                        new { id = "songlist", templateId = "songlist", title = "³ë·¡ ½ÅÃ»¼­", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
-                        new { id = "avatar", templateId = "avatar", title = "Ä³¸¯ÅÍ ¾Æ¹ÙÅ¸", x = 1400, y = 500, width = 400, height = 500, zIndex = 20, visible = true, opacity = 1.0 },
-                        new { id = "roulette", templateId = "roulette", title = "·ê·¿", x = 500, y = 100, width = 800, height = 800, zIndex = 30, visible = false, opacity = 1.0 },
-                        new { id = "chat", templateId = "chat", title = "Ã¤ÆÃÃ¢", x = 50, y = 700, width = 400, height = 300, zIndex = 40, visible = true, opacity = 1.0 }
+                        new { id = "songlist", templateId = "songlist", title = "ë…¸ë˜ ì‹ ì²­ì„œ", x = 50, y = 50, width = 400, height = 600, zIndex = 10, visible = true, opacity = 1.0 },
+                        new { id = "avatar", templateId = "avatar", title = "ìºë¦­í„° ì•„ë°”íƒ€", x = 1400, y = 500, width = 400, height = 500, zIndex = 20, visible = true, opacity = 1.0 },
+                        new { id = "roulette", templateId = "roulette", title = "ë£°ë ›", x = 500, y = 100, width = 800, height = 800, zIndex = 30, visible = false, opacity = 1.0 },
+                        new { id = "chat", templateId = "chat", title = "ì±„íŒ…ì°½", x = 50, y = 700, width = 400, height = 300, zIndex = 40, visible = true, opacity = 1.0 }
                     }
                 };
                 return Ok(Result<object>.Success(defaultLayout));
             }
 
-            // [¹°¸Û]: ÀúÀåµÈ JSONÀ» °´Ã¼·Î ¿ªÁ÷·ÄÈ­ÇÏ¿© Result ºÀÅõ¿¡ ´ã¾Æ Àü¼Û
+            // [ë¬¼ë©]: ì €ì¥ëœ JSONì„ ê°ì²´ë¡œ ì—­ì§ë ¬í™”í•˜ì—¬ Result ë´‰íˆ¬ì— ë‹´ì•„ ì „ì†¡
             var layoutObj = JsonSerializer.Deserialize<JsonElement>(preference.PreferenceValue);
             return Ok(Result<JsonElement>.Success(layoutObj));
         }
@@ -90,16 +90,16 @@ namespace MooldangBot.Application.Controllers.Overlay
             // Broadcast to all overlays in this streamer's group
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveOverlayStyle", layoutJson);
 
-            return Ok(Result<object>.Success(new { success = true, message = "·¹ÀÌ¾Æ¿ôÀÌ ¼º°øÀûÀ¸·Î ÀúÀå ¹× Àû¿ëµÇ¾ú½À´Ï´Ù." }));
+            return Ok(Result<object>.Success(new { success = true, message = "ë ˆì´ì•„ì›ƒì´ ì„±ê³µì ìœ¼ë¡œ ì €ì¥ ë° ì ìš©ë˜ì—ˆìŠµë‹ˆë‹¤." }));
         }
 
         // POST /api/overlay/upload
         [HttpPost("upload")]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
-            // [ÀÌÁö½º °¡µå]: ¿¹¿Ü¸¦ ´øÁöÁö ¾Ê°í Result.Failure·Î ¹æ¾î
+            // [ì´ì§€ìŠ¤ ê°€ë“œ]: ì˜ˆì™¸ë¥¼ ë˜ì§€ì§€ ì•Šê³  Result.Failureë¡œ ë°©ì–´
             if (file == null || file.Length == 0) 
-                return BadRequest(Result<string>.Failure("¾÷·ÎµåÇÒ ÆÄÀÏÀÌ ¾ø°Å³ª ºñ¾îÀÖ½À´Ï´Ù."));
+                return BadRequest(Result<string>.Failure("ì—…ë¡œë“œí•  íŒŒì¼ì´ ì—†ê±°ë‚˜ ë¹„ì–´ìˆìŠµë‹ˆë‹¤."));
 
             try 
             {
@@ -122,7 +122,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             }
             catch (Exception ex)
             {
-                return BadRequest(Result<string>.Failure($"ÆÄÀÏ ÀúÀå Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù: {ex.Message}"));
+                return BadRequest(Result<string>.Failure($"íŒŒì¼ ì €ì¥ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤: {ex.Message}"));
             }
         }
     }

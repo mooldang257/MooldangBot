@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Chzzk.Drops;

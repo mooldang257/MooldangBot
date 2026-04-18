@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.DTOs;
+namespace MooldangBot.Domain.DTOs;
 
 /// <summary>
 /// [v13.0] 중앙 병기창(Master Song Library) 징집용 데이터 수신 규격 (Smart Alias Synergy)

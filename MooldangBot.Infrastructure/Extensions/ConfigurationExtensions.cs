@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using DotNetEnv;
 using System.IO;
 using System.Linq;

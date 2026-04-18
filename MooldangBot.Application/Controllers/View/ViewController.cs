@@ -6,8 +6,8 @@ using System.IO;
 namespace MooldangBot.Application.Controllers.View
 {
     [ApiController]
-    [ApiExplorerSettings(IgnoreApi = true)] // [v10.1] Swagger µî API ¹®¼­¿¡¼­ Á¦¿Ü
-    // [v10.1] Primary Constructor Àû¿ë
+    [ApiExplorerSettings(IgnoreApi = true)] // [v10.1] Swagger ë“± API ë¬¸ì„œì—ì„œ ì œì™¸
+    // [v10.1] Primary Constructor ì ìš©
     public class ViewController(IWebHostEnvironment env) : ControllerBase
     {
         [HttpGet("/bot")]

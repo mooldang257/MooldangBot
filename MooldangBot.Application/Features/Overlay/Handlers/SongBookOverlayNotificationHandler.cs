@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.SongBook.Events;
 

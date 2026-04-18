@@ -1,4 +1,4 @@
-﻿using Prometheus;
+using Prometheus;
 
 namespace MooldangBot.Application.Common.Metrics;
 

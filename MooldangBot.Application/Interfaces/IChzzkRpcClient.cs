@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Models.Commands;
+using MooldangBot.Contracts.Chzzk.Models.Commands;
 
 namespace MooldangBot.Contracts.Common.Interfaces;
 

@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.AI.Interfaces;
+using MooldangBot.Contracts.AI.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Common.Interfaces;

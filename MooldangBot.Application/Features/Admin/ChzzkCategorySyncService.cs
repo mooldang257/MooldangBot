@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;

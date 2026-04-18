@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Chzzk.Models.Internal;
+namespace MooldangBot.Contracts.Chzzk.Models.Internal;
 
 /// <summary>
 /// [v3.6] 외부 시뮬레이터로부터 주입받는 치지직 원본 이벤트 요청 DTO입니다.

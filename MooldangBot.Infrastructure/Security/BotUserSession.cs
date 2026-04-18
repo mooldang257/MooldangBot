@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MooldangBot.Contracts.Common.Interfaces;
 
 namespace MooldangBot.Infrastructure.Security;

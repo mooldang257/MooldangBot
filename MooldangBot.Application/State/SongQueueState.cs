@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Application.State;
+namespace MooldangBot.Application.State;
 
 public class SongQueueState
 {

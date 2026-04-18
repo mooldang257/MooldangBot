@@ -13,7 +13,7 @@ namespace MooldangBot.Application.Controllers.Shared
     [ApiController]
     [Route("api/SharedComponent")]
     [Authorize]
-    // [v10.1] Primary Constructor Àû¿ë
+    // [v10.1] Primary Constructor ì ìš©
     public class SharedComponentController(IAppDbContext db) : ControllerBase
     {
         private string? GetCurrentChzzkUid()
@@ -26,7 +26,7 @@ namespace MooldangBot.Application.Controllers.Shared
         {
             var chzzkUid = GetCurrentChzzkUid();
             if (string.IsNullOrEmpty(chzzkUid)) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤."));
 
             var components = await db.SharedComponents
                 .AsNoTracking()
@@ -49,7 +49,7 @@ namespace MooldangBot.Application.Controllers.Shared
         {
             var chzzkUid = GetCurrentChzzkUid();
             if (string.IsNullOrEmpty(chzzkUid)) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤."));
 
             var component = await db.SharedComponents
                 .AsNoTracking()
@@ -57,7 +57,7 @@ namespace MooldangBot.Application.Controllers.Shared
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (component == null) 
-                return NotFound(Result<string>.Failure("ÄÄÆ÷³ÍÆ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             return Ok(Result<SharedComponentDto>.Success(new SharedComponentDto
             {
@@ -73,11 +73,11 @@ namespace MooldangBot.Application.Controllers.Shared
         {
             var chzzkUid = GetCurrentChzzkUid();
             if (string.IsNullOrEmpty(chzzkUid)) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤."));
 
             var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
-                return NotFound(Result<string>.Failure("½ºÆ®¸®¸Ó ÇÁ·ÎÇÊÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("ìŠ¤íŠ¸ë¦¬ë¨¸ í”„ë¡œí•„ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             var component = new SharedComponent
             {
@@ -105,14 +105,14 @@ namespace MooldangBot.Application.Controllers.Shared
         {
             var chzzkUid = GetCurrentChzzkUid();
             if (string.IsNullOrEmpty(chzzkUid)) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤."));
 
             var component = await db.SharedComponents
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             
             if (component == null) 
-                return NotFound(Result<string>.Failure("ÄÄÆ÷³ÍÆ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             component.Name = dto.Name;
             component.Type = dto.Type;
@@ -120,7 +120,7 @@ namespace MooldangBot.Application.Controllers.Shared
 
             await db.SaveChangesAsync();
 
-            return Ok(Result<object>.Success(new { success = true, message = "ÄÄÆ÷³ÍÆ®°¡ ¾÷µ¥ÀÌÆ®µÇ¾ú½À´Ï´Ù." }));
+            return Ok(Result<object>.Success(new { success = true, message = "ì»´í¬ë„ŒíŠ¸ê°€ ì—…ë°ì´íŠ¸ë˜ì—ˆìŠµë‹ˆë‹¤." }));
         }
 
         [HttpDelete("{id}")]
@@ -128,19 +128,19 @@ namespace MooldangBot.Application.Controllers.Shared
         {
             var chzzkUid = GetCurrentChzzkUid();
             if (string.IsNullOrEmpty(chzzkUid)) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤."));
 
             var component = await db.SharedComponents
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             
             if (component == null) 
-                return NotFound(Result<string>.Failure("ÄÄÆ÷³ÍÆ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             db.SharedComponents.Remove(component);
             await db.SaveChangesAsync();
 
-            return Ok(Result<object>.Success(new { success = true, message = "ÄÄÆ÷³ÍÆ®°¡ »èÁ¦µÇ¾ú½À´Ï´Ù." }));
+            return Ok(Result<object>.Success(new { success = true, message = "ì»´í¬ë„ŒíŠ¸ê°€ ì‚­ì œë˜ì—ˆìŠµë‹ˆë‹¤." }));
         }
     }
 }

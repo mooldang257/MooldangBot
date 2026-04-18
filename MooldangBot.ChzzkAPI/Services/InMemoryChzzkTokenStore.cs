@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 
 namespace MooldangBot.ChzzkAPI.Services;

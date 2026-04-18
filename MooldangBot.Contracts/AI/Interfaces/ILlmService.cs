@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.AI.Interfaces;
+namespace MooldangBot.Contracts.AI.Interfaces;
 
 /// <summary>
 /// [목소리의 생성]: LLM(OpenAI, Gemini 등)을 통해 실제 응답 텍스트를 생성하는 인터페이스입니다.

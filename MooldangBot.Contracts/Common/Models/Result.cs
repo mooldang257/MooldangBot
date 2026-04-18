@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Common.Models;
+namespace MooldangBot.Contracts.Common.Models;
 
 public class Result<T>
 {

@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Contracts.Common.Interfaces;
 
 /// <summary>
 /// [오시리스의 지혜]: MariaDB를 활용한 스트리머별 영구 설정 관리 인터페이스입니다.

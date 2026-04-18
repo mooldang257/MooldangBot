@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.DTOs;
+namespace MooldangBot.Domain.DTOs;
 
 /// <summary>
 /// 마스터 데이터를 캐시 메모리에 적재하기 위한 불변 DTO 객체 (v1.2)

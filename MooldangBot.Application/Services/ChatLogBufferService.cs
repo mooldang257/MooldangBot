@@ -1,4 +1,4 @@
-﻿using System.Threading.Channels;
+using System.Threading.Channels;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 

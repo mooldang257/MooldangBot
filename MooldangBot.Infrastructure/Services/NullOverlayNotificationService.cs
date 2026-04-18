@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;

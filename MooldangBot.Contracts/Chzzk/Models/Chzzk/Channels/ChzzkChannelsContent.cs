@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Chzzk.Channels;

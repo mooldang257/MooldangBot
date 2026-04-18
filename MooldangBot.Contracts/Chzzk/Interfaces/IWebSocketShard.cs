@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Contracts.Chzzk.Models.Events;
 
 namespace MooldangBot.Contracts.Chzzk.Interfaces;
 

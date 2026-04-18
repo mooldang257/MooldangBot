@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Contracts.Common.Interfaces;
 using SixLabors.ImageSharp;

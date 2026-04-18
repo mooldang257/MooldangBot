@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Modules.Roulette.State;

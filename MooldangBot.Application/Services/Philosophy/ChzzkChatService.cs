@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Contracts.Chzzk.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces;

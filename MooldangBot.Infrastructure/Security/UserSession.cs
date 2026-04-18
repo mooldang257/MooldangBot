@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using MooldangBot.Contracts.Common.Interfaces;
 using System.Security.Claims;
 

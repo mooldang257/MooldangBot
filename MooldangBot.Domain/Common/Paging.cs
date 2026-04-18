@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.Common;
+namespace MooldangBot.Domain.Common;
 
 // 📥 페이징 요청 규격 (.NET 10 record 활용)
 public record PagedRequest(

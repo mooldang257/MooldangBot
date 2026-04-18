@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Contracts.Common.Interfaces;

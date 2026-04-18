@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;

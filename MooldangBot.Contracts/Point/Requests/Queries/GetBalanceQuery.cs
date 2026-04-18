@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MooldangBot.Contracts.Point.Enums;
 
 namespace MooldangBot.Contracts.Point.Requests.Queries;

@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 
 namespace MooldangBot.Contracts.Chzzk.Models.Chzzk.Chat;

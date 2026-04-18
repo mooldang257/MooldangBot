@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Point.Enums;
+namespace MooldangBot.Contracts.Point.Enums;
 
 public enum PointCurrencyType
 {

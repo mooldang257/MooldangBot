@@ -45,7 +45,7 @@ namespace MooldangBot.Application.Controllers.Auth
                 var val = _configuration["BASE_DOMAIN"];
                 if (!string.IsNullOrEmpty(val)) return val;
                 
-                throw new Exception("[?�시리스??거절]: ?�경 ?�정 ?�일(.env ?�는 appsettings)?�서 'BASE_DOMAIN'???�정?�어 ?��? ?�습?�다.");
+                throw new Exception("[?�시리스??거절]: ?�경 ?�정 ?�일(.env ?�는 appsettings)?�서 'BASE_DOMAIN'???�정?�어 ?��? ?�습?�다.");
             }
         }
 
@@ -82,8 +82,8 @@ namespace MooldangBot.Application.Controllers.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[?�시리스??거절] 로그??URL ?�성 ?�패");
-                return Ok(Result<object>.Failure($"로그??URL ?�성 ?�패: {ex.Message}"));
+                _logger.LogError(ex, "[?�시리스??거절] 로그??URL ?�성 ?�패");
+                return Ok(Result<object>.Failure($"로그??URL ?�성 ?�패: {ex.Message}"));
             }
         }
 
@@ -125,7 +125,7 @@ namespace MooldangBot.Application.Controllers.Auth
         {
             if (User.Identity?.IsAuthenticated != true)
             {
-                return Ok(Result<object>.Failure("?�증?��? ?��? ?�용?�입?�다."));
+                return Ok(Result<object>.Failure("?�증?��? ?��? ?�용?�입?�다."));
             }
 
             var resolvedUid = uid;
@@ -141,7 +141,7 @@ namespace MooldangBot.Application.Controllers.Auth
 
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("치�?�?계정 ?�동 ?�보가 ?�습?�다."));
+                return Ok(Result<object>.Failure("치�?�?계정 ?�동 ?�보가 ?�습?�다."));
             }
 
             try 
@@ -164,7 +164,7 @@ namespace MooldangBot.Application.Controllers.Auth
                     return Ok(Result<object>.Success(new {
                         isAuthenticated = true,
                         isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                        channelName = profile.ChannelName ?? "?�트리머",
+                        channelName = profile.ChannelName ?? "?�트리머",
                         profileImageUrl = profile.ProfileImageUrl ?? "",
                         chzzkUid = profile.ChzzkUid,
                         slug = profile.Slug
@@ -190,22 +190,22 @@ namespace MooldangBot.Application.Controllers.Auth
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"[AuthMe] Profile refresh failed for {chzzkUid}");
-                return Ok(Result<object>.Failure($"?�보 갱신 ?�패: {ex.Message}"));
+                return Ok(Result<object>.Failure($"?�보 갱신 ?�패: {ex.Message}"));
             }
 
-            return Ok(Result<object>.Failure("?�로???�보�?찾을 ???�습?�다."));
+            return Ok(Result<object>.Failure("?�로???�보�?찾을 ???�습?�다."));
         }
 
         [HttpGet("auth/resolve-slug/{slug}")]
         public async Task<IActionResult> ResolveStreamerSlug(string slug)
         {
-            if (string.IsNullOrEmpty(slug)) return BadRequest("[?�시리스??거절] ?�효?��? ?��? 주소?�니??");
+            if (string.IsNullOrEmpty(slug)) return BadRequest("[?�시리스??거절] ?�효?��? ?��? 주소?�니??");
 
             var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
 
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
+                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
             }
             
             return Ok(Result<object>.Success(new { chzzkUid }));
@@ -215,12 +215,12 @@ namespace MooldangBot.Application.Controllers.Auth
         [Authorize]
         public async Task<IActionResult> ValidateStreamerAccessBySlug(string slug)
         {
-            if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[?�시리스??거절] ?�효?��? ?��? 주소?�니??"));
+            if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[?�시리스??거절] ?�효?��? ?��? 주소?�니??"));
 
             var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
+                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
             }
 
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -242,7 +242,7 @@ namespace MooldangBot.Application.Controllers.Auth
                 return Ok(Result<object>.Success(new { chzzkUid }));
             }
 
-            return Ok(Result<object>.Failure("[?�시리스??거절] ?�당 채널??관�?권한???�습?�다."));
+            return Ok(Result<object>.Failure("[?�시리스??거절] ?�당 채널??관�?권한???�습?�다."));
         }
 
         [HttpGet("auth/logout")]
@@ -325,41 +325,41 @@ namespace MooldangBot.Application.Controllers.Auth
             }
             catch (Exception ex)
             {
-                return Content($"[�??�증 ?�류] {ex.Message}");
+                return Content($"[�??�증 ?�류] {ex.Message}");
             }
         }
 
         [HttpGet("/api/auth/callback")]
         [HttpGet("/api/v1/auth/callback")]
-        [HttpGet("/Auth/callback")] // ?�� [Aegis Bridge]: Nginx ?�회 경로 지??(404 방�?)
+        [HttpGet("/Auth/callback")] // ?�� [Aegis Bridge]: Nginx ?�회 경로 지??(404 방�?)
         [AllowAnonymous]
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state)) 
             {
-                return Ok(Result<object>.Failure("?�수 ?�증 ?�라미터가 ?�락?�었?�니??"));
+                return Ok(Result<object>.Failure("?�수 ?�증 ?�라미터가 ?�락?�었?�니??"));
             }
 
             var stateFromCookie = Request.Cookies[StateCookieName];
             if (string.IsNullOrEmpty(stateFromCookie) || stateFromCookie != state)
             {
-                return Ok(Result<object>.Failure("?�증 ?�션???�효?��? ?�거??변조되?�습?�다. ?�시 ?�도??주세??"));
+                return Ok(Result<object>.Failure("?�증 ?�션???�효?��? ?�거??변조되?�습?�다. ?�시 ?�도??주세??"));
             }
 
             var cachedJson = await _cache.GetStringAsync($"auth:state:{state}");
             if (string.IsNullOrEmpty(cachedJson))
             {
-                return Ok(Result<object>.Failure("?�증 ?�간??초과?�었?�니?? ?�시 로그?�해 주세??"));
+                return Ok(Result<object>.Failure("?�증 ?�간??초과?�었?�니?? ?�시 로그?�해 주세??"));
             }
 
             var cachedData = JsonSerializer.Deserialize<AuthSessionData>(cachedJson);
-            if (cachedData == null) return Ok(Result<object>.Failure("?�스???�류: ?�증 ?�션 ?�이?��? ?�상?�었?�니??"));
+            if (cachedData == null) return Ok(Result<object>.Failure("?�스???�류: ?�증 ?�션 ?�이?��? ?�상?�었?�니??"));
 
             var result = await _authService.ProcessCallbackAsync(code, cachedData);
 
             if (!result.IsSuccess)
             {
-                return Ok(Result<object>.Failure($"?�증 ?�패: {result.ErrorMessage}"));
+                return Ok(Result<object>.Failure($"?�증 ?�패: {result.ErrorMessage}"));
             }
 
             if (!string.IsNullOrEmpty(result.RedirectUrl))
@@ -367,11 +367,11 @@ namespace MooldangBot.Application.Controllers.Auth
                 string htmlResponse = $@"
                     <!DOCTYPE html>
                     <html lang='ko'>
-                    <head><meta charset='UTF-8'><title>�??�동 ?�공</title></head>
+                    <head><meta charset='UTF-8'><title>�??�동 ?�공</title></head>
                     <body style='background-color:#121212; color:#00e676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center;'>
                         <div>
-                            <h1 style='color:#0093E9;'>?�� �?계정 ?�동 ?�료!</h1>
-                            <p style='color:#fff;'>[{result.ChannelName}] 계정??물멍 ?�용 봇으�??�록?�었?�니??<br>?�제 창을 ?�아주세??</p>
+                            <h1 style='color:#0093E9;'>?�� �?계정 ?�동 ?�료!</h1>
+                            <p style='color:#fff;'>[{result.ChannelName}] 계정??물멍 ?�용 봇으�??�록?�었?�니??<br>?�제 창을 ?�아주세??</p>
                         </div>
                     </body>
                     </html>";

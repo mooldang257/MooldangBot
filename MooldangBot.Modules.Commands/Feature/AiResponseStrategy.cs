@@ -1,4 +1,4 @@
-﻿using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.AI.Interfaces;
 using MooldangBot.Domain.Entities;

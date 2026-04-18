@@ -10,7 +10,7 @@ using MooldangBot.Contracts.Common.Models;
 namespace MooldangBot.Application.Controllers.Avatar
 {
     [ApiController]
-    // [v10.1] Primary Constructor Àû¿ë
+    // [v10.1] Primary Constructor ì ìš©
     public class AvatarSettingsController(IAppDbContext db, IWebHostEnvironment env) : ControllerBase
     {
         [HttpGet("/api/avatar/settings/{chzzkUid}")]
@@ -18,7 +18,7 @@ namespace MooldangBot.Application.Controllers.Avatar
         {
             var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
-                return NotFound(Result<string>.Failure("½ºÆ®¸®¸Ó¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                return NotFound(Result<string>.Failure("ìŠ¤íŠ¸ë¦¬ë¨¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
             var setting = await db.AvatarSettings
                 .Include(s => s.StreamerProfile)
@@ -39,7 +39,7 @@ namespace MooldangBot.Application.Controllers.Avatar
         {
             var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõµÇÁö ¾ÊÀº »ç¿ëÀÚÀÔ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ë˜ì§€ ì•Šì€ ì‚¬ìš©ìì…ë‹ˆë‹¤."));
 
             var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
             if (setting == null)
@@ -65,25 +65,25 @@ namespace MooldangBot.Application.Controllers.Avatar
         [HttpPost("/api/avatar/settings/upload-image")]
         public async Task<IActionResult> UploadAvatarImage([FromForm] string chzzkUid, [FromForm] string tier, IFormFile file)
         {
-            // [ÀÌÁö½º °¡µå]: ±ÇÇÑ È®ÀÎ ½ÇÆĞ ½Ã Result.Failure ¹İÈ¯
+            // [ì´ì§€ìŠ¤ ê°€ë“œ]: ê¶Œí•œ í™•ì¸ ì‹¤íŒ¨ ì‹œ Result.Failure ë°˜í™˜
             var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
-                return Unauthorized(Result<string>.Failure("ÀÎÁõµÇÁö ¾ÊÀº »ç¿ëÀÚÀÔ´Ï´Ù."));
+                return Unauthorized(Result<string>.Failure("ì¸ì¦ë˜ì§€ ì•Šì€ ì‚¬ìš©ìì…ë‹ˆë‹¤."));
 
             if (file == null || file.Length == 0)
-                return BadRequest(Result<string>.Failure("¾÷·ÎµåÇÒ ÆÄÀÏÀÌ ¾ø°Å³ª ºñ¾îÀÖ½À´Ï´Ù."));
+                return BadRequest(Result<string>.Failure("ì—…ë¡œë“œí•  íŒŒì¼ì´ ì—†ê±°ë‚˜ ë¹„ì–´ìˆìŠµë‹ˆë‹¤."));
 
             try 
             {
                 var allowedExts = new[] { ".png", ".jpg", ".jpeg", ".gif" };
                 var ext = Path.GetExtension(file.FileName).ToLower();
                 if (!allowedExts.Contains(ext))
-                    return BadRequest(Result<string>.Failure("Çã¿ëµÇÁö ¾Ê´Â ÆÄÀÏ Çü½ÄÀÔ´Ï´Ù. (.png, .jpg, .gif¸¸ °¡´É)"));
+                    return BadRequest(Result<string>.Failure("í—ˆìš©ë˜ì§€ ì•ŠëŠ” íŒŒì¼ í˜•ì‹ì…ë‹ˆë‹¤. (.png, .jpg, .gifë§Œ ê°€ëŠ¥)"));
 
                 string uploadsFolder = Path.Combine(env.WebRootPath, "images", "avatars");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // ÆÄÀÏ¸í: chzzkuid_tier_timestamp.ext (Ä³½Ã ¹«È¿È­ ¸ñÀû)
+                // íŒŒì¼ëª…: chzzkuid_tier_timestamp.ext (ìºì‹œ ë¬´íš¨í™” ëª©ì )
                 string fileName = $"{chzzkUid}_{tier}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}{ext}";
                 string filePath = Path.Combine(uploadsFolder, fileName);
 
@@ -94,7 +94,7 @@ namespace MooldangBot.Application.Controllers.Avatar
 
                 string fileUrl = $"/images/avatars/{fileName}";
 
-                // DB ¾÷µ¥ÀÌÆ®
+                // DB ì—…ë°ì´íŠ¸
                 var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
                 if (setting == null)
                 {
@@ -112,7 +112,7 @@ namespace MooldangBot.Application.Controllers.Avatar
             }
             catch (Exception ex)
             {
-                return BadRequest(Result<string>.Failure($"¾Æ¹ÙÅ¸ ÀÌ¹ÌÁö ÀúÀå Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù: {ex.Message}"));
+                return BadRequest(Result<string>.Failure($"ì•„ë°”íƒ€ ì´ë¯¸ì§€ ì €ì¥ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤: {ex.Message}"));
             }
         }
     }

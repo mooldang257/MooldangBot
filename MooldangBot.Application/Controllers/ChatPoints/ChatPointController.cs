@@ -12,7 +12,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
     [ApiController]
     [Route("api/chatpoint")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor ?�용
+    // [v10.1] Primary Constructor ?�용
     public class ChatPointController(IAppDbContext context, ILogger<ChatPointController> logger) : ControllerBase
     {
         [HttpGet("{chzzkUid}")]
@@ -24,7 +24,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
 
             return Ok(Result<object>.Success(new {
                 pointPerChat = profile.PointPerChat,
@@ -45,7 +45,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             if (profile == null) 
             {
                 logger.LogWarning("Streamer not found for Uid: {Uid}", chzzkUid);
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
             }
 
             profile.PointPerChat = dto.PointPerChat;
@@ -53,13 +53,13 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             profile.IsAutoAccumulateDonation = dto.IsAutoAccumulateDonation;
 
             await context.SaveChangesAsync();
-            return Ok(Result<object>.Success(new { success = true, message = "?�인???�정???�?�되?�습?�다." }));
+            return Ok(Result<object>.Success(new { success = true, message = "?�인???�정???�?�되?�습?�다." }));
         }
 
         [HttpGet("{chzzkUid}/viewers")]
         public async Task<IActionResult> GetViewers(string chzzkUid)
         {
-            // [v7.0] Wallet Architecture: 분산??지�??�이블들??조인?�여 ?�합 �??�공
+            // [v7.0] Wallet Architecture: 분산??지�??�이블들??조인?�여 ?�합 �??�공
             var viewers = await (from r in context.ViewerRelations.IgnoreQueryFilters()
                                  join p in context.ViewerPoints.IgnoreQueryFilters() 
                                     on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points

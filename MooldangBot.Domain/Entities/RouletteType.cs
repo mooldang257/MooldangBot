@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.Entities
+namespace MooldangBot.Domain.Entities
 {
     public enum RouletteType
     {

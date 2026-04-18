@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.Chzzk.Models.Enums;
+namespace MooldangBot.Contracts.Chzzk.Models.Enums;
 
 /// <summary>
 /// [오시리스의 분류]: 치지직 게이트웨이에서 발생하는 이벤트의 정규화된 유형입니다.

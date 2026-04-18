@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MooldangBot.Contracts.Common.Interfaces;
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;

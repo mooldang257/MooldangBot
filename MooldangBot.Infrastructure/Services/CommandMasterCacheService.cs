@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.DTOs;

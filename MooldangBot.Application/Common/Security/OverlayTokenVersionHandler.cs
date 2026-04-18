@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Entities;

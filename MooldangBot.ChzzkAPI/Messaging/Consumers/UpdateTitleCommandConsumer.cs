@@ -1,4 +1,4 @@
-﻿using MassTransit;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Live;

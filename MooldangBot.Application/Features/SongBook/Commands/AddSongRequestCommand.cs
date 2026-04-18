@@ -1,4 +1,4 @@
-﻿using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Contracts.Common.Interfaces;
 using MediatR;
 using MooldangBot.Contracts.Common.Interfaces;
 using System.Text.Json.Serialization;

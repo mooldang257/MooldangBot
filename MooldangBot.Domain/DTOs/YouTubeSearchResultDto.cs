@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Domain.DTOs;
+namespace MooldangBot.Domain.DTOs;
 
 /// <summary>
 /// [v13.0] 유튜브 실시간 정찰 결과 통신 규격 (YouTube Recon Synergy)

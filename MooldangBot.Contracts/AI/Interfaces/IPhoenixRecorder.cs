@@ -1,4 +1,4 @@
-﻿namespace MooldangBot.Contracts.AI.Interfaces;
+namespace MooldangBot.Contracts.AI.Interfaces;
 
 /// <summary>
 /// [피닉스의 기록]: 실험의 다층 기록과 윤회를 담당하는 인터페이스입니다.
