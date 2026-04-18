@@ -225,6 +225,16 @@
         if (props.popQueue) props.popQueue(); 
     }
 
+    function getContrastColor(hex: string) {
+        if (!hex) return '#FFFFFF';
+        const color = hex.replace('#', '');
+        const r = parseInt(color.substring(0, 2), 16);
+        const g = parseInt(color.substring(2, 4), 16);
+        const b = parseInt(color.substring(4, 6), 16);
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 145) ? '#111111' : '#FFFFFF';
+    }
+
     onDestroy(() => { if (ctx) ctx.revert(); });
 </script>
 
@@ -251,26 +261,27 @@
 
             <!-- Phase C: 스튜디오 스타일 결과 카드 -->
             {#if showCard && highlightedResult}
+                {@const contrastColor = getContrastColor(highlightedResult.color)}
                 <div bind:this={mainCardRef} 
                     class="studio-card template-{highlightedResult.template?.toLowerCase() || 'standard'}" 
                     class:is-mission={highlightedResult.isMission}
                 >
-                    <div class="card-glow" style="background: {highlightedResult.color}33"></div>
-                    <div class="card-glass-body">
+                    <div class="card-glow" style="background: {highlightedResult.color}"></div>
+                    <div class="card-glass-body" style="background: {highlightedResult.color}; color: {contrastColor}">
                         <div class="card-header">
-                            <div class="studio-badge">STUDIO EDITION</div>
-                            <div class="viewer-tag">@{activeSpin.viewerNickname}</div>
+                            <div class="studio-badge" style="background: {contrastColor}; color: {highlightedResult.color}">STUDIO EDITION</div>
+                            <div class="viewer-tag" style="color: {contrastColor}">@{activeSpin.viewerNickname}</div>
                         </div>
 
                         <div class="result-box">
-                            <span class="roulette-title">{activeSpin.rouletteName}</span>
-                            <h2 class="result-text" style="color: {highlightedResult.color}">{highlightedResult.itemName}</h2>
+                            <span class="roulette-title" style="color: {contrastColor}; opacity: 0.7">{activeSpin.rouletteName}</span>
+                            <h2 class="result-text" style="color: {contrastColor}">{highlightedResult.itemName}</h2>
                             {#if highlightedResult.isMission}
                                 <div class="mission-badge">MISSION!!</div>
                             {/if}
                         </div>
 
-                        <div class="card-status">
+                        <div class="card-status" style="color: {contrastColor}; opacity: 0.6">
                             <span class="progress-info">{historyResults.length} / {activeSpin.results.length}</span>
                             <span class="spin-id-tag">REF: {activeSpin.spinId.substring(0,8)}</span>
                         </div>
@@ -364,13 +375,22 @@
         border-radius: 32px;
         box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
         display: flex; flex-direction: column; justify-content: space-between;
+        transition: background 0.5s ease, color 0.5s ease;
+        overflow: hidden;
+    }
+    /* 배경 질감용 광택 */
+    .card-glass-body::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%, rgba(0, 0, 0, 0.1) 100%);
+        pointer-events: none;
     }
     .card-glow {
         position: absolute; inset: -10px; border-radius: 40px; filter: blur(30px);
         z-index: -1; opacity: 0.6;
+        transition: background 0.5s ease;
     }
-    .is-mission .card-glass-body { border: 3px solid var(--studio-coral); }
-    .is-mission .card-glow { background: var(--studio-coral) !important; opacity: 0.3; }
+    .is-mission .card-glass-body { border: 4px solid var(--studio-coral) !important; }
+    .is-mission .card-glow { background: var(--studio-coral) !important; opacity: 0.4; }
 
     /* [v5.0] 등급별 디자인 템플릿 */
     .template-rare .card-glass-body { border: 1px solid #54BCD1; box-shadow: 0 0 30px rgba(84, 188, 209, 0.3); }
@@ -415,8 +435,8 @@
     .viewer-tag { color: #fff; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 800; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; }
 
     .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px 0; }
-    .roulette-title { color: rgba(255, 255, 255, 0.6); font-size: clamp(0.9rem, 3vw, 1.1rem); margin-bottom: 8px; font-weight: 600; }
-    .result-text { font-size: clamp(2rem, 10vw, 4.25rem); font-weight: 950; margin: 0; line-height: 1.1; text-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
+    .roulette-title { color: inherit; font-size: clamp(0.9rem, 3vw, 1.1rem); margin-bottom: 8px; font-weight: 600; }
+    .result-text { font-size: clamp(2rem, 10vw, 4.25rem); font-weight: 950; margin: 0; line-height: 1.1; color: inherit; }
     
     .mission-badge { 
         margin-top: 1.5vh; background: var(--studio-coral); color: #fff; 
