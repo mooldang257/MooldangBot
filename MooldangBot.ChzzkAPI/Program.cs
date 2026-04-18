@@ -1,5 +1,4 @@
 using MooldangBot.Modules.Commands;
-using Microsoft.OpenApi.Models;
 using MooldangBot.ChzzkAPI.Apis.Internal;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
@@ -76,15 +75,6 @@ builder.Services.AddControllers(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "MooldangBot.ChzzkAPI",
-        Version = "v1",
-        Description = "치지직 봇 상태 관리 및 API 검증 인터페이스"
-    });
-});
 
 // 5. 로깅 설정 (Serilog)
 builder.Host.UseSerilog((context, configuration) =>
@@ -102,11 +92,7 @@ var app = builder.Build();
 // [마크6]: 지연 시간 추적 미들웨어 최상단 배치
 app.UseMiddleware<MooldangBot.ChzzkAPI.Core.Middleware.LatencyTrackingMiddleware>();
 
-if (app.Environment.IsDevelopment() || true) // 개발 환경 및 통합 테스트 시 Swagger 노출
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
 
 app.UseAuthorization();
 app.MapHealthChecks("/health"); // [오시리스의 맥박]: 도커 헬스체크 엔드포인트

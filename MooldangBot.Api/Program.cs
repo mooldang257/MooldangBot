@@ -11,10 +11,10 @@ using MooldangBot.Infrastructure.Workers;
 using MooldangBot.Modules.Commands;
 using MooldangBot.Modules.Roulette;
 using MooldangBot.Modules.SongBookModule;
-using MooldangBot.Presentation;
-using MooldangBot.Presentation.Hubs;
-using MooldangBot.Presentation.Extensions;
+using MooldangBot.Application.Hubs;
+using MooldangBot.Application.Extensions;
 using MooldangBot.Infrastructure.Security;
+using MooldangBot.Presentation;
 using Prometheus;
 using Serilog;
 using System.Text.Json;
@@ -58,7 +58,6 @@ try
     // 🛣️ [API 관리]: 버전 관리, 문서화(Swagger), CORS, 속도 제한
     builder.Services
         .AddMooldangVersioning()
-        .AddMooldangSwagger()
         .AddMooldangCors()
         .AddMooldangRateLimiter();
 
@@ -90,8 +89,6 @@ try
     app.MapHealthChecks("/health");
     app.MapHub<OverlayHub>("/overlayHub");
 
-    // 📜 [문서화 UI]: 조건부 Swagger 활성화
-    app.UseMooldangSwaggerUI(builder.Configuration, app.Environment);
 
     // 🕊️ [오시리스의 시동]: 시스템 초기화 (DB 시딩)
     await app.InitializeDatabaseAsync();

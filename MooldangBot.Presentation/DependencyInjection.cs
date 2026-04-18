@@ -1,6 +1,6 @@
 using MooldangBot.Contracts.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Presentation.Services;
+using MooldangBot.Application.Services;
 
 namespace MooldangBot.Presentation
 {

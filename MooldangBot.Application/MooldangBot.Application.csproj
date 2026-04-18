@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.1" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
-    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Dapper" Version="2.1.72" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.2" />
@@ -38,7 +38,6 @@
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
     <ProjectReference Include="..\MooldangBot.Contracts\MooldangBot.Contracts.csproj" />
@@ -51,6 +50,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Modules.Commands\MooldangBot.Modules.Commands.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
   </ItemGroup>
 
 </Project>
