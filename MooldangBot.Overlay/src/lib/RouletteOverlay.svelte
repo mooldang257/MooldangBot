@@ -287,7 +287,7 @@
         position: fixed; inset: 0; display: flex; flex-direction: column; 
         justify-content: flex-start; align-items: center;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
-        overflow: hidden;
+        /* overflow: hidden 제거 (그림자 짤림 방지) */
     }
 
     .deep-sea-gradient {
@@ -298,7 +298,7 @@
 
     .content-wrapper { 
         display: flex; flex-direction: column; align-items: center; gap: 4vh; 
-        width: 100%; max-width: 100vw; padding: 0; /* 상단 여백 제거 */
+        width: 100%; max-width: 100vw; padding-top: 5px; /* 세이프 존 5px로 미세 조정 */
     }
 
     .stage-area { 
