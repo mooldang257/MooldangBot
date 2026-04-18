@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
