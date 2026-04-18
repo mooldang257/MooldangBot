@@ -1,4 +1,4 @@
-﻿# ------------------------------------------
+# ------------------------------------------
 # ?룛截?Build Stage
 # ------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
@@ -10,7 +10,6 @@ WORKDIR /src
 
 # Copy csproj and Restore
 COPY ["MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj", "MooldangBot.ChzzkAPI/"]
-COPY ["MooldangBot.Contracts/MooldangBot.Contracts.csproj", "MooldangBot.Contracts/"]
 COPY ["MooldangBot.Application/MooldangBot.Application.csproj", "MooldangBot.Application/"]
 COPY ["MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj", "MooldangBot.Infrastructure/"]
 COPY ["MooldangBot.Domain/MooldangBot.Domain.csproj", "MooldangBot.Domain/"]
