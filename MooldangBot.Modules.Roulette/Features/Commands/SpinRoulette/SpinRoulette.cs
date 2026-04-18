@@ -109,9 +109,9 @@ public class SpinRouletteHandler(
                         totalDurationMs
                     );
 
-                    // 시작 및 결과 이벤트 발행 (비결합)
-                    await mediator.Publish(new RouletteSpinInitiatedNotification(chzzkUid, roulette.Name, viewerNickname, viewerUid, count), ct);
-                    await mediator.Publish(new RouletteSpinResultNotification(chzzkUid, spinId, response, logs), ct);
+                    // [v4.2] 레거시 중복 알림 제거: 이제 RouletteExecutionHandler에서 통합 관리합니다.
+                    // await mediator.Publish(new RouletteSpinInitiatedNotification(chzzkUid, roulette.Name, viewerNickname, viewerUid, count), ct);
+                    // await mediator.Publish(new RouletteSpinResultNotification(chzzkUid, spinId, response, logs), ct);
 
                     return results;
                 }
