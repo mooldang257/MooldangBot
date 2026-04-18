@@ -1,5 +1,5 @@
 using MooldangBot.Modules.Roulette.Abstractions;
-using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MediatR;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;

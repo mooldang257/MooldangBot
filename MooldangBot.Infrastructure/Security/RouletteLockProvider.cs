@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using RedLockNet;
 using StackExchange.Redis;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Roulette.Interfaces;
+using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Contracts.Common.Services;
 
 namespace MooldangBot.Infrastructure.Security;
