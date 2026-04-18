@@ -228,7 +228,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
             {
                 using var doc = System.Text.Json.JsonDocument.Parse(rawJson);
                 _logger.LogInformation("🧪 [Simulation] 채널 {ChzzkUid}에 테스트 이벤트({EventName}) 주입 시도 (Shard: {ShardId})", chzzkUid, eventName, shardId);
-                await ws.ProcessSingleChatAsync(chzzkUid, doc.RootElement, eventName);
+                await ws.RouteToProcessorAsync(chzzkUid, doc.RootElement, eventName);
                 return true;
             }
             return false;
