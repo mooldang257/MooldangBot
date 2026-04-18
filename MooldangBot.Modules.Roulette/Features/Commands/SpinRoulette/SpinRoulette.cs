@@ -16,12 +16,22 @@ namespace MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 /// <summary>
 /// [하모니의 회전 명령]: 룰렛 추첨을 요청하는 명령입니다.
 /// </summary>
+public record RouletteExecutionResult(
+    List<RouletteItem> Items,
+    string SpinId,
+    SpinRouletteResponse Response,
+    List<RouletteLog> Logs
+);
+
+/// <summary>
+/// [하모니의 회전 명령]: 룰렛 추첨을 요청하는 명령입니다.
+/// </summary>
 public record SpinRouletteCommand(
     string ChzzkUid,
     int RouletteId,
     string ViewerUid,
     int Count,
-    string? ViewerNickname = null) : IRequest<List<RouletteItem>>;
+    string? ViewerNickname = null) : IRequest<RouletteExecutionResult?>;
 
 /// <summary>
 /// [하모니의 집도]: 룰렛 추첨 명령을 처리하는 핸들러입니다.
@@ -31,9 +41,9 @@ public class SpinRouletteHandler(
     RouletteState rouletteState,
     IMediator mediator,
     IRouletteLockProvider lockProvider,
-    ILogger<SpinRouletteHandler> logger) : IRequestHandler<SpinRouletteCommand, List<RouletteItem>>
+    ILogger<SpinRouletteHandler> logger) : IRequestHandler<SpinRouletteCommand, RouletteExecutionResult?>
 {
-    public async Task<List<RouletteItem>> Handle(SpinRouletteCommand request, CancellationToken ct)
+    public async Task<RouletteExecutionResult?> Handle(SpinRouletteCommand request, CancellationToken ct)
     {
         var chzzkUid = request.ChzzkUid;
         var rouletteId = request.RouletteId;
@@ -41,7 +51,7 @@ public class SpinRouletteHandler(
         var count = request.Count;
         var viewerNickname = request.ViewerNickname;
 
-        if (count <= 0) return new List<RouletteItem>();
+        if (count <= 0) return null;
 
         // 🛡️ [오시리스의 인내]: 룰렛 실행 락 획득
         using var @lock = await lockProvider.AcquireLockAsync(chzzkUid, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30));
@@ -50,7 +60,7 @@ public class SpinRouletteHandler(
         {
             logger.LogWarning("🎰 [룰렛 지연] {ChzzkUid} 스트리머의 룰렛 락 획득 실패", chzzkUid);
             await mediator.Publish(new RouletteErrorMessageNotification(chzzkUid, "⚠️ 현재 요청이 많아 룰렛을 실행할 수 없습니다. 잠시 후 다시 시도해 주세요!", viewerUid), ct);
-            return new List<RouletteItem>();
+            return null;
         }
 
         try
@@ -64,7 +74,7 @@ public class SpinRouletteHandler(
                 {
                     // 1. 컨텍스트 조회
                     var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
-                    if (streamer == null) return new List<RouletteItem>();
+                    if (streamer == null) return null;
 
                     var globalViewer = await GetOrCreateGlobalViewerAsync(viewerUid, viewerNickname, ct);
 
@@ -76,7 +86,7 @@ public class SpinRouletteHandler(
                     if (roulette == null || !roulette.Items.Any(i => i.IsActive))
                     {
                         logger.LogWarning("🎰 [룰렛 실행 불가] {RouletteId} 활성 항목 없음", rouletteId);
-                        return new List<RouletteItem>();
+                        return null;
                     }
 
                     // 3. 추첨 로직 실행
@@ -113,7 +123,7 @@ public class SpinRouletteHandler(
                     // await mediator.Publish(new RouletteSpinInitiatedNotification(chzzkUid, roulette.Name, viewerNickname, viewerUid, count), ct);
                     // await mediator.Publish(new RouletteSpinResultNotification(chzzkUid, spinId, response, logs), ct);
 
-                    return results;
+                    return new RouletteExecutionResult(results, spinId, response, logs);
                 }
                 catch (Exception ex)
                 {
@@ -126,7 +136,7 @@ public class SpinRouletteHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "🎰 [룰렛 최종 오류] {Message}", ex.Message);
-            return new List<RouletteItem>();
+            return null;
         }
     }
 

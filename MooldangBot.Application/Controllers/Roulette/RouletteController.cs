@@ -323,12 +323,12 @@ namespace MooldangBot.Application.Controllers.Roulette
         public async Task<IActionResult> TestSpin(string chzzkUid, int Id, [FromQuery] bool Is10x = false)
         {
             int count = Is10x ? 10 : 1;
-            var results = await mediator.Send(new SpinRouletteCommand(chzzkUid, Id, "admin_test", count, "관리자"));
+            var result = await mediator.Send(new SpinRouletteCommand(chzzkUid, Id, "admin_test", count, "관리자"));
             
-            if (results == null || !results.Any()) 
+            if (result == null || !result.Items.Any()) 
                 return NotFound(Result<string>.Failure("룰렛을 찾을 수 없거나 활성화된 아이템이 없습니다."));
                 
-            return Ok(Result<object>.Success(results));
+            return Ok(Result<object>.Success(result.Items));
         }
     }
 }

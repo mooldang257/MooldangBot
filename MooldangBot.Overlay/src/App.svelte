@@ -11,17 +11,9 @@
   // [오시리스의 공명]: 실시간 데이터 스토어 초기화
   const signalrStore = accessToken ? createSignalRStore(accessToken) : null;
 
-  let lastRouletteResult: any = null;
-
-  // 스토어 구독을 통해 룰렛 결과 감시
-  $: if (signalrStore) {
-      const unsubscribe = signalrStore.subscribe(state => {
-          if (state.lastRouletteResult && state.lastRouletteResult !== lastRouletteResult) {
-              lastRouletteResult = state.lastRouletteResult;
-          }
-      });
-      // onMount에서 처리할 수 있으나 Svelte의 반응형 구문을 활용
-  }
+  // [물멍]: $ 스토어 구독 기능을 활용하여 룰렛 결과 감시 (Svelte 5 반응성 최저화)
+  // lastRouletteResult의 값이 변경될 때마다 컴포넌트가 반응합니다.
+  let resultData = $derived($signalrStore?.lastRouletteResult);
 </script>
 
 <main>
@@ -32,8 +24,8 @@
         <NoticeWidget message="시스템에 성공적으로 공명 중입니다." />
         
         <!-- 2. 룰렛 결과 레이어 -->
-        {#if lastRouletteResult}
-            <RouletteOverlay bind:resultData={lastRouletteResult} />
+        {#if resultData}
+            <RouletteOverlay {resultData} />
         {/if}
     </div>
   {:else}

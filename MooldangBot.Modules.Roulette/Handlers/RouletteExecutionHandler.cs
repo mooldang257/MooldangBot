@@ -7,6 +7,7 @@ using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Modules.Roulette.Notifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +48,7 @@ public class RouletteExecutionHandler(
 
             // [3. Precision Execution]: 룰렛 추첨 로직 가동 (물리 엔진 작동 시작)
             // 지휘관님, 이제 SpinRouletteHandler는 결과뿐만 아니라 애니메이션 총 소요 시간(TotalDurationMs)을 반환합니다.
-            var items = await mediator.Send(new SpinRouletteCommand(
+            var executionResult = await mediator.Send(new SpinRouletteCommand(
                 notification.StreamerUid,
                 rouletteCmd.TargetId.Value,
                 notification.ViewerUid,
@@ -55,7 +56,16 @@ public class RouletteExecutionHandler(
                 notification.ViewerNickname
             ), ct);
 
-            if (items == null || !items.Any()) return;
+            if (executionResult == null || !executionResult.Items.Any()) return;
+
+            // [오시리스의 전파]: 오버레이 결과 알림 발행 (SignalR 발송 트리거)
+            // 이 신호가 발송되어야 오버레이에서 화려한 연출이 시작됩니다.
+            await mediator.Publish(new RouletteSpinResultNotification(
+                notification.StreamerUid,
+                executionResult.SpinId,
+                executionResult.Response,
+                executionResult.Logs
+            ), ct);
 
             // [4. Timing Control]: 정밀 선사격 대기 (Precision Pre-firing)
             // 지휘관님의 수식에 따라 산출된 시간에서 오프셋을 제하여, 애니메이션이 멈추는 찰나에 채팅을 쏘아 올립니다.
@@ -67,7 +77,7 @@ public class RouletteExecutionHandler(
             await Task.Delay(delayTime, ct);
 
             // [5. Salvo Summary Discharge]: 지휘관 지의에 따라 요약된 리포트를 단발로 사격
-            var summary = string.Join(", ", items.GroupBy(i => i.ItemName)
+            var summary = string.Join(", ", executionResult.Items.GroupBy(i => i.ItemName)
                 .Select(g => $"{g.Key} x{g.Count()}"));
             
             var streamerProfile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, ct);
@@ -86,7 +96,7 @@ public class RouletteExecutionHandler(
                     {
                         StreamerProfileId = streamerProfile?.Id ?? 0,
                         Keyword = rouletteCmd.Keyword,
-                        GlobalViewerId = items.First().Id, // 실제 시청자 ID 매핑 필요 (현재는 러프하게 처리)
+                        GlobalViewerId = executionResult.Items.First().Id, // 실제 시청자 ID 매핑 필요 (현재는 러프하게 처리)
                         IsSuccess = true,
                         DonationAmount = notification.DonationAmount,
                         Arguments = notification.Arguments,
