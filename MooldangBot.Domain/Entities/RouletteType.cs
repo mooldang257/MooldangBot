@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace MooldangBot.Domain.Entities
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum RouletteType
     {
         Cheese,
