@@ -27,9 +27,9 @@ namespace MooldangBot.Application.Services
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveRouletteResult", response, token);
         }
 
-        public async Task NotifyMissionReceivedAsync(string chzzkUid, RouletteLog missionLog, CancellationToken token = default)
+        public async Task NotifyMissionReceivedAsync(string chzzkUid, RouletteMissionOverlayDto missionDto, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("MissionReceived", missionLog, token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("MissionReceived", missionDto, token);
         }
 
         public async Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default)

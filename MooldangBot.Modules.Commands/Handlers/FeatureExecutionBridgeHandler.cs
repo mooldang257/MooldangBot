@@ -29,9 +29,9 @@ public class FeatureExecutionBridgeHandler(
     {
         try
         {
-            // [1. Filtering]: 실행 대상 중 브릿지가 필요한 기능형 명령어들 추출 (Reply 제외)
+            // [1. Filtering]: 실행 대상 중 브릿지가 필요한 기능형 명령어들 추출 (Reply 및 전용 핸들러가 있는 Roulette 제외)
             var targets = notification.AllMatchedCommands
-                .Where(c => c.FeatureType != CommandFeatureType.Reply)
+                .Where(c => c.FeatureType != CommandFeatureType.Reply && c.FeatureType != CommandFeatureType.Roulette)
                 .ToList();
 
             if (!targets.Any()) return;

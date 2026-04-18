@@ -142,6 +142,10 @@ namespace MooldangBot.Domain.Contracts.Chzzk;
 [JsonSerializable(typeof(ChatOverlayDto))]
 [JsonSerializable(typeof(ChzzkChatEventPayload))]
 [JsonSerializable(typeof(MooldangBot.Domain.Models.Chzzk.ChzzkChatProfile))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.RouletteLog))]
+[JsonSerializable(typeof(MooldangBot.Domain.DTOs.RouletteMissionOverlayDto))]
+[JsonSerializable(typeof(List<RouletteResultDto>))]
+[JsonSerializable(typeof(List<RouletteSpinSummaryDto>))]
 [JsonSerializable(typeof(object))]
 
 // ⚡ [P0 Quick Win] 핫패스 배치 워커 및 캐시 서비스에서 사용되는 타입 등록

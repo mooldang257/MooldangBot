@@ -38,10 +38,15 @@ public class RouletteNotificationHandler :
             // 오버레이 결과 전송 (채팅은 RouletteExecutionHandler에서 쏘므로 여기서는 오버레이만 담당)
             await _overlayService.NotifyRouletteResultAsync(notification.ChzzkUid, notification.Response);
 
-            // 미션 항목이 있을 경우 별도 알림
-            foreach (var log in notification.Logs.Where(l => l.IsMission))
+            // 미션 항목이 있을 경우 별도 알림 (v4.6: 보안을 위해 최소 정보만 담은 DTO로 변환하여 송출)
+            foreach (var result in notification.Response.Results.Where(r => r.IsMission))
             {
-                await _overlayService.NotifyMissionReceivedAsync(notification.ChzzkUid, log);
+                await _overlayService.NotifyMissionReceivedAsync(notification.ChzzkUid, new RouletteMissionOverlayDto(
+                    notification.SpinId,
+                    result.ItemName,
+                    result.ViewerNickname ?? "Anonymous",
+                    result.Color
+                ));
             }
         }
         catch (Exception ex)

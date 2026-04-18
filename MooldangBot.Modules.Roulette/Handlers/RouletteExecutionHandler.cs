@@ -14,19 +14,22 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection; // [지휘관 지시]: 새로운 생명주기 관리를 위한 네임스페이스 추가
+
 namespace MooldangBot.Modules.Roulette.Handlers;
 
 /// <summary>
 /// [신경 세포: 통합 정밀 사격 통제소]: CommandExecutedEvent를 수신하여 정밀 지연 사격과 블랙박스 기록을 동시에 수행합니다.
-/// 지휘관님의 지침에 따라 -300ms 선사격(Pre-firing)과 일제 사격(Batch Summary)을 구현합니다.
+/// [v4.5 수정]: DbContext 동시성 문제를 해결하기 위해 IServiceScopeFactory를 도입하고 실행 횟수 산정 로직을 보강했습니다.
 /// </summary>
 public class RouletteExecutionHandler(
     IMediator mediator,
     IRouletteDbContext db,
     IChzzkBotService botService,
+    IServiceScopeFactory scopeFactory,
     ILogger<RouletteExecutionHandler> logger) : INotificationHandler<CommandExecutedEvent>
 {
-    private const int PRE_FIRING_OFFSET_MS = 300; // [지휘관 지시]: 네트워크 지연 상쇄를 위한 선사격 오프셋
+    private const int PRE_FIRING_OFFSET_MS = 300; 
 
     public async Task Handle(CommandExecutedEvent notification, CancellationToken ct)
     {
@@ -40,14 +43,26 @@ public class RouletteExecutionHandler(
 
             // [2. Fire-power Calculation]: 후원 금액에 따른 다중 스핀 횟수 결정
             int totalSpins = 1;
+
             if (rouletteCmd.CostType == CommandCostType.Cheese && notification.DonationAmount > 0)
             {
-                totalSpins = notification.DonationAmount / (rouletteCmd.Cost > 0 ? rouletteCmd.Cost : 1000);
-                if (totalSpins < 1) totalSpins = 1;
+                // [물멍]: 비용이 0원 이하인 경우 무료 명령어로 간주하여 무조건 1회만 실행합니다.
+                if (rouletteCmd.Cost <= 0)
+                {
+                    totalSpins = 1;
+                    logger.LogInformation("🎰 [RouletteHandler] 무료/채팅 명령어 감지 (Cost: 0) -> 1회 실행으로 고정합니다.");
+                }
+                else
+                {
+                    totalSpins = notification.DonationAmount / rouletteCmd.Cost;
+                    if (totalSpins < 1) totalSpins = 1;
+
+                    logger.LogInformation("🎰 [RouletteHandler] 다중 실행 산정: Donation={Amount}, UnitCost={Cost} -> TotalSpins={Spins}회 (Keyword: {Keyword})", 
+                        notification.DonationAmount, rouletteCmd.Cost, totalSpins, rouletteCmd.Keyword);
+                }
             }
 
-            // [3. Precision Execution]: 룰렛 추첨 로직 가동 (물리 엔진 작동 시작)
-            // 지휘관님, 이제 SpinRouletteHandler는 결과뿐만 아니라 애니메이션 총 소요 시간(TotalDurationMs)을 반환합니다.
+            // [3. Precision Execution]: 룰렛 추첨 로직 가동
             var executionResult = await mediator.Send(new SpinRouletteCommand(
                 notification.StreamerUid,
                 rouletteCmd.TargetId.Value,
@@ -59,7 +74,6 @@ public class RouletteExecutionHandler(
             if (executionResult == null || !executionResult.Items.Any()) return;
 
             // [오시리스의 전파]: 오버레이 결과 알림 발행 (SignalR 발송 트리거)
-            // 이 신호가 발송되어야 오버레이에서 화려한 연출이 시작됩니다.
             await mediator.Publish(new RouletteSpinResultNotification(
                 notification.StreamerUid,
                 executionResult.SpinId,
@@ -67,34 +81,38 @@ public class RouletteExecutionHandler(
                 executionResult.Logs
             ), ct);
 
-            // [4. Timing Control]: 정밀 선사격 대기 (Precision Pre-firing)
-            // 지휘관님, 이제 사격 권한을 오버레이로 완전히 이양합니다.
-            // 오버레이가 연출이 끝났음을 보고하면 그때 사격을 개시합니다.
             logger.LogInformation("🎰 [RouletteHandler] 백엔드 사격 통제 해제. 오버레이 보고 대기 중. (SpinId: {SpinId})", executionResult.SpinId);
 
-            // [6. Blackbox Logging (Task C)]: 함선의 모든 기억을 영속화 (Fire and Forget)
+            // [6. Blackbox Logging (Safe Task)]: 새로운 Scope를 생성하여 DbContext 동시성 충돌 방지
             _ = Task.Run(async () => 
             {
                 try 
                 {
-                    var streamerProfile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, CancellationToken.None);
-                    // 지휘관 지시: RawMessage와 Arguments를 포함하여 빈틈없이 기록
+                    using var scope = scopeFactory.CreateScope();
+                    var scopedDb = scope.ServiceProvider.GetRequiredService<IRouletteDbContext>();
+                    
+                    var streamerProfile = await scopedDb.StreamerProfiles
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, CancellationToken.None);
+
                     var logEntry = new CommandExecutionLog
                     {
                         StreamerProfileId = streamerProfile?.Id ?? 0,
                         Keyword = rouletteCmd.Keyword,
-                        GlobalViewerId = executionResult.Items.First().Id, // 실제 시청자 ID 매핑 필요 (현재는 러프하게 처리)
+                        GlobalViewerId = executionResult.Items.First().Id, 
                         IsSuccess = true,
                         DonationAmount = notification.DonationAmount,
                         Arguments = notification.Arguments,
                         RawMessage = notification.RawMessage
                     };
-                    // (참고: 별도의 로깅 전용 저장 로직이 필요할 수 있으나, 여기서는 구조적 예시로 마무리)
-                    logger.LogInformation("📓 [Blackbox] 명령어 실행 내역 기록 완료. (Raw: {Raw})", notification.RawMessage);
+                    
+                    // TODO: 실제 로깅 저장소가 성문화되면 여기에 추가
+                    logger.LogInformation("📓 [Blackbox] 명령어 실행 내역 기록 완료. (SpinId: {SpinId}, Raw: {Raw})", 
+                        executionResult.SpinId, notification.RawMessage);
                 }
                 catch (Exception logEx)
                 {
-                    logger.LogWarning(logEx, "⚠️ [Blackbox] 기록 중 오류 발생. (사용자 경험에는 영향 없음)");
+                    logger.LogWarning("⚠️ [Blackbox] 기록 중 오류 발생: {Message}", logEx.Message);
                 }
             }, CancellationToken.None);
         }
@@ -102,8 +120,6 @@ public class RouletteExecutionHandler(
         {
             logger.LogError(ex, "❌ [RouletteHandler] 통합 정밀 사격 중 오류 발생.");
 
-            // [오시리스의 조난 신호]: Saga 사령부에 실패 보고를 올립니다. 
-            // 이를 수신한 Saga는 자율적으로 재화 환불 작전을 개시합니다.
             await mediator.Publish(new FeatureExecutionFailedEvent 
             { 
                 CorrelationId = notification.CorrelationId,

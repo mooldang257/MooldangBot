@@ -81,6 +81,7 @@ namespace MooldangBot.Domain.DTOs
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
     public record RouletteSpinSummaryDto(string ItemName, int Count, bool IsMission, string Color);
     public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSpinSummaryDto> Summary, int TotalDurationMs);
+    public record RouletteMissionOverlayDto(string SpinId, string ItemName, string ViewerNickname, string Color);
 
     // 🎰 룰렛 저장용 DTO (통합 저장 지원)
     public class RouletteSaveDto
