@@ -353,6 +353,10 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     internal async Task ProcessSingleDonationAsync(string chzzkUid, JsonElement element)
     {
+        // 🧪 [DATA_DRIVEN_LOGGING]: 치지직 서버에서 보내주는 원본 JSON 데이터를 가감없이 출력합니다.
+        // 이 로그를 통해 msgId, messageId 등 유니크 필드를 특정할 것입니다.
+        _logger.LogInformation("🛠️ [RAW_DONATION] {Raw}", element.GetRawText());
+
         var donationPayload = element.Deserialize<ChzzkDonationPayload>();
         if (donationPayload == null) return;
 
