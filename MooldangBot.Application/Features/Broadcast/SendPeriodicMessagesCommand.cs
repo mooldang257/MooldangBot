@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Application.Features.Broadcast;

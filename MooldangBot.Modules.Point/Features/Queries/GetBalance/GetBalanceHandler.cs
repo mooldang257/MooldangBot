@@ -4,7 +4,7 @@ using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Modules.Point.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Common.Security;
 
 namespace MooldangBot.Modules.Point.Features.Queries.GetBalance;
 

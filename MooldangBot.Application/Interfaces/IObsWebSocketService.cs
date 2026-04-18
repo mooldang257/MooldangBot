@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 public interface IObsWebSocketService
 {

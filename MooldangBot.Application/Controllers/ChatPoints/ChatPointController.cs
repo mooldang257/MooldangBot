@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.ChatPoints
 {

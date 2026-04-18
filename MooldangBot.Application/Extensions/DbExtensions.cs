@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Application.Extensions;
 

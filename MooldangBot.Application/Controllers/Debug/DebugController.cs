@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Debug
 {

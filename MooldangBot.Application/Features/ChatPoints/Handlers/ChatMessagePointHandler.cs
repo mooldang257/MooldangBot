@@ -1,10 +1,10 @@
-using MooldangBot.Contracts.Events;
+using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MediatR;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 
 namespace MooldangBot.Application.Features.ChatPoints.Handlers;
 

@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.SongBook.DTOs;
+using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
@@ -13,7 +13,7 @@ namespace MooldangBot.Modules.SongBook.Features.Commands;
 /// <summary>
 /// [하모니의 조율]: 송북 설정 및 관련 명령어들을 통합적으로 동기화합니다.
 /// </summary>
-public record UpdateSonglistSettingsCommand(string StreamerUid, MooldangBot.Modules.SongBook.DTOs.SonglistSettingsUpdateRequest Request) : IRequest<Result<object>>;
+public record UpdateSonglistSettingsCommand(string StreamerUid, MooldangBot.Domain.Contracts.SongBook.SonglistSettingsUpdateRequest Request) : IRequest<Result<object>>;
 
 public class UpdateSonglistSettingsHandler(
     ISongBookDbContext db, 

@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [영겁의 열쇠]: 스트리머의 인증 토큰 생명주기를 관리하는 인터페이스입니다.

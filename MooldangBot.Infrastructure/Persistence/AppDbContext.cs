@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Infrastructure.Persistence.Configurations;
 using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Infrastructure.Persistence.Extensions;
-using MooldangBot.Contracts.Common.Interfaces; 
+using MooldangBot.Domain.Abstractions; 
 using MooldangBot.Domain.Common; // KstClock 참조
 
 namespace MooldangBot.Infrastructure.Persistence;

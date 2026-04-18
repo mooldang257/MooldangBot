@@ -5,10 +5,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooldangBot.Application.Services;
-using MooldangBot.Contracts.Common.Services;
-using MooldangBot.Application.Contracts.Chzzk;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Modules.Point.Requests.Models;
+using MooldangBot.Domain.Common.Services;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Point;
 using MediatR;
 using MooldangBot.Modules.Point.Requests.Commands;
 

@@ -2,7 +2,7 @@ using Asp.Versioning;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Application.Extensions;
 

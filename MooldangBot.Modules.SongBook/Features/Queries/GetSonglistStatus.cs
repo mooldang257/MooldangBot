@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Modules.SongBook.Abstractions;
 
 namespace MooldangBot.Modules.SongBook.Features.Queries;

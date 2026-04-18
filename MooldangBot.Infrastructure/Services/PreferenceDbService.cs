@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.Services;

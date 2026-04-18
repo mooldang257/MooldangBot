@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Application.Contracts.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk;
 using System.Text.Json;
 
 namespace MooldangBot.Application.Extensions;

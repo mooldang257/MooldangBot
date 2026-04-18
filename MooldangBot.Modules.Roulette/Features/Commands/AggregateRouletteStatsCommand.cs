@@ -2,7 +2,7 @@ using Dapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Modules.Roulette.Features.Commands;
 

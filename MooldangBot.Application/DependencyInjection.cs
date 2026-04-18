@@ -1,16 +1,16 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.AI.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.AI.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Common.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Services;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Features.Admin;
 using MooldangBot.Application.Features.Overlay;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Application.Services.Auth;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Common.Services;
 using MooldangBot.Modules.Commands;
 
 namespace MooldangBot.Application

@@ -1,5 +1,5 @@
 using MediatR;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.EntityFrameworkCore;

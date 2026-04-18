@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +9,7 @@ using MooldangBot.Application.Hubs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Overlay
 {

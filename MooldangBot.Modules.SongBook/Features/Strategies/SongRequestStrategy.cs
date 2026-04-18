@@ -1,7 +1,7 @@
 using MediatR;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Modules.SongBook.DTOs;
+using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;

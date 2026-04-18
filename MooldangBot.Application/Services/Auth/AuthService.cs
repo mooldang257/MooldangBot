@@ -1,9 +1,9 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Common.Security;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
@@ -13,7 +13,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Caching.Distributed;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Domain.Events;
 using MediatR;
 

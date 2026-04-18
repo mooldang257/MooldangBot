@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Modules.SongBook.Features.Commands;
 using MooldangBot.Modules.SongBook.Features.Queries;
 using MooldangBot.Domain.Common;

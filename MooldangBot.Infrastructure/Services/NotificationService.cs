@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using StackExchange.Redis;
 
 namespace MooldangBot.Infrastructure.Services;

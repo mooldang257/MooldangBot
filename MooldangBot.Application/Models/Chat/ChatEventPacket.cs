@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Models.Chzzk;
 
 namespace MooldangBot.Application.Models.Chat;
 

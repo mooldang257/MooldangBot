@@ -1,7 +1,7 @@
 using System.Threading.Channels;
 using MooldangBot.Application.Services;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Modules.Point.Requests.Models;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Point;
 using FluentAssertions;
 using Xunit;
 

@@ -1,6 +1,6 @@
 using MediatR;
-using MooldangBot.Modules.Point.Requests.Models;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Contracts.Point;
+using MooldangBot.Domain.Abstractions;
 using System.Collections.Generic;
 
 namespace MooldangBot.Modules.Point.Requests.Commands;

@@ -1,14 +1,14 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Modules.SongBook.DTOs;
+using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Common;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Application.Common.Helpers;
 using MooldangBot.Application.Common.Interfaces;
 

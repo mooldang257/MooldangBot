@@ -1,5 +1,5 @@
 using MediatR;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.SongBook.Events;
 
 namespace MooldangBot.Application.Features.Overlay.Handlers;

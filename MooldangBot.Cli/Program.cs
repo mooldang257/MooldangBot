@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using DotNetEnv;
 using Microsoft.AspNetCore.DataProtection;
 

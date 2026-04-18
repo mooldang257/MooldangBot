@@ -2,7 +2,7 @@ using MooldangBot.Domain.Entities;
 using System;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [영겁의 저장소]: Redis를 통해 인스턴스 간 공유되는 치지직 인증 토큰 저장소 인터페이스입니다.

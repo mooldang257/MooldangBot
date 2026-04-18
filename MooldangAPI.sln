@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.2.11408.102
@@ -12,8 +12,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Api", "MooldangBot.Api\MooldangBot.Api.csproj", "{7AA3F82E-1DE1-4C44-A52F-2ED889C5B5A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.ChzzkAPI", "MooldangBot.ChzzkAPI\MooldangBot.ChzzkAPI.csproj", "{2C6D5C1B-3E29-4FBD-8C91-550D303A8366}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Contracts", "MooldangBot.Contracts\MooldangBot.Contracts.csproj", "{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Modules.Roulette", "MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj", "{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}"
 EndProject
@@ -93,18 +91,6 @@ Global
 		{2C6D5C1B-3E29-4FBD-8C91-550D303A8366}.Release|x64.Build.0 = Release|Any CPU
 		{2C6D5C1B-3E29-4FBD-8C91-550D303A8366}.Release|x86.ActiveCfg = Release|Any CPU
 		{2C6D5C1B-3E29-4FBD-8C91-550D303A8366}.Release|x86.Build.0 = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|x64.Build.0 = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Debug|x86.Build.0 = Debug|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|x64.ActiveCfg = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|x64.Build.0 = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|x86.ActiveCfg = Release|Any CPU
-		{5256CB1C-5256-4BAA-A17D-1D1F5914FFFB}.Release|x86.Build.0 = Release|Any CPU
 		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1FA2F99-F06E-41AA-9B20-BDCD3287BEB7}.Debug|x64.ActiveCfg = Debug|Any CPU

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Application.Services;
 using StackExchange.Redis;

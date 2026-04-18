@@ -1,14 +1,14 @@
 using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
-using MooldangBot.Application.Contracts.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MooldangBot.Application.Contracts.Chzzk;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using MySqlConnector;

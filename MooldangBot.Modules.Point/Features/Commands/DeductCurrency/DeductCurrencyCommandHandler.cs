@@ -1,10 +1,10 @@
 using Dapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Point.Enums;
 using MooldangBot.Modules.Point.Requests.Commands;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Common.Security;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Domain.Entities;

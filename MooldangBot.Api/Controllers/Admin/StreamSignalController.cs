@@ -1,6 +1,6 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using MooldangBot.Application.Hubs;

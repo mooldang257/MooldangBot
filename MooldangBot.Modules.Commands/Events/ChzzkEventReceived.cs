@@ -1,6 +1,6 @@
 using MediatR;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Modules.Commands.Events;

@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Services;

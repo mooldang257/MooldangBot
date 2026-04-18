@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.SongRequest;
 

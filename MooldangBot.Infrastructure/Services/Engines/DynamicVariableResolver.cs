@@ -1,10 +1,10 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Models.Chzzk;
 
 namespace MooldangBot.Infrastructure.Services.Engines
 {

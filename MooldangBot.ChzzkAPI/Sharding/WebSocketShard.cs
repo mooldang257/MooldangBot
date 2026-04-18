@@ -5,11 +5,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Events;
-using MooldangBot.Contracts.Chzzk.Models;
-using MooldangBot.Contracts.Chzzk.Models.Enums;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Models;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Enums;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Session;
 using StackExchange.Redis;
 using System.Security.Cryptography;
 

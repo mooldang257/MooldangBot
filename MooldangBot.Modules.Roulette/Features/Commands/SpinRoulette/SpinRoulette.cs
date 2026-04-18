@@ -6,7 +6,7 @@ using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Common.Security;
 using System.Text.Json;
 using MooldangBot.Modules.Roulette.State;
 using MooldangBot.Modules.Roulette.Notifications;

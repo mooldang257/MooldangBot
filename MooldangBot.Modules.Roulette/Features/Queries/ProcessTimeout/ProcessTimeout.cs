@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [오시리스의 서판]: 초고속으로 유입되는 채팅 로그를 메인 DB 쓰기 부하 없이 수집하기 위한 하이-스로풋 버퍼 인터페이스입니다.

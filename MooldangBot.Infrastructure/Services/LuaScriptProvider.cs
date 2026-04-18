@@ -1,7 +1,7 @@
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Common.Services;
 
 namespace MooldangBot.Infrastructure.Services;
 

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 public interface IChzzkCategorySyncService
 {

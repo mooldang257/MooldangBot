@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System;

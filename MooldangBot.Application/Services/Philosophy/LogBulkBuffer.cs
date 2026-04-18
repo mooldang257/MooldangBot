@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities.Philosophy;
 using System.Collections.Concurrent;
 

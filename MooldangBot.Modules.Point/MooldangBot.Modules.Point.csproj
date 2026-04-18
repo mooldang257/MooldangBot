@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
-    <ProjectReference Include="..\MooldangBot.Contracts\MooldangBot.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

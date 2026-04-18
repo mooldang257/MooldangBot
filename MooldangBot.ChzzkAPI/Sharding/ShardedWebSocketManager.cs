@@ -2,9 +2,9 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using StackExchange.Redis;
 
 namespace MooldangBot.ChzzkAPI.Sharding;
@@ -18,8 +18,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
     private readonly ILogger<ShardedWebSocketManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly MooldangBot.Contracts.Chzzk.Interfaces.IChzzkApiClient _apiClient;
-    private readonly MooldangBot.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore _tokenStore;
+    private readonly MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChzzkApiClient _apiClient;
+    private readonly MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore _tokenStore;
     private readonly IConfiguration _configuration;
     private readonly IConnectionMultiplexer _redis;
     private readonly ConcurrentDictionary<int, IWebSocketShard> _shards = new();
@@ -31,8 +31,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
     public ShardedWebSocketManager(
         ILoggerFactory loggerFactory,
         IServiceScopeFactory scopeFactory,
-        MooldangBot.Contracts.Chzzk.Interfaces.IChzzkApiClient apiClient,
-        MooldangBot.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore tokenStore,
+        MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChzzkApiClient apiClient,
+        MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChzzkGatewayTokenStore tokenStore,
         IConfiguration configuration,
         IConnectionMultiplexer redis)
     {
@@ -197,7 +197,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         var token = await _tokenStore.GetTokenAsync(chzzkUid);
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
-        return await _apiClient.SetChatNoticeAsync(chzzkUid, new MooldangBot.Contracts.Chzzk.Models.Chzzk.Chat.SetChatNoticeRequest { Message = message }, token.AuthCookie);
+        return await _apiClient.SetChatNoticeAsync(chzzkUid, new MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Chat.SetChatNoticeRequest { Message = message }, token.AuthCookie);
     }
 
     public async Task<bool> UpdateTitleAsync(string chzzkUid, string newTitle)
@@ -206,7 +206,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
         // [v3.1.7] 공식 명세에 따른 DefaultLiveTitle 필드를 사용하여 방제 변경을 수행합니다.
-        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Contracts.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { DefaultLiveTitle = newTitle }, token.AuthCookie);
+        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { DefaultLiveTitle = newTitle }, token.AuthCookie);
     }
 
     public async Task<bool> UpdateCategoryAsync(string chzzkUid, string category)
@@ -215,7 +215,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         if (string.IsNullOrEmpty(token.AuthCookie)) return false;
 
         // [v2.7.2] 카테고리가 텍스트가 아닌 ID 규격임을 확인하여 업데이트합니다.
-        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Contracts.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { CategoryId = category }, token.AuthCookie);
+        return await _apiClient.UpdateLiveSettingAsync(chzzkUid, new MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live.UpdateLiveSettingRequest { CategoryId = category }, token.AuthCookie);
     }
 
     public async Task<bool> InjectEventAsync(string chzzkUid, string eventName, string rawJson)

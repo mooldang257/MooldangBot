@@ -1,6 +1,6 @@
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using System.Text;
 
 namespace MooldangBot.Modules.Commands.General;

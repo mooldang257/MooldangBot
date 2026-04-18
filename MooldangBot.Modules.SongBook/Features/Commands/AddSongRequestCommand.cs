@@ -1,5 +1,5 @@
 using MediatR;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Modules.SongBook.Events;
 using MooldangBot.Modules.SongBook.State;
 

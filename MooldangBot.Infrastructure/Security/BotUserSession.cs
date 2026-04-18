@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Infrastructure.Security;
 

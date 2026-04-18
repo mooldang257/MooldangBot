@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options; 
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Configuration;
 
 namespace MooldangBot.ChzzkAPI.Workers;

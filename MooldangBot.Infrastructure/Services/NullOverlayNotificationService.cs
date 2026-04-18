@@ -1,8 +1,8 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 

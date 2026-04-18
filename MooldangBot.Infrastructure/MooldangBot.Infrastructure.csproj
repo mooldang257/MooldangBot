@@ -3,7 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
-    <ProjectReference Include="..\MooldangBot.Contracts\MooldangBot.Contracts.csproj" />
     <!-- [Phase 1 리팩터링]: DbContext 인터페이스가 각 모듈 내부로 이동됨에 따라 직접 참조 추가 -->
     <ProjectReference Include="..\MooldangBot.Modules.SongBook\MooldangBot.Modules.SongBook.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj" />

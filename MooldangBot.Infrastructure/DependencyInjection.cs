@@ -1,11 +1,11 @@
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
-using MooldangBot.Contracts.Common.Services;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.AI.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Common.Services;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.AI.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.ApiClients;
@@ -147,7 +147,7 @@ namespace MooldangBot.Infrastructure
 
             // [피닉스의 심장]: 실전 채팅 클라이언트 (게이트웨이 프록시 기반으로 전환 - 1단계)
             // [네임스페이스 명시]: Application.Interfaces의 규격을 구현한 프록시를 주입합니다.
-            services.AddSingleton<MooldangBot.Contracts.Common.Interfaces.IChzzkChatClient, GatewayChatClientProxy>();
+            services.AddSingleton<MooldangBot.Domain.Abstractions.IChzzkChatClient, GatewayChatClientProxy>();
             // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
             // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
             
@@ -217,7 +217,7 @@ namespace MooldangBot.Infrastructure
             // [오시리스의 수리]: 다형성 메시징을 위한 글로벌 엔드포인트 컨벤션 설정.
             // 모든 ChzzkCommandBase 파생 명령들이 통합 큐(chzzk-commands-rpc)로 라우팅되도록 강제합니다.
             // [시니어 팁]: 구체적 타입을 명시하지 않으면 MassTransit은 발송 시 큐를 찾지 못할 수 있으므로, 리플렉션으로 모든 파생 타입을 등록합니다.
-            var commandBaseType = typeof(MooldangBot.Contracts.Chzzk.Models.Commands.ChzzkCommandBase);
+            var commandBaseType = typeof(MooldangBot.Domain.Contracts.Chzzk.Models.Commands.ChzzkCommandBase);
             var chzzkCommandTypes = commandBaseType.Assembly.GetTypes()
                 .Where(t => t.IsClass && !t.IsAbstract && commandBaseType.IsAssignableFrom(t));
             
@@ -282,7 +282,7 @@ namespace MooldangBot.Infrastructure
                         .Where(t => t.GetInterfaces().Any(i => 
                             i.IsGenericType && 
                             i.GetGenericTypeDefinition() == typeof(IConsumer<>) && 
-                            typeof(MooldangBot.Contracts.Chzzk.Models.Commands.ChzzkCommandBase).IsAssignableFrom(i.GetGenericArguments()[0])))
+                            typeof(MooldangBot.Domain.Contracts.Chzzk.Models.Commands.ChzzkCommandBase).IsAssignableFrom(i.GetGenericArguments()[0])))
                         .ToList();
 
                     if (chzzkCommandConsumers.Any())

@@ -1,9 +1,9 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Hubs;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Config
 {

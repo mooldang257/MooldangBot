@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Application.Contracts.Chzzk;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Internal;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Internal;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Shared;
 
 namespace MooldangBot.ChzzkAPI.Apis.Internal;
 
@@ -51,7 +51,7 @@ public class InternalTokenController : ControllerBase
             return StatusCode(500, "Failed to exchange token via integrated client");
         }
 
-        return Ok(new ChzzkApiResponse<MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
+        return Ok(new ChzzkApiResponse<MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
         {
             Code = 200,
             Content = tokenResponse
@@ -76,7 +76,7 @@ public class InternalTokenController : ControllerBase
             return StatusCode(500, "Failed to refresh token via integrated client");
         }
 
-        return Ok(new ChzzkApiResponse<MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
+        return Ok(new ChzzkApiResponse<MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Authorization.TokenResponse>
         {
             Code = 200,
             Content = tokenResponse

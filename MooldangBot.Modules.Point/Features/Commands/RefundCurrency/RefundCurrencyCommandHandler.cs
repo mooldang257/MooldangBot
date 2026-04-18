@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Modules.Point.Commands; // [v7.4] 성지로 이전된 규격 참조

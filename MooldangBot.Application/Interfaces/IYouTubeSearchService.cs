@@ -1,6 +1,6 @@
 using MooldangBot.Domain.DTOs;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [v13.0] 유튜브 실시간 정찰 및 검색 인터페이스 (YouTube Recon Synergy)

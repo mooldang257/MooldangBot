@@ -1,7 +1,7 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;

@@ -1,17 +1,17 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Contracts.Chzzk;
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Users;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Categories;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Channels;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Live;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Chat;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Session;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Restrictions;
-using MooldangBot.Contracts.Chzzk.Models.Chzzk.Drops;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Shared;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Authorization;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Users;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Categories;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Chat;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Session;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Restrictions;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Drops;
 using System.Linq;
 
 namespace MooldangBot.Infrastructure.ApiClients
@@ -100,7 +100,7 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             // [오시리스의 수선]: 게이트웨이는 ChzzkChannelsContent 구조로 응답하므로 이에 맞춰 파싱합니다.
             // [v2.1] 정규화: 명확한 네임스페이스 경로를 지정하여 중복 정의 충돌을 방지합니다.
-            var response = await SafePostAsync<MooldangBot.Contracts.Models.Chzzk.ChzzkChannelsContent>("/api/internal/channels/batch", new { ChannelIds = uids });
+            var response = await SafePostAsync<MooldangBot.Domain.Models.Chzzk.ChzzkChannelsContent>("/api/internal/channels/batch", new { ChannelIds = uids });
             
             if (response?.Data == null) return new List<ChannelProfile>();
 

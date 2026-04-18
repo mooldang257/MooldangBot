@@ -1,9 +1,9 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using MooldangBot.Application.Contracts.Chzzk;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;

@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Microsoft.Extensions.Logging;

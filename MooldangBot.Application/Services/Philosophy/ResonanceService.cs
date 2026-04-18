@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Common.Interfaces.Philosophy;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Models.Philosophy;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities.Philosophy;
-using MooldangBot.Contracts.AI.Models;
+using MooldangBot.Domain.Contracts.AI.Models;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -30,7 +30,7 @@ public class ResonanceService : IResonanceService
 
     private class ParhosState
     {
-        public MooldangBot.Contracts.AI.Models.Parhos Parhos { get; set; } = null!;
+        public MooldangBot.Domain.Contracts.AI.Models.Parhos Parhos { get; set; } = null!;
         public double LastEmaHz { get; set; } = 10.01;
         public double LastStability { get; set; } = 1.0;
     }
@@ -76,7 +76,7 @@ public class ResonanceService : IResonanceService
 
         var newState = new ParhosState
         {
-            Parhos = new MooldangBot.Contracts.AI.Models.Parhos(chzzkUid, channelName, lastVibration, 1, true, KstClock.Now),
+            Parhos = new MooldangBot.Domain.Contracts.AI.Models.Parhos(chzzkUid, channelName, lastVibration, 1, true, KstClock.Now),
             LastEmaHz = lastVibration,
             LastStability = 1.0
         };
@@ -183,13 +183,13 @@ public class ResonanceService : IResonanceService
         return "Parhos (Neutral)";
     }
 
-    public async Task<MooldangBot.Contracts.AI.Models.Parhos> GetCurrentParhosStateAsync(string chzzkUid)
+    public async Task<MooldangBot.Domain.Contracts.AI.Models.Parhos> GetCurrentParhosStateAsync(string chzzkUid)
     {
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-            if (profile == null) return new MooldangBot.Contracts.AI.Models.Parhos("NULL", "None", 10.01, 1, false, KstClock.Now);
+            if (profile == null) return new MooldangBot.Domain.Contracts.AI.Models.Parhos("NULL", "None", 10.01, 1, false, KstClock.Now);
             
             var state = await GetOrHydrateStateAsync(profile.Id);
             ApplyNaturalDecay(state);

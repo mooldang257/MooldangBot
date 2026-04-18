@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Asp.Versioning;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Common.Models;
 using System.Security.Claims;
 
 namespace MooldangBot.Application.Controllers.Shared;

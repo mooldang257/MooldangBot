@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Domain.DTOs;
 using Microsoft.EntityFrameworkCore;

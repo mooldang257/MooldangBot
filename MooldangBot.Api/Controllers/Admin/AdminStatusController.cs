@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Infrastructure.Services;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Common.Services;
 using System;
 using System.Diagnostics;
 using System.Linq;

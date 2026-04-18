@@ -1,7 +1,7 @@
 using MooldangBot.Modules.Commands.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -9,7 +9,7 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Commands
 {

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MooldangBot.Contracts.Events;
+using MooldangBot.Domain.Events;
 
 namespace MooldangBot.Verifier.Inspectors;
 

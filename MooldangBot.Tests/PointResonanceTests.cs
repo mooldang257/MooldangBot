@@ -2,14 +2,14 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.ChatPoints.Handlers;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.Workers.Points;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Modules.Point.Requests.Models;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Contracts.Point;
+using MooldangBot.Domain.Common.Services;
 using NSubstitute;
 using Xunit;
 

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using System.Security.Claims;
 
 namespace MooldangBot.Infrastructure.Security;

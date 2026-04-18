@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using FuzzySharp;
 using MooldangBot.Application.Common.Utils;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;

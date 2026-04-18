@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Infrastructure.Services.Engines;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Common.Services;
 using MooldangBot.Application.Services;
 using NSubstitute;
 using Xunit;
@@ -28,7 +28,7 @@ public class AegisPipelineTests
         var service = new IdentityCacheService(_cache, _scopeFactory, _chaos, _logger);
         var streamerUid = "streamer123";
         var profile = new StreamerProfile { ChzzkUid = streamerUid, ChannelName = "TestChannel" };
-        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile, MooldangBot.Application.Contracts.Chzzk.ChzzkJsonContext.Default.StreamerProfile);
+        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile, MooldangBot.Domain.Contracts.Chzzk.ChzzkJsonContext.Default.StreamerProfile);
 
         // 캐시에 데이터가 있다고 가정
         _cache.GetAsync($"Streamer:{streamerUid}", Arg.Any<CancellationToken>()).Returns(profileBytes);

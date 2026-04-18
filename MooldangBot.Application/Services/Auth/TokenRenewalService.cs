@@ -5,15 +5,15 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
-using MooldangBot.Contracts.Models.Chzzk;
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Models.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 
 namespace MooldangBot.Application.Services.Auth;
 

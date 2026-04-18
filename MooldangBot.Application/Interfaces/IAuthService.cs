@@ -1,7 +1,7 @@
 using MooldangBot.Domain.DTOs;
 using System.Threading.Tasks;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [오시리스의 전령]: 사용자 인증 및 권한 관리의 핵심 비즈니스 로직을 담당합니다.

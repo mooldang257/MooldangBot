@@ -1,5 +1,5 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Logging;

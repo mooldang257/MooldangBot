@@ -1,8 +1,8 @@
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Models.Chzzk;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

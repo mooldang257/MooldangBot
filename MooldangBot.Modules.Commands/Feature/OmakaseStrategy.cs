@@ -1,7 +1,7 @@
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -42,7 +42,7 @@ public class OmakaseStrategy(
             }
 
             // 2. [사용자 식별]: GlobalViewer 확보 (v6.2 해시 기반 표준)
-            var viewerHash = MooldangBot.Contracts.Security.Sha256Hasher.ComputeHash(notification.SenderId);
+            var viewerHash = MooldangBot.Domain.Common.Security.Sha256Hasher.ComputeHash(notification.SenderId);
             var viewer = await db.GlobalViewers
                 .FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
 

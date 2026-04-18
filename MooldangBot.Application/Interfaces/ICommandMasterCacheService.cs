@@ -1,7 +1,7 @@
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// 명령어 마스터 데이터를 IMemoryCache를 통해 관리하는 서비스 인터페이스입니다.

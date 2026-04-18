@@ -1,7 +1,7 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 using MooldangBot.Domain.Common;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Common.Security;
 
 namespace MooldangBot.Modules.Commands.Feature;
 

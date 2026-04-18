@@ -1,6 +1,6 @@
-using MooldangBot.Contracts.Chzzk.Models.Commands;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Commands;
 
-namespace MooldangBot.Contracts.Common.Interfaces;
+namespace MooldangBot.Domain.Abstractions;
 
 /// <summary>
 /// [?�시리스???�령 RPC]: 치�?�?게이?�웨?�로 명령??보내�?결과�??�기?�으�?RPC) ?�신?�는 ?�터?�이?�입?�다.

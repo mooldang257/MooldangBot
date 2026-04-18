@@ -1,0 +1,22 @@
+using System.Text.Json.Serialization;
+using System;
+
+namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
+
+/// <summary>
+/// [오시리스??吏곸씤]: 梨꾨꼸 愿由ъ옄 ?뺣낫 ?곗씠?곗엯?덈떎.
+/// </summary>
+public class ChzzkManagerData
+{
+    [JsonPropertyName("managerChannelId")]
+    public string ManagerChannelId { get; set; } = string.Empty;
+
+    [JsonPropertyName("managerChannelName")]
+    public string? ManagerChannelName { get; set; }
+
+    [JsonPropertyName("userRole")]
+    public string? UserRole { get; set; }
+
+    [JsonPropertyName("createdDate")]
+    public string? CreatedDate { get; set; }
+}

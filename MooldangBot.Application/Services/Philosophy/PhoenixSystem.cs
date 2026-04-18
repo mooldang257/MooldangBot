@@ -1,5 +1,5 @@
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.AI.Interfaces;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.AI.Interfaces;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;

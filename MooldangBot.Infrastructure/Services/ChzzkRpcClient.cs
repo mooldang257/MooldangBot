@@ -2,8 +2,8 @@ using System.Reflection;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Commands;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Commands;
 
 namespace MooldangBot.Infrastructure.Services;
 

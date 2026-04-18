@@ -1,6 +1,6 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Common.Messages;
+using MooldangBot.Domain.Common.Models;
 using System.Threading.Tasks;
 
 namespace MooldangBot.Application.Consumers;

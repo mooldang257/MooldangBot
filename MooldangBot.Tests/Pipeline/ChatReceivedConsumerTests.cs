@@ -1,6 +1,6 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Consumers;
 using MooldangBot.Domain.Entities;
 using MassTransit;

@@ -1,9 +1,9 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Dapper;
-using MooldangBot.Contracts.Security;
+using MooldangBot.Domain.Common.Security;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Domain.Common;

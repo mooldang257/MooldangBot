@@ -4,7 +4,7 @@ using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MooldangBot.Contracts.Common.Models;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Middleware;
 

@@ -2,9 +2,9 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using RedLockNet;
 using StackExchange.Redis;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
-using MooldangBot.Contracts.Common.Services;
+using MooldangBot.Domain.Common.Services;
 
 namespace MooldangBot.Infrastructure.Security;
 

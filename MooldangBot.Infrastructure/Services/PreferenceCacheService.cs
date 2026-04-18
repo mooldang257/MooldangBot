@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using StackExchange.Redis;
 
 namespace MooldangBot.Infrastructure.Services;

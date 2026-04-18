@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MooldangBot.Contracts.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
 

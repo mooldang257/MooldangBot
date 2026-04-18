@@ -1,7 +1,7 @@
 using MooldangBot.Application.Features.ChatPoints.Handlers;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Chzzk.Models.Events;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
