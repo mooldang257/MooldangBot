@@ -43,6 +43,11 @@ public class RouletteItem : IAuditable
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
 
+    [Required]
+    [MaxLength(50)]
+    [JsonPropertyName("template")]
+    public string Template { get; set; } = "Standard";
+
     [JsonPropertyName("createdAt")]
     public KstClock CreatedAt { get; set; } = KstClock.Now;
 

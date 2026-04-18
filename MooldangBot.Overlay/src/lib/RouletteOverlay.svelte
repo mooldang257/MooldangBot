@@ -145,6 +145,19 @@
                     { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.2)" }
                 );
 
+                // [v5.0] 등급별 특수 연출 (전설 등급 화면 흔들림 등)
+                if (result.template === 'Legendary') {
+                    // 화면 전체 흔들림 (Screen Shake)
+                    gsap.to(containerRef, {
+                        x: "random(-10, 10)",
+                        y: "random(-10, 10)",
+                        duration: 0.05,
+                        repeat: 10,
+                        yoyo: true,
+                        onComplete: () => gsap.set(containerRef, { x: 0, y: 0 })
+                    });
+                }
+
                 if (result.isMission) {
                     gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.3 });
                 }
@@ -238,7 +251,10 @@
 
             <!-- Phase C: 스튜디오 스타일 결과 카드 -->
             {#if showCard && highlightedResult}
-                <div bind:this={mainCardRef} class="studio-card" class:is-mission={highlightedResult.isMission}>
+                <div bind:this={mainCardRef} 
+                    class="studio-card template-{highlightedResult.template?.toLowerCase() || 'standard'}" 
+                    class:is-mission={highlightedResult.isMission}
+                >
                     <div class="card-glow" style="background: {highlightedResult.color}33"></div>
                     <div class="card-glass-body">
                         <div class="card-header">
@@ -355,6 +371,40 @@
     }
     .is-mission .card-glass-body { border: 3px solid var(--studio-coral); }
     .is-mission .card-glow { background: var(--studio-coral) !important; opacity: 0.3; }
+
+    /* [v5.0] 등급별 디자인 템플릿 */
+    .template-rare .card-glass-body { border: 1px solid #54BCD1; box-shadow: 0 0 30px rgba(84, 188, 209, 0.3); }
+    .template-rare .card-glow { background: #54BCD1 !important; opacity: 0.4; }
+
+    .template-epic .card-glass-body { border: 2px solid #A07CFE; box-shadow: 0 0 50px rgba(160, 124, 254, 0.4); }
+    .template-epic .card-glow { background: #A07CFE !important; opacity: 0.5; }
+    .template-epic::before {
+        content: ''; position: absolute; inset: -20px;
+        background: radial-gradient(circle, rgba(160, 124, 254, 0.15) 0%, transparent 70%);
+        z-index: -2; border-radius: 50%; animation: aura 3s infinite alternate;
+    }
+
+    .template-legendary .card-glass-body { 
+        border: 3px solid #FFD700; 
+        box-shadow: 0 0 80px rgba(255, 215, 0, 0.5); 
+        background: rgba(255, 215, 0, 0.05);
+    }
+    .template-legendary .card-glow { background: #FFD700 !important; opacity: 0.6; }
+    .template-legendary::before {
+        content: ''; position: absolute; inset: -40px;
+        background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+        z-index: -2; border-radius: 50%; animation: pulse-gold 2s infinite;
+    }
+
+    @keyframes aura {
+        from { transform: scale(1); opacity: 0.5; }
+        to { transform: scale(1.2); opacity: 0.8; }
+    }
+    @keyframes pulse-gold {
+        0% { transform: scale(1); filter: blur(20px); }
+        50% { transform: scale(1.3); filter: blur(40px); }
+        100% { transform: scale(1); filter: blur(20px); }
+    }
 
     .card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .studio-badge { 

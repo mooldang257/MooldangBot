@@ -78,8 +78,8 @@ namespace MooldangBot.Domain.DTOs
     }
 
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
-    public record RouletteResultDto(string ItemName, bool IsMission, string Color, string? ViewerNickname);
-    public record RouletteSpinSummaryDto(string ItemName, int Count, bool IsMission, string Color);
+    public record RouletteResultDto(string ItemName, bool IsMission, string Color, string Template, string? ViewerNickname);
+    public record RouletteSpinSummaryDto(string ItemName, int Count, bool IsMission, string Color, string Template);
     public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSpinSummaryDto> Summary, int TotalDurationMs);
     public record RouletteMissionOverlayDto(string SpinId, string ItemName, string ViewerNickname, string Color);
 
@@ -108,6 +108,8 @@ namespace MooldangBot.Domain.DTOs
         public string Color { get; set; } = "#3498db";
         [JsonPropertyName("isMission")]
         public bool IsMission { get; set; }
+        [JsonPropertyName("template")]
+        public string Template { get; set; } = "Standard";
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
     }

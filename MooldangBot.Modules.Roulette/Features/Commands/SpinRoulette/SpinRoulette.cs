@@ -102,7 +102,7 @@ public class SpinRouletteHandler(
 
                     // 5. 결과 가공 및 이벤트 발행
                     var summary = results.GroupBy(r => r.ItemName)
-                        .Select(g => new RouletteSpinSummaryDto(g.Key, g.Count(), g.First().IsMission, g.First().Color))
+                        .Select(g => new RouletteSpinSummaryDto(g.Key, g.Count(), g.First().IsMission, g.First().Color, g.First().Template))
                         .ToList();
 
                     // [v4.9] 아쿠아틱 서스펜스(거품 유영 및 진동) 연출을 위해 시간 대폭 상향 (T-total)
@@ -114,7 +114,7 @@ public class SpinRouletteHandler(
                         roulette.Id,
                         roulette.Name,
                         viewerNickname,
-                        results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, viewerNickname)).ToList(),
+                        results.Select(r => new RouletteResultDto(r.ItemName, r.IsMission, r.Color, r.Template, viewerNickname)).ToList(),
                         summary,
                         totalDurationMs
                     );
