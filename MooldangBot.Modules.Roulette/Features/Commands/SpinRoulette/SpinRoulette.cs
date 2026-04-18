@@ -105,9 +105,9 @@ public class SpinRouletteHandler(
                         .Select(g => new RouletteSpinSummaryDto(g.Key, g.Count(), g.First().IsMission, g.First().Color))
                         .ToList();
 
-                    // [v4.7] 지휘관 지시: 순차적 개별 노출 연출에 맞춰 물리 시간 대폭 상향 (T-total)
-                    // T_total = T_start(1500) + (N * T_sequential(1700)) + T_outro(3000)
-                    int totalDurationMs = 1500 + (count * 1700) + 3000;
+                    // [v4.9] 아쿠아틱 서스펜스(거품 유영 및 진동) 연출을 위해 시간 대폭 상향 (T-total)
+                    // T_total = T_intro(2500) + (N * T_bubble_suspense(5000)) + T_outro(4000)
+                    int totalDurationMs = 2500 + (count * 5000) + 4000;
 
                     var response = new SpinRouletteResponse(
                         spinId,

@@ -16,15 +16,17 @@
     let particleContainer: HTMLDivElement;
     let ctx: gsap.Context;
 
-    // [상태 제어]: 수중 거품 테마를 위한 상태들
+    // [상태 제어]: 지휘관 설계안(아쿠아틱 메이크오버) 반영
     let activeSpin: any = $state(null);
     let highlightedResult: any = $state(null);
     let historyResults: any[] = $state([]);
     let isPlaying = $state(false);
-    let showCard = $state(false); // 거품이 터진 후 카드를 보여줄지 여부
-    let bubbles: any[] = $state([]); // 화면에 부유하는 거품들
+    let showCard = $state(false);
+    
+    // [후보 거품]: Phase A에서 유영할 여러 개의 거품들
+    let candidates: any[] = $state([]);
 
-    // [오시리스의 감시]: 큐 변화 실시간 추적
+    // [오시리스의 감시자]
     $effect(() => {
         const queue = props.rouletteQueue || [];
         if (queue.length > 0 && !isPlaying) {
@@ -50,137 +52,143 @@
         await tick();
         
         if (containerRef) {
-            await startAquaticBubblePop(activeSpin);
+            await startStudioAquaticSequence(activeSpin);
         } else {
             finishAndNext(activeSpin);
         }
     }
 
-    /**
-     * 🫧 [오시리스의 거품]: 수중 거품 터뜨리기 테마 연출
-     */
-    async function startAquaticBubblePop(data: any) {
+    async function startStudioAquaticSequence(data: any) {
         if (ctx) ctx.revert();
         
         const results = data.results || [];
         
         ctx = gsap.context(async () => {
-            // 1. 시각적 인트로: 화면 전체가 살짝 푸른빛으로 물듭니다.
-            gsap.to(containerRef, { opacity: 1, duration: 0.8 });
+            // 초기 컨테이너 등장
+            gsap.to(containerRef, { opacity: 1, duration: 1 });
 
-            // 2. 초기 거품 생성 (배경에 깔릴 거품들)
-            createBackgroundBubbles();
-
-            // 3. 순차적 결과 노출 루프
             for (let i = 0; i < results.length; i++) {
                 const result = results[i];
                 highlightedResult = result;
-                showCard = false; // 카드는 숨기고
+                showCard = false;
                 
-                // [포인팅]: 이번 결과를 담은 거품 생성 및 중앙 정렬
-                const targetBubble = createMainBubble(result);
+                // [Phase A]: 후보 거품 생성 및 유영
+                candidates = Array.from({ length: 4 }).map((_, id) => ({
+                    id,
+                    x: (Math.random() - 0.5) * 400,
+                    y: (Math.random() - 0.5) * 200 + 400,
+                    size: Math.random() * 40 + 80
+                }));
                 await tick();
 
-                // 거품이 춤추며 중앙으로 등장
-                await gsap.fromTo(".main-bubble", 
-                    { scale: 0, y: 300, opacity: 0 },
-                    { 
-                        scale: 1, y: 0, opacity: 1, duration: 1.2, 
-                        ease: "elastic.out(1, 0.5)",
-                        onUpdate: function() {
-                            // 부유하는 느낌을 위해 미세한 떨림 추가
-                            const time = Date.now() * 0.005;
-                            gsap.set(".main-bubble", { 
-                                x: Math.sin(time) * 10,
-                                rotation: Math.cos(time) * 3
-                            });
-                        }
-                    }
-                ).then();
-
-                // 찰나의 긴장감 (부풀어 오르기)
-                await gsap.to(".main-bubble", { scale: 1.2, duration: 0.4, ease: "slow(0.7, 0.7, false)" });
-
-                // [POP!]: 거품이 터집니다!
-                triggerPopParticles();
-                showCard = true; // 카드 노출
-                
-                // 카드 등장 애니메이션 (파티클과 함께)
-                gsap.fromTo(mainCardRef,
-                    { scale: 0.5, opacity: 0, filter: 'blur(20px)' },
-                    { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.5, ease: "back.out(2)" }
+                // 거품들이 중앙으로 모여들며 유영 (Bouncing/Floating)
+                const candidateTl = gsap.timeline();
+                candidateTl.fromTo(".candidate-bubble", 
+                    { scale: 0, opacity: 0 },
+                    { scale: 1, opacity: 1, duration: 0.8, stagger: 0.1, ease: "back.out(1.7)" }
                 );
 
-                // 강조 시간
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // 2초간 서로 부딪히며 유영하는 연출
+                await new Promise(resolve => {
+                    gsap.to(".candidate-bubble", {
+                        x: "random(-150, 150)",
+                        y: "random(-100, 100)",
+                        duration: 2,
+                        repeat: 1,
+                        yoyo: true,
+                        ease: "sine.inOut",
+                        onComplete: resolve
+                    });
+                });
 
-                // 히스토리에 추가 및 카드 정리
+                // [Phase B]: 최종 거품 선정 및 서스펜스
+                // 첫 번째 거품만 남기고 나머지는 물결 속으로
+                const winnerIndex = 0;
+                gsap.to(`.candidate-bubble:not(:nth-child(${winnerIndex + 1}))`, {
+                    scale: 0, opacity: 0, duration: 0.5, filter: "blur(10px)"
+                });
+
+                // 당첨 거품 중앙 정렬 및 진동
+                const winnerBubble = `.candidate-bubble:nth-child(${winnerIndex + 1})`;
+                await gsap.to(winnerBubble, {
+                    x: 0, y: 0, scale: 1.5, duration: 0.8, ease: "power2.inOut"
+                }).then();
+
+                // 격렬한 진동 (서스펜스)
+                await gsap.to(winnerBubble, {
+                    x: "random(-5, 5)",
+                    rotation: "random(-3, 3)",
+                    duration: 0.05,
+                    repeat: 15,
+                    yoyo: true
+                }).then();
+
+                // [Phase C]: POP & Reveal
+                triggerPopParticles();
+                showCard = true;
+                candidates = []; // 후보 거품 제거
+
+                // 카드 등장 (스튜디오 스타일)
+                gsap.fromTo(mainCardRef,
+                    { scale: 0.3, opacity: 0, rotationY: 90 },
+                    { scale: 1, opacity: 1, rotationY: 0, duration: 0.6, ease: "back.out(1.2)" }
+                );
+
+                // 코랄 강조색 펄스 (미션일 경우)
+                if (result.isMission) {
+                    gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.5 });
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // 히스토리 누적
                 historyResults = [...historyResults, result];
                 await tick();
 
-                // 하단 그리드 아이템 팝업
                 if (gridItems[historyResults.length - 1]) {
                     gsap.fromTo(gridItems[historyResults.length - 1],
-                        { scale: 0, opacity: 0 },
-                        { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(3)" }
+                        { scale: 0, y: 20 },
+                        { scale: 1, y: 0, duration: 0.4, ease: "back.out(2)" }
                     );
                 }
 
                 if (i < results.length - 1) {
-                    gsap.to(mainCardRef, { opacity: 0, scale: 0.8, duration: 0.3 });
-                    await new Promise(resolve => setTimeout(resolve, 400));
+                    gsap.to(mainCardRef, { opacity: 0, scale: 0.8, duration: 0.4 });
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
 
-            // 4. 아웃트로
+            // 전체 종료
             gsap.to(containerRef, {
-                opacity: 0, y: -30, delay: 2.5, duration: 1, ease: "power4.inOut",
+                opacity: 0, y: -50, delay: 3, duration: 0.8,
                 onComplete: () => finishAndNext(data)
             });
 
         }, containerRef);
     }
 
-    function createBackgroundBubbles() {
-        bubbles = Array.from({ length: 15 }).map((_, i) => ({
-            id: i,
-            size: Math.random() * 60 + 20,
-            left: Math.random() * 100,
-            delay: Math.random() * 5,
-            duration: Math.random() * 10 + 5
-        }));
-    }
-
-    function createMainBubble(result: any) {
-        // 메인 버블은 CSS 클래스로 제어
-        return { isMain: true };
-    }
-
     function triggerPopParticles() {
         if (!particleContainer) return;
-
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 40; i++) {
             const p = document.createElement('div');
-            p.className = 'droplet';
-            const size = Math.random() * 8 + 4;
+            p.className = 'droplet-v2';
+            const size = Math.random() * 10 + 5;
             p.style.width = `${size}px`;
             p.style.height = `${size}px`;
-            p.style.background = highlightedResult?.color || '#3b82f6';
+            // 스튜디오 코랄 블루 혹은 아이템 색상
+            p.style.background = `linear-gradient(135deg, ${highlightedResult?.color || '#54BCD1'}, #ffffff99)`;
             
             particleContainer.appendChild(p);
 
             const angle = Math.random() * Math.PI * 2;
-            const velocity = Math.random() * 200 + 100;
-            const tx = Math.cos(angle) * velocity;
-            const ty = Math.sin(angle) * velocity;
-
+            const dist = Math.random() * 300 + 100;
             gsap.to(p, {
-                x: tx,
-                y: ty,
+                x: Math.cos(angle) * dist,
+                y: Math.sin(angle) * dist,
                 opacity: 0,
                 scale: 0,
-                duration: 0.8 + Math.random() * 0.4,
-                ease: "power2.out",
+                duration: 1,
+                ease: "power3.out",
                 onComplete: () => p.remove()
             });
         }
@@ -188,84 +196,73 @@
 
     async function finishAndNext(data: any) {
         if (props.connection) {
-            try {
-                await props.connection.invoke("CompleteRouletteAsync", data.spinId);
-            } catch (e) {
-                console.warn("⚠️ [신호 전송 실패]:", e);
-            }
+            try { await props.connection.invoke("CompleteRouletteAsync", data.spinId); } catch {}
         }
         isPlaying = false;
-        bubbles = [];
         if (props.popQueue) props.popQueue(); 
     }
 
-    onDestroy(() => {
-        if (ctx) ctx.revert();
-    });
-
-    let isMission = $derived(highlightedResult?.isMission || false);
+    onDestroy(() => { if (ctx) ctx.revert(); });
 </script>
 
 {#if activeSpin}
 <div bind:this={containerRef} class="overlay-container" style="opacity: 0">
-    <!-- 배경 수중 효과 -->
-    <div class="water-overlay"></div>
-    {#each bubbles as b (b.id)}
-        <div class="bg-bubble" style="
-            width: {b.size}px; height: {b.size}px; 
-            left: {b.left}%; 
-            animation: float {b.duration}s infinite linear {b.delay}s;
-        "></div>
-    {/each}
-
+    <!-- 심해 필터 효과 -->
+    <div class="deep-sea-gradient"></div>
+    
     <div class="content-wrapper">
-        <!-- [메인 스테이지]: 거품과 카드 -->
         <div class="stage-area">
-            {#if !showCard && highlightedResult}
-                <div class="main-bubble-wrapper">
-                    <div class="main-bubble" style="border: 2px solid {highlightedResult.color}88">
-                        <div class="bubble-shine"></div>
-                        <span class="bubble-inner-text" style="color: {highlightedResult.color}">{highlightedResult.itemName.substring(0,1)}</span>
-                    </div>
+            <!-- Phase A & B: 후보 거품들 -->
+            {#each candidates as cb (cb.id)}
+                <div class="candidate-bubble glass-bubble" style="
+                    width: {cb.size}px; height: {cb.size}px;
+                    left: calc(50% + {cb.x}px); top: calc(50% + {cb.y}px);
+                ">
+                    <div class="bubble-reflection"></div>
                 </div>
-            {/if}
+            {/each}
 
+            <!-- 파티클 앵커 -->
             <div bind:this={particleContainer} class="particle-anchor"></div>
 
+            <!-- Phase C: 스튜디오 스타일 결과 카드 -->
             {#if showCard && highlightedResult}
-                <div bind:this={mainCardRef} class="main-card" class:mission={isMission}>
-                    <div class="card-glass"></div>
-                    <div class="card-content">
-                        <div class="roulette-info">
-                            <span class="roulette-name">{activeSpin.rouletteName}</span>
-                            <span class="viewer-name">@{activeSpin.viewerNickname}</span>
+                <div bind:this={mainCardRef} class="studio-card" class:is-mission={highlightedResult.isMission}>
+                    <div class="card-glow" style="background: {highlightedResult.color}33"></div>
+                    <div class="card-glass-body">
+                        <div class="card-header">
+                            <div class="studio-badge">STUDIO EDITION</div>
+                            <div class="viewer-tag">@{activeSpin.viewerNickname}</div>
                         </div>
-                        <div class="result-display">
-                            <h2 class="result-item" style="color: {highlightedResult.color}">{highlightedResult.itemName}</h2>
-                            {#if isMission}
+
+                        <div class="result-box">
+                            <span class="roulette-title">{activeSpin.rouletteName}</span>
+                            <h2 class="result-text" style="color: {highlightedResult.color}">{highlightedResult.itemName}</h2>
+                            {#if highlightedResult.isMission}
                                 <div class="mission-badge">MISSION!!</div>
                             {/if}
                         </div>
-                        <div class="card-footer">
-                            <span class="spin-count">{historyResults.length} / {activeSpin.results.length}</span>
-                            <span class="spin-id">#{activeSpin.spinId.substring(0, 8)}</span>
+
+                        <div class="card-status">
+                            <span class="progress-info">{historyResults.length} / {activeSpin.results.length}</span>
+                            <span class="spin-id-tag">REF: {activeSpin.spinId.substring(0,8)}</span>
                         </div>
                     </div>
                 </div>
             {/if}
         </div>
 
-        <!-- [하단]: 히스토리 그리드 -->
-        <div class="history-container">
-            <div class="history-grid">
+        <!-- 하단 히스토리 (심해 글래스모피즘) -->
+        <div class="history-tray">
+            <div class="history-grid-v2">
                 {#each historyResults as res, i}
                     <div 
                         bind:this={gridItems[i]} 
-                        class="grid-item" 
-                        class:is-mission={res.isMission}
-                        style="border-bottom: 3px solid {res.color}"
+                        class="history-chip" 
+                        class:chip-mission={res.isMission}
+                        style="border-left: 4px solid {res.color}"
                     >
-                        <span class="grid-item-name">{res.itemName}</span>
+                        <span class="chip-text">{res.itemName}</span>
                     </div>
                 {/each}
             </div>
@@ -275,83 +272,101 @@
 {/if}
 
 <style>
+    /* [디자인 토큰]: 스튜디오 스타일 정의 */
+    :root {
+        --studio-primary: #0093E9;
+        --studio-coral-blue: #54BCD1;
+        --studio-coral: #FF7F50;
+    }
+
     .overlay-container {
         position: fixed; inset: 0; display: flex; justify-content: center; align-items: flex-start;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
         overflow: hidden;
     }
-    .water-overlay {
-        position: absolute; inset: 0; 
-        background: linear-gradient(to bottom, rgba(30, 64, 175, 0.05) 0%, rgba(30, 58, 138, 0.1) 100%);
+
+    .deep-sea-gradient {
+        position: absolute; inset: 0;
+        background: radial-gradient(circle at center, rgba(84, 188, 209, 0.1) 0%, rgba(0, 147, 233, 0.15) 100%);
         pointer-events: none;
     }
 
-    /* 거품 스타일 (Glassmorphism + Aquatic) */
-    .bg-bubble {
-        position: absolute; bottom: -100px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        backdrop-filter: blur(2px);
-        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
-    }
-    @keyframes float {
-        0% { transform: translateY(0) translateX(0); opacity: 0; }
-        10% { opacity: 0.6; }
-        90% { opacity: 0.6; }
-        100% { transform: translateY(-120vh) translateX(50px); opacity: 0; }
-    }
-
     .content-wrapper { 
-        display: flex; flex-direction: column; align-items: center; gap: 40px; 
-        width: 100%; max-width: 1200px; padding-top: 50px;
+        display: flex; flex-direction: column; align-items: center; gap: 60px; 
+        width: 100%; max-width: 1200px; padding-top: 80px;
     }
 
-    .stage-area { position: relative; width: 100%; height: 400px; display: flex; justify-content: center; align-items: center; }
+    .stage-area { position: relative; width: 100%; height: 450px; display: flex; justify-content: center; align-items: center; }
 
-    /* 메인 대형 거품 */
-    .main-bubble-wrapper { position: relative; width: 200px; height: 200px; }
-    .main-bubble {
-        position: absolute; inset: 0;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 70%);
-        backdrop-filter: blur(8px);
-        box-shadow: 0 0 40px rgba(255, 255, 255, 0.1), inset 0 0 20px rgba(255, 255, 255, 0.2);
+    /* 심해 글래스모피즘 거품 */
+    .glass-bubble {
+        position: absolute; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.2), 0 10px 30px rgba(0, 0, 0, 0.15);
         display: flex; justify-content: center; align-items: center;
-        overflow: hidden;
     }
-    .bubble-shine {
-        position: absolute; top: 15%; left: 15%; width: 25%; height: 25%;
-        background: rgba(255, 255, 255, 0.4); border-radius: 50%; filter: blur(2px);
+    .bubble-reflection {
+        position: absolute; top: 15%; left: 15%; width: 30%; height: 30%;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, transparent 100%);
+        border-radius: 50%; filter: blur(2px);
     }
-    .bubble-inner-text { font-size: 80px; font-weight: 900; opacity: 0.4; filter: blur(1px); }
 
-    /* 파티클 */
-    .particle-anchor { position: absolute; }
-    :global(.droplet) { position: absolute; border-radius: 50%; pointer-events: none; }
-
-    /* 카드 스타일 (기존 유지 및 폴리싱) */
-    .main-card { 
-        position: relative; width: 500px; min-height: 300px; border-radius: 40px; 
-        overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); 
-        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+    /* 스튜디오 에디션 카드 디자인 */
+    .studio-card { 
+        position: relative; width: 540px; min-height: 340px; border-radius: 48px; 
+        perspective: 1000px; transform-style: preserve-3d;
     }
-    .main-card.mission { border: 3px solid #fbbf24; box-shadow: 0 0 50px rgba(251, 191, 36, 0.3); }
-    .card-glass { position: absolute; inset: 0; backdrop-filter: blur(20px); z-index: -1; }
-    .card-content { padding: 40px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
-    .roulette-name { color: rgba(255, 255, 255, 0.5); font-size: 16px; font-weight: 600; }
-    .viewer-name { color: #fff; font-size: 20px; font-weight: 800; }
-    .result-item { font-size: 56px; font-weight: 950; text-align: center; margin: 20px 0; }
-    .mission-badge { background: #fbbf24; color: #000; padding: 6px 20px; border-radius: 100px; font-size: 14px; font-weight: 900; }
-    .card-footer { display: flex; justify-content: space-between; align-items: center; opacity: 0.4; font-size: 12px; }
-
-    /* 히스토리 그리드 */
-    .history-grid { 
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; 
-        max-width: 1000px; padding: 20px; 
-        background: rgba(15, 23, 42, 0.3); border-radius: 20px; 
-        backdrop-filter: blur(10px);
+    .card-glass-body {
+        position: relative; width: 100%; height: 100%; padding: 48px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(40px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 48px;
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+        display: flex; flex-direction: column; justify-content: space-between;
     }
-    .grid-item { background: rgba(30, 41, 59, 0.8); padding: 10px 20px; border-radius: 14px; color: #fff; font-weight: 700; font-size: 14px; }
+    .card-glow {
+        position: absolute; inset: -20px; border-radius: 60px; filter: blur(40px);
+        z-index: -1; opacity: 0.6;
+    }
+    .is-mission .card-glass-body { border: 3px solid var(--studio-coral); }
+    .is-mission .card-glow { background: var(--studio-coral) !important; opacity: 0.3; }
+
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .studio-badge { 
+        background: var(--studio-primary); color: #fff; padding: 4px 12px; 
+        border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.1em;
+    }
+    .viewer-tag { color: #fff; font-size: 20px; font-weight: 800; opacity: 0.9; }
+
+    .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+    .roulette-title { color: rgba(255, 255, 255, 0.6); font-size: 18px; margin-bottom: 8px; font-weight: 600; }
+    .result-text { font-size: 68px; font-weight: 950; margin: 0; line-height: 1.1; text-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
+    
+    .mission-badge { 
+        margin-top: 24px; background: var(--studio-coral); color: #fff; 
+        padding: 8px 32px; border-radius: 100px; font-size: 18px; font-weight: 900;
+        box-shadow: 0 10px 30px rgba(255, 127, 80, 0.4);
+    }
+
+    .card-status { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: #fff; opacity: 0.5; }
+
+    /* 히스토리 트레이 */
+    .history-tray { width: 100%; display: flex; justify-content: center; }
+    .history-grid-v2 { 
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; 
+        max-width: 1000px; padding: 30px; 
+        background: rgba(255, 255, 255, 0.08); border-radius: 32px; 
+        backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .history-chip { 
+        background: rgba(255, 255, 255, 0.12); padding: 14px 24px; border-radius: 18px; 
+        color: #fff; font-size: 16px; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .chip-mission { background: rgba(255, 127, 80, 0.15); border: 1px solid rgba(255, 127, 80, 0.3); }
+
+    .particle-anchor { position: absolute; z-index: 10; }
+    :global(.droplet-v2) { position: absolute; border-radius: 50%; pointer-events: none; border: 1px solid rgba(255, 255, 255, 0.4); }
 </style>
