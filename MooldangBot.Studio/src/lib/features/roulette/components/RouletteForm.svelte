@@ -23,10 +23,9 @@
             {
                 id: 0,
                 itemName: "",
-                probability: 0,
-                probability10x: 0,
+                probability: 10,
+                probability10x: 10,
                 color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
-                template: "Standard",
                 isMission: false,
                 isActive: true
             }
@@ -214,7 +213,7 @@
                         class="grid grid-cols-12 gap-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-sky-200 transition-all group"
                         transition:slide|local
                     >
-                        <div class="col-span-4 space-y-1">
+                        <div class="col-span-3 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">아이템 이름</label>
                             <input 
                                 type="text" 
@@ -224,7 +223,7 @@
                             />
                         </div>
                         <div class="col-span-2 space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase">확률(%)</label>
+                            <label class="text-[10px] font-black text-slate-400 uppercase">기본 확률</label>
                             <input 
                                 type="number" 
                                 step="0.1"
@@ -233,26 +232,34 @@
                             />
                         </div>
                         <div class="col-span-2 space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase">디자인 템플릿</label>
+                            <label class="text-[10px] font-black text-sky-400 uppercase">10연차 확률</label>
+                            <input 
+                                type="number" 
+                                step="0.1"
+                                bind:value={item.probability10x}
+                                class="w-full px-4 py-2 bg-white ring-2 ring-sky-50 border border-sky-100 rounded-xl focus:ring-primary focus:border-primary outline-none font-black text-sm text-primary"
+                            />
+                        </div>
+                        <div class="col-span-2 space-y-1">
+                            <label class="text-[10px] font-black text-slate-400 uppercase">템플릿</label>
                             <select 
                                 bind:value={item.template}
                                 class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-xs text-slate-700 appearance-none cursor-pointer"
                             >
-                                <option value="Standard">🫧 일반 (Standard)</option>
-                                <option value="Rare">💎 희귀 (Rare)</option>
-                                <option value="Epic">🌀 영웅 (Epic)</option>
-                                <option value="Legendary">🏆 전설 (Legendary)</option>
+                                <option value="Standard">🫧 일반</option>
+                                <option value="Rare">💎 희귀</option>
+                                <option value="Epic">🌀 영웅</option>
+                                <option value="Legendary">🏆 전설</option>
                             </select>
                         </div>
-                        <div class="col-span-2 space-y-1">
+                        <div class="col-span-1 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">색상</label>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center justify-center">
                                 <input 
                                     type="color" 
                                     bind:value={item.color}
-                                    class="w-10 h-10 p-0.5 bg-white border border-slate-200 rounded-xl cursor-pointer"
+                                    class="w-9 h-9 p-0.5 bg-white border border-slate-200 rounded-xl cursor-pointer"
                                 />
-                                <span class="hidden xl:block text-[10px] font-mono text-slate-400">{item.color}</span>
                             </div>
                         </div>
                         <div class="col-span-1 flex items-end justify-center pb-2">

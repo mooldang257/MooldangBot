@@ -197,6 +197,14 @@ public class SpinRouletteHandler(
     private RouletteItem DrawItem(List<RouletteItem> items, bool is10x)
     {
         double totalWeight = items.Sum(i => is10x ? i.Probability10x : i.Probability);
+        
+        // [v6.2] 세이프티 가드: 10연차 확률이 모두 0으로 설정된 경우 일반 확률로 폴백합니다.
+        if (is10x && totalWeight <= 0)
+        {
+            totalWeight = items.Sum(i => i.Probability);
+            is10x = false; // 일반 확률 참조 모드로 강제 전환
+        }
+
         if (totalWeight <= 0) return items.First();
 
         double randomValue = Random.Shared.NextDouble() * totalWeight;
