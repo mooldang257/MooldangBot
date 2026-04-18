@@ -1,12 +1,3 @@
-import { readable, type Readable } from 'svelte/store';
-import * as signalR from '@microsoft/signalr';
-
-export interface OverlayState {
-    songList: any[];
-    overlayTheme: number;
-    isConnected: boolean;
-    rouletteQueue: any[]; // 🎰 [대기열 시스템]
-}
 import { writable, type Writable } from 'svelte/store';
 import * as signalR from '@microsoft/signalr';
 
