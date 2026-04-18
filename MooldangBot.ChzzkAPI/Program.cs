@@ -20,6 +20,7 @@ using MooldangBot.Application;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Infrastructure;
 using MooldangBot.Infrastructure.Services;
+using MooldangBot.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddCustomDotEnv(args);
@@ -73,6 +74,8 @@ builder.Services.AddControllers(options =>
     options.JsonSerializerOptions.TypeInfoResolver = ChzzkJsonContext.Default;
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
+
+builder.Services.AddMooldangVersioning();
 
 builder.Services.AddEndpointsApiExplorer();
 
