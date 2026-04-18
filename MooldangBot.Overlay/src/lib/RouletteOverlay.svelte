@@ -215,7 +215,8 @@
             {#each candidates as cb (cb.id)}
                 <div class="candidate-bubble glass-bubble" style="
                     width: {cb.size}px; height: {cb.size}px;
-                    left: calc(50% + {cb.x}px); top: calc(50% + {cb.y}px);
+                    left: 50%; top: 50%;
+                    transform: translate(calc(-50% + {cb.x}px), calc(-50% + {cb.y}px));
                 ">
                     <div class="bubble-reflection"></div>
                 </div>
@@ -278,6 +279,10 @@
         --studio-coral: #FF7F50;
     }
 
+    * {
+        box-sizing: border-box;
+    }
+
     .overlay-container {
         position: fixed; inset: 0; display: flex; flex-direction: column; 
         justify-content: flex-start; align-items: center;
@@ -299,6 +304,8 @@
     .stage-area { 
         position: relative; width: 100%; min-height: 400px; height: 50vh;
         display: flex; justify-content: center; align-items: center; 
+        perspective: 1200px; /* 3D 투영 중심점 확보를 위해 부모로 이동 */
+        perspective-origin: center;
     }
 
     /* 심해 글래스모피즘 거품 */
@@ -319,8 +326,8 @@
     /* 스튜디오 에디션 카드 디자인 (반응형 최적화) */
     .studio-card { 
         position: relative; width: 90%; max-width: 540px; min-height: 300px; border-radius: 32px; 
-        perspective: 1000px; transform-style: preserve-3d;
-        margin: 0 auto; /* 좌우 중앙 정렬 강제 */
+        transform-style: preserve-3d;
+        margin: 0; /* 불필요한 마진 제거 */
     }
     .card-glass-body {
         position: relative; width: 100%; height: 100%; padding: 6%;
