@@ -1,6 +1,6 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Point.Commands;
 using System;
 

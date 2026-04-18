@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Domain.Events;
 using System;
 using System.Threading;

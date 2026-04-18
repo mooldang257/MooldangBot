@@ -1,7 +1,7 @@
 using MediatR;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Common.Messages;
 using System.Threading;
 using System.Threading.Tasks;

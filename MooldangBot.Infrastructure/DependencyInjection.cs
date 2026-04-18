@@ -10,7 +10,7 @@ using MooldangBot.Modules.SongBookModule.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;

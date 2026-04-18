@@ -1,10 +1,10 @@
 using MooldangBot.Contracts.Common.Events;
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System;
 
-namespace MooldangBot.Contracts.Commands.Events;
+namespace MooldangBot.Modules.Commands.Events;
 
 /// <summary>
 /// [신경망 데이터 패키지]: 명령어 매칭 및 결제가 완료된 후, 실제 기능을 실행하기 위해 전파되는 핵심 이벤트입니다.

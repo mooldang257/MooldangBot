@@ -1,8 +1,8 @@
-using MooldangBot.Contracts.Commands.Requests;
+using MooldangBot.Modules.Commands.Requests;
 using MooldangBot.Contracts.Point.Interfaces;
 using MooldangBot.Contracts.Point.Requests.Commands;
 using MooldangBot.Contracts.Point.Enums;
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MediatR;

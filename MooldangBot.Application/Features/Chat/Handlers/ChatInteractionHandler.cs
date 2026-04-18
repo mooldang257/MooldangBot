@@ -1,5 +1,5 @@
-using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Commands.Events;
 using MediatR;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Events;

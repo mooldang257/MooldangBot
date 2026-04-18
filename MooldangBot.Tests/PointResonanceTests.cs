@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Features.ChatPoints.Handlers;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.Workers.Points;

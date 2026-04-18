@@ -1,6 +1,6 @@
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;

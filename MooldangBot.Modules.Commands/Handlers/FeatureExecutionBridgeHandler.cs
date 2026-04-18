@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Events;
-using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Events;
+using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using MooldangBot.Modules.Commands.Abstractions;

@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Chzzk.Interfaces;

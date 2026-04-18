@@ -1,7 +1,7 @@
 ﻿using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Contracts.Commands.Interfaces;
+namespace MooldangBot.Modules.Commands.Abstractions;
 
 /// <summary>
 /// [파로스의 통합]: 명령어의 생성, 수정, 삭제 및 연관 데이터의 라이프사이클을 통괄 관리하는 서비스입니다.

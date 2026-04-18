@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Modules.Commands.Abstractions;

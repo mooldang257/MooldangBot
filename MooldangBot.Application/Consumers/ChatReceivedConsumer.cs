@@ -3,7 +3,7 @@ using MooldangBot.Contracts.Events;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 

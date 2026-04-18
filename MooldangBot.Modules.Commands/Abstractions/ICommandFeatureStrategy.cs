@@ -1,7 +1,7 @@
 ﻿using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 
-namespace MooldangBot.Contracts.Commands.Interfaces;
+namespace MooldangBot.Modules.Commands.Abstractions;
 
 public interface ICommandFeatureStrategy
 {

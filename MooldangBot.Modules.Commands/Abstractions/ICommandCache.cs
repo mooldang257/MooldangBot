@@ -1,6 +1,6 @@
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Models;
 
-namespace MooldangBot.Contracts.Commands.Interfaces;
+namespace MooldangBot.Modules.Commands.Abstractions;
 
 /// <summary>
 /// [파로스의 등대 - v3.0]: 고성능 명령어 라우팅을 위한 인메모리 캐시 인터페이스입니다.

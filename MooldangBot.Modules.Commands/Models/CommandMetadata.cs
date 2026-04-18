@@ -1,6 +1,6 @@
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Contracts.Commands.Models;
+namespace MooldangBot.Modules.Commands.Models;
 
 /// <summary>
 /// [오시리스의 전령]: 명령어 매칭 및 실행에 필요한 핵심 메타데이터를 담고 있는 가벼운 레코드입니다.

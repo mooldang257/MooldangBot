@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Contracts.SongBook.Interfaces;
 using MooldangBot.Modules.SongBookModule.Persistence;
 using MooldangBot.Modules.SongBookModule.Features.Strategies;

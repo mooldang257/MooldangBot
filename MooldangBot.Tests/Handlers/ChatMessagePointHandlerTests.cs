@@ -1,5 +1,5 @@
 using MooldangBot.Application.Features.ChatPoints.Handlers;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;

@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using MooldangBot.Contracts.Commands.Models;
+using MooldangBot.Modules.Commands.Models;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Modules.Commands.General;

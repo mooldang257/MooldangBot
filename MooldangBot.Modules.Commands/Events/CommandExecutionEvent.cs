@@ -1,6 +1,6 @@
 ﻿using MooldangBot.Contracts.Abstractions;
 
-namespace MooldangBot.Contracts.Events;
+namespace MooldangBot.Modules.Commands.Events;
 
 /// <summary>
 /// [오시리스의 기록]: 명령어 실행 결과를 담는 통합 이벤트 모델입니다.

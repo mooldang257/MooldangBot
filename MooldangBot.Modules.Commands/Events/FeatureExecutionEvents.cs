@@ -1,7 +1,7 @@
 using System;
 using MooldangBot.Contracts.Abstractions;
 
-namespace MooldangBot.Contracts.Commands.Events;
+namespace MooldangBot.Modules.Commands.Events;
 
 /// <summary>
 /// [오시리스의 확인]: 특정 기능(Feature)의 실행이 성공적으로 완료되었음을 알리는 이벤트입니다.

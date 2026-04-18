@@ -1,4 +1,4 @@
-using MooldangBot.Contracts.Commands.Interfaces;
+using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Common.Interfaces;
 using System.Text;

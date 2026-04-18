@@ -1,8 +1,8 @@
 using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Contracts.Commands.Interfaces;
-using MooldangBot.Contracts.Commands.Models;
-using MooldangBot.Contracts.Commands.Requests;
-using MooldangBot.Contracts.Commands.Events;
+using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Modules.Commands.Models;
+using MooldangBot.Modules.Commands.Requests;
+using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
