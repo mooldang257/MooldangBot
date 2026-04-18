@@ -309,7 +309,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         }
     }
 
-    private async Task RouteToProcessorAsync(string chzzkUid, JsonElement element, string eventName)
+    internal async Task RouteToProcessorAsync(string chzzkUid, JsonElement element, string eventName)
     {
         switch (eventName.ToUpper())
         {
@@ -325,7 +325,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         }
     }
 
-    private async Task ProcessSingleChatAsync(string chzzkUid, JsonElement element)
+    internal async Task ProcessSingleChatAsync(string chzzkUid, JsonElement element)
     {
         var chatPayload = element.Deserialize<ChzzkChatPayload>();
         if (chatPayload == null) return;
@@ -351,7 +351,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         await PublishInternalEventAsync(chzzkUid, eventPayload, now);
     }
 
-    private async Task ProcessSingleDonationAsync(string chzzkUid, JsonElement element)
+    internal async Task ProcessSingleDonationAsync(string chzzkUid, JsonElement element)
     {
         var donationPayload = element.Deserialize<ChzzkDonationPayload>();
         if (donationPayload == null) return;
@@ -389,7 +389,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         await PublishInternalEventAsync(chzzkUid, eventPayload, now);
     }
 
-    private async Task ProcessSingleSubscriptionAsync(string chzzkUid, JsonElement element)
+    internal async Task ProcessSingleSubscriptionAsync(string chzzkUid, JsonElement element)
     {
         var subPayload = element.Deserialize<ChzzkSubscriptionPayload>();
         if (subPayload == null) return;
