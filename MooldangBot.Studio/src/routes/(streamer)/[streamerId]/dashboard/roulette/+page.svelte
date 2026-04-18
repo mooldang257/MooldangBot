@@ -143,7 +143,7 @@
 
     async function handleTestSpin(id: number) {
         try {
-            const results = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}/${id}/test`);
+            const results = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}/${id}/test`, { method: "POST" });
             alert(`[테스트 결과] ${results.map((r: any) => r.itemName).join(", ")} 당첨!`);
         } catch (e: any) {
             alert(e.message || "테스트 실패!");

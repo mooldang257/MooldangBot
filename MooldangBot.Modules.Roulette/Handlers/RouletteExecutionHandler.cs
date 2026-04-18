@@ -68,29 +68,16 @@ public class RouletteExecutionHandler(
             ), ct);
 
             // [4. Timing Control]: 정밀 선사격 대기 (Precision Pre-firing)
-            // 지휘관님의 수식에 따라 산출된 시간에서 오프셋을 제하여, 애니메이션이 멈추는 찰나에 채팅을 쏘아 올립니다.
-            // (v4.1 기준: 기본 3.5초 + 스핀당 1초 가량 대기)
-            int expectedDuration = 1500 + (totalSpins * 1000) + 2000;
-            int delayTime = Math.Max(0, expectedDuration - PRE_FIRING_OFFSET_MS);
-
-            logger.LogInformation("🎰 [RouletteHandler] 정밀 대기 시작: {Delay}ms 후 사격 예정. (Spins: {Count})", delayTime, totalSpins);
-            await Task.Delay(delayTime, ct);
-
-            // [5. Salvo Summary Discharge]: 지휘관 지의에 따라 요약된 리포트를 단발로 사격
-            var summary = string.Join(", ", executionResult.Items.GroupBy(i => i.ItemName)
-                .Select(g => $"{g.Key} x{g.Count()}"));
-            
-            var streamerProfile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, ct);
-            if (streamerProfile != null)
-            {
-                await botService.SendReplyChatAsync(streamerProfile, $"🎰 [추첨 결과]: {summary}! 축하합니다! 🎉", notification.ViewerUid, ct);
-            }
+            // 지휘관님, 이제 사격 권한을 오버레이로 완전히 이양합니다.
+            // 오버레이가 연출이 끝났음을 보고하면 그때 사격을 개시합니다.
+            logger.LogInformation("🎰 [RouletteHandler] 백엔드 사격 통제 해제. 오버레이 보고 대기 중. (SpinId: {SpinId})", executionResult.SpinId);
 
             // [6. Blackbox Logging (Task C)]: 함선의 모든 기억을 영속화 (Fire and Forget)
             _ = Task.Run(async () => 
             {
                 try 
                 {
+                    var streamerProfile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, CancellationToken.None);
                     // 지휘관 지시: RawMessage와 Arguments를 포함하여 빈틈없이 기록
                     var logEntry = new CommandExecutionLog
                     {

@@ -11,9 +11,11 @@
   // [오시리스의 공명]: 실시간 데이터 스토어 초기화
   const signalrStore = accessToken ? createSignalRStore(accessToken) : null;
 
-  // [물멍]: $ 스토어 구독 기능을 활용하여 룰렛 결과 감시 (Svelte 5 반응성 최저화)
-  // lastRouletteResult의 값이 변경될 때마다 컴포넌트가 반응합니다.
-  let resultData = $derived($signalrStore?.lastRouletteResult);
+  // [오시리스의 공명]: 실시간 데이터 스토어 구독
+  // 큐(Queue)는 RouletteOverlay 컴포넌트 내부에서 비워가며 처리합니다.
+  let rouletteQueue = $derived($signalrStore?.rouletteQueue || []);
+  let connection = $derived($signalrStore?.connection);
+  const popQueue = signalrStore?.popQueue;
 </script>
 
 <main>
@@ -23,10 +25,8 @@
         <!-- 1. 공지/알림 레이어 (공통 알림) -->
         <NoticeWidget message="시스템에 성공적으로 공명 중입니다." />
         
-        <!-- 2. 룰렛 결과 레이어 -->
-        {#if resultData}
-            <RouletteOverlay {resultData} />
-        {/if}
+        <!-- 2. 룰렛 결과 레이어 (상주형: 큐를 스스로 감시) -->
+        <RouletteOverlay {rouletteQueue} {connection} {popQueue} />
     </div>
   {:else}
     <div class="unauthorized">
