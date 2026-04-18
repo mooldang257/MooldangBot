@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using MooldangBot.Contracts.Common.Models;
 
-namespace MooldangBot.Api.Middleware;
+namespace MooldangBot.Application.Middleware;
 
 /// <summary>
 /// [오시리스의 심판]: 애플리케이션 전역의 예외를 캐치하여 표준화된 에러 응답을 반환합니다. 

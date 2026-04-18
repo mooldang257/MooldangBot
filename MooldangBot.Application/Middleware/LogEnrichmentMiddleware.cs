@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Serilog.Context;
 
-namespace MooldangBot.Api.Middleware;
+namespace MooldangBot.Application.Middleware;
 
 /// <summary>
 /// 🎶 [하모니의 기록]: 모든 요청 로그에 TraceId, UserId, InstanceId를 부여하여 추적성을 강화합니다.

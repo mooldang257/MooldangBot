@@ -1,24 +1,17 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Contracts.Common.Interfaces;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace MooldangBot.Presentation.Security;
+namespace MooldangBot.Application.Common.Security;
 
-public class ChannelManagerAuthorizationHandler : AuthorizationHandler<ChannelManagerRequirement>
+public class ChannelManagerAuthorizationHandler(
+    IUserSession _userSession, 
+    IHttpContextAccessor _httpContextAccessor, 
+    ILogger<ChannelManagerAuthorizationHandler> _logger) : AuthorizationHandler<ChannelManagerRequirement>
 {
-    private readonly IUserSession _userSession;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<ChannelManagerAuthorizationHandler> _logger;
-
-    public ChannelManagerAuthorizationHandler(IUserSession userSession, IHttpContextAccessor httpContextAccessor, ILogger<ChannelManagerAuthorizationHandler> logger)
-    {
-        _userSession = userSession;
-        _httpContextAccessor = httpContextAccessor;
-        _logger = logger;
-    }
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ChannelManagerRequirement requirement)
     {
