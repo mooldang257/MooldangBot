@@ -87,6 +87,9 @@ public class ChzzkDonationPayload
 
     [JsonPropertyName("extras")]
     public System.Text.Json.JsonElement? Extra { get; set; }
+
+    [JsonPropertyName("eventSentAt")]
+    public string? EventSentAt { get; set; }
 }
 
 /// <summary>

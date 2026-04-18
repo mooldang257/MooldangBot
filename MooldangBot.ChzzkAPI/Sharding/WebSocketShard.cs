@@ -353,10 +353,6 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     internal async Task ProcessSingleDonationAsync(string chzzkUid, JsonElement element)
     {
-        // 🧪 [DATA_DRIVEN_LOGGING]: 치지직 서버에서 보내주는 원본 JSON 데이터를 가감없이 출력합니다.
-        // 이 로그를 통해 msgId, messageId 등 유니크 필드를 특정할 것입니다.
-        _logger.LogInformation("🛠️ [RAW_DONATION] {Raw}", element.GetRawText());
-
         var donationPayload = element.Deserialize<ChzzkDonationPayload>();
         if (donationPayload == null) return;
 
@@ -368,10 +364,11 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         int amount = ExtractAmount(donationPayload.PayAmount, donationPayload.Extra);
         string donationMsg = donationPayload.DonationText ?? string.Empty;
 
-        // [v7.1] 멱등성 보호막 (중복 후원 방지)
-        if (await IsDuplicateDonationAsync(chzzkUid, senderId, amount, donationMsg))
+        // [v4.4] 데이터 기반 멱등성 보호막 (eventSentAt 나노초 정밀도 사용)
+        if (await IsDuplicateDonationAsync(chzzkUid, senderId, amount, donationMsg, donationPayload.EventSentAt))
         {
-            _logger.LogWarning("🛡️ [Shard {Id}] 중복 후원 감지 및 차단: {Nickname}({Uid}) - {Amount}치즈", _shardId, nickname, senderId, amount);
+            _logger.LogWarning("🛡️ [Shard {Id}] 중복 후원 감지 및 차단: {Nickname}({Uid}) - {Amount}치즈 (Key: {IdKey})", 
+                _shardId, nickname, senderId, amount, donationPayload.EventSentAt);
             return;
         }
 
@@ -571,26 +568,36 @@ public class WebSocketShard : IWebSocketShard, IDisposable
     }
 
     /// <summary>
-    /// [v7.1] 페이로드 해시와 Redis SETNX를 결합한 1초 마이크로 락 멱등성 검증기
+    /// [v4.4] 데이터 기반 멱등성 검증기 (eventSentAt 나노초 지문 사용)
     /// </summary>
-    private async Task<bool> IsDuplicateDonationAsync(string streamerId, string senderId, int amount, string message)
+    private async Task<bool> IsDuplicateDonationAsync(string streamerId, string senderId, int amount, string message, string? eventSentAt)
     {
         try
         {
-            // 1. 후원의 핵심 식별 요소 결합 (메시지는 해시 처리하여 키 길이 최적화)
-            var rawKey = $"{streamerId}:{senderId}:{amount}:{ComputeHash(message)}";
-            var redisKey = $"idempotency:donation:{rawKey}";
+            // 1. 고유 식별 키 생성
+            // 지휘관님, 이제 임의 생성이 아닌 치지직 서버가 준 나노초 시각(eventSentAt)을 절대 지문으로 사용합니다.
+            string rawKey;
+            if (!string.IsNullOrEmpty(eventSentAt))
+            {
+                // [정밀 타격]: 서버가 준 시각은 변조 불가능한 절대 키입니다.
+                rawKey = eventSentAt;
+            }
+            else
+            {
+                // [폴백]: 혹시라도 필드가 누락된 경우에만 기존 임의 조합 체킹 (안전장치)
+                rawKey = $"{senderId}:{amount}:{ComputeHash(message)}";
+            }
 
-            // 2. Redis SETNX (1초 락)
-            // 성공(True) -> 처음 들어온 패킷 (통과)
-            // 실패(False) -> 1초 이내에 동일 패킷 존재 (차단)
-            var success = await _redis.StringSetAsync(redisKey, "LOCKED", expiry: TimeSpan.FromSeconds(1), when: When.NotExists);
+            var redisKey = $"idempotency:donation:{streamerId}:{rawKey}";
+
+            // 2. Redis SETNX (3초 락 - 찰나의 소켓 재전송 버그만 방어)
+            var success = await _redis.StringSetAsync(redisKey, "LOCKED", expiry: TimeSpan.FromSeconds(3), when: When.NotExists);
             return !success;
         }
         catch (Exception ex)
         {
             // [Fail-Open]: 인프라 장애 시 후원 누락 방지를 위해 무조건 통과
-            _logger.LogCritical(ex, "🚨 [Idempotency] Redis 연결 및 연산 실패! Fail-Open 정책에 따라 후원을 허용합니다.");
+            _logger.LogCritical(ex, "🚨 [Idempotency] Redis 연결 실패! 후원 누락 방지를 위해 Fail-Open 모드로 전환합니다.");
             return false;
         }
     }
