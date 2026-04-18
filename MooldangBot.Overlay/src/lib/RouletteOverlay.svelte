@@ -2,8 +2,14 @@
     import { onMount, onDestroy, tick } from 'svelte';
     import gsap from 'gsap';
 
+    interface Props {
+        rouletteQueue: any[];
+        connection: any;
+        popQueue: () => void;
+    }
+
     // [오시리스의 눈]: Svelte 5 정석 반응형 프롭 선언
-    let props = $props();
+    let props: Props = $props();
 
     let containerRef: HTMLDivElement;
     let mainCardRef: HTMLDivElement;
@@ -106,7 +112,7 @@
         if (ctx) ctx.revert();
     });
 
-    let mainResult = $derived(activeResult?.results?.[activeResult.results.length - 1]);
+    let mainResult = $derived(activeResult?.results?.[(activeResult?.results?.length ?? 0) - 1]);
     let isMission = $derived(mainResult?.isMission || false);
 </script>
 
