@@ -61,12 +61,11 @@ public override async Task<int> SaveChangesAsync(CancellationToken ct) {
 
 ## 🏗️ 4. 레이어드 아키텍처 (Layered Integrity)
 
-오시리스는 관심사 분리(SoC)를 통해 각 레이어의 순결성을 유지합니다.
+오시리스는 관심사 분리(SoC)를 통해 각 레이어의 순결성을 유지하며, 최근 단순화를 통해 3대 핵심 계층으로 재편되었습니다.
 
-1.  **Domain**: 함선의 비즈니스 로직과 엔티티 (순수한 기억).
-2.  **Application**: 유스케이스와 추상화된 인터페이스 (항해 엔진).
-3.  **Infrastructure**: 외부 데이터베이스 및 인프라 구현 (함선의 구동부).
-4.  **Presentation**: API 엔드포인트 및 SignalR 허브 (함교의 스크린).
+1.  **Domain**: 함선의 비즈니스 로직, 엔티티, 그리고 **전역 공용 명세(Core Specification)**. 외부 의존성이 없는 순수한 기억의 저장소이자 시스템의 나침반입니다.
+2.  **Application**: 항해 엔진. 유스케이스 구현, 비즈니스 서비스, 그리고 **통합된 API 컨트롤러/허브(Presentation)**를 포함합니다.
+3.  **Infrastructure**: 외부 데이터베이스 및 인프라 구현 (함선의 구동부). 실제 물리적 구현체들이 위치합니다.
 
 ---
 

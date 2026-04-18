@@ -17,29 +17,20 @@
 | **DI 등록 포인트** | **3곳** (App, Infra, Modules) | 3곳 | **완료** |
 | **Program.cs 줄 수** | **104줄** | ~150줄 | **목표 초과 달성** |
 
-### 현재 프로젝트 목록 (19개)
+### 현재 프로젝트 목록 (9개 + Tests)
 
 ```
-솔루션 (19 프로젝트)
-├── MooldangBot.Domain                ← 순수 도메인
-├── MooldangBot.Contracts             ← ⚠️ 해체 대상: 110파일 (인터페이스/DTO/이벤트)
-├── MooldangBot.Application           ← 비즈니스 로직
-├── MooldangBot.Infrastructure        ← 인프라 구현
-├── MooldangBot.Presentation          ← ⚠️ 병합 대상: API 컨트롤러, SignalR
-├── MooldangBot.Api                   ← 진입점 1 (Program.cs 404줄)
-├── MooldangBot.ChzzkAPI              ← 진입점 2 (게이트웨이)
-├── MooldangBot.ChzzkAPI.Contracts    ← ⚠️ 삭제 대상: 빈 프로젝트
+솔루션 (10 프로젝트)
+├── MooldangBot.Domain                ← 확장 도메인 (Contracts 흡수)
+├── MooldangBot.Application           ← 비즈니스 로직 (Presentation & 경량 모듈 흡수)
+├── MooldangBot.Infrastructure        ← 인프라 구현 (WorkerRegistry 통합)
+├── MooldangBot.Api                   ← 진입점 (슬림화 완료: 104줄)
+├── MooldangBot.ChzzkAPI              ← 치지직 게이트웨이
 ├── MooldangBot.Modules.Commands      ← 명령어 모듈
 ├── MooldangBot.Modules.SongBook      ← 곡 신청 모듈
 ├── MooldangBot.Modules.Roulette      ← 룰렛 모듈
 ├── MooldangBot.Modules.Point         ← 포인트 모듈
-├── MooldangBot.Modules.Core          ← ⚠️ 병합 검토: Features만 존재
-├── MooldangBot.Modules.Broadcast     ← ⚠️ 병합 검토: Features만 존재
-├── MooldangBot.Modules.Ledger        ← ⚠️ 병합 검토: Features만 존재
-├── MooldangBot.Tests                 ← 테스트
-├── MooldangBot.Verifier              ← 운영 도구
-├── MooldangBot.StressTool            ← 부하 테스트
-├── MooldangBot.Simulator             ← 시뮬레이터
+└── MooldangBot.Tests                 ← 테스트
 ```
 
 ---
@@ -75,7 +66,7 @@
 
 ## 📋 Phase별 실행 계획
 
-### Phase 1: 빈 프로젝트 및 운영 도구 정리 (난이도: ⭐ | 위험도: 🟢 낮음)
+### Phase 1: 빈 프로젝트 및 운영 도구 정리 (완료 ✅)
 
 > **목표**: 실질적 코드가 없는 프로젝트를 솔루션에서 제거하여 즉시 인지 부하를 줄입니다.
 
@@ -100,7 +91,7 @@
 
 ---
 
-### Phase 2: Contracts 프로젝트 해체 (난이도: ⭐⭐⭐⭐ | 위험도: 🟡 중간)
+### Phase 2: Contracts 프로젝트 해체 (완료 ✅)
 
 > **목표**: 110개 파일의 Contracts 프로젝트를 완전히 해체하여 각 소비자 프로젝트로 분산합니다.
 > 
@@ -183,7 +174,7 @@ using MooldangBot.Application.Contracts.Chzzk;
 
 ---
 
-### Phase 3: Presentation → Application 병합 (난이도: ⭐⭐⭐ | 위험도: 🟡 중간)
+### Phase 3: Presentation → Application 병합 (완료 ✅)
 
 > **목표**: Presentation 레이어의 Controller/Hub를 Application에 통합하여 불필요한 프로젝트 경계를 제거합니다.
 
@@ -218,7 +209,7 @@ using MooldangBot.Application.Contracts.Chzzk;
 
 ---
 
-### Phase 4: 경량 모듈 통합 (난이도: ⭐⭐ | 위험도: 🟢 낮음)
+### Phase 4: 경량 모듈 통합 (완료 ✅)
 
 > **목표**: Features 폴더만 존재하는 경량 모듈(Core, Broadcast, Ledger)을 Application으로 흡수합니다.
 
@@ -246,7 +237,7 @@ using MooldangBot.Application.Contracts.Chzzk;
 
 ---
 
-### Phase 5: Program.cs 슬림화 (난이도: ⭐⭐ | 위험도: 🟢 낮음)
+### Phase 5: Program.cs 슬림화 (완료 ✅)
 
 > **목표**: 404줄의 Program.cs를 ~150줄로 줄여 진입점의 가독성을 극대화합니다.
 

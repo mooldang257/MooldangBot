@@ -99,8 +99,13 @@ try {
 - **Single-File 응집도**: 명령(Command/Query) 레코드, 검증 로직, 핸들러(Handler) 로직을 **단일 파일**에 함께 배치하여 캡슐화와 유지보수성을 극대화합니다. (예: `SpinRoulette.cs`)
 - **얇은 위임자 (Thin Orchestrator)**: Controller나 레거시 Service 계층은 스스로 복잡한 비즈니스 로직을 처리하지 않습니다. 오직 MediatR의 `ISender.Send()`를 호출하여 모듈 내부의 핸들러에 제어권을 위임하는 중계 역할만 수행합니다.
 
-### 🤝 계약(Contracts) 기반 의존성 분리
-- **Contracts 프로젝트 연동**: 모듈 간의 결합도를 낮추고 순환 참조(Circular Dependency)를 방지하기 위해, 공용 인프라 및 전역 상태(예: `IOverlayState`, `IRouletteLockProvider`)는 반드시 `MooldangBot.Contracts` 프로젝트에 인터페이스로 정의합니다.
+### 🤝 도메인 중심 계약(Contracts) 관리
+- **전역 명세 통합**: 모듈 간 결합도를 낮추기 위한 공용 인터페이스 및 DTO는 최하위 계층인 `MooldangBot.Domain` 프로젝트에 정의합니다. 이는 모든 프로젝트가 참조할 수 있는 '시스템의 공용 언어' 역할을 합니다.
+- **순환 참조 방지**: `Application`에 있던 계약들을 `Domain`으로 내림으로써, 모듈 간의 수평적 상호작용 시 발생하던 순환 참조 문제를 완벽히 차단합니다.
+
+### 🚀 고성능 JSON Source Generation
+- **GC 부하 최소화**: 대규모 트래픽(10k TPS) 대응을 위해 리플렉션 대신 `System.Text.Json`의 Source Generator를 필수적으로 사용합니다.
+- **Context 관리**: 모든 DTO는 `ChzzkJsonContext` 등에 등록하여 빌드 시점에 직렬화 코드를 생성하도록 관리합니다.
 
 ---
 
