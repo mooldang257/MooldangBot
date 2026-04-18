@@ -12,9 +12,7 @@ using MooldangBot.Modules.Commands;
 using MooldangBot.Modules.Roulette;
 using MooldangBot.Modules.SongBookModule;
 using MooldangBot.Application.Hubs;
-using MooldangBot.Application.Extensions;
 using MooldangBot.Infrastructure.Security;
-using MooldangBot.Presentation;
 using Prometheus;
 using Serilog;
 using System.Text.Json;
@@ -43,8 +41,7 @@ try
         .AddRouletteModule()
         .AddCommandsModule()
         .AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly)
-        .AddApplicationServices()
-        .AddPresentationServices();
+        .AddApplicationServices();
 
     // 🔍 [지능형 광역 소나]: MediatR 어셈블리 스캔
     builder.Services.AddMooldangMediatR();
@@ -72,7 +69,6 @@ try
     });
 
     builder.Services.AddControllers()
-        .AddApplicationPart(typeof(MooldangBot.Presentation.DependencyInjection).Assembly)
         .AddJsonOptions(options => {
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);

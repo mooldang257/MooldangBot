@@ -54,6 +54,9 @@ namespace MooldangBot.Application
             services.AddSingleton<PulseService>();
             services.AddSingleton<CommandBackgroundTaskQueue>();
 
+            // [Phase 3] Presentation 레이어 통합: 오버레이 알림 서비스 등록
+            services.AddSingleton<IOverlayNotificationService, OverlayNotificationService>();
+
             return services;
         }
 

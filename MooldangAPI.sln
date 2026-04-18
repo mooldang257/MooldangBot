@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Application", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Infrastructure", "MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj", "{723DF56E-5535-4399-8352-28274D422A7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Presentation", "MooldangBot.Presentation\MooldangBot.Presentation.csproj", "{2008F625-3432-4455-BD0D-DC0C2DAAF125}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.Api", "MooldangBot.Api\MooldangBot.Api.csproj", "{7AA3F82E-1DE1-4C44-A52F-2ED889C5B5A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooldangBot.ChzzkAPI", "MooldangBot.ChzzkAPI\MooldangBot.ChzzkAPI.csproj", "{2C6D5C1B-3E29-4FBD-8C91-550D303A8366}"
@@ -71,18 +69,6 @@ Global
 		{723DF56E-5535-4399-8352-28274D422A7E}.Release|x64.Build.0 = Release|Any CPU
 		{723DF56E-5535-4399-8352-28274D422A7E}.Release|x86.ActiveCfg = Release|Any CPU
 		{723DF56E-5535-4399-8352-28274D422A7E}.Release|x86.Build.0 = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|x64.Build.0 = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Debug|x86.Build.0 = Debug|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|x64.ActiveCfg = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|x64.Build.0 = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|x86.ActiveCfg = Release|Any CPU
-		{2008F625-3432-4455-BD0D-DC0C2DAAF125}.Release|x86.Build.0 = Release|Any CPU
 		{7AA3F82E-1DE1-4C44-A52F-2ED889C5B5A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7AA3F82E-1DE1-4C44-A52F-2ED889C5B5A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AA3F82E-1DE1-4C44-A52F-2ED889C5B5A2}.Debug|x64.ActiveCfg = Debug|Any CPU
