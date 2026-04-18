@@ -87,6 +87,7 @@ namespace MooldangBot.Contracts.Chzzk;
 [JsonSerializable(typeof(UpdateRewardClaimRequest))]
 [JsonSerializable(typeof(UpdateTokenRequest))]
 [JsonSerializable(typeof(ExchangeTokenRequest))]
+[JsonSerializable(typeof(RefreshTokenRequest))]
 [JsonSerializable(typeof(ChannelBatchRequest))]
 [JsonSerializable(typeof(InjectEventRequest))]
 [JsonSerializable(typeof(ChzzkEventEnvelope))]
