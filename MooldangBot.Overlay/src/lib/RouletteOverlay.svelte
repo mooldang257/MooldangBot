@@ -291,11 +291,14 @@
     }
 
     .content-wrapper { 
-        display: flex; flex-direction: column; align-items: center; gap: 60px; 
-        width: 100%; max-width: 1200px; padding-top: 80px;
+        display: flex; flex-direction: column; align-items: center; gap: 4vh; 
+        width: 100%; max-width: 95vw; padding-top: 5vh;
     }
 
-    .stage-area { position: relative; width: 100%; height: 450px; display: flex; justify-content: center; align-items: center; }
+    .stage-area { 
+        position: relative; width: 100%; min-height: 400px; height: 50vh;
+        display: flex; justify-content: center; align-items: center; 
+    }
 
     /* 심해 글래스모피즘 거품 */
     .glass-bubble {
@@ -312,57 +315,59 @@
         border-radius: 50%; filter: blur(2px);
     }
 
-    /* 스튜디오 에디션 카드 디자인 */
+    /* 스튜디오 에디션 카드 디자인 (반응형 최적화) */
     .studio-card { 
-        position: relative; width: 540px; min-height: 340px; border-radius: 48px; 
+        position: relative; width: 90%; max-width: 540px; min-height: 300px; border-radius: 32px; 
         perspective: 1000px; transform-style: preserve-3d;
     }
     .card-glass-body {
-        position: relative; width: 100%; height: 100%; padding: 48px;
+        position: relative; width: 100%; height: 100%; padding: 6%;
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(40px);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 48px;
+        border-radius: 32px;
         box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
         display: flex; flex-direction: column; justify-content: space-between;
     }
     .card-glow {
-        position: absolute; inset: -20px; border-radius: 60px; filter: blur(40px);
+        position: absolute; inset: -10px; border-radius: 40px; filter: blur(30px);
         z-index: -1; opacity: 0.6;
     }
     .is-mission .card-glass-body { border: 3px solid var(--studio-coral); }
     .is-mission .card-glow { background: var(--studio-coral) !important; opacity: 0.3; }
 
-    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .studio-badge { 
-        background: var(--studio-primary); color: #fff; padding: 4px 12px; 
-        border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.1em;
+        background: var(--studio-primary); color: #fff; padding: 2px 10px; 
+        border-radius: 6px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em;
+        white-space: nowrap;
     }
-    .viewer-tag { color: #fff; font-size: 20px; font-weight: 800; opacity: 0.9; }
+    .viewer-tag { color: #fff; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 800; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; }
 
-    .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-    .roulette-title { color: rgba(255, 255, 255, 0.6); font-size: 18px; margin-bottom: 8px; font-weight: 600; }
-    .result-text { font-size: 68px; font-weight: 950; margin: 0; line-height: 1.1; text-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
+    .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px 0; }
+    .roulette-title { color: rgba(255, 255, 255, 0.6); font-size: clamp(0.9rem, 3vw, 1.1rem); margin-bottom: 8px; font-weight: 600; }
+    .result-text { font-size: clamp(2rem, 10vw, 4.25rem); font-weight: 950; margin: 0; line-height: 1.1; text-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
     
     .mission-badge { 
-        margin-top: 24px; background: var(--studio-coral); color: #fff; 
-        padding: 8px 32px; border-radius: 100px; font-size: 18px; font-weight: 900;
+        margin-top: 1.5vh; background: var(--studio-coral); color: #fff; 
+        padding: 4px 20px; border-radius: 100px; font-size: clamp(0.8rem, 3vw, 1.1rem); font-weight: 900;
         box-shadow: 0 10px 30px rgba(255, 127, 80, 0.4);
     }
 
-    .card-status { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: #fff; opacity: 0.5; }
+    .card-status { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #fff; opacity: 0.5; margin-top: 20px; }
 
-    /* 히스토리 트레이 */
-    .history-tray { width: 100%; display: flex; justify-content: center; }
+    /* 히스토리 트레이 (반응형) */
+    .history-tray { width: 100%; display: flex; justify-content: center; padding: 0 20px; }
     .history-grid-v2 { 
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; 
-        max-width: 1000px; padding: 30px; 
-        background: rgba(255, 255, 255, 0.08); border-radius: 32px; 
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; 
+        width: 100%; max-width: 1000px; padding: 20px; 
+        background: rgba(255, 255, 255, 0.08); border-radius: 24px; 
         backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .history-chip { 
-        background: rgba(255, 255, 255, 0.12); padding: 14px 24px; border-radius: 18px; 
-        color: #fff; font-size: 16px; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.12); padding: 8px 16px; border-radius: 12px; 
+        color: #fff; font-size: 0.875rem; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
     }
     .chip-mission { background: rgba(255, 127, 80, 0.15); border: 1px solid rgba(255, 127, 80, 0.3); }
 
