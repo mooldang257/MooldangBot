@@ -8,7 +8,7 @@ namespace MooldangBot.Presentation
     {
         public static IServiceCollection AddPresentationServices(this IServiceCollection services)
         {
-            services.AddScoped<IOverlayNotificationService, OverlayNotificationService>();
+            services.AddSingleton<IOverlayNotificationService, OverlayNotificationService>();
             return services;
         }
     }
