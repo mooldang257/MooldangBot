@@ -76,7 +76,7 @@
                 candidates = Array.from({ length: 4 }).map((_, id) => ({
                     id,
                     x: (Math.random() - 0.5) * 400,
-                    y: (Math.random() - 0.5) * 200 + 400,
+                    y: (Math.random() - 0.5) * 200, // 카드가 나타나는 중앙 영역(0,0)과 일치시킴
                     size: Math.random() * 40 + 80
                 }));
                 await tick();
@@ -85,17 +85,16 @@
                 const candidateTl = gsap.timeline();
                 candidateTl.fromTo(".candidate-bubble", 
                     { scale: 0, opacity: 0 },
-                    { scale: 1, opacity: 1, duration: 0.8, stagger: 0.1, ease: "back.out(1.7)" }
+                    { scale: 1, opacity: 1, duration: 0.4, stagger: 0.1, ease: "back.out(1.7)" }
                 );
 
-                // 2초간 서로 부딪히며 유영하는 연출
+                // 1.5초간 서로 부딪히며 유영하는 연출 (속도 상향)
                 await new Promise(resolve => {
                     gsap.to(".candidate-bubble", {
                         x: "random(-150, 150)",
                         y: "random(-100, 100)",
-                        duration: 2,
-                        repeat: 1,
-                        yoyo: true,
+                        duration: 1.5,
+                        repeat: 0, // 반복 제거로 속도 대폭 상향
                         ease: "sine.inOut",
                         onComplete: resolve
                     });
@@ -108,18 +107,18 @@
                     scale: 0, opacity: 0, duration: 0.5, filter: "blur(10px)"
                 });
 
-                // 당첨 거품 중앙 정렬 및 진동
+                // 당첨 거품 중앙 정렬 및 진동 (속도 상향)
                 const winnerBubble = `.candidate-bubble:nth-child(${winnerIndex + 1})`;
                 await gsap.to(winnerBubble, {
-                    x: 0, y: 0, scale: 1.5, duration: 0.8, ease: "power2.inOut"
+                    x: 0, y: 0, scale: 1.5, duration: 0.4, ease: "power2.inOut"
                 }).then();
 
-                // 격렬한 진동 (서스펜스)
+                // 격렬한 진동 (서스펜스 - 더 빠르게)
                 await gsap.to(winnerBubble, {
-                    x: "random(-5, 5)",
-                    rotation: "random(-3, 3)",
-                    duration: 0.05,
-                    repeat: 15,
+                    x: "random(-6, 6)",
+                    rotation: "random(-4, 4)",
+                    duration: 0.04,
+                    repeat: 12,
                     yoyo: true
                 }).then();
 
@@ -131,15 +130,15 @@
                 // 카드 등장 (스튜디오 스타일)
                 gsap.fromTo(mainCardRef,
                     { scale: 0.3, opacity: 0, rotationY: 90 },
-                    { scale: 1, opacity: 1, rotationY: 0, duration: 0.6, ease: "back.out(1.2)" }
+                    { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.2)" }
                 );
 
                 // 코랄 강조색 펄스 (미션일 경우)
                 if (result.isMission) {
-                    gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.5 });
+                    gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.3 });
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 // 히스토리 누적
                 historyResults = [...historyResults, result];
