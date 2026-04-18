@@ -1,13 +1,9 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, tick } from 'svelte';
     import gsap from 'gsap';
 
-    // [지휘관의 지침]: 부모로부터 큐와 연결 인스턴스, 큐 소진 함수를 주입받습니다.
-    let { 
-        rouletteQueue = [], 
-        connection = null, 
-        popQueue = () => {} 
-    } = $props();
+    // [오시리스의 눈]: Svelte 5 정석 반응형 프롭 선언
+    let props = $props();
 
     let containerRef: HTMLDivElement;
     let mainCardRef: HTMLDivElement;
@@ -18,37 +14,43 @@
     let activeResult: any = $state(null);
     let isPlaying = $state(false);
 
-    // [오시리스의 감시]: 큐에 변화가 생기면 자동으로 연출 엔진 가동
+    // [오시리스의 감시]: 큐 변화 실시간 추적 (반응형 프롭 참조 필수)
     $effect(() => {
-        if (rouletteQueue.length > 0 && !isPlaying) {
+        const queue = props.rouletteQueue || [];
+        console.log(`🎰 [감시자] 큐 변화 감지 (대기중: ${queue.length}개, 연출중: ${isPlaying})`);
+        
+        if (queue.length > 0 && !isPlaying) {
             processNext();
         }
     });
 
     async function processNext() {
-        if (rouletteQueue.length === 0) {
+        if (!props.rouletteQueue || props.rouletteQueue.length === 0) {
+            console.log("🎰 [프로세서] 소진할 큐가 없습니다.");
             isPlaying = false;
             activeResult = null;
             return;
         }
 
+        console.log("🎰 [프로세서] 새 연출을 준비합니다.");
         isPlaying = true;
-        // 큐의 첫 번째 항목을 현재 연출 대상으로 설정
-        // [주의]: 원본 큐는 signalrStore가 관리하므로 여기서는 시각적 동기화만 수행
-        activeResult = rouletteQueue[0];
+        activeResult = props.rouletteQueue[0];
         
-        // DOM 업데이트를 기다린 후 애니메이션 시작
-        setTimeout(() => {
+        // [오시리스의 동기화]: Svelte가 DOM을 그릴 때까지 대기 (Race Condition 방지)
+        await tick();
+        
+        if (containerRef) {
+            console.log("🎰 [프로세서] DOM 준비 완료, 연출을 시작합니다.", activeResult.spinId);
             startAnimation(activeResult);
-        }, 50);
+        } else {
+            console.error("🚨 [비상] containerRef가 생성되지 않았습니다. 즉시 강제 보고합니다.");
+            finishAndNext(activeResult);
+        }
     }
 
     function startAnimation(data: any) {
-        if (!containerRef) return;
-        
         if (ctx) ctx.revert();
         
-        // [가변 속도 사격]: 결과 개수에 따라 연출 속도를 동적으로 조절 (최소 0.01초까지 단축)
         const resultCount = data.results?.length || 1;
         const staggerSpeed = Math.max(0.01, 0.15 / (resultCount / 4));
         const gridDelay = Math.min(6, 4 + (resultCount * staggerSpeed));
@@ -74,32 +76,36 @@
 
             tl.to(containerRef, {
                 opacity: 0, y: -50, delay: gridDelay, duration: 0.6, ease: "power2.inOut",
-                onComplete: async () => {
-                    // [오시리스의 마침표]: 애니메이션이 끝나면 서버에 보고하여 채팅 사격 요청
-                    if (connection) {
-                        try {
-                            console.log(`🚀 [완료 보고] SpinId: ${data.spinId} 사격 요청 중...`);
-                            await connection.invoke("CompleteRouletteAsync", data.spinId);
-                        } catch (e) {
-                            console.warn("신호 전송 실패:", e);
-                        }
-                    }
-
-                    // [대기열 소진]: 현재 처리가 끝난 항목을 전역 스토어에서 제거합니다.
-                    isPlaying = false;
-                    if (popQueue) popQueue(); 
-                    processNext();
-                }
+                onComplete: () => finishAndNext(data)
             });
 
         }, containerRef);
+    }
+
+    async function finishAndNext(data: any) {
+        // [오시리스의 마침표]: 서버 보고 (채팅 사격 신호)
+        if (props.connection) {
+            try {
+                console.log(`🚀 [완료 보고] SpinId: ${data.spinId} 서버 신호 송신 중...`);
+                await props.connection.invoke("CompleteRouletteAsync", data.spinId);
+                console.log("✅ [완료 보고] 서버 수신 확인.");
+            } catch (e) {
+                console.warn("⚠️ [신호 전송 실패]:", e);
+            }
+        }
+
+        isPlaying = false;
+        if (props.popQueue) {
+            console.log("🎰 [프로세서] 연출 완료, 큐에서 제거합니다.");
+            props.popQueue(); 
+            // $effect가 다음 항목을 감지하여 자동으로 processNext를 트리거합니다.
+        }
     }
 
     onDestroy(() => {
         if (ctx) ctx.revert();
     });
 
-    // 메인 결과 추출 (가장 마지막 결과 또는 첫 번째 미션 항목)
     let mainResult = $derived(activeResult?.results?.[activeResult.results.length - 1]);
     let isMission = $derived(mainResult?.isMission || false);
 </script>

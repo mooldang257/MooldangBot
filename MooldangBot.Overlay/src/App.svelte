@@ -26,7 +26,11 @@
         <NoticeWidget message="시스템에 성공적으로 공명 중입니다." />
         
         <!-- 2. 룰렛 결과 레이어 (상주형: 큐를 스스로 감시) -->
-        <RouletteOverlay {rouletteQueue} {connection} {popQueue} />
+        <RouletteOverlay 
+            rouletteQueue={rouletteQueue} 
+            connection={connection} 
+            popQueue={popQueue} 
+        />
     </div>
   {:else}
     <div class="unauthorized">
