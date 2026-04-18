@@ -26,6 +26,7 @@
                 probability: 0,
                 probability10x: 0,
                 color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
+                template: "Standard",
                 isMission: false,
                 isActive: true
             }
@@ -213,13 +214,13 @@
                         class="grid grid-cols-12 gap-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-sky-200 transition-all group"
                         transition:slide|local
                     >
-                        <div class="col-span-5 space-y-1">
+                        <div class="col-span-4 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">아이템 이름</label>
                             <input 
                                 type="text" 
                                 bind:value={item.itemName}
                                 placeholder="당첨 항목"
-                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-sm text-slate-700"
+                                class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-sm text-slate-700"
                             />
                         </div>
                         <div class="col-span-2 space-y-1">
@@ -228,8 +229,20 @@
                                 type="number" 
                                 step="0.1"
                                 bind:value={item.probability}
-                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-black text-sm text-slate-700"
+                                class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-black text-sm text-slate-700"
                             />
+                        </div>
+                        <div class="col-span-2 space-y-1">
+                            <label class="text-[10px] font-black text-slate-400 uppercase">디자인 템플릿</label>
+                            <select 
+                                bind:value={item.template}
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-xs text-slate-700 appearance-none cursor-pointer"
+                            >
+                                <option value="Standard">🫧 일반 (Standard)</option>
+                                <option value="Rare">💎 희귀 (Rare)</option>
+                                <option value="Epic">🌀 영웅 (Epic)</option>
+                                <option value="Legendary">🏆 전설 (Legendary)</option>
+                            </select>
                         </div>
                         <div class="col-span-2 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">색상</label>
@@ -239,13 +252,13 @@
                                     bind:value={item.color}
                                     class="w-10 h-10 p-0.5 bg-white border border-slate-200 rounded-xl cursor-pointer"
                                 />
-                                <span class="hidden lg:block text-[10px] font-mono text-slate-400">{item.color}</span>
+                                <span class="hidden xl:block text-[10px] font-mono text-slate-400">{item.color}</span>
                             </div>
                         </div>
-                        <div class="col-span-2 flex items-end justify-center pb-2.5">
-                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <div class="col-span-1 flex items-end justify-center pb-2">
+                            <label class="flex flex-col items-center gap-1 cursor-pointer select-none">
+                                <span class="text-[9px] font-black text-slate-400 uppercase">미션</span>
                                 <input type="checkbox" bind:checked={item.isMission} class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                                <span class="text-xs font-bold text-slate-500">미션</span>
                             </label>
                         </div>
                         <div class="col-span-1 flex items-end justify-end pb-2">
