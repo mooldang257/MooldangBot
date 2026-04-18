@@ -283,7 +283,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         {
             foreach (var element in messages.EnumerateArray())
             {
-                await ProcessSingleChatAsync(chzzkUid, element, eventName);
+                await RouteToProcessorAsync(chzzkUid, element, eventName);
             }
             processed = true;
         }
@@ -292,14 +292,14 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         {
             foreach (var element in actualData.EnumerateArray())
             {
-                await ProcessSingleChatAsync(chzzkUid, element, eventName);
+                await RouteToProcessorAsync(chzzkUid, element, eventName);
             }
             processed = true;
         }
         // 3. 단일 객체인 경우 (간혹 발생)
         else if (actualData.ValueKind == JsonValueKind.Object)
         {
-            await ProcessSingleChatAsync(chzzkUid, actualData, eventName);
+            await RouteToProcessorAsync(chzzkUid, actualData, eventName);
             processed = true;
         }
 
@@ -309,204 +309,157 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         }
     }
 
-    internal async Task ProcessSingleChatAsync(string chzzkUid, JsonElement element, string defaultEventName)
+    private async Task RouteToProcessorAsync(string chzzkUid, JsonElement element, string eventName)
     {
-        // [Diagnostic] 데이터 정규화를 위해 원본 페이로드를 디버그 모드에서만 출력합니다.
-        _logger.LogDebug("📡 [Shard {Id}] Raw Payload ({Event}): {Raw}", _shardId, defaultEventName, element.GetRawText());
+        switch (eventName.ToUpper())
+        {
+            case "CHAT":
+                await ProcessSingleChatAsync(chzzkUid, element);
+                break;
+            case "DONATION":
+                await ProcessSingleDonationAsync(chzzkUid, element);
+                break;
+            case "SUBSCRIPTION":
+                await ProcessSingleSubscriptionAsync(chzzkUid, element);
+                break;
+        }
+    }
 
-        // [v3.7] 지휘관님 제안: 다형성 기반의 현대화된 이벤트 모델을 생성합니다.
-        DateTime now = DateTime.UtcNow;
-
-        // [v3.2.11] 지휘관님 지침: ChzzkAPI 내부에서 데이터 정제 및 검증 수행
+    private async Task ProcessSingleChatAsync(string chzzkUid, JsonElement element)
+    {
         var chatPayload = element.Deserialize<ChzzkChatPayload>();
         if (chatPayload == null) return;
 
-        // [v3.8] 지휘관님 최종 조난 지침: 후원 데이터 중복 발행 원천 차단
-        // 치지직은 후원 시 "DONATION"과 "CHAT"을 동시에 보낼 수 있습니다.
-        // 우리는 "DONATION" 타입으로 들어온 것만 진짜 후원(DonationEvent)으로 인정하고, 
-        // "CHAT" 타입 안에 섞여 들어온 후원 정보 때문에 중복으로 후원 이벤트가 나가는 것을 막습니다.
-        if (defaultEventName.ToUpper() == "CHAT")
-        {
-            // [v7.2] 후원 정보가 섞인 채팅이 오더라도, 이미 "DONATION" 타입 소식이 오고 있으므로
-            // 여기서 강제로 Donation으로 업그레이드하지 않고 일반 채팅 처리를 따르거나 무시하게 합니다.
-            eventType = ChzzkEventType.Chat; 
-        }
-        else if (element.TryGetProperty("donationType", out var dtProp) || (!string.IsNullOrEmpty(chatPayload.DonationType)))
-        {
-            var dtValue = dtProp.ValueKind != JsonValueKind.Undefined ? dtProp.GetString() : chatPayload.DonationType;
-            if (dtValue == "VIDEO") eventType = ChzzkEventType.VideoDonation;
-            else if (dtValue == "CHAT") eventType = ChzzkEventType.ChatDonation;
-        }
+        DateTime now = DateTime.UtcNow;
+        string nickname = ExtractNickname(chatPayload.Profile);
+        string senderId = chatPayload.SenderChannelId ?? chatPayload.ChannelId;
+        string? userRole = chatPayload.UserRoleCode ?? ExtractUserRoleFromProfile(chatPayload.Profile);
 
-        // 닉네임 추출 및 정제
-        string nickname = "Unknown";
-        if (chatPayload.Profile.HasValue)
+        var eventPayload = new ChzzkChatEvent
         {
-            var profile = chatPayload.Profile.Value;
-            if (profile.ValueKind == JsonValueKind.String)
-            {
-                try {
-                    using var profileDoc = JsonDocument.Parse(profile.GetString() ?? "{}");
-                    nickname = profileDoc.RootElement.TryGetProperty("nickname", out var nick) 
-                        ? nick.GetString() ?? "Unknown" : "Unknown";
-                } catch { nickname = "Unknown"; }
-            }
-            else if (profile.ValueKind == JsonValueKind.Object)
-            {
-                nickname = profile.TryGetProperty("nickname", out var nick) 
-                    ? nick.GetString() ?? "Unknown" : "Unknown";
-            }
-        }
+            ChannelId = chzzkUid,
+            SenderId = senderId,
+            Nickname = nickname,
+            UserRoleCode = userRole,
+            Timestamp = now,
+            Content = chatPayload.Content,
+            ChatChannelId = chatPayload.ChatChannelId,
+            Emojis = chatPayload.Emojis
+        };
 
-        // [v3.7] 공식 문서(Session.md) 기반 루트 필드 우선 추출
-        string senderId = chatPayload.SenderChannelId ?? chatPayload.ChannelId; 
-        string? userRole = chatPayload.UserRoleCode;
-        string? chatChannelId = chatPayload.ChatChannelId;
+        _logger.LogInformation("🗨️ [Shard {Id}] CHAT: {Nickname}: {Msg}", _shardId, nickname, chatPayload.Content);
+        await PublishInternalEventAsync(chzzkUid, eventPayload, now);
+    }
 
-        // [v3.2.12] 실전 데이터 보정: userRoleCode가 profile 내부에 있는 경우 대응
-        if (string.IsNullOrEmpty(userRole) && chatPayload.Profile.HasValue && chatPayload.Profile.Value.ValueKind == JsonValueKind.Object)
+    private async Task ProcessSingleDonationAsync(string chzzkUid, JsonElement element)
+    {
+        var donationPayload = element.Deserialize<ChzzkDonationPayload>();
+        if (donationPayload == null) return;
+
+        DateTime now = DateTime.UtcNow;
+        string nickname = donationPayload.DonatorNickname ?? ExtractNickname(donationPayload.Profile);
+        string senderId = donationPayload.DonatorChannelId ?? donationPayload.ChannelId;
+        string? userRole = donationPayload.UserRoleCode ?? ExtractUserRoleFromProfile(donationPayload.Profile);
+
+        int amount = ExtractAmount(donationPayload.PayAmount, donationPayload.Extra);
+        string donationMsg = donationPayload.DonationText ?? string.Empty;
+
+        // [v7.1] 멱등성 보호막 (중복 후원 방지)
+        if (await IsDuplicateDonationAsync(chzzkUid, senderId, amount, donationMsg))
         {
-            if (chatPayload.Profile.Value.TryGetProperty("userRoleCode", out var prop))
-            {
-                userRole = prop.GetString();
-            }
+            _logger.LogWarning("🛡️ [Shard {Id}] 중복 후원 감지 및 차단: {Nickname}({Uid}) - {Amount}치즈", _shardId, nickname, senderId, amount);
+            return;
         }
 
-        // [v3.1.8] 하위 호환성: Extra 필드로부터 추가 추출 시도
-        if (chatPayload.Extra.HasValue && chatPayload.Extra.Value.ValueKind == JsonValueKind.Object)
+        var isVideo = donationPayload.DonationType == "VIDEO";
+        var eventPayload = new ChzzkDonationEvent
         {
-            var extra = chatPayload.Extra.Value;
-            if (string.IsNullOrEmpty(userRole) && extra.TryGetProperty("userRoleCode", out var ur)) userRole = ur.GetString();
-            if (string.IsNullOrEmpty(chatChannelId) && extra.TryGetProperty("chatChannelId", out var ccid)) chatChannelId = ccid.GetString();
-            if (senderId == chatPayload.ChannelId && extra.TryGetProperty("senderChannelId", out var scid)) senderId = scid.GetString() ?? senderId;
-        }
+            ChannelId = chzzkUid,
+            SenderId = senderId,
+            Nickname = nickname,
+            UserRoleCode = userRole,
+            Timestamp = now,
+            PayAmount = amount,
+            DonationMessage = donationMsg,
+            IsVideoDonation = isVideo,
+            SafeEventId = Guid.NewGuid().ToString()
+        };
 
-        ChzzkEventBase? eventPayload = null;
+        _logger.LogInformation("💰 [Shard {Id}] DONATION: {Nickname}({Uid}) - {Amount}치즈", _shardId, nickname, senderId, amount);
+        await PublishInternalEventAsync(chzzkUid, eventPayload, now);
+    }
 
-        // [v3.7] 다형성 모델 생성 (프로퍼티 초기화 방식)
-        if (eventType == ChzzkEventType.ChatDonation || eventType == ChzzkEventType.VideoDonation)
+    private async Task ProcessSingleSubscriptionAsync(string chzzkUid, JsonElement element)
+    {
+        var subPayload = element.Deserialize<ChzzkSubscriptionPayload>();
+        if (subPayload == null) return;
+
+        DateTime now = DateTime.UtcNow;
+        string nickname = subPayload.SubscriberNickname ?? ExtractNickname(subPayload.Profile);
+        string senderId = subPayload.SubscriberChannelId ?? subPayload.ChannelId;
+
+        int tier = subPayload.TierNo ?? 1;
+        int month = subPayload.Month ?? 0;
+
+        var eventPayload = new ChzzkSubscriptionEvent
         {
-            int amount = 0;
-            string donationMsg = string.Empty;
+            ChannelId = chzzkUid,
+            SenderId = senderId,
+            Nickname = nickname,
+            Timestamp = now,
+            SubscriptionTier = tier,
+            SubscriptionMonth = month
+        };
 
-            // [Resilience] 루트 필드 우선 추출 (Session.md 준수)
-            if (chatPayload.PayAmount.HasValue)
-            {
-                var pa = chatPayload.PayAmount.Value;
-                amount = pa.ValueKind == JsonValueKind.Number ? pa.GetInt32() : (int.TryParse(pa.GetString(), out var val) ? val : 0);
-            }
-            donationMsg = chatPayload.DonationText ?? string.Empty;
+        _logger.LogInformation("💎 [Shard {Id}] SUBSCRIPTION: {Nickname} ({Uid})", _shardId, nickname, senderId);
+        await PublishInternalEventAsync(chzzkUid, eventPayload, now);
+    }
 
-            // [Fallback] 시뮬레이션 및 기존 호환: Extra 필드 또는 직접 속성 확인
-            if (amount == 0 && chatPayload.Extra.HasValue && chatPayload.Extra.Value.ValueKind == JsonValueKind.Object)
-            {
-                var extra = chatPayload.Extra.Value;
-                if (extra.TryGetProperty("payAmount", out var pa)) 
-                    amount = pa.ValueKind == JsonValueKind.Number ? pa.GetInt32() : (int.TryParse(pa.GetString(), out var val) ? val : 0);
-            }
-
-            if (nickname == "Unknown" && (chatPayload.DonatorNickname != null))
-                nickname = chatPayload.DonatorNickname;
-
-            // [v7.1] 멱등성 보호막 (Idempotency Filter)
-            // 소켓 재전송 버그로 인한 수십ms 단위의 중복은 차단하고, 1초 이상의 광클 후원은 허용합니다.
-            if (await IsDuplicateDonationAsync(chzzkUid, senderId, amount, donationMsg))
-            {
-                _logger.LogWarning("🛡️ [Shard {Id}] 중복 후원 감지 및 차단: {Nickname}({Uid}) - {Amount}치즈", _shardId, nickname, senderId, amount);
-                return;
-            }
-
-            var safeEventId = Guid.NewGuid().ToString();
-
-            eventPayload = new ChzzkDonationEvent
-            {
-                ChannelId = chzzkUid,
-                SenderId = senderId,
-                Nickname = nickname,
-                UserRoleCode = userRole,
-                Timestamp = now,
-                PayAmount = amount,
-                DonationMessage = donationMsg,
-                IsVideoDonation = eventType == ChzzkEventType.VideoDonation,
-                SafeEventId = safeEventId
-            };
-
-            var donationTypeName = eventType == ChzzkEventType.VideoDonation ? "영상후원" : "채팅후원";
-            _logger.LogInformation("💰 [Shard {Id}] {DonationType}: {Nickname}({Uid}) - {Amount}치즈 (SafeId: {SafeId})", 
-                _shardId, donationTypeName, nickname, senderId, amount, safeEventId);
-        }
-        else if (eventType == ChzzkEventType.Subscription)
+    private string ExtractNickname(JsonElement? profile)
+    {
+        if (!profile.HasValue) return "Unknown";
+        if (profile.Value.ValueKind == JsonValueKind.String)
         {
-            int tier = 1;
-            int month = 0;
-
-            if (chatPayload.Extra.HasValue && chatPayload.Extra.Value.ValueKind == JsonValueKind.Object)
-            {
-                var extra = chatPayload.Extra.Value;
-                if (extra.TryGetProperty("tier", out var t)) tier = t.GetInt32();
-                if (extra.TryGetProperty("month", out var m)) month = m.GetInt32();
-            }
-
-            // [Fallback] 루트에서 직접 추출 시도
-            if (element.TryGetProperty("tierNo", out var rtn)) tier = rtn.GetInt32();
-            if (month == 0 && element.TryGetProperty("month", out var rm)) month = rm.GetInt32();
-            if (nickname == "Unknown" && element.TryGetProperty("subscriberNickname", out var snick))
-                nickname = snick.GetString() ?? nickname;
-
-            eventPayload = new ChzzkSubscriptionEvent
-            {
-                ChannelId = chzzkUid,
-                SenderId = senderId,
-                Nickname = nickname,
-                UserRoleCode = userRole,
-                Timestamp = now,
-                SubscriptionTier = tier,
-                SubscriptionMonth = month
-            };
-
-            _logger.LogInformation("💎 [Shard {Id}] SUBSCRIPTION: {Nickname} ({Uid})", _shardId, nickname, senderId);
+            try { return JsonDocument.Parse(profile.Value.GetString() ?? "{}").RootElement.GetProperty("nickname").GetString() ?? "Unknown"; }
+            catch { return "Unknown"; }
         }
-        else
+        return profile.Value.TryGetProperty("nickname", out var nick) ? nick.GetString() ?? "Unknown" : "Unknown";
+    }
+
+    private string? ExtractUserRoleFromProfile(JsonElement? profile)
+    {
+        if (profile?.ValueKind == JsonValueKind.Object && profile.Value.TryGetProperty("userRoleCode", out var prop))
+            return prop.GetString();
+        return null;
+    }
+
+    private int ExtractAmount(JsonElement? amountElem, JsonElement? extra)
+    {
+        if (amountElem.HasValue)
         {
-            eventPayload = new ChzzkChatEvent
-            {
-                ChannelId = chzzkUid,
-                SenderId = senderId,
-                Nickname = nickname,
-                UserRoleCode = userRole,
-                Timestamp = now,
-                Content = chatPayload.Content,
-                ChatChannelId = chatChannelId,
-                Emojis = chatPayload.Emojis
-            };
-
-            _logger.LogInformation("🗨️ [Shard {Id}] CHAT: {Nickname}: {Msg}", _shardId, nickname, chatPayload.Content);
+            var val = amountElem.Value;
+            if (val.ValueKind == JsonValueKind.Number) return val.GetInt32();
+            if (val.ValueKind == JsonValueKind.String && int.TryParse(val.GetString(), out var res)) return res;
         }
+        if (extra?.ValueKind == JsonValueKind.Object && extra.Value.TryGetProperty("payAmount", out var pa))
+            return pa.ValueKind == JsonValueKind.Number ? pa.GetInt32() : (int.TryParse(pa.GetString(), out var v) ? v : 0);
+        return 0;
+    }
 
-        // [v3.7.2] 봇 자가 응답 방어 (Gateway Level): 봇의 UID와 일치하면 무시합니다.
+    private async Task PublishInternalEventAsync(string chzzkUid, ChzzkEventBase payload, DateTime now)
+    {
+        // 봇 자가 응답 방어
         var botUid = _configuration["BOT_CHZZK_UID"]?.Trim();
-        if (!string.IsNullOrEmpty(botUid) && !string.IsNullOrEmpty(senderId))
-        {
-            if (senderId.Equals(botUid, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogInformation("🛡️ [Shard {Id}] 봇 자가 응답 감지: {Nickname}의 메시지를 차단합니다. (UID: {UID})", _shardId, nickname, senderId);
-                return;
-            }
-        }
+        if (!string.IsNullOrEmpty(botUid) && payload.SenderId.Equals(botUid, StringComparison.OrdinalIgnoreCase)) return;
 
-        // [v3.7] 현대화된 봉투(Envelope)에 담아 사출
-        if (eventPayload != null)
-        {
-            var envelope = new ChzzkEventEnvelope(
-                MessageId: Guid.NewGuid(),
-                ChzzkUid: chzzkUid,
-                Payload: eventPayload,
-                ReceivedAt: now,
-                Version: "3.7"
-            );
-
-            await _publisher.PublishEventAsync(envelope);
-        }
+        var envelope = new ChzzkEventEnvelope(
+            MessageId: Guid.NewGuid(),
+            ChzzkUid: chzzkUid,
+            Payload: payload,
+            ReceivedAt: now,
+            Version: "4.0"
+        );
+        await _publisher.PublishEventAsync(envelope);
     }
 
     /// <summary>

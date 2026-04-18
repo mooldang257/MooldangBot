@@ -21,12 +21,10 @@ public class ChzzkSystemEventData
 }
 
 /// <summary>
-/// [오시리스의 파동]: CHAT/DONATION/SUBSCRIPTION 통합 이벤트 페이로드 모델.
-/// 공식 OpenAPI 명세(Session.md)의 모든 루트 필드를 포함합니다.
+/// [v4.0] CHAT 전용 페이로드 모델 (순수 채팅 목적)
 /// </summary>
 public class ChzzkChatPayload
 {
-    // 공통 필드
     [JsonPropertyName("channelId")]
     public string ChannelId { get; set; } = string.Empty;
 
@@ -42,7 +40,6 @@ public class ChzzkChatPayload
     [JsonPropertyName("emojis")]
     public System.Text.Json.JsonElement? Emojis { get; set; }
 
-    // CHAT 전용 루트 필드
     [JsonPropertyName("senderChannelId")]
     public string? SenderChannelId { get; set; }
 
@@ -52,7 +49,18 @@ public class ChzzkChatPayload
     [JsonPropertyName("userRoleCode")]
     public string? UserRoleCode { get; set; }
 
-    // DONATION 전용 루트 필드
+    [JsonPropertyName("extras")]
+    public System.Text.Json.JsonElement? Extra { get; set; }
+}
+
+/// <summary>
+/// [v4.0] DONATION 전용 페이로드 모델 (결제 및 후원 목적)
+/// </summary>
+public class ChzzkDonationPayload
+{
+    [JsonPropertyName("channelId")]
+    public string ChannelId { get; set; } = string.Empty;
+
     [JsonPropertyName("donationType")]
     public string? DonationType { get; set; }
 
@@ -63,12 +71,32 @@ public class ChzzkChatPayload
     public string? DonatorNickname { get; set; }
 
     [JsonPropertyName("payAmount")]
-    public System.Text.Json.JsonElement? PayAmount { get; set; } // String 또는 Number 대응
+    public System.Text.Json.JsonElement? PayAmount { get; set; }
 
     [JsonPropertyName("donationText")]
     public string? DonationText { get; set; }
 
-    // SUBSCRIPTION 전용 루트 필드
+    [JsonPropertyName("userRoleCode")]
+    public string? UserRoleCode { get; set; }
+
+    [JsonPropertyName("messageTime")]
+    public long MessageTime { get; set; }
+
+    [JsonPropertyName("profile")]
+    public System.Text.Json.JsonElement? Profile { get; set; }
+
+    [JsonPropertyName("extras")]
+    public System.Text.Json.JsonElement? Extra { get; set; }
+}
+
+/// <summary>
+/// [v4.0] SUBSCRIPTION 전용 페이로드 모델 (구독 목적)
+/// </summary>
+public class ChzzkSubscriptionPayload
+{
+    [JsonPropertyName("channelId")]
+    public string ChannelId { get; set; } = string.Empty;
+
     [JsonPropertyName("subscriberChannelId")]
     public string? SubscriberChannelId { get; set; }
 
@@ -78,13 +106,12 @@ public class ChzzkChatPayload
     [JsonPropertyName("tierNo")]
     public int? TierNo { get; set; }
 
-    [JsonPropertyName("tierName")]
-    public string? TierName { get; set; }
-
     [JsonPropertyName("month")]
     public int? Month { get; set; }
 
-    // 하위 호환성 및 확장용
+    [JsonPropertyName("profile")]
+    public System.Text.Json.JsonElement? Profile { get; set; }
+
     [JsonPropertyName("extras")]
     public System.Text.Json.JsonElement? Extra { get; set; }
 }
