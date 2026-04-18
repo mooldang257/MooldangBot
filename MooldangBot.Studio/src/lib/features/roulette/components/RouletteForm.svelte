@@ -52,9 +52,19 @@
 
     const handleCopy = async (e: MouseEvent) => {
         try {
-            // [물멍]: 현재 도메인 및 토큰 기반 URL 생성
-            const token = localStorage.getItem("token") || "";
-            const obsUrl = `${window.location.origin}/overlay/roulette?access_token=${token}`;
+            // [물멍]: 백엔드로부터 오버레이 전용 토큰 발급 (Aegis of Resonance)
+            const response = await fetch('/api/overlay/auth/token', {
+                method: 'POST',
+                credentials: 'include' 
+            });
+            const data = await response.json();
+            
+            if (!data.success) {
+                console.error("Token fetch failed:", data.message);
+                return;
+            }
+
+            const obsUrl = `${window.location.origin}/overlay/?access_token=${data.token}`;
             
             await navigator.clipboard.writeText(obsUrl);
             copied = true;
