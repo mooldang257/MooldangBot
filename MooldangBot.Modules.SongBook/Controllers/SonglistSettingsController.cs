@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Common.Models;
-using MooldangBot.Modules.SongBookModule.Features.Commands;
-using MooldangBot.Modules.SongBookModule.Features.Queries;
+using MooldangBot.Modules.SongBook.Features.Commands;
+using MooldangBot.Modules.SongBook.Features.Queries;
 
-namespace MooldangBot.Modules.SongBookModule.Controllers;
+namespace MooldangBot.Modules.SongBook.Controllers;
 
 /// <summary>
 /// [오시리스의 설정]: 송북 디자인 및 관련 명령어 설정을 담당하는 컨트롤러입니다.

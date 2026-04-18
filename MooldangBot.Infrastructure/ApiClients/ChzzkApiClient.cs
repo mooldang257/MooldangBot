@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Authorization;

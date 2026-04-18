@@ -1,6 +1,6 @@
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Contracts.SongBook.Interfaces;
+namespace MooldangBot.Modules.SongBook.Abstractions;
 
 /// <summary>
 /// [오시리스의 저장소]: 송북 도메인의 영속성을 담당하는 인터페이스입니다.

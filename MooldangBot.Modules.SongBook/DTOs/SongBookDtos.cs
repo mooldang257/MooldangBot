@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Contracts.SongBook.DTOs;
+namespace MooldangBot.Modules.SongBook.DTOs;
 
 public class SonglistSettingsUpdateRequest
 {

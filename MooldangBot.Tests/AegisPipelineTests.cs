@@ -28,7 +28,7 @@ public class AegisPipelineTests
         var service = new IdentityCacheService(_cache, _scopeFactory, _chaos, _logger);
         var streamerUid = "streamer123";
         var profile = new StreamerProfile { ChzzkUid = streamerUid, ChannelName = "TestChannel" };
-        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile, MooldangBot.Contracts.Chzzk.ChzzkJsonContext.Default.StreamerProfile);
+        var profileBytes = JsonSerializer.SerializeToUtf8Bytes(profile, MooldangBot.Application.Contracts.Chzzk.ChzzkJsonContext.Default.StreamerProfile);
 
         // 캐시에 데이터가 있다고 가정
         _cache.GetAsync($"Streamer:{streamerUid}", Arg.Any<CancellationToken>()).Returns(profileBytes);

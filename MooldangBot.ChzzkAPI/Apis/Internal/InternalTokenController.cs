@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Contracts.Chzzk.Models.Internal;
 using MooldangBot.Contracts.Chzzk.Models.Chzzk.Shared;

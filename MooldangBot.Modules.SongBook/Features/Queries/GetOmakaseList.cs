@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Models;
-using MooldangBot.Contracts.SongBook.DTOs;
-using MooldangBot.Modules.SongBookModule.Abstractions;
+using MooldangBot.Modules.SongBook.DTOs;
+using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Modules.SongBookModule.Features.Queries;
+namespace MooldangBot.Modules.SongBook.Features.Queries;
 
 /// <summary>
 /// [오마카세 목록 요청]: 특정 스트리머의 활성화된 오마카세 리스트를 조회합니다.

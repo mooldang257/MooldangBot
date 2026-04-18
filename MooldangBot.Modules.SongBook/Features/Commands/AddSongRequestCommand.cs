@@ -1,9 +1,9 @@
 using MediatR;
 using MooldangBot.Contracts.Common.Models;
-using MooldangBot.Contracts.SongBook.Events;
-using MooldangBot.Modules.SongBookModule.State;
+using MooldangBot.Modules.SongBook.Events;
+using MooldangBot.Modules.SongBook.State;
 
-namespace MooldangBot.Modules.SongBookModule.Features.Commands;
+namespace MooldangBot.Modules.SongBook.Features.Commands;
 
 /// <summary>
 /// [곡 신청 명령]: 시청자가 노래를 신청할 때 처리되는 로직입니다.

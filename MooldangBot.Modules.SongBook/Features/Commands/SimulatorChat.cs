@@ -2,10 +2,10 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Models;
 using MooldangBot.Contracts.Chzzk.Interfaces;
-using MooldangBot.Modules.SongBookModule.Abstractions;
+using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Domain.Events;
 
-namespace MooldangBot.Modules.SongBookModule.Features.Commands;
+namespace MooldangBot.Modules.SongBook.Features.Commands;
 
 /// <summary>
 /// [시뮬레이션 기동]: 채팅 시뮬레이션 이벤트를 발생시켜 시스템 동작을 테스트합니다.

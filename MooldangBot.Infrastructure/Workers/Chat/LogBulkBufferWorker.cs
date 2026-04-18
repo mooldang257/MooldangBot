@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Options;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Domain.Entities.Philosophy;

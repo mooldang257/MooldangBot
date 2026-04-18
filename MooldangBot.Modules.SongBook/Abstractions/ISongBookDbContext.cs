@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Modules.SongBookModule.Abstractions;
+namespace MooldangBot.Modules.SongBook.Abstractions;
 
 /// <summary>
 /// [오시리스의 성궤]: 송북 모듈이 필요로 하는 모든 데이터베이스 테이블에 대한 추상화 인터페이스입니다.

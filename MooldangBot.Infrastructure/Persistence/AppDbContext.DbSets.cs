@@ -4,7 +4,7 @@ using MooldangBot.Domain.Entities.Philosophy;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
-using MooldangBot.Modules.SongBookModule.Abstractions;
+using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Infrastructure.Sagas;
 

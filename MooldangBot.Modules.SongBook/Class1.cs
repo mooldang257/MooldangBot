@@ -1,4 +1,4 @@
-namespace MooldangBot.Modules.SongBookModule;
+namespace MooldangBot.Modules.SongBook;
 
 public class Class1
 {

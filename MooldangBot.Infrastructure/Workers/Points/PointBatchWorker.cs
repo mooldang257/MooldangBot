@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Services;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Point.Requests.Models;
 using MediatR;

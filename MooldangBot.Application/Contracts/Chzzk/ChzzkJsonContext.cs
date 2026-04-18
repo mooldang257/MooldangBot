@@ -17,7 +17,7 @@ using MooldangBot.Contracts.Chzzk.Models;
 using MooldangBot.Contracts.Models.Chzzk; 
 using MooldangBot.Domain.DTOs;
 
-namespace MooldangBot.Contracts.Chzzk;
+namespace MooldangBot.Application.Contracts.Chzzk;
 
 /// <summary>
 /// [오시리스의 성판]: 치지직 API 및 보트 시스템의 모든 주요 모델들에 대한 고성능 JSON Source Generator 컨텍스트입니다.
@@ -118,14 +118,14 @@ namespace MooldangBot.Contracts.Chzzk;
 // Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
 // SongBook Module DTOs (Contracts)
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SonglistDataDto))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongUpdateRequest))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SonglistSettingsUpdateRequest))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongRequestCommandDto))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.OmakaseDto))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongQueueDto))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongQueueViewDto))]
-[JsonSerializable(typeof(MooldangBot.Contracts.SongBook.DTOs.SongAddRequest))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SonglistDataDto))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SongUpdateRequest))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SonglistSettingsUpdateRequest))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SongRequestCommandDto))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.OmakaseDto))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SongQueueDto))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SongQueueViewDto))]
+[JsonSerializable(typeof(MooldangBot.Modules.SongBook.DTOs.SongAddRequest))]
 
 // Domain DTOs
 [JsonSerializable(typeof(PeriodicMessageDto))]

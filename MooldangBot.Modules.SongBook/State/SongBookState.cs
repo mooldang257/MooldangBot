@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace MooldangBot.Modules.SongBookModule.State;
+namespace MooldangBot.Modules.SongBook.State;
 
 public class SongBookState
 {

@@ -1,6 +1,6 @@
 using MediatR;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Contracts.SongBook.Events;
+using MooldangBot.Modules.SongBook.Events;
 
 namespace MooldangBot.Application.Features.Overlay.Handlers;
 

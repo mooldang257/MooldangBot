@@ -1,6 +1,6 @@
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Common.Services;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;

@@ -2,11 +2,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Contracts.Common.Models;
-using MooldangBot.Modules.SongBookModule.Features.Commands;
-using MooldangBot.Modules.SongBookModule.Features.Queries;
+using MooldangBot.Modules.SongBook.Features.Commands;
+using MooldangBot.Modules.SongBook.Features.Queries;
 using MooldangBot.Domain.Common;
 
-namespace MooldangBot.Modules.SongBookModule.Controllers;
+namespace MooldangBot.Modules.SongBook.Controllers;
 
 /// <summary>
 /// [오시리스의 서고]: 송북(노래 신청 및 오마카세) 관련 기능을 담당하는 모듈 컨트롤러입니다.

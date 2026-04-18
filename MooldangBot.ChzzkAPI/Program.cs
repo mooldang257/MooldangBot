@@ -11,7 +11,7 @@ using MooldangBot.ChzzkAPI.Services;
 using RabbitMQ.Client;
 using Serilog;
 using System.Text.Json.Serialization;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using MooldangBot.ChzzkAPI.Extensions;

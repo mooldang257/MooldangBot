@@ -1,13 +1,13 @@
 using MediatR;
 using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Contracts.SongBook.DTOs;
+using MooldangBot.Modules.SongBook.DTOs;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
-using MooldangBot.Modules.SongBookModule.Features.Commands;
+using MooldangBot.Modules.SongBook.Features.Commands;
 
-namespace MooldangBot.Modules.SongBookModule.Features.Strategies;
+namespace MooldangBot.Modules.SongBook.Features.Strategies;
 
 /// <summary>
 /// [오시리스의 지휘]: 노래 신청 명령어(!신청 곡명)가 들어왔을 때 송북 모듈로 해당 요청을 전달합니다.

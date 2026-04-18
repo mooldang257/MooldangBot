@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Contracts.Common.Models;
-using MooldangBot.Modules.SongBookModule.Abstractions;
+using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Domain.Entities;
 
-namespace MooldangBot.Modules.SongBookModule.Features.Queries;
+namespace MooldangBot.Modules.SongBook.Features.Queries;
 
 /// <summary>
 /// [?ㅼ젙 ?쇳꽣: ?〓턿]: ?ㅽ듃由щ㉧???〓턿 ?ㅼ젙 ?곗씠??紐낅졊?? ?ㅻ쭏移댁꽭, ?붿옄????瑜?議고쉶?⑸땲??

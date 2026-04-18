@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Contracts.SongBook.DTOs;
+using MooldangBot.Modules.SongBook.DTOs;
 using MooldangBot.Domain.Common;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Contracts.Common.Models;

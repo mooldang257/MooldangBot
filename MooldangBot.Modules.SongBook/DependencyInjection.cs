@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Contracts.SongBook.Interfaces;
-using MooldangBot.Modules.SongBookModule.Persistence;
-using MooldangBot.Modules.SongBookModule.Features.Strategies;
-using MooldangBot.Modules.SongBookModule.State;
+using MooldangBot.Modules.SongBook.Abstractions;
+using MooldangBot.Modules.SongBook.Persistence;
+using MooldangBot.Modules.SongBook.Features.Strategies;
+using MooldangBot.Modules.SongBook.State;
 
 
-namespace MooldangBot.Modules.SongBookModule;
+namespace MooldangBot.Modules.SongBook;
 
 public static class SongBookModuleExtensions
 {

@@ -12,7 +12,7 @@ using Polly;
 using Polly.Retry;
 using Dapper;
 using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.Contracts.Chzzk;
+using MooldangBot.Application.Contracts.Chzzk;
 using System.Collections.Concurrent;
 using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Services;
