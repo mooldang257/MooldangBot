@@ -27,11 +27,12 @@
     let candidates: any[] = $state([]);
 
     // [사운드 엔진]
+    // [사운드 엔진]: 기본 사운드는 CDN을 활용해 즉각적인 피드백 제공
     const DEFAULT_SOUNDS: Record<string, string> = {
-        'Standard': '/assets/sounds/roulette/normal.mp3',
-        'Rare': '/assets/sounds/roulette/rare.mp3',
-        'Epic': '/assets/sounds/roulette/epic.mp3',
-        'Legendary': '/assets/sounds/roulette/legendary.mp3'
+        'Standard': 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', // 깔끔한 팝업
+        'Rare': 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',     // 마법적인 소리
+        'Epic': 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',     // 화려한 벨
+        'Legendary': 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3' // 웅장한 승리
     };
     let audioCache: Map<string, HTMLAudioElement> = new Map();
 
