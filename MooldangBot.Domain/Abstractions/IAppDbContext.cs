@@ -47,6 +47,7 @@ namespace MooldangBot.Domain.Abstractions
         DbSet<Master_SongStaging> MasterSongStagings { get; set; }
         DbSet<RouletteLog> RouletteLogs { get; set; }
         DbSet<RouletteSpin> RouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성 레이어 추가
+        DbSet<SoundAsset> SoundAssets { get; set; }
         
         // [v11.1] 천상의 장부 (Celestial Ledger)
         DbSet<PointTransactionHistory> PointTransactionHistories { get; set; }
