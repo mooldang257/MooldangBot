@@ -4,7 +4,7 @@ using MooldangBot.Contracts.Common.Interfaces;
 using RedLockNet;
 using StackExchange.Redis;
 
-namespace MooldangBot.Modules.Core.Features.Commands;
+namespace MooldangBot.Application.Features.Core;
 
 /// <summary>
 /// [영점 조절]: 분산 환경의 인스턴스별 접속자 보고를 취합하여 전역 카운트를 교정합니다.
@@ -29,7 +29,7 @@ public class SyncFleetConnectionsCommandHandler(
         await using var redLock = await lockFactory.CreateLockAsync(resource, expiry);
         if (!redLock.IsAcquired) return;
 
-        logger.LogInformation("👑 [Core 모듈] 함대 마스터 권한 획득. 영점 조절 시작.");
+        logger.LogInformation("👑 [Core] 함대 마스터 권한 획득. 영점 조절 시작.");
 
         var db = redis.GetDatabase();
         var fleetKeyPrefix = "overlay:v1:fleet-counts:";
@@ -63,6 +63,6 @@ public class SyncFleetConnectionsCommandHandler(
             await db.StringSetAsync(globalKey, totalNewCount, TimeSpan.FromDays(7));
         }
 
-        logger.LogInformation("✅ [Core 모듈] 전 함대 영점 조절 완료. ({Count}개 채널)", keys.Count);
+        logger.LogInformation("✅ [Core] 전 함대 영점 조절 완료. ({Count}개 채널)", keys.Count);
     }
 }

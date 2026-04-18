@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Common;
 
-namespace MooldangBot.Modules.Broadcast.Features.Commands;
+namespace MooldangBot.Application.Features.Broadcast;
 
 /// <summary>
 /// [정기 메시지 송출]: 활성 스트리머들의 주기적 메시지 설정에 따라 방송 채팅창에 메시지를 보냅니다.
@@ -19,7 +19,7 @@ public class SendPeriodicMessagesCommandHandler(
 {
     public async Task Handle(SendPeriodicMessagesCommand request, CancellationToken ct)
     {
-        logger.LogInformation("🚀 [방송 모듈] 정기 메시지 송출 작업 시작...");
+        logger.LogInformation("🚀 [Broadcast] 정기 메시지 송출 작업 시작...");
 
         var profiles = await db.StreamerProfiles
             .AsNoTracking()

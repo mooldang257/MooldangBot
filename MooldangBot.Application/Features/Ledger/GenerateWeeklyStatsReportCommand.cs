@@ -5,7 +5,7 @@ using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
 using System.Text.Json;
 
-namespace MooldangBot.Modules.Ledger.Features.Commands;
+namespace MooldangBot.Application.Features.Ledger;
 
 /// <summary>
 /// [주간 결산 리포트]: 지난 7일간의 지표를 취합하여 디스코드로 요약 보고서를 발송합니다.
@@ -26,11 +26,11 @@ public class GenerateWeeklyStatsReportCommandHandler(
         // 1. 중복 발송 방지 체크
         if (!await ShouldSendReportAsync(now.Date, ct))
         {
-            logger.LogInformation("⏭️ [장부 모듈] 오늘 이미 주간 리포트가 발송되었습니다.");
+            logger.LogInformation("⏭️ [Ledger] 오늘 이미 주간 리포트가 발송되었습니다.");
             return;
         }
 
-        logger.LogInformation("📊 [장부 모듈] 주간 리포트 생성 및 발송 시작...");
+        logger.LogInformation("📊 [Ledger] 주간 리포트 생성 및 발송 시작...");
 
         // 2. 데이터 취합
         var last7Days = await db.PointDailySummaries
@@ -40,7 +40,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
 
         if (last7Days.Count == 0)
         {
-            logger.LogWarning("⚠️ [장부 모듈] 집계 데이터가 없어 리포트를 건너뜁니다.");
+            logger.LogWarning("⚠️ [Ledger] 집계 데이터가 없어 리포트를 건너뜜");
             return;
         }
 
@@ -88,7 +88,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
         await notificationService.SendAlertAsync(report, false, "weekly:report");
         await MarkReportAsSentAsync(now.Date, ct);
         
-        logger.LogInformation("📨 [장부 모듈] 주간 리포트 전송 완료");
+        logger.LogInformation("📨 [Ledger] 주간 리포트 전송 완료");
     }
 
     private async Task<bool> ShouldSendReportAsync(DateTime today, CancellationToken ct)

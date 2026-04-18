@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Interfaces;
 using MooldangBot.Domain.Common;
-using MooldangBot.Modules.Ledger.Features.Commands;
+using MooldangBot.Application.Features.Ledger;
 
 namespace MooldangBot.Infrastructure.Workers.Ledger;
 

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooldangBot.Application.Services;
 using MooldangBot.Contracts.Common.Interfaces;
-using MooldangBot.Modules.Core.Features.Commands;
+using MooldangBot.Application.Features.Core;
 
 namespace MooldangBot.Infrastructure.Workers.Maintenance;
 
