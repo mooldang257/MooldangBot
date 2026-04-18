@@ -246,36 +246,39 @@
 
         }, containerRef);
     }
+    function triggerPopParticles() {
+        if (!particleContainer) return;
 
-            // 등급에 따른 파티클 개수 조절
-            const template = (highlightedResult?.template || 'Standard').toLowerCase();
-            const count = template === 'legendary' ? 100 : template === 'epic' ? 60 : template === 'rare' ? 40 : 25;
+        // 등급에 따른 파티클 개수 조절
+        const template = (highlightedResult?.template || 'Standard').toLowerCase();
+        const count = template === 'legendary' ? 100 : template === 'epic' ? 60 : template === 'rare' ? 40 : 25;
 
-            for (let i = 0; i < count; i++) {
-                const p = document.createElement('div');
-                p.className = 'droplet-v2';
-                const size = Math.random() * (template === 'legendary' ? 15 : 10) + 5;
-                p.style.width = `${size}px`;
-                p.style.height = `${size}px`;
-                
-                // 등급별 테마 색상 및 아이템 색상 혼합
-                const themeColor = template === 'legendary' ? '#FFD700' : template === 'epic' ? '#A07CFE' : highlightedResult?.color || '#54BCD1';
-                p.style.background = `linear-gradient(135deg, ${themeColor}, #ffffff)`;
-                
-                particleContainer.appendChild(p);
-    
-                const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * (template === 'legendary' ? 500 : 300) + 100;
-                gsap.to(p, {
-                    x: Math.cos(angle) * dist,
-                    y: Math.sin(angle) * dist,
-                    opacity: 0,
-                    scale: 0,
-                    duration: template === 'legendary' ? 1.5 : 1,
-                    ease: "power3.out",
-                    onComplete: () => p.remove()
-                });
-            }
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'droplet-v2';
+            const size = Math.random() * (template === 'legendary' ? 15 : 10) + 5;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            
+            // 등급별 테마 색상 및 아이템 색상 혼합
+            const themeColor = template === 'legendary' ? '#FFD700' : template === 'epic' ? '#A07CFE' : highlightedResult?.color || '#54BCD1';
+            p.style.background = `linear-gradient(135deg, ${themeColor}, #ffffff)`;
+            
+            particleContainer.appendChild(p);
+
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * (template === 'legendary' ? 500 : 300) + 100;
+            gsap.to(p, {
+                x: Math.cos(angle) * dist,
+                y: Math.sin(angle) * dist,
+                opacity: 0,
+                scale: 0,
+                duration: template === 'legendary' ? 1.5 : 1,
+                ease: "power3.out",
+                onComplete: () => p.remove()
+            });
+        }
+    }
 
     async function finishAndNext(data: any) {
         if (props.connection) {
