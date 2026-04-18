@@ -1,16 +1,41 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import NoticeWidget from './lib/NoticeWidget.svelte';
+  import RouletteOverlay from './lib/RouletteOverlay.svelte';
+  import { createSignalRStore } from './store/signalrStore';
   
   // URL 쿼리 스트링에서 액세스 토큰 추출 (Aegis of Resonance)
-  // 클라이언트 측에서만 파악됨 (Static Build에서도 작동)
   const urlParams = new URLSearchParams(window.location.search);
-  const accessToken = urlParams.get('access_token');
+  const accessToken = urlParams.get('access_token') || "";
+
+  // [오시리스의 공명]: 실시간 데이터 스토어 초기화
+  const signalrStore = accessToken ? createSignalRStore(accessToken) : null;
+
+  let lastRouletteResult: any = null;
+
+  // 스토어 구독을 통해 룰렛 결과 감시
+  $: if (signalrStore) {
+      const unsubscribe = signalrStore.subscribe(state => {
+          if (state.lastRouletteResult && state.lastRouletteResult !== lastRouletteResult) {
+              lastRouletteResult = state.lastRouletteResult;
+          }
+      });
+      // onMount에서 처리할 수 있으나 Svelte의 반응형 구문을 활용
+  }
 </script>
 
 <main>
   {#if accessToken}
-    <!-- [오시리스의 공명]: 토큰이 존재할 때 실시간 위젯 가동 -->
-    <NoticeWidget message="시스템에 성공적으로 공명 중입니다." />
+    <!-- [오시리스의 무대]: 레이어별 위젯 배치 -->
+    <div class="overlay-layer">
+        <!-- 1. 공지/알림 레이어 (공통 알림) -->
+        <NoticeWidget message="시스템에 성공적으로 공명 중입니다." />
+        
+        <!-- 2. 룰렛 결과 레이어 -->
+        {#if lastRouletteResult}
+            <RouletteOverlay bind:resultData={lastRouletteResult} />
+        {/if}
+    </div>
   {:else}
     <div class="unauthorized">
        🚨 [오시리스의 경고]: 비인가 접근입니다. (No Access Token)

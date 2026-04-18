@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target } from "lucide-svelte";
-    import { slide, fade } from "svelte/transition";
+    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check } from "lucide-svelte";
+    import { slide, fade, fly } from "svelte/transition";
 
     let { 
         rouletteForm = $bindable(), 
@@ -45,6 +45,37 @@
         rouletteForm.isActive = true;
         rouletteForm.items = [];
     }
+
+    // [물멍]: URL 복사 상태 관리 (Osiris UI 계승)
+    let copied = $state(false);
+    let bubbles: { id: number; x: number; y: number }[] = $state([]);
+
+    const handleCopy = async (e: MouseEvent) => {
+        try {
+            // [물멍]: 현재 도메인 및 토큰 기반 URL 생성
+            const token = localStorage.getItem("token") || "";
+            const obsUrl = `${window.location.origin}/overlay/roulette?access_token=${token}`;
+            
+            await navigator.clipboard.writeText(obsUrl);
+            copied = true;
+
+            // 물방울 애니메이션 피드백
+            for (let i = 0; i < 5; i++) {
+                bubbles.push({
+                    id: Date.now() + i,
+                    x: e.clientX + (Math.random() * 40 - 20),
+                    y: e.clientY + (Math.random() * 40 - 20),
+                });
+            }
+
+            setTimeout(() => {
+                copied = false;
+                bubbles = [];
+            }, 2000);
+        } catch (err) {
+            console.error("Failed to copy: ", err);
+        }
+    };
 </script>
 
 <div class="bg-white rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-900/5 overflow-hidden">
@@ -60,14 +91,40 @@
                 <p class="text-sm text-slate-500 font-bold">도전의 가치와 확률의 재미를 설계해 보세요.</p>
             </div>
         </div>
-        {#if rouletteForm.id !== 0}
-            <button 
-                on:click={resetForm}
-                class="px-4 py-2 text-slate-400 hover:text-slate-600 font-bold text-sm transition-all"
+        <div class="flex items-center gap-4">
+            {#if rouletteForm.id !== 0}
+                <button 
+                    on:click={resetForm}
+                    class="px-4 py-2 text-slate-400 hover:text-slate-600 font-bold text-sm transition-all"
+                >
+                    새로 만들기 모드로 전환
+                </button>
+            {/if}
+
+            <!-- [물멍]: 오버레이 URL 복사 버튼 (프리미엄 조약돌 디자인) -->
+            <button
+                on:click={handleCopy}
+                class="group relative flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-sky-400 to-primary text-white rounded-full font-black shadow-lg shadow-sky-200/50 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all text-xs"
             >
-                새로 만들기 모드로 전환
+                {#if copied}
+                    <Check size={16} class="text-white animate-bounce" />
+                    <span class="tracking-tighter">복사 완료!</span>
+                {:else}
+                    <Copy size={16} class="text-white group-hover:rotate-12 transition-transform" />
+                    <span class="tracking-tighter">오버레이 URL 복사</span>
+                {/if}
+
+                <!-- 🫧 물방울 애니메이션 레이어 -->
+                {#each bubbles as bubble (bubble.id)}
+                    <div
+                        class="fixed w-2 h-2 bg-white/60 rounded-full blur-[1px] pointer-events-none z-[100]"
+                        style="left: {bubble.x}px; top: {bubble.y}px;"
+                        in:fly={{ y: -50, duration: 800 }}
+                        out:fade
+                    ></div>
+                {/each}
             </button>
-        {/if}
+        </div>
     </div>
 
     <div class="p-6 md:p-8 space-y-8">

@@ -5,6 +5,7 @@ export interface OverlayState {
     songList: any[];
     overlayTheme: number;
     isConnected: boolean;
+    lastRouletteResult: any | null; // 🎰 추가: 최근 룰렛 결과 데이터
 }
 
 /**
@@ -15,7 +16,8 @@ export const createSignalRStore = (token: string): Readable<OverlayState> => {
     const initialState: OverlayState = {
         songList: [],
         overlayTheme: 1,
-        isConnected: false
+        isConnected: false,
+        lastRouletteResult: null
     };
 
     return readable(initialState, (set) => {
@@ -39,6 +41,19 @@ export const createSignalRStore = (token: string): Readable<OverlayState> => {
             };
             set(currentState);
             console.log("[오시리스의 수신] 오버레이 상태 업데이트 완료");
+        });
+
+        // 🎰 [v11.2] 룰렛 결과 수신 핸들러 추가
+        connection.on("ReceiveRouletteResult", (response: any) => {
+            console.log("🎰 [룰렛 결과 수신]", response);
+            currentState = {
+                ...currentState,
+                lastRouletteResult: {
+                    ...response,
+                    timestamp: Date.now() // 고유 식별을 위해 타임스탬프 추가
+                }
+            };
+            set(currentState);
         });
 
         connection.onreconnecting(() => {
