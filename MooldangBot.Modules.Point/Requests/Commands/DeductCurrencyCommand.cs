@@ -13,6 +13,7 @@ namespace MooldangBot.Modules.Point.Requests.Commands;
 public record DeductCurrencyCommand(
     string StreamerUid, 
     string ViewerUid, 
+    string? ViewerNickname,
     int Amount, 
     PointCurrencyType CurrencyType) : IRequest<DeductResult>;
 

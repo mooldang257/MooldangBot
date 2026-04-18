@@ -10,6 +10,7 @@ namespace MooldangBot.Modules.Point.Requests.Commands;
 public record ProcessCommandBillingCommand(
     string StreamerUid, 
     string ViewerUid, 
+    string? ViewerNickname,
     int Cost, 
     CommandCostType CostType
 ) : IRequest<BillingResult>;

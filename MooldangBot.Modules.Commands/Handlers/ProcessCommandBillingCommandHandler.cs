@@ -32,6 +32,7 @@ public class ProcessCommandBillingCommandHandler(
         var deductRequest = new DeductCurrencyCommand(
             request.StreamerUid,
             request.ViewerUid,
+            request.ViewerNickname,
             request.Cost,
             currencyType);
 

@@ -8,6 +8,7 @@ using MooldangBot.Domain.Common.Security;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 using System.Data;
 
 namespace MooldangBot.Modules.Point.Features.Commands.DeductCurrency;
@@ -82,7 +83,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
                 .Select(v => v.Points)
                 .FirstOrDefaultAsync(ct);
 
-            var redisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, request.ViewerUid);
+            var redisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, cleanedUid);
             var totalBalance = dbBalance + redisIncrement;
 
             if (totalBalance < request.Amount)
@@ -91,7 +92,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
             }
 
             // 고빈도 포인트는 캐시에 음수 증분으로 기록 (Write-Back 동기화 대기)
-            await _pointCache.AddPointAsync(request.StreamerUid, request.ViewerUid, -request.Amount);
+            await _pointCache.AddPointAsync(request.StreamerUid, cleanedUid, -request.Amount);
             return new DeductResult(true, totalBalance - request.Amount);
         }
 
