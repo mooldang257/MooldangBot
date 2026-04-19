@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.Common.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace MooldangBot.Application.Controllers.Config
 {
