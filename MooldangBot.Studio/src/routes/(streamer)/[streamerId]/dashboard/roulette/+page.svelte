@@ -105,7 +105,7 @@
 
     async function handleUpdateLogStatus(id: number, status: number) {
         try {
-            await apiFetch(`/api/admin/roulette/history/${id}/status`, {
+            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/${id}/status`, {
                 method: "PUT",
                 body: JSON.stringify(status)
             });
@@ -120,7 +120,7 @@
     async function handleDeleteLog(id: number) {
         if (!confirm("이 기록을 정말 삭제하시겠습니까?")) return;
         try {
-            await apiFetch(`/api/admin/roulette/history/${id}`, { method: "DELETE" });
+            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/${id}`, { method: "DELETE" });
             historyLogs = historyLogs.filter(l => l.id !== id);
         } catch (e: any) {
             alert(e.message || "삭제 실패!");

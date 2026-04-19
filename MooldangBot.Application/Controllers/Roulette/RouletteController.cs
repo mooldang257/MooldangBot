@@ -312,14 +312,13 @@ namespace MooldangBot.Application.Controllers.Roulette
             return Ok(Result<PagedResponse<RouletteLogDto>>.Success(new PagedResponse<RouletteLogDto>(Data: outputData, NextLastId: nextLastId)));
         }
 
-        [HttpPut("history/{id}/status")]
-        public async Task<IActionResult> UpdateStatus(long id, [FromBody] RouletteLogStatus status)
+        [HttpPut("{chzzkUid}/history/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(string chzzkUid, long id, [FromBody] RouletteLogStatus status)
         {
-            var streamerUid = User.FindFirst("StreamerId")?.Value ?? "None";
             var log = await db.RouletteLogs
                 .IgnoreQueryFilters()
                 .Include(l => l.StreamerProfile)
-                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == streamerUid);
+                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (log == null) 
                 return NotFound(Result<string>.Failure("로그를 찾을 수 없거나 접근 권한이 없습니다."));
@@ -331,14 +330,13 @@ namespace MooldangBot.Application.Controllers.Roulette
             return Ok(Result<RouletteLog>.Success(log));
         }
 
-        [HttpDelete("history/{id}")]
-        public async Task<IActionResult> DeleteHistory(long id)
+        [HttpDelete("{chzzkUid}/history/{id}")]
+        public async Task<IActionResult> DeleteHistory(string chzzkUid, long id)
         {
-            var streamerUid = User.FindFirst("StreamerId")?.Value ?? "None";
             var log = await db.RouletteLogs
                 .IgnoreQueryFilters()
                 .Include(l => l.StreamerProfile)
-                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == streamerUid);
+                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == chzzkUid);
 
             if (log == null) 
                 return NotFound(Result<string>.Failure("삭제할 로그를 찾을 수 없거나 접근 권한이 없습니다."));
