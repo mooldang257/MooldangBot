@@ -38,7 +38,8 @@
         flex-direction: column;
         justify-content: center;
         color: white;
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.4);
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+        -webkit-font-smoothing: antialiased;
         pointer-events: none;
     }
 
