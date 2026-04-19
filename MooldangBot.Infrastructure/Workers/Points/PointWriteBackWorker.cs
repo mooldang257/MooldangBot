@@ -15,11 +15,11 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Domain.Contracts.Chzzk;
 using System.Collections.Concurrent;
 using MooldangBot.Application.Services;
-using MooldangBot.Domain.Common.Services;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Point;
 using MediatR;
 using MooldangBot.Modules.Point.Requests.Commands;
+using MooldangBot.Domain.Common.Security;
 
 namespace MooldangBot.Infrastructure.Workers.Points;
 
@@ -129,26 +129,34 @@ public class PointWriteBackWorker(
             using var transaction = await connection.BeginTransactionAsync(ct);
             try
             {
-                // [물멍의 일격]: 10K TPS를 버티는 쾌속 Identity & Point Upsert
+                // [오버드라이브 통합 UPSERT]: 10K TPS를 버티는 3단계 무손실 동기화 엔진
                 
-                // 1순위: 시청자 관계 등록 및 닉네임/활동일시 동기화
+                // [Step 0] GlobalViewer 확보 (마스터 정보가 없으면 자동 생성)
+                const string globalUpsertSql = @"
+                    INSERT INTO core_global_viewers (viewer_uid, viewer_uid_hash, nickname, created_at, updated_at)
+                    VALUES (@ViewerUid, @Hash, @Nickname, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE 
+                        nickname = VALUES(nickname),
+                        updated_at = NOW();";
+
+                // [Step 1] ViewerRelation 확보 (관계 및 활동 시간 동기화)
                 const string relationUpsertSql = @"
                     INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, nickname, first_visit_at, last_chat_at, created_at, updated_at)
                     SELECT s.id, g.id, @Nickname, NOW(), NOW(), NOW(), NOW()
                     FROM core_streamer_profiles s
-                    JOIN core_global_viewers g ON g.id = (SELECT id FROM core_global_viewers WHERE viewer_uid = @ViewerUid LIMIT 1)
+                    JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE s.chzzk_uid = @StreamerUid
                     ON DUPLICATE KEY UPDATE 
                         nickname = VALUES(nickname),
                         last_chat_at = NOW(),
                         updated_at = NOW();";
 
-                // 2순위: 포인트 합산
+                // [Step 2] ViewerPoint 정산 (최종 포인트 합산)
                 const string pointUpsertSql = @"
                     INSERT INTO viewer_points (streamer_profile_id, global_viewer_id, points, created_at, updated_at)
                     SELECT s.id, g.id, @Amount, NOW(), NOW()
                     FROM core_streamer_profiles s
-                    JOIN core_global_viewers g ON g.id = (SELECT id FROM core_global_viewers WHERE viewer_uid = @ViewerUid LIMIT 1)
+                    JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE s.chzzk_uid = @StreamerUid
                     ON DUPLICATE KEY UPDATE 
                         points = points + VALUES(points),
@@ -159,17 +167,23 @@ public class PointWriteBackWorker(
                     var parts = kvp.Key.Split(':'); // "streamerUid:viewerUid"
                     if (parts.Length < 2) continue;
 
+                    var viewerUid = parts[1];
+                    var hash = Sha256Hasher.ComputeHash(viewerUid);
+
                     var param = new 
                     { 
                         StreamerUid = parts[0], 
-                        ViewerUid = parts[1], 
+                        ViewerUid = viewerUid,
+                        Hash = hash,
                         Nickname = kvp.Value.Nickname,
                         Amount = kvp.Value.Amount 
                     };
 
-                    // [v18.5] 시청자 관계 먼저 (Identity First)
+                    // 1. 마스터 먼저 (Global Identity)
+                    await connection.ExecuteAsync(globalUpsertSql, param, transaction);
+                    // 2. 관계 정의 (Registration)
                     await connection.ExecuteAsync(relationUpsertSql, param, transaction);
-                    // 그 다음 포인트
+                    // 3. 마지막으로 포인트 (Balance)
                     await connection.ExecuteAsync(pointUpsertSql, param, transaction);
                 }
 
