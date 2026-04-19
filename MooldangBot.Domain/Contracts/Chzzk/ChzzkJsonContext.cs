@@ -126,6 +126,11 @@ namespace MooldangBot.Domain.Contracts.Chzzk;
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongQueueDto))]
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongQueueViewDto))]
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongAddRequest))]
+[JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongOverlayDto))]
+[JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.CurrentSongDto))]
+[JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.QueueSongDto))]
+[JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongOverlaySettings))]
+[JsonSerializable(typeof(List<MooldangBot.Domain.Contracts.SongBook.QueueSongDto>))]
 
 // Domain DTOs
 [JsonSerializable(typeof(PeriodicMessageDto))]
