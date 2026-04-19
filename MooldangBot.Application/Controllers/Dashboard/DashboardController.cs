@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
@@ -15,7 +16,9 @@ namespace MooldangBot.Application.Controllers.Dashboard
     [Route("api/dashboard")]
     public class DashboardController(IAppDbContext db, IChzzkApiClient chzzkApi) : ControllerBase
     {
-        // 1. ??쒕낫???듦퀎 ?붿빟 議고쉶
+        /// <summary>
+        /// 대시보드 통계 요약 조회 (Live 상태 및 주요 지표)
+        /// </summary>
         [HttpGet("summary/{streamerUid}")]
         public async Task<IActionResult> GetSummary(string streamerUid)
         {
@@ -24,10 +27,19 @@ namespace MooldangBot.Application.Controllers.Dashboard
 
             var today = KstClock.Now.Date;
 
-            // [臾쇰찉]: 諛⑹넚 ?곹깭 ?뺤씤 (移섏?吏?API ?ㅼ떆媛??곕룞)
-            var liveStatus = await chzzkApi.GetLiveDetailAsync(profile.ChzzkUid);
+            // [물멍]: 방송 상태 확인 (치지직 API 실시간 연동)
+            // [v1.0.2] API 호출 실패 시에도 대시보드가 열리도록 예외 방어
+            LiveDetailResponse? liveStatus = null;
+            try
+            {
+                liveStatus = await chzzkApi.GetLiveDetailAsync(profile.ChzzkUid);
+            }
+            catch (Exception)
+            {
+                // 로깅 후 기본값 처리
+            }
             
-            // [?곗씠??: ??쒕낫???듯빀 吏??吏묎퀎
+            // [물멍]: 통계 데이터 집계
             var todaySongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
             var pendingSongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
             
@@ -62,14 +74,16 @@ namespace MooldangBot.Application.Controllers.Dashboard
             return Ok(Result<DashboardSummaryDto>.Success(summary));
         }
 
-        // 2. 理쒓렐 ?쒕룞 濡쒓렇 議고쉶 (?듯빀 釉붾옓諛뺤뒪)
+        /// <summary>
+        /// 최근 활동 로그 조회 (통합 활동 타임라인)
+        /// </summary>
         [HttpGet("activities/{streamerUid}")]
         public async Task<IActionResult> GetActivities(string streamerUid)
         {
             var profile = await GetProfileByUidOrSlugAsync(streamerUid);
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            // [臾쇰찉]: 媛??꾨찓??濡쒓렇 ?좊땲??(理쒓렐 5媛쒖뵫 痍⑦빀)
+            // [물멍]: 각 도메인별 최근 5건씩 취합 (Null 참조 방지 강화)
             var songs = await db.SongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
@@ -79,8 +93,8 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 .Select(s => new DashboardActivityDto {
                     Id = $"song_{s.Id}",
                     Type = "song",
-                    User = s.GlobalViewer != null ? s.GlobalViewer.Nickname : "?듬챸",
-                    Content = $"怨??좎껌: {s.Title} - {s.Artist}",
+                    User = s.GlobalViewer != null ? (s.GlobalViewer.Nickname ?? "익명") : "익명",
+                    Content = $"곡 신청: {s.Title} - {s.Artist}",
                     CreatedAt = s.CreatedAt,
                     IconType = "Music"
                 }).ToListAsync();
@@ -94,8 +108,8 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 .Select(t => new DashboardActivityDto {
                     Id = $"point_{t.Id}",
                     Type = "point",
-                    User = t.GlobalViewer != null ? t.GlobalViewer.Nickname : "?듬챸",
-                    Content = $"{t.Reason}: {t.Amount}?ъ씤???뚮え",
+                    User = t.GlobalViewer != null ? (t.GlobalViewer.Nickname ?? "익명") : "익명",
+                    Content = $"{(t.Reason ?? "포인트 사용")}: {Math.Abs(t.Amount)}포인트 소모",
                     CreatedAt = t.CreatedAt,
                     IconType = "Coins"
                 }).ToListAsync();
@@ -109,13 +123,15 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 .Select(l => new DashboardActivityDto {
                     Id = $"roulette_{l.Id}",
                     Type = "roulette",
-                    User = l.GlobalViewer != null ? l.GlobalViewer.Nickname : "?듬챸",
-                    Content = $"猷곕젢 寃곌낵: {l.ItemName}",
+                    User = l.GlobalViewer != null ? (l.GlobalViewer.Nickname ?? "익명") : "익명",
+                    Content = $"룰렛 결과: {l.ItemName}",
                     CreatedAt = l.CreatedAt,
                     IconType = "Zap"
                 }).ToListAsync();
 
-            var activities = songs.Concat(points).Concat(roulettes)
+            var activities = (songs ?? [])
+                .Concat(points ?? [])
+                .Concat(roulettes ?? [])
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(10)
                 .ToList();
@@ -130,7 +146,9 @@ namespace MooldangBot.Application.Controllers.Dashboard
 
         private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
         {
+            if (string.IsNullOrWhiteSpace(uid)) return null;
             var target = uid.ToLower();
+            
             return await db.StreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
@@ -146,4 +164,3 @@ namespace MooldangBot.Application.Controllers.Dashboard
         }
     }
 }
-
