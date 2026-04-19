@@ -21,6 +21,7 @@ public interface ICommandDbContext
     DbSet<MooldangBot.Domain.Entities.RouletteItem> RouletteItems { get; set; }
     DbSet<SongQueue> SongQueues { get; set; }
     DbSet<SonglistSession> SonglistSessions { get; set; }
+    DbSet<MooldangBot.Domain.Entities.Philosophy.BroadcastSession> BroadcastSessions { get; set; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

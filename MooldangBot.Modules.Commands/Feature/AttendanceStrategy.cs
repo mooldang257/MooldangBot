@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Common.Security;
+using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Modules.Commands.Feature;
 
@@ -67,6 +68,36 @@ public class AttendanceStrategy(
         bool isFirstToday = viewer.LastAttendanceAt?.Date != KstClock.Today;
         if (isFirstToday)
         {
+            // [오시리스의 영명]: 방송 세션 기반 연속 출석 판정 로직
+            var latestSessions = await db.BroadcastSessions
+                .AsNoTracking()
+                .Where(s => s.StreamerProfileId == streamer.Id)
+                .OrderByDescending(s => s.Id)
+                .Take(2)
+                .ToListAsync(ct);
+
+            // 직전 세션(Previous Session)이 존재할 때만 연속성 체크
+            if (latestSessions.Count >= 2 && viewer.LastAttendanceAt != null)
+            {
+                var previousSession = latestSessions.Last(); // 최신 바로 이전 세션
+                
+                // 마지막 출석이 직전 세션 기간 내에 있었는지 확인
+                if (viewer.LastAttendanceAt >= previousSession.StartTime && 
+                    (previousSession.EndTime == null || viewer.LastAttendanceAt <= previousSession.EndTime))
+                {
+                    viewer.ConsecutiveAttendanceCount++;
+                }
+                else
+                {
+                    viewer.ConsecutiveAttendanceCount = 1;
+                }
+            }
+            else
+            {
+                // 데이터가 없거나 첫 방송인 경우
+                viewer.ConsecutiveAttendanceCount = 1;
+            }
+
             viewer.LastAttendanceAt = KstClock.Now;
             viewer.AttendanceCount++;
             await db.SaveChangesAsync(ct);

@@ -41,6 +41,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
                 "GetLiveCategory" => await GetLiveCategoryAsync(streamerUid),
                 "GetLiveNotice" => await GetLiveNoticeAsync(streamerUid),
                 "GetSonglistStatus" => await GetSonglistStatusAsync(streamerUid),
+                "GetConsecutiveAttendance" => await GetConsecutiveAttendanceAsync(streamerUid, viewerUid),
                 _ => null
             };
         }
@@ -134,5 +135,19 @@ namespace MooldangBot.Infrastructure.Services.Engines
             return result;
         }
 
+        /// <summary>
+        /// [v18.5] DB에서 시청자의 연속 출석 횟수를 가져옵니다.
+        /// </summary>
+        private async Task<string?> GetConsecutiveAttendanceAsync(string streamerUid, string viewerUid)
+        {
+            var hash = Sha256Hasher.ComputeHash(viewerUid);
+            var relation = await _db.ViewerRelations
+                .AsNoTracking()
+                .Include(r => r.StreamerProfile)
+                .Include(r => r.GlobalViewer)
+                .FirstOrDefaultAsync(r => r.StreamerProfile!.ChzzkUid == streamerUid && r.GlobalViewer!.ViewerUidHash == hash);
+            
+            return relation?.ConsecutiveAttendanceCount.ToString() ?? "0";
+        }
     }
 }
