@@ -9,10 +9,14 @@ namespace MooldangBot.Application.Controllers.Config
 {
     [ApiController]
     [Route("api/settings/bot")]
-    // [v10.1] Primary Constructor ?�용
-    public class BotConfigController(IAppDbContext db, IChzzkBotService chzzkService, IIdentityCacheService identityCache) : ControllerBase
+    // [v10.1] Primary Constructor ?용
+    public class BotConfigController(
+        IAppDbContext db, 
+        IChzzkBotService chzzkService, 
+        IIdentityCacheService identityCache,
+        IConfiguration configuration) : ControllerBase
     {
-        // 1. ?�재 �??�성???�태 조회
+        // 1. ?재 ??성???태 조회
         [HttpGet("status/{uid}")]
         public async Task<IActionResult> GetBotStatus(string uid)
         {
@@ -44,22 +48,27 @@ namespace MooldangBot.Application.Controllers.Config
             { 
                 success = true, 
                 isActive = streamer.IsActive, 
-                message = "�??�정??즉시 변경되?�습?�다." 
+                message = "??정??즉시 변경되?습?다." 
             }));
         }
 
-        // 3. ?�교 주소(Slug) 조회
+        // 3. ?교 주소(Slug) 조회
         [HttpGet("slug/{uid}")]
         public async Task<IActionResult> GetStreamerSlug(string uid)
         {
             var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            return Ok(Result<object>.Success(new { slug = streamer.Slug }));
+            var baseDomain = configuration["BASE_DOMAIN"] ?? "https://mooldang.tv";
+            return Ok(Result<object>.Success(new 
+            { 
+                slug = streamer.Slug, 
+                baseDomain = baseDomain 
+            }));
         }
 
-        // 4. ?�교 주소(Slug) 변�?
+        // 4. ?교 주소(Slug) 변?
         [HttpPost("slug/{uid}")]
         public async Task<IActionResult> UpdateStreamerSlug(string uid, [FromBody] SlugUpdateRequest req)
         {

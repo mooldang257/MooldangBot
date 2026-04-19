@@ -8,6 +8,7 @@
     
     let currentSlug = $state('');
     let newSlug = $state('');
+    let baseDomain = $state('');
     let isLoading = $state(true);
     let isSaving = $state(false);
     let message = $state('');
@@ -21,6 +22,7 @@
                 const data = await res.json();
                 currentSlug = data.slug || '';
                 newSlug = currentSlug;
+                baseDomain = data.baseDomain || 'https://mooldang.tv';
             }
         } catch (e) {
             console.error('설정 로드 실패:', e);
@@ -112,7 +114,7 @@
                                 <span class="text-sm font-bold text-slate-500">현재 함교 주소</span>
                             </div>
                             <code class="px-5 py-2 rounded-xl bg-white border border-sky-100 text-primary font-black tracking-tight text-sm md:text-base">
-                                https://mooldang.tv/{currentSlug || streamerId}
+                                {baseDomain.replace(/\/$/, '')}/{currentSlug || streamerId}
                             </code>
                         </div>
 
