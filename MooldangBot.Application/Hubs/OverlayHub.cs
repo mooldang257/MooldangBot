@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Application.Hubs;
 
@@ -14,7 +15,8 @@ namespace MooldangBot.Application.Hubs;
 /// [오시리스의 지혜소]: 서버와 오버레이 간의 실시간 공명 허브입니다.
 /// (Aegis of Resonance): 현재 JWT(오버레이)와 Cookie(대시보드) 인증을 모두 지원합니다.
 /// </summary>
-[Authorize(Policy = "OverlayAuth")]
+// [v2.4.0]: JWT 인증 종속성 탈피. 해시 데이터 기반의 가벼운 공명 체계로 전환.
+// (Aegis of Resonance): OBS 등 외부 환경에서 인증 없이 주소만으로 접속 가능하도록 설정합니다.
 [EnableRateLimiting("overlay-high")]
 public class OverlayHub(
     IMediator mediator,
@@ -33,11 +35,34 @@ public class OverlayHub(
         await mediator.Send(new CompleteRouletteCommand(spinId));
     }
 
-    // [v2.1.0] OBS 브라우저 소스 클라이언트 연결 (JWT 사용 가능)
+    // [v2.4.0] OBS 브라우저 소스 클라이언트 연결 (해시 기반 식별 강화)
     public override async Task OnConnectedAsync()
     {
-        // [오시리스의 인장]: JWT 토큰 또는 쿠키에서 StreamerId 추출
+        // [오시리스의 인장]: 
+        // 1. 기존 쿠키/JWT 세션에서 StreamerId 추출 시도 (대시보드 미리보기 등)
         var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
+
+        // 2. 세션이 없는 경우(OBS) 쿼리 스트링에서 16자리 해시 토큰 추출
+        if (string.IsNullOrEmpty(chzzkUid))
+        {
+            var httpContext = Context.GetHttpContext();
+            var shortToken = httpContext?.Request.Query["access_token"].ToString();
+
+            if (!string.IsNullOrEmpty(shortToken) && shortToken.Length == 16)
+            {
+                using var scope = Context.GetHttpContext()?.RequestServices.CreateScope();
+                var db = scope?.ServiceProvider.GetRequiredService<IAppDbContext>();
+                
+                var streamer = await db!.StreamerProfiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.OverlayToken == shortToken);
+
+                if (streamer != null)
+                {
+                    chzzkUid = streamer.ChzzkUid;
+                }
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(chzzkUid))
         {
@@ -45,14 +70,14 @@ public class OverlayHub(
             await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
             await overlayState.IncrementAsync(normalizedUid); // Redis 카운터 증가
             
-            logger.LogInformation("[오시리스의 공명] 오버레이 연결 성공. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
+            logger.LogInformation("[오시리스의 공명] 오버레이 연결 성공 (Identity: {ChzzkUid})", normalizedUid);
 
-            // [물멍]: 연결 즉시 현재 신청곡 상태를 해당 클라이언트에만 전송 (초기 데이터 주입)
+            // [물멍]: 연결 즉시 현재 신청곡 상태 전송 (초기 데이터 주입)
             await GetNotificationService().BroadcastSongOverlayUpdateAsync(normalizedUid, Context.ConnectionId);
         }
         else
         {
-            logger.LogWarning("[오시리스의 불협화음] 유효하지 않은 연결 시도 차단. ConnectionId: {ConnectionId}", Context.ConnectionId);
+            logger.LogWarning("[오시리스의 불협화음] 인가되지 않은 오버레이 연결 시도 차단 (ConnectionId: {Id})", Context.ConnectionId);
             Context.Abort();
             return;
         }

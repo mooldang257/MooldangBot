@@ -65,8 +65,7 @@ public static class SecurityExtensions
                     return Task.CompletedTask;
                 }
             };
-        })
-        .AddScheme<AuthenticationSchemeOptions, OverlayShortTokenHandler>("OverlayShortToken", null);
+        });
 
         services.AddAuthorization(options => {
             options.DefaultPolicy = new AuthorizationPolicyBuilder()
@@ -78,16 +77,9 @@ public static class SecurityExtensions
                 policy.RequireAuthenticatedUser();
                 policy.Requirements.Add(new ChannelManagerRequirement());
             });
-
-            options.AddPolicy("OverlayAuth", policy => {
-                policy.AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme, "OverlayShortToken");
-                policy.RequireAuthenticatedUser();
-                policy.Requirements.Add(new OverlayTokenVersionRequirement());
-            });
         });
 
         services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
-        services.AddScoped<IAuthorizationHandler, OverlayTokenVersionHandler>();
 
         return services;
     }

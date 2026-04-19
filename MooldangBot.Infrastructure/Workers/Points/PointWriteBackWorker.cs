@@ -134,7 +134,7 @@ public class PointWriteBackWorker(
                     INSERT INTO viewer_points (streamer_profile_id, global_viewer_id, points, created_at, updated_at)
                     SELECT s.id, g.id, @Amount, NOW(), NOW()
                     FROM core_streamer_profiles s
-                    JOIN global_viewers g ON g.id = (SELECT id FROM global_viewers WHERE viewer_uid = @ViewerUid LIMIT 1)
+                    JOIN core_global_viewers g ON g.id = (SELECT id FROM core_global_viewers WHERE viewer_uid = @ViewerUid LIMIT 1)
                     WHERE s.chzzk_uid = @StreamerUid
                     ON DUPLICATE KEY UPDATE 
                         points = points + VALUES(points),
