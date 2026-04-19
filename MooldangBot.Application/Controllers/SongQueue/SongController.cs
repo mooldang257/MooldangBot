@@ -173,7 +173,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
 
             await db.SaveChangesAsync();
-            await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+            await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
             return Ok(Result<MooldangBot.Domain.Entities.SongQueue>.Success(newSong));
         }
 
@@ -220,7 +220,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             song.Status = status;
             await db.SaveChangesAsync();
 
-            await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+            await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
             return Ok(Result<bool>.Success(true));
         }
 
@@ -240,7 +240,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 db.SongQueues.RemoveRange(songs);
                 await db.SaveChangesAsync();
 
-                await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+                await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
                 return Ok(Result<bool>.Success(true));
             }
             return NotFound(Result<string>.Failure("삭제할 대상을 찾을 수 없습니다."));
@@ -280,7 +280,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             try
             {
                 await db.SaveChangesAsync();
-                await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+                await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
                 return Ok(Result<MooldangBot.Domain.Entities.SongQueue>.Success(songItem));
             }
             catch (DbUpdateException ex)
@@ -303,7 +303,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             if (deletedCount > 0)
             {
-                await notificationService.NotifySongQueueChangedAsync(chzzkUid);
+                await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
                 return Ok(Result<int>.Success(deletedCount));
             }
 

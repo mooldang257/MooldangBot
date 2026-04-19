@@ -10,43 +10,46 @@ using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 namespace MooldangBot.Application.Hubs;
 
 /// <summary>
-/// [?�시리스??지?�소]: ?�버?� ?�버?�이 간의 ?�시�?공명 ?�로?�니??
-/// (Aegis of Resonance): ?�제 JWT(?�버?�이)?� Cookie(?�?�보?? ?�증??모두 지?�합?�다.
+/// [오시리스의 지혜소]: 서버와 오버레이 간의 실시간 공명 허브입니다.
+/// (Aegis of Resonance): 현재 JWT(오버레이)와 Cookie(대시보드) 인증을 모두 지원합니다.
 /// </summary>
-// [오시리스의 열쇠]: 오버레이와 대시보드 모두에서 공명할 수 있도록 전용 정책을 사용합니다.
 [Authorize(Policy = "OverlayAuth")]
 [EnableRateLimiting("overlay-high")]
 public class OverlayHub(
     IMediator mediator,
     PulseService pulseService,
+    IOverlayNotificationService notificationService,
     ILogger<OverlayHub> logger, 
     IOverlayState overlayState) : Hub
 {
     /// <summary>
-    /// [v1.9.9] ?�버?�이 ?�니메이???�료 ???�버??결과�??�립?�다.
-    /// [Pure Vertical Slice]: 메디?�이?��? ?�해 모듈???�들?�에 ?�임?�니??
+    /// [v1.9.9] 오버레이 애니메이션 완료 후 서버에 결과를 알립니다.
     /// </summary>
     public async Task CompleteRouletteAsync(string spinId)
     {
         await mediator.Send(new CompleteRouletteCommand(spinId));
     }
 
-    // [v2.1.0] OBS 브라?��? ?�스 ?�라?�언?��? ?�결?????�출 (JWT ?�레???�용)
+    // [v2.1.0] OBS 브라우저 소스 클라이언트 연결 (JWT 사용 가능)
     public override async Task OnConnectedAsync()
     {
-        // ?�� [?�시리스???��? ?�장]: ?�직 JWT ?�큰 ?�에 ?�명??StreamerId ?�레?�만 ?�뢰?�니??
+        // [오시리스의 인장]: JWT 토큰 또는 쿠키에서 StreamerId 추출
         var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
 
         if (!string.IsNullOrWhiteSpace(chzzkUid))
         {
             var normalizedUid = chzzkUid.ToLower();
             await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
-            await overlayState.IncrementAsync(normalizedUid); // [v13.0] Redis 분산 카운??증�?
-            logger.LogInformation("[?�시리스??공명] ?�버?�이 ?�결 ?�공. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
+            await overlayState.IncrementAsync(normalizedUid); // Redis 카운터 증가
+            
+            logger.LogInformation("[오시리스의 공명] 오버레이 연결 성공. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
+
+            // [물멍]: 연결 즉시 현재 신청곡 상태를 해당 클라이언트에만 전송 (초기 데이터 주입)
+            await notificationService.BroadcastSongOverlayUpdateAsync(normalizedUid, Context.ConnectionId);
         }
         else
         {
-            logger.LogWarning("[?�시리스??불협?�음] ?�효???�레???�는 ?�버?�이 ?�결 ?�도 차단. ConnectionId: {ConnectionId}", Context.ConnectionId);
+            logger.LogWarning("[오시리스의 불협화음] 유효하지 않은 연결 시도 차단. ConnectionId: {ConnectionId}", Context.ConnectionId);
             Context.Abort();
             return;
         }
@@ -59,15 +62,15 @@ public class OverlayHub(
         var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
         if (!string.IsNullOrWhiteSpace(chzzkUid))
         {
-            await overlayState.DecrementAsync(chzzkUid.ToLower()); // [v13.0] Redis 분산 카운??감소
+            await overlayState.DecrementAsync(chzzkUid.ToLower()); // Redis 카운터 감소
         }
 
-        logger.LogTrace("[?�시리스???�상] ?�버?�이 ?�결 종료. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", chzzkUid ?? "Unknown", Context.ConnectionId);
+        logger.LogTrace("[오시리스의 회상] 오버레이 연결 종료. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", chzzkUid ?? "Unknown", Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
 
     /// <summary>
-    /// [v2.2.0] ?�라?�언??매개변???�존?�을 ?�거?�고 ?�직 ?�큰???�레?�만 ?�뢰?�니??
+    /// [v2.2.0] 스트리머 전용 그룹에 명시적으로 합류합니다.
     /// </summary>
     public async Task JoinStreamerGroup()
     {
@@ -87,7 +90,7 @@ public class OverlayHub(
         }
     }
 
-    // ?�� ?�?�보???�태 ?�데?�트�??�일 그룹(?�트리머)???�버?�이?�에 ?�송
+    // 상태 업데이트를 스트리머 그룹에 전송
     public async Task UpdateOverlayState(string stateJson)
     {
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
@@ -97,7 +100,7 @@ public class OverlayHub(
         }
     }
 
-    // ?�정 ?�리??그룹??가??(?�리?�별 ?�립 ?�데?�트 지??
+    // 프리셋 그룹 관리
     public async Task JoinPresetGroup(int presetId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"preset-{presetId}");
@@ -108,13 +111,12 @@ public class OverlayHub(
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"preset-{presetId}");
     }
 
-    // ?�리???�이?�웃 ?�데?�트 브로?�캐?�트
+    // 스타일 업데이트 브로드캐스트
     public async Task UpdatePresetStyle(int presetId, string styleJson)
     {
         await Clients.Group($"preset-{presetId}").SendAsync("ReceiveOverlayStyle", styleJson);
     }
 
-    // ?�� ?�자???�정 ?�데?�트�??�일 그룹(?�트리머)???�버?�이?�에 ?�송
     public async Task UpdateOverlayStyle(string styleJson)
     {
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
@@ -125,7 +127,7 @@ public class OverlayHub(
     }
 
     /// <summary>
-    /// [v2.2.1] ?�버?�이 ?�라?�언?�의 ?�시�??�존 맥박???�신?�니??
+    /// [v2.2.1] 클라이언트의 생존 신호를 수신합니다.
     /// </summary>
     public async Task ReportPulse()
     {

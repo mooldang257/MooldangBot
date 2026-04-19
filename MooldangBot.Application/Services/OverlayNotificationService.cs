@@ -10,16 +10,18 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace MooldangBot.Application.Services
 {
     public class OverlayNotificationService(
         IHubContext<OverlayHub> hubContext,
+        IAppDbContext db,
         ILogger<OverlayNotificationService> logger) : IOverlayNotificationService
     {
         public async Task NotifyRefreshAsync(string? chzzkUid, CancellationToken token = default)
         {
-            if (string.IsNullOrEmpty(chzzkUid)) return; // [v3.0.0] Clients.All ?�체 브로?�캐?�트 금�? (?�능 보호)
+            if (string.IsNullOrEmpty(chzzkUid)) return; 
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("SongAdded", "System", "New song request received", token);
         }
 
@@ -35,6 +37,7 @@ namespace MooldangBot.Application.Services
 
         public async Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default)
         {
+            // [물멍]: 단순히 신호만 보내는 구식 방식입니다. 가급적 BroadcastSongOverlayUpdateAsync를 사용하세요.
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("NotifySongQueueChanged", cancellationToken: token);
         }
 
@@ -43,27 +46,74 @@ namespace MooldangBot.Application.Services
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
         }
 
-        public async Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, System.Text.Json.JsonElement? emojis = null, int? payAmount = null, CancellationToken token = default)
+        public async Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, JsonElement? emojis = null, int? payAmount = null, CancellationToken token = default)
         {
-            // [?버?이??메아?: ?측 ?이??senderId, emojis, payAmount)??함??100% ?합??DTO ?성
             var chatDto = new ChatOverlayDto(senderId, nickname, userRole, message, emojis, payAmount);
-            
-            // [?이???송 규격]: ?버?이??JSON.parse() ?구?항??맞춰 문자?로 직렬??
             var jsonRaw = JsonSerializer.Serialize(chatDto, ChzzkJsonContext.Default.ChatOverlayDto);
-            
-            // [?이???장검?: 추출?기 ?하?가공된 JSON ?태??세 로그 출력
-            if (payAmount > 0)
-                logger.LogInformation("? [?버?이 ?원 ?신] Amount: {Amount}, User: {Nickname}", payAmount, nickname);
-            else
-                logger.LogDebug("? [?버?이 채팅 ?신] User: {Nickname}", nickname);
             
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChat", jsonRaw, token);
         }
 
         public async Task NotifySongOverlayUpdateAsync(string chzzkUid, SongOverlayDto data, CancellationToken token = default)
         {
-            // [v16.0] 신청곡 오버레이 실시간 주파수 공명
             await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveSongOverlayUpdate", data, token);
+        }
+
+        public async Task BroadcastSongOverlayUpdateAsync(string chzzkUid, string? connectionId = null, CancellationToken token = default)
+        {
+            var normalizedUid = chzzkUid.ToLower();
+            
+            // 1. 스트리머 프로필 및 설정 조회
+            var profile = await db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == normalizedUid, token);
+
+            if (profile == null) return;
+
+            // 2. 현재 재생 중인 곡 조회
+            var currentSong = await db.SongQueues
+                .AsNoTracking()
+                .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Playing && !s.IsDeleted)
+                .OrderByDescending(s => s.UpdatedAt)
+                .FirstOrDefaultAsync(token);
+
+            // 3. 대기열 곡 조회 (상위 5개)
+            var queueSongs = await db.SongQueues
+                .AsNoTracking()
+                .Include(s => s.GlobalViewer)
+                .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)
+                .OrderBy(s => s.Id)
+                .Take(5)
+                .ToListAsync(token);
+
+            // 4. 설정 파싱 (디자인 설정)
+            var settings = new SongOverlaySettings();
+            if (!string.IsNullOrEmpty(profile.DesignSettingsJson))
+            {
+                try {
+                    var parsed = JsonSerializer.Deserialize<SongOverlaySettings>(profile.DesignSettingsJson);
+                    if (parsed != null) settings = parsed;
+                } catch { /* 기본값 유지 */ }
+            }
+
+            // 5. DTO 조립
+            var dto = new SongOverlayDto(
+                currentSong != null ? new CurrentSongDto(currentSong.Title, currentSong.Artist) : null,
+                queueSongs.Select(s => new QueueSongDto(s.Title, s.Artist, s.RequesterNickname ?? s.GlobalViewer?.Nickname ?? "익명")).ToList(),
+                settings
+            );
+
+            // 6. 전송 (특정 연결 대상 또는 그룹 전체)
+            if (!string.IsNullOrEmpty(connectionId))
+            {
+                await hubContext.Clients.Client(connectionId).SendAsync("ReceiveSongOverlayUpdate", dto, token);
+            }
+            else
+            {
+                await hubContext.Clients.Group(normalizedUid).SendAsync("ReceiveSongOverlayUpdate", dto, token);
+            }
+
+            logger.LogInformation("[오시리스의 공명] 신청곡 오버레이 상태 브로드캐스트 완료. Channel: {ChzzkUid}, State: {State}", normalizedUid, currentSong != null ? "Playing" : "Idle");
         }
     }
 }

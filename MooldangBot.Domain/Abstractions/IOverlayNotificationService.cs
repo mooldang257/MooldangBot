@@ -15,4 +15,9 @@ public interface IOverlayNotificationService
     
     // [v16.0] 신청곡 오버레이 전용 실시간 상태 동기화
     Task NotifySongOverlayUpdateAsync(string chzzkUid, SongOverlayDto data, CancellationToken token = default);
+
+    /// <summary>
+    /// [물멍]: 현재 상태(Playing, Pending, Settings)를 DB에서 직접 조회하여 오버레이에 브로드캐스트합니다.
+    /// </summary>
+    Task BroadcastSongOverlayUpdateAsync(string chzzkUid, string? connectionId = null, CancellationToken token = default);
 }
