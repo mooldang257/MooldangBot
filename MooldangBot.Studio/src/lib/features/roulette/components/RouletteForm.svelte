@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check, Volume2, Mic, Music, Trash2, Play, StopCircle } from "lucide-svelte";
+    import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check, Volume2, VolumeX, Mic, Music, Trash2, Play, StopCircle } from "lucide-svelte";
     import { slide, fade, fly } from "svelte/transition";
 
     let { 
@@ -162,6 +162,12 @@
     function removeCustomSound(index: number) {
         rouletteForm.items[index].soundUrl = null;
         rouletteForm.items[index].useDefaultSound = true;
+    }
+
+    function setSilentMode(index: number) {
+        rouletteForm.items[index].soundUrl = null;
+        rouletteForm.items[index].useDefaultSound = false;
+        activeSoundItemIndex = null;
     }
 
     function previewSound(url: string) {
@@ -451,18 +457,26 @@
             <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-black text-slate-400 uppercase tracking-widest">현재 사운드</span>
-                    {#if !rouletteForm.items[activeSoundItemIndex].useDefaultSound}
-                        <button on:click={() => removeCustomSound(activeSoundItemIndex!)} class="text-[10px] font-black text-red-500 hover:underline">기본으로 변경</button>
-                    {/if}
+                    <div class="flex gap-2">
+                        {#if rouletteForm.items[activeSoundItemIndex].useDefaultSound || rouletteForm.items[activeSoundItemIndex].soundUrl}
+                            <button on:click={() => setSilentMode(activeSoundItemIndex!)} class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors">무음으로 전환</button>
+                        {/if}
+                        {#if !rouletteForm.items[activeSoundItemIndex].useDefaultSound}
+                            <button on:click={() => removeCustomSound(activeSoundItemIndex!)} class="text-[10px] font-black text-primary hover:underline">기본으로 변경</button>
+                        {/if}
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     {#if rouletteForm.items[activeSoundItemIndex].useDefaultSound}
-                        <div class="p-2 bg-slate-200 text-slate-500 rounded-lg"><Music size={16} /></div>
-                        <span class="text-sm font-bold text-slate-600">등급별 기본 사운드</span>
+                        <div class="p-2 bg-primary/10 text-primary rounded-lg"><Music size={16} /></div>
+                        <span class="text-sm font-bold text-slate-700">등급별 기본 사운드</span>
+                    {:else if !rouletteForm.items[activeSoundItemIndex].soundUrl}
+                        <div class="p-2 bg-slate-100 text-slate-400 rounded-lg"><VolumeX size={16} /></div>
+                        <span class="text-sm font-bold text-slate-400 italic">사운드 없음 (무음)</span>
                     {:else}
-                        <div class="p-2 bg-primary/10 text-primary rounded-lg"><Volume2 size={16} /></div>
-                        <span class="text-sm font-bold text-primary truncate flex-1">{rouletteForm.items[activeSoundItemIndex].soundUrl?.split('/').pop()}</span>
-                        <button on:click={() => previewSound(rouletteForm.items[activeSoundItemIndex].soundUrl!)} class="p-2 bg-white text-primary rounded-lg shadow-sm border border-slate-100"><Play size={14}/></button>
+                        <div class="p-2 bg-sky-100 text-sky-600 rounded-lg"><Volume2 size={16} /></div>
+                        <span class="text-sm font-bold text-sky-700 truncate flex-1">{rouletteForm.items[activeSoundItemIndex].soundUrl?.split('/').pop()}</span>
+                        <button on:click={() => previewSound(rouletteForm.items[activeSoundItemIndex].soundUrl!)} class="p-2 bg-white text-sky-600 rounded-lg shadow-sm border border-slate-100 hover:bg-sky-50 transition-colors"><Play size={14}/></button>
                     {/if}
                 </div>
             </div>
