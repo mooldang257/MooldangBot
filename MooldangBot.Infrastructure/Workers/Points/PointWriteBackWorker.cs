@@ -140,21 +140,26 @@ public class PointWriteBackWorker(
                 
                 // [Step 0] GlobalViewer 확보 (마스터 정보가 없으면 자동 생성)
                 const string globalUpsertSql = @"
-                    INSERT INTO core_global_viewers (viewer_uid, viewer_uid_hash, nickname, created_at, updated_at)
-                    VALUES (@ViewerUid, @Hash, @Nickname, NOW(), NOW())
+                    INSERT INTO core_global_viewers (viewer_uid, viewer_uid_hash, nickname, is_deleted, created_at, updated_at)
+                    VALUES (@ViewerUid, @Hash, @Nickname, 0, NOW(), NOW())
+                    AS new_v
                     ON DUPLICATE KEY UPDATE 
-                        nickname = VALUES(nickname),
+                        nickname = new_v.nickname,
+                        is_deleted = 0,
                         updated_at = NOW();";
 
                 // [Step 1] ViewerRelation 확보 (관계 및 활동 시간 동기화)
                 const string relationUpsertSql = @"
-                    INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, nickname, first_visit_at, last_chat_at, created_at, updated_at)
-                    SELECT s.id, g.id, @Nickname, NOW(), NOW(), NOW(), NOW()
+                    INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, nickname, is_active, is_deleted, first_visit_at, last_chat_at, created_at, updated_at)
+                    SELECT s.id, g.id, @Nickname, 1, 0, NOW(), NOW(), NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
+                    AS new_r
                     ON DUPLICATE KEY UPDATE 
-                        nickname = VALUES(nickname),
+                        nickname = new_r.nickname,
+                        is_active = 1,
+                        is_deleted = 0,
                         last_chat_at = NOW(),
                         updated_at = NOW();";
 
@@ -165,8 +170,9 @@ public class PointWriteBackWorker(
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
+                    AS new_p
                     ON DUPLICATE KEY UPDATE 
-                        points = points + VALUES(points),
+                        points = points + new_p.points,
                         updated_at = NOW();";
 
                 foreach (var kvp in data)
