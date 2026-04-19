@@ -11,16 +11,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "nickname",
-                table: "viewer_relations",
-                type: "varchar(100)",
-                maxLength: 100,
-                nullable: false,
-                defaultValue: "",
-                collation: "utf8mb4_unicode_ci")
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.AddColumn<byte[]>(
                 name: "title_vector",
                 table: "func_song_master_library",
@@ -45,10 +35,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "nickname",
-                table: "viewer_relations");
-
             migrationBuilder.DropColumn(
                 name: "title_vector",
                 table: "func_song_master_library");
