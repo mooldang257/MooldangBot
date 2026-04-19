@@ -20,6 +20,9 @@ public class ViewerPointConfiguration : IEntityTypeConfiguration<ViewerPoint>
                .WithMany()
                .HasForeignKey(v => v.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        // [v18.2] UPSERT 무결성을 위한 복합 유니크 인덱스 추가
+        builder.HasIndex(v => new { v.StreamerProfileId, v.GlobalViewerId }).IsUnique();
     }
 }
 

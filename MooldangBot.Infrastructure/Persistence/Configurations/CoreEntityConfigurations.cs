@@ -59,6 +59,7 @@ public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
         builder.Property(e => e.Nickname).UseCollation(ciCollation); // [v6.2] 중앙 닉네임
         
         builder.Property(e => e.ViewerUidHash).HasMaxLength(64).IsRequired();
+        builder.HasIndex(e => e.ViewerUidHash).IsUnique().HasDatabaseName("IX_GlobalViewer_ViewerUidHash");
         
         // 🚀 [v6.2.2] 닉네임 기반 시청자 검색 성능 최적화 (오시리스의 눈)
         builder.HasIndex(e => e.Nickname).HasDatabaseName("IX_GlobalViewer_Nickname");
@@ -139,5 +140,8 @@ public class ViewerRelationConfiguration : IEntityTypeConfiguration<ViewerRelati
                .WithMany()
                .HasForeignKey(v => v.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        // [v18.2] UPSERT 무결성을 위한 복합 유니크 인덱스 추가
+        builder.HasIndex(v => new { v.StreamerProfileId, v.GlobalViewerId }).IsUnique();
     }
 }
