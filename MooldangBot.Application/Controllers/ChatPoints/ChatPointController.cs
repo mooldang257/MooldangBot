@@ -94,6 +94,8 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             var total = await query.CountAsync();
             var items = await query.Skip(offset).Take(limit).ToListAsync();
 
+            logger.LogInformation("GetViewers: Found {Total} total viewers, returning {Count} items for {Uid}", total, items.Count, chzzkUid);
+
             return Ok(Result<object>.Success(new { total, items }));
         }
 
@@ -105,6 +107,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] int offset = 0, 
             [FromQuery] int limit = 20)
         {
+            // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
             var query = context.ViewerDonations
                         .AsNoTracking()
                         .IgnoreQueryFilters()
@@ -130,6 +133,8 @@ namespace MooldangBot.Application.Controllers.ChatPoints
 
             var total = await query.CountAsync();
             var items = await query.Skip(offset).Take(limit).ToListAsync();
+
+            logger.LogInformation("GetDonations: Found {Total} total records, returning {Count} items for {Uid}", total, items.Count, chzzkUid);
 
             return Ok(Result<object>.Success(new { total, items }));
         }

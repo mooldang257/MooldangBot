@@ -22,8 +22,8 @@
         isAutoAccumulateDonation: false
     });
 
-    let viewerPoints = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, search: "", sort: "points" });
-    let donationRecords = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, search: "", sort: "total" });
+    let viewerPoints = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "points" });
+    let donationRecords = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "total" });
 
     async function loadSettings() {
         if (!chzzkUid) return;
@@ -59,6 +59,7 @@
             viewerPoints.offset = 0;
             viewerPoints.items = [];
             viewerPoints.hasNext = true;
+            viewerPoints.isInitialized = true;
         }
         if (!viewerPoints.hasNext) return;
 
@@ -87,6 +88,7 @@
             donationRecords.offset = 0;
             donationRecords.items = [];
             donationRecords.hasNext = true;
+            donationRecords.isInitialized = true;
         }
         if (!donationRecords.hasNext) return;
 
@@ -124,9 +126,9 @@
 
     // 탭 변경 시 데이터 로드
     $effect(() => {
-        if (chzzkUid) {
-            if (activeTab === 'viewers' && viewerPoints.items.length === 0) loadViewerPoints(true);
-            if (activeTab === 'donations' && donationRecords.items.length === 0) loadDonationRecords(true);
+        if (chzzkUid && isLoaded) {
+            if (activeTab === 'viewers' && !viewerPoints.isInitialized) loadViewerPoints(true);
+            if (activeTab === 'donations' && !donationRecords.isInitialized) loadDonationRecords(true);
         }
     });
 </script>
