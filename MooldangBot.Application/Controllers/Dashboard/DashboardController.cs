@@ -19,14 +19,13 @@ namespace MooldangBot.Application.Controllers.Dashboard
         [HttpGet("summary/{streamerUid}")]
         public async Task<IActionResult> GetSummary(string streamerUid)
         {
-            var targetUid = streamerUid.ToLower();
-            var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
-            if (profile == null) return NotFound(Result<string>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎."));
+            var profile = await GetProfileByUidOrSlugAsync(streamerUid);
+            if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var today = KstClock.Now.Date;
 
             // [臾쇰찉]: 諛⑹넚 ?곹깭 ?뺤씤 (移섏?吏?API ?ㅼ떆媛??곕룞)
-            var liveStatus = await chzzkApi.GetLiveDetailAsync(targetUid);
+            var liveStatus = await chzzkApi.GetLiveDetailAsync(profile.ChzzkUid);
             
             // [?곗씠??: ??쒕낫???듯빀 吏??吏묎퀎
             var todaySongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
@@ -67,9 +66,8 @@ namespace MooldangBot.Application.Controllers.Dashboard
         [HttpGet("activities/{streamerUid}")]
         public async Task<IActionResult> GetActivities(string streamerUid)
         {
-            var targetUid = streamerUid.ToLower();
-            var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid);
-            if (profile == null) return NotFound(Result<string>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎."));
+            var profile = await GetProfileByUidOrSlugAsync(streamerUid);
+            if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             // [臾쇰찉]: 媛??꾨찓??濡쒓렇 ?좊땲??(理쒓렐 5媛쒖뵫 痍⑦빀)
             var songs = await db.SongQueues
@@ -128,6 +126,14 @@ namespace MooldangBot.Application.Controllers.Dashboard
             }
 
             return Ok(Result<List<DashboardActivityDto>>.Success(activities));
+        }
+
+        private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
+        {
+            var target = uid.ToLower();
+            return await db.StreamerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
         }
 
         private string GetRelativeTime(KstClock time)

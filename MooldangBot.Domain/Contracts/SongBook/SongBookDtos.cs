@@ -6,12 +6,24 @@ namespace MooldangBot.Domain.Contracts.SongBook;
 
 public class SonglistSettingsUpdateRequest
 {
+    [JsonPropertyName("designSettingsJson")]
+    public string DesignSettingsJson { get; set; } = "{}";
+
     [JsonPropertyName("songRequestCommands")]
     public List<SongRequestCommandDto> SongRequestCommands { get; set; } = new();
     
+    [JsonPropertyName("omakases")]
+    public List<OmakaseDto> Omakases { get; set; } = new();
+}
+
+public class SonglistSettingsResponseDto
+{
     [JsonPropertyName("designSettingsJson")]
     public string DesignSettingsJson { get; set; } = "{}";
-    
+
+    [JsonPropertyName("songRequestCommands")]
+    public List<SongRequestCommandDto> SongRequestCommands { get; set; } = new();
+
     [JsonPropertyName("omakases")]
     public List<OmakaseDto> Omakases { get; set; } = new();
 }
