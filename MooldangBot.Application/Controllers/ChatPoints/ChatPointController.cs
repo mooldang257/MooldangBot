@@ -65,17 +65,20 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] int offset = 0, 
             [FromQuery] int limit = 20)
         {
-            var query = from r in context.ViewerRelations.IgnoreQueryFilters()
-                        join p in context.ViewerPoints.IgnoreQueryFilters() 
-                           on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points
-                        from p in points.DefaultIfEmpty()
-                        where r.StreamerProfile!.ChzzkUid == chzzkUid
-                        select new {
+            var query = context.ViewerRelations
+                        .AsNoTracking()
+                        .IgnoreQueryFilters()
+                        .Where(r => r.StreamerProfile!.ChzzkUid == chzzkUid)
+                        .Select(r => new {
                             nickname = r.GlobalViewer!.Nickname,
-                            points = p != null ? p.Points : 0,
+                            points = context.ViewerPoints
+                                .IgnoreQueryFilters()
+                                .Where(p => p.StreamerProfileId == r.StreamerProfileId && p.GlobalViewerId == r.GlobalViewerId)
+                                .Select(p => (int?)p.Points)
+                                .FirstOrDefault() ?? 0,
                             attendanceCount = r.AttendanceCount,
                             lastAttendanceAt = r.LastAttendanceAt
-                        };
+                        });
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -103,14 +106,16 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] int offset = 0, 
             [FromQuery] int limit = 20)
         {
-            var query = from d in context.ViewerDonations.IgnoreQueryFilters()
-                        where d.StreamerProfile!.ChzzkUid == chzzkUid
-                        select new {
+            var query = context.ViewerDonations
+                        .AsNoTracking()
+                        .IgnoreQueryFilters()
+                        .Where(d => d.StreamerProfile!.ChzzkUid == chzzkUid)
+                        .Select(d => new {
                             nickname = d.GlobalViewer!.Nickname,
                             balance = d.Balance,
                             totalDonated = d.TotalDonated,
                             updatedAt = d.UpdatedAt ?? d.CreatedAt
-                        };
+                        });
 
             if (!string.IsNullOrWhiteSpace(search))
             {
