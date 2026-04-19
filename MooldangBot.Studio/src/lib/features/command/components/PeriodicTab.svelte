@@ -3,6 +3,8 @@
     import { fade, slide } from 'svelte/transition';
     import { apiFetch } from '$lib/api/client'; // [Osiris] 표준 통신 모듈 주입
 
+    import PeriodicTable from './PeriodicTable.svelte';
+
     export let messages: { id: number; intervalMinutes: number; message: string; isEnabled: boolean }[] = [];
     export let chzzkUid: string = '';
     export let onRefresh: () => Promise<void> = async () => {};
@@ -46,7 +48,12 @@
 
     function editPeriodic(msg: any) {
         msgForm = { ...msg };
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const formElement = document.getElementById("periodic-form-section");
+        if (formElement) {
+            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     function resetMsgForm() {
@@ -56,7 +63,7 @@
 
 <div class="space-y-10" in:fade>
     <!-- [입력 구역] -->
-    <section class="bg-white/90 backdrop-blur-2xl p-10 rounded-[3rem] border-t-8 border-t-amber-400 border border-white shadow-xl overflow-hidden relative group">
+    <section id="periodic-form-section" class="bg-white/90 backdrop-blur-2xl p-10 rounded-[3rem] border-t-8 border-t-amber-400 border border-white shadow-xl overflow-hidden relative group scroll-mt-24 md:scroll-mt-32">
         <!-- 배경 데코 -->
         <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-amber-50 rounded-full blur-3xl opacity-50 group-hover:bg-amber-100 transition-colors"></div>
 
@@ -92,43 +99,11 @@
         </div>
     </section>
 
-    <!-- [배치 목록] -->
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {#each messages as msg}
-            <div class="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white shadow-lg relative overflow-hidden group hover:shadow-2xl transition-all" in:slide>
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-                            <Clock size={20} />
-                        </div>
-                        <span class="text-lg font-black text-slate-700 font-mono tracking-tighter">{msg.intervalMinutes}분 주기</span>
-                    </div>
-                    <button on:click={() => togglePeriodic(msg)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {msg.isEnabled ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-slate-200'}">
-                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {msg.isEnabled ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
-                    </button>
-                </div>
-                
-                <div class="text-sm font-bold text-slate-600 leading-relaxed bg-slate-50/50 p-5 rounded-[2rem] border border-dashed border-slate-200 min-h-[100px] mb-6 text-left relative">
-                    <span class="absolute -top-3 -left-1 text-2xl opacity-20">"</span>
-                    {msg.message}
-                    <span class="absolute -bottom-6 -right-1 text-2xl opacity-20">"</span>
-                </div>
-
-                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button on:click={() => editPeriodic(msg)} class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-500 hover:text-primary hover:border-primary hover:shadow-md transition-all">수정</button>
-                    <button on:click={() => deletePeriodic(msg.id)} class="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-400 hover:text-rose-500 hover:border-rose-500 hover:shadow-md transition-all flex items-center gap-1.5">
-                        <Trash2 size={14} /> 삭제
-                    </button>
-                </div>
-            </div>
-        {/each}
-
-        {#if messages.length === 0}
-            <div class="col-span-full py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                <Clock size={48} class="mb-4 opacity-20" />
-                <p class="font-bold">등록된 정기 메세지가 없습니다.</p>
-                <p class="text-xs">상단 폼에서 새로운 메세지를 예약해 보세요!</p>
-            </div>
-        {/if}
-    </section>
+    <!-- [정기 메시지 데이터베이스] -->
+    <PeriodicTable 
+        {messages} 
+        onEdit={editPeriodic} 
+        onDelete={deletePeriodic} 
+        onToggle={togglePeriodic} 
+    />
 </div>
