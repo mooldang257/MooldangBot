@@ -393,10 +393,9 @@
 
     .overlay-container {
         position: absolute; inset: 0; display: flex; flex-direction: column; 
-        justify-content: flex-start; align-items: center;
+        justify-content: center; align-items: center;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%; overflow: hidden;
     }
 
     .deep-sea-gradient {
@@ -406,14 +405,14 @@
     }
 
     .content-wrapper { 
-        display: flex; flex-direction: column; align-items: center; gap: 4vh; 
-        width: 100%; max-width: 100vw; padding-top: 5px; /* 세이프 존 5px로 미세 조정 */
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; 
+        width: 100%; height: 100%; max-width: 100%; padding: 10px;
     }
 
     .stage-area { 
-        position: relative; width: 100%; min-height: 400px; height: 50vh;
+        position: relative; width: 100%; flex: 1; min-height: 0;
         display: flex; justify-content: center; align-items: center; 
-        perspective: 1200px; /* 3D 투영 중심점 확보를 위해 부모로 이동 */
+        perspective: 2000px;
         perspective-origin: center;
     }
 
@@ -434,9 +433,9 @@
 
     /* 스튜디오 에디션 카드 디자인 (반응형 최적화) */
     .studio-card { 
-        position: relative; width: 90%; max-width: 540px; min-height: 300px; border-radius: 32px; 
+        position: relative; width: 100%; max-width: 540px; aspect-ratio: 1.8 / 1; border-radius: 32px; 
         transform-style: preserve-3d;
-        margin: 0; /* 불필요한 마진 제거 */
+        margin: 0;
     }
     .card-glass-body {
         position: relative; width: 100%; height: 100%; padding: 6%;
@@ -515,15 +514,16 @@
         box-shadow: 0 10px 30px rgba(255, 127, 80, 0.4);
     }
 
-    .card-status { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #fff; opacity: 0.5; margin-top: 20px; }
+    .card-status { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 700; color: #fff; opacity: 0.5; margin-top: 10px; }
 
     /* 히스토리 트레이 (반응형) */
-    .history-tray { width: 100%; display: flex; justify-content: center; padding: 0 20px; }
+    .history-tray { width: 100%; display: flex; justify-content: center; padding: 0 10px; max-height: 30%; }
     .history-grid-v2 { 
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; 
-        width: 100%; max-width: 1000px; padding: 20px; 
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; 
+        width: 100%; max-width: 1000px; padding: 10px; 
         background: rgba(255, 255, 255, 0.08); border-radius: 24px; 
         backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
     }
     .history-chip { 
         padding: 8px 16px; border-radius: 12px; 
