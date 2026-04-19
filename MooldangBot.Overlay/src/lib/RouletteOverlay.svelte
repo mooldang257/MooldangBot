@@ -51,7 +51,12 @@
     }
 
     function playResultSound(result: any) {
-        const url = (!result.useDefaultSound && result.soundUrl) 
+        // [오시리스의 침묵]: 기본 사운드 미사용 및 연동 사운드 없을 시 음소거
+        if (!result.useDefaultSound && !result.soundUrl) {
+            return;
+        }
+
+        const url = (result.soundUrl) 
             ? result.soundUrl 
             : DEFAULT_SOUNDS[result.template] || DEFAULT_SOUNDS['Standard'];
             
