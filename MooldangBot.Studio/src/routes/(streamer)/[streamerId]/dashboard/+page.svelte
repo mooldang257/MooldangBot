@@ -284,7 +284,7 @@
                             
                             {#if newSlug}
                                 <p class="text-[10px] font-bold text-slate-400 animate-in fade-in slide-in-from-left-2 transition-all">
-                                    미리보기: <span class="text-primary">localhost:3000/{newSlug.toLowerCase()}</span>
+                                    미리보기: <span class="text-primary">https://bot.mooldang.com/{newSlug.toLowerCase()}</span>
                                 </p>
                             {/if}
 
