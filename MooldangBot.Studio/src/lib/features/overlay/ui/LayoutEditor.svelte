@@ -37,6 +37,10 @@
     let startY = $state(0);
     let startElemX = $state(0);
     let startElemY = $state(0);
+    let startElemW = $state(0);
+    let startElemH = $state(0);
+
+    let resizingId = $state<string | null>(null);
 
     let containerWidth = $state(0);
     let scale = $derived(containerWidth / CANVAS_W);
@@ -58,6 +62,7 @@
 
     function handleMouseDown(e: MouseEvent, id: string) {
         if (e.button !== 0) return;
+        e.stopPropagation(); // [물멍]: 이벤트 버블링 방지
         draggingId = id;
         const el = elements.find(v => v.id === id);
         if (el) {
@@ -70,8 +75,23 @@
         window.addEventListener('mouseup', handleMouseUp);
     }
 
+    function handleResizeDown(e: MouseEvent, id: string) {
+        if (e.button !== 0) return;
+        e.stopPropagation(); // [Osiris]: 드래그 이벤트와 겹치지 않도록 차단
+        resizingId = id;
+        const el = elements.find(v => v.id === id);
+        if (el) {
+            startX = e.clientX;
+            startY = e.clientY;
+            startElemW = el.w;
+            startElemH = el.h;
+        }
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    }
+
     function handleMouseMove(e: MouseEvent) {
-        if (!draggingId) return;
+        if (!draggingId && !resizingId) return;
         const dx = (e.clientX - startX) / scale;
         const dy = (e.clientY - startY) / scale;
 
@@ -83,12 +103,20 @@
                     y: Math.round(Math.max(0, Math.min(CANVAS_H - el.h, startElemY + dy)))
                 };
             }
+            if (el.id === resizingId) {
+                return {
+                    ...el,
+                    w: Math.round(Math.max(50, Math.min(CANVAS_W - el.x, startElemW + dx))),
+                    h: Math.round(Math.max(50, Math.min(CANVAS_H - el.y, startElemH + dy)))
+                };
+            }
             return el;
         });
     }
 
     function handleMouseUp() {
         draggingId = null;
+        resizingId = null;
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
     }
@@ -195,6 +223,25 @@
                                     />
                                 </div>
                             </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase">Width</label>
+                                    <input 
+                                        type="number" 
+                                        bind:value={el.w}
+                                        class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase">Height</label>
+                                    <input 
+                                        type="number" 
+                                        bind:value={el.h}
+                                        class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     {/each}
                 </div>
@@ -243,10 +290,19 @@
                             </div>
                         </div>
 
-                        <!-- 조절 핸들 아이콘 (장식용) -->
+                        <!-- 조절 핸들 아이콘 (장식용 이동 핸들) -->
                         <div class="absolute top-0 left-0 p-2 text-white/50">
                             <Move size={14} />
                         </div>
+
+                        <!-- [Osiris]: 실제 크기 조절 핸들 (우측 하단) -->
+                        <button 
+                            class="absolute bottom-0 right-0 w-6 h-6 flex items-center justify-center cursor-nwse-resize group/handle"
+                            onmousedown={(e) => handleResizeDown(e, el.id)}
+                            aria-label="Resize handle"
+                        >
+                            <div class="w-2 h-2 border-r-2 border-b-2 border-white/40 group-hover/handle:border-white transition-colors"></div>
+                        </button>
                     </div>
                 {/each}
 
