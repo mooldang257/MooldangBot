@@ -18,6 +18,15 @@
 
     let allRoulettes: any[] = $state([]);
     let historyLogs: any[] = $state([]);
+    
+    // [페이징/필터 상태]: 누락된 상태 변수 복구
+    let nextLastId: number | null = $state(null);
+    let currentFilters = $state({
+        nickname: "",
+        itemName: "",
+        status: null as number | null
+    });
+    let hasNext = $derived(nextLastId !== null);
 
     let rouletteForm = $state({
         id: 0,
