@@ -58,7 +58,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
             if (request.CurrencyType == PointCurrencyType.ChatPoint)
             {
                 // [무료 포인트]: Redis를 통한 고속 Write-Back 처리
-                await _pointCache.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
+                await _pointCache.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Nickname ?? "Unknown", request.Amount);
                 
                 // 현재 잔액은 DB값 + Redis 증분값
                 var dbBalance = await _db.ViewerPoints.AsNoTracking()
@@ -73,14 +73,24 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
             }
             else
             {
-                // [유료 재화]: MariaDB 동기 업데이트 및 스냅샷 로깅
+                // [유료/수동 재화]: MariaDB 동기 업데이트
                 var connection = _db.Database.GetDbConnection();
                 if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
 
                 using var transaction = await connection.BeginTransactionAsync(ct);
                 try
                 {
-                    // [물멍]: 선장님 지시에 따라 '후원 적립 여부'를 반영합니다.
+                    // [1순위: Identity First] 시청자 관계 및 닉네임, 마지막 활동 시간 등록
+                    const string relationUpsertSql = @"
+                        INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, first_visit_at, last_chat_at, created_at, updated_at)
+                        VALUES (@StreamerId, @GlobalId, NOW(), NOW(), NOW(), NOW())
+                        ON DUPLICATE KEY UPDATE 
+                            last_chat_at = NOW(),
+                            updated_at = NOW();";
+
+                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewer.Id }, transaction);
+
+                    // [2순위: 포인트/재화 정산]
                     int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
 
                     const string upsertSql = @"

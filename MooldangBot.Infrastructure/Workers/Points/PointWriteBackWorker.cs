@@ -88,21 +88,21 @@ public class PointWriteBackWorker(
 
     private async Task ProcessSyncAsync(CancellationToken ct)
     {
-        IDictionary<string, int>? increments = null;
+        IDictionary<string, PointVariant>? increments = null;
 
         try
         {
             using var scope = serviceProvider.CreateScope();
             var cache = scope.ServiceProvider.GetRequiredService<IPointCacheService>();
 
-            // 1. Redis에서 모든 증분 데이터 원자적 추출 (Lua Script)
+            // 1. Redis에서 모든 증분 데이터 원자적 추출 (Lua Script) - [포인트 + 닉네임]
             increments = await cache.ExtractAllIncrementalPointsAsync();
             if (increments == null || increments.Count == 0) return;
 
             // 2. DB 벌크 업데이트 실행 (Polly 적용)
             await SyncToDatabaseAsync(increments, scope, ct);
             
-            logger.LogInformation("✅ [WriteBack] {Count}건의 포인트 변동분 병합 완료.", increments.Count);
+            logger.LogInformation("✅ [WriteBack] {Count}건의 포인트 및 시청자 정보 동기화 완료.", increments.Count);
         }
         catch (Exception ex)
         {
@@ -111,13 +111,13 @@ public class PointWriteBackWorker(
             
             if (increments != null && increments.Count > 0)
             {
-                // 3. [익산 보험] 실패한 데이터를 파일로 덤프
+                // [익산 보험] 실패한 데이터 덤프 로직 (DTO 변경에 따른 수정 필요 시 수정)
                 await CreateBackupAsync(increments);
             }
         }
     }
 
-    private async Task SyncToDatabaseAsync(IDictionary<string, int> data, IServiceScope scope, CancellationToken ct)
+    private async Task SyncToDatabaseAsync(IDictionary<string, PointVariant> data, IServiceScope scope, CancellationToken ct)
     {
         var db = scope.ServiceProvider.GetRequiredService<IPointDbContext>();
 
@@ -129,8 +129,22 @@ public class PointWriteBackWorker(
             using var transaction = await connection.BeginTransactionAsync(ct);
             try
             {
-                // [물멍의 일격]: 10K TPS를 버티는 쾌속 Upsert
-                const string upsertSql = @"
+                // [물멍의 일격]: 10K TPS를 버티는 쾌속 Identity & Point Upsert
+                
+                // 1순위: 시청자 관계 등록 및 닉네임/활동일시 동기화
+                const string relationUpsertSql = @"
+                    INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, nickname, first_visit_at, last_chat_at, created_at, updated_at)
+                    SELECT s.id, g.id, @Nickname, NOW(), NOW(), NOW(), NOW()
+                    FROM core_streamer_profiles s
+                    JOIN core_global_viewers g ON g.id = (SELECT id FROM core_global_viewers WHERE viewer_uid = @ViewerUid LIMIT 1)
+                    WHERE s.chzzk_uid = @StreamerUid
+                    ON DUPLICATE KEY UPDATE 
+                        nickname = VALUES(nickname),
+                        last_chat_at = NOW(),
+                        updated_at = NOW();";
+
+                // 2순위: 포인트 합산
+                const string pointUpsertSql = @"
                     INSERT INTO viewer_points (streamer_profile_id, global_viewer_id, points, created_at, updated_at)
                     SELECT s.id, g.id, @Amount, NOW(), NOW()
                     FROM core_streamer_profiles s
@@ -145,12 +159,18 @@ public class PointWriteBackWorker(
                     var parts = kvp.Key.Split(':'); // "streamerUid:viewerUid"
                     if (parts.Length < 2) continue;
 
-                    await connection.ExecuteAsync(upsertSql, new 
+                    var param = new 
                     { 
                         StreamerUid = parts[0], 
                         ViewerUid = parts[1], 
-                        Amount = kvp.Value 
-                    }, transaction);
+                        Nickname = kvp.Value.Nickname,
+                        Amount = kvp.Value.Amount 
+                    };
+
+                    // [v18.5] 시청자 관계 먼저 (Identity First)
+                    await connection.ExecuteAsync(relationUpsertSql, param, transaction);
+                    // 그 다음 포인트
+                    await connection.ExecuteAsync(pointUpsertSql, param, transaction);
                 }
 
                 await transaction.CommitAsync(ct);
@@ -166,7 +186,7 @@ public class PointWriteBackWorker(
     // ==========================================
     // [익산 보험] (Iksan Insurance) 파일 기반 복구 로직
     // ==========================================
-    private async Task CreateBackupAsync(IDictionary<string, int> failedData)
+    private async Task CreateBackupAsync(IDictionary<string, PointVariant> failedData)
     {
         try
         {
@@ -177,11 +197,15 @@ public class PointWriteBackWorker(
             if (File.Exists(BackupFileName))
             {
                 var existingJson = await File.ReadAllTextAsync(BackupFileName);
-                var existingData = JsonSerializer.Deserialize<Dictionary<string, int>>(existingJson) ?? new();
+                var existingData = JsonSerializer.Deserialize<Dictionary<string, PointVariant>>(existingJson) ?? new();
                 
                 foreach (var kvp in failedData)
                 {
-                    if (existingData.ContainsKey(kvp.Key)) existingData[kvp.Key] += kvp.Value;
+                    if (existingData.ContainsKey(kvp.Key)) 
+                    {
+                        var existing = existingData[kvp.Key];
+                        existingData[kvp.Key] = existing with { Amount = existing.Amount + kvp.Value.Amount, Nickname = kvp.Value.Nickname };
+                    }
                     else existingData[kvp.Key] = kvp.Value;
                 }
                 failedData = existingData;
@@ -204,7 +228,7 @@ public class PointWriteBackWorker(
         try
         {
             var json = await File.ReadAllTextAsync(BackupFileName, ct);
-            var backupData = JsonSerializer.Deserialize<Dictionary<string, int>>(json);
+            var backupData = JsonSerializer.Deserialize<Dictionary<string, PointVariant>>(json);
             
             if (backupData != null && backupData.Count > 0)
             {

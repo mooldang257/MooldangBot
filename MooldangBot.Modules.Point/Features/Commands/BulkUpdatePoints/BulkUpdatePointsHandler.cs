@@ -44,8 +44,15 @@ public class BulkUpdatePointsHandler : IRequestHandler<BulkUpdatePointsCommand>
         try
         {
             // [물멍의 일격]: 모든 변동분을 Redis 캐시에 즉시 반영 (Write-Back)
+            // aggregatedJobs는 (StreamerUid, ViewerUid)로 묶여있으므로, 각 그룹에서 가장 마지막 Nickname을 사용합니다.
             var tasks = aggregatedJobs.Select(job => 
-                _pointCache.AddPointAsync(job.StreamerUid, job.ViewerUid, job.Total));
+            {
+                var latestNickname = jobList
+                    .Where(j => j.StreamerUid == job.StreamerUid && j.ViewerUid == job.ViewerUid)
+                    .Last().Nickname;
+
+                return _pointCache.AddPointAsync(job.StreamerUid, job.ViewerUid, latestNickname, job.Total);
+            });
 
             await Task.WhenAll(tasks);
 

@@ -9,17 +9,19 @@ public interface IPointCacheService
     /// <summary>
     /// Redis에 시청자의 포인트를 누적합니다 (Atomic INCR).
     /// </summary>
-    Task AddPointAsync(string streamerUid, string viewerUid, int amount);
+    Task AddPointAsync(string streamerUid, string viewerUid, string nickname, int amount);
 
     /// <summary>
     /// DB 동기화를 위해 Redis에서 모든 변동 데이터를 원자적으로 추출하고 캐시를 초기화합니다.
     /// (Lua Script를 사용하여 조회와 삭제 사이의 데이터 유실을 방지합니다)
     /// </summary>
-    /// <returns>Key: "streamerUid:viewerUid", Value: 변동된 포인트 합계</returns>
-    Task<IDictionary<string, int>> ExtractAllIncrementalPointsAsync();
+    /// <returns>Key: "streamerUid:viewerUid", Value: 변동된 포인트 합계 및 닉네임</returns>
+    Task<IDictionary<string, PointVariant>> ExtractAllIncrementalPointsAsync();
 
     /// <summary>
     /// 특정 시청자의 Redis 미반영 포인트 잔액을 조회합니다.
     /// </summary>
     Task<int> GetIncrementalPointAsync(string streamerUid, string viewerUid);
 }
+
+public record PointVariant(int Amount, string Nickname);

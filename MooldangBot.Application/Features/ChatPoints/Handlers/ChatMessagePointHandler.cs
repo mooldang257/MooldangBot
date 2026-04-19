@@ -27,6 +27,9 @@ public class ChatMessagePointHandler(
         if (string.IsNullOrEmpty(chat.SenderId))
             return Task.CompletedTask;
 
+        // [v7.2] 시청자 정보 로깅 강화
+        logger.LogInformation("💬 [채팅 포인트 이벤트] {Nickname}({Uid}): 포인트 적립 요청 수신", chat.Nickname, chat.SenderId);
+
         // 3. [공명 전파]: 모든 채팅 메시지에 대해 즉시 포인트 적립 요청을 배치 서비스로 위임
         batchService.EnqueueIncrement(
             notification.Profile.ChzzkUid!, 
