@@ -80,20 +80,23 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 using var transaction = await connection.BeginTransactionAsync(ct);
                 try
                 {
-                    // 1. 잔액 원자적 업데이트 (Upsert)
+                    // [물멍]: 선장님 지시에 따라 '후원 적립 여부'를 반영합니다.
+                    int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
+
                     const string upsertSql = @"
                         INSERT INTO viewer_donations (streamer_profile_id, global_viewer_id, balance, total_donated, created_at, updated_at)
-                        VALUES (@StreamerId, @GlobalId, @Amount, IF(@Amount > 0, @Amount, 0), NOW(), NOW())
+                        VALUES (@StreamerId, @GlobalId, @Amount, @TotalIncrement, NOW(), NOW())
                         ON DUPLICATE KEY UPDATE 
                             balance = balance + @Amount,
-                            total_donated = total_donated + IF(@Amount > 0, @Amount, 0),
+                            total_donated = total_donated + @TotalIncrement,
                             updated_at = NOW();";
 
                     await connection.ExecuteAsync(upsertSql, new 
                     { 
                         StreamerId = streamer.Id, 
                         GlobalId = globalViewer.Id, 
-                        Amount = request.Amount 
+                        Amount = request.Amount,
+                        TotalIncrement = totalIncrement
                     }, transaction);
 
                     // 2. 최종 잔액 조회 (스냅샷 생성용)

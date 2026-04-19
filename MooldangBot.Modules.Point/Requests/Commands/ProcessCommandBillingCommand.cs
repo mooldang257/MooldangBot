@@ -13,7 +13,8 @@ public record ProcessCommandBillingCommand(
     string? ViewerNickname,
     int Cost, 
     CommandCostType CostType,
-    int DonationAmount = 0
+    int DonationAmount = 0,
+    bool AccumulateTotal = true
 ) : IRequest<BillingResult>;
 
 /// <summary>

@@ -12,7 +12,6 @@ namespace MooldangBot.Application.Controllers.ChatPoints
     [ApiController]
     [Route("api/chatpoint")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor ?�용
     public class ChatPointController(IAppDbContext context, ILogger<ChatPointController> logger) : ControllerBase
     {
         [HttpGet("{chzzkUid}")]
@@ -24,11 +23,12 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             
             if (profile == null) 
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             return Ok(Result<object>.Success(new {
                 pointPerChat = profile.PointPerChat,
                 pointPerDonation1000 = profile.PointPerDonation1000,
+                pointPerAttendance = profile.PointPerAttendance,
                 isAutoAccumulateDonation = profile.IsAutoAccumulateDonation
             }));
         }
@@ -45,40 +45,89 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             if (profile == null) 
             {
                 logger.LogWarning("Streamer not found for Uid: {Uid}", chzzkUid);
-                return NotFound(Result<string>.Failure("?�트리머�?찾을 ???�습?�다."));
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
             }
 
             profile.PointPerChat = dto.PointPerChat;
             profile.PointPerDonation1000 = dto.PointPerDonation1000;
+            profile.PointPerAttendance = dto.PointPerAttendance;
             profile.IsAutoAccumulateDonation = dto.IsAutoAccumulateDonation;
 
             await context.SaveChangesAsync();
-            return Ok(Result<object>.Success(new { success = true, message = "?�인???�정???�?�되?�습?�다." }));
+            return Ok(Result<object>.Success(new { success = true, message = "포인트 설정이 저장되었습니다." }));
         }
 
         [HttpGet("{chzzkUid}/viewers")]
-        public async Task<IActionResult> GetViewers(string chzzkUid)
+        public async Task<IActionResult> GetViewers(
+            string chzzkUid, 
+            [FromQuery] string? search = null, 
+            [FromQuery] string? sort = "points", 
+            [FromQuery] int offset = 0, 
+            [FromQuery] int limit = 20)
         {
-            // [v7.0] Wallet Architecture: 분산??지�??�이블들??조인?�여 ?�합 �??�공
-            var viewers = await (from r in context.ViewerRelations.IgnoreQueryFilters()
-                                 join p in context.ViewerPoints.IgnoreQueryFilters() 
-                                    on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points
-                                 from p in points.DefaultIfEmpty()
-                                 join d in context.ViewerDonations.IgnoreQueryFilters() 
-                                    on new { r.StreamerProfileId, r.GlobalViewerId } equals new { d.StreamerProfileId, d.GlobalViewerId } into donations
-                                 from d in donations.DefaultIfEmpty()
-                                 where r.StreamerProfile!.ChzzkUid == chzzkUid
-                                 orderby (p != null ? p.Points : 0) descending
-                                 select new {
-                                     nickname = r.GlobalViewer!.Nickname,
-                                     points = p != null ? p.Points : 0,
-                                     donationPoints = d != null ? d.Balance : 0,
-                                     attendanceCount = r.AttendanceCount,
-                                     lastAttendanceAt = r.LastAttendanceAt
-                                 })
-                                 .ToListAsync();
+            var query = from r in context.ViewerRelations.IgnoreQueryFilters()
+                        join p in context.ViewerPoints.IgnoreQueryFilters() 
+                           on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into points
+                        from p in points.DefaultIfEmpty()
+                        where r.StreamerProfile!.ChzzkUid == chzzkUid
+                        select new {
+                            nickname = r.GlobalViewer!.Nickname,
+                            points = p != null ? p.Points : 0,
+                            attendanceCount = r.AttendanceCount,
+                            lastAttendanceAt = r.LastAttendanceAt
+                        };
 
-            return Ok(Result<object>.Success(viewers));
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(v => v.nickname.Contains(search));
+            }
+
+            query = sort switch
+            {
+                "attendance" => query.OrderByDescending(v => v.attendanceCount),
+                "recent" => query.OrderByDescending(v => v.lastAttendanceAt),
+                _ => query.OrderByDescending(v => v.points)
+            };
+
+            var total = await query.CountAsync();
+            var items = await query.Skip(offset).Take(limit).ToListAsync();
+
+            return Ok(Result<object>.Success(new { total, items }));
+        }
+
+        [HttpGet("{chzzkUid}/donations")]
+        public async Task<IActionResult> GetDonations(
+            string chzzkUid, 
+            [FromQuery] string? search = null, 
+            [FromQuery] string? sort = "total", 
+            [FromQuery] int offset = 0, 
+            [FromQuery] int limit = 20)
+        {
+            var query = from d in context.ViewerDonations.IgnoreQueryFilters()
+                        where d.StreamerProfile!.ChzzkUid == chzzkUid
+                        select new {
+                            nickname = d.GlobalViewer!.Nickname,
+                            balance = d.Balance,
+                            totalDonated = d.TotalDonated,
+                            updatedAt = d.UpdatedAt ?? d.CreatedAt
+                        };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(v => v.nickname.Contains(search));
+            }
+
+            query = sort switch
+            {
+                "balance" => query.OrderByDescending(v => v.balance),
+                "recent" => query.OrderByDescending(v => v.updatedAt),
+                _ => query.OrderByDescending(v => v.totalDonated)
+            };
+
+            var total = await query.CountAsync();
+            var items = await query.Skip(offset).Take(limit).ToListAsync();
+
+            return Ok(Result<object>.Success(new { total, items }));
         }
     }
 
@@ -89,6 +138,9 @@ namespace MooldangBot.Application.Controllers.ChatPoints
         
         [JsonPropertyName("pointPerDonation1000")]
         public int PointPerDonation1000 { get; set; }
+
+        [JsonPropertyName("pointPerAttendance")]
+        public int PointPerAttendance { get; set; }
 
         [JsonPropertyName("isAutoAccumulateDonation")]
         public bool IsAutoAccumulateDonation { get; set; }

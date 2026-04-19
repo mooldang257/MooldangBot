@@ -16,7 +16,8 @@ public record DeductCurrencyCommand(
     string? ViewerNickname,
     int Amount, 
     PointCurrencyType CurrencyType,
-    int DonationAmount = 0) : IRequest<DeductResult>;
+    int DonationAmount = 0,
+    bool AccumulateTotal = true) : IRequest<DeductResult>;
 
 /// <summary>
 /// [v7.0] 재화 차감 결과 모델

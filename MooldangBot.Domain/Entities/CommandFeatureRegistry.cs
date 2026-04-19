@@ -23,7 +23,8 @@ public enum CommandFeatureType
     SystemResponse = 10, // 시스템 응답
     AI = 11,             // AI 답변
     Attendance = 12,     // 출석체크
-    PointCheck = 13      // 포인트 확인
+    PointCheck = 13,     // 포인트 확인
+    Donation = 14        // 후원 적립 (순수 누적용)
 }
 
 /// <summary>
@@ -57,7 +58,8 @@ public static class CommandFeatureRegistry
         new CommandFeatureMetadata(CommandFeatureType.SystemResponse, 2, "SystemResponse", "시스템 응답", 0, CommandRole.Manager),
         new CommandFeatureMetadata(CommandFeatureType.AI, 3, "AI", "AI 답변", 1000, CommandRole.Viewer),
         new CommandFeatureMetadata(CommandFeatureType.Attendance, 3, "Attendance", "출석체크", 10, CommandRole.Viewer),
-        new CommandFeatureMetadata(CommandFeatureType.PointCheck, 1, "PointCheck", "포인트확인", 0, CommandRole.Viewer)
+        new CommandFeatureMetadata(CommandFeatureType.PointCheck, 1, "PointCheck", "포인트확인", 0, CommandRole.Viewer),
+        new CommandFeatureMetadata(CommandFeatureType.Donation, 3, "Donation", "후원 적립", 0, CommandRole.Viewer)
     );
 
     public static IReadOnlyList<CommandFeatureMetadata> All => _features;

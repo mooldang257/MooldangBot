@@ -35,7 +35,8 @@ public class ProcessCommandBillingCommandHandler(
             request.ViewerNickname,
             request.Cost,
             currencyType,
-            request.DonationAmount);
+            request.DonationAmount,
+            request.AccumulateTotal);
 
         var result = await mediator.Send(deductRequest, ct);
 

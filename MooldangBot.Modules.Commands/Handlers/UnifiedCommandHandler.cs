@@ -75,9 +75,14 @@ public class UnifiedCommandHandler(
         var primary = matches.First();
         var args = parser.Parse(msg, primary);
 
+        // [물멍]: 선장님 지시에 따라 '후원 적립 모드'와 '후원 전용 명령어' 여부를 판단합니다.
+        // IsAutoAccumulateDonation: false(항상 누적), true(명령어 있을 때만 누적)
+        bool accumulateTotal = !legacyEvent.Profile.IsAutoAccumulateDonation || 
+                              matches.Any(m => m.FeatureType == CommandFeatureType.Donation);
+
         // [3. Single Billing]: 통합 결제 (지휘관 지침: 하이브리드 동기 방식 유지)
         var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
-            targetUid, legacyEvent.SenderId, legacyEvent.Username, primary.Cost, primary.CostType, (int)legacyEvent.DonationAmount), ct);
+            targetUid, legacyEvent.SenderId, legacyEvent.Username, primary.Cost, primary.CostType, (int)legacyEvent.DonationAmount, accumulateTotal), ct);
 
         if (!billingResult.Success)
         {

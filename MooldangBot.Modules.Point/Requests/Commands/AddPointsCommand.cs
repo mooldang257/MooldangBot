@@ -13,4 +13,5 @@ public record AddPointsCommand(
     string Nickname, 
     int Amount, 
     PointCurrencyType CurrencyType,
-    string? PlatformTransactionId = null) : IRequest<(bool Success, int CurrentBalance)>;
+    string? PlatformTransactionId = null,
+    bool AccumulateTotal = true) : IRequest<(bool Success, int CurrentBalance)>;

@@ -38,6 +38,11 @@ public class StreamerProfile : ISoftDeletable, IAuditable
     public bool IsAutoAccumulateDonation { get; set; } = false;
     public int PointPerDonation1000 { get; set; } = 1000;
 
+    /// <summary>
+    /// [물멍]: 출석 시 지급할 기본 포인트입니다. 선장님 지시에 따라 복구되었습니다.
+    /// </summary>
+    public int PointPerAttendance { get; set; } = 10;
+
     public bool IsActive { get; set; } = false;
 
     public bool IsDeleted { get; set; } = false;

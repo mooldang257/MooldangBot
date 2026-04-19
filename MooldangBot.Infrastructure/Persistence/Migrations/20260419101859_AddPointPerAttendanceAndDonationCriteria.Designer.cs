@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MooldangBot.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260419101859_AddPointPerAttendanceAndDonationCriteria")]
+    partial class AddPointPerAttendanceAndDonationCriteria
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1925,10 +1928,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     b.Property<int>("OverlayTokenVersion")
                         .HasColumnType("int")
                         .HasColumnName("overlay_token_version");
-
-                    b.Property<int>("PointPerAttendance")
-                        .HasColumnType("int")
-                        .HasColumnName("point_per_attendance");
 
                     b.Property<int>("PointPerChat")
                         .HasColumnType("int")
