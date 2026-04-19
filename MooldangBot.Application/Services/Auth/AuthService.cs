@@ -260,15 +260,25 @@ public class AuthService(
         var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null) return false;
 
-        // [오시리스의 철퇴]: 버전을 올림으로써 기존 토큰들을 무효화
+        // [오시리스의 철퇴]: 버전을 올림으로써 기존 JWT 토큰들을 무효화
         streamer.OverlayTokenVersion++;
+
+        // [오시리스의 인장 갱신]: 짧은 해시 토큰도 새로 생성하여 기존 주소를 무효화합니다.
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new char[16];
+        for (int i = 0; i < 16; i++)
+        {
+            random[i] = chars[Random.Shared.Next(chars.Length)];
+        }
+        streamer.OverlayToken = new string(random);
+
         await _db.SaveChangesAsync();
 
         // 🛡️ [오시리스의 기억 소멸]: 캐시 무효화 (불일치 방지)
         string cacheKey = $"{CacheKeyPrefix}{chzzkUid}";
         await _cache.RemoveAsync(cacheKey);
 
-        _logger.LogWarning($"[오시리스의 철퇴] 오버레이 토큰 폐기(버전 업) 및 캐시 무효화 완료 (ChzzkUid: {chzzkUid}, NewVersion: {streamer.OverlayTokenVersion})");
+        _logger.LogWarning($"[오시리스의 철퇴] 오버레이 토큰 폐기 및 짧은 해시 재발급 완료 (ChzzkUid: {chzzkUid}, NewVersion: {streamer.OverlayTokenVersion})");
         
         return true;
     }

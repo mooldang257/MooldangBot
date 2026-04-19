@@ -120,3 +120,22 @@ public record SongAddRequest(
     int? Cost = null,
     CommandCostType? CostType = null
 );
+
+/// <summary>
+/// [오시리스의 무대]: 신청곡 오버레이 전송 전용 DTO
+/// </summary>
+public record SongOverlayDto(
+    CurrentSongDto? CurrentSong,
+    List<QueueSongDto> Queue,
+    SongOverlaySettings Settings
+);
+
+public record CurrentSongDto(string Title, string? Artist);
+
+public record QueueSongDto(string Title, string? Artist, string? Requester);
+
+public record SongOverlaySettings(
+    string LiveTitleFont = "Gmarket Sans",
+    string LiveArtistFont = "Gmarket Sans",
+    string QueueFont = "Pretendard"
+);

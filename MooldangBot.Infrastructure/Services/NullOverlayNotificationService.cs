@@ -1,4 +1,5 @@
 using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.SongBook;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,4 +26,6 @@ public class NullOverlayNotificationService : IOverlayNotificationService
     public Task NotifyPointChangedAsync(string chzzkUid, CancellationToken token = default) => Task.CompletedTask;
     
     public Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, JsonElement? emojis = null, int? payAmount = null, CancellationToken token = default) => Task.CompletedTask;
+
+    public Task NotifySongOverlayUpdateAsync(string chzzkUid, SongOverlayDto data, CancellationToken token = default) => Task.CompletedTask;
 }

@@ -6,6 +6,7 @@ export interface OverlayState {
     overlayTheme: number;
     isConnected: boolean;
     rouletteQueue: any[];
+    songOverlay: any | null;
     connection: signalR.HubConnection | null;
 }
 
@@ -19,6 +20,7 @@ export const createSignalRStore = (token: string) => {
         overlayTheme: 1,
         isConnected: false,
         rouletteQueue: [],
+        songOverlay: null,
         connection: null
     };
 
@@ -53,6 +55,14 @@ export const createSignalRStore = (token: string) => {
         update(s => ({
             ...s,
             rouletteQueue: [...s.rouletteQueue, { ...response, timestamp: Date.now() }]
+        }));
+    });
+
+    connection.on("ReceiveSongOverlayUpdate", (data: any) => {
+        console.log("🎵 [신청곡 신호 포착] 오버레이를 갱신합니다.", data);
+        update(s => ({
+            ...s,
+            songOverlay: data
         }));
     });
 

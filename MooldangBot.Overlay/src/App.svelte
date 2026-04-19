@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import NoticeWidget from './lib/NoticeWidget.svelte';
   import RouletteOverlay from './lib/RouletteOverlay.svelte';
+  import SongRequestOverlay from './lib/SongRequestOverlay.svelte';
   import { createSignalRStore } from './store/signalrStore';
   
   // URL 쿼리 스트링에서 액세스 토큰 추출 (Aegis of Resonance)
@@ -14,6 +15,7 @@
   // [오시리스의 공명]: 실시간 데이터 스토어 구독
   // 큐(Queue)는 RouletteOverlay 컴포넌트 내부에서 비워가며 처리합니다.
   let rouletteQueue = $derived($signalrStore?.rouletteQueue || []);
+  let songOverlay = $derived($signalrStore?.songOverlay);
   let connection = $derived($signalrStore?.connection);
   const popQueue = signalrStore?.popQueue;
 </script>
@@ -31,6 +33,9 @@
             connection={connection} 
             popQueue={popQueue} 
         />
+
+        <!-- 3. 신청곡 현황 레이어 (v16.0 신규) -->
+        <SongRequestOverlay data={songOverlay} />
     </div>
   {:else}
     <div class="unauthorized">

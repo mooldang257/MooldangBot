@@ -15,24 +15,40 @@
 
     const handleCopy = async (e: MouseEvent) => {
         try {
-            await navigator.clipboard.writeText(obsUrl);
-            copied = true;
+            // [오시리스의 공명]: 벨리데이션된 JWT가 포함된 오버레이용 URL을 동적으로 생성
+            const response = await fetch('/api/overlay/auth/token', {
+                method: 'POST',
+                credentials: 'include' 
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const baseUrl = window.location.origin;
+                const overlayUrl = `${baseUrl}/overlay/?access_token=${data.token}`;
+                
+                await navigator.clipboard.writeText(overlayUrl);
+                copied = true;
 
-            // [물멍]: 물방울 애니메이션 피드백
-            for (let i = 0; i < 5; i++) {
-                bubbles.push({
-                    id: Date.now() + i,
-                    x: e.clientX + (Math.random() * 40 - 20),
-                    y: e.clientY + (Math.random() * 40 - 20),
-                });
+                // [물멍]: 물방울 애니메이션 피드백
+                for (let i = 0; i < 5; i++) {
+                    bubbles.push({
+                        id: Date.now() + i,
+                        x: e.clientX + (Math.random() * 40 - 20),
+                        y: e.clientY + (Math.random() * 40 - 20),
+                    });
+                }
+
+                setTimeout(() => {
+                    copied = false;
+                    bubbles = [];
+                }, 2000);
+            } else {
+                alert(`❌ 오류: ${data.message}`);
             }
-
-            setTimeout(() => {
-                copied = false;
-                bubbles = [];
-            }, 2000);
         } catch (err) {
-            console.error("Failed to copy: ", err);
+            console.error("Failed to copy URL:", err);
+            alert("🚨 오버레이 주소를 생성하는 중 오류가 발생했습니다.");
         }
     };
 </script>

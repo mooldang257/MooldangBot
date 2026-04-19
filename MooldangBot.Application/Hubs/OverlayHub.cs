@@ -13,7 +13,8 @@ namespace MooldangBot.Application.Hubs;
 /// [?�시리스??지?�소]: ?�버?� ?�버?�이 간의 ?�시�?공명 ?�로?�니??
 /// (Aegis of Resonance): ?�제 JWT(?�버?�이)?� Cookie(?�?�보?? ?�증??모두 지?�합?�다.
 /// </summary>
-[Authorize(AuthenticationSchemes = "Bearer,Cookies")]
+// [오시리스의 열쇠]: 오버레이와 대시보드 모두에서 공명할 수 있도록 전용 정책을 사용합니다.
+[Authorize(Policy = "OverlayAuth")]
 [EnableRateLimiting("overlay-high")]
 public class OverlayHub(
     IMediator mediator,
