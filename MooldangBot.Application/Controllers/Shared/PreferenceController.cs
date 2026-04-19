@@ -15,7 +15,7 @@ namespace MooldangBot.Application.Controllers.Shared;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "ChannelManager")]
+[Authorize]
 // [v10.1] Primary Constructor 적용
 public class PreferenceController(
     IPreferenceCacheService cacheService,
@@ -42,6 +42,7 @@ public class PreferenceController(
     /// [임시] 특정 스트리머의 설정을 Redis에서 조회합니다. (ID 또는 슬러그 지원)
     /// </summary>
     [HttpGet("temporary/{chzzkUid}/{key}")]
+    [Authorize(Policy = "ChannelManager")]
     public async Task<IActionResult> GetTemporaryPreference(string chzzkUid, string key)
     {
         var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
