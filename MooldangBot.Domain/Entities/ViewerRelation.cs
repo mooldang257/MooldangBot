@@ -28,6 +28,12 @@ public class ViewerRelation : ISoftDeletable, IAuditable
     public virtual GlobalViewer? GlobalViewer { get; set; }
 
     /// <summary>
+    /// [v6.2] 해당 채널에서의 닉네임 (동적 갱신 가능)
+    /// </summary>
+    [MaxLength(100)]
+    public string Nickname { get; set; } = string.Empty;
+
+    /// <summary>
     /// 총 출석 횟수
     /// </summary>
     public int AttendanceCount { get; set; } = 0;

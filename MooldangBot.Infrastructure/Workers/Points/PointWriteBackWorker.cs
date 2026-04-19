@@ -150,8 +150,14 @@ public class PointWriteBackWorker(
 
                 // [Step 1] ViewerRelation 확보 (관계 및 활동 시간 동기화)
                 const string relationUpsertSql = @"
-                    INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, nickname, is_active, is_deleted, first_visit_at, last_chat_at, created_at, updated_at)
-                    SELECT s.id, g.id, @Nickname, 1, 0, NOW(), NOW(), NOW(), NOW()
+                    INSERT INTO viewer_relations (
+                        streamer_profile_id, global_viewer_id, nickname, 
+                        is_active, is_deleted, 
+                        attendance_count, consecutive_attendance_count,
+                        first_visit_at, last_chat_at, 
+                        created_at, updated_at
+                    )
+                    SELECT s.id, g.id, @Nickname, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
