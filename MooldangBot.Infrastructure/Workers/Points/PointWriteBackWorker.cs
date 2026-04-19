@@ -99,7 +99,8 @@ public class PointWriteBackWorker(
             increments = await cache.ExtractAllIncrementalPointsAsync();
             if (increments == null || increments.Count == 0) 
             {
-                // [물멍]: 변동분이 없으면 동기화를 건너뜁니다.
+                // [물멍]: 변동분이 없으면 동기화를 건너뛰되, 생존 신고는 남깁니다.
+                logger.LogDebug("📡 [WriteBack] 추출된 변동분 없음. 다음 주기를 대기합니다.");
                 return;
             }
 
