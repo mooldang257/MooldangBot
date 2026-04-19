@@ -40,16 +40,81 @@
         }
     }
 
-    async function loadHistory() {
+    async function loadHistory(filters: any = null) {
         if (!chzzkUid) return;
         isLoadingHistory = true;
+        
+        // 필터 업데이트
+        if (filters) {
+            currentFilters = { ...currentFilters, ...filters };
+        } else if (filters === undefined) {
+            // 필터 초기화 시 (새로고침 버튼 등)
+            currentFilters = { nickname: "", itemName: "", status: null };
+        }
+
         try {
-            const data = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}/history`);
-            historyLogs = data.data || data.Items || data.items || [];
+            const queryParams = new URLSearchParams();
+            if (currentFilters.nickname) queryParams.append("nickname", currentFilters.nickname);
+            if (currentFilters.itemName) queryParams.append("itemName", currentFilters.itemName);
+            if (currentFilters.status !== null) queryParams.append("status", currentFilters.status.toString());
+            
+            const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
+            const response = await apiFetch<any>(url);
+            
+            historyLogs = response.data || [];
+            nextLastId = response.nextLastId;
         } catch (e) {
             console.error("[물멍] 룰렛 히스토리 로드 실패:", e);
         } finally {
             isLoadingHistory = false;
+        }
+    }
+
+    async function loadMoreHistory() {
+        if (!chzzkUid || !nextLastId || isLoadingHistory) return;
+        
+        isLoadingHistory = true;
+        try {
+            const queryParams = new URLSearchParams();
+            if (currentFilters.nickname) queryParams.append("nickname", currentFilters.nickname);
+            if (currentFilters.itemName) queryParams.append("itemName", currentFilters.itemName);
+            if (currentFilters.status !== null) queryParams.append("status", currentFilters.status.toString());
+            queryParams.append("lastId", nextLastId.toString());
+
+            const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
+            const response = await apiFetch<any>(url);
+            
+            const newData = response.data || [];
+            historyLogs = [...historyLogs, ...newData];
+            nextLastId = response.nextLastId;
+        } catch (e) {
+            console.error("[물멍] 추가 히스토리 로드 실패:", e);
+        } finally {
+            isLoadingHistory = false;
+        }
+    }
+
+    async function handleUpdateLogStatus(id: number, status: number) {
+        try {
+            await apiFetch(`/api/admin/roulette/history/${id}/status`, {
+                method: "PUT",
+                body: JSON.stringify(status)
+            });
+            
+            const idx = historyLogs.findIndex(l => l.id === id);
+            if (idx !== -1) historyLogs[idx].status = status;
+        } catch (e: any) {
+            alert(e.message || "상태 변경 실패!");
+        }
+    }
+
+    async function handleDeleteLog(id: number) {
+        if (!confirm("이 기록을 정말 삭제하시겠습니까?")) return;
+        try {
+            await apiFetch(`/api/admin/roulette/history/${id}`, { method: "DELETE" });
+            historyLogs = historyLogs.filter(l => l.id !== id);
+        } catch (e: any) {
+            alert(e.message || "삭제 실패!");
         }
     }
 
@@ -229,6 +294,10 @@
                 <RouletteHistory 
                     {historyLogs} 
                     onRefresh={loadHistory} 
+                    onLoadMore={loadMoreHistory}
+                    onUpdateStatus={handleUpdateLogStatus}
+                    onDelete={handleDeleteLog}
+                    {hasNext}
                     isLoading={isLoadingHistory} 
                 />
             </div>

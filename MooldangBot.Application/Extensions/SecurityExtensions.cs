@@ -56,14 +56,17 @@ public static class SecurityExtensions
                 {
                     var accessToken = context.Request.Query["access_token"];
                     var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/overlayHub"))
+                    
+                    // [오시리스의 선별]: 토큰이 존재하고 JWT 규격(16자 초과)일 때만 JWT Bearer가 처리하도록 합니다.
+                    if (!string.IsNullOrEmpty(accessToken) && accessToken.ToString().Length > 16 && path.StartsWithSegments("/overlayHub"))
                     {
                         context.Token = accessToken;
                     }
                     return Task.CompletedTask;
                 }
             };
-        });
+        })
+        .AddScheme<AuthenticationSchemeOptions, OverlayShortTokenHandler>("OverlayShortToken", null);
 
         services.AddAuthorization(options => {
             options.DefaultPolicy = new AuthorizationPolicyBuilder()
@@ -77,7 +80,7 @@ public static class SecurityExtensions
             });
 
             options.AddPolicy("OverlayAuth", policy => {
-                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "OverlayShortToken");
                 policy.RequireAuthenticatedUser();
                 policy.Requirements.Add(new OverlayTokenVersionRequirement());
             });

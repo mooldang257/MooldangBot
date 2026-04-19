@@ -10,5 +10,5 @@ public record PagedRequest(
 // 📤 페이징 응답 규격
 public record PagedResponse<T>(
     List<T> Data, 
-    int? NextLastId
+    long? NextLastId
 );

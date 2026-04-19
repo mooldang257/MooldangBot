@@ -20,6 +20,13 @@ public class OverlayTokenVersionHandler(IServiceScopeFactory _scopeFactory, IDis
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, OverlayTokenVersionRequirement requirement)
     {
+        // [오시리스의 유연함]: 짧은 해시 토큰으로 인증된 경우 버전 체크를 건너뛰고 성공 처리합니다.
+        if (context.User.FindFirst("TokenMode")?.Value == "ShortHash")
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var streamerIdClaim = context.User.FindFirst("StreamerId")?.Value;
         var tokenVersionClaim = context.User.FindFirst("TokenVersion")?.Value;
 

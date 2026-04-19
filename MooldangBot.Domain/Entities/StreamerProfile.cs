@@ -51,4 +51,7 @@ public class StreamerProfile : ISoftDeletable, IAuditable
     public int? ActiveOverlayPresetId { get; set; }
 
     public int OverlayTokenVersion { get; set; } = 1;
+
+    [MaxLength(32)]
+    public string? OverlayToken { get; set; }
 }

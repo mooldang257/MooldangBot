@@ -267,7 +267,14 @@ namespace MooldangBot.Application.Controllers.Roulette
         }
 
         [HttpGet("{chzzkUid}/history")]
-        public async Task<IActionResult> GetHistory(string chzzkUid, [FromQuery] RouletteLogStatus? status = null, [FromQuery] long lastId = 0, [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetHistory(
+            string chzzkUid, 
+            [FromQuery] RouletteLogStatus? status = null, 
+            [FromQuery] string? nickname = null,
+            [FromQuery] int? rouletteId = null,
+            [FromQuery] string? itemName = null,
+            [FromQuery] long lastId = 0, 
+            [FromQuery] int pageSize = 20)
         {
             var query = db.RouletteLogs
                 .IgnoreQueryFilters()
@@ -276,7 +283,12 @@ namespace MooldangBot.Application.Controllers.Roulette
                 .Include(l => l.GlobalViewer) 
                 .Where(l => l.StreamerProfile!.ChzzkUid == chzzkUid);
 
+            // 필터링 적용
             if (status.HasValue) query = query.Where(l => l.Status == status.Value);
+            if (!string.IsNullOrWhiteSpace(nickname)) query = query.Where(l => l.GlobalViewer!.Nickname.Contains(nickname));
+            if (rouletteId.HasValue && rouletteId.Value > 0) query = query.Where(l => l.RouletteId == rouletteId.Value);
+            if (!string.IsNullOrWhiteSpace(itemName)) query = query.Where(l => l.ItemName.Contains(itemName));
+            
             if (lastId > 0) query = query.Where(l => l.Id < lastId);
 
             var logs = await query
@@ -297,7 +309,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             var outputData = hasNext ? logs[..pageSize] : logs;
             long? nextLastId = hasNext ? outputData[^1].Id : null;
 
-            return Ok(Result<PagedResponse<RouletteLogDto>>.Success(new PagedResponse<RouletteLogDto>(Data: outputData, NextLastId: (int?)nextLastId)));
+            return Ok(Result<PagedResponse<RouletteLogDto>>.Success(new PagedResponse<RouletteLogDto>(Data: outputData, NextLastId: nextLastId)));
         }
 
         [HttpPut("history/{id}/status")]
@@ -317,6 +329,24 @@ namespace MooldangBot.Application.Controllers.Roulette
             await db.SaveChangesAsync();
 
             return Ok(Result<RouletteLog>.Success(log));
+        }
+
+        [HttpDelete("history/{id}")]
+        public async Task<IActionResult> DeleteHistory(long id)
+        {
+            var streamerUid = User.FindFirst("StreamerId")?.Value ?? "None";
+            var log = await db.RouletteLogs
+                .IgnoreQueryFilters()
+                .Include(l => l.StreamerProfile)
+                .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == streamerUid);
+
+            if (log == null) 
+                return NotFound(Result<string>.Failure("삭제할 로그를 찾을 수 없거나 접근 권한이 없습니다."));
+
+            db.RouletteLogs.Remove(log);
+            await db.SaveChangesAsync();
+
+            return Ok(Result<bool>.Success(true));
         }
 
         [HttpPost("{chzzkUid}/{Id}/test")]

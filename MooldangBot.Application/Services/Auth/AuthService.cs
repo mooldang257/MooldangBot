@@ -237,38 +237,22 @@ public class AuthService(
         var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null) throw new Exception("[오시리스의 거절] 해당 스트리머를 찾을 수 없습니다.");
 
-        // 1. JWT 설정 로드 (전용 검증은 ValidateMandatorySecrets에서 수행됨)
-        var secret = _configuration["JwtSettings:Secret"]!;
-        
-        var issuer = _configuration["JwtSettings:Issuer"] ?? "MooldangBot";
-        var audience = _configuration["JwtSettings:Audience"] ?? "MooldangBot_Overlay";
-        var expiryDays = int.Parse(_configuration["JwtSettings:ExpiryDays"] ?? "365");
-
-        // 2. 클레임 구성 (역할, UID, 현재 토큰 버전 포함)
-        var claims = new[]
+        // [오시리스의 정제]: URL 가독성을 위해 16자리 짧은 해시 토큰을 생성하거나 반환합니다.
+        if (string.IsNullOrEmpty(streamer.OverlayToken))
         {
-            new Claim("StreamerId", chzzkUid.ToLower()),
-            new Claim(ClaimTypes.Role, role),
-            new Claim("TokenVersion", streamer.OverlayTokenVersion.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-        // 3. 토큰 서명 및 생성
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expiry = DateTime.UtcNow.AddDays(expiryDays);
-
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: expiry,
-            signingCredentials: creds
-        );
-
-        _logger.LogInformation($"[오시리스의 공명] 오버레이 토큰 발급 완료 (ChzzkUid: {chzzkUid}, Version: {streamer.OverlayTokenVersion})");
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new char[16];
+            for (int i = 0; i < 16; i++)
+            {
+                random[i] = chars[Random.Shared.Next(chars.Length)];
+            }
+            streamer.OverlayToken = new string(random);
+            await _db.SaveChangesAsync();
+            
+            _logger.LogInformation($"[오시리스의 인장] 신규 오버레이 짧은 토큰이 발급되었습니다. (ChzzkUid: {chzzkUid})");
+        }
         
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return streamer.OverlayToken;
     }
 
     public async Task<bool> RevokeOverlayTokenAsync(string chzzkUid)
