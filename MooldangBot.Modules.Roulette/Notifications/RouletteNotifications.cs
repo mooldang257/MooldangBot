@@ -20,7 +20,7 @@ public record RouletteSpinInitiatedNotification(
 /// </summary>
 public record RouletteSpinResultNotification(
     string ChzzkUid,
-    string SpinId,
+    long SpinId,
     SpinRouletteResponse Response,
     List<RouletteLog> Logs
 ) : INotification;

@@ -80,8 +80,8 @@ namespace MooldangBot.Domain.DTOs
     // 🎰 룰렛 결과 전송을 위한 DTO (v6)
     public record RouletteResultDto(string ItemName, bool IsMission, string Color, string Template, string? ViewerNickname, string? SoundUrl = null, bool UseDefaultSound = true);
     public record RouletteSpinSummaryDto(string ItemName, int Count, bool IsMission, string Color, string Template, string? SoundUrl = null, bool UseDefaultSound = true);
-    public record SpinRouletteResponse(string SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSpinSummaryDto> Summary, int TotalDurationMs);
-    public record RouletteMissionOverlayDto(string SpinId, string ItemName, string ViewerNickname, string Color);
+    public record SpinRouletteResponse(long SpinId, int RouletteId, string RouletteName, string? ViewerNickname, List<RouletteResultDto> Results, List<RouletteSpinSummaryDto> Summary, int TotalDurationMs);
+    public record RouletteMissionOverlayDto(long SpinId, string ItemName, string ViewerNickname, string Color);
 
     // 🎰 룰렛 저장용 DTO (통합 저장 지원)
     public class RouletteSaveDto
@@ -211,7 +211,7 @@ namespace MooldangBot.Domain.DTOs
     public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, KstClock CreatedAt, int Status);
 
     public record CompleteRequest(
-        [property: JsonPropertyName("spinId")] string SpinId
+        [property: JsonPropertyName("spinId")] long SpinId
     );
 
     public class RouletteUpdateRequest

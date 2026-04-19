@@ -30,7 +30,7 @@ public class OverlayHub(
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 후 서버에 결과를 알립니다.
     /// </summary>
-    public async Task CompleteRouletteAsync(string spinId)
+    public async Task CompleteRouletteAsync(long spinId)
     {
         await mediator.Send(new CompleteRouletteCommand(spinId));
     }

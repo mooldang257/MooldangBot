@@ -13,7 +13,8 @@ namespace MooldangBot.Domain.Entities;
 public class RouletteSpin
 {
     [Key]
-    public string Id { get; set; } = string.Empty; // GUID
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public long Id { get; set; }
 
     public int StreamerProfileId { get; set; } // [v4.4] ChzzkUid 제거 및 FK 도입
 

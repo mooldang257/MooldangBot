@@ -101,10 +101,10 @@ namespace MooldangBot.Infrastructure
             // [오시리스의 서판]: 채팅 로그 벌크 처리 서비스 등록
             services.AddSingleton<IChatLogBufferService, ChatLogBufferService>();
 
-            // Database — [v10.11] AddPooledDbContextFactory 전환 (poolSize: 1024)
-            // [오시리스의 영속]: 고부하 환경에서 컨텍스트 객체 자체를 풀링하여 재사용함으로써 메모리 할당 비용을 극한으로 낮춥니다.
+            // Database — [v11.7.2] AddPooledDbContextFactory 전환 (poolSize: 1024)
+            // [오시리스의 영속]: MariaDB 11.7 엔진의 최신 옵티마이저와 Vector Search 기능을 활용합니다.
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            var serverVersion = ServerVersion.Parse("10.11-mariadb");
+            var serverVersion = ServerVersion.Parse("11.7.2-mariadb");
             
             services.AddPooledDbContextFactory<AppDbContext>(options =>
                 options.UseMySql(connectionString, serverVersion, mysqlOptions =>

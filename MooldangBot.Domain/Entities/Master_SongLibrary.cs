@@ -48,6 +48,12 @@ public class Master_SongLibrary : IAuditable
     [Column(TypeName = "TEXT")]
     public string? Lyrics { get; set; }
 
+    /// <summary>
+    /// [v11.7] 의미 기반 검색을 위한 벡터 데이터 (MariaDB 11.7 신기능)
+    /// </summary>
+    [Column(TypeName = "VECTOR(768)")]
+    public byte[]? TitleVector { get; set; }
+
     public KstClock CreatedAt { get; set; } = KstClock.Now;
     public KstClock? UpdatedAt { get; set; }
 }

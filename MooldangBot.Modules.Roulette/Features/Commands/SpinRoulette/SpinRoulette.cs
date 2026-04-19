@@ -18,7 +18,7 @@ namespace MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 /// </summary>
 public record RouletteExecutionResult(
     List<RouletteItem> Items,
-    string SpinId,
+    long SpinId,
     SpinRouletteResponse Response,
     List<RouletteLog> Logs
 );
@@ -219,13 +219,11 @@ public class SpinRouletteHandler(
         return items.Last();
     }
 
-    private async Task<string> CreateRouletteSpinAsync(int streamerId, int rouletteId, int viewerId, List<RouletteItem> results, string chzzkUid, int count, CancellationToken ct)
+    private async Task<long> CreateRouletteSpinAsync(int streamerId, int rouletteId, int viewerId, List<RouletteItem> results, string chzzkUid, int count, CancellationToken ct)
     {
         var summaryList = results.GroupBy(r => r.ItemName).Select(g => $"{g.Key} x{g.Count()}");
-        var spinId = Guid.NewGuid().ToString();
         var spin = new RouletteSpin
         {
-            Id = spinId,
             StreamerProfileId = streamerId,
             RouletteId = rouletteId,
             GlobalViewerId = viewerId,
@@ -237,6 +235,6 @@ public class SpinRouletteHandler(
         };
         db.RouletteSpins.Add(spin);
         await db.SaveChangesAsync(ct);
-        return spinId;
+        return spin.Id;
     }
 }

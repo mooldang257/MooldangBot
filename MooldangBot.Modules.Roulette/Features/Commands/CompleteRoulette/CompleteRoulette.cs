@@ -9,7 +9,7 @@ namespace MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 /// <summary>
 /// [하모니의 마침 명령]: 룰렛의 애니메이션이 종료되어 결과를 확정하는 명령입니다.
 /// </summary>
-public record CompleteRouletteCommand(string SpinId) : IRequest<bool>;
+public record CompleteRouletteCommand(long SpinId) : IRequest<bool>;
 
 /// <summary>
 /// [하모니의 마침 도우미]: 룰렛 완료 명령을 처리하는 핸들러입니다.

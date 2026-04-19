@@ -35,7 +35,6 @@ public class CompleteRequestValidator : AbstractValidator<CompleteRequest>
     public CompleteRequestValidator()
     {
         RuleFor(x => x.SpinId)
-            .NotEmpty().WithMessage("SpinId는 필수 값입니다.")
-            .Length(36).WithMessage("유효한 UUID 형식의 SpinId가 필요합니다.");
+            .GreaterThan(0).WithMessage("유효하지 않은 SpinId입니다.");
     }
 }

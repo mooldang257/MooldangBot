@@ -9,4 +9,5 @@ public interface ISongBookRepository
 {
     Task<MooldangBot.Domain.Entities.SongBook?> GetByStreamerIdAsync(string streamerUid);
     Task AddAsync(MooldangBot.Domain.Entities.SongBook songBook);
+    Task<List<Master_SongLibrary>> SearchByVectorAsync(float[] vector, int limit = 10);
 }
