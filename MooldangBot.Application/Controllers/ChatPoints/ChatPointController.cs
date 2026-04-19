@@ -76,6 +76,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                             nickname = g.Nickname,
                             points = p != null ? p.Points : 0,
                             attendanceCount = r.AttendanceCount,
+                            consecutiveAttendanceCount = r.ConsecutiveAttendanceCount,
                             lastAttendanceAt = r.LastAttendanceAt
                         };
 
@@ -87,6 +88,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             query = sort switch
             {
                 "attendance" => query.OrderByDescending(v => v.attendanceCount),
+                "consecutive" => query.OrderByDescending(v => v.consecutiveAttendanceCount),
                 "recent" => query.OrderByDescending(v => v.lastAttendanceAt),
                 _ => query.OrderByDescending(v => v.points)
             };

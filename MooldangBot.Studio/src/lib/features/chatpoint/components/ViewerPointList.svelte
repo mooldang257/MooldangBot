@@ -80,6 +80,12 @@
                 출석 횟수 순
             </button>
             <button 
+                onclick={() => handleSort("consecutive")}
+                class="px-5 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap {sortKey === 'consecutive' ? 'bg-white text-primary shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}"
+            >
+                연속 출석 순
+            </button>
+            <button 
                 onclick={() => handleSort("recent")}
                 class="px-5 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap {sortKey === 'recent' ? 'bg-white text-primary shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}"
             >
@@ -98,6 +104,7 @@
                         <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">시청자</th>
                         <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">포인트</th>
                         <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">출석 횟수</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">연속 출석</th>
                         <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">최근 출석</th>
                     </tr>
                 </thead>
@@ -123,6 +130,11 @@
                                     {item.attendanceCount}회
                                 </span>
                             </td>
+                            <td class="px-8 py-6 text-center">
+                                <span class="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[11px] font-black border border-orange-100">
+                                    {item.consecutiveAttendanceCount}회
+                                </span>
+                            </td>
                             <td class="px-8 py-6 text-right text-xs font-bold text-slate-400">
                                 {item.lastAttendanceAt ? new Date(item.lastAttendanceAt).toLocaleString() : '-'}
                             </td>
@@ -131,7 +143,7 @@
 
                     {#if items.length === 0 && !isLoading}
                         <tr>
-                            <td colspan="5" class="px-8 py-20 text-center space-y-4">
+                            <td colspan="6" class="px-8 py-20 text-center space-y-4">
                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
                                     <Search size={32} />
                                 </div>
