@@ -392,10 +392,11 @@
     }
 
     .overlay-container {
-        position: fixed; inset: 0; display: flex; flex-direction: column; 
+        position: absolute; inset: 0; display: flex; flex-direction: column; 
         justify-content: flex-start; align-items: center;
         z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
-        /* overflow: hidden 제거 (그림자 짤림 방지) */
+        width: 100%;
+        height: 100%;
     }
 
     .deep-sea-gradient {

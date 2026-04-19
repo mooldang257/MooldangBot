@@ -149,5 +149,15 @@ public record QueueSongDto(string Title, string? Artist, string? Requester);
 public record SongOverlaySettings(
     string LiveTitleFont = "Gmarket Sans",
     string LiveArtistFont = "Gmarket Sans",
-    string QueueFont = "Pretendard"
+    string QueueFont = "Pretendard",
+    Dictionary<string, OverlayElementDto>? Layout = null
+);
+
+public record OverlayElementDto(
+    int X,
+    int Y,
+    int? Width = null,
+    int? Height = null,
+    bool Visible = true,
+    double Opacity = 1.0
 );

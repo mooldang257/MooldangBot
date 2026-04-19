@@ -91,7 +91,7 @@ namespace MooldangBot.Application.Services
             if (!string.IsNullOrEmpty(profile.DesignSettingsJson))
             {
                 try {
-                    var parsed = JsonSerializer.Deserialize<SongOverlaySettings>(profile.DesignSettingsJson);
+                    var parsed = JsonSerializer.Deserialize(profile.DesignSettingsJson, ChzzkJsonContext.Default.SongOverlaySettings);
                     if (parsed != null) settings = parsed;
                 } catch { /* 기본값 유지 */ }
             }
