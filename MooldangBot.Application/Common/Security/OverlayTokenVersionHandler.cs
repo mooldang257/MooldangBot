@@ -20,8 +20,10 @@ public class OverlayTokenVersionHandler(IServiceScopeFactory _scopeFactory, IDis
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, OverlayTokenVersionRequirement requirement)
     {
-        // [오시리스의 유연함]: 짧은 해시 토큰으로 인증된 경우 버전 체크를 건너뛰고 성공 처리합니다.
-        if (context.User.FindFirst("TokenMode")?.Value == "ShortHash")
+        // [오시리스의 유연함]: 짧은 해시 토큰(오버레이) 또는 쿠키 인증(대시보드)인 경우 버전 체크를 건너뜁니다.
+        var authType = context.User.Identity?.AuthenticationType;
+        if (context.User.FindFirst("TokenMode")?.Value == "ShortHash" || 
+            authType == Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
         {
             context.Succeed(requirement);
             return;

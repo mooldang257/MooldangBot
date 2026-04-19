@@ -80,7 +80,7 @@ public static class SecurityExtensions
             });
 
             options.AddPolicy("OverlayAuth", policy => {
-                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "OverlayShortToken");
+                policy.AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme, "OverlayShortToken");
                 policy.RequireAuthenticatedUser();
                 policy.Requirements.Add(new OverlayTokenVersionRequirement());
             });
