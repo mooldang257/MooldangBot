@@ -145,9 +145,8 @@ public class PointWriteBackWorker(
                         is_deleted, created_at, updated_at
                     )
                     VALUES (@ViewerUid, @Hash, @Nickname, 0, NOW(), NOW())
-                    AS new_v
                     ON DUPLICATE KEY UPDATE 
-                        nickname = new_v.nickname,
+                        nickname = VALUES(nickname),
                         is_deleted = 0,
                         updated_at = NOW();";
 
@@ -164,9 +163,8 @@ public class PointWriteBackWorker(
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
-                    AS new_r
                     ON DUPLICATE KEY UPDATE 
-                        nickname = new_r.nickname,
+                        nickname = VALUES(nickname),
                         is_active = 1,
                         is_deleted = 0,
                         last_chat_at = NOW(),
@@ -182,9 +180,8 @@ public class PointWriteBackWorker(
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
-                    AS new_p
                     ON DUPLICATE KEY UPDATE 
-                        points = points + new_p.points,
+                        points = points + VALUES(points),
                         updated_at = NOW();";
 
                 foreach (var kvp in data)
