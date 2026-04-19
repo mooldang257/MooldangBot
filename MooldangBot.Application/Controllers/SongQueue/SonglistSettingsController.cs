@@ -13,7 +13,8 @@ namespace MooldangBot.Application.Controllers.SongQueue
     // [v10.1] Primary Constructor 적용
     public class SonglistSettingsController(
         IAppDbContext db,
-        IOverlayNotificationService notificationService) : ControllerBase
+        IOverlayNotificationService notificationService,
+        MooldangBot.Domain.Abstractions.IAuthService authService) : ControllerBase
     {
         [HttpGet("/api/settings/data/{streamerId}")]
         public async Task<IActionResult> GetSettings(string streamerId)
@@ -22,8 +23,12 @@ namespace MooldangBot.Application.Controllers.SongQueue
             if (profile == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
+            // [물멍]: 오버레이 주소 생성을 위해 토큰 보강 (없으면 자동 생성)
+            var overlayToken = await authService.IssueOverlayTokenAsync(profile.ChzzkUid, "Streamer");
+
             var settings = new SonglistSettingsResponseDto
             {
+                OverlayToken = overlayToken,
                 DesignSettingsJson = profile.DesignSettingsJson ?? "{}",
                 SongRequestCommands = await db.UnifiedCommands
                     .AsNoTracking()

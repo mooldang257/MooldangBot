@@ -18,6 +18,9 @@ public class SonglistSettingsUpdateRequest
 
 public class SonglistSettingsResponseDto
 {
+    [JsonPropertyName("overlayToken")]
+    public string? OverlayToken { get; set; }
+
     [JsonPropertyName("designSettingsJson")]
     public string DesignSettingsJson { get; set; } = "{}";
 

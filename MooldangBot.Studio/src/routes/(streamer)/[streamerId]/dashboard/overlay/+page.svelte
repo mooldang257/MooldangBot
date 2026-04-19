@@ -31,6 +31,11 @@
                 const rawJson = data.designSettingsJson || "{}";
                 designSettings = JSON.parse(rawJson);
                 layoutData = designSettings.layout || {};
+                
+                // [물멍]: 불러온 설정에 토큰이 있다면 전역 상태와 강제 동기화 (주소 복사 시 누락 방지)
+                if (data.overlayToken) {
+                    userState.overlayToken = data.overlayToken;
+                }
             }
         } catch (err: any) {
             console.error("[물멍] 설정 로드 실패:", err);
