@@ -60,6 +60,7 @@
         else if (typeName === 'Category') icon = '📂';
         else if (typeName === 'SonglistToggle') icon = '🎵';
         else if (typeName === 'Attendance') icon = '📅';
+        else if (typeName === 'Roulette') icon = '🎡';
 
         return { icon, displayName };
     }
@@ -151,9 +152,19 @@
                         </td>
                         <td class="p-6">
                             <div class="flex items-center justify-center gap-2 transition-all">
-                                <button on:click={() => onEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
-                                    <Edit2 size={18} />
-                                </button>
+                                {#if cmd.featureType === 'Roulette'}
+                                    <button 
+                                        disabled 
+                                        class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-300 cursor-not-allowed opacity-50"
+                                        title="룰렛 관리를 이용해 주세요"
+                                    >
+                                        <Edit2 size={18} />
+                                    </button>
+                                {:else}
+                                    <button on:click={() => onEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
+                                        <Edit2 size={18} />
+                                    </button>
+                                {/if}
                                 <button on:click={() => onDelete(cmd.id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm">
                                     <Trash2 size={18} />
                                 </button>

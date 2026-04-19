@@ -11,7 +11,8 @@
 
     $: availableFeatures = masterData.features.filter((f: any) => {
         const cat = masterData.categories.find((c: any) => c.name === cmdForm.category);
-        return cat && f.categoryId === cat.id;
+        // [물멍]: 룰렛 기능은 특수 구조를 가지므로 일반 명령어 폼에서 생성/수정을 제외합니다.
+        return cat && f.categoryId === cat.id && f.typeName !== 'Roulette';
     });
 
     async function saveCommand() {
@@ -134,10 +135,17 @@
 
         <!-- 8. 저장 버튼 영역 -->
         <div class="col-span-1 md:col-span-2 lg:col-span-6 flex justify-end pt-6">
-            <button on:click={saveCommand} class="w-full lg:w-56 h-16 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/30 hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 group/save">
-                <Save size={24} class="group-hover/save:rotate-12 transition-transform" />
-                <span class="text-base tracking-tighter">{cmdForm.id === 0 ? '명령어 저장하기' : '수정 완료하기'}</span>
-            </button>
+            {#if cmdForm.featureType === 'Roulette'}
+                <div class="w-full p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4">
+                    <p class="text-sm font-bold text-amber-700">🎰 룰렛 설정(확률, 아이템 등)은 전용 룰렛 관리 메뉴에서 수정하실 수 있습니다.</p>
+                    <a href="./roulette" class="whitespace-nowrap px-4 py-2 bg-amber-500 text-white rounded-xl font-black text-xs hover:bg-amber-600 transition-colors">룰렛 관리로 이동</a>
+                </div>
+            {:else}
+                <button on:click={saveCommand} class="w-full lg:w-56 h-16 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/30 hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 group/save">
+                    <Save size={24} class="group-hover/save:rotate-12 transition-transform" />
+                    <span class="text-base tracking-tighter">{cmdForm.id === 0 ? '명령어 저장하기' : '수정 완료하기'}</span>
+                </button>
+            {/if}
         </div>
     </div>
 </section>

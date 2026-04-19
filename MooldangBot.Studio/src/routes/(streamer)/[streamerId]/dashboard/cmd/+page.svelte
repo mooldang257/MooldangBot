@@ -81,6 +81,7 @@
                 priority: c.priority ?? c.Priority ?? 0,
                 matchType: c.matchType ?? c.MatchType ?? "Exact",
                 requiresSpace: c.requiresSpace ?? c.RequiresSpace ?? true,
+                targetId: c.targetId ?? c.TargetId ?? null,
             }));
         } catch (e) {
             console.error("[물멍] 명령어 목록 로드 실패:", e);
@@ -147,9 +148,19 @@
 
     async function executeDelete(id: number) {
         try {
-            await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, {
-                method: "DELETE",
-            });
+            // [물멍]: 룰렛 명령어인 경우 룰렛 전용 삭제 API를 호출하여 데이터 무결성을 유지합니다.
+            const cmd = allCommands.find(c => c.id === id);
+            
+            if (cmd?.featureType === 'Roulette' && cmd.targetId) {
+                await apiFetch(`/api/admin/roulette/${chzzkUid}/${cmd.targetId}`, {
+                    method: "DELETE",
+                });
+            } else {
+                await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, {
+                    method: "DELETE",
+                });
+            }
+            
             allCommands = allCommands.filter((c) => c.id !== id);
         } catch (err: any) {
             alert(err.message || "삭제 실패!");
