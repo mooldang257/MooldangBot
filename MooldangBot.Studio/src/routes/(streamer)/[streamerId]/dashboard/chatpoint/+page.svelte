@@ -112,7 +112,7 @@
         try {
             const profile = await apiFetch<any>("/api/auth/me");
             chzzkUid = profile.chzzkUid || profile.ChzzkUid;
-            if (chzzkUid) {
+            if (chzzkUid && !isLoaded) {
                 await loadSettings();
             }
         } catch (e) {
@@ -210,7 +210,7 @@
                         total={viewerPoints.total}
                         isLoading={viewerPoints.isLoading}
                         hasNext={viewerPoints.hasNext}
-                        onLoadMore={() => loadViewerPoints()}
+                        onLoadMore={loadViewerPoints}
                         onSearch={(t) => { viewerPoints.search = t; loadViewerPoints(true); }}
                         onSort={(s) => { viewerPoints.sort = s; loadViewerPoints(true); }}
                     />
@@ -222,7 +222,7 @@
                         total={donationRecords.total}
                         isLoading={donationRecords.isLoading}
                         hasNext={donationRecords.hasNext}
-                        onLoadMore={() => loadDonationRecords()}
+                        onLoadMore={loadDonationRecords}
                         onSearch={(t) => { donationRecords.search = t; loadDonationRecords(true); }}
                         onSort={(s) => { donationRecords.sort = s; loadDonationRecords(true); }}
                     />

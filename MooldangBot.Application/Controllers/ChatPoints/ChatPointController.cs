@@ -65,20 +65,19 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] int offset = 0, 
             [FromQuery] int limit = 20)
         {
-            var query = context.ViewerRelations
-                        .AsNoTracking()
-                        .IgnoreQueryFilters()
-                        .Where(r => r.StreamerProfile!.ChzzkUid == chzzkUid)
-                        .Select(r => new {
-                            nickname = r.GlobalViewer!.Nickname,
-                            points = context.ViewerPoints
-                                .IgnoreQueryFilters()
-                                .Where(p => p.StreamerProfileId == r.StreamerProfileId && p.GlobalViewerId == r.GlobalViewerId)
-                                .Select(p => (int?)p.Points)
-                                .FirstOrDefault() ?? 0,
+            // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
+            var query = from r in context.ViewerRelations.AsNoTracking().IgnoreQueryFilters()
+                        join g in context.GlobalViewers.AsNoTracking().IgnoreQueryFilters() on r.GlobalViewerId equals g.Id
+                        join p in context.ViewerPoints.AsNoTracking().IgnoreQueryFilters() 
+                           on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into pts
+                        from p in pts.DefaultIfEmpty()
+                        where r.StreamerProfile!.ChzzkUid == chzzkUid
+                        select new {
+                            nickname = g.Nickname,
+                            points = p != null ? p.Points : 0,
                             attendanceCount = r.AttendanceCount,
                             lastAttendanceAt = r.LastAttendanceAt
-                        });
+                        };
 
             if (!string.IsNullOrWhiteSpace(search))
             {

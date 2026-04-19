@@ -40,7 +40,8 @@
                 try {
                     await onLoadMore();
                 } finally {
-                    isProcessing = false;
+                    // [v10.5] 전역 쿨다운 추가: 서버가 너무 빨라도 최소 500ms는 대기하여 프론트 루루 방지
+                    setTimeout(() => { isProcessing = false; }, 500);
                 }
             }
         }, { threshold: 0.5 });
