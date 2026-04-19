@@ -22,9 +22,6 @@ public static class SerilogExtensions
                 .ReadFrom.Services(services)
                 .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Information)
-                .Filter.ByExcluding(le => le.Level == Serilog.Events.LogEventLevel.Information && 
-                                         le.Properties.TryGetValue("SourceContext", out var source) && 
-                                         source.ToString().Contains("Microsoft.EntityFrameworkCore.Database.Command"))
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
                 .Enrich.WithProperty("InstanceId", instanceId)
