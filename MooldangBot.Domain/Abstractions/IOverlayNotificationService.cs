@@ -1,5 +1,6 @@
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Domain.Abstractions;
 
