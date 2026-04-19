@@ -85,10 +85,10 @@ public class AuthService(
             // 1. [오시리스 v10.5]: 통합 서비스를 통한 토큰 교환 (정규화된 RedirectUri 전달)
             var tokenResult = await _chzzkApi.ExchangeTokenAsync(code, state: cachedData.State, redirectUri: redirectUri);
             
-            // [v2.6] 필수 토큰 유효성 검증 강화 (CS8604 대응)
-            if (string.IsNullOrEmpty(tokenResult.AccessToken) || string.IsNullOrEmpty(tokenResult.RefreshToken))
+            // [v2.6] 필수 토큰 유효성 검증 강화 (CS8604 등 대응)
+            if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken) || string.IsNullOrEmpty(tokenResult.RefreshToken))
             {
-                _logger.LogError("[인증] 토큰 교환 성공했으나 필수 토큰 정보가 누락되었습니다.");
+                _logger.LogError("[인증] 토큰 교환 실패 또는 필수 토큰 정보가 누락되었습니다.");
                 return new AuthResult { IsSuccess = false, ErrorMessage = "인증 토큰 정보가 불완전합니다." };
             }
 
