@@ -127,6 +127,20 @@
         }
     }
 
+    async function handleBulkDelete(ids: number[]) {
+        if (!chzzkUid || ids.length === 0) return;
+        try {
+            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/bulk-delete`, {
+                method: "POST",
+                body: JSON.stringify(ids)
+            });
+            
+            historyLogs = historyLogs.filter(l => !ids.includes(l.id));
+        } catch (e: any) {
+            alert(e.message || "일괄 삭제 실패!");
+        }
+    }
+
     onMount(async () => {
         try {
             const profile = await apiFetch<any>("/api/auth/me");
@@ -306,6 +320,7 @@
                     onLoadMore={loadMoreHistory}
                     onUpdateStatus={handleUpdateLogStatus}
                     onDelete={handleDeleteLog}
+                    onBulkDelete={handleBulkDelete}
                     {hasNext}
                     isLoading={isLoadingHistory} 
                 />

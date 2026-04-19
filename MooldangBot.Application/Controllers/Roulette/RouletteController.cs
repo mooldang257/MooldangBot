@@ -347,6 +347,17 @@ namespace MooldangBot.Application.Controllers.Roulette
             return Ok(Result<bool>.Success(true));
         }
 
+        [HttpPost("{chzzkUid}/history/bulk-delete")]
+        public async Task<IActionResult> BulkDeleteHistory(string chzzkUid, [FromBody] List<long> ids)
+        {
+            var affectedRows = await db.RouletteLogs
+                .IgnoreQueryFilters()
+                .Where(l => ids.Contains(l.Id) && l.StreamerProfile!.ChzzkUid == chzzkUid)
+                .ExecuteDeleteAsync();
+
+            return Ok(Result<int>.Success(affectedRows));
+        }
+
         [HttpPost("{chzzkUid}/{Id}/test")]
         public async Task<IActionResult> TestSpin(string chzzkUid, int Id, [FromQuery] bool Is10x = false)
         {

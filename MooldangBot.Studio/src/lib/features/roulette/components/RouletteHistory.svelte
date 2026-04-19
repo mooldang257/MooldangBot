@@ -8,6 +8,7 @@
         onLoadMore,
         onUpdateStatus,
         onDelete,
+        onBulkDelete,
         hasNext = false,
         isLoading = false 
     } = $props<{
@@ -16,6 +17,7 @@
         onLoadMore: () => void;
         onUpdateStatus: (id: number, status: number) => void;
         onDelete: (id: number) => void;
+        onBulkDelete: (ids: number[]) => void;
         hasNext: boolean;
         isLoading?: boolean;
     }>();
@@ -27,9 +29,37 @@
     });
 
     let showFilters = $state(false);
+    let selectedIds = $state<number[]>([]);
 
     function handleSearch() {
         onRefresh({ ...filters, status: filters.status === "" ? null : Number(filters.status) });
+    }
+
+    // [전체 선택 로직]
+    let isAllSelected = $derived(historyLogs.length > 0 && selectedIds.length === historyLogs.length);
+    
+    function toggleAll() {
+        if (isAllSelected) {
+            selectedIds = [];
+        } else {
+            selectedIds = historyLogs.map(log => log.id);
+        }
+    }
+
+    function toggleSelect(id: number) {
+        if (selectedIds.includes(id)) {
+            selectedIds = selectedIds.filter(i => i !== id);
+        } else {
+            selectedIds = [...selectedIds, id];
+        }
+    }
+
+    function handleBulkDeleteClick() {
+        if (selectedIds.length === 0) return;
+        if (confirm(`선택한 ${selectedIds.length}개의 기록을 정말 삭제하시겠습니까?`)) {
+            onBulkDelete(selectedIds);
+            selectedIds = [];
+        }
     }
 
     function formatKstDate(dateStr: string) {
@@ -63,7 +93,7 @@
     }
 </script>
 
-<div class="bg-white rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-900/5 overflow-hidden">
+<div class="bg-white rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-900/5 overflow-hidden relative">
     <div class="p-6 md:p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/30">
         <div class="flex items-center gap-3">
             <div class="p-2.5 bg-primary/10 text-primary rounded-2xl">
@@ -143,6 +173,14 @@
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-slate-50/50">
+                    <th class="px-6 py-4 w-10 border-b border-slate-100">
+                        <input 
+                            type="checkbox" 
+                            checked={isAllSelected} 
+                            onchange={toggleAll}
+                            class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                        />
+                    </th>
                     <th class="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">일시</th>
                     <th class="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">참여자</th>
                     <th class="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">룰렛 정보</th>
@@ -153,7 +191,15 @@
             </thead>
             <tbody class="divide-y divide-slate-50">
                 {#each historyLogs as log (log.id)}
-                    <tr class="hover:bg-slate-50/50 transition-colors" in:fade>
+                    <tr class="hover:bg-slate-50/50 transition-colors {selectedIds.includes(log.id) ? 'bg-primary/[0.02]' : ''}" in:fade>
+                        <td class="px-6 py-4">
+                            <input 
+                                type="checkbox" 
+                                checked={selectedIds.includes(log.id)} 
+                                onchange={() => toggleSelect(log.id)}
+                                class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                            />
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center gap-2 text-slate-400">
                                 <Clock size={14} />
@@ -205,7 +251,7 @@
                     </tr>
                 {:else}
                     <tr>
-                        <td colspan="6" class="px-6 py-20 text-center">
+                        <td colspan="7" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center justify-center text-slate-300">
                                 <Search size={48} strokeWidth={1} class="mb-4 opacity-20" />
                                 <p class="font-black text-slate-400">기록이 없습니다.</p>
@@ -231,6 +277,38 @@
                 {:else}
                     더 많은 기록 보기 <ChevronRight size={14} />
                 {/if}
+            </button>
+        </div>
+    {/if}
+
+    <!-- [물멍]: Floating Action Bar -->
+    {#if selectedIds.length > 0}
+        <div 
+            class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-slate-800"
+            transition:fly={{ y: 20 }}
+        >
+            <div class="flex items-center gap-2">
+                <span class="w-6 h-6 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                    {selectedIds.length}
+                </span>
+                <span class="text-xs font-bold text-slate-300">항목 선택됨</span>
+            </div>
+            
+            <div class="h-4 w-px bg-slate-700"></div>
+
+            <button 
+                onclick={handleBulkDeleteClick}
+                class="flex items-center gap-2 text-rose-400 hover:text-rose-300 text-xs font-black transition-colors"
+            >
+                <Trash2 size={16} />
+                일괄 삭제 실행
+            </button>
+
+            <button 
+                onclick={() => selectedIds = []}
+                class="text-xs font-bold text-slate-400 hover:text-white transition-colors"
+            >
+                취소
             </button>
         </div>
     {/if}
