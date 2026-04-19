@@ -56,7 +56,7 @@ public class RefundCurrencyCommandHandler(
 
             // 2. 캐시 메모리 복구
             // IPointCacheService 인터페이스 규격(AddPointAsync)을 사용합니다.
-            await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Amount);
+            await cacheService.AddPointAsync(request.StreamerUid, request.ViewerUid, request.ViewerNickname ?? "Unknown", request.Amount);
 
             await dbContext.SaveChangesAsync(ct);
 

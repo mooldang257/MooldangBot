@@ -95,7 +95,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
             }
 
             // 고빈도 포인트는 캐시에 음수 증분으로 기록 (Write-Back 동기화 대기)
-            await _pointCache.AddPointAsync(request.StreamerUid, cleanedUid, -request.Amount);
+            await _pointCache.AddPointAsync(request.StreamerUid, cleanedUid, request.ViewerNickname ?? "Unknown", -request.Amount);
             return new DeductResult(true, totalBalance - request.Amount);
         }
 
