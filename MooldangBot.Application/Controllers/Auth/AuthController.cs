@@ -141,7 +141,7 @@ namespace MooldangBot.Application.Controllers.Auth
 
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("치�?�?계정 ?�동 ?�보가 ?�습?�다."));
+                return Ok(Result<object>.Failure("치??계정 ?동 ?보가 ?습?다."));
             }
 
             try 
@@ -161,14 +161,21 @@ namespace MooldangBot.Application.Controllers.Auth
                         await _db.SaveChangesAsync();
                     }
 
+                    // [물멍]: 오버레이 주소 생성을 위해 토큰 보강 (없으면 자동 생성)
+                    var overlayToken = profile.OverlayToken;
+                    if (string.IsNullOrEmpty(overlayToken))
+                    {
+                        overlayToken = await _authService.IssueOverlayTokenAsync(profile.ChzzkUid, "Streamer");
+                    }
+
                     return Ok(Result<object>.Success(new {
                         isAuthenticated = true,
                         isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                        channelName = profile.ChannelName ?? "?�트리머",
+                        channelName = profile.ChannelName ?? "스트리머",
                         profileImageUrl = profile.ProfileImageUrl ?? "",
                         chzzkUid = profile.ChzzkUid,
                         slug = profile.Slug,
-                        overlayToken = profile.OverlayToken
+                        overlayToken = overlayToken
                     }));
                 }
                 else
