@@ -2,11 +2,18 @@
     import { Search, Edit2, Trash2, Clock, ArrowUpDown } from 'lucide-svelte';
     import { fade } from 'svelte/transition';
 
-    // [물멍]: Svelte 5 Props 정의
-    export let messages: { id: number; intervalMinutes: number; message: string; isEnabled: boolean }[] = [];
-    export let onEdit: (msg: any) => void;
-    export let onDelete: (id: number) => Promise<void>;
-    export let onToggle: (msg: any) => Promise<void>;
+    // [물멍]: Svelte 5 Props 및 상태 관리
+    let { 
+        messages = [], 
+        onEdit, 
+        onDelete, 
+        onToggle 
+    } = $props<{
+        messages: { id: number; intervalMinutes: number; message: string; isEnabled: boolean }[];
+        onEdit: (msg: any) => void;
+        onDelete: (id: number) => Promise<void>;
+        onToggle: (msg: any) => Promise<void>;
+    }>();
 
     let searchQuery = $state('');
     let sortOrder: 'asc' | 'desc' = $state('asc');
