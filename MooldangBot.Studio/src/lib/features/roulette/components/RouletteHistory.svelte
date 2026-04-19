@@ -1,6 +1,6 @@
 <script lang="ts">
     import { RefreshCw, History, User, Gift, Clock, Search, ChevronRight, CheckCircle2, Trash2 } from "lucide-svelte";
-    import { fade, slide } from "svelte/transition";
+    import { fade, slide, fly } from "svelte/transition";
 
     let { 
         historyLogs = [], 
