@@ -6,9 +6,10 @@
   import RouletteOverlay from './lib/RouletteOverlay.svelte';
   import { createSignalRStore } from './store/signalrStore';
   
-  // URL 쿼리 스트링에서 액세스 토큰 추출 (Aegis of Resonance)
-  const urlParams = new URLSearchParams(window.location.search);
-  const accessToken = urlParams.get('access_token') || "";
+  // URL 해시(#) 데이터에서 액세스 토큰 추출 (Security & Privacy Improvement)
+  const hashString = window.location.hash.substring(1);
+  const hashParams = new URLSearchParams(hashString);
+  const accessToken = hashParams.get('access_token') || "";
 
   // [오시리스의 공명]: 실시간 데이터 스토어 초기화
   const signalrStore = accessToken ? createSignalRStore(accessToken) : null;

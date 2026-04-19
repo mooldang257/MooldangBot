@@ -167,7 +167,8 @@ namespace MooldangBot.Application.Controllers.Auth
                         channelName = profile.ChannelName ?? "?�트리머",
                         profileImageUrl = profile.ProfileImageUrl ?? "",
                         chzzkUid = profile.ChzzkUid,
-                        slug = profile.Slug
+                        slug = profile.Slug,
+                        overlayToken = profile.OverlayToken
                     }));
                 }
                 else

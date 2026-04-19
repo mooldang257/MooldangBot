@@ -17,7 +17,7 @@
 
     // [v6.3.0]: 유저 식별자 반응성 확보
     const streamerId = $derived(userState.uid || $page.params.streamerId || "");
-    const overlayUrl = $derived(`${window.location.origin}/overlay?access_token=${userState.overlayToken || ''}`);
+    const overlayUrl = $derived(`${window.location.origin}/overlay#access_token=${userState.overlayToken || ''}`);
 
     onMount(async () => {
         await loadSettings();
