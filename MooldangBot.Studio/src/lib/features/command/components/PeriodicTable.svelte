@@ -18,9 +18,9 @@
     let searchQuery = $state('');
     let sortOrder: 'asc' | 'desc' = $state('asc');
 
-    // [오시리스의 눈]: 실시간 필터링 및 정렬 로직
+    // [오시리스의 눈]: 실시간 필터링 및 정렬 로직 (배열 안전 체크 포함)
     let filteredMessages = $derived(
-        messages
+        (Array.isArray(messages) ? messages : [])
             .filter(m => (m.message || '').toLowerCase().includes(searchQuery.toLowerCase()))
             .sort((a, b) => {
                 return sortOrder === 'asc' 

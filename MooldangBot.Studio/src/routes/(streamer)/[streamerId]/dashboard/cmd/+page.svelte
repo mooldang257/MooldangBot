@@ -93,7 +93,8 @@
             const data = await apiFetch<any>(
                 `/api/PeriodicMessage/list/${chzzkUid}`
             );
-            periodicMessages = data || [];
+            // [물멍]: ListResponse 객체에서 실제 목록인 items를 추출합니다.
+            periodicMessages = data?.items || data?.Items || (Array.isArray(data) ? data : []);
         } catch (e) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
         }
