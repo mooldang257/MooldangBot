@@ -6,12 +6,12 @@
 
     const streamerId = $page.params.streamerId;
     
-    let currentSlug = '';
-    let newSlug = '';
-    let isLoading = true;
-    let isSaving = false;
-    let message = '';
-    let status: 'idle' | 'success' | 'error' = 'idle';
+    let currentSlug = $state('');
+    let newSlug = $state('');
+    let isLoading = $state(true);
+    let isSaving = $state(false);
+    let message = $state('');
+    let status: 'idle' | 'success' | 'error' = $state('idle');
 
     // [물멍]: 함교 정보 초기 로드
     onMount(async () => {
@@ -30,8 +30,8 @@
     });
 
     // [물멍]: 슬러그 유효성 검사 (3~20자 영문 소문자, 숫자, 하이픈)
-    $: isValid = /^[a-z0-9-]{3,20}$/.test(newSlug);
-    $: isChanged = newSlug !== currentSlug;
+    let isValid = $derived(/^[a-z0-9-]{3,20}$/.test(newSlug));
+    let isChanged = $derived(newSlug !== currentSlug);
 
     async function saveSlug() {
         if (!isValid || !isChanged) return;
@@ -163,7 +163,7 @@
                         <!-- 저장 버튼 -->
                         <div class="flex justify-end pt-4">
                             <button 
-                                on:click={saveSlug}
+                                onclick={saveSlug}
                                 disabled={!isValid || !isChanged || isSaving}
                                 class="group relative px-10 py-5 rounded-[1.5rem] bg-primary text-white font-black text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 disabled:grayscale disabled:opacity-50 disabled:active:scale-100 transition-all overflow-hidden flex items-center gap-3"
                             >

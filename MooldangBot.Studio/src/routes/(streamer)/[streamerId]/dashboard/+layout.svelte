@@ -4,6 +4,9 @@
     import { fade, fly, slide } from 'svelte/transition';
     import { Menu, ChevronLeft, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings } from 'lucide-svelte';
 
+    // [물멍]: Svelte 5 표준에 맞춰 children props 수신
+    let { children } = $props();
+
     // [물멍]: 사이드바 축소 상태를 관리하는 룬 (Svelte 5) - 이제 기본은 축소형입니다.
     let isCollapsed = $state(true);
 
@@ -99,7 +102,7 @@
                 >
                     <!-- 아이콘 영역 -->
                     <span class="flex-shrink-0 flex items-center justify-center {isCollapsed ? 'w-full' : ''} transform group-hover:scale-110 transition-transform">
-                        <svelte:component this={item.icon} size={22} strokeWidth={2.5} />
+                        <item.icon size={22} strokeWidth={2.5} />
                     </span>
                     
                     <!-- 텍스트 영역 -->
@@ -134,7 +137,7 @@
     <!-- [메인 콘텐츠 레이아웃] -->
     <main class="flex-1 overflow-x-hidden p-6 md:p-10">
         <div class="max-w-7xl mx-auto h-full">
-            <slot />
+            {@render children()}
         </div>
     </main>
 </div>

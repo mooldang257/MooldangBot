@@ -1,3 +1,4 @@
+<script lang="ts">
     import { RefreshCw, History, User, Gift, Clock, Search, ChevronRight, CheckCircle2, Trash2 } from "lucide-svelte";
     import { fade, slide } from "svelte/transition";
 
@@ -75,14 +76,14 @@
         </div>
         <div class="flex items-center gap-2">
             <button 
-                on:click={() => showFilters = !showFilters}
+                onclick={() => showFilters = !showFilters}
                 class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-black text-sm hover:bg-slate-200 transition-all"
             >
                 <Search size={16} />
                 필터 {showFilters ? '닫기' : '열기'}
             </button>
             <button 
-                on:click={() => onRefresh()}
+                onclick={() => onRefresh()}
                 disabled={isLoading}
                 class="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-black text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
             >
@@ -101,7 +102,7 @@
                     bind:value={filters.nickname}
                     placeholder="참여자 검색..."
                     class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold transition-all"
-                    on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+                    onkeydown={(e) => e.key === 'Enter' && handleSearch()}
                 />
             </div>
             <div class="space-y-1.5">
@@ -111,7 +112,7 @@
                     bind:value={filters.itemName}
                     placeholder="결과명 검색..."
                     class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold transition-all"
-                    on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+                    onkeydown={(e) => e.key === 'Enter' && handleSearch()}
                 />
             </div>
             <div class="space-y-1.5">
@@ -128,7 +129,7 @@
             </div>
             <div class="flex items-end">
                 <button 
-                    on:click={handleSearch}
+                    onclick={handleSearch}
                     class="w-full py-2 bg-primary text-white rounded-xl font-black text-sm hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
                 >
                     <Search size={16} />
@@ -185,7 +186,7 @@
                             <div class="flex items-center justify-center gap-2">
                                 {#if log.status === 0}
                                     <button 
-                                        on:click={() => onUpdateStatus(log.id, 1)}
+                                        onclick={() => onUpdateStatus(log.id, 1)}
                                         class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors tooltip"
                                         title="지급 완료"
                                     >
@@ -193,7 +194,7 @@
                                     </button>
                                 {/if}
                                 <button 
-                                    on:click={() => onDelete(log.id)}
+                                    onclick={() => onDelete(log.id)}
                                     class="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                     title="삭제"
                                 >
@@ -220,7 +221,7 @@
     {#if hasNext}
         <div class="p-4 border-t border-slate-50 bg-slate-50/10 flex justify-center">
             <button 
-                on:click={onLoadMore}
+                onclick={onLoadMore}
                 disabled={isLoading}
                 class="px-6 py-2 text-[11px] font-black text-slate-400 hover:text-primary transition-all flex items-center gap-2 uppercase tracking-widest border border-slate-200 rounded-full bg-white hover:border-primary/30"
             >

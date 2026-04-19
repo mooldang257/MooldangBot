@@ -1,26 +1,36 @@
 <script lang="ts">
     import { fade, scale } from 'svelte/transition';
     import { AlertTriangle, X, Trash2 } from 'lucide-svelte';
-    import { createEventDispatcher } from 'svelte';
 
-    const dispatch = createEventDispatcher();
+    let {
+        isOpen = $bindable(false),
+        title = "잠깐만요!",
+        message = "정말 이 명령어를 삭제하시겠습니까?",
+        keyword = "",
+        confirmText = "과감하게 삭제",
+        cancelText = "함교로 복귀",
+        onconfirm,
+        oncancel
+    } = $props<{
+        isOpen: boolean;
+        title?: string;
+        message?: string;
+        keyword?: string;
+        confirmText?: string;
+        cancelText?: string;
+        onconfirm?: (data: { dontAskAgain: boolean }) => void;
+        oncancel?: () => void;
+    }>();
 
-    export let isOpen = false;
-    export let title = "잠깐만요!";
-    export let message = "정말 이 명령어를 삭제하시겠습니까?";
-    export let keyword = ""; // 🎯 삭제 대상 키워드 강조
-    export let confirmText = "과감하게 삭제";
-    export let cancelText = "함교로 복귀";
-
-    let dontAskAgain = false;
+    let dontAskAgain = $state(false);
 
     function handleConfirm() {
-        dispatch('confirm', { dontAskAgain });
+        onconfirm?.({ dontAskAgain });
         isOpen = false;
     }
 
     function handleCancel() {
-        dispatch('cancel');
+        oncancel?.();
         isOpen = false;
     }
 </script>
@@ -34,7 +44,7 @@
         <!-- 배경 다크/블러 오버레이 -->
         <div 
             class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            on:click={handleCancel}
+            onclick={handleCancel}
         ></div>
 
         <!-- 모달 본체: Breathing Glass -->
@@ -89,14 +99,14 @@
                 <!-- 버튼 그룹 -->
                 <div class="flex flex-col gap-3">
                     <button 
-                        on:click={handleConfirm}
+                        onclick={handleConfirm}
                         class="w-full h-16 bg-gradient-to-br from-rose-500 to-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/confirm"
                     >
                         <Trash2 size={24} class="group-hover/confirm:rotate-12 transition-transform" />
                         {confirmText}
                     </button>
                     <button 
-                        on:click={handleCancel}
+                        onclick={handleCancel}
                         class="w-full h-14 bg-slate-50 text-slate-400 font-black rounded-2xl hover:bg-slate-100 hover:text-slate-600 transition-all text-sm"
                     >
                         {cancelText}
@@ -106,7 +116,7 @@
 
             <!-- 하단 닫기 x 버튼 -->
             <button 
-                on:click={handleCancel}
+                onclick={handleCancel}
                 class="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-500 hover:bg-slate-50 rounded-xl transition-all"
             >
                 <X size={20} />

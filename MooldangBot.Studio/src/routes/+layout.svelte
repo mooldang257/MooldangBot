@@ -6,12 +6,14 @@
     import { userState } from '$lib/core/state/user.svelte';
 
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
-    let { data } = $props();
+    let { data, children } = $props();
 
     // [Osiris]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
-    if (data && data.userData) {
-        userState.set(data.userData);
-    }
+    $effect(() => {
+        if (data && data.userData) {
+            userState.set(data.userData);
+        }
+    });
 
     const isLoaded = $derived(!!data);
 
@@ -91,7 +93,7 @@
             {#if isLoaded}
                 {#if !userState.isAuthenticated}
                     <button 
-                        on:click={toggleLoginModal}
+                        onclick={toggleLoginModal}
                         class="px-6 md:px-8 py-2 md:py-2.5 bg-chzzk text-white text-xs md:text-sm font-black rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all outline-none"
                     >
                         치지직 로그인
@@ -104,7 +106,7 @@
                             <a href="/{userState.slug}/dashboard" class="text-[8px] md:text-[10px] font-black text-primary hover:underline uppercase tracking-tighter">내 대시보드</a>
                         </div>
                         <div class="hidden md:block w-px h-6 bg-slate-300 mx-1"></div>
-                        <button on:click={logout} class="text-[10px] md:text-xs font-black text-rose-500 hover:underline border-none bg-transparent cursor-pointer">로그아웃</button>
+                        <button onclick={logout} class="text-[10px] md:text-xs font-black text-rose-500 hover:underline border-none bg-transparent cursor-pointer">로그아웃</button>
                     </div>
                 {/if}
             {/if}
@@ -116,7 +118,7 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-6" transition:fade={{ duration: 200 }}>
-            <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" on:click={toggleLoginModal}></div>
+            <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onclick={toggleLoginModal}></div>
             
             <div 
                 class="relative w-full max-w-lg bg-white/80 backdrop-blur-[40px] rounded-[3rem] shadow-[0_40px_120px_rgba(0,0,0,0.1)] p-8 md:p-16 border border-white/60 overflow-y-auto max-h-[90vh]"
@@ -130,7 +132,7 @@
                 <div class="grid grid-cols-1 gap-4 md:gap-6">
                     {#each loginPaths as role, i}
                         <button 
-                            on:click={() => handleRoleSelect(role.id)}
+                            onclick={() => handleRoleSelect(role.id)}
                             class="flex flex-col items-center justify-center p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] {role.glass} border backdrop-blur-xl shadow-sm {role.isActive ? 'hover:shadow-2xl hover:-translate-y-2' : 'cursor-not-allowed'} transition-all group text-center"
                             in:fly={{ y: 30, delay: 100 + (i * 100) }}
                             disabled={!role.isActive}
@@ -146,7 +148,7 @@
                     {/each}
                 </div>
 
-                <button on:click={toggleLoginModal} class="mt-8 md:mt-12 w-full py-2 text-slate-400 font-[900] text-[10px] md:text-xs uppercase tracking-[0.4em] hover:text-slate-600 transition-colors">
+                <button onclick={toggleLoginModal} class="mt-8 md:mt-12 w-full py-2 text-slate-400 font-[900] text-[10px] md:text-xs uppercase tracking-[0.4em] hover:text-slate-600 transition-colors">
                     CLOSE
                 </button>
             </div>
@@ -155,7 +157,7 @@
 
     <!-- [메인 콘텐츠 영역]: pt-20으로 헤더 공간 확보 -->
     <main class="main-layout flex-1 w-full pt-20">
-        <slot isAuthenticated={userState.isAuthenticated} userData={userState} {isLoaded} />
+        {@render children()}
     </main>
 
     <!-- [전역 배경 메시]: 모든 화면에서 유지 -->

@@ -245,7 +245,7 @@
         <div class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar">
             <button
                 class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'manage' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                on:click={() => (activeTab = "manage")}
+                onclick={() => (activeTab = "manage")}
             >
                 <div class="flex items-center gap-2">
                     <Settings size={18} />
@@ -257,7 +257,7 @@
             </button>
             <button
                 class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'history' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                on:click={() => (activeTab = "history")}
+                onclick={() => (activeTab = "history")}
             >
                 <div class="flex items-center gap-2">
                     <History size={18} />

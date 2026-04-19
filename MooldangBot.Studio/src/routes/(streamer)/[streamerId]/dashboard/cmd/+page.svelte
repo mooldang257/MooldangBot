@@ -155,8 +155,8 @@
         }
     }
 
-    async function onConfirmDelete(event: any) {
-        if (event.detail.dontAskAgain) {
+    async function onConfirmDelete(data: { dontAskAgain: boolean }) {
+        if (data.dontAskAgain) {
             skipDeleteConfirm = true;
             await apiFetch("/api/Preference/temporary/skipDeleteConfirm", {
                 method: "POST",
@@ -175,7 +175,7 @@
 <ConfirmModal
     bind:isOpen={showDeleteModal}
     keyword={deleteTargetKeyword}
-    on:confirm={onConfirmDelete}
+    onconfirm={onConfirmDelete}
 />
 
 <div class="space-y-12 pb-20 text-left">
@@ -207,13 +207,14 @@
                     tab
                         ? 'text-primary'
                         : 'text-slate-400 hover:text-slate-600'}"
-                    on:click={() => (activeTab = tab)}
+                    onclick={() => (activeTab = tab)}
                 >
                     <div class="flex items-center gap-2">
-                        <svelte:component
-                            this={tab === "commands" ? Zap : Clock}
-                            size={18}
-                        />
+                        {#if tab === "commands"}
+                            <Zap size={18} />
+                        {:else}
+                            <Clock size={18} />
+                        {/if}
                         <span
                             >{tab === "commands"
                                 ? "명령어 관리"
@@ -272,7 +273,7 @@
                     </p>
                     <div class="flex gap-4">
                         <button
-                            on:click={() => window.location.reload()}
+                            onclick={() => window.location.reload()}
                             class="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-full font-black shadow-lg shadow-slate-200 hover:scale-105 active:scale-95 transition-all text-sm"
                         >
                             <RefreshCw size={18} />

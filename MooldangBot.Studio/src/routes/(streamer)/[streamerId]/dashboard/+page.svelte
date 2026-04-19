@@ -177,7 +177,10 @@
                 <Settings2 size={16} />
                 환경설정
             </button>
-            <button class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-2xl text-xs font-black shadow-lg shadow-primary/30 hover:-translate-y-0.5 transition-all outline-none">
+            <button 
+                onclick={refreshDashboard}
+                class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-2xl text-xs font-black shadow-lg shadow-primary/30 hover:-translate-y-0.5 transition-all outline-none"
+            >
                 <LayoutDashboard size={16} />
                 대시보드 새로고침
             </button>
@@ -194,7 +197,7 @@
                 >
                     <div class="flex justify-between items-start mb-8">
                         <div class="p-4 rounded-2xl {card.bg} {card.color} transition-transform group-hover:scale-110 shadow-sm">
-                            <svelte:component this={card.icon} size={24} strokeWidth={2.5} />
+                            <card.icon size={24} strokeWidth={2.5} />
                         </div>
                         <span class="text-[10px] font-black text-emerald-500 bg-emerald-50/60 px-3 py-1.5 rounded-xl border border-emerald-100/50">
                             {card.trend}
@@ -230,9 +233,10 @@
             <div class="bg-white/85 backdrop-blur-xl rounded-[2.5rem] border border-white p-6 md:p-8 shadow-[0_15px_45px_rgba(0,147,233,0.04)] overflow-hidden">
                 <div class="space-y-3">
                     {#each activities as activity}
+                        {@const ActivityIcon = iconMap[activity.iconType] || Bell}
                         <div class="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/60 transition-all group cursor-pointer border border-transparent hover:border-sky-50 shadow-sm hover:shadow-md">
                             <div class="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-                                <svelte:component this={iconMap[activity.iconType] || Bell} size={18} />
+                                <ActivityIcon size={18} />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-center mb-0.5">
@@ -292,7 +296,7 @@
                         </div>
 
                         <button 
-                            on:click={updateSlug}
+                            onclick={updateSlug}
                             disabled={isSavingSlug || !newSlug}
                             class="w-full py-4 bg-slate-900 text-white rounded-2xl text-xs font-[1000] shadow-lg shadow-slate-900/10 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
