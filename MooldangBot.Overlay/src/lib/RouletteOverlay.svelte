@@ -433,12 +433,12 @@
 
     /* 스튜디오 에디션 카드 디자인 (반응형 최적화) */
     .studio-card { 
-        position: relative; width: 100%; max-width: 540px; aspect-ratio: 1.8 / 1; border-radius: 32px; 
+        position: relative; width: 100%; max-width: 540px; aspect-ratio: 2.4 / 1; border-radius: 28px; 
         transform-style: preserve-3d;
         margin: 0;
     }
     .card-glass-body {
-        position: relative; width: 100%; height: 100%; padding: 6%;
+        position: relative; width: 100%; height: 100%; padding: 4% 6%;
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(40px);
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -504,9 +504,9 @@
     }
     .viewer-tag { color: #fff; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 800; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; }
 
-    .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px 0; }
-    .roulette-title { color: inherit; font-size: clamp(0.9rem, 3vw, 1.1rem); margin-bottom: 8px; font-weight: 600; }
-    .result-text { font-size: clamp(2rem, 10vw, 4.25rem); font-weight: 950; margin: 0; line-height: 1.1; color: inherit; }
+    .result-box { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10px 0; }
+    .roulette-title { color: inherit; font-size: clamp(0.8rem, 2.5vw, 1rem); margin-bottom: 4px; font-weight: 600; }
+    .result-text { font-size: clamp(1.8rem, 8vw, 3.5rem); font-weight: 950; margin: 0; line-height: 1; color: inherit; }
     
     .mission-badge { 
         margin-top: 1.5vh; background: var(--studio-coral); color: #fff; 
