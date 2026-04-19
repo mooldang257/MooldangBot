@@ -29,7 +29,7 @@
         if (!chzzkUid) return;
         try {
             const res = await apiFetch<any>(`/api/chatpoint/${chzzkUid}`);
-            settings = res.data;
+            settings = res;
         } catch (e) {
             console.error("[물멍] 설정 로드 실패:", e);
         }
@@ -66,7 +66,7 @@
         try {
             const url = `/api/chatpoint/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}&offset=${viewerPoints.offset}&limit=20`;
             const res = await apiFetch<any>(url);
-            const { items, total } = res.data;
+            const { items, total } = res;
             
             viewerPoints.items = [...viewerPoints.items, ...items];
             viewerPoints.total = total;
@@ -74,6 +74,7 @@
             viewerPoints.hasNext = viewerPoints.items.length < total;
         } catch (e) {
             console.error("[물멍] 포인트 리스트 로드 실패:", e);
+            viewerPoints.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
         } finally {
             viewerPoints.isLoading = false;
         }
@@ -93,7 +94,7 @@
         try {
             const url = `/api/chatpoint/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}&offset=${donationRecords.offset}&limit=20`;
             const res = await apiFetch<any>(url);
-            const { items, total } = res.data;
+            const { items, total } = res;
             
             donationRecords.items = [...donationRecords.items, ...items];
             donationRecords.total = total;
@@ -101,6 +102,7 @@
             donationRecords.hasNext = donationRecords.items.length < total;
         } catch (e) {
             console.error("[물멍] 후원 기록 로드 실패:", e);
+            donationRecords.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
         } finally {
             donationRecords.isLoading = false;
         }
