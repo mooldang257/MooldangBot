@@ -191,13 +191,17 @@
             </thead>
             <tbody class="divide-y divide-slate-50">
                 {#each historyLogs as log (log.id)}
-                    <tr class="hover:bg-slate-50/50 transition-colors {selectedIds.includes(log.id) ? 'bg-primary/[0.02]' : ''}" in:fade>
+                    <tr 
+                        onclick={() => toggleSelect(log.id)}
+                        class="hover:bg-slate-50/50 transition-colors cursor-pointer group/row {selectedIds.includes(log.id) ? 'bg-primary/[0.04]' : ''}" 
+                        in:fade
+                    >
                         <td class="px-6 py-4">
                             <input 
                                 type="checkbox" 
                                 checked={selectedIds.includes(log.id)} 
-                                onchange={() => toggleSelect(log.id)}
-                                class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                                class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20 pointer-events-none"
+                                readonly
                             />
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -208,7 +212,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover/row:bg-white transition-colors">
                                     <User size={16} />
                                 </div>
                                 <span class="font-black text-slate-700 text-sm tracking-tight">{log.viewerNickname}</span>
@@ -228,7 +232,7 @@
                                 {getStatusText(log.status)}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4" onclick={(e) => e.stopPropagation()} class:cursor-default={true}>
                             <div class="flex items-center justify-center gap-2">
                                 {#if log.status === 0}
                                     <button 
