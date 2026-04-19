@@ -32,10 +32,16 @@
         onSort(key);
     }
 
+    let isProcessing = false;
     onMount(() => {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && hasNext && !isLoading) {
-                onLoadMore();
+        const observer = new IntersectionObserver(async (entries) => {
+            if (entries[0].isIntersecting && hasNext && !isLoading && !isProcessing) {
+                isProcessing = true;
+                try {
+                    await onLoadMore();
+                } finally {
+                    isProcessing = false;
+                }
             }
         }, { threshold: 0.5 });
 
