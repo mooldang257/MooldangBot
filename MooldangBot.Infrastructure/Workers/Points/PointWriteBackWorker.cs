@@ -97,7 +97,13 @@ public class PointWriteBackWorker(
 
             // 1. Redis에서 모든 증분 데이터 원자적 추출 (Lua Script) - [포인트 + 닉네임]
             increments = await cache.ExtractAllIncrementalPointsAsync();
-            if (increments == null || increments.Count == 0) return;
+            if (increments == null || increments.Count == 0) 
+            {
+                // [물멍]: 변동분이 없으면 동기화를 건너뜁니다.
+                return;
+            }
+
+            logger.LogInformation("🔄 [WriteBack] {Count}건의 포인트 변동분 동기화를 시작합니다.", increments.Count);
 
             // 2. DB 벌크 업데이트 실행 (Polly 적용)
             await SyncToDatabaseAsync(increments, scope, ct);
@@ -145,7 +151,7 @@ public class PointWriteBackWorker(
                     SELECT s.id, g.id, @Nickname, NOW(), NOW(), NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
-                    WHERE s.chzzk_uid = @StreamerUid
+                    WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
                     ON DUPLICATE KEY UPDATE 
                         nickname = VALUES(nickname),
                         last_chat_at = NOW(),
@@ -157,7 +163,7 @@ public class PointWriteBackWorker(
                     SELECT s.id, g.id, @Amount, NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
-                    WHERE s.chzzk_uid = @StreamerUid
+                    WHERE LOWER(s.chzzk_uid) = LOWER(@StreamerUid)
                     ON DUPLICATE KEY UPDATE 
                         points = points + VALUES(points),
                         updated_at = NOW();";
