@@ -45,7 +45,7 @@ namespace MooldangBot.Application.Controllers.Auth
                 var val = _configuration["BASE_DOMAIN"];
                 if (!string.IsNullOrEmpty(val)) return val;
                 
-                throw new Exception("[?�시리스??거절]: ?�경 ?�정 ?�일(.env ?�는 appsettings)?�서 'BASE_DOMAIN'???�정?�어 ?��? ?�습?�다.");
+                throw new Exception("[오시리스의 거절]: 환경 설정 파일(.env 또는 appsettings)에서 'BASE_DOMAIN'이 설정되어 있지 않습니다.");
             }
         }
 
@@ -82,8 +82,8 @@ namespace MooldangBot.Application.Controllers.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[?�시리스??거절] 로그??URL ?�성 ?�패");
-                return Ok(Result<object>.Failure($"로그??URL ?�성 ?�패: {ex.Message}"));
+                _logger.LogError(ex, "[오시리스의 거절] 로그인 URL 생성 실패");
+                return Ok(Result<object>.Failure($"로그인 URL 생성 실패: {ex.Message}"));
             }
         }
 
@@ -125,7 +125,7 @@ namespace MooldangBot.Application.Controllers.Auth
         {
             if (User.Identity?.IsAuthenticated != true)
             {
-                return Ok(Result<object>.Failure("?�증?��? ?��? ?�용?�입?�다."));
+                return Ok(Result<object>.Failure("인증되지 않은 사용자입니다."));
             }
 
             var resolvedUid = uid;
@@ -141,7 +141,7 @@ namespace MooldangBot.Application.Controllers.Auth
 
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("치??계정 ?동 ?보가 ?습?다."));
+                return Ok(Result<object>.Failure("치지직 계정 연동 정보가 없습니다."));
             }
 
             try 
@@ -198,22 +198,22 @@ namespace MooldangBot.Application.Controllers.Auth
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"[AuthMe] Profile refresh failed for {chzzkUid}");
-                return Ok(Result<object>.Failure($"?�보 갱신 ?�패: {ex.Message}"));
+                return Ok(Result<object>.Failure($"정보 갱신 실패: {ex.Message}"));
             }
 
-            return Ok(Result<object>.Failure("?�로???�보�?찾을 ???�습?�다."));
+            return Ok(Result<object>.Failure("정보를 찾을 수 없습니다."));
         }
 
         [HttpGet("auth/resolve-slug/{slug}")]
         public async Task<IActionResult> ResolveStreamerSlug(string slug)
         {
-            if (string.IsNullOrEmpty(slug)) return BadRequest("[?�시리스??거절] ?�효?��? ?��? 주소?�니??");
+            if (string.IsNullOrEmpty(slug)) return BadRequest("[오시리스의 거절] 유효하지 않은 주소입니다.");
 
             var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
 
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
+                return Ok(Result<object>.Failure("[오시리스의 거절] 존재하지 않는 주소입니다."));
             }
             
             return Ok(Result<object>.Success(new { chzzkUid }));
@@ -223,12 +223,12 @@ namespace MooldangBot.Application.Controllers.Auth
         [Authorize]
         public async Task<IActionResult> ValidateStreamerAccessBySlug(string slug)
         {
-            if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[?�시리스??거절] ?�효?��? ?��? 주소?�니??"));
+            if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[오시리스의 거절] 유효하지 않은 주소입니다."));
 
             var chzzkUid = await _identityCache.GetChzzkUidBySlugAsync(slug);
             if (string.IsNullOrEmpty(chzzkUid))
             {
-                return Ok(Result<object>.Failure("[?�시리스??거절] 존재?��? ?�는 주소?�니??"));
+                return Ok(Result<object>.Failure("[오시리스의 거절] 존재하지 않는 주소입니다."));
             }
 
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -250,7 +250,7 @@ namespace MooldangBot.Application.Controllers.Auth
                 return Ok(Result<object>.Success(new { chzzkUid }));
             }
 
-            return Ok(Result<object>.Failure("[?�시리스??거절] ?�당 채널??관�?권한???�습?�다."));
+            return Ok(Result<object>.Failure("[오시리스의 거절] 해당 채널의 관리 권한이 없습니다."));
         }
 
         [HttpGet("auth/logout")]
@@ -333,41 +333,41 @@ namespace MooldangBot.Application.Controllers.Auth
             }
             catch (Exception ex)
             {
-                return Content($"[�??�증 ?�류] {ex.Message}");
+                return Content($"[인증 오류] {ex.Message}");
             }
         }
 
         [HttpGet("/api/auth/callback")]
         [HttpGet("/api/v1/auth/callback")]
-        [HttpGet("/Auth/callback")] // ?�� [Aegis Bridge]: Nginx ?�회 경로 지??(404 방�?)
+        [HttpGet("/Auth/callback")] // [Aegis Bridge]: Nginx 우회 경로 지정 (404 방지)
         [AllowAnonymous]
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {
             if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state)) 
             {
-                return Ok(Result<object>.Failure("?�수 ?�증 ?�라미터가 ?�락?�었?�니??"));
+                return Ok(Result<object>.Failure("필수 인증 파라미터가 누락되었습니다."));
             }
 
             var stateFromCookie = Request.Cookies[StateCookieName];
             if (string.IsNullOrEmpty(stateFromCookie) || stateFromCookie != state)
             {
-                return Ok(Result<object>.Failure("?�증 ?�션???�효?��? ?�거??변조되?�습?�다. ?�시 ?�도??주세??"));
+                return Ok(Result<object>.Failure("인증 세션이 유효하지 않거나 변조되었습니다. 다시 시도해 주세요."));
             }
 
             var cachedJson = await _cache.GetStringAsync($"auth:state:{state}");
             if (string.IsNullOrEmpty(cachedJson))
             {
-                return Ok(Result<object>.Failure("?�증 ?�간??초과?�었?�니?? ?�시 로그?�해 주세??"));
+                return Ok(Result<object>.Failure("인증 시간이 초과되었습니다. 다시 로그인해 주세요."));
             }
 
             var cachedData = JsonSerializer.Deserialize<AuthSessionData>(cachedJson);
-            if (cachedData == null) return Ok(Result<object>.Failure("?�스???�류: ?�증 ?�션 ?�이?��? ?�상?�었?�니??"));
+            if (cachedData == null) return Ok(Result<object>.Failure("시스템 오류: 인증 세션 데이터가 손상되었습니다."));
 
             var result = await _authService.ProcessCallbackAsync(code, cachedData);
 
             if (!result.IsSuccess)
             {
-                return Ok(Result<object>.Failure($"?�증 ?�패: {result.ErrorMessage}"));
+                return Ok(Result<object>.Failure($"인증 실패: {result.ErrorMessage}"));
             }
 
             if (!string.IsNullOrEmpty(result.RedirectUrl))
@@ -375,11 +375,11 @@ namespace MooldangBot.Application.Controllers.Auth
                 string htmlResponse = $@"
                     <!DOCTYPE html>
                     <html lang='ko'>
-                    <head><meta charset='UTF-8'><title>�??�동 ?�공</title></head>
+                    <head><meta charset='UTF-8'><title>연동 성공</title></head>
                     <body style='background-color:#121212; color:#00e676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center;'>
                         <div>
-                            <h1 style='color:#0093E9;'>?�� �?계정 ?�동 ?�료!</h1>
-                            <p style='color:#fff;'>[{result.ChannelName}] 계정??물멍 ?�용 봇으�??�록?�었?�니??<br>?�제 창을 ?�아주세??</p>
+                            <h1 style='color:#0093E9;'>치지직 계정 연동 완료!</h1>
+                            <p style='color:#fff;'>[{result.ChannelName}] 계정이 물멍 전용 봇으로 등록되었습니다.<br>이제 창을 닫아주세요.</p>
                         </div>
                     </body>
                     </html>";
