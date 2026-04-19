@@ -83,55 +83,62 @@ namespace MooldangBot.Application.Controllers.Dashboard
             var profile = await GetProfileByUidOrSlugAsync(streamerUid);
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            // [물멍]: 각 도메인별 최근 5건씩 취합 (Null 참조 방지 강화)
-            var songs = await db.SongQueues
+            // [물멍]: 각 도메인별 원본 데이터를 먼저 가져온 후 메모리에서 매핑합니다. (DB 엔진 해석 오류 방지)
+            var rawSongs = await db.SongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
                 .Where(s => s.StreamerProfileId == profile.Id)
                 .OrderByDescending(s => s.CreatedAt)
                 .Take(5)
-                .Select(s => new DashboardActivityDto {
-                    Id = $"song_{s.Id}",
-                    Type = "song",
-                    User = s.GlobalViewer != null ? (s.GlobalViewer.Nickname ?? "익명") : "익명",
-                    Content = $"곡 신청: {s.Title} - {s.Artist}",
-                    CreatedAt = s.CreatedAt,
-                    IconType = "Music"
-                }).ToListAsync();
+                .ToListAsync();
 
-            var points = await db.PointTransactionHistories
+            var rawPoints = await db.PointTransactionHistories
                 .AsNoTracking()
                 .Include(t => t.GlobalViewer)
                 .Where(t => t.StreamerProfileId == profile.Id && t.Amount < 0)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(5)
-                .Select(t => new DashboardActivityDto {
-                    Id = $"point_{t.Id}",
-                    Type = "point",
-                    User = t.GlobalViewer != null ? (t.GlobalViewer.Nickname ?? "익명") : "익명",
-                    Content = $"{(t.Reason ?? "포인트 사용")}: {Math.Abs(t.Amount)}포인트 소모",
-                    CreatedAt = t.CreatedAt,
-                    IconType = "Coins"
-                }).ToListAsync();
+                .ToListAsync();
 
-            var roulettes = await db.RouletteLogs
+            var rawRoulettes = await db.RouletteLogs
                 .AsNoTracking()
                 .Include(l => l.GlobalViewer)
                 .Where(l => l.StreamerProfileId == profile.Id)
                 .OrderByDescending(l => l.CreatedAt)
                 .Take(5)
-                .Select(l => new DashboardActivityDto {
-                    Id = $"roulette_{l.Id}",
-                    Type = "roulette",
-                    User = l.GlobalViewer != null ? (l.GlobalViewer.Nickname ?? "익명") : "익명",
-                    Content = $"룰렛 결과: {l.ItemName}",
-                    CreatedAt = l.CreatedAt,
-                    IconType = "Zap"
-                }).ToListAsync();
+                .ToListAsync();
 
-            var activities = (songs ?? [])
-                .Concat(points ?? [])
-                .Concat(roulettes ?? [])
+            // 메모리 매핑 (C#단에서 처리하여 100% 안전함)
+            var songActivities = rawSongs.Select(s => new DashboardActivityDto {
+                Id = $"song_{s.Id}",
+                Type = "song",
+                User = s.GlobalViewer?.Nickname ?? "익명",
+                Content = $"곡 신청: {s.Title} - {s.Artist}",
+                CreatedAt = s.CreatedAt,
+                IconType = "Music"
+            });
+
+            var pointActivities = rawPoints.Select(t => new DashboardActivityDto {
+                Id = $"point_{t.Id}",
+                Type = "point",
+                User = t.GlobalViewer?.Nickname ?? "익명",
+                Content = $"{(t.Reason ?? "포인트 사용")}: {Math.Abs(t.Amount)}포인트 소모",
+                CreatedAt = t.CreatedAt,
+                IconType = "Coins"
+            });
+
+            var rouletteActivities = rawRoulettes.Select(l => new DashboardActivityDto {
+                Id = $"roulette_{l.Id}",
+                Type = "roulette",
+                User = l.GlobalViewer?.Nickname ?? "익명",
+                Content = $"룰렛 결과: {l.ItemName}",
+                CreatedAt = l.CreatedAt,
+                IconType = "Zap"
+            });
+
+            var activities = songActivities
+                .Concat(pointActivities)
+                .Concat(rouletteActivities)
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(10)
                 .ToList();

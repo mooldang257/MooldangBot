@@ -5,6 +5,7 @@ using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 
 namespace MooldangBot.Application.Hubs;
@@ -18,10 +19,12 @@ namespace MooldangBot.Application.Hubs;
 public class OverlayHub(
     IMediator mediator,
     PulseService pulseService,
-    IOverlayNotificationService notificationService,
     ILogger<OverlayHub> logger, 
     IOverlayState overlayState) : Hub
 {
+    private IOverlayNotificationService GetNotificationService() 
+        => Context.GetHttpContext()?.RequestServices.GetRequiredService<IOverlayNotificationService>() 
+           ?? throw new InvalidOperationException("IOverlayNotificationService is not available.");
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 후 서버에 결과를 알립니다.
     /// </summary>
@@ -45,7 +48,7 @@ public class OverlayHub(
             logger.LogInformation("[오시리스의 공명] 오버레이 연결 성공. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", normalizedUid, Context.ConnectionId);
 
             // [물멍]: 연결 즉시 현재 신청곡 상태를 해당 클라이언트에만 전송 (초기 데이터 주입)
-            await notificationService.BroadcastSongOverlayUpdateAsync(normalizedUid, Context.ConnectionId);
+            await GetNotificationService().BroadcastSongOverlayUpdateAsync(normalizedUid, Context.ConnectionId);
         }
         else
         {
