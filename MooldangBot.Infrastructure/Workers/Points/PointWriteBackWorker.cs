@@ -140,7 +140,10 @@ public class PointWriteBackWorker(
                 
                 // [Step 0] GlobalViewer 확보 (마스터 정보가 없으면 자동 생성)
                 const string globalUpsertSql = @"
-                    INSERT INTO core_global_viewers (viewer_uid, viewer_uid_hash, nickname, is_deleted, created_at, updated_at)
+                    INSERT INTO core_global_viewers (
+                        viewer_uid, viewer_uid_hash, nickname, 
+                        is_deleted, created_at, updated_at
+                    )
                     VALUES (@ViewerUid, @Hash, @Nickname, 0, NOW(), NOW())
                     AS new_v
                     ON DUPLICATE KEY UPDATE 
@@ -171,7 +174,10 @@ public class PointWriteBackWorker(
 
                 // [Step 2] ViewerPoint 정산 (최종 포인트 합산)
                 const string pointUpsertSql = @"
-                    INSERT INTO viewer_points (streamer_profile_id, global_viewer_id, points, created_at, updated_at)
+                    INSERT INTO viewer_points (
+                        streamer_profile_id, global_viewer_id, points, 
+                        created_at, updated_at
+                    )
                     SELECT s.id, g.id, @Amount, NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
