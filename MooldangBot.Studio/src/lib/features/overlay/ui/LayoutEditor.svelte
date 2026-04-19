@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { Move, Maximize2, MousePointer2, Save, RotateCcw, Eye, EyeOff } from 'lucide-svelte';
 
     // [Osiris]: 1920x1080 표준 해상도 정의
@@ -43,12 +43,17 @@
 
     // [물멍]: 외부 layout 데이터가 들어올 때 동기화
     $effect(() => {
-        if (layout && Object.keys(layout).length > 0) {
-            elements = elements.map(el => ({
-                ...el,
-                ...(layout[el.id] || {})
-            }));
-        }
+        // [Osiris]: layout 프로퍼티에 대해서만 반응성을 가집니다.
+        const currentLayout = layout;
+
+        untrack(() => {
+            if (currentLayout && Object.keys(currentLayout).length > 0) {
+                elements = elements.map(el => ({
+                    ...el,
+                    ...(currentLayout[el.id] || {})
+                }));
+            }
+        });
     });
 
     function handleMouseDown(e: MouseEvent, id: string) {
