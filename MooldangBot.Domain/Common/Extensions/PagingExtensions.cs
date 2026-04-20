@@ -5,7 +5,7 @@ namespace MooldangBot.Domain.Common.Extensions;
 
 public static class PagingExtensions
 {
-    public static async Task<PagedResponse<T>> ToPagedListAsync<T>(
+    public static async Task<CursorPagedResponse<T>> ToPagedListAsync<T>(
         this IQueryable<T> query, 
         int limit, 
         Func<T, long> cursorSelector) where T : class
@@ -21,6 +21,6 @@ public static class PagingExtensions
         // [물멍]: 다음 커서는 마지막 아이템의 식별자입니다.
         long? nextCursor = hasNext ? cursorSelector(outputData[^1]) : null;
 
-        return new PagedResponse<T>(outputData, nextCursor, hasNext);
+        return new CursorPagedResponse<T>(outputData, nextCursor, hasNext);
     }
 }

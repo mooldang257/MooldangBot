@@ -14,7 +14,7 @@ namespace MooldangBot.Application.Controllers.Shared;
 /// [오시리스의 지혜]: 사용자의 개인적 설정(Preference)을 관리하는 하이브리드 컨트롤러입니다.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/preference")]
 [Authorize]
 // [v10.1] Primary Constructor 적용
 public class PreferenceController(

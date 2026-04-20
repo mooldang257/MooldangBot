@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Overlay
@@ -58,7 +59,7 @@ namespace MooldangBot.Application.Controllers.Overlay
 
 
         [HttpGet]
-        public async Task<IActionResult> GetPresets(string chzzkUid, [FromQuery] PagedRequest request)
+        public async Task<IActionResult> GetPresets(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
             var query = db.OverlayPresets
                 .IgnoreQueryFilters() 
@@ -108,7 +109,7 @@ namespace MooldangBot.Application.Controllers.Overlay
                 })
                 .ToPagedListAsync(request.Limit, p => p.Id);
 
-            return Ok(Result<PagedResponse<OverlayPresetDto>>.Success(pagedResult));
+            return Ok(Result<CursorPagedResponse<OverlayPresetDto>>.Success(pagedResult));
         }
 
         [HttpGet("{id:int}")]

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common.Models;
 using MediatR;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
@@ -13,7 +13,6 @@ using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 
 namespace MooldangBot.Application.Controllers.Roulette
 {
-    [ApiController]
     [ApiController]
     [Route("api/admin/roulette")]
     [Authorize(Policy = "ChannelManager")]
@@ -25,7 +24,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         }
 
         [HttpGet("{chzzkUid}")]
-        public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] PagedRequest request)
+        public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
             var query = db.Roulettes
                 .IgnoreQueryFilters()
@@ -58,7 +57,7 @@ namespace MooldangBot.Application.Controllers.Roulette
                 .AsNoTracking()
                 .ToPagedListAsync(request.Limit, r => r.Id);
 
-            return Ok(Result<PagedResponse<RouletteSummaryDto>>.Success(pagedResult));
+            return Ok(Result<CursorPagedResponse<RouletteSummaryDto>>.Success(pagedResult));
         }
 
         [HttpGet("{chzzkUid}/{Id}")]
@@ -338,7 +337,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             [FromQuery] string? nickname = null,
             [FromQuery] int? rouletteId = null,
             [FromQuery] string? itemName = null,
-            [FromQuery] PagedRequest request = null!)
+            [FromQuery] CursorPagedRequest request = null!)
         {
             var query = db.RouletteLogs
                 .IgnoreQueryFilters()
@@ -371,7 +370,7 @@ namespace MooldangBot.Application.Controllers.Roulette
                 ))
                 .ToPagedListAsync(request.Limit, l => l.Id);
 
-            return Ok(Result<PagedResponse<RouletteLogDto>>.Success(pagedResult));
+            return Ok(Result<CursorPagedResponse<RouletteLogDto>>.Success(pagedResult));
         }
 
         [HttpPut("{chzzkUid}/history/{id}/status")]
@@ -389,7 +388,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             log.ProcessedAt = KstClock.Now;
             await db.SaveChangesAsync();
 
-            return Ok(Result<RouletteLog>.Success(log));
+            return Ok(Result<bool>.Success(true));
         }
 
         [HttpDelete("{chzzkUid}/history/{id}")]

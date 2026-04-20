@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Controllers.ChatPoints
 {
@@ -60,7 +62,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
         [HttpGet("{chzzkUid}/viewers")]
         public async Task<IActionResult> GetViewers(
             string chzzkUid, 
-            [FromQuery] PagedRequest request)
+            [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
             var query = from r in context.ViewerRelations.AsNoTracking().IgnoreQueryFilters()
@@ -70,6 +72,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                         from p in pts.DefaultIfEmpty()
                         where r.StreamerProfile!.ChzzkUid == chzzkUid
                         select new {
+                            id = r.Id,
                             nickname = g.Nickname,
                             points = p != null ? p.Points : 0,
                             attendanceCount = r.AttendanceCount,
@@ -105,13 +108,13 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                 v.lastAttendanceAt
             )).ToPagedListAsync(request.Limit, v => v.Id);
 
-            return Ok(Result<PagedResponse<ViewerPointResponseDto>>.Success(items));
+            return Ok(Result<CursorPagedResponse<ViewerPointResponseDto>>.Success(items));
         }
 
         [HttpGet("{chzzkUid}/donations")]
         public async Task<IActionResult> GetDonations(
             string chzzkUid, 
-            [FromQuery] PagedRequest request)
+            [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
             var query = context.ViewerDonations
@@ -119,6 +122,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                         .IgnoreQueryFilters()
                         .Where(d => d.StreamerProfile!.ChzzkUid == chzzkUid)
                         .Select(d => new {
+                            id = d.Id,
                             nickname = d.GlobalViewer!.Nickname,
                             balance = d.Balance,
                             totalDonated = d.TotalDonated,
@@ -150,7 +154,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                 d.updatedAt
             )).ToPagedListAsync(request.Limit, d => d.Id);
 
-            return Ok(Result<PagedResponse<ViewerDonationResponseDto>>.Success(items));
+            return Ok(Result<CursorPagedResponse<ViewerDonationResponseDto>>.Success(items));
         }
 
         private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)

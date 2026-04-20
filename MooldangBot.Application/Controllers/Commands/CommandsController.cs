@@ -10,12 +10,13 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Domain.Common.Models;
+using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 
 namespace MooldangBot.Application.Controllers.Commands
 {
     [ApiController]
-    [Route("api/commands/{chzzkUid}")]
+    [Route("api/command/{chzzkUid}")]
     [Authorize(Policy = "ChannelManager")]
     // [v10.1] Primary Constructor 활용
     public class CommandsController(
@@ -31,7 +32,7 @@ namespace MooldangBot.Application.Controllers.Commands
         [HttpGet]
         public async Task<IActionResult> GetUnifiedCommands(
             string chzzkUid, 
-            [FromQuery] PagedRequest request)
+            [FromQuery] CursorPagedRequest request)
         {
             var streamer = await db.StreamerProfiles
                 .AsNoTracking()
@@ -81,7 +82,7 @@ namespace MooldangBot.Application.Controllers.Commands
                 );
             }).ToList();
 
-            return Ok(Result<PagedResponse<UnifiedCommandDto>>.Success(new PagedResponse<UnifiedCommandDto>(items, pagedResult.NextCursor, pagedResult.HasNext)));
+            return Ok(Result<CursorPagedResponse<UnifiedCommandDto>>.Success(new CursorPagedResponse<UnifiedCommandDto>(items, pagedResult.NextCursor, pagedResult.HasNext)));
         }
 
         /// <summary>
@@ -123,7 +124,7 @@ namespace MooldangBot.Application.Controllers.Commands
         /// <summary>
         /// 마스터 데이터 조회 (24시간 인메모리 캐시 적용)
         /// </summary>
-        [HttpGet("/api/commands/master")]
+        [HttpGet("master")]
         [AllowAnonymous] 
         public async Task<IActionResult> GetMasterData()
         {
@@ -134,7 +135,7 @@ namespace MooldangBot.Application.Controllers.Commands
         /// <summary>
         /// 마스터 데이터 캐시 강제 갱신
         /// </summary>
-        [HttpPost("/api/commands/master/refresh")]
+        [HttpPost("master/refresh")]
         public IActionResult RefreshMasterCache()
         {
             masterCache.RefreshCache();

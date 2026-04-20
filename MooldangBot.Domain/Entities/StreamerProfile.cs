@@ -59,4 +59,17 @@ public class StreamerProfile : ISoftDeletable, IAuditable
 
     [MaxLength(32)]
     public string? OverlayToken { get; set; }
-}
+
+    // [v10.1] 전용 API 설정 레이어 (오시리스의 인장)
+    [MaxLength(100)]
+    public string? ClientId { get; set; }
+
+    [MaxLength(200)]
+    public string? ClientSecret { get; set; }
+
+    [MaxLength(500)]
+    public string? RedirectUrl { get; set; }
+
+    [MaxLength(100)]
+    public string? BotNickname { get; set; }
+}

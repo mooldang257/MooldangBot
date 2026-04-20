@@ -11,7 +11,7 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.Shared
 {
     [ApiController]
-    [Route("api/SharedComponent")]
+    [Route("api/shared-component")]
     [Authorize]
     // [v10.1] Primary Constructor 적용
     public class SharedComponentController(IAppDbContext db) : ControllerBase

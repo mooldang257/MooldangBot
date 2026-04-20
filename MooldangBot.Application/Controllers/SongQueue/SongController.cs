@@ -7,6 +7,7 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Application.Common.Helpers;
@@ -32,7 +33,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
         public async Task<IActionResult> GetSongQueue(
             string chzzkUid, 
             [FromQuery] SongStatus? status,
-            [FromQuery] PagedRequest request)
+            [FromQuery] CursorPagedRequest request)
         {
             var streamer = await GetCachedProfileAsync(chzzkUid);
             if (streamer == null) 
@@ -105,7 +106,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             var pagedResult = await pagedSource.ToPagedListAsync(effectiveLimit, s => s.Id);
 
-            return Ok(Result<PagedResponse<SongQueueViewDto>>.Success(pagedResult));
+            return Ok(Result<CursorPagedResponse<SongQueueViewDto>>.Success(pagedResult));
         }
 
         [HttpPost]

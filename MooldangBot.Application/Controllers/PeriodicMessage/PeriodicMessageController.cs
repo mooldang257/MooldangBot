@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
+using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.PeriodicMessages
@@ -15,7 +17,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
     public class PeriodicMessageController(IAppDbContext db) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetList(string chzzkUid, [FromQuery] PagedRequest request)
+        public async Task<IActionResult> GetList(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
             var pagedResult = await db.PeriodicMessages
                 .Include(m => m.StreamerProfile)
@@ -30,7 +32,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
                 })
                 .ToPagedListAsync(request.Limit, m => m.Id);
 
-            return Ok(Result<PagedResponse<PeriodicMessageDto>>.Success(pagedResult));
+            return Ok(Result<CursorPagedResponse<PeriodicMessageDto>>.Success(pagedResult));
         }
 
         [HttpPost]
