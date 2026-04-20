@@ -73,17 +73,28 @@ namespace MooldangBot.Application.Controllers.Roulette
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
                 .Where(x => x.Command.FeatureType == CommandFeatureType.Roulette)
-                .Select(x => new 
+                .Select(x => new RouletteResponseDto
                 {
                     Id = x.Roulette.Id,
-                    ChzzkUid = x.Roulette.StreamerProfile!.ChzzkUid,
                     Name = x.Roulette.Name,
-                    UpdatedAt = x.Roulette.UpdatedAt,
-                    Items = x.Roulette.Items,
                     Type = x.Command.CostType == CommandCostType.Cheese ? RouletteType.Cheese : RouletteType.ChatPoint,
                     Command = x.Command.Keyword,
                     CostPerSpin = x.Command.Cost,
-                    IsActive = x.Command.IsActive
+                    IsActive = x.Command.IsActive,
+                    UpdatedAt = x.Roulette.UpdatedAt,
+                    Items = x.Roulette.Items.Select(i => new RouletteItemResponseDto
+                    {
+                        Id = i.Id,
+                        ItemName = i.ItemName,
+                        Probability = i.Probability,
+                        Probability10x = i.Probability10x,
+                        Color = i.Color,
+                        IsMission = i.IsMission,
+                        Template = i.Template,
+                        IsActive = i.IsActive,
+                        SoundUrl = i.SoundUrl,
+                        UseDefaultSound = i.UseDefaultSound
+                    }).ToList()
                 })
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
@@ -91,8 +102,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             if (consolidated == null) 
                 return NotFound(Result<string>.Failure("룰렛을 찾을 수 없습니다."));
 
-            foreach (var I in consolidated.Items) I.Roulette = null;
-            return Ok(Result<object>.Success(consolidated));
+            return Ok(Result<RouletteResponseDto>.Success(consolidated));
         }
 
         [HttpPost("{chzzkUid}")]
@@ -114,14 +124,19 @@ namespace MooldangBot.Application.Controllers.Roulette
                 StreamerProfileId = streamer.Id,
                 Name = req.Name,
                 UpdatedAt = KstClock.Now,
-                Items = req.Items
+                Items = req.Items.Select(i => new Domain.Entities.RouletteItem
+                {
+                    ItemName = i.ItemName,
+                    Probability = i.Probability,
+                    Probability10x = i.Probability10x,
+                    Color = i.Color,
+                    IsMission = i.IsMission,
+                    Template = i.Template,
+                    IsActive = i.IsActive,
+                    SoundUrl = i.SoundUrl,
+                    UseDefaultSound = i.UseDefaultSound
+                }).ToList()
             };
-
-            foreach (var I in RouletteObj.Items) 
-            {
-                I.Id = 0;
-                I.Roulette = null;
-            }
 
             db.Roulettes.Add(RouletteObj);
             await db.SaveChangesAsync();
@@ -147,11 +162,32 @@ namespace MooldangBot.Application.Controllers.Roulette
             db.UnifiedCommands.Add(UnifiedCmd);
             await db.SaveChangesAsync();
 
-            foreach (var I in RouletteObj.Items) I.Roulette = null;
-            return Ok(Result<Domain.Entities.Roulette>.Success(RouletteObj));
+            return Ok(Result<RouletteResponseDto>.Success(new RouletteResponseDto
+            {
+                Id = RouletteObj.Id,
+                Name = RouletteObj.Name,
+                Type = req.Type,
+                Command = UnifiedCmd.Keyword,
+                CostPerSpin = UnifiedCmd.Cost,
+                IsActive = UnifiedCmd.IsActive,
+                UpdatedAt = RouletteObj.UpdatedAt,
+                Items = RouletteObj.Items.Select(i => new RouletteItemResponseDto
+                {
+                    Id = i.Id,
+                    ItemName = i.ItemName,
+                    Probability = i.Probability,
+                    Probability10x = i.Probability10x,
+                    Color = i.Color,
+                    IsMission = i.IsMission,
+                    Template = i.Template,
+                    IsActive = i.IsActive,
+                    SoundUrl = i.SoundUrl,
+                    UseDefaultSound = i.UseDefaultSound
+                }).ToList()
+            }));
         }
 
-        [HttpPost("{chzzkUid}/{Id}")]
+        [HttpPut("{chzzkUid}/{Id}")]
         public async Task<IActionResult> UpdateRoulette(string chzzkUid, int Id, [FromBody] RouletteUpdateRequest req)
         {
             var RouletteObj = await db.Roulettes
@@ -167,12 +203,19 @@ namespace MooldangBot.Application.Controllers.Roulette
             RouletteObj.UpdatedAt = KstClock.Now;
 
             db.RouletteItems.RemoveRange(RouletteObj.Items);
-            foreach (var Item in req.Items)
+            RouletteObj.Items = req.Items.Select(i => new Domain.Entities.RouletteItem
             {
-                Item.Id = 0;
-                Item.RouletteId = Id;
-            }
-            RouletteObj.Items = req.Items;
+                RouletteId = Id,
+                ItemName = i.ItemName,
+                Probability = i.Probability,
+                Probability10x = i.Probability10x,
+                Color = i.Color,
+                IsMission = i.IsMission,
+                Template = i.Template,
+                IsActive = i.IsActive,
+                SoundUrl = i.SoundUrl,
+                UseDefaultSound = i.UseDefaultSound
+            }).ToList();
 
             var UnifiedCmd = await db.UnifiedCommands
                 .IgnoreQueryFilters()
@@ -191,9 +234,30 @@ namespace MooldangBot.Application.Controllers.Roulette
             }
 
             await db.SaveChangesAsync();
-            foreach (var I in RouletteObj.Items) I.Roulette = null;
 
-            return Ok(Result<Domain.Entities.Roulette>.Success(RouletteObj));
+            return Ok(Result<RouletteResponseDto>.Success(new RouletteResponseDto
+            {
+                Id = RouletteObj.Id,
+                Name = RouletteObj.Name,
+                Type = req.Type,
+                Command = UnifiedCmd?.Keyword ?? string.Empty,
+                CostPerSpin = UnifiedCmd?.Cost ?? 0,
+                IsActive = UnifiedCmd?.IsActive ?? false,
+                UpdatedAt = RouletteObj.UpdatedAt,
+                Items = RouletteObj.Items.Select(i => new RouletteItemResponseDto
+                {
+                    Id = i.Id,
+                    ItemName = i.ItemName,
+                    Probability = i.Probability,
+                    Probability10x = i.Probability10x,
+                    Color = i.Color,
+                    IsMission = i.IsMission,
+                    Template = i.Template,
+                    IsActive = i.IsActive,
+                    SoundUrl = i.SoundUrl,
+                    UseDefaultSound = i.UseDefaultSound
+                }).ToList()
+            }));
         }
 
         [HttpPatch("{chzzkUid}/{Id}/status")]
@@ -347,7 +411,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpPost("{chzzkUid}/history/bulk-delete")]
+        [HttpDelete("{chzzkUid}/history/bulk")]
         public async Task<IActionResult> BulkDeleteHistory(string chzzkUid, [FromBody] List<long> ids)
         {
             var affectedRows = await db.RouletteLogs

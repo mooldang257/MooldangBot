@@ -24,9 +24,9 @@ namespace MooldangBot.Application.Controllers.SongQueue
         ISongLibraryService libraryService) : ControllerBase
     {
         /// <summary>
-        /// [v2.0] 곡 대기열 목록 조회 (커서 기반 페이지네이션)
+        /// [v10.0] 곡 대기열 목록 조회 (커서 기반 페이지네이션)
         /// </summary>
-        [HttpGet("/api/song/queue/{chzzkUid}")]
+        [HttpGet("/api/song/{chzzkUid}/queue")]
         public async Task<IActionResult> GetSongQueue(
             string chzzkUid, 
             [FromQuery] SongStatus? status,
@@ -115,7 +115,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<CursorPagedResponse<SongQueueViewDto>>.Success(response));
         }
 
-        [HttpPost("/api/song/add/{chzzkUid}")]
+        [HttpPost("/api/song/{chzzkUid}")]
         public async Task<IActionResult> AddSong(string chzzkUid, [FromBody] SongAddRequest request, [FromQuery] int? omakaseId = null)
         {
             var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
@@ -174,10 +174,25 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             await db.SaveChangesAsync();
             await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
-            return Ok(Result<MooldangBot.Domain.Entities.SongQueue>.Success(newSong));
+            
+            var responseDto = new SongQueueResponseDto
+            {
+                Id = newSong.Id,
+                StreamerProfileId = newSong.StreamerProfileId,
+                GlobalViewerId = newSong.GlobalViewerId ?? 0,
+                ViewerNickname = newSong.RequesterNickname ?? "익명",
+                Title = newSong.Title,
+                Artist = newSong.Artist ?? "Unknown",
+                Status = newSong.Status,
+                FinalCost = newSong.Cost ?? 0,
+                CreatedAt = newSong.CreatedAt,
+                IsPriority = false // [물멍]: 현재 엔티티에 IsPriority 필드 부재로 false 고정
+            };
+
+            return Ok(Result<SongQueueResponseDto>.Success(responseDto));
         }
 
-        [HttpPut("/api/song/{chzzkUid}/{id}/status")]
+        [HttpPatch("/api/song/{chzzkUid}/{id}/status")]
         public async Task<IActionResult> UpdateStatus(string chzzkUid, int id, [FromQuery] SongStatus status)
         {
             var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
@@ -224,7 +239,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpDelete("/api/song/delete/{chzzkUid}")]
+        [HttpDelete("/api/song/{chzzkUid}/bulk")]
         public async Task<IActionResult> DeleteSongs(string chzzkUid, [FromBody] List<int> ids)
         {
             var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
@@ -246,7 +261,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return NotFound(Result<string>.Failure("삭제할 대상을 찾을 수 없습니다."));
         }
 
-        [HttpPut("/api/song/{chzzkUid}/{id:int}/edit")]
+        [HttpPut("/api/song/{chzzkUid}/{id:int}")]
         public async Task<IActionResult> UpdateSongDetails(string chzzkUid, int id, [FromBody] SongUpdateRequest request)
         {
             var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
@@ -281,7 +296,22 @@ namespace MooldangBot.Application.Controllers.SongQueue
             {
                 await db.SaveChangesAsync();
                 await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
-                return Ok(Result<MooldangBot.Domain.Entities.SongQueue>.Success(songItem));
+                
+                var resultDto = new SongQueueResponseDto
+                {
+                    Id = songItem.Id,
+                    StreamerProfileId = songItem.StreamerProfileId,
+                    GlobalViewerId = songItem.GlobalViewerId ?? 0,
+                    ViewerNickname = songItem.RequesterNickname ?? "익명",
+                    Title = songItem.Title,
+                    Artist = songItem.Artist ?? "Unknown",
+                    Status = songItem.Status,
+                    FinalCost = songItem.Cost ?? 0,
+                    CreatedAt = songItem.CreatedAt,
+                    IsPriority = false // [물멍]: 현재 엔티티에 IsPriority 필드 부재로 false 고정
+                };
+                
+                return Ok(Result<SongQueueResponseDto>.Success(resultDto));
             }
             catch (DbUpdateException ex)
             {
@@ -289,7 +319,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
         }
 
-        [HttpDelete("/api/song/clear/{chzzkUid}/{status}")]
+        [HttpDelete("/api/song/{chzzkUid}/clear/{status}")]
         public async Task<IActionResult> ClearSongsByStatus(string chzzkUid, SongStatus status)
         {
             var streamer = await GetProfileByUidOrSlugAsync(chzzkUid);

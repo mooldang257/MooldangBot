@@ -24,9 +24,9 @@ namespace MooldangBot.Application.Controllers.Commands
         IConfiguration config) : ControllerBase
     {
         /// <summary>
-        /// [v2.0] ???? 紐낅�??紐⑸�?議고??(?�ㅼ�?湲곕�???�씠吏??�씠???�좊�??
+        /// [v10.0] 통합 명령어 목록 조회 (커서 기반 페이지네이션)
         /// </summary>
-        [HttpGet("/api/commands/unified/{chzzkUid}")]
+        [HttpGet("/api/commands/{chzzkUid}")]
         public async Task<IActionResult> GetUnifiedCommands(
             string chzzkUid, 
             [FromQuery] CursorPagedRequest request)
@@ -37,7 +37,7 @@ namespace MooldangBot.Application.Controllers.Commands
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
             if (streamer == null) 
-                return NotFound(Result<string>.Failure("??�듃?�щ㉧??李얠??????�뒿??�떎."));
+                return NotFound(Result<string>.Failure("??듃?щ㉧??李얠??????뒿??떎."));
             
             var streamerId = streamer.Id;
             int maxLimit = config.GetValue<int>("Pagination:MaxLimit", 100);
@@ -85,15 +85,15 @@ namespace MooldangBot.Application.Controllers.Commands
         }
 
         /// <summary>
-        /// [v1.8] ???? 紐낅�???????�?�� ??�젙 (??�퉬????�씠???꾩엫)
+        /// [v10.0] 통합 명령어 생성 및 수정 (Upsert 패턴)
         /// </summary>
-        [HttpPost("/api/commands/unified/{chzzkUid}")]
+        [HttpPost("/api/commands/{chzzkUid}")]
         public async Task<IActionResult> UpsertUnifiedCommand(string chzzkUid, [FromBody] SaveUnifiedCommandRequest req)
         {
             try
             {
                 var entity = await unifiedCommandService.UpsertCommandAsync(chzzkUid, req);
-                return Ok(Result<object>.Success(new { Message = req.Id > 0 ? "??�젙 ?꾨즺" : "??�꽦 ?꾨즺", Id = entity.Id }));
+                return Ok(Result<object>.Success(new { Message = req.Id > 0 ? "??왂 ?꾨즺" : "??꽦 ?꾨즺", Id = entity.Id }));
             }
             catch (InvalidOperationException ex)
             {
@@ -105,18 +105,15 @@ namespace MooldangBot.Application.Controllers.Commands
             }
         }
 
-        [HttpPost("/api/commands/unified/save/{chzzkUid}")]
-        public async Task<IActionResult> SaveUnifiedCommand(string chzzkUid, [FromBody] SaveUnifiedCommandRequest req) 
-            => await UpsertUnifiedCommand(chzzkUid, req);
 
-        [HttpDelete("/api/commands/unified/delete/{chzzkUid}/{id}")]
+        [HttpDelete("/api/commands/{chzzkUid}/{id}")]
         public async Task<IActionResult> DeleteUnifiedCommand(string chzzkUid, int id)
         {
             await unifiedCommandService.DeleteCommandAsync(chzzkUid, id);
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpPatch("/api/commands/unified/toggle/{chzzkUid}/{id}")]
+        [HttpPatch("/api/commands/{chzzkUid}/{id}/status")]
         public async Task<IActionResult> ToggleUnifiedCommand(string chzzkUid, int id)
         {
             await unifiedCommandService.ToggleCommandAsync(chzzkUid, id);
@@ -145,14 +142,5 @@ namespace MooldangBot.Application.Controllers.Commands
             return Ok(Result<object>.Success(new { Message = "Master cache refreshed successfully." }));
         }
 
-        // --- Legacy Support ---
-        [HttpGet("/api/commands/list/{chzzkUid}")]
-        public IActionResult GetCommands(string chzzkUid) => Ok(Result<List<CombinedCommandDto>>.Success(new List<CombinedCommandDto>()));
-
-        [HttpPost("/api/commands/save/{chzzkUid}")]
-        public IActionResult SaveCommand(string chzzkUid, [FromBody] object cmd) => Ok(Result<bool>.Success(true));
-
-        [HttpDelete("/api/commands/delete/{chzzkUid}/{idStr}")]
-        public IActionResult DeleteCommand(string chzzkUid, string idStr) => Ok(Result<bool>.Success(true));
     }
 }

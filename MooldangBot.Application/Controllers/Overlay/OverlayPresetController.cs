@@ -17,12 +17,12 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.Overlay
 {
     [ApiController]
-    [Route("api/OverlayPreset")]
+    [Route("api/overlay-preset")]
     [Authorize(Policy = "ChannelManager")]
     // [v10.1] Primary Constructor 적용
     public class OverlayPresetController(IAppDbContext db, IWebHostEnvironment env) : ControllerBase
     {
-        [HttpPost("upload-image/{chzzkUid}")]
+        [HttpPost("{chzzkUid}/image")]
         public async Task<IActionResult> UploadImage(string chzzkUid, IFormFile image)
         {
             // [이지스 가드]
@@ -57,7 +57,7 @@ namespace MooldangBot.Application.Controllers.Overlay
         }
 
 
-        [HttpGet("list/{chzzkUid}")]
+        [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetPresets(string chzzkUid)
         {
             var presets = await db.OverlayPresets
@@ -149,7 +149,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             }));
         }
 
-        [HttpGet("active/{chzzkUid}")]
+        [HttpGet("{chzzkUid}/active")]
         [AllowAnonymous]
         public async Task<IActionResult> GetActivePreset(string chzzkUid)
         {
@@ -256,7 +256,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             return Ok(Result<object>.Success(new { success = true, message = "프리셋이 삭제되었습니다." }));
         }
 
-        [HttpPost("sync/{chzzkUid}/{id}")]
+        [HttpPatch("{chzzkUid}/{id}/active")]
         public async Task<IActionResult> SyncPreset(string chzzkUid, int id)
         {
             var preset = await db.OverlayPresets

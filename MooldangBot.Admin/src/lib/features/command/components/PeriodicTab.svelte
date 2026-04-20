@@ -12,7 +12,7 @@
     async function savePeriodic() {
         if (!msgForm.message) return alert("내용을 입력해 주세요.");
         try {
-            await apiFetch(`/api/periodicmessage/save/${chzzkUid}`, {
+            await apiFetch(`/api/periodic-message/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...msgForm, chzzkUid })
@@ -27,7 +27,7 @@
     async function deletePeriodic(id: number) {
         if (!confirm("정말 이 정기 메세지를 삭제하시겠습니까?")) return;
         try {
-            await apiFetch(`/api/periodicmessage/delete/${chzzkUid}/${id}`, { method: 'DELETE' });
+            await apiFetch(`/api/periodic-message/${chzzkUid}/${id}`, { method: 'DELETE' });
             await onRefresh();
         } catch (err: any) {
             alert(err.message || "삭제 실패");
@@ -36,7 +36,7 @@
 
     async function togglePeriodic(msg: any) {
         try {
-            await apiFetch(`/api/periodicmessage/toggle/${chzzkUid}/${msg.id}`, { method: 'PATCH' });
+            await apiFetch(`/api/periodic-message/${chzzkUid}/${msg.id}/status`, { method: 'PATCH' });
             msg.isEnabled = !msg.isEnabled;
             messages = [...messages];
         } catch (err: any) {

@@ -19,7 +19,7 @@
         if (!cmdForm.keyword) return alert("발동 키워드를 입력해 주세요! (예: !추천)");
         
         try {
-            await apiFetch(`/api/commands/unified/${chzzkUid}`, {
+            await apiFetch(`/api/commands/${chzzkUid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...cmdForm, chzzkUid })

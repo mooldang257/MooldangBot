@@ -229,6 +229,6 @@ namespace MooldangBot.Domain.DTOs
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; }
         [JsonPropertyName("items")]
-        public List<MooldangBot.Domain.Entities.RouletteItem> Items { get; set; } = new();
+        public List<RouletteItemSaveDto> Items { get; set; } = new();
     }
 }

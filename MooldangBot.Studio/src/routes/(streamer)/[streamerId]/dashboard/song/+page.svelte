@@ -68,8 +68,8 @@
             if (!targetUid) return;
             
             const [pendingData, completedData, settingsData] = await Promise.all([
-                apiFetch<any>(`/api/song/queue/${targetUid}?status=Pending`),
-                apiFetch<any>(`/api/song/queue/${targetUid}?status=Completed&limit=50`),
+                apiFetch<any>(`/api/song/${targetUid}/queue?status=Pending`),
+                apiFetch<any>(`/api/song/${targetUid}/queue?status=Completed&limit=50`),
                 apiFetch<any>(`/api/settings/data/${targetUid}`)
             ]);
 
@@ -103,7 +103,7 @@
                 commandList = newCommandList;
             }
             
-            const playingData = await apiFetch<any>(`/api/song/queue/${targetUid}?status=Playing&limit=1`);
+            const playingData = await apiFetch<any>(`/api/song/${targetUid}/queue?status=Playing&limit=1`);
             const fetchedSong = (playingData.items && playingData.items.length > 0) ? playingData.items[0] : null;
 
             // [물멍]: 가사 정보 보호 (Safeguard) - 새로 가져온 데이터에 가사가 없지만 기존에 있었다면 유지합니다.
@@ -125,7 +125,7 @@
             const targetUid = streamerId;
             if (!targetUid) return;
             
-            const pendingData = await apiFetch<any>(`/api/song/queue/${targetUid}?status=Pending`);
+            const pendingData = await apiFetch<any>(`/api/song/${targetUid}/queue?status=Pending`);
             queue = pendingData.items || [];
             
             console.log("🌊 [국소 갱신] 대기열 리스트 업데이트 완료");
@@ -199,7 +199,7 @@
         queue = queue.filter((s) => s.id !== song.id);
 
         try {
-            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Playing`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Playing`, { method: "PATCH" });
         } catch (err) {
             // 실패 시 롤백
             queue = previousQueue;
@@ -217,7 +217,7 @@
         currentSong = null;
 
         try {
-            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Completed`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Completed`, { method: "PATCH" });
         } catch (err) {
             completed = previousCompleted;
             currentSong = previousCurrent;
@@ -232,7 +232,7 @@
         queue = queue.filter((s) => !ids.includes(s.id));
 
         try {
-         const result = await apiFetch<any>(`/api/song/delete/${streamerId}`, {
+         const result = await apiFetch<any>(`/api/song/${streamerId}/bulk`, {
             method: 'DELETE',
             body: JSON.stringify(ids)
         });
@@ -261,7 +261,7 @@
         queue = [...queue, tempSong];
 
         try {
-            await apiFetch(`/api/song/add/${streamerId}`, {
+            await apiFetch(`/api/song/${streamerId}`, {
                 method: "POST",
                 body: JSON.stringify({
                     title: song.title,
@@ -300,7 +300,7 @@
         }
 
         try {
-            await apiFetch(`/api/song/${streamerId}/${updatedSong.id}/edit`, {
+            await apiFetch(`/api/song/${streamerId}/${updatedSong.id}`, {
                 method: "PUT",
                 body: JSON.stringify({
                     title: updatedSong.title,
@@ -362,7 +362,7 @@
         queue = [...queue, song].sort((a, b) => a.id - b.id);
 
         try {
-            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Pending`, { method: "PUT" });
+            await apiFetch(`/api/song/${streamerId}/${song.id}/status?status=Pending`, { method: "PATCH" });
         } catch (err) {
             queue = previousQueue;
             completed = previousCompleted;
@@ -378,7 +378,7 @@
         completed = completed.filter(s => s.id !== id);
 
         try {
-            await apiFetch(`/api/song/delete/${streamerId}`, {
+            await apiFetch(`/api/song/${streamerId}/bulk`, {
                 method: "DELETE",
                 body: JSON.stringify([id])
             });
@@ -392,7 +392,7 @@
     const handleClearHistory = async () => {
         if (!confirm("정말로 모든 완료 기록을 삭제하시겠습니까? (복구 불가능)")) return;
         
-        const result = await apiFetch<any>(`/api/song/clear/${streamerId}/Completed`, {
+        const result = await apiFetch<any>(`/api/song/${streamerId}/clear/Completed`, {
             method: 'DELETE'
         });
 

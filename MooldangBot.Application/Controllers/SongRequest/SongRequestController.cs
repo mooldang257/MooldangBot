@@ -7,11 +7,11 @@ namespace MooldangBot.Application.Controllers.SongRequest;
 /// [v10.1] 표준 통신 프로토콜 (Result<T>) 적용 검증을 위한 샘플 컨트롤러
 /// </summary>
 [ApiController]
-[Route("api/SongRequest")]
+[Route("api/song-request")]
 // [v10.1] Primary Constructor 적용
 public class SongRequestController() : ControllerBase
 {
-    [HttpGet("pending/{chzzkUid}")]
+    [HttpGet("{chzzkUid}/pending")]
     public IActionResult GetPendingSongs(string chzzkUid)
     {
         // [물멍]: DB 없이 즉시 결과를 확인할 수 있는 Mock 데이터

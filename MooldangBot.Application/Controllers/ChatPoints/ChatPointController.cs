@@ -10,7 +10,7 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.ChatPoints
 {
     [ApiController]
-    [Route("api/chatpoint")]
+    [Route("api/chat-point")]
     [Authorize(Policy = "ChannelManager")]
     public class ChatPointController(IAppDbContext context, ILogger<ChatPointController> logger) : ControllerBase
     {

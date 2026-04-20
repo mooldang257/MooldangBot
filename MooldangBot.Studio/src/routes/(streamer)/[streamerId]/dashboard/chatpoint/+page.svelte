@@ -28,7 +28,7 @@
     async function loadSettings() {
         if (!chzzkUid) return;
         try {
-            const res = await apiFetch<any>(`/api/chatpoint/${chzzkUid}`);
+            const res = await apiFetch<any>(`/api/chat-point/${chzzkUid}`);
             settings = res;
         } catch (e) {
             console.error("[물멍] 설정 로드 실패:", e);
@@ -39,7 +39,7 @@
         if (!chzzkUid) return;
         isSubmitting = true;
         try {
-            await apiFetch(`/api/chatpoint/${chzzkUid}`, {
+            await apiFetch(`/api/chat-point/${chzzkUid}`, {
                 method: 'POST',
                 body: JSON.stringify(newSettings)
             });
@@ -65,7 +65,7 @@
 
         viewerPoints.isLoading = true;
         try {
-            const url = `/api/chatpoint/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}&offset=${viewerPoints.offset}&limit=20`;
+            const url = `/api/chat-point/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}&offset=${viewerPoints.offset}&limit=20`;
             const res = await apiFetch<any>(url);
             const { items, total } = res;
             
@@ -94,7 +94,7 @@
 
         donationRecords.isLoading = true;
         try {
-            const url = `/api/chatpoint/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}&offset=${donationRecords.offset}&limit=20`;
+            const url = `/api/chat-point/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}&offset=${donationRecords.offset}&limit=20`;
             const res = await apiFetch<any>(url);
             const { items, total } = res;
             

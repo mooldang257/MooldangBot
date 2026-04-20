@@ -65,7 +65,7 @@
         if (!chzzkUid) return;
         try {
             const data = await apiFetch<any>(
-                `/api/commands/unified/${chzzkUid}?limit=100`
+                `/api/commands/${chzzkUid}?limit=100`
             );
             const items = data.items || data.Items || [];
             allCommands = items.map((c: any) => ({
@@ -92,7 +92,7 @@
         if (!chzzkUid) return;
         try {
             const data = await apiFetch<any>(
-                `/api/PeriodicMessage/list/${chzzkUid}`
+                `/api/periodic-message/${chzzkUid}`
             );
             // [물멍]: ListResponse 객체에서 실제 목록인 items를 추출합니다.
             periodicMessages = data?.items || data?.Items || (Array.isArray(data) ? data : []);
@@ -156,7 +156,7 @@
                     method: "DELETE",
                 });
             } else {
-                await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, {
+                await apiFetch(`/api/commands/${chzzkUid}/${id}`, {
                     method: "DELETE",
                 });
             }

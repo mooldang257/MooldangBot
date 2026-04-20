@@ -9,12 +9,12 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.PeriodicMessages
 {
     [ApiController]
-    [Route("api/PeriodicMessage")]
+    [Route("api/periodic-message")]
     [Authorize(Policy = "ChannelManager")]
     // [v10.1] Primary Constructor 적용
     public class PeriodicMessageController(IAppDbContext db) : ControllerBase
     {
-        [HttpGet("list/{chzzkUid}")]
+        [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetList(string chzzkUid)
         {
             var list = await db.PeriodicMessages
@@ -33,7 +33,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             return Ok(Result<ListResponse<PeriodicMessageDto>>.Success(new ListResponse<PeriodicMessageDto>(list, list.Count)));
         }
 
-        [HttpPost("save/{chzzkUid}")]
+        [HttpPost("{chzzkUid}")]
         public async Task<IActionResult> Save(string chzzkUid, [FromBody] PeriodicMessageSaveRequest req)
         {
             if (req.Id > 0)
@@ -69,7 +69,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpDelete("delete/{chzzkUid}/{id}")]
+        [HttpDelete("{chzzkUid}/{id}")]
         public async Task<IActionResult> Delete(string chzzkUid, int id)
         {
             var item = await db.PeriodicMessages
@@ -86,7 +86,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpPatch("toggle/{chzzkUid}/{id}")]
+        [HttpPatch("{chzzkUid}/{id}/status")]
         public async Task<IActionResult> Toggle(string chzzkUid, int id)
         {
             var item = await db.PeriodicMessages

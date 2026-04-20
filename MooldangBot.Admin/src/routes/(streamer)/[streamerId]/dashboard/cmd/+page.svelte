@@ -65,7 +65,7 @@
     async function loadCommands() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/commands/unified/${chzzkUid}?limit=100`);
+            const data = await apiFetch<any>(`/api/commands/${chzzkUid}?limit=100`);
             const items = data.items || data.Items || [];
             
             allCommands = items.map((c: any) => ({
@@ -87,7 +87,7 @@
     async function loadPeriodicMessages() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/PeriodicMessage/list/${chzzkUid}`);
+            const data = await apiFetch<any>(`/api/periodic-message/${chzzkUid}`);
             periodicMessages = data || [];
         } catch (e) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
@@ -141,7 +141,7 @@
 
     async function executeDelete(id: number) {
         try {
-            await apiFetch(`/api/commands/unified/delete/${chzzkUid}/${id}`, {
+            await apiFetch(`/api/commands/${chzzkUid}/${id}`, {
                 method: "DELETE",
             });
             allCommands = allCommands.filter((c) => c.id !== id);
