@@ -9,17 +9,19 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.SongQueue
 {
     [ApiController]
+    [Route("api/config/songlist/{chzzkUid}")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
+    // [v10.1] Primary Constructor 활용
     public class SonglistSettingsController(
         IAppDbContext db,
         IOverlayNotificationService notificationService,
-        MooldangBot.Domain.Abstractions.IAuthService authService) : ControllerBase
+        MooldangBot.Domain.Abstractions.IAuthService authService,
+        IIdentityCacheService identityCache) : ControllerBase
     {
-        [HttpGet("/api/settings/data/{streamerId}")]
-        public async Task<IActionResult> GetSettings(string streamerId)
+        [HttpGet]
+        public async Task<IActionResult> GetSettings(string chzzkUid)
         {
-            var profile = await GetProfileByUidOrSlugAsync(streamerId);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -61,10 +63,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<SonglistSettingsResponseDto>.Success(settings));
         }
 
-        [HttpPost("/api/settings/update/{streamerId}")]
-        public async Task<IActionResult> UpdateSettings(string streamerId, [FromBody] SonglistSettingsUpdateRequest request)
+        [HttpPost]
+        public async Task<IActionResult> UpdateSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest request)
         {
-            var profile = await GetProfileByUidOrSlugAsync(streamerId);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -160,8 +162,11 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<bool>.Success(true));
         }
 
-        private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
+        private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
         {
+            var profile = await identityCache.GetStreamerProfileAsync(uid);
+            if (profile != null) return profile;
+
             var target = uid.ToLower();
             return await db.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));

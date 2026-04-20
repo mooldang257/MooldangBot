@@ -9,18 +9,18 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.PeriodicMessages
 {
     [ApiController]
-    [Route("api/periodic-message")]
+    [Route("api/periodic-message/{chzzkUid}")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
+    // [v10.1] Primary Constructor 활용
     public class PeriodicMessageController(IAppDbContext db) : ControllerBase
     {
-        [HttpGet("{chzzkUid}")]
-        public async Task<IActionResult> GetList(string chzzkUid)
+        [HttpGet]
+        public async Task<IActionResult> GetList(string chzzkUid, [FromQuery] PagedRequest request)
         {
-            var list = await db.PeriodicMessages
+            var pagedResult = await db.PeriodicMessages
                 .Include(m => m.StreamerProfile)
                 .Where(m => m.StreamerProfile!.ChzzkUid == chzzkUid)
-                .OrderBy(m => m.Id)
+                .OrderByDescending(m => m.Id)
                 .Select(m => new PeriodicMessageDto
                 {
                     Id = m.Id,
@@ -28,12 +28,12 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
                     Message = m.Message,
                     IsEnabled = m.IsEnabled
                 })
-                .ToListAsync();
+                .ToPagedListAsync(request.Limit, m => m.Id);
 
-            return Ok(Result<ListResponse<PeriodicMessageDto>>.Success(new ListResponse<PeriodicMessageDto>(list, list.Count)));
+            return Ok(Result<PagedResponse<PeriodicMessageDto>>.Success(pagedResult));
         }
 
-        [HttpPost("{chzzkUid}")]
+        [HttpPost]
         public async Task<IActionResult> Save(string chzzkUid, [FromBody] PeriodicMessageSaveRequest req)
         {
             if (req.Id > 0)
@@ -69,7 +69,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpDelete("{chzzkUid}/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string chzzkUid, int id)
         {
             var item = await db.PeriodicMessages
@@ -86,7 +86,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpPatch("{chzzkUid}/{id}/status")]
+        [HttpPatch("{id}/status")]
         public async Task<IActionResult> Toggle(string chzzkUid, int id)
         {
             var item = await db.PeriodicMessages

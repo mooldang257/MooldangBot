@@ -19,14 +19,14 @@
     let allRoulettes: any[] = $state([]);
     let historyLogs: any[] = $state([]);
     
-    // [페이징/필터 상태]: 누락된 상태 변수 복구
-    let nextLastId: number | null = $state(null);
+    // [페이징/필터 상태]: 신규 커서 규격 적용
+    let nextCursor: number | null = $state(null);
     let currentFilters = $state({
         nickname: "",
         itemName: "",
         status: null as number | null
     });
-    let hasNext = $derived(nextLastId !== null);
+    let hasNext = $derived(nextCursor !== null);
 
     let rouletteForm = $state({
         id: 0,
@@ -41,9 +41,8 @@
     async function loadRoulettes() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}`);
-            // PagedResponse 구조 대응
-            allRoulettes = data.data || data.Items || data.items || [];
+            const response = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}`);
+            allRoulettes = response.items || [];
         } catch (e) {
             console.error("[물멍] 룰렛 목록 로드 실패:", e);
         }
@@ -70,8 +69,8 @@
             const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
             const response = await apiFetch<any>(url);
             
-            historyLogs = response.data || [];
-            nextLastId = response.nextLastId;
+            historyLogs = response.items || [];
+            nextCursor = response.nextCursor;
         } catch (e) {
             console.error("[물멍] 룰렛 히스토리 로드 실패:", e);
         } finally {
@@ -80,7 +79,7 @@
     }
 
     async function loadMoreHistory() {
-        if (!chzzkUid || !nextLastId || isLoadingHistory) return;
+        if (!chzzkUid || !nextCursor || isLoadingHistory) return;
         
         isLoadingHistory = true;
         try {
@@ -88,14 +87,14 @@
             if (currentFilters.nickname) queryParams.append("nickname", currentFilters.nickname);
             if (currentFilters.itemName) queryParams.append("itemName", currentFilters.itemName);
             if (currentFilters.status !== null) queryParams.append("status", currentFilters.status.toString());
-            queryParams.append("lastId", nextLastId.toString());
+            queryParams.append("cursor", nextCursor.toString());
 
             const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
             const response = await apiFetch<any>(url);
             
-            const newData = response.data || [];
+            const newData = response.items || [];
             historyLogs = [...historyLogs, ...newData];
-            nextLastId = response.nextLastId;
+            nextCursor = response.nextCursor;
         } catch (e) {
             console.error("[물멍] 추가 히스토리 로드 실패:", e);
         } finally {

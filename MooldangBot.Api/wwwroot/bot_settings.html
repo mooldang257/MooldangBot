@@ -184,7 +184,7 @@
     async function loadConfig() {
         if (!uid) return;
         try {
-            const res = await fetch(`/api/settings/bot/config/${uid}`);
+            const res = await fetch(`/api/config/bot/${uid}/config`);
             if (res.ok) {
                 const data = await res.json();
                 document.getElementById('client-id').value = data.clientId || '';
@@ -220,8 +220,8 @@
         }
 
         try {
-            const res = await fetch(`/api/settings/bot/config/${uid}`, {
-                method: 'POST',
+            const res = await fetch(`/api/config/bot/${uid}/config`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ clientId, clientSecret, redirectUrl })
             });
@@ -239,7 +239,7 @@
 
     function startBotLogin() {
         if (!confirm('설정된 전용 API 정보를 사용하여 봇 계정 연동을 시작하시겠습니까?')) return;
-        window.location.href = `/api/settings/bot/login/${uid}`;
+        window.location.href = `/api/config/bot/${uid}/login`;
     }
 
     loadConfig();

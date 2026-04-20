@@ -7,17 +7,20 @@ public static class PagingExtensions
 {
     public static async Task<PagedResponse<T>> ToPagedListAsync<T>(
         this IQueryable<T> query, 
-        int pageSize, 
-        Func<T, int> idSelector) where T : class
+        int limit, 
+        Func<T, long> cursorSelector) where T : class
     {
+        // [물멍]: 다음 페이지 존재 여부 확인을 위해 요청된 개수보다 하나 더 가져옵니다.
         var rawData = await query
-            .Take(pageSize + 1)
+            .Take(limit + 1)
             .ToListAsync();
 
-        var hasNext = rawData.Count > pageSize;
-        var outputData = hasNext ? rawData[..pageSize] : rawData;
-        int? nextLastId = hasNext ? idSelector(outputData[^1]) : null;
+        var hasNext = rawData.Count > limit;
+        var outputData = hasNext ? rawData[..limit] : rawData;
+        
+        // [물멍]: 다음 커서는 마지막 아이템의 식별자입니다.
+        long? nextCursor = hasNext ? cursorSelector(outputData[^1]) : null;
 
-        return new PagedResponse<T>(outputData, nextLastId);
+        return new PagedResponse<T>(outputData, nextCursor, hasNext);
     }
 }

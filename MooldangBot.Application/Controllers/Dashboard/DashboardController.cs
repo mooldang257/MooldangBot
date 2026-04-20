@@ -8,22 +8,34 @@ using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MooldangBot.Application.Controllers.Dashboard
 {
     [Authorize]
     [ApiController]
-    [Route("api/dashboard")]
-    public class DashboardController(IAppDbContext db, IChzzkApiClient chzzkApi) : ControllerBase
+    [Route("api/dashboard/{streamerUid}")]
+    public class DashboardController(
+        IAppDbContext db, 
+        IChzzkApiClient chzzkApi, 
+        IMemoryCache cache,
+        IIdentityCacheService identityCache) : ControllerBase
     {
         /// <summary>
         /// 대시보드 통계 요약 조회 (Live 상태 및 주요 지표)
         /// </summary>
-        [HttpGet("summary/{streamerUid}")]
+        [HttpGet("summary")]
         public async Task<IActionResult> GetSummary(string streamerUid)
         {
-            var profile = await GetProfileByUidOrSlugAsync(streamerUid);
+            // [이지스의 눈]: 식별자(Uid/Slug) 조회를 캐시에서 선행 처리
+            var profile = await GetCachedProfileAsync(streamerUid);
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+
+            var cacheKey = $"dashboard:summary:{profile.ChzzkUid}";
+            if (cache.TryGetValue(cacheKey, out DashboardSummaryDto? cachedSummary) && cachedSummary != null)
+            {
+                return Ok(Result<DashboardSummaryDto>.Success(cachedSummary));
+            }
 
             var today = KstClock.Now.Date;
 
@@ -71,16 +83,19 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 TopCommand = topCommand
             };
 
+            // [물멍]: 60초간 대시보드 데이터 보존 (DB 부하 경감)
+            cache.Set(cacheKey, summary, TimeSpan.FromSeconds(60));
+
             return Ok(Result<DashboardSummaryDto>.Success(summary));
         }
 
         /// <summary>
         /// 최근 활동 로그 조회 (통합 활동 타임라인)
         /// </summary>
-        [HttpGet("activities/{streamerUid}")]
+        [HttpGet("activities")]
         public async Task<IActionResult> GetActivities(string streamerUid)
         {
-            var profile = await GetProfileByUidOrSlugAsync(streamerUid);
+            var profile = await GetCachedProfileAsync(streamerUid);
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             // [물멍]: 각 도메인별 원본 데이터를 먼저 가져온 후 메모리에서 매핑합니다. (DB 엔진 해석 오류 방지)
@@ -151,14 +166,21 @@ namespace MooldangBot.Application.Controllers.Dashboard
             return Ok(Result<List<DashboardActivityDto>>.Success(activities));
         }
 
-        private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
+        private async Task<StreamerProfile?> GetCachedProfileAsync(string uidOrSlug)
         {
-            if (string.IsNullOrWhiteSpace(uid)) return null;
-            var target = uid.ToLower();
-            
-            return await db.StreamerProfiles
+            if (string.IsNullOrWhiteSpace(uidOrSlug)) return null;
+
+            // 1. 캐시 서비스에서 먼저 시도
+            var profile = await identityCache.GetStreamerProfileAsync(uidOrSlug);
+            if (profile != null) return profile;
+
+            // 2. 캐시에 없으면 DB 조회 후 수동 캐시 (slug 대응)
+            var target = uidOrSlug.ToLower();
+            profile = await db.StreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
+
+            return profile;
         }
 
         private string GetRelativeTime(KstClock time)

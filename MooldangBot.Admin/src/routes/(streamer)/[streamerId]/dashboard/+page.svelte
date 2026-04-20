@@ -77,8 +77,8 @@
         slugFeedback = '함교의 대지에 새 주소를 기록 중...';
 
         try {
-            const res: any = await apiFetch(`/api/settings/bot/slug/${streamerId}`, {
-                method: 'POST',
+            const res: any = await apiFetch(`/api/config/bot/${streamerId}/slug`, {
+                method: 'PATCH',
                 body: JSON.stringify({ slug: newSlug.toLowerCase().trim() })
             });
 
@@ -95,8 +95,8 @@
     async function refreshDashboard() {
         try {
             const [sumData, actData] = await Promise.all([
-                apiFetch<any>(`/api/dashboard/summary/${streamerId}`),
-                apiFetch<any[]>(`/api/dashboard/activities/${streamerId}`)
+                apiFetch<any>(`/api/dashboard/${streamerId}/summary`),
+                apiFetch<any[]>(`/api/dashboard/${streamerId}/activities`)
             ]);
             summary = sumData;
             activities = actData;

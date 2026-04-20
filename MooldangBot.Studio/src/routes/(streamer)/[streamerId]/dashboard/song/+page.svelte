@@ -70,7 +70,7 @@
             const [pendingData, completedData, settingsData] = await Promise.all([
                 apiFetch<any>(`/api/song/${targetUid}/queue?status=Pending`),
                 apiFetch<any>(`/api/song/${targetUid}/queue?status=Completed&limit=50`),
-                apiFetch<any>(`/api/settings/data/${targetUid}`)
+                apiFetch<any>(`/api/config/songlist/${targetUid}`)
             ]);
 
             queue = pendingData.items || [];
@@ -341,7 +341,7 @@
                     }))
             };
 
-            await apiFetch(`/api/settings/update/${targetUid}`, {
+            await apiFetch(`/api/config/songlist/${targetUid}`, {
                 method: "POST",
                 body: JSON.stringify(payload)
             });

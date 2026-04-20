@@ -3,7 +3,6 @@ using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
 using MooldangBot.Domain.Common.Security;
 using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
@@ -24,9 +23,7 @@ using Microsoft.Extensions.Logging;
 namespace MooldangBot.Application.Controllers.Auth
 {
     [ApiController]
-    [ApiVersion("1.0")]
     [Route("api")]
-    [Route("api/v{version:apiVersion}")]
     public class AuthController(
         IAppDbContext _db, 
         IConfiguration _configuration, 
@@ -49,8 +46,7 @@ namespace MooldangBot.Application.Controllers.Auth
             }
         }
 
-        [HttpGet("/api/auth/chzzk-login")]
-        [HttpGet("/api/v1/auth/chzzk-login")]
+        [HttpGet("auth/chzzk-login")]
         [EnableRateLimiting("strict-auth")]
         public async Task<IActionResult> ChzzkLogin([FromQuery] string? type)
         {
@@ -337,8 +333,7 @@ namespace MooldangBot.Application.Controllers.Auth
             }
         }
 
-        [HttpGet("/api/auth/callback")]
-        [HttpGet("/api/v1/auth/callback")]
+        [HttpGet("auth/callback")]
         [HttpGet("/Auth/callback")] // [Aegis Bridge]: Nginx 우회 경로 지정 (404 방지)
         [AllowAnonymous]
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)

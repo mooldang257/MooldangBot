@@ -1,60 +1,63 @@
-# [P1] API 아키텍처 고도화 및 일관성 강화
+# [P1] API 아키텍처 고도화 및 일관성 강화 (성능 및 정규화)
 
-보고서에서 제안된 P1(단기) 우선순위 항목을 해결하기 위한 상세 구현 계획입니다. 이 작업은 P0 작업이 완료된 후 수행되는 것을 전제로 합니다.
+선장님, P0 단계의 안정화가 확인되었으므로 이제 시스템의 성능을 끌어올리고 구조적 부채를 해결하는 **P1 단계**를 제안합니다. 이 단계에서는 API의 일관성을 확보하고 DB 부하를 줄이기 위한 캐싱 및 페이징 고도화에 집중합니다.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **데이터 로딩 방식의 변화**
-> 페이지네이션이 커서 기반으로 일원화됨에 따라 프론트엔드의 리스트 로딩 로직이 전면 수정되어야 합니다. 기존의 `Page 1, 2, 3...` 방식이 아닌 `더보기(NextCursor)` 방식으로 UI 대응이 필요할 수 있습니다.
+> **1. API 버전 관리 제거 (`/api/v1/...` → `/api/...`)**
+> 현재 프로젝트는 단일 버전을 유지하고 있으므로, 관리 복잡도를 줄이기 위해 `Asp.Versioning` 모듈을 제거하고 경로를 단순화할 계획입니다. 모든 API 엔드포인트는 루트 `/api/` 하위로 통합됩니다.
+>
+> **2. 데이터 로딩 방식의 전면 전환 (Cursor-based)**
+> 모든 목록 조회 UI가 페이지 번호 방식에서 **'더보기(Load More)'** 또는 **'무한 스크롤'** 방식으로 전환됩니다. 이는 대규모 데이터셋에서의 성능 최적화와 데이터 정합성(중복 방지)을 위한 결정입니다. `ChatPoint` 등에서 사용 중인 `offset/limit` 방식을 `LastId` 기반의 커서 페이징으로 완전히 대체합니다.
 
 ## Proposed Changes
 
 ### 1. [Infrastructure] 공통 기반 고도화
 
-#### [MODIFY] [PagingExtensions.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Domain/Common/Extensions/PagingExtensions.cs)
-- `PagedResponse` 처리 로직을 `CursorPagedResponse`와 완전 통합
-- `IQueryable` 확장 메서드를 통해 모든 목록 조회가 일관된 커서 인터페이스를 반환하도록 수정
+#### [MODIFY] [Paging.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Domain/Common/Paging.cs)
+- `PagedResponse<T>`를 `CursorPagedResponse<T>`로 정규화하여 프론트엔드에서 다음 데이터 존재 여부(`hasNext`)와 다음 커서(`nextCursor`)를 쉽게 식별할 수 있도록 필드 추가.
+- `PagedRequest`에 정렬(Sort) 및 필터링 필드 추가.
 
 #### [DELETE] [VersioningExtensions.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Extensions/VersioningExtensions.cs)
-- `Asp.Versioning` 관련 설정을 제거하고 `Program.cs`에서 관련 파이프라인 정리
-- 유일하게 사용되던 `v1` 경로를 기본 경로(`api/`)로 흡수
+- `Asp.Versioning` 관련 설정을 제거하고 `AddMooldangVersioning()` 메서드에서 버전 관리 로직 삭제 (FluentValidation 설정은 유지).
+- `Program.cs`에서 `AddMooldangVersioning()` 호출부 정리.
 
 ---
 
-### 2. [Backend] 컨트롤러 및 라우트 정규화
+### 2. [Backend] 컨트롤러 정규화 및 캐싱 확대
 
 #### [MODIFY] [ChatPointController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/ChatPoints/ChatPointController.cs)
-- **페이지네이션**: `offset/limit` 패턴을 제거하고 `CursorPagedResponse<T>` 적용
-- **타입 정규화**: `Result<object>` 대신 `Result<ChatPointSettingsDto>`, `Result<CursorPagedResponse<ViewerPointDto>>` 등으로 명시적 타입 반환
-- **라우트**: `api/chatpoint` → `api/chat-point` (Kebab-case 준수)
+- **페이징 정규화**: `GetViewers`, `GetDonations`의 `offset/limit`을 제거하고 `PagingExtensions`를 사용하여 커서 기반으로 전환.
+- **DTO 명시**: 익명 객체 반환(`Result<object>`)을 제거하고 `Result<ViewerPointCursorResponse>` 등 명시적 DTO 모델 적용.
 
 #### [MODIFY] [DashboardController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Dashboard/DashboardController.cs)
-- **라우트 정규화**: `api/dashboard/summary/{uid}` → `api/dashboard/{uid}/summary`
-- **라우트 정규화**: `api/dashboard/activities/{uid}` → `api/dashboard/{uid}/activities`
-- (이 도메인은 이미 DTO를 잘 사용 중이므로 경로 일관성 위주로 수정)
+- **경로 정규화**: `api/dashboard/summary/{uid}` → `api/dashboard/{uid}/summary`로 변경하여 UID를 경로 상단으로 이동.
+- **성능 최적화 (캐싱)**: `IMemoryCache`를 사용한 대시보드 요약 데이터 캐싱(TTL 30~60초)을 도입하여 반복적인 DB 집계 부하 차단.
+- **성능 최적화 (Identity)**: `IIdentityCacheService`를 사용하여 스트리머 프로필 조회 시 DB 히트 차단.
 
 #### [MODIFY] [BotConfigController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Config/BotConfigController.cs)
-- **라우트 정규화**: `api/settings/bot/status/{uid}` 등 `settings` 접두사를 `config`로 변경하여 도메인 경계 명확화
-- **정규화 경로**: `api/config/bot/{uid}/status`
+- **도메인 명확화**: `api/settings/bot` → `api/config/bot`으로 경로 변경.
+- 불필요한 `POST` 메서드를 비즈니스 의미에 맞는 `PATCH`로 개선 (예: ToggleBotStatus).
 
 ---
 
-### 3. [Frontend] 데이터 통신 계층 일원화
+### 3. [Frontend] API 통신 계층 일원화 및 동기화
 
-#### [MODIFY] Admin / Studio API Client
-- 두 프로젝트에 흩어진 `client.ts`의 SSR 처리 로직을 Studio의 `handleFetch` 패턴으로 통일
-- 신규 커서 페이지네이션 인터페이스(`nextCursor`, `hasNext`)에 맞게 공통 데이터 헬퍼 수정
+#### [MODIFY] Admin / Studio 공통 API 클라이언트
+- 신규 커서 페이징 인터페이스(`nextCursor`, `hasNext`)를 처리할 수 있도록 공통 데이터 헬퍼 함수 업데이트.
+- 변경된 정규화 경로(`config/bot`, `dashboard/{uid}/summary` 등) 반영.
 
----
+## Open Questions
+
+- (모든 질문이 해결되었습니다. 선장님의 승인에 따라 작업을 시작합니다.)
 
 ## Verification Plan
 
 ### Automated Tests
-- `dotnet build`: API 버전 제거 및 DTO 전환에 따른 컴파일 오류 점검
-- `curl` 또는 `Postman`을 이용한 라우트 경로 변경 이행 여부 전수 확인
+- `dotnet build`: 도메인 모델 및 DTO 변경에 따른 컴파일 오류 점검.
+- **API Unit Test**: 신규 커서 페이징 로직의 데이터 일관성 검증 (NextLastId가 정확히 반환되는지).
 
 ### Manual Verification
-- **시청자/도네이션 목록**: 무한 스크롤 또는 더보기 버튼이 정상적으로 커서 데이터를 가져오는지 확인
-- **설정 페이지**: 익명 객체 반환이 제거되었음에도 프론트엔드에서 데이터 바인딩이 정상적인지 확인
-- **로그인/권한**: `chzzkUid`가 경로 중앙으로 이동함에 따른 권한 검사 미들웨어(Aegis) 정상 동작 확인
+- **Admin/Studio 대시보드**: 캐시 적용 후 초기 진입 시 체감 속도 향상 확인.
+- **명령어/시청자 목록**: 커서 기반 페이징이 프론트엔드 'Next' 요청 시 중복이나 누락 없이 데이터를 가져오는지 확인.

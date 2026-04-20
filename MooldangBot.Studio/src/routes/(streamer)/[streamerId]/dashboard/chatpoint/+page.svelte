@@ -22,8 +22,8 @@
         isAutoAccumulateDonation: false
     });
 
-    let viewerPoints = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "points" });
-    let donationRecords = $state({ items: [] as any[], total: 0, offset: 0, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "total" });
+    let viewerPoints = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "points" });
+    let donationRecords = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "total" });
 
     async function loadSettings() {
         if (!chzzkUid) return;
@@ -56,7 +56,7 @@
     async function loadViewerPoints(reset = false) {
         if (!chzzkUid || (viewerPoints.isLoading && !reset)) return;
         if (reset) {
-            viewerPoints.offset = 0;
+            viewerPoints.nextCursor = null;
             viewerPoints.items = [];
             viewerPoints.hasNext = true;
             viewerPoints.isInitialized = true;
@@ -65,14 +65,13 @@
 
         viewerPoints.isLoading = true;
         try {
-            const url = `/api/chat-point/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}&offset=${viewerPoints.offset}&limit=20`;
+            const cursorParam = viewerPoints.nextCursor ? `&cursor=${viewerPoints.nextCursor}` : "";
+            const url = `/api/chat-point/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}${cursorParam}&limit=20`;
             const res = await apiFetch<any>(url);
-            const { items, total } = res;
             
-            viewerPoints.items = [...viewerPoints.items, ...items];
-            viewerPoints.total = total;
-            viewerPoints.offset += items.length;
-            viewerPoints.hasNext = viewerPoints.items.length < total;
+            viewerPoints.items = [...viewerPoints.items, ...res.items];
+            viewerPoints.nextCursor = res.nextCursor;
+            viewerPoints.hasNext = res.hasNext;
         } catch (e) {
             console.error("[물멍] 포인트 리스트 로드 실패:", e);
             viewerPoints.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
@@ -85,7 +84,7 @@
     async function loadDonationRecords(reset = false) {
         if (!chzzkUid || (donationRecords.isLoading && !reset)) return;
         if (reset) {
-            donationRecords.offset = 0;
+            donationRecords.nextCursor = null;
             donationRecords.items = [];
             donationRecords.hasNext = true;
             donationRecords.isInitialized = true;
@@ -94,14 +93,13 @@
 
         donationRecords.isLoading = true;
         try {
-            const url = `/api/chat-point/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}&offset=${donationRecords.offset}&limit=20`;
+            const cursorParam = donationRecords.nextCursor ? `&cursor=${donationRecords.nextCursor}` : "";
+            const url = `/api/chat-point/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}${cursorParam}&limit=20`;
             const res = await apiFetch<any>(url);
-            const { items, total } = res;
             
-            donationRecords.items = [...donationRecords.items, ...items];
-            donationRecords.total = total;
-            donationRecords.offset += items.length;
-            donationRecords.hasNext = donationRecords.items.length < total;
+            donationRecords.items = [...donationRecords.items, ...res.items];
+            donationRecords.nextCursor = res.nextCursor;
+            donationRecords.hasNext = res.hasNext;
         } catch (e) {
             console.error("[물멍] 후원 기록 로드 실패:", e);
             donationRecords.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
@@ -209,7 +207,6 @@
                 <div in:fade>
                     <ViewerPointList 
                         items={viewerPoints.items}
-                        total={viewerPoints.total}
                         isLoading={viewerPoints.isLoading}
                         hasNext={viewerPoints.hasNext}
                         onLoadMore={loadViewerPoints}
@@ -221,7 +218,6 @@
                 <div in:fade>
                     <DonationRecordList 
                         items={donationRecords.items}
-                        total={donationRecords.total}
                         isLoading={donationRecords.isLoading}
                         hasNext={donationRecords.hasNext}
                         onLoadMore={loadDonationRecords}

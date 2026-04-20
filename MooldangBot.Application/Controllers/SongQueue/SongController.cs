@@ -15,27 +15,26 @@ using MooldangBot.Application.Common.Interfaces;
 namespace MooldangBot.Application.Controllers.SongQueue
 {
     [ApiController]
+    [Route("api/song/{chzzkUid}")]
     [Authorize(Policy = "ChannelManager")]
     // [v10.1] Primary Constructor 적용
     public class SongController(
         IAppDbContext db, 
         IOverlayNotificationService notificationService,
         IConfiguration config,
-        ISongLibraryService libraryService) : ControllerBase
+        ISongLibraryService libraryService,
+        IIdentityCacheService identityCache) : ControllerBase
     {
         /// <summary>
-        /// [v10.0] 곡 대기열 목록 조회 (커서 기반 페이지네이션)
+        /// 곡 대기열 목록 조회 (커서 기반 페이지네이션)
         /// </summary>
-        [HttpGet("/api/song/{chzzkUid}/queue")]
+        [HttpGet("queue")]
         public async Task<IActionResult> GetSongQueue(
             string chzzkUid, 
             [FromQuery] SongStatus? status,
-            [FromQuery] int? cursor,
-            [FromQuery] int? limit)
+            [FromQuery] PagedRequest request)
         {
-            var request = new CursorPagedRequest(cursor, limit ?? 20);
-            
-            var streamer = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var streamer = await GetCachedProfileAsync(chzzkUid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -55,19 +54,18 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 query = query.Where(s => s.Status == status.Value);
             }
 
-            if (request.Cursor.HasValue)
+            if (request.Cursor.HasValue && request.Cursor.Value > 0)
             {
-                // [물멍]: 대기열(Pending)은 신청순(오름차순)으로 커서보다 큰 ID를 찾고, 나머지는 최신순(내림차순)으로 커서보다 작은 ID를 찾습니다.
+                // [물멍]: 대기열(Pending)은 신청순(오름차순), 나머지는 최신순(내림차순)으로 커서 조건을 분기합니다.
                 if (status == SongStatus.Pending)
                     query = query.Where(s => s.Id > request.Cursor.Value);
                 else
                     query = query.Where(s => s.Id < request.Cursor.Value);
             }
 
-            var items = await (status == SongStatus.Pending 
+            var pagedSource = (status == SongStatus.Pending 
                 ? query.OrderBy(s => s.Id) 
                 : query.OrderByDescending(s => s.Id))
-                .Take(effectiveLimit + 1)
                 .Select(s => new SongQueueViewDto
                 {
                     Id = s.Id,
@@ -103,22 +101,17 @@ namespace MooldangBot.Application.Controllers.SongQueue
                             .Where(m => m.SongLibraryId == s.SongLibraryId)
                             .Select(m => m.Lyrics)
                             .FirstOrDefault()
-                })
-                .ToListAsync();
+                });
 
-            bool hasNext = items.Count > effectiveLimit;
-            if (hasNext) items.RemoveAt(effectiveLimit);
+            var pagedResult = await pagedSource.ToPagedListAsync(effectiveLimit, s => s.Id);
 
-            int? nextCursor = items.LastOrDefault()?.Id;
-
-            var response = new CursorPagedResponse<SongQueueViewDto>(items, nextCursor, hasNext);
-            return Ok(Result<CursorPagedResponse<SongQueueViewDto>>.Success(response));
+            return Ok(Result<PagedResponse<SongQueueViewDto>>.Success(pagedResult));
         }
 
-        [HttpPost("/api/song/{chzzkUid}")]
+        [HttpPost]
         public async Task<IActionResult> AddSong(string chzzkUid, [FromBody] SongAddRequest request, [FromQuery] int? omakaseId = null)
         {
-            var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
             
@@ -192,10 +185,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<SongQueueResponseDto>.Success(responseDto));
         }
 
-        [HttpPatch("/api/song/{chzzkUid}/{id}/status")]
+        [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(string chzzkUid, int id, [FromQuery] SongStatus status)
         {
-            var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -239,10 +232,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<bool>.Success(true));
         }
 
-        [HttpDelete("/api/song/{chzzkUid}/bulk")]
+        [HttpDelete("bulk")]
         public async Task<IActionResult> DeleteSongs(string chzzkUid, [FromBody] List<int> ids)
         {
-            var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -261,10 +254,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return NotFound(Result<string>.Failure("삭제할 대상을 찾을 수 없습니다."));
         }
 
-        [HttpPut("/api/song/{chzzkUid}/{id:int}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateSongDetails(string chzzkUid, int id, [FromBody] SongUpdateRequest request)
         {
-            var profile = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var profile = await GetCachedProfileAsync(chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -319,10 +312,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
         }
 
-        [HttpDelete("/api/song/{chzzkUid}/clear/{status}")]
+        [HttpDelete("clear/{status}")]
         public async Task<IActionResult> ClearSongsByStatus(string chzzkUid, SongStatus status)
         {
-            var streamer = await GetProfileByUidOrSlugAsync(chzzkUid);
+            var streamer = await GetCachedProfileAsync(chzzkUid);
             if (streamer == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -340,8 +333,11 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<string>.Success("삭제할 내역이 없습니다."));
         }
 
-        private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
+        private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
         {
+            var profile = await identityCache.GetStreamerProfileAsync(uid);
+            if (profile != null) return profile;
+
             var target = uid.ToLower();
             return await db.StreamerProfiles
                 .AsNoTracking()

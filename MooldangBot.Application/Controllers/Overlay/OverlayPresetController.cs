@@ -17,12 +17,12 @@ using MooldangBot.Domain.Common.Models;
 namespace MooldangBot.Application.Controllers.Overlay
 {
     [ApiController]
-    [Route("api/overlay-preset")]
+    [Route("api/overlay-preset/{chzzkUid}")]
     [Authorize(Policy = "ChannelManager")]
-    // [v10.1] Primary Constructor 적용
+    // [v10.1] Primary Constructor 활용
     public class OverlayPresetController(IAppDbContext db, IWebHostEnvironment env) : ControllerBase
     {
-        [HttpPost("{chzzkUid}/image")]
+        [HttpPost("image")]
         public async Task<IActionResult> UploadImage(string chzzkUid, IFormFile image)
         {
             // [이지스 가드]
@@ -57,14 +57,15 @@ namespace MooldangBot.Application.Controllers.Overlay
         }
 
 
-        [HttpGet("{chzzkUid}")]
-        public async Task<IActionResult> GetPresets(string chzzkUid)
+        [HttpGet]
+        public async Task<IActionResult> GetPresets(string chzzkUid, [FromQuery] PagedRequest request)
         {
-            var presets = await db.OverlayPresets
+            var query = db.OverlayPresets
                 .IgnoreQueryFilters() 
                 .Include(p => p.StreamerProfile)
-                .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid)
-                .ToListAsync();
+                .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid);
+
+            var presets = await query.ToListAsync();
 
             if (presets.Count == 0)
             {
@@ -92,21 +93,25 @@ namespace MooldangBot.Application.Controllers.Overlay
 
                 db.OverlayPresets.Add(defaultPreset);
                 await db.SaveChangesAsync();
-                presets.Add(defaultPreset);
+                // [물멍]: 재조회하여 페이징 엔진에 진입시킵니다.
+                query = db.OverlayPresets.IgnoreQueryFilters().Where(p => p.Id == defaultPreset.Id);
             }
 
-            var result = presets.Select(p => new OverlayPresetDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                ConfigJson = p.ConfigJson,
-                UpdatedAt = p.UpdatedAt
-            });
+            var pagedResult = await query
+                .OrderByDescending(p => p.Id)
+                .Select(p => new OverlayPresetDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    ConfigJson = p.ConfigJson,
+                    UpdatedAt = p.UpdatedAt
+                })
+                .ToPagedListAsync(request.Limit, p => p.Id);
 
-            return Ok(Result<IEnumerable<OverlayPresetDto>>.Success(result));
+            return Ok(Result<PagedResponse<OverlayPresetDto>>.Success(pagedResult));
         }
 
-        [HttpGet("{chzzkUid}/{id}")]
+        [HttpGet("{id:int}")]
         [AllowAnonymous] 
         public async Task<IActionResult> GetPreset(string chzzkUid, int id)
         {
@@ -149,7 +154,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             }));
         }
 
-        [HttpGet("{chzzkUid}/active")]
+        [HttpGet("active")]
         [AllowAnonymous]
         public async Task<IActionResult> GetActivePreset(string chzzkUid)
         {
@@ -192,7 +197,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             }));
         }
 
-        [HttpPost("{chzzkUid}")]
+        [HttpPost]
         public async Task<IActionResult> CreatePreset(string chzzkUid, OverlayPresetDto dto)
         {
             var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
@@ -220,7 +225,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             }));
         }
 
-        [HttpPut("{chzzkUid}/{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePreset(string chzzkUid, int id, OverlayPresetDto dto)
         {
             var preset = await db.OverlayPresets
@@ -239,7 +244,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             return Ok(Result<object>.Success(new { success = true, message = "프리셋이 업데이트되었습니다." }));
         }
 
-        [HttpDelete("{chzzkUid}/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePreset(string chzzkUid, int id)
         {
             var preset = await db.OverlayPresets
@@ -256,7 +261,7 @@ namespace MooldangBot.Application.Controllers.Overlay
             return Ok(Result<object>.Success(new { success = true, message = "프리셋이 삭제되었습니다." }));
         }
 
-        [HttpPatch("{chzzkUid}/{id}/active")]
+        [HttpPatch("{id}/active")]
         public async Task<IActionResult> SyncPreset(string chzzkUid, int id)
         {
             var preset = await db.OverlayPresets

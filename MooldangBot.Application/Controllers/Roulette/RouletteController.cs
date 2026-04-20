@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
@@ -14,8 +14,7 @@ using MooldangBot.Modules.Roulette.Features.Commands.CompleteRoulette;
 namespace MooldangBot.Application.Controllers.Roulette
 {
     [ApiController]
-    [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/admin/roulette")]
+    [ApiController]
     [Route("api/admin/roulette")]
     [Authorize(Policy = "ChannelManager")]
     public class RouletteController(IAppDbContext db, IMediator mediator) : ControllerBase
@@ -26,19 +25,25 @@ namespace MooldangBot.Application.Controllers.Roulette
         }
 
         [HttpGet("{chzzkUid}")]
-        public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] int LastId = 0, [FromQuery] int PageSize = 10)
+        public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] PagedRequest request)
         {
-            var RawData = await db.Roulettes
+            var query = db.Roulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.StreamerProfile)
-                .Where(R => R.StreamerProfile!.ChzzkUid == chzzkUid && (LastId == 0 || R.Id < LastId))
+                .Where(R => R.StreamerProfile!.ChzzkUid == chzzkUid);
+
+            if (request.Cursor.HasValue && request.Cursor.Value > 0)
+            {
+                query = query.Where(R => R.Id < request.Cursor.Value);
+            }
+
+            var pagedResult = await query
                 .Join(db.UnifiedCommands.IgnoreQueryFilters(),
                     r => r.Id,
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
                 .Where(x => x.Command.FeatureType == CommandFeatureType.Roulette)
                 .OrderByDescending(x => x.Roulette.Id)
-                .Take(PageSize + 1)
                 .Select(x => new RouletteSummaryDto
                 {
                     Id = x.Roulette.Id,
@@ -51,13 +56,9 @@ namespace MooldangBot.Application.Controllers.Roulette
                     LstUpdDt = x.Roulette.UpdatedAt
                 })
                 .AsNoTracking()
-                .ToListAsync();
+                .ToPagedListAsync(request.Limit, r => r.Id);
 
-            var HasNext = RawData.Count > PageSize;
-            var OutputData = HasNext ? RawData[..PageSize] : RawData;
-            int? NextLastId = HasNext ? OutputData[^1].Id : null;
-
-            return Ok(Result<PagedResponse<RouletteSummaryDto>>.Success(new PagedResponse<RouletteSummaryDto>(Data: OutputData, NextLastId: NextLastId)));
+            return Ok(Result<PagedResponse<RouletteSummaryDto>>.Success(pagedResult));
         }
 
         [HttpGet("{chzzkUid}/{Id}")]
@@ -337,8 +338,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             [FromQuery] string? nickname = null,
             [FromQuery] int? rouletteId = null,
             [FromQuery] string? itemName = null,
-            [FromQuery] long lastId = 0, 
-            [FromQuery] int pageSize = 20)
+            [FromQuery] PagedRequest request = null!)
         {
             var query = db.RouletteLogs
                 .IgnoreQueryFilters()
@@ -353,11 +353,13 @@ namespace MooldangBot.Application.Controllers.Roulette
             if (rouletteId.HasValue && rouletteId.Value > 0) query = query.Where(l => l.RouletteId == rouletteId.Value);
             if (!string.IsNullOrWhiteSpace(itemName)) query = query.Where(l => l.ItemName.Contains(itemName));
             
-            if (lastId > 0) query = query.Where(l => l.Id < lastId);
+            if (request.Cursor.HasValue && request.Cursor.Value > 0)
+            {
+                query = query.Where(l => l.Id < request.Cursor.Value);
+            }
 
-            var logs = await query
+            var pagedResult = await query
                 .OrderByDescending(l => l.Id)
-                .Take(pageSize + 1)
                 .Select(l => new RouletteLogDto(
                     l.Id, 
                     l.RouletteId, 
@@ -367,13 +369,9 @@ namespace MooldangBot.Application.Controllers.Roulette
                     l.CreatedAt, 
                     (int)l.Status
                 ))
-                .ToListAsync();
+                .ToPagedListAsync(request.Limit, l => l.Id);
 
-            var hasNext = logs.Count > pageSize;
-            var outputData = hasNext ? logs[..pageSize] : logs;
-            long? nextLastId = hasNext ? outputData[^1].Id : null;
-
-            return Ok(Result<PagedResponse<RouletteLogDto>>.Success(new PagedResponse<RouletteLogDto>(Data: outputData, NextLastId: nextLastId)));
+            return Ok(Result<PagedResponse<RouletteLogDto>>.Success(pagedResult));
         }
 
         [HttpPut("{chzzkUid}/history/{id}/status")]

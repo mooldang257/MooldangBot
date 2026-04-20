@@ -16,7 +16,7 @@
     // [물멍]: 함교 정보 초기 로드
     onMount(async () => {
         try {
-            const res = await fetch(`/api/settings/bot/slug/${streamerId}`);
+            const res = await fetch(`/api/config/bot/${streamerId}/slug`);
             if (res.ok) {
                 const data = await res.json();
                 currentSlug = data.slug || '';
@@ -41,8 +41,8 @@
         message = '';
 
         try {
-            const res = await fetch(`/api/settings/bot/slug/${streamerId}`, {
-                method: 'POST',
+            const res = await fetch(`/api/config/bot/${streamerId}/slug`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slug: newSlug })
             });

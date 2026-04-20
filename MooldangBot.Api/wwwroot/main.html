@@ -491,7 +491,7 @@
         async function fetchBotStatus() {
             if (!currentChzzkUid) return;
             try {
-                const res = await fetch(`/api/settings/bot/status/${currentChzzkUid}`);
+                const res = await fetch(`/api/config/bot/${currentChzzkUid}/status`);
                 if (res.ok) {
                     const statusData = await res.json();
                     isBotEnabled = statusData.isEnabled;
@@ -507,10 +507,10 @@
             btn.disabled = true;
             btn.innerText = '처리 중...';
             try {
-                const res = await fetch(`/api/settings/bot/toggle/${currentChzzkUid}`, {
-                    method: 'POST',
+                const res = await fetch(`/api/config/bot/${currentChzzkUid}/status`, {
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isEnabled: !isBotEnabled })
+                    body: JSON.stringify({ IsEnabled: !isBotEnabled })
                 });
                 if (res.ok) {
                     const data = await res.json();
