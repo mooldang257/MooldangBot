@@ -19,7 +19,11 @@
 
 ## 4. EF Core 및 마이그레이션 정책
 * **[Rule 4]** 마이그레이션 파일이 비대해지거나 구조적 충돌이 발생할 경우, **압착(Squash)** 작업을 통해 단일 `InitialCreate` 파일로 통합하여 배포 안정성을 유지한다.
-* **[Rule 5]** `AppDbContext` 내의 `ToTable()` 호출 시 반드시 스네이크 케이스 명칭을 명시하여 물리 스키마와 코드 간의 정합성을 유지한다.
+* **[Rule 5] Model Configuration 분리 (Anti-Bloat Pattern)**: `AppDbContext` 내에 수백 줄의 Fluent API 코드를 방치하지 않는다. 모든 엔티티 매핑 설정은 도메인별로 `IEntityTypeConfiguration<T>`를 구현한 클래스로 분리한다.
+  * 위치: `MooldangBot.Infrastructure/Persistence/Configurations/`
+  * 명명 규칙: `{Domain}EntityConfigurations.cs` (예: `RouletteEntityConfigurations.cs`)
+  * `AppDbContext`에서는 `modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly)`를 호출하여 자동 등록한다.
+* **[Rule 6]** `ToTable()` 호출 시 반드시 스네이크 케이스 명칭을 명시하여 물리 스키마와 코드 간의 정합성을 유지한다.
 
 ## 5. 데이터 영속성 및 삭제 정책 (Persistence)
 * **[Rule 6]** 모든 주요 마스터 데이터는 **논리적 삭제(Soft Delete)**를 원칙으로 한다.
@@ -35,4 +39,4 @@
 * **[Rule 12] 커넥션 풀 및 리소스 모니터링**: 고부하 대응을 위해 `AddDbContextPool`의 `poolSize`는 항상 예상되는 동시성 수준(현재 1,024) 이상으로 유지하며, MariaDB의 `max_connections` 설정과 동기화한다.
 
 ---
-**최종 갱신일**: 2026-04-12 (대규모 채팅 폭주 대응 최적화 체계 도입 - 물멍 파트너 작성)
+**최종 갱신일**: 2026-04-20 (AppDbContext 분리 및 Configurations 구조 체계 도입 - 물멍 파트너 작성)

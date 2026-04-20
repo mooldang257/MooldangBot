@@ -10,8 +10,8 @@
 
 1.  **Domain**: 함선의 비즈니스 로직과 전역 공용 명세(Core Specification). 프로젝트의 최하단에서 모든 레이어의 기준이 됩니다.
 2.  **Application**: 유스케이스 구현 및 **통합된 컨트롤러/허브**. 비즈니스 로직과 API 진입점이 한곳에 있어 개발 속도가 극대화됩니다.
-3.  **Infrastructure**: 데이터베이스 및 인프라 구현. 모든 Background Worker는 `WorkerRegistry`를 통해 중앙 관리됩니다.
-4.  **Modules**: 실질적인 큰 단위의 비즈니스 기능(Commands, SongBook, Roulette, Point)을 독립된 프로젝트로 유지하여 확정성을 보장합니다.
+3.  **Infrastructure**: 데이터베이스 구현 및 인프라 통합 계층. 모든 Background Worker는 **`WorkerRegistry.cs`**를 통해 중앙에서 수명 주기가 관리되며, `appsettings.json`과 연동되어 동적으로 제어됩니다.
+4.  **Modules**: 핵심 비즈니스 기능(Commands, Roulette, Point, SongBook)을 독립된 프로젝트로 유지합니다. 각 모듈은 자신만의 `Abstractions`, `Handlers`, `Domain` 요소(기능 전용)를 가지며, 외부 인터페이스(Contracts) 의존을 최소화합니다.
 
 ---
 

@@ -99,9 +99,10 @@ try {
 - **Single-File 응집도**: 명령(Command/Query) 레코드, 검증 로직, 핸들러(Handler) 로직을 **단일 파일**에 함께 배치하여 캡슐화와 유지보수성을 극대화합니다. (예: `SpinRoulette.cs`)
 - **얇은 위임자 (Thin Orchestrator)**: Controller나 레거시 Service 계층은 스스로 복잡한 비즈니스 로직을 처리하지 않습니다. 오직 MediatR의 `ISender.Send()`를 호출하여 모듈 내부의 핸들러에 제어권을 위임하는 중계 역할만 수행합니다.
 
-### 🤝 도메인 중심 계약(Contracts) 관리
-- **전역 명세 통합**: 모듈 간 결합도를 낮추기 위한 공용 인터페이스 및 DTO는 최하위 계층인 `MooldangBot.Domain` 프로젝트에 정의합니다. 이는 모든 프로젝트가 참조할 수 있는 '시스템의 공용 언어' 역할을 합니다.
-- **순환 참조 방지**: `Application`에 있던 계약들을 `Domain`으로 내림으로써, 모듈 간의 수평적 상호작용 시 발생하던 순환 참조 문제를 완벽히 차단합니다.
+### 🤝 모듈별 격리된 계약(Abstractions) 관리
+- **모듈별 추상화 (Modular Abstractions)**: `MooldangBot.Contracts`의 비대화를 막기 위해, 각 기능 모듈(`Roulette`, `Point`, `Commands`, `SongBook`)은 자신의 인터페이스를 독자적인 `Abstractions` 폴더 내에 정의합니다. (예: `MooldangBot.Modules.Roulette/Abstractions/IRouletteDbContext.cs`)
+- **수평적 참조 금지 (Layering strictly enforced)**: 모듈 간에 구체적인 핸들러나 내부 서비스를 직접 참조하는 것을 엄격히 금지합니다. 오직 `MediatR` 메시지나 공용 인터페이스(`Abstractions`)를 통해서만 상호작용합니다.
+- **순환 참조 방지**: `Infrastructure`는 모든 모듈의 인터페이스를 구현하지만, 모듈은 서로를 모르고 오직 인프라가 제공하는 계약(Abstractions)에만 의존하게 함으로써 순환 참조의 고리를 완벽히 끊어냅니다.
 
 ### 🚀 고성능 JSON Source Generation
 - **GC 부하 최소화**: 대규모 트래픽(10k TPS) 대응을 위해 리플렉션 대신 `System.Text.Json`의 Source Generator를 필수적으로 사용합니다.
