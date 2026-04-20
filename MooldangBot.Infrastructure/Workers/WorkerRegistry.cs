@@ -24,7 +24,7 @@ public static class WorkerRegistry
         services.AddHostedService<Chat.ChatLogBatchWorker>();
         services.AddHostedService<Chat.LogBulkBufferWorker>();
 
-        // Core Workers
+        // Core Workers (GateWay는 독립 위치 유지를 위해 여기서 배제함)
         services.AddHostedService<ChzzkBackgroundService>();
         services.AddHostedService<SystemWatchdogService>();
 
@@ -41,6 +41,9 @@ public static class WorkerRegistry
         // Ledger & Analytics Workers
         services.AddHostedService<Ledger.CelestialLedgerWorker>();
         services.AddHostedService<Ledger.WeeklyStatsReporter>();
+
+        // Module Workers 통합 (지휘관 지침: Roulette 통합 - Infrastructure로 이관됨)
+        services.AddHostedService<Maintenance.RouletteResultWorker>();
 
         return services;
     }

@@ -1,10 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooldangBot.Application.Services;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Common;
 using MooldangBot.Application.Features.Ledger;
 
@@ -16,51 +14,26 @@ namespace MooldangBot.Infrastructure.Workers.Ledger;
 public class WeeklyStatsReporter(
     IServiceScopeFactory scopeFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<WeeklyStatsReporter> logger) : BackgroundService
+    ILogger<WeeklyStatsReporter> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(WeeklyStatsReporter))
 {
-    private const string WorkerName = nameof(WeeklyStatsReporter);
-    private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(30);
+    // [지휘관 지침]: 주간 리포트 체크는 30분(1,800초) 단위로 수행합니다.
+    protected override int DefaultIntervalSeconds => 1800;
 
-    private WorkerSettings CurrentSettings => optionsMonitor.Get(WorkerName);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        logger.LogInformation("🚀 [WeeklyStatsReporter] 가동 시작 (설정: {Interval}s)", CurrentSettings.IntervalSeconds);
-
-        while (!stoppingToken.IsCancellationRequested)
+        var now = KstClock.Now;
+        
+        // 매주 월요일 오전 9시 체성분 분석
+        if (now.Value.DayOfWeek == DayOfWeek.Monday && now.Value.Hour == 9)
         {
-            var settings = CurrentSettings;
-            if (!settings.IsEnabled)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                continue;
-            }
+            using var scope = scopeFactory.CreateScope();
+            var pulse = scope.ServiceProvider.GetRequiredService<PulseService>();
+            var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
 
-            try
-            {
-                var now = KstClock.Now;
-                
-                // 매주 월요일 오전 9시 체성분 분석 (설정된 주기에 따라 체크)
-                if (now.Value.DayOfWeek == DayOfWeek.Monday && now.Value.Hour == 9)
-                {
-                    using var scope = scopeFactory.CreateScope();
-                    var pulse = scope.ServiceProvider.GetRequiredService<PulseService>();
-                    var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
+            pulse.ReportPulse(_workerName);
+            _logger.LogInformation("🔔 [주간 결산] 월요일 아침이 되었습니다. 리포트 생성을 하달합니다.");
 
-                    pulse.ReportPulse(WorkerName);
-                    logger.LogInformation("🔔 [주간 결산] 월요일 아침이 되었습니다. 리포트 생성을 하달합니다.");
-
-                    // 결산 모듈로 리포트 생성 명령 하달
-                    await mediator.Send(new GenerateWeeklyStatsReportCommand(), stoppingToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "❌ [WeeklyStatsReporter] 실행 중 오류 발생");
-            }
-
-            // 체크 주기는 설정을 따르거나 고정값(30분) 사용
-            await Task.Delay(_checkInterval, stoppingToken);
+            await mediator.Send(new GenerateWeeklyStatsReportCommand(), ct);
         }
     }
 }

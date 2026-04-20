@@ -1,63 +1,31 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Domain.Abstractions;
 using Microsoft.Extensions.Options;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Infrastructure.Workers.Broadcast;
 
 /// <summary>
-/// [영겁의 파수꾼]: 스트리머들의 인증 토큰 만료를 감시하고, 만료 임박순으로 우선순위를 정하여 갱신을 수행하는 전용 서비스입니다.
+/// [영겁의 파수꾼]: 스트리머들의 인증 토큰 만료를 감시하고 임박순으로 갱신을 수행하는 서비스입니다.
 /// </summary>
 public class TokenRenewalBackgroundService(
     IServiceProvider serviceProvider,
-    IOptionsMonitor<WorkerSettings> optionsMonitor, // [수정] Named Options 패턴 적용
-    ILogger<TokenRenewalBackgroundService> logger) : BackgroundService
+    IOptionsMonitor<WorkerSettings> optionsMonitor,
+    ILogger<TokenRenewalBackgroundService> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(TokenRenewalBackgroundService))
 {
-    private const string WorkerName = nameof(TokenRenewalBackgroundService);
+    // [지휘관 지침]: 기본 토큰 점검 주기는 30분(1,800초)으로 설정합니다.
+    protected override int DefaultIntervalSeconds => 1800;
 
-    // [수정] Named Options Get(WorkerName)으로 본인 설정을 획득
-    private WorkerSettings CurrentSettings => optionsMonitor.Get(WorkerName);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        logger.LogInformation("🚀 [TokenRenewalBackgroundService] 가동 시작 (설정: {Interval}s)", CurrentSettings.IntervalSeconds);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            var settings = CurrentSettings;
-            if (!settings.IsEnabled)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                continue;
-            }
-
-            try
-            {
-                await ProcessPriorityRenewalAsync(stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(settings.IntervalSeconds), stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "[영겁의 파수꾼] 토큰 갱신 루프 중 예외 발생");
-            }
-        }
-    }
-
-    private async Task ProcessPriorityRenewalAsync(CancellationToken ct)
+    protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var renewalService = scope.ServiceProvider.GetRequiredService<ITokenRenewalService>();
 
-        // 1. [우선순위의 산정]: 봇 활성화된 스트리머 중 만료 시간이 가장 임박한 순서로 정렬
+        // [우선순위 산정]: 봇 활성화된 스트리머 중 만료 임박순 정렬
         var profiles = await db.StreamerProfiles
-            .Where(p => p.IsActive && p.IsMasterEnabled) // [v6.1.6] 갱신 대상 선별 시 마스터 킬 스위치 반영
+            .Where(p => p.IsActive && p.IsMasterEnabled)
             .ToListAsync(ct);
 
         var sortedProfiles = profiles
@@ -66,27 +34,27 @@ public class TokenRenewalBackgroundService(
 
         if (sortedProfiles.Count == 0) return;
 
-        logger.LogInformation($"[영겁의 파수꾼] {sortedProfiles.Count}명의 스트리머 토큰 상태를 만료 임박순으로 점검합니다.");
+        _logger.LogInformation("[영겁의 파수꾼] {Count}명의 스트리머 토큰 상태를 점검합니다.", sortedProfiles.Count);
 
-        // 2. [순차적 갱신]: API 속도 제한 및 부하 분산을 위해 짧은 간격을 두고 하나씩 처리
+        // [순차적 갱신]: API 속도 제한 준수를 위해 소량의 딜레이를 주며 처리
         foreach (var profile in sortedProfiles)
         {
             if (ct.IsCancellationRequested) break;
 
             try
             {
-                // [영겁의 열쇠]: 만료 1시간 이내일 경우 자동 갱신 수행
+                // 만료 1시간 이내일 경우 자동 갱신 수행
                 bool result = await renewalService.RenewIfNeededAsync(profile.ChzzkUid);
                 
                 if (result)
                 {
-                    // 갱신 직후 혹은 이미 유효한 경우 약간의 대기 (100ms)
+                    // 갱신 직후 API 부하 조절을 위해 100ms 대기
                     await Task.Delay(100, ct);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"⚠️ [영겁의 파수꾼] {profile.ChzzkUid} 토큰 갱신 중 오류: {ex.Message}");
+                _logger.LogWarning("⚠️ [영겁의 파수꾼] {ChzzkUid} 토큰 갱신 실패: {Msg}", profile.ChzzkUid, ex.Message);
             }
         }
     }

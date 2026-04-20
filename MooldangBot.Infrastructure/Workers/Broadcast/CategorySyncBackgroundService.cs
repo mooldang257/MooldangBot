@@ -1,49 +1,27 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Features.Admin;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using MooldangBot.Application.Features.Admin;
 
 namespace MooldangBot.Infrastructure.Workers.Broadcast;
 
+/// <summary>
+/// [카테고리 동기화 워커]: 치지직 플랫폼의 최신 카테고리(게임 등) 목록을 로컬 DB와 동기화합니다.
+/// </summary>
 public class CategorySyncBackgroundService(
     ILogger<CategorySyncBackgroundService> logger, 
     IServiceScopeFactory scopeFactory,
-    IOptionsMonitor<WorkerSettings> optionsMonitor) : BackgroundService
+    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(logger, optionsMonitor, nameof(CategorySyncBackgroundService))
 {
-    private const string WorkerName = nameof(CategorySyncBackgroundService);
+    // [지휘관 지침]: 카테고리 동기화는 5분(300초) 주기로 수행합니다.
+    protected override int DefaultIntervalSeconds => 300;
 
-    // [수정] Named Options Get(WorkerName)으로 본인 설정을 획득
-    private WorkerSettings CurrentSettings => optionsMonitor.Get(WorkerName);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        logger.LogInformation("🚀 [CategorySyncBackgroundService] 가동 시작 (설정: {Interval}s)", CurrentSettings.IntervalSeconds);
+        using var scope = scopeFactory.CreateScope();
+        var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
         
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            var settings = CurrentSettings;
-            if (!settings.IsEnabled)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                continue;
-            }
-
-            try
-            {
-                using var scope = scopeFactory.CreateScope();
-                var syncService = scope.ServiceProvider.GetRequiredService<ChzzkCategorySyncService>();
-                await syncService.SyncCategoriesAsync(stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "❌ [카테고리 동기화] 오류 발생");
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(settings.IntervalSeconds), stoppingToken);
-        }
+        _logger.LogInformation("📡 [카테고리 동기화] 최신 카테고리 목록을 확보합니다.");
+        await syncService.SyncCategoriesAsync(ct);
     }
 }

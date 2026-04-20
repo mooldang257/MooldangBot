@@ -1,57 +1,38 @@
-using Microsoft.Extensions.Hosting;
-using MooldangBot.Domain.Abstractions;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.DependencyInjection;
+using MooldangBot.Domain.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Infrastructure.Workers.Maintenance;
 
+/// <summary>
+/// [룰렛 로그 정리 워커]: 7일이 경과한 오래된 룰렛 실행 로그를 주기적으로 삭제합니다.
+/// </summary>
 public class RouletteLogCleanupService(
     ILogger<RouletteLogCleanupService> logger, 
     IServiceProvider serviceProvider,
-    IOptionsMonitor<WorkerSettings> optionsMonitor) : BackgroundService
+    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(logger, optionsMonitor, nameof(RouletteLogCleanupService))
 {
-    private const string WorkerName = nameof(RouletteLogCleanupService);
+    // [지휘관 지침]: 룰렛 로그 정리는 2시간(7,200초) 주기로 수행합니다.
+    protected override int DefaultIntervalSeconds => 7200;
 
-    // [수정] Named Options Get(WorkerName)으로 본인 설정을 획득
-    private WorkerSettings CurrentSettings => optionsMonitor.Get(WorkerName);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        logger.LogInformation("🚀 [RouletteLogCleanupService] 가동 시작 (설정: {Interval}s)", CurrentSettings.IntervalSeconds);
+        _logger.LogDebug("[룰렛 로그] 오래된 기록을 정찰합니다.");
+        using var scope = serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        while (!stoppingToken.IsCancellationRequested)
+        // 7일 경과 데이터 기준
+        var thresholdDate = KstClock.Now.AddDays(-7);
+        int oldLogs = await db.RouletteLogs
+            .Where(l => l.CreatedAt < thresholdDate)
+            .ExecuteDeleteAsync(ct);
+
+        if (oldLogs > 0)
         {
-            var settings = CurrentSettings;
-            if (!settings.IsEnabled)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                continue;
-            }
-
-            try
-            {
-                using var scope = serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-                var thresholdDate = KstClock.Now.AddDays(-7);
-                var oldLogs = await db.RouletteLogs
-                    .Where(l => l.CreatedAt < thresholdDate)
-                    .ExecuteDeleteAsync(stoppingToken);
-
-                if (oldLogs > 0)
-                {
-                    logger.LogInformation("🧹 [룰렛 로그 정리] {Count}개의 오래된 로그를 삭제했습니다.", oldLogs);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "❌ [룰렛 로그 정리] 실행 중 오류 발생");
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(settings.IntervalSeconds), stoppingToken);
+            _logger.LogInformation("🧹 [룰렛 로그 정리] {Count}개의 오래된 기록을 삭제했습니다. (기준: {Threshold})", oldLogs, thresholdDate);
         }
     }
 }

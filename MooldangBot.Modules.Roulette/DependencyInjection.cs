@@ -15,8 +15,7 @@ public static class RouletteModuleExtensions
         // Strategies
         services.AddScoped<ICommandFeatureStrategy, RouletteStrategy>();
 
-        // Workers
-        services.AddHostedService<MooldangBot.Modules.Roulette.Workers.RouletteResultWorker>();
+        // Workers (WorkerRegistry.cs에서 중앙 관리되므로 여기서의 등록은 삭제합니다.)
 
         // Features 핸들러들은 MediatR 자동 스캔(Broadband Sonar)에 의해 등록됩니다.
 
