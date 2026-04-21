@@ -1,5 +1,5 @@
 using MooldangBot.Domain.Events;
-using MooldangBot.Modules.Commands.Models;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using System.Collections.Generic;
 using System;

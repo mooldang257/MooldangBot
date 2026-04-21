@@ -1,4 +1,4 @@
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 using MediatR;
 using MooldangBot.Domain.Entities;

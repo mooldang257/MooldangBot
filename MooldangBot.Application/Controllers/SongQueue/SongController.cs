@@ -12,6 +12,8 @@ using Microsoft.Extensions.Configuration;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Application.Common.Helpers;
 using MooldangBot.Application.Common.Interfaces;
+using NewSongBookState = MooldangBot.Modules.SongBook.State.SongBookState;
+using MooldangBot.Modules.SongBook.State;
 
 namespace MooldangBot.Application.Controllers.SongQueue
 {
@@ -24,7 +26,8 @@ namespace MooldangBot.Application.Controllers.SongQueue
         IOverlayNotificationService notificationService,
         IConfiguration config,
         ISongLibraryService libraryService,
-        IIdentityCacheService identityCache) : ControllerBase
+        IIdentityCacheService identityCache,
+        NewSongBookState songBuffer) : ControllerBase
     {
         /// <summary>
         /// 곡 대기열 목록 조회 (커서 기반 페이지네이션)
@@ -167,6 +170,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
 
             await db.SaveChangesAsync();
+
+            // [MODERN]: 인메모리 버퍼(SongBookState) 즉시 반영
+            songBuffer.AddSong(chzzkUid, newSong.Id, newSong.RequesterNickname ?? "익명", newSong.Title, newSong.Artist);
+
             await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
             
             var responseDto = new SongQueueResponseDto
@@ -229,6 +236,22 @@ namespace MooldangBot.Application.Controllers.SongQueue
             song.Status = status;
             await db.SaveChangesAsync();
 
+            // [MODERN]: 인메모리 버퍼(SongBookState) 상태 동기화
+            if (status == SongStatus.Playing)
+            {
+                songBuffer.SetCurrentSong(chzzkUid, song.Id, song.Title, song.Artist ?? "");
+                songBuffer.RemoveSong(chzzkUid, song.Id); // 큐에서 재생 중으로 이동 시 큐에서는 제거
+            }
+            else if (status == SongStatus.Completed || status == SongStatus.Cancelled)
+            {
+                songBuffer.RemoveSong(chzzkUid, song.Id);
+                var current = songBuffer.GetCurrentSong(chzzkUid);
+                if (current != null && current.Id == song.Id)
+                {
+                    songBuffer.ClearCurrentSong(chzzkUid);
+                }
+            }
+
             await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
             return Ok(Result<bool>.Success(true));
         }
@@ -248,6 +271,12 @@ namespace MooldangBot.Application.Controllers.SongQueue
             {
                 db.SongQueues.RemoveRange(songs);
                 await db.SaveChangesAsync();
+
+                // [MODERN]: 인메모리 버퍼(SongBookState) 벌크 동기화
+                foreach (var songId in ids)
+                {
+                    songBuffer.RemoveSong(chzzkUid, songId);
+                }
 
                 await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
                 return Ok(Result<bool>.Success(true));
@@ -327,6 +356,9 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             if (deletedCount > 0)
             {
+                // [MODERN]: 대량 삭제 시 안전을 위해 해당 스트리머 버퍼 초기화 (다음 조회 시 DB에서 Re-sync)
+                songBuffer.Clear(chzzkUid);
+                
                 await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
                 return Ok(Result<int>.Success(deletedCount));
             }

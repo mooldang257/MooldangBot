@@ -1,6 +1,6 @@
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
-using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.Commands.Models;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Domain.Abstractions;

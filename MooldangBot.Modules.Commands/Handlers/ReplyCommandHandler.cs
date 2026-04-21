@@ -4,7 +4,7 @@ using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using System;
 using System.Linq;
 using System.Threading;

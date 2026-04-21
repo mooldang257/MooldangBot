@@ -1,5 +1,5 @@
 using MediatR;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Common;

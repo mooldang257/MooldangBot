@@ -2,7 +2,7 @@ using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Modules.Point.Interfaces;
 using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Modules.Point.Enums;
-using MooldangBot.Modules.Commands.Models;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MediatR;

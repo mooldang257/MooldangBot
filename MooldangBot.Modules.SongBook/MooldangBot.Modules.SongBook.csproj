@@ -13,12 +13,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
-    <ProjectReference Include="..\MooldangBot.Modules.Commands\MooldangBot.Modules.Commands.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.2" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Entities.Philosophy;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Modules.SongBook.Abstractions;

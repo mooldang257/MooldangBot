@@ -1,5 +1,5 @@
 using MooldangBot.Domain.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Domain.Entities;

@@ -1,6 +1,6 @@
 using MooldangBot.Application.Features.Chat.Handlers;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
@@ -47,7 +47,7 @@ public class ChatInteractionHandlerTests
         };
 
         _commandCache.GetMatchesAsync("streamer1", "안녕하세요!")
-            .Returns(Enumerable.Empty<MooldangBot.Modules.Commands.Models.CommandMetadata>());
+            .Returns(Enumerable.Empty<MooldangBot.Domain.DTOs.CommandMetadata>());
 
         var notification = new ChzzkEventReceived(Guid.NewGuid(), profile, chatEvent, DateTimeOffset.UtcNow);
 
@@ -82,7 +82,7 @@ public class ChatInteractionHandlerTests
         };
 
         _commandCache.GetMatchesAsync("streamer1", "응원합니다!")
-            .Returns(Enumerable.Empty<MooldangBot.Modules.Commands.Models.CommandMetadata>());
+            .Returns(Enumerable.Empty<MooldangBot.Domain.DTOs.CommandMetadata>());
 
         var notification = new ChzzkEventReceived(Guid.NewGuid(), profile, donationEvent, DateTimeOffset.UtcNow);
 
@@ -160,7 +160,7 @@ public class ChatInteractionHandlerTests
         };
 
         // 명령어 캐시가 매칭 결과를 반환
-        var matchedCommand = new MooldangBot.Modules.Commands.Models.CommandMetadata
+        var matchedCommand = new MooldangBot.Domain.DTOs.CommandMetadata
         {
             Id = 1,
             Keyword = "!룰렛",

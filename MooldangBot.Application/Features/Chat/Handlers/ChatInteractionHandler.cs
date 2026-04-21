@@ -1,4 +1,4 @@
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Commands.Events;
 using MediatR;
 using MooldangBot.Domain.Abstractions;

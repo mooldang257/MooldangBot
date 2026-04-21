@@ -9,8 +9,8 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
-using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -164,6 +164,9 @@ namespace MooldangBot.Infrastructure
 
             // [v7.0] Wallet Architecture: 포인트 캐시 등록 (워커는 WorkerRegistry에서 통합 관리)
             services.AddSingleton<IPointCacheService, PointCacheService>();
+
+            // [v15.2] 오시리스의 특식: 오마카세 캐시 등록
+            services.AddSingleton<IOmakaseCacheService, OmakaseCacheService>();
 
             // [v13.1] 리포지토리 등록
             // [Phase 2] ISongBookRepository는 SongBook 모듈에서 등록됩니다.

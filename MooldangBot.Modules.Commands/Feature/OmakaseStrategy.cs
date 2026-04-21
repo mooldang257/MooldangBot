@@ -1,7 +1,6 @@
-using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
+using MooldangBot.Modules.SongBook.State;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -21,6 +20,8 @@ public class OmakaseStrategy(
     IDynamicQueryEngine dynamicEngine,
     IOverlayNotificationService notificationService,
     IIdentityCacheService identityCache,
+    IOmakaseCacheService omakaseCache,
+    SongBookState songBookState,
     ILogger<OmakaseStrategy> logger) : ICommandFeatureStrategy
 {
     public string FeatureType => "Omakase";
@@ -32,7 +33,12 @@ public class OmakaseStrategy(
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
 
-            // 1. [메뉴 탐색]: 명령어가 가리키는 특정 오마카세 아이템 조회
+            // 1. [메뉴 탐색]: 캐시 우선 조회
+            int targetId = command.TargetId.GetValueOrDefault();
+            string icon = await omakaseCache.GetIconAsync(command.StreamerProfileId, targetId, ct);
+            int currentCount = await omakaseCache.GetCountAsync(command.StreamerProfileId, targetId, ct);
+
+            // [S2]: 캐시 미스 시 또는 정합성 확보를 위해 DB 확인 (일회성 로드)
             var menu = await db.StreamerOmakases
                 .FirstOrDefaultAsync(o => o.StreamerProfileId == command.StreamerProfileId && o.Id == command.TargetId && o.IsActive, ct);
 
@@ -41,15 +47,25 @@ public class OmakaseStrategy(
                 logger.LogWarning("⚠️ [OmakaseStrategy] 유효한 오마카세 메뉴를 찾을 수 없습니다. (TargetId: {TargetId})", command.TargetId);
                 return CommandExecutionResult.Failure("메뉴를 찾을 수 없음", shouldRefund: true);
             }
+            
+            // 캐시 동기화 (최초 1회 또는 갱신 시)
+            if (icon == "🍣" || currentCount == 0)
+            {
+                await omakaseCache.SyncFromDbAsync(command.StreamerProfileId, targetId, menu.Icon, menu.Count, ct);
+                icon = menu.Icon;
+            }
 
-            // 2. [사용자 식별]: GlobalViewer 확보 (이지스 통합 캐시 활용)
+            // 2. [사용자 식별]: GlobalViewer 확보
             var viewerId = await identityCache.SyncGlobalViewerIdAsync(notification.SenderId, notification.Username);
 
-            // 3. [상태 업데이트]: 주문 횟수 증가 및 신청곡 리스트(SongQueue) 등록
+            // 3. [상태 업데이트]: 캐시 증분 및 DB 기록
+            await omakaseCache.IncrementCountAsync(command.StreamerProfileId, targetId, ct);
             menu.Count++;
             
-            // 곡 제목은 "아이콘 + 응답 텍스트" 조합 (기존 레거시 호환)
-            string songTitle = $"{menu.Icon} {command.ResponseText}";
+            // 곡 제목은 "아이콘 + 응답 텍스트" 조합
+            string songTitle = $"{icon} {command.ResponseText}";
+
+            // [통합]: 인메모리 SongBookState에 즉각 등록 (오버레이 노출용)
 
             var queueCount = await db.SongQueues
                 .Where(q => q.StreamerProfileId == command.StreamerProfileId)
@@ -70,6 +86,9 @@ public class OmakaseStrategy(
 
             db.SongQueues.Add(newRequest);
             await db.SaveChangesAsync(ct);
+
+            // [통합]: 인메모리 SongBookState에 즉각 등록 (오버레이 노출용, ID 포함)
+            songBookState.AddSong(notification.Profile.ChzzkUid, newRequest.Id, notification.Username, songTitle);
 
             // [오버레이의 메아리]: 대기열 실시간 갱신 전파
             await notificationService.NotifySongQueueChangedAsync(notification.Profile.ChzzkUid, ct);

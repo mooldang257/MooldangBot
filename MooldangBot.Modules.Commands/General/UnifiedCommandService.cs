@@ -1,5 +1,5 @@
-using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.DTOs;

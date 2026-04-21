@@ -3,6 +3,10 @@ using MooldangBot.Modules.SongBook.State;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Common.Models;
+using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
+using MooldangBot.Modules.SongBook.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 
 namespace MooldangBot.Modules.SongBook.Features.Commands;
@@ -16,6 +20,7 @@ public record AddSongRequestCommand(string ChzzkUid, string Username, string Son
 public class AddSongRequestCommandHandler(
     SongBookState state, 
     IMediator mediator,
+    ISongBookDbContext db,
     IOverlayNotificationService overlayNotification) : IRequestHandler<AddSongRequestCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(AddSongRequestCommand request, CancellationToken ct)
@@ -31,21 +36,52 @@ public class AddSongRequestCommandHandler(
             artist = parts[1].Trim();
         }
 
-        // 2. 인메모리 상태 업데이트
-        var added = state.AddSong(request.Username, title, artist);
+        // 2. 인메모리 상태 업데이트 (스트리머별 큐 적용)
+        // [MODERN]: DB 저장 전에는 임시 ID(0)로 시도하거나, 아래에서 DB 저장 후 실제 ID로 교체합니다.
+        // 여기선 가입 가능 여부만 체크하고 실제 추가는 DB 저장 후에 수행합니다.
+        
+        // 3. [영속화]: DB에 신청 내역 저장
+        var profile = await db.StreamerProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid, ct);
+
+        int newSongId = 0;
+        if (profile != null)
+        {
+            var queueCount = await db.SongQueues
+                .Where(q => q.StreamerProfileId == profile.Id)
+                .CountAsync(ct);
+
+            var newRequest = new SongQueue
+            {
+                StreamerProfileId = profile.Id,
+                RequesterNickname = request.Username,
+                Title = string.IsNullOrEmpty(artist) ? title : $"{title} - {artist}",
+                Status = SongStatus.Pending,
+                CreatedAt = KstClock.Now,
+                SortOrder = queueCount + 1
+            };
+
+            db.SongQueues.Add(newRequest);
+            await db.SaveChangesAsync(ct);
+            newSongId = newRequest.Id;
+        }
+
+        // 인메모리 버퍼 실제 추가 (ID 포함)
+        var added = state.AddSong(request.ChzzkUid, newSongId, request.Username, title, artist);
         
         if (!added)
             return Result<bool>.Failure("이미 신청된 곡입니다.");
 
-        // 3. [오시리스의 전파]: 도메인 이벤트 발행 (이전 호환성 유지)
+        // 4. [오시리스의 전파]: 도메인 이벤트 발행
         await mediator.Publish(new SongAddedEvent(request.Username, title, request.ChzzkUid), ct);
 
-        // 4. [실시간 공명]: 오버레이 상태 브로드캐스트
-        var current = state.CurrentSong;
-        var queue = state.GetQueue().Select(s => new QueueSongDto(s.Title, s.Artist, s.Username)).ToList();
+        // 5. [실시간 공명]: 오버레이 상태 브로드캐스트
+        var current = state.GetCurrentSong(request.ChzzkUid);
+        var queue = state.GetQueue(request.ChzzkUid).Select(s => new QueueSongDto(s.Title, s.Artist, s.Username)).ToList();
         
         var overlayData = new SongOverlayDto(
-            current != null ? new CurrentSongDto(current.Value.Title, current.Value.Artist) : null,
+            current != null ? new CurrentSongDto(current.Title, current.Artist) : null,
             queue,
             new SongOverlaySettings() // 기본 폰트 설정 사용
         );

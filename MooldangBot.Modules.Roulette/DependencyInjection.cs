@@ -1,4 +1,4 @@
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Roulette.Strategies;
 using MooldangBot.Modules.Roulette.State;

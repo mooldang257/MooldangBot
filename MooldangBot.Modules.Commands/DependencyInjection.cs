@@ -1,5 +1,5 @@
-using MooldangBot.Modules.Commands.Abstractions;
-using MooldangBot.Modules.Commands.Abstractions;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using MooldangBot.Modules.Commands.Cache;
 using MooldangBot.Modules.Commands.General;
