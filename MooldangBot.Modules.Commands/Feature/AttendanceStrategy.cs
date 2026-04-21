@@ -19,7 +19,8 @@ namespace MooldangBot.Modules.Commands.Feature;
 public class AttendanceStrategy(
     IServiceProvider serviceProvider,
     IChzzkBotService botService,
-    IDynamicQueryEngine dynamicEngine) : ICommandFeatureStrategy
+    IDynamicQueryEngine dynamicEngine,
+    IIdentityCacheService identityCache) : ICommandFeatureStrategy
 {
     public string FeatureType => "Attendance";
 
@@ -30,36 +31,19 @@ public class AttendanceStrategy(
         var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, ct);
         if (streamer == null) return CommandExecutionResult.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
-        var viewerHash = Sha256Hasher.ComputeHash(notification.SenderId);
-        
-        // 1. 글로벌 시청자 확보
-        var globalViewer = await db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
-        if (globalViewer == null)
-        {
-            globalViewer = new GlobalViewer 
-            { 
-                ViewerUid = notification.SenderId, 
-                ViewerUidHash = viewerHash,
-                Nickname = notification.Username
-            };
-            db.GlobalViewers.Add(globalViewer);
-        }
-        else if (globalViewer.Nickname != notification.Username)
-        {
-            globalViewer.Nickname = notification.Username;
-            globalViewer.UpdatedAt = KstClock.Now;
-        }
+        // 1. 글로벌 시청자 확보 (이지스 통합 캐시 활용)
+        var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(notification.SenderId, notification.Username);
 
         // 2. 채널별 프로필 확보
         var viewer = await db.ViewerRelations
-            .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewer.Id, ct);
+            .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId, ct);
 
         if (viewer == null)
         {
             viewer = new ViewerRelation 
             { 
                 StreamerProfileId = streamer.Id,
-                GlobalViewerId = globalViewer.Id
+                GlobalViewerId = globalViewerId
             };
             db.ViewerRelations.Add(viewer);
         }

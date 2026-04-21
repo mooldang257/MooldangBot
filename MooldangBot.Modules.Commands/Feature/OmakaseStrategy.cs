@@ -20,6 +20,7 @@ public class OmakaseStrategy(
     IChzzkBotService botService,
     IDynamicQueryEngine dynamicEngine,
     IOverlayNotificationService notificationService,
+    IIdentityCacheService identityCache,
     ILogger<OmakaseStrategy> logger) : ICommandFeatureStrategy
 {
     public string FeatureType => "Omakase";
@@ -41,28 +42,8 @@ public class OmakaseStrategy(
                 return CommandExecutionResult.Failure("메뉴를 찾을 수 없음", shouldRefund: true);
             }
 
-            // 2. [사용자 식별]: GlobalViewer 확보 (v6.2 해시 기반 표준)
-            var viewerHash = MooldangBot.Domain.Common.Security.Sha256Hasher.ComputeHash(notification.SenderId);
-            var viewer = await db.GlobalViewers
-                .FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
-
-            if (viewer == null)
-            {
-                viewer = new GlobalViewer 
-                { 
-                    ViewerUid = notification.SenderId, 
-                    ViewerUidHash = viewerHash,
-                    Nickname = notification.Username
-                };
-                db.GlobalViewers.Add(viewer);
-            }
-            else if (viewer.Nickname != notification.Username && !string.Equals(notification.Username, "TEST", StringComparison.OrdinalIgnoreCase))
-            {
-                // [물멍] 테스트 알림 등으로 인한 닉네임 오염 방지
-                viewer.Nickname = notification.Username;
-                viewer.UpdatedAt = KstClock.Now;
-            }
-            await db.SaveChangesAsync(ct);
+            // 2. [사용자 식별]: GlobalViewer 확보 (이지스 통합 캐시 활용)
+            var viewerId = await identityCache.SyncGlobalViewerIdAsync(notification.SenderId, notification.Username);
 
             // 3. [상태 업데이트]: 주문 횟수 증가 및 신청곡 리스트(SongQueue) 등록
             menu.Count++;
@@ -77,7 +58,7 @@ public class OmakaseStrategy(
             var newRequest = new SongQueue
             {
                 StreamerProfileId = command.StreamerProfileId,
-                GlobalViewerId = viewer.Id,
+                GlobalViewerId = viewerId,
                 RequesterNickname = notification.Username, // [물멍] 신청 시점 닉네임 박제 (Snapshot)
                 Title = songTitle,
                 Status = SongStatus.Pending,

@@ -34,6 +34,7 @@ public class AuthService(
     IDataProtectionProvider _protectionProvider,
     IChzzkAccessCredentialStore _tokenStore, // [오시리스의 영겁]: Redis 토큰 저장소 추가
     IMediator _mediator, // [오시리스의 지혜]: 이벤트 발행을 위한 메디에이터 추가
+    IIdentityCacheService _identityCache, // [이지스의 눈]: 시청자 캐시 동기화 추가
     ILogger<AuthService> _logger) : IAuthService
 {
     private const string CacheKeyPrefix = "OverlayTokenVersion:";
@@ -137,29 +138,8 @@ public class AuthService(
 
     private async Task<AuthResult> SyncGlobalViewerAsync(string chzzkUid, string channelName, string? profileImageUrl)
     {
-        var viewerHash = Sha256Hasher.ComputeHash(chzzkUid);
-        var viewer = await _db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == viewerHash);
-
-        if (viewer == null)
-        {
-            viewer = new GlobalViewer 
-            { 
-                ViewerUid = chzzkUid,
-                ViewerUidHash = viewerHash,
-                Nickname = channelName,
-                ProfileImageUrl = profileImageUrl,
-                CreatedAt = KstClock.Now
-            };
-            _db.GlobalViewers.Add(viewer);
-        }
-        else
-        {
-            viewer.Nickname = channelName;
-            viewer.ProfileImageUrl = profileImageUrl;
-            viewer.UpdatedAt = KstClock.Now;
-        }
-
-        await _db.SaveChangesAsync();
+        // [이지스 통합]: 시청자 동기화 및 캐싱을 IdentityCacheService로 일원화합니다.
+        await _identityCache.SyncGlobalViewerIdAsync(chzzkUid, channelName, profileImageUrl);
 
         _logger.LogInformation($"[오시리스의 기록] 시청자 정보 동기화 완료 (ChzzkUid: {chzzkUid}, Nickname: {channelName})");
         return new AuthResult { IsSuccess = true, ChzzkUid = chzzkUid, ChannelName = channelName };

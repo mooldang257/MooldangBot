@@ -9,6 +9,7 @@ using MooldangBot.Domain.Common.Security;
 using System.Text.Json;
 using MooldangBot.Modules.Roulette.State;
 using MooldangBot.Modules.Roulette.Notifications;
+using MooldangBot.Domain.Abstractions;
 
 namespace MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 
@@ -40,6 +41,7 @@ public class SpinRouletteHandler(
     RouletteState rouletteState,
     IMediator mediator,
     IRouletteLockProvider lockProvider,
+    IIdentityCacheService identityCache,
     ILogger<SpinRouletteHandler> logger) : IRequestHandler<SpinRouletteCommand, RouletteExecutionResult?>
 {
     public async Task<RouletteExecutionResult?> Handle(SpinRouletteCommand request, CancellationToken ct)
@@ -75,7 +77,8 @@ public class SpinRouletteHandler(
                     var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
                     if (streamer == null) return null;
 
-                    var globalViewer = await GetOrCreateGlobalViewerAsync(viewerUid, viewerNickname, ct);
+                    // [이지스 통합]: 시청자 정보를 캐시 서비스에서 조회/생성합니다.
+                    var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(viewerUid, viewerNickname ?? "비회원", null, ct);
 
                     // 2. 룰렛 및 항목 조회
                     var roulette = await db.Roulettes
@@ -89,13 +92,13 @@ public class SpinRouletteHandler(
                     }
 
                     // 3. 추첨 로직 실행
-                    var (results, logs) = ExecuteSpinLogic(roulette, globalViewer, count);
+                    var (results, logs) = ExecuteSpinLogic(roulette, globalViewerId, count);
 
                     // 4. 영속성 반영
                     db.RouletteLogs.AddRange(logs);
                     await db.SaveChangesAsync(ct);
 
-                    var spinId = await CreateRouletteSpinAsync(streamer.Id, rouletteId, globalViewer.Id, results, chzzkUid, count, ct);
+                    var spinId = await CreateRouletteSpinAsync(streamer.Id, rouletteId, globalViewerId, results, chzzkUid, count, ct);
                     
                     await transaction.CommitAsync(ct);
 
@@ -118,10 +121,6 @@ public class SpinRouletteHandler(
                         totalDurationMs
                     );
 
-                    // [v4.2] 레거시 중복 알림 제거: 이제 RouletteExecutionHandler에서 통합 관리합니다.
-                    // await mediator.Publish(new RouletteSpinInitiatedNotification(chzzkUid, roulette.Name, viewerNickname, viewerUid, count), ct);
-                    // await mediator.Publish(new RouletteSpinResultNotification(chzzkUid, spinId, response, logs), ct);
-
                     return new RouletteExecutionResult(results, spinId, response, logs);
                 }
                 catch (Exception ex)
@@ -139,32 +138,7 @@ public class SpinRouletteHandler(
         }
     }
 
-    private async Task<GlobalViewer> GetOrCreateGlobalViewerAsync(string viewerUid, string? viewerNickname, CancellationToken ct)
-    {
-        var viewerHash = Sha256Hasher.ComputeHash(viewerUid);
-        var globalViewer = await db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
-        
-        if (globalViewer == null)
-        {
-            globalViewer = new GlobalViewer 
-            { 
-                ViewerUid = viewerUid, 
-                ViewerUidHash = viewerHash,
-                Nickname = viewerNickname ?? "비회원"
-            };
-            db.GlobalViewers.Add(globalViewer);
-        }
-        else if (!string.IsNullOrEmpty(viewerNickname) && globalViewer.Nickname != viewerNickname)
-        {
-            globalViewer.Nickname = viewerNickname;
-            globalViewer.UpdatedAt = KstClock.Now;
-        }
-
-        await db.SaveChangesAsync(ct);
-        return globalViewer;
-    }
-
-    private (List<RouletteItem> results, List<RouletteLog> logs) ExecuteSpinLogic(MooldangBot.Domain.Entities.Roulette roulette, GlobalViewer viewer, int count)
+    private (List<RouletteItem> results, List<RouletteLog> logs) ExecuteSpinLogic(MooldangBot.Domain.Entities.Roulette roulette, int globalViewerId, int count)
     {
         var activeItems = roulette.Items.Where(i => i.IsActive).ToList();
         var results = new List<RouletteItem>();
@@ -182,7 +156,7 @@ public class SpinRouletteHandler(
                 RouletteId = roulette.Id,
                 RouletteItemId = result.Id,
                 RouletteName = roulette.Name,
-                GlobalViewerId = viewer.Id,
+                GlobalViewerId = globalViewerId,
                 ItemName = result.ItemName,
                 IsMission = result.IsMission,
                 Status = result.IsMission ? RouletteLogStatus.Pending : RouletteLogStatus.Completed,

@@ -19,6 +19,7 @@ namespace MooldangBot.Modules.Point.Features.Commands.RefundCurrency;
 public class RefundCurrencyCommandHandler(
     IPointDbContext dbContext,
     IPointCacheService cacheService,
+    IIdentityCacheService identityCache,
     ILogger<RefundCurrencyCommandHandler> logger) : IRequestHandler<RefundCurrencyCommand, bool>
 {
     public async Task<bool> Handle(RefundCurrencyCommand request, CancellationToken ct)
@@ -29,12 +30,12 @@ public class RefundCurrencyCommandHandler(
             var streamerProfile = await dbContext.StreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
             
-            var globalViewer = await dbContext.GlobalViewers
-                .FirstOrDefaultAsync(v => v.Nickname == request.ViewerNickname, ct); // 닉네임 또는 UID 해시 기반 조회 필요
+            // [이지스 통합]: UID 기반 시청자 식별 및 동기화
+            var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.ViewerNickname ?? "Unknown", null, ct);
 
-            if (streamerProfile == null || globalViewer == null)
+            if (streamerProfile == null || globalViewerId == 0)
             {
-                logger.LogWarning("⚠️ [자율 복구 실패] 대상 프로필 또는 시청자를 찾을 수 없습니다. (Viewer: {Viewer})", request.ViewerNickname);
+                logger.LogWarning("⚠️ [자율 복구 실패] 대상 프로필 또는 시청자를 식별할 수 없습니다. (Uid: {Uid})", request.ViewerUid);
                 return false;
             }
 
@@ -45,7 +46,7 @@ public class RefundCurrencyCommandHandler(
             var log = new PointTransactionHistory
             {
                 StreamerProfileId = streamerProfile.Id,
-                GlobalViewerId = globalViewer.Id,
+                GlobalViewerId = globalViewerId,
                 Amount = request.Amount,
                 Type = PointTransactionType.System, // [v7.3] 오시리스 규률: 환불은 시스템 보정 트랜잭션으로 취급합니다.
                 Reason = $"[자율복구] {request.Reason} (ID: {request.CorrelationId})",

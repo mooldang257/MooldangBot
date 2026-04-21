@@ -25,11 +25,8 @@ export async function apiFetch<T>(
         // 'Authorization': `Bearer ${선장님의_인증_토큰}` // 추후 인증 연동 시 활성화
     };
 
-    // [Aegis Bridge]: SSR 환경에서는 브라우저 프록시가 작동하지 않으므로 백엔드 주소를 직접 명시
-    let finalUrl = url;
-    if (!browser && url.startsWith('/api')) {
-        finalUrl = `http://mooldang-app:8080${url}`;
-    }
+    // [Aegis Bridge]: SSR 환경에서의 URL 치환은 hooks.server.ts의 handleFetch가 담당합니다.
+    const finalUrl = url;
 
     const fetchOptions: RequestInit = {
         ...options,

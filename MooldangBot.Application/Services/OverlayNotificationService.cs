@@ -5,6 +5,7 @@ using System.Text.Json;
 using MooldangBot.Domain.Contracts.Chzzk;
 using MooldangBot.Domain.Models.Chzzk;
 using MooldangBot.Application.Hubs;
+using MooldangBot.Domain.Contracts.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
@@ -15,35 +16,35 @@ using Microsoft.EntityFrameworkCore;
 namespace MooldangBot.Application.Services
 {
     public class OverlayNotificationService(
-        IHubContext<OverlayHub> hubContext,
+        IHubContext<OverlayHub, IOverlayClient> hubContext,
         IAppDbContext db,
         ILogger<OverlayNotificationService> logger) : IOverlayNotificationService
     {
         public async Task NotifyRefreshAsync(string? chzzkUid, CancellationToken token = default)
         {
             if (string.IsNullOrEmpty(chzzkUid)) return; 
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("SongAdded", "System", "New song request received", token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).SongAdded("System", "New song request received");
         }
 
         public async Task NotifyRouletteResultAsync(string chzzkUid, SpinRouletteResponse response, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveRouletteResult", response, token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).ReceiveRouletteResult(response);
         }
 
         public async Task NotifyMissionReceivedAsync(string chzzkUid, RouletteMissionOverlayDto missionDto, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("MissionReceived", missionDto, token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).MissionReceived(missionDto);
         }
 
         public async Task NotifySongQueueChangedAsync(string chzzkUid, CancellationToken token = default)
         {
             // [물멍]: 단순히 신호만 보내는 구식 방식입니다. 가급적 BroadcastSongOverlayUpdateAsync를 사용하세요.
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("NotifySongQueueChanged", cancellationToken: token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).NotifySongQueueChanged();
         }
 
         public async Task NotifyPointChangedAsync(string chzzkUid, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("RefreshSongAndDashboard", cancellationToken: token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).RefreshSongAndDashboard();
         }
 
         public async Task NotifyChatReceivedAsync(string chzzkUid, string senderId, string nickname, string message, string userRole, JsonElement? emojis = null, int? payAmount = null, CancellationToken token = default)
@@ -51,12 +52,12 @@ namespace MooldangBot.Application.Services
             var chatDto = new ChatOverlayDto(senderId, nickname, userRole, message, emojis, payAmount);
             var jsonRaw = JsonSerializer.Serialize(chatDto, ChzzkJsonContext.Default.ChatOverlayDto);
             
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveChat", jsonRaw, token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).ReceiveChat(jsonRaw);
         }
 
         public async Task NotifySongOverlayUpdateAsync(string chzzkUid, SongOverlayDto data, CancellationToken token = default)
         {
-            await hubContext.Clients.Group(chzzkUid.ToLower()).SendAsync("ReceiveSongOverlayUpdate", data, token);
+            await hubContext.Clients.Group(chzzkUid.ToLower()).ReceiveSongOverlayUpdate(data);
         }
 
         public async Task BroadcastSongOverlayUpdateAsync(string chzzkUid, string? connectionId = null, CancellationToken token = default)
@@ -106,11 +107,11 @@ namespace MooldangBot.Application.Services
             // 6. 전송 (특정 연결 대상 또는 그룹 전체)
             if (!string.IsNullOrEmpty(connectionId))
             {
-                await hubContext.Clients.Client(connectionId).SendAsync("ReceiveSongOverlayUpdate", dto, token);
+                await hubContext.Clients.Client(connectionId).ReceiveSongOverlayUpdate(dto);
             }
             else
             {
-                await hubContext.Clients.Group(normalizedUid).SendAsync("ReceiveSongOverlayUpdate", dto, token);
+                await hubContext.Clients.Group(normalizedUid).ReceiveSongOverlayUpdate(dto);
             }
 
             logger.LogInformation("[오시리스의 공명] 신청곡 오버레이 상태 브로드캐스트 완료. Channel: {ChzzkUid}, State: {State}", normalizedUid, currentSong != null ? "Playing" : "Idle");

@@ -14,9 +14,9 @@ public interface IIdentityCacheService
     Task<StreamerProfile?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct = default);
 
     /// <summary>
-    /// 시청자의 GlobalViewerId를 캐시에서 조회하거나 생성합니다. (30분 TTL)
+    /// 시청자의 정보를 동기화(조회/생성/업데이트)하고 GlobalViewerId를 반환합니다. (30분 TTL)
     /// </summary>
-    Task<int> GetGlobalViewerIdAsync(string viewerUid, string nickname, CancellationToken ct = default);
+    Task<int> SyncGlobalViewerIdAsync(string viewerUid, string nickname, string? profileImageUrl = null, CancellationToken ct = default);
 
     /// <summary>
     /// [물멍]: 커스텀 함교 주소(Slug)를 통해 스트리머의 UID를 해부합니다.

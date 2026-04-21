@@ -1,4 +1,5 @@
 using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Common.Services;
 using MooldangBot.Domain.Contracts.Chzzk;
 using System.Text.Json;
@@ -55,31 +56,58 @@ public class IdentityCacheService(
         return profile;
     }
 
-    public async Task<int> GetGlobalViewerIdAsync(string viewerUid, string nickname, CancellationToken ct = default)
+    public async Task<int> SyncGlobalViewerIdAsync(string viewerUid, string nickname, string? profileImageUrl = null, CancellationToken ct = default)
     {
         var hash = Sha256Hasher.ComputeHash(viewerUid);
         string key = $"{ViewerKeyPrefix}{hash}";
         
         string? val = await cache.GetStringAsync(key, ct);
-        if (int.TryParse(val, out int cachedId))
+        bool cacheHit = val != null;
+
+        // Cache Hit인 경우에도 만료 전까지는 DB 조회를 건너뛰지만, 
+        // AuthService나 특정 트리거에서 강제로 최신 동기화가 필요한 경우가 있으므로 로직 설계 주의
+        if (cacheHit && int.TryParse(val, out int cachedId))
         {
             return cachedId;
         }
 
-        // Cache Miss: DB 조회 (없을 경우 생성)
+        // Cache Miss: DB 조회 (없을 경우 생성, 있을 경우 정보 업데이트)
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var viewer = await db.GlobalViewers.FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
-        if (viewer == null)
+        var viewer = await db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
+        bool isNew = viewer == null;
+
+        if (isNew)
         {
-            viewer = new GlobalViewer { ViewerUid = viewerUid, ViewerUidHash = hash, Nickname = nickname };
+            viewer = new GlobalViewer 
+            { 
+                ViewerUid = viewerUid, 
+                ViewerUidHash = hash, 
+                Nickname = nickname,
+                ProfileImageUrl = profileImageUrl,
+                CreatedAt = KstClock.Now
+            };
             db.GlobalViewers.Add(viewer);
-            await db.SaveChangesAsync(ct);
             logger.LogInformation("🆕 [이지스 신규 시청자 생성] {Nickname} (Hash: {Hash})", nickname, hash);
         }
+        else
+        {
+            // 정보가 바뀌었는지 확인 후 업데이트 (Dirty Check)
+            bool isUpdated = false;
+            if (viewer!.Nickname != nickname) { viewer.Nickname = nickname; isUpdated = true; }
+            if (profileImageUrl != null && viewer.ProfileImageUrl != profileImageUrl) { viewer.ProfileImageUrl = profileImageUrl; isUpdated = true; }
 
+            if (isUpdated)
+            {
+                viewer.UpdatedAt = KstClock.Now;
+                logger.LogDebug("🔄 [이지스 시청자 정보 업데이트] {Nickname}", nickname);
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
         await cache.SetStringAsync(key, viewer.Id.ToString(), _viewerOptions, ct);
+        
         return viewer.Id;
     }
 

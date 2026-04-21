@@ -23,37 +23,33 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
     private readonly IPointCacheService _pointCache;
     private readonly ILogger<AddPointsHandler> _logger;
     private readonly IOverlayNotificationService _notificationService;
+    private readonly IIdentityCacheService _identityCache;
 
     public AddPointsHandler(
         IPointDbContext db,
         IPointCacheService pointCache,
         ILogger<AddPointsHandler> logger,
-        IOverlayNotificationService notificationService)
+        IOverlayNotificationService notificationService,
+        IIdentityCacheService identityCache)
     {
         _db = db;
         _pointCache = pointCache;
         _logger = logger;
         _notificationService = notificationService;
+        _identityCache = identityCache;
     }
 
     public async Task<(bool Success, int CurrentBalance)> Handle(AddPointsCommand request, CancellationToken ct)
     {
         try
         {
-            var viewerHash = Sha256Hasher.ComputeHash(request.ViewerUid);
             var streamer = await _db.StreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
             if (streamer == null) return (false, 0);
 
-            // 1. 글로벌 시청자 확보 (Join 성능을 위해 GlobalViewerId는 미리 확보)
-            var globalViewer = await _db.GlobalViewers.FirstOrDefaultAsync(g => g.ViewerUidHash == viewerHash, ct);
-            if (globalViewer == null)
-            {
-                globalViewer = new GlobalViewer { ViewerUid = request.ViewerUid, ViewerUidHash = viewerHash, Nickname = request.Nickname ?? "" };
-                _db.GlobalViewers.Add(globalViewer);
-                await _db.SaveChangesAsync(ct);
-            }
+            // 1. 글로벌 시청자 확보 (이지스 통합 캐시 활용)
+            var globalViewerId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.Nickname ?? "Unknown", null, ct);
 
             if (request.CurrencyType == PointCurrencyType.ChatPoint)
             {
@@ -62,7 +58,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 
                 // 현재 잔액은 DB값 + Redis 증분값
                 var dbBalance = await _db.ViewerPoints.AsNoTracking()
-                    .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewer.Id)
+                    .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId)
                     .Select(v => v.Points)
                     .FirstOrDefaultAsync(ct);
                 
@@ -88,7 +84,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                             last_chat_at = NOW(),
                             updated_at = NOW();";
 
-                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewer.Id }, transaction);
+                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
 
                     // [2순위: 포인트/재화 정산]
                     int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
@@ -104,7 +100,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                     await connection.ExecuteAsync(upsertSql, new 
                     { 
                         StreamerId = streamer.Id, 
-                        GlobalId = globalViewer.Id, 
+                        GlobalId = globalViewerId, 
                         Amount = request.Amount,
                         TotalIncrement = totalIncrement
                     }, transaction);
@@ -112,7 +108,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                     // 2. 최종 잔액 조회 (스냅샷 생성용)
                     var currentBalance = await connection.QueryFirstOrDefaultAsync<int>(
                         "SELECT balance FROM viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
-                        new { StreamerId = streamer.Id, GlobalId = globalViewer.Id }, transaction);
+                        new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
 
                     // 3. 감사 로그(ViewerDonationHistory) 기록
                     const string logSql = @"
@@ -122,7 +118,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                     await connection.ExecuteAsync(logSql, new
                     {
                         StreamerId = streamer.Id,
-                        GlobalId = globalViewer.Id,
+                        GlobalId = globalViewerId,
                         TxId = request.PlatformTransactionId ?? $"ADJ-{Guid.NewGuid():N}", // [v7.1] 전송된 SafeEventId 사용
                         Amount = request.Amount,
                         BalanceAfter = currentBalance,

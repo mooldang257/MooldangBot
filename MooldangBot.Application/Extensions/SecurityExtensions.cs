@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using MooldangBot.Application.Common.Security;
 using System.Security.Claims;
 using System.Text;
+using MooldangBot.Application.Security;
 
 namespace MooldangBot.Application.Extensions;
 
@@ -77,9 +78,16 @@ public static class SecurityExtensions
                 policy.RequireAuthenticatedUser();
                 policy.Requirements.Add(new ChannelManagerRequirement());
             });
+
+            // [이지스 쉴드]: 스트리머 채널 접근 권한 정책 등록
+            options.AddPolicy("chzzk-access", policy => {
+                policy.RequireAuthenticatedUser();
+                policy.Requirements.Add(new StreamerAccessRequirement());
+            });
         });
 
         services.AddScoped<IAuthorizationHandler, ChannelManagerAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, StreamerAccessHandler>();
 
         return services;
     }

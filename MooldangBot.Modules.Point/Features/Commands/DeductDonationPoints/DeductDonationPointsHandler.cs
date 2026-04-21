@@ -18,28 +18,31 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
     private readonly IPointDbContext _db;
     private readonly ILogger<DeductDonationPointsHandler> _logger;
     private readonly IOverlayNotificationService _notificationService;
+    private readonly IIdentityCacheService _identityCache;
 
     public DeductDonationPointsHandler(
         IPointDbContext db,
         ILogger<DeductDonationPointsHandler> logger,
-        IOverlayNotificationService notificationService)
+        IOverlayNotificationService notificationService,
+        IIdentityCacheService identityCache)
     {
         _db = db;
         _logger = logger;
         _notificationService = notificationService;
+        _identityCache = identityCache;
     }
 
     public async Task<(bool Success, int CurrentBalance)> Handle(DeductDonationPointsCommand request, CancellationToken ct)
     {
         try
         {
-            var viewerHash = Sha256Hasher.ComputeHash(request.ViewerUid);
             var streamer = await _db.StreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
             if (streamer == null) return (false, 0);
 
-            var globalId = await _db.GlobalViewers.Where(g => g.ViewerUidHash == viewerHash).Select(g => g.Id).FirstOrDefaultAsync(ct);
+            // [이지스 통합]: 시청자 식별을 캐시 서비스로 일원화
+            var globalId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, "viewer", null, ct);
             if (globalId == 0) return (false, 0);
 
             var connection = _db.Database.GetDbConnection();

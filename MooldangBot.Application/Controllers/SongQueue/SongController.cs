@@ -17,7 +17,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
 {
     [ApiController]
     [Route("api/song/{chzzkUid}")]
-    [Authorize(Policy = "ChannelManager")]
+    [Authorize(Policy = "chzzk-access")]
     // [v10.1] Primary Constructor 적용
     public class SongController(
         IAppDbContext db, 

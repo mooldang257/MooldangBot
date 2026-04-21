@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Http;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.Avatar
 {
     [ApiController]
+    [Authorize(Policy = "chzzk-access")]
     // [v10.1] Primary Constructor 적용
     public class AvatarSettingsController(IAppDbContext db, IWebHostEnvironment env) : ControllerBase
     {
@@ -34,8 +36,8 @@ namespace MooldangBot.Application.Controllers.Avatar
             return Ok(Result<AvatarSetting>.Success(setting));
         }
 
-        [HttpPost("/api/avatar/settings/update")]
-        public async Task<IActionResult> UpdateAvatarSettings([FromQuery] string chzzkUid, [FromBody] AvatarSetting req)
+        [HttpPut("/api/avatar/settings/{chzzkUid}")]
+        public async Task<IActionResult> UpdateAvatarSettings(string chzzkUid, [FromBody] AvatarSetting req)
         {
             var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 

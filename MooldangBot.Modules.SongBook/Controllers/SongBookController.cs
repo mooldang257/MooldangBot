@@ -44,7 +44,7 @@ public class SongBookController(IMediator mediator) : ControllerBase
     /// <summary>
     /// [송리스트 상태 토글]: 노래 신청 세션을 열거나 닫습니다. (스트리머 전용)
     /// </summary>
-    [HttpPost("status/toggle")]
+    [HttpPatch("status/toggle")]
     public async Task<ActionResult<Result<object>>> ToggleStatus([FromBody] ToggleSonglistStatusCommand command)
         => Ok(await mediator.Send(command));
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Services;
 using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Contracts.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using MediatR;
@@ -22,7 +23,7 @@ public class OverlayHub(
     IMediator mediator,
     PulseService pulseService,
     ILogger<OverlayHub> logger, 
-    IOverlayState overlayState) : Hub
+    IOverlayState overlayState) : Hub<IOverlayClient>
 {
     private IOverlayNotificationService GetNotificationService() 
         => Context.GetHttpContext()?.RequestServices.GetRequiredService<IOverlayNotificationService>() 
@@ -124,7 +125,7 @@ public class OverlayHub(
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
         if (!string.IsNullOrEmpty(streamerUid))
         {
-            await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayState", stateJson);
+            await Clients.Group(streamerUid.ToLower()).ReceiveOverlayState(stateJson);
         }
     }
 
@@ -142,7 +143,7 @@ public class OverlayHub(
     // 스타일 업데이트 브로드캐스트
     public async Task UpdatePresetStyle(int presetId, string styleJson)
     {
-        await Clients.Group($"preset-{presetId}").SendAsync("ReceiveOverlayStyle", styleJson);
+        await Clients.Group($"preset-{presetId}").ReceiveOverlayStyle(styleJson);
     }
 
     public async Task UpdateOverlayStyle(string styleJson)
@@ -150,7 +151,7 @@ public class OverlayHub(
         var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
         if (!string.IsNullOrEmpty(streamerUid))
         {
-            await Clients.Group(streamerUid.ToLower()).SendAsync("ReceiveOverlayStyle", styleJson);
+            await Clients.Group(streamerUid.ToLower()).ReceiveOverlayStyle(styleJson);
         }
     }
 

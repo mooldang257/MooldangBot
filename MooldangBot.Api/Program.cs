@@ -58,6 +58,44 @@ try
         .AddMooldangCors()
         .AddMooldangRateLimiter();
 
+    // 📄 [오시리스의 기록부]: Swagger/OpenAPI 설정
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+        {
+            Title = "MooldangBot API",
+            Version = "v1",
+            Description = "[이지스 브릿지]: 물당봇 통합 백엔드 API 서비스"
+        });
+
+        // JWT 보안 정의 추가
+        options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+            Name = "Authorization",
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "Bearer"
+        });
+
+        options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
+                },
+                Array.Empty<string>()
+            }
+        });
+
+        // XML 주석 반영
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
+    });
+
     // 🏗️ [기타 필수 서비스]
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IUserSession, UserSession>();
@@ -78,6 +116,17 @@ try
 
     // 🌊 [미들웨어 파이프라인]: 확장 메서드로 통합 관리
     app.UseMooldangMiddlewares();
+
+    // Swagger UI 활성화
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "MooldangBot API v1");
+            options.RoutePrefix = "swagger"; // 예: http://localhost:8010/swagger
+        });
+    }
 
     // 🎯 [엔드포인트 매핑]
     app.MapControllers();
