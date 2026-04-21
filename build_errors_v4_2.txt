@@ -1,0 +1,32 @@
+  Determining projects to restore...
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx [/home/mooldang/projects/MooldangBot/MooldangBot.Api/MooldangBot.Api.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf [/home/mooldang/projects/MooldangBot/MooldangBot.Api/MooldangBot.Api.csproj]
+  All projects are up-to-date for restore.
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf
+  MooldangBot.Domain -> /home/mooldang/projects/MooldangBot/MooldangBot.Domain/bin/Debug/net10.0/MooldangBot.Domain.dll
+  MooldangBot.Modules.Point -> /home/mooldang/projects/MooldangBot/MooldangBot.Modules.Point/bin/Debug/net10.0/MooldangBot.Modules.Point.dll
+  MooldangBot.Modules.Commands -> /home/mooldang/projects/MooldangBot/MooldangBot.Modules.Commands/bin/Debug/net10.0/MooldangBot.Modules.Commands.dll
+  MooldangBot.Modules.Roulette -> /home/mooldang/projects/MooldangBot/MooldangBot.Modules.Roulette/bin/Debug/net10.0/MooldangBot.Modules.Roulette.dll
+  MooldangBot.Modules.SongBook -> /home/mooldang/projects/MooldangBot/MooldangBot.Modules.SongBook/bin/Debug/net10.0/MooldangBot.Modules.SongBook.dll
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/DependencyInjection.cs(7,7): warning CS0105: The using directive for 'MooldangBot.Domain.Abstractions' appeared previously in this namespace [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Features/SongBook/Commands/AddSongRequestCommand.cs(3,7): warning CS0105: The using directive for 'MooldangBot.Domain.Abstractions' appeared previously in this namespace [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Security/StreamerAccessHandler.cs(18,23): warning CS9113: Parameter '_db' is unread. [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Services/IdentityCacheService.cs(88,29): error CS0103: The name 'KstClock' does not exist in the current context [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Services/IdentityCacheService.cs(102,36): error CS0103: The name 'KstClock' does not exist in the current context [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+
+Build FAILED.
+
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx [/home/mooldang/projects/MooldangBot/MooldangBot.Api/MooldangBot.Api.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf [/home/mooldang/projects/MooldangBot/MooldangBot.Api/MooldangBot.Api.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx
+/home/mooldang/projects/MooldangBot/MooldangBot.Infrastructure/MooldangBot.Infrastructure.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 9.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/DependencyInjection.cs(7,7): warning CS0105: The using directive for 'MooldangBot.Domain.Abstractions' appeared previously in this namespace [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Features/SongBook/Commands/AddSongRequestCommand.cs(3,7): warning CS0105: The using directive for 'MooldangBot.Domain.Abstractions' appeared previously in this namespace [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Security/StreamerAccessHandler.cs(18,23): warning CS9113: Parameter '_db' is unread. [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Services/IdentityCacheService.cs(88,29): error CS0103: The name 'KstClock' does not exist in the current context [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+/home/mooldang/projects/MooldangBot/MooldangBot.Application/Services/IdentityCacheService.cs(102,36): error CS0103: The name 'KstClock' does not exist in the current context [/home/mooldang/projects/MooldangBot/MooldangBot.Application/MooldangBot.Application.csproj]
+    7 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.42

@@ -16,11 +16,12 @@ namespace MooldangBot.Infrastructure.Workers.Chat;
 /// <summary>
 /// [오시리스의 서기 워커]: 버퍼링된 채팅 로그를 MySqlBulkCopy로 초고속 적재합니다.
 /// </summary>
-public class ChatLogBatchWorker(
+public class ChatLogBatchWorker(IServiceProvider serviceProvider,
+    
     IChatLogBufferService bufferService,
     IServiceScopeFactory scopeFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<ChatLogBatchWorker> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(ChatLogBatchWorker))
+    ILogger<ChatLogBatchWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(ChatLogBatchWorker))
 {
     private const string BackupFileName = "data/temp_chat_logs.json";
     private readonly ConcurrentQueue<ChatInteractionLog> _retryBuffer = new();

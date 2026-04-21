@@ -13,10 +13,10 @@ namespace MooldangBot.Infrastructure.Workers.Maintenance;
 public class RouletteLogCleanupService(
     ILogger<RouletteLogCleanupService> logger, 
     IServiceProvider serviceProvider,
-    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(logger, optionsMonitor, nameof(RouletteLogCleanupService))
+    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(RouletteLogCleanupService))
 {
-    // [지휘관 지침]: 룰렛 로그 정리는 2시간(7,200초) 주기로 수행합니다.
-    protected override int DefaultIntervalSeconds => 7200;
+    // [지휘관 지침]: 룰렛 로그 정리는 24시간(86,400초) 주기로 수행합니다.
+    protected override int DefaultIntervalSeconds => 86400;
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
@@ -24,10 +24,10 @@ public class RouletteLogCleanupService(
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        // 7일 경과 데이터 기준
-        var thresholdDate = KstClock.Now.AddDays(-7);
+        // 90일 경과 데이터 중 미수행(Pending) 상태가 아닌 것만 삭제
+        var thresholdDate = KstClock.Now.AddDays(-90);
         int oldLogs = await db.RouletteLogs
-            .Where(l => l.CreatedAt < thresholdDate)
+            .Where(l => l.CreatedAt < thresholdDate && l.Status != MooldangBot.Domain.Entities.RouletteLogStatus.Pending)
             .ExecuteDeleteAsync(ct);
 
         if (oldLogs > 0)

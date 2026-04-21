@@ -26,7 +26,7 @@ public class PointWriteBackWorker(
     PulseService pulse,
     ChaosManager chaosManager,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<PointWriteBackWorker> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(PointWriteBackWorker))
+    ILogger<PointWriteBackWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(PointWriteBackWorker))
 {
     private const string BackupFileName = "data/point_writeback_backup.json"; 
     
@@ -38,6 +38,9 @@ public class PointWriteBackWorker(
                 logger.LogWarning("⚠️ [WriteBack] DB 업데이트 1시적 실패. {TimeSpan}초 후 재시도합니다.", timeSpan.Seconds);
             });
 
+
+    protected override bool RequiresDistributedLock => true;
+
     protected override int DefaultIntervalSeconds => 10;
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -48,7 +51,6 @@ public class PointWriteBackWorker(
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        pulse.ReportPulse(_workerName);
 
         if (chaosManager.IsRedisPanic)
         {

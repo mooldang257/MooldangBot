@@ -18,7 +18,7 @@ public class SystemWatchdogService(
     INotificationService notificationService,
     IDistributedLockFactory lockFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<SystemWatchdogService> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(SystemWatchdogService))
+    ILogger<SystemWatchdogService> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(SystemWatchdogService))
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     

@@ -11,11 +11,12 @@ namespace MooldangBot.Infrastructure.Workers.Chat;
 /// <summary>
 /// [기록관의 수레]: 버퍼에 쌓인 대량의 로그를 EFCore.BulkExtensions를 강화하여 DB에 일괄 저장합니다.
 /// </summary>
-public class LogBulkBufferWorker(
+public class LogBulkBufferWorker(IServiceProvider serviceProvider,
+    
     LogBulkBuffer buffer,
     IServiceScopeFactory scopeFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<LogBulkBufferWorker> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(LogBulkBufferWorker))
+    ILogger<LogBulkBufferWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(LogBulkBufferWorker))
 {
     protected override int DefaultIntervalSeconds => 1;
 

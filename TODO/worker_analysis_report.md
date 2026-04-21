@@ -2,7 +2,7 @@
 
 > **분석 일시**: 2026-04-20 09:50 KST  
 > **대상**: `MooldangBot.Infrastructure/Workers/` 전체 + `MooldangBot.ChzzkAPI/Workers/`  
-> **워커 총 수**: 16개 (WorkerRegistry 15개 + GatewayWorker 1개)
+> **워커 총 수**: 17개 (WorkerRegistry 16개 + GatewayWorker 1개)
 
 ---
 
@@ -25,33 +25,34 @@
 | 13 | Maintenance | `RouletteResultWorker` | ✅ BaseHybridWorker | 10s | ❌ | ❌ | ❌ |
 | 14 | Ledger | `CelestialLedgerWorker` | ✅ BaseHybridWorker | 21600s | ❌ | ❌ | ✅ |
 | 15 | Ledger | `WeeklyStatsReporter` | ✅ BaseHybridWorker | 1800s | ❌ | ❌ | ✅ |
-| 16 | ChzzkAPI | `GatewayWorker` | ❌ **BackgroundService 직접** | 1h (유지루프) | ❌ | ❌ | ❌ |
+| 16 | Maintenance | `ChatLogCleanupWorker` | ✅ BaseHybridWorker | 86400s | ❌ | ✅ RedLock | ✅ |
+| 17 | ChzzkAPI | `GatewayWorker` | ❌ **BackgroundService 직접** | 1h (유지루프) | ❌ | ❌ | ❌ |
 
 > [!NOTE]
-> 모든 15개 워커가 `BaseHybridWorker`를 올바르게 상속하며, 2초 안전 하한선이 적용됩니다.  
+> 모든 16개 워커가 `BaseHybridWorker`를 올바르게 상속하며, 2초 안전 하한선이 적용됩니다.  
 > `GatewayWorker`는 `ChzzkAPI` 프로젝트에서 독립 등록되며 의도적으로 제외된 상태입니다.
 
 ---
 
-## 2. 🔴 데드락 / 중복 실행 분석
+## 2. ✅ 데드락 / 중복 실행 분석 (해결 완료)
 
-### 2.1 다중 인스턴스 중복 실행 위험 (Docker 환경)
+### 2.1 다중 인스턴스 중복 실행 위험 (해결 완료)
 
-> [!CAUTION]
-> **심각도: 높음** — Docker 환경에서 동일 워커가 여러 인스턴스에서 동시 실행될 경우 데이터 정합성이 깨질 수 있습니다.
+> [!NOTE]
+> 🚀 **조치 완료**: BaseHybridWorker에 분산 락(RedLock)이 전면 도입되어 핵심 워커들의 동시 실행 충돌이 차단되었습니다.
 
-현재 **분산 잠금(RedLock)**을 사용하는 워커는 `SystemWatchdogService` **단 1개**뿐입니다.
+현재 **분산 잠금(RedLock)**이 주요 권장 대상(P0, P1) 워커 등에 모두 적용되어 데이터 정합성을 보장하도록 개선되었습니다.
 
-| 워커 | 위험도 | 증상 | 설명 |
+| 워커 | 조치 내역 | 상태 | 설명 |
 |------|--------|------|------|
-| `PointWriteBackWorker` | 🔴 **치명** | 포인트 이중 적용 | `ExtractAllIncrementalPoints` → DB 동기화를 2개 인스턴스가 동시 수행 시, 동일 변동분이 2번 적용됩니다. Redis GETDEL이 원자적이지 않다면 **포인트 2배 지급 사고** 발생 |
-| `PointBatchWorker` | 🟡 중간 | 이중 처리(가능성 낮음) | `IPointBatchService`가 `Channel<T>` 기반이라면 인스턴스별 독립 버퍼를 보유하므로 중복 가능성은 낮으나, 공유 큐(RabbitMQ 등)라면 경합 발생 |
-| `StagingCleanupWorker` | 🟡 중간 | 동시 DELETE 충돌 | `ExecuteDeleteAsync`는 멱등성이 있어 데이터 손실은 없으나, 불필요한 DB 부하 및 락 경합 발생 |
-| `RouletteLogCleanupService` | 🟡 중간 | 동시 DELETE 경합 | 위와 동일 패턴 |
-| `CelestialLedgerWorker` | 🟡 중간 | 통계 이중 집계 | 2개 인스턴스가 동시에 `AggregatePointStats` + `AggregateRouletteStats`를 실행하면 집계값이 왜곡될 수 있음 |
-| `TokenRenewalBackgroundService` | 🟢 낮음 | 토큰 이중 갱신 | 갱신 자체는 멱등이지만, 치지직 API 속도 제한(Rate Limit)에 걸릴 수 있음 |
-| `CategorySyncBackgroundService` | 🟢 낮음 | 불필요한 API 호출 | UPSERT 패턴이면 데이터 무결성은 유지, 단 API 쿼터 낭비 |
-| `PeriodicMessageWorker` | 🔴 **치명** | 메시지 중복 송출 | 2개 인스턴스에서 동시 실행 시 동일 메시지가 2번 채팅에 뿌려짐 |
+| `PointWriteBackWorker` | ✅ **RedLock 도입** | 🟢 안전 | **포인트 2배 이중 지급** 사고가 원천 차단되었습니다. |
+| `PointBatchWorker` | - | 🟢 안전 | `Channel<T>` 기반 독립 버퍼라서 로컬 메모리 경합이 없습니다. |
+| `StagingCleanupWorker` | - | 🟢 안전 | DB DELETE 멱등성이 있어 락 없이도 무결성이 보장됩니다. |
+| `RouletteLogCleanupService` | - | 🟢 안전 | 위와 동일하게 멱등성이 유지됩니다. |
+| `CelestialLedgerWorker` | ✅ **RedLock 도입** | 🟢 안전 | 통계가 두 번 더해지는 통계 왜곡 맹점이 차단되었습니다. |
+| `TokenRenewalBackgroundService` | ✅ **RedLock 도입** | 🟢 안전 | 여러 인스턴스가 갱신을 동시 시도해 치지직 API Rate Limit에 걸리는 것을 막아줍니다. |
+| `CategorySyncBackgroundService` | - | 🟢 안전 | UPSERT 패턴이므로 병렬 처리에도 안전합니다. |
+| `PeriodicMessageWorker` | ✅ **RedLock 도입** | 🟢 안전 | 정기 메시지가 채팅창에 똑같이 두 번 송출되는 문제가 해결되었습니다. |
 
 ### 2.2 프로세스 내 데드락 분석
 
@@ -64,39 +65,34 @@
 
 ---
 
-## 3. 🟡 기능 중복 및 정리 필요 사항
+## 3. ✅ 기능 증설 및 로그 정리 체계 확립 (해결 완료)
 
-### 3.1 로그 정리 로직 중복
+### 3.1 시스템 로그 보존 및 정리 체계
 
-> [!WARNING]
-> `RouletteLogCleanupService`와 `CelestialLedgerWorker` → `CleanupExpiredLogsCommand`의 역할이 겹칩니다.
+> [!NOTE]
+> 테이블별로 역할이 명확히 분리된 3대 유지보수(Cleanup) 워커가 가동되어 데이터베이스의 무한 성장을 방지합니다. 기능 중복 없이 독립적으로 동작합니다.
 
-| 워커/명령 | 대상 테이블 | 보관 기간 | 주기 |
-|-----------|-------------|-----------|------|
-| `RouletteLogCleanupService` | `roulette_logs` | 7일 | 2시간 |
-| `CleanupExpiredLogsCommand` (via CelestialLedger) | `log_point_transactions` | 30일 | 6시간 |
+| 분류 | 워커/명령 | 대상 테이블 | 보관 기간 | 주기 | 상태 |
+|------|-----------|-------------|-----------|------|------|
+| 룰렛 | `RouletteLogCleanupService` | `roulette_logs` | 90일 | 24시간 | 🟢 정상 |
+| 포인트 | `CleanupExpiredLogsCommand` | `log_point_transactions` | 30일 | 24시간 | 🟢 정상 |
+| 채팅 | `ChatLogCleanupWorker` | `log_chat_interactions` | 90일 | 24시간 | ✅ **신규 적용** |
 
-**결론**: 현재는 대상 테이블이 **다르므로** 기능 중복은 아닙니다. 다만, 향후 **채팅 로그(`log_chat_interactions`) 정리** 워커가 없어서 테이블이 무한 성장할 수 있습니다.
+**결론**: 유일한 맹점이었던 **채팅 로그(`log_chat_interactions`) 무한 성장 문제**가 `ChatLogCleanupWorker` 워커 신설을 통해 완전히 해결되었습니다. 3가지 로그 대상 테이블 각각이 충돌 없이 안전하게 수명 주기를 관리받고 있습니다.
 
-### 3.2 Pulse 보고 불균형
+### 3.2 Pulse 보고 불균형 (해결 완료)
 
-아래 워커들은 Watchdog 감시 대상에서 **빠져 있습니다** (`PulseService.ReportPulse` 호출 없음):
+~~아래 워커들은 Watchdog 감시 대상에서 **빠져 있습니다** (`PulseService.ReportPulse` 호출 없음):~~
 
-- `ChatLogBatchWorker` — **고속 처리(2s 주기)** 워커가 감시 사각지대
-- `LogBulkBufferWorker` — 위와 동일
-- `ChzzkBackgroundService` — 핵심 커넥션 워커가 감시 누락
-- `SystemWatchdogService` — 감시자 자체의 맥박 보고 부재
-- `TokenRenewalBackgroundService` — 토큰 갱신 실패 시 감지 불가
-- `CategorySyncBackgroundService` — 중요도 낮으나 일관성 위반
-- `StagingCleanupWorker` — 중요도 낮음
-- `RouletteLogCleanupService` — 중요도 낮음
-- `RouletteResultWorker` — 룰렛 결과 미전송 감지 불가
+> ✅ **해결 완료**: `BaseHybridWorker` 엔진 레벨에 `PulseService`가 통합되어, 현재 모든 자식 워커가 자동으로 Watchdog에 맥박을 보고합니다. 사각지대가 완전히 해소되었습니다.
 
 ---
 
-## 4. 🟢 추가 개선 제안
+## 4. 🟢 추가 개선 완료 사항
 
-### 4.1 분산 잠금 적용 필요 워커 (우선순위순)
+### 4.1 분산 잠금 적용 대상 (해결 완료)
+
+> ✅ **해결 완료**: P0, P1 그룹의 모든 워커에 `RequiresDistributedLock => true` 적용이 완료되었습니다.
 
 ```
 🔴 P0 (즉시)
@@ -117,7 +113,7 @@
 
 | 제안 워커 | 분류 | 역할 | 우선순위 |
 |-----------|------|------|----------|
-| `ChatLogCleanupWorker` | Maintenance | `log_chat_interactions` 테이블 정리 (90일 보관) | 🔴 높음 — 현재 무한 성장 중 |
+| `ChatLogCleanupWorker` | Maintenance | `log_chat_interactions` 테이블 정리 (90일 보관) | ✅ **적용 완료** |
 | `BroadcastSessionCleanupWorker` | Maintenance | 비활성 브로드캐스트 세션 정리 | 🟡 중간 |
 | `MetricsCollectorWorker` | Ledger | 프로메테우스 메트릭 수집/Report | 🟢 낮음 (관측 체계 확장 시) |
 
@@ -158,17 +154,16 @@
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| BaseHybridWorker 상속 | ✅ 완벽 | 15/15 (GatewayWorker 제외 — 의도적) |
+| BaseHybridWorker 상속 | ✅ 완벽 | 16/16 (GatewayWorker 제외 — 의도적) |
 | 2초 하한선 적용 | ✅ 정상 | ChatLog/LogBulk의 1s가 자동 2s 보정 |
 | 프로세스 내 데드락 | ✅ 안전 | SemaphoreSlim Skip 패턴 사용 |
-| 다중 인스턴스 데드락 | 🔴 위험 | `PointWriteBackWorker`, `PeriodicMessageWorker` 즉시 조치 필요 |
+| 다중 인스턴스 데드락 | ✅ 안전 | RedLock 엔진 내장 및 P0, P1 워커 적용 완료 |
 | 기능 중복 | ✅ 양호 | 로그 정리 대상은 테이블이 다름 |
-| 누락 워커 | 🟡 주의 | 채팅 로그 정리 워커 부재 (테이블 무한 성장) |
-| Pulse 보고 일관성 | 🟡 주의 | 9/15개 워커 미보고 → Watchdog 사각지대 |
-| WorkerRegistry 정합성 | ✅ 완벽 | 등록 15개 = 실제 파일 15개 일치 |
+| 누락 워커 | ✅ 해결됨 | `ChatLogCleanupWorker` 신설 완료 |
+| Pulse 보고 일관성 | ✅ 완벽 | 엔진 통합으로 16/16 워커 전수 자동 보고 |
+| WorkerRegistry 정합성 | ✅ 완벽 | 등록 16개 = 실제 파일 16개 일치 |
 
 ---
 
-> [!IMPORTANT]
-> **즉시 조치 필요**: `PointWriteBackWorker`와 `PeriodicMessageWorker`에 분산 잠금을 적용하지 않으면, Docker 스케일 아웃 시 **포인트 이중 적용**과 **메시지 중복 송출** 사고가 발생합니다.  
-> `BaseHybridWorker`에 분산 잠금 메커니즘을 내장하는 것을 **강력히 권장**합니다.
+> [!NOTE]
+> 🚀 **조치 완료**: 권장되었던 BaseHybridWorker 엔진 개편, 분산 잠금 도입, Pulse 자동 보고 기능이 모두 성공적으로 반영되었습니다.

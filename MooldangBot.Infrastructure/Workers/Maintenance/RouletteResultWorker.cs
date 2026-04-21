@@ -10,10 +10,11 @@ namespace MooldangBot.Infrastructure.Workers.Maintenance;
 /// [오시리스의 파수꾼]: 룰렛 결과 전송 스케줄을 감시하고 자동 전송을 수행하는 백그라운드 서비스입니다.
 /// (Phase 3): 순환 참조 방지를 위해 Infrastructure 계층으로 안착되었습니다.
 /// </summary>
-public class RouletteResultWorker(
+public class RouletteResultWorker(IServiceProvider serviceProvider,
+    
     IServiceScopeFactory scopeFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<RouletteResultWorker> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(RouletteResultWorker))
+    ILogger<RouletteResultWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(RouletteResultWorker))
 {
     // [지휘관 지침]: 룰렛 결과 감시 주기는 기본 10초로 설정합니다.
     protected override int DefaultIntervalSeconds => 10;

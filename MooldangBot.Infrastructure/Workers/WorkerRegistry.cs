@@ -37,6 +37,7 @@ public static class WorkerRegistry
         services.AddHostedService<Maintenance.StagingCleanupWorker>();
         services.AddHostedService<Maintenance.RouletteLogCleanupService>();
         services.AddHostedService<Maintenance.ZeroingWorker>();
+        services.AddHostedService<Maintenance.ChatLogCleanupWorker>();
 
         // Ledger & Analytics Workers
         services.AddHostedService<Ledger.CelestialLedgerWorker>();

@@ -11,11 +11,12 @@ namespace MooldangBot.Infrastructure.Workers.Core;
 /// <summary>
 /// [치지직 워커]: 활성 스트리머들의 라이브 상태를 주기적으로 점검하고 채팅 연결을 확보합니다.
 /// </summary>
-public class ChzzkBackgroundService(
+public class ChzzkBackgroundService(IServiceProvider serviceProvider,
+    
     ILogger<ChzzkBackgroundService> logger, 
     IServiceScopeFactory scopeFactory,
     IChzzkChatClient chatClient,
-    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(logger, optionsMonitor, nameof(ChzzkBackgroundService))
+    IOptionsMonitor<WorkerSettings> optionsMonitor) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(ChzzkBackgroundService))
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 

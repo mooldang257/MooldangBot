@@ -11,10 +11,11 @@ namespace MooldangBot.Infrastructure.Workers.Ledger;
 /// <summary>
 /// [주간 결산 방아쇠]: 매주 월요일 오전 9시에 통계 리포트 생성 명령을 결산 모듈로 하달합니다.
 /// </summary>
-public class WeeklyStatsReporter(
+public class WeeklyStatsReporter(IServiceProvider serviceProvider,
+    
     IServiceScopeFactory scopeFactory,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<WeeklyStatsReporter> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(WeeklyStatsReporter))
+    ILogger<WeeklyStatsReporter> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(WeeklyStatsReporter))
 {
     // [지휘관 지침]: 주간 리포트 체크는 30분(1,800초) 단위로 수행합니다.
     protected override int DefaultIntervalSeconds => 1800;
@@ -30,7 +31,6 @@ public class WeeklyStatsReporter(
             var pulse = scope.ServiceProvider.GetRequiredService<PulseService>();
             var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
 
-            pulse.ReportPulse(_workerName);
             _logger.LogInformation("🔔 [주간 결산] 월요일 아침이 되었습니다. 리포트 생성을 하달합니다.");
 
             await mediator.Send(new GenerateWeeklyStatsReportCommand(), ct);

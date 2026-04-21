@@ -12,9 +12,12 @@ namespace MooldangBot.Infrastructure.Workers.Broadcast;
 public class TokenRenewalBackgroundService(
     IServiceProvider serviceProvider,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<TokenRenewalBackgroundService> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(TokenRenewalBackgroundService))
+    ILogger<TokenRenewalBackgroundService> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(TokenRenewalBackgroundService))
 {
     // [지휘관 지침]: 기본 토큰 점검 주기는 30분(1,800초)으로 설정합니다.
+
+    protected override bool RequiresDistributedLock => true;
+
     protected override int DefaultIntervalSeconds => 1800;
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)

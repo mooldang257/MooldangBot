@@ -4,6 +4,9 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using RedLockNet;
+using MooldangBot.Application.Services;
 
 namespace MooldangBot.Infrastructure.Workers;
 
@@ -16,9 +19,18 @@ public abstract class BaseHybridWorker : BackgroundService
     protected readonly ILogger _logger;
     protected readonly IOptionsMonitor<WorkerSettings> _optionsMonitor;
     protected readonly string _workerName;
+    protected readonly IServiceProvider _serviceProvider;
 
-    protected BaseHybridWorker(ILogger logger, IOptionsMonitor<WorkerSettings> optionsMonitor, string workerName)
+    /// <summary>
+    /// 분산 잠금(RedLock) 활성화 여부입니다. (자식 워커가 오버라이드합니다)
+    /// </summary>
+    protected virtual bool RequiresDistributedLock => false;
+    protected virtual string LockResourceName => $"lock:worker:{_workerName}";
+    protected virtual TimeSpan LockExpiry => TimeSpan.FromSeconds(DefaultIntervalSeconds - 1);
+
+    protected BaseHybridWorker(IServiceProvider serviceProvider, ILogger logger, IOptionsMonitor<WorkerSettings> optionsMonitor, string workerName)
     {
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _optionsMonitor = optionsMonitor;
         _workerName = workerName;
@@ -47,8 +59,36 @@ public abstract class BaseHybridWorker : BackgroundService
 
             try
             {
-                // 2. 비즈니스 로직 수행
-                await ProcessWorkAsync(stoppingToken);
+                // [오시리스 엔진] 자동 맥박 보고
+                var pulse = _serviceProvider.GetService<PulseService>();
+                pulse?.ReportPulse(_workerName);
+
+                // 2. 비즈니스 로직 수행 (분산 잠금 확인)
+                if (RequiresDistributedLock)
+                {
+                    var lockFactory = _serviceProvider.GetService<IDistributedLockFactory>();
+                    if (lockFactory != null)
+                    {
+                        var adjustedExpiry = LockExpiry.TotalSeconds <= 0 ? TimeSpan.FromSeconds(1) : LockExpiry;
+                        await using var redLock = await lockFactory.CreateLockAsync(LockResourceName, adjustedExpiry);
+                        if (!redLock.IsAcquired)
+                        {
+                            // 락 획득 실패 시, 잠시 대기 후 루프 재개
+                            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                            continue;
+                        }
+                        await ProcessWorkAsync(stoppingToken);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ [{WorkerName}] 분산 잠금이 요구되었으나 IDistributedLockFactory가 주입되지 않았습니다. 일반 모드로 실행합니다.", _workerName);
+                        await ProcessWorkAsync(stoppingToken);
+                    }
+                }
+                else
+                {
+                    await ProcessWorkAsync(stoppingToken);
+                }
             }
             catch (Exception ex)
             {

@@ -12,7 +12,7 @@ namespace MooldangBot.Infrastructure.Workers.Maintenance;
 public class StagingCleanupWorker(
     IServiceProvider serviceProvider, 
     IOptionsMonitor<WorkerSettings> optionsMonitor,
-    ILogger<StagingCleanupWorker> logger) : BaseHybridWorker(logger, optionsMonitor, nameof(StagingCleanupWorker))
+    ILogger<StagingCleanupWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(StagingCleanupWorker))
 {
     // [지휘관 지침]: 스테이징 데이터 정리는 4시간(14,400초) 주기로 수행합니다.
     protected override int DefaultIntervalSeconds => 14400;

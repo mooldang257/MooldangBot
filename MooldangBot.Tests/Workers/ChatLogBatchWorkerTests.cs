@@ -22,7 +22,9 @@ namespace MooldangBot.Tests.Workers;
 /// </summary>
 public class ChatLogBatchWorkerTests
 {
+    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
     private readonly IChatLogBufferService _buffer = Substitute.For<IChatLogBufferService>();
+
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly ILogger<ChatLogBatchWorker> _logger = Substitute.For<ILogger<ChatLogBatchWorker>>();
     private readonly IOptionsMonitor<WorkerSettings> _options = Substitute.For<IOptionsMonitor<WorkerSettings>>();
@@ -42,7 +44,7 @@ public class ChatLogBatchWorkerTests
     public async Task StopAsync_Should_Call_Buffer_Complete()
     {
         // [Arrange]
-        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _options, _logger);
+        var worker = new ChatLogBatchWorker(_serviceProvider, _buffer, _scopeFactory, _options, _logger);
 
         // 빈 DrainAll 반환
         _buffer.DrainAllAsync(Arg.Any<CancellationToken>())
@@ -59,7 +61,7 @@ public class ChatLogBatchWorkerTests
     public async Task StopAsync_With_Empty_Buffer_Should_Not_Throw()
     {
         // [Arrange]
-        var worker = new ChatLogBatchWorker(_buffer, _scopeFactory, _options, _logger);
+        var worker = new ChatLogBatchWorker(_serviceProvider, _buffer, _scopeFactory, _options, _logger);
 
         _buffer.DrainAllAsync(Arg.Any<CancellationToken>())
             .Returns(EmptyAsyncEnumerable());
