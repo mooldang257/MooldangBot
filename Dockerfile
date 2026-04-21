@@ -53,10 +53,12 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 # efbundle 대신 MooldangBot.Cli.dll을 사용하므로 번들 복사 불필요
 
-# 업로드/데이터 폴더 생성 및 권한 설정
-RUN mkdir -p /app/wwwroot/images/avatars && \
+# 업로드/데이터 폴더 생성 및 curl 설치 (Healthcheck용)
+RUN apt-get update && apt-get install -y curl && \
+    mkdir -p /app/wwwroot/images/avatars && \
     mkdir -p /app/db_data && \
-    chmod -R 777 /app/wwwroot/images/avatars
+    chmod -R 777 /app/wwwroot/images/avatars && \
+    rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "api/MooldangBot.Api.dll"]

@@ -109,6 +109,20 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/overlayHub`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
+      - "traefik.http.services.app.loadbalancer.sticky.cookie=true"
+      - "traefik.http.middlewares.app-upgrade.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.app.middlewares=app-upgrade,cloudflare-real-ip@file"
     networks:
       - osiris_net
     depends_on:
@@ -173,6 +187,12 @@ services:
       - NODE_ENV=production
       - ORIGIN=${BASE_DOMAIN}
       - INTERNAL_API_URL=http://app:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.studio.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.studio.entrypoints=web"
+      - "traefik.http.services.studio.loadbalancer.server.port=3000"
+      - "traefik.http.routers.studio.middlewares=cloudflare-real-ip@file"
     networks:
       - osiris_net
     depends_on:
@@ -184,6 +204,12 @@ services:
       dockerfile: Dockerfile
     container_name: mooldang-overlay
     restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.overlay.rule=PathPrefix(`/overlay`)"
+      - "traefik.http.routers.overlay.entrypoints=web"
+      - "traefik.http.services.overlay.loadbalancer.server.port=80"
+      - "traefik.http.routers.overlay.middlewares=cloudflare-real-ip@file"
     networks:
       - osiris_net
 
@@ -196,6 +222,12 @@ services:
     environment:
       - NODE_ENV=production
       - ORIGIN=${BASE_DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.routers.admin.middlewares=admin-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.admin.loadbalancer.server.port=3000"
     networks:
       - osiris_net
     depends_on:
@@ -213,6 +245,12 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=${BASE_DOMAIN}/admin/monitoring/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=PathPrefix(`/admin/monitoring`)"
+      - "traefik.http.routers.grafana.entrypoints=web"
+      - "traefik.http.routers.grafana.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
     networks:
       - osiris_net
     volumes:
@@ -245,21 +283,29 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
 
-  nginx:
-    image: nginx:alpine
-    container_name: mooldang-nginx
+  traefik:
+    image: traefik:v3.6.13
+    container_name: mooldang-traefik
     restart: always
     ports:
       - "80:80"
+      - "8080:8080" # 대시보드
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /var/log/traefik:/var/log/traefik
     networks:
       - osiris_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard.entrypoints=traefik"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-shield@file"
     depends_on:
-      - studio
-      - admin
-      - overlay
-      - app
+      app:
+        condition: service_healthy
 
   adminer:
     image: adminer:latest
