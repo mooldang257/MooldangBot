@@ -6,5 +6,5 @@ namespace MooldangBot.Modules.Commands.Abstractions;
 public interface ICommandFeatureStrategy
 {
     string FeatureType { get; }
-    Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct);
+    Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct);
 }

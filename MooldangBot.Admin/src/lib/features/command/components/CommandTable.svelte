@@ -31,7 +31,7 @@
 
     async function toggleCommand(cmd: any) {
         try {
-            await apiFetch(`/api/commands/unified/toggle/${chzzkUid}/${cmd.id}`, { method: 'PATCH' });
+            await apiFetch(`/api/command/${chzzkUid}/${cmd.id}/status`, { method: 'PATCH' });
             cmd.isActive = !cmd.isActive;
             allCommands = [...allCommands];
         } catch (err: any) {

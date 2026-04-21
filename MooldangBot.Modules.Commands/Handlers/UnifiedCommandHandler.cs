@@ -35,26 +35,29 @@ public class UnifiedCommandHandler(
 {
     public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
-        var legacyEvent = ConvertToLegacy(notification);
-        if (legacyEvent == null) return;
+        var chatEvent = ConvertToEvent(notification);
+        if (chatEvent == null) return;
 
-        if (!await idempotency.TryAcquireAsync(legacyEvent.CorrelationId.ToString(), TimeSpan.FromMinutes(10)))
+        // 📡 [전사적 전파]: IAMF 및 OBS 핸들러 등 다른 모듈에서 이벤트를 수신할 수 있도록 공표합니다.
+        await mediator.Publish(chatEvent, ct);
+
+        if (!await idempotency.TryAcquireAsync(chatEvent.CorrelationId.ToString(), TimeSpan.FromMinutes(10)))
         {
             return; 
         }
 
-        await botService.GetStreamerTokenAsync(legacyEvent.Profile);
+        await botService.GetStreamerTokenAsync(chatEvent.Profile);
 
-        string msg = (legacyEvent.Message ?? "").Trim();
-        string targetUid = (legacyEvent.Profile.ChzzkUid ?? "").ToLower(); 
+        string msg = (chatEvent.Message ?? "").Trim();
+        string targetUid = (chatEvent.Profile.ChzzkUid ?? "").ToLower(); 
         
-        if (string.IsNullOrEmpty(msg) && legacyEvent.DonationAmount <= 0) return;
+        if (string.IsNullOrEmpty(msg) && chatEvent.DonationAmount <= 0) return;
 
         // [1. Scan]: 모든 매칭되는 명령어 리스트 확보
         var matches = (await cache.GetMatchesAsync(targetUid, msg)).ToList();
 
         // [v1.9.7] 후원 자동 매칭 (매칭된 명령어가 없고 후원금이 있는 경우)
-        if (!matches.Any() && legacyEvent.DonationAmount > 0)
+        if (!matches.Any() && chatEvent.DonationAmount > 0)
         {
             var autoCmd = await cache.GetAutoMatchDonationCommandAsync(targetUid, "Roulette");
             if (autoCmd != null) matches.Add(autoCmd);
@@ -65,8 +68,8 @@ public class UnifiedCommandHandler(
             if (msg.StartsWith("!"))
             {
                 await publishEndpoint.Publish(new CommandExecutionEvent(
-                    legacyEvent.CorrelationId, targetUid, msg.Split(' ')[0], legacyEvent.SenderId, legacyEvent.Username,
-                    false, "명령어를 찾을 수 없음", legacyEvent.DonationAmount, KstClock.Now), ct);
+                    chatEvent.CorrelationId, targetUid, msg.Split(' ')[0], chatEvent.SenderId, chatEvent.Username,
+                    false, "명령어를 찾을 수 없음", chatEvent.DonationAmount, KstClock.Now), ct);
             }
             return;
         }
@@ -77,43 +80,43 @@ public class UnifiedCommandHandler(
 
         // [물멍]: 선장님 지시에 따라 '후원 적립 모드'와 '후원 전용 명령어' 여부를 판단합니다.
         // IsAutoAccumulateDonation: false(항상 누적), true(명령어 있을 때만 누적)
-        bool accumulateTotal = !legacyEvent.Profile.IsAutoAccumulateDonation || 
+        bool accumulateTotal = !chatEvent.Profile.IsAutoAccumulateDonation || 
                               matches.Any(m => m.FeatureType == CommandFeatureType.Donation);
 
         // [3. Single Billing]: 통합 결제 (지휘관 지침: 하이브리드 동기 방식 유지)
         var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
-            targetUid, legacyEvent.SenderId, legacyEvent.Username, primary.Cost, primary.CostType, (int)legacyEvent.DonationAmount, accumulateTotal), ct);
+            targetUid, chatEvent.SenderId, chatEvent.Username, primary.Cost, primary.CostType, (int)chatEvent.DonationAmount, accumulateTotal), ct);
 
         if (!billingResult.Success)
         {
-            await botService.SendReplyChatAsync(legacyEvent.Profile, $"⚠️ {billingResult.ErrorMessage} 🔒", legacyEvent.SenderId, ct);
+            await botService.SendReplyChatAsync(chatEvent.Profile, $"⚠️ {billingResult.ErrorMessage} 🔒", chatEvent.SenderId, ct);
             await publishEndpoint.Publish(new CommandExecutionEvent(
-                legacyEvent.CorrelationId, targetUid, primary.Keyword, legacyEvent.SenderId, legacyEvent.Username,
-                false, billingResult.ErrorMessage, legacyEvent.DonationAmount, KstClock.Now), ct);
+                chatEvent.CorrelationId, targetUid, primary.Keyword, chatEvent.SenderId, chatEvent.Username,
+                false, billingResult.ErrorMessage, chatEvent.DonationAmount, KstClock.Now), ct);
             return;
         }
 
         // 📡 [4. Event Choreography Dispatch]: 직접 호출 대신 전사적 신경망으로 사건을 전파합니다.
         // 모든 전략(Strategy) 실행과 부수 효과는 이제 각 모듈의 INotificationHandler에서 자율적으로 처리됩니다.
         await mediator.Publish(new CommandExecutedEvent(
-            legacyEvent.CorrelationId,
+            chatEvent.CorrelationId,
             targetUid,
-            legacyEvent.SenderId,
-            legacyEvent.Username,
+            chatEvent.SenderId,
+            chatEvent.Username,
             primary,
             matches,
             args,
             msg, // [지휘관 지시]: 원본 메시지(RawMessage) 포함
-            legacyEvent.DonationAmount
+            chatEvent.DonationAmount
         ), ct);
 
         // [v4.0] 기존 로그 사울 로직 유지 (외부 관측용)
         await publishEndpoint.Publish(new CommandExecutionEvent(
-            legacyEvent.CorrelationId, targetUid, primary.Keyword, legacyEvent.SenderId, legacyEvent.Username,
-            true, null, legacyEvent.DonationAmount, KstClock.Now), ct);
+            chatEvent.CorrelationId, targetUid, primary.Keyword, chatEvent.SenderId, chatEvent.Username,
+            true, null, chatEvent.DonationAmount, KstClock.Now), ct);
     }
 
-    private async Task CompensatePrimaryAsync(ChatMessageReceivedEvent_Legacy n, CommandMetadata c, CancellationToken ct)
+    private async Task CompensatePrimaryAsync(ChatMessageEvent n, CommandMetadata c, CancellationToken ct)
     {
         // 보상 트랜잭션: 차감된 금액만큼 다시 충전 (재편성된 네임스페이스 반영)
         await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
@@ -121,18 +124,18 @@ public class UnifiedCommandHandler(
             c.CostType == CommandCostType.Cheese ? MooldangBot.Modules.Point.Enums.PointCurrencyType.DonationPoint : MooldangBot.Modules.Point.Enums.PointCurrencyType.ChatPoint), ct);
     }
 
-    private ChatMessageReceivedEvent_Legacy? ConvertToLegacy(ChzzkEventReceived notification)
+    private ChatMessageEvent? ConvertToEvent(ChzzkEventReceived n)
     {
-        if (notification.Payload is ChzzkChatEvent chat)
+        if (n.Payload is ChzzkChatEvent chat)
         {
-            return new ChatMessageReceivedEvent_Legacy(
-                notification.MessageId, notification.Profile, chat.Nickname, chat.Content,
+            return new ChatMessageEvent(
+                n.MessageId, n.CorrelationId, n.OccurredOn, n.Profile, chat.Nickname, chat.Content,
                 chat.UserRoleCode ?? "common_user", chat.SenderId, chat.Emojis, 0);
         }
-        else if (notification.Payload is ChzzkDonationEvent donation)
+        else if (n.Payload is ChzzkDonationEvent donation)
         {
-             return new ChatMessageReceivedEvent_Legacy(
-                notification.MessageId, notification.Profile, donation.Nickname, donation.DonationMessage,
+             return new ChatMessageEvent(
+                n.MessageId, n.CorrelationId, n.OccurredOn, n.Profile, donation.Nickname, donation.DonationMessage,
                 "donation_user", donation.SenderId, null, donation.PayAmount);
         }
         return null;

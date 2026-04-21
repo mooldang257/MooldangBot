@@ -47,12 +47,14 @@ public class FeatureExecutionBridgeHandler(
             }
 
             // [3. Legacy Event Reconstruction]: 기존 전략들이 기대하는 레거시 이벤트 객체 복구
-            var legacyEvent = new ChatMessageReceivedEvent_Legacy(
-                notification.CorrelationId,
+            var legacyEvent = new ChatMessageEvent(
+                Guid.NewGuid(), 
+                notification.CorrelationId, 
+                DateTime.UtcNow,
                 streamerProfile,
                 notification.ViewerNickname,
                 notification.RawMessage,
-                "common_user", // 역할은 이벤트에 포함되지 않았으나 기본값으로 설정
+                "common_user",
                 notification.ViewerUid,
                 null, 
                 notification.DonationAmount

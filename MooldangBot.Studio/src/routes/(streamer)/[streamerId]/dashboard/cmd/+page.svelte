@@ -50,7 +50,7 @@
 
     async function loadMasterData() {
         try {
-            const res = await apiFetch<any>("/api/commands/master");
+            const res = await apiFetch<any>(`/api/command/${chzzkUid}/master`);
             if (res) {
                 masterData = res;
                 isMasterDataValid = true;
@@ -65,7 +65,7 @@
         if (!chzzkUid) return;
         try {
             const data = await apiFetch<any>(
-                `/api/commands/${chzzkUid}?limit=100`
+                `/api/command/${chzzkUid}?limit=100`
             );
             const items = data.items || data.Items || [];
             allCommands = items.map((c: any) => ({
@@ -156,7 +156,7 @@
                     method: "DELETE",
                 });
             } else {
-                await apiFetch(`/api/commands/${chzzkUid}/${id}`, {
+                await apiFetch(`/api/command/${chzzkUid}/${id}`, {
                     method: "DELETE",
                 });
             }

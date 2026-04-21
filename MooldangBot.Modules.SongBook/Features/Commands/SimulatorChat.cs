@@ -26,8 +26,10 @@ public class SimulatorChatHandler(
             return Result<object>.Failure("스트리머를 찾을 수 없습니다.");
 
         // [v15.1]: 기존 레거시 이벤트 발행 (호환성 유지)
-        await mediator.Publish(new ChatMessageReceivedEvent_Legacy(
+        await mediator.Publish(new ChatMessageEvent(
             Guid.NewGuid(),
+            Guid.NewGuid(),
+            DateTime.UtcNow,
             profile, 
             "시뮬레이터", 
             request.Message, 

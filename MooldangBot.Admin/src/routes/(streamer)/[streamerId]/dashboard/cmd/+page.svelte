@@ -43,7 +43,7 @@
 
     async function loadMasterData() {
         try {
-            const res = await apiFetch<any>("/api/commands/master");
+            const res = await apiFetch<any>(`/api/command/${chzzkUid}/master`);
             const raw = res || {};
 
             // [물멍]: 실제 API 조사 결과(camelCase)를 바탕으로 데이터 규격을 100% 동기화합니다.
@@ -65,7 +65,7 @@
     async function loadCommands() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/commands/${chzzkUid}?limit=100`);
+            const data = await apiFetch<any>(`/api/command/${chzzkUid}?limit=100`);
             const items = data.items || data.Items || [];
             
             allCommands = items.map((c: any) => ({
@@ -141,7 +141,7 @@
 
     async function executeDelete(id: number) {
         try {
-            await apiFetch(`/api/commands/${chzzkUid}/${id}`, {
+            await apiFetch(`/api/command/${chzzkUid}/${id}`, {
                 method: "DELETE",
             });
             allCommands = allCommands.filter((c) => c.id !== id);

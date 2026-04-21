@@ -26,7 +26,7 @@
     async function loadSettings() {
         try {
             if (!streamerId) return;
-            const data = await apiFetch<any>(`/api/settings/data/${streamerId}`);
+            const data = await apiFetch<any>(`/api/config/songlist/${streamerId}`);
             if (data) {
                 const rawJson = data.designSettingsJson || "{}";
                 designSettings = JSON.parse(rawJson);
@@ -64,13 +64,13 @@
 
             // [물멍]: SonglistSettingsController의 동기화 로직이 덮어쓰기 방식이므로, 
             // 현재 활성화된 명령어 데이터도 함께 보내야 함
-            const currentData = await apiFetch<any>(`/api/settings/data/${streamerId}`);
+            const currentData = await apiFetch<any>(`/api/config/songlist/${streamerId}`);
             if (currentData) {
                 payload.songRequestCommands = currentData.songRequestCommands || [];
                 payload.omakases = currentData.omakases || [];
             }
 
-            await apiFetch(`/api/settings/update/${streamerId}`, {
+            await apiFetch(`/api/config/songlist/${streamerId}`, {
                 method: "POST",
                 body: JSON.stringify(payload)
             });

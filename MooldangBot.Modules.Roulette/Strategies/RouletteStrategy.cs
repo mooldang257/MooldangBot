@@ -16,7 +16,7 @@ public class RouletteStrategy(
 {
     public string FeatureType => "Roulette";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         if (command.TargetId == null)
         {

@@ -24,7 +24,7 @@ public class OmakaseStrategy(
 {
     public string FeatureType => "Omakase";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         try
         {

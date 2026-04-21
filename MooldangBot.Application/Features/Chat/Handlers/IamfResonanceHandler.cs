@@ -19,10 +19,10 @@ public class IamfResonanceHandler(
     IPhoenixRecorder phoenix,
     IResonanceService resonance,
     IChatTrafficAnalyzer trafficAnalyzer,
-    ILogger<IamfResonanceHandler> logger) : INotificationHandler<ChatMessageReceivedEvent_Legacy>
+    ILogger<IamfResonanceHandler> logger) : INotificationHandler<ChatMessageEvent>
 {
 
-    public async Task Handle(ChatMessageReceivedEvent_Legacy notification, CancellationToken cancellationToken)
+    public async Task Handle(ChatMessageEvent notification, CancellationToken cancellationToken)
     {
         // 1. [오시리스의 규율] 파동 검증
         var (isValid, message) = await regulation.ValidateRegulationAsync(notification.Message, "Sephiroth");

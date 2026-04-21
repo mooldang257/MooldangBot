@@ -29,12 +29,12 @@ public class CategoryStrategy(
         { "로아", "로스트아크" }, { "철권", "철권 8" }
     };
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.Keyword, command.ResponseText, ct);
     }
 
-    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageReceivedEvent_Legacy notification, string keyword, string responseTemplate, CancellationToken ct)
+    private async Task<CommandExecutionResult> ExecuteInternalAsync(ChatMessageEvent notification, string keyword, string responseTemplate, CancellationToken ct)
     {
         // 1. [인수 추출]
         string msg = notification.Message.Trim();

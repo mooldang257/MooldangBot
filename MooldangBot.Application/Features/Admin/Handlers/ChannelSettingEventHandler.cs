@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace MooldangBot.Application.Features.Admin.Handlers;
 
-public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceivedEvent_Legacy>
+public class ChannelSettingEventHandler : INotificationHandler<ChatMessageEvent>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ChannelSettingEventHandler> _logger;
@@ -46,7 +46,7 @@ public class ChannelSettingEventHandler : INotificationHandler<ChatMessageReceiv
     
     // ...
 
-    public async Task Handle(ChatMessageReceivedEvent_Legacy notification, CancellationToken cancellationToken)
+    public async Task Handle(ChatMessageEvent notification, CancellationToken cancellationToken)
     {
         // [v4.1.0] 방제 및 카테고리 변경 로직은 이제 UnifiedCommandHandler와 각 Strategy(Title, StreamCategory)에서 담당합니다.
         // 이 핸들러는 향후 관리자 전용(Admin) 긴급 제어 기능 등을 위해 남겨둡니다.

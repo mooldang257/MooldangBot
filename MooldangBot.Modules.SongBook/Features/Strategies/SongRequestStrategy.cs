@@ -16,7 +16,7 @@ public class SongRequestStrategy(IMediator mediator) : ICommandFeatureStrategy
 {
     public string FeatureType => CommandFeatureTypes.SongRequest;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageReceivedEvent_Legacy notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(notification.Message)) 
             return CommandExecutionResult.Failure("곡명을 입력해주세요.");
