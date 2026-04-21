@@ -35,7 +35,9 @@
 * **[Rule 9] 채팅 로그 배치 처리 (Buffer-Worker Pattern)**: 초당 10,000건 이상의 고부하 채팅 로그는 `IChatLogBufferService`를 통해 메모리에 버퍼링한 뒤, `ChatLogBatchWorker`를 통해 일정 주기(1초) 또는 개수(5,000건) 단위로 벌크 인서트한다.
   * 채팅 이벤트 발생 시 DB에 즉시 `SaveChangesAsync`를 호출하는 것은 시스템 붕괴의 원인이 되므로 엄격히 금지한다.
 * **[Rule 10] 포인트 적립 배치화**: 시청자 포인트 적립은 `PointBatchService`를 경유하여 원자적 SQL 업데이트가 배치로 수행되도록 유도한다. 이는 동일 로우에 대한 락 경합(Lock Contention)을 최소화하기 위함이다.
-* **[Rule 11] 벌크 적재 전략**: 초고속 적재가 필요한 로그성 데이터는 EF Core 대신 **Dapper**를 사용하여 `INSERT INTO ... VALUES (...), (...);` 형태의 벌크 인서트 쿼리를 직접 작성하여 처리한다.
+* **[Rule 11] 벌크 적재 및 Zero-Allocation 전략**: 
+  * 초고속 적재가 필요한 로그성 데이터는 일반적인 Dapper `INSERT` 대신 **`MySqlBulkCopy`** (Zero-copy 벌크 적재) 사용을 원칙으로 합니다.
+  * 이는 런타임에 거대한 SQL 문자열을 동적으로 생성함으로써 발생하는 GC(Garbage Collection) 압박을 원천적으로 차단하기 위함입니다. (5,000건 이상의 배치 처리 시 필수)
 * **[Rule 12] 커넥션 풀 및 리소스 모니터링**: 고부하 대응을 위해 `AddDbContextPool`의 `poolSize`는 항상 예상되는 동시성 수준(현재 1,024) 이상으로 유지하며, MariaDB의 `max_connections` 설정과 동기화한다.
 
 ---

@@ -80,17 +80,29 @@ builder.Services.AddHostedService<CelestialLedgerWorker>(); // [v11.0] 백그라
 
 ## 🔄 4. 백그라운드 서비스 (Background Services)
 
-시간이 오래 걸리거나 주기적으로 실행되어야 하는 작업은 `IHostedService`를 통해 백그라운드에서 조용히 처리합니다.
+모든 주기적 작업은 **`BaseHybridWorker`** 표준 엔진을 상속받아 구현합니다. 엔진은 설정 기반의 유연성과 서비스의 안전성을 자동으로 보장합니다.
 
-**[핵심 코드: CelestialLedgerWorker]**
+### 🧱 주요 특징 및 규칙
+- **엔진 레벨 통합**: `PulseService`(상태 보고) 및 `RedLock`(분산 잠금) 기능이 엔진 내부에 통합되어 있습니다.
+- **자동 맥박 보고**: `ExecuteAsync` 루프 시작 시 자동으로 워치독에 맥박을 보고하므로, 자식 워커에서 별도로 `ReportPulse`를 호출하지 않습니다.
+- **안전 하한선**: 워커의 실행 주기가 2초 미만으로 설정될 경우, 엔진이 자동으로 2초로 상향 조정하여 시스템 부하를 방지합니다.
+
+**[핵심 코드: BaseHybridWorker 상속 패턴]**
 ```csharp
-// [오시리스의 지능]: 장기 사용되지 않는 리소스(Semaphore 등)는 타이머를 통해 자동 수거합니다.
-private void CleanupZombieLocks(...) {
-    foreach (var kvp in _localLocks) {
-        if (kvp.Value.IsUnused && kvp.Value.IsExpired) {
-            _localLocks.TryRemove(kvp.Key, out var entry);
-            entry.Dispose(); // OS 핸들 즉시 반환
-        }
+public class MyCustomWorker : BaseHybridWorker 
+{
+    // 1. 분산 잠금이 필요한 경우 true로 설정 (기본값: false)
+    protected override bool RequiresDistributedLock => true;
+
+    // 2. 설정이 없을 경우 사용할 기본 주기 정의
+    protected override int DefaultIntervalSeconds => 60;
+
+    protected override async Task ProcessWorkAsync(CancellationToken ct) 
+    {
+        // 3. 실제 비즈니스 로직만 구현 (IServiceProvider 활용 가능)
+        using var scope = _serviceProvider.CreateScope();
+        var myService = scope.ServiceProvider.GetRequiredService<IMyService>();
+        await myService.DoWorkAsync(ct);
     }
 }
 ```
@@ -101,17 +113,16 @@ private void CleanupZombieLocks(...) {
 
 오시리스 함대가 다중 인스턴스로 확장됨에 따라, 단일 메모리 락(Semaphore) 대신 **RedLock**을 통한 분산 락을 필수적으로 사용합니다.
 
-### 🧱 RedLock 사용 원칙
-- **상태 수정 전용**: 데이터 정합성이 보장되어야 하는 모든 쓰기 작업에 적용합니다.
-- **최단 시간 점유**: 락 점유 시간은 10초 이내로 제한하며, 작업 완료 후 즉시 해제합니다.
+### 🧱 RedLock 사용 방식
+1. **워커 기반 락**: `BaseHybridWorker`에서 `RequiresDistributedLock` 옵션을 켜면 엔진이 해당 워커의 실행 주기를 전역적으로 보호합니다.
+2. **코드 레벨 락**: 메서드 내부에서 특정 리소스를 보호해야 할 경우 `IDistributedLockFactory`를 사용하여 직접 락을 획득합니다.
 
-**[핵심 코드: RedLock Implementation]**
+**[핵심 코드: Manual RedLock Implementation]**
 ```csharp
-using (var redLock = await _lockFactory.CreateLockAsync("lock:resource:id", TimeSpan.FromSeconds(10))) {
-    if (redLock.IsAcquired) {
-        // 🛡️ [오시리스의 보호]: 단 한 대의 인스턴스만 이 로직을 실행합니다.
-        await DoAtomicWorkAsync();
-    }
+// [오시리스의 보호]: 특정 리소스를 10초간 잠금
+await using var redLock = await _lockFactory.CreateLockAsync("lock:resource:id", TimeSpan.FromSeconds(10));
+if (redLock.IsAcquired) {
+    await DoAtomicWorkAsync();
 }
 ```
 

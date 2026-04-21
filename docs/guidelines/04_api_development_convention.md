@@ -69,8 +69,19 @@ public async Task<Result<SongSettingsResponseDto>> GetSettings(string chzzkUid) 
 
 오버레이와 대시보드 실시간 통신 시 타입 안전성을 보장하기 위해 Strongly-typed Hub를 사용합니다.
 
-1.  **인터페이스 정의**: 클라이언트가 수신할 이벤트를 `IOverlayClient`와 같은 인터페이스에 정의합니다.
-2.  **상수 관리**: 이벤트명, 그룹명 등은 `SignalREvents.cs` 상수를 사용하여 오타로 인한 장애를 방지합니다.
+1.  **인터페이스 정의**: 클라이언트가 수신할 이벤트를 `IOverlayClient`와 같은 인터페이스에 정의하여 컴파일 타임 에러 체크를 유도합니다.
+2.  **허브 선언**: `Hub<IOverlayClient>`를 상속받아 문자열 없이 이벤트를 전송합니다.
+3.  **상수 관리**: 그룹명 등은 `SignalREvents.cs` 상수를 사용하여 오타로 인한 장애를 방지합니다.
+
+**[핵심 코드: Strongly-typed Hub]**
+```csharp
+public class OverlayHub : Hub<IOverlayClient> {
+    public async Task SendResult(string chzzkUid, object data) {
+        // "ReceiveResult" 문자열 대신 인터페이스 메서드 직접 호출
+        await Clients.Group(chzzkUid).OnRouletteResult(data);
+    }
+}
+```
 
 ---
 

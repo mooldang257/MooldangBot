@@ -104,9 +104,9 @@ try {
 - **수평적 참조 금지 (Layering strictly enforced)**: 모듈 간에 구체적인 핸들러나 내부 서비스를 직접 참조하는 것을 엄격히 금지합니다. 오직 `MediatR` 메시지나 공용 인터페이스(`Abstractions`)를 통해서만 상호작용합니다.
 - **순환 참조 방지**: `Infrastructure`는 모든 모듈의 인터페이스를 구현하지만, 모듈은 서로를 모르고 오직 인프라가 제공하는 계약(Abstractions)에만 의존하게 함으로써 순환 참조의 고리를 완벽히 끊어냅니다.
 
-### 🚀 고성능 JSON Source Generation
+### 🚀 고성능 JSON Source Generation (Zero-Allocation)
 - **GC 부하 최소화**: 대규모 트래픽(10k TPS) 대응을 위해 리플렉션 대신 `System.Text.Json`의 Source Generator를 필수적으로 사용합니다.
-- **Context 관리**: 모든 DTO는 `ChzzkJsonContext` 등에 등록하여 빌드 시점에 직렬화 코드를 생성하도록 관리합니다.
+- **Context 필수 명시**: `JsonSerializer.Serialize` 또는 `Deserialize` 호출 시 반드시 `ChzzkJsonContext.Default`와 같은 컨텍스트를 인자로 전달해야 합니다. (컨텍스트 누락 시 런타임 리플렉션이 발생하여 성능이 저하됩니다.)
 
 ---
 
