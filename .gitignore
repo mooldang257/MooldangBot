@@ -1,48 +1,27 @@
-# ?” [MooldangBot Zero-Git Policy .gitignore]
+# MooldangBot Git Ignore
 
-# 1. Visual Studio ìºì‹œ ë°?ë¡œì»¬ ?¤ì •
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
+# Images and Versions (Stored locally, not in Git)
+**/images/
+*.tar
+mooldang-images/
 
-# 2. ë¹Œë“œ ê²°ê³¼ë¬?(ì»´íŒŒ?¼ëœ ?Œì¼??
-bin/
-obj/
-publish/
-
-# 3. ?” ë³´ì•ˆ ë°??˜ê²½ ?¤ì • (GITHUB ?…ë¡œ???ˆë? ê¸ˆì?)
-#appsettings.json
-#appsettings.Dev.json
-#appsettings.Production.json
-#appsettings.Development.json
+# Environment and Secrets
 .env
 .env.*
-secrets/
+*.suo
+*.user
+**/keys/
 
-# 4. ?°êµ¬, ë¡œê·¸ ë°??„ì‹œ ?Œì¼ (?œë²„ ë¹Œë“œ ë¶ˆí•„??
-scripts/archive/
-scripts/logs/
-*.sql
-*.zip
-*.rar
-*.md.tmp
-*.log
+# Build and IDE
+bin/
+obj/
+.vs/
+.agent/
+.gemini/
 
-# 5. ë¡œì»¬ ?°ì´???´ë” (ë³¼ë¥¨ ë§¤í•‘ ê¶Œì¥)
-wwwroot/images/avatars/
-db_data/
-
-# 6. ê¸°í? ?œìŠ¤???Œì¼ ë°?ë°°í¬ ë²ˆë“¤
-efbundle*
-.DS_Store
-Thumbs.db
-# 7. [¹°¸Û] Ãß°¡ - Çö´ëÀû À¥ ¹× ºôµå »êÃâ¹°
-node_modules/
+# Data
 data/
-build_output.txt
-test_results.txt
-Report/
-*.tmp
-*.bak
+db_data/
+**/data/
+**/logs/
+*.log

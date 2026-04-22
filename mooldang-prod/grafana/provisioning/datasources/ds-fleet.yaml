@@ -1,0 +1,25 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "5s" # [v2.4.1] 5초 수집 주기에 최적화
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      timeout: 60
+      derivedFields:
+        - datasourceUid: Prometheus
+          matcherRegex: "CorrelationId: (\\S+)"
+          name: CorrelationId
+          url: "$${__value.raw}"

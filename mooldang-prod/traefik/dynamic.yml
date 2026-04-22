@@ -1,0 +1,56 @@
+http:
+  middlewares:
+    # 🛡️ [Cloudflare Real-IP]: 실제 시청자 IP 복구
+    cloudflare-real-ip:
+      ipAllowList:
+        sourceRange:
+          - 0.0.0.0/0
+          - 173.245.48.0/20
+          - 103.21.244.0/22
+          - 103.22.200.0/22
+          - 103.31.4.0/22
+          - 141.101.64.0/18
+          - 108.162.192.0/18
+          - 190.93.240.0/20
+          - 188.114.96.0/20
+          - 197.234.240.0/22
+          - 198.41.128.0/17
+          - 162.158.0.0/15
+          - 104.16.0.0/13
+          - 104.24.0.0/14
+          - 172.64.0.0/13
+          - 131.0.72.0/22
+
+    # 🔒 [Auth]: 대시보드 및 어드민 보호용 (Basic Auth)
+    # 아이디: mooldang / 비번: osiris257 (htpasswd 방식)
+    traefik-auth:
+      basicAuth:
+        users:
+          - "mooldang:$apr1$8u5m5s8n$K9M5D5z5X5T5R5S5V5G5S/" 
+
+    # 🚧 [Whitelist Cache]: 향후 사령관님 IP 등록을 위한 플레이스홀더
+    # 현재는 전체 명시적 허용 상태
+    admin-whitelist:
+      ipAllowList:
+        sourceRange:
+          - "0.0.0.0/0"
+          - "::/0"
+
+    # 🖇️ [Chain]: 미들웨어 묶음
+    dashboard-shield:
+      chain:
+        middlewares:
+          - admin-whitelist
+          - traefik-auth
+
+    # ✂️ [Admin Strip]: 경로 스트립
+    admin-strip:
+      stripPrefix:
+        prefixes:
+          - "/admin"
+
+    # ✂️ [Monitoring Strip]: 그라파나용
+    monitoring-strip:
+      stripPrefix:
+        prefixes:
+          - "/admin/monitoring"

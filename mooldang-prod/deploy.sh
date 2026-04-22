@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# ---------------------------------------------------------
+# 🔱 [MooldangBot] 운영 환경 지능형 선택 기동 스크립트 v1.0
+# images/ 폴더의 버전 목록을 보여주고 선택하여 배포합니다.
+# ---------------------------------------------------------
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${GREEN}⚓ 물댕 함대 운영 제어 시스템에 접속했습니다.${NC}"
+
+# 1. 사용 가능한 버전 스캔 (images 폴더에서 mooldang-app-*.tar 파일 기반)
+if [ ! -d "images" ]; then
+    echo -e "${RED}❌ 오류: images 폴더가 없습니다.${NC}"
+    exit 1
+fi
+
+# mooldang-app-*.tar 파일들로부터 버전 추출
+VERSIONS=($(ls images/mooldang-app-*.tar 2>/dev/null | sed -E 's/.*mooldang-app-(.*)\.tar/\1/' | sort -r))
+
+if [ ${#VERSIONS[@]} -eq 0 ]; then
+    echo -e "${YELLOW}⚠️ 사용 가능한 이미지 버전이 없습니다. release.sh를 먼저 실행해주세요.${NC}"
+    exit 1
+fi
+
+# 2. 버전 선택 메뉴
+echo -e "\n${YELLOW}🚢 가동할 버전을 선택해주세요:${NC}"
+for i in "${!VERSIONS[@]}"; do
+    echo "$((i+1))) ${VERSIONS[$i]}"
+done
+echo "q) 종료"
+
+read -p "선택 (번호 입력): " choice
+
+if [[ "$choice" == "q" ]]; then
+    echo "취소되었습니다."
+    exit 0
+fi
+
+if [[ -z "$choice" || ! "$choice" =~ ^[0-9]+$ || "$choice" -lt 1 || "$choice" -gt ${#VERSIONS[@]} ]]; then
+    echo -e "${RED}❌ 올바르지 않은 선택입니다.${NC}"
+    exit 1
+fi
+
+SELECTED_VERSION=${VERSIONS[$((choice-1))]}
+echo -e "${GREEN}▶️ 선택된 버전: $SELECTED_VERSION${NC}"
+
+# 3. 이미지 로드
+echo -e "${YELLOW}📥 이미지를 Docker 엔진에 로드하는 중...${NC}"
+SERVICES=("app" "chzzk-bot" "studio" "overlay" "admin")
+for svc in "${SERVICES[@]}"; do
+    FILE="images/mooldang-$svc-$SELECTED_VERSION.tar"
+    if [ -f "$FILE" ]; then
+        echo "  - $svc (파일: $(basename $FILE)) 로딩 중..."
+        docker load -i "$FILE"
+    fi
+done
+
+# 4. .env 파일 업데이트 (버전 동기화)
+if [ -f .env ]; then
+    # 기존 변수 유무 확인 후 수정 또는 추가
+    if grep -q "^VERSION_APP=" .env; then
+        sed -i "s/^VERSION_APP=.*/VERSION_APP=$SELECTED_VERSION/" .env
+    else
+        echo "VERSION_APP=$SELECTED_VERSION" >> .env
+    fi
+
+    if grep -q "^VERSION_UI=" .env; then
+        sed -i "s/^VERSION_UI=.*/VERSION_UI=$SELECTED_VERSION/" .env
+    else
+        echo "VERSION_UI=$SELECTED_VERSION" >> .env
+    fi
+    echo -e "${GREEN}📝 .env 파일의 배포 버전을 $SELECTED_VERSION 으로 업데이트했습니다.${NC}"
+else
+    echo -e "${YELLOW}⚠️ .env 파일이 없어 직접 업데이트하지 못했습니다.${NC}"
+fi
+
+# 5. 함대 기동
+echo -e "${GREEN}🚀 선택한 버전($SELECTED_VERSION)으로 함대 가동을 시작합니다...${NC}"
+docker compose up -d
+
+echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
+docker compose ps
