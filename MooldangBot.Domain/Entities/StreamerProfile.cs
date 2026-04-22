@@ -20,7 +20,7 @@ public class StreamerProfile : ISoftDeletable, IAuditable
     public string? ProfileImageUrl { get; set; }
 
     /// <summary>
-    /// [물멍]: 선장님이 직접 명명하신 함교의 고유 주소(Slug)입니다.
+    /// [물멍]: 선장님이 직접 명명하신 물댕봇의 고유 주소(Slug)입니다.
     /// </summary>
     [MaxLength(50)]
     public string? Slug { get; set; }

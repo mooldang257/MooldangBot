@@ -19,7 +19,7 @@ public interface IIdentityCacheService
     Task<int> SyncGlobalViewerIdAsync(string viewerUid, string nickname, string? profileImageUrl = null, CancellationToken ct = default);
 
     /// <summary>
-    /// [물멍]: 커스텀 함교 주소(Slug)를 통해 스트리머의 UID를 해부합니다.
+    /// [물멍]: 커스텀 물댕봇 주소(Slug)를 통해 스트리머의 UID를 해부합니다.
     /// </summary>
     Task<string?> GetChzzkUidBySlugAsync(string slug, CancellationToken ct = default);
 
@@ -29,7 +29,7 @@ public interface IIdentityCacheService
     void InvalidateStreamer(string chzzkUid);
 
     /// <summary>
-    /// [물멍]: 특정 함교 주소(Slug) 캐시를 강제로 무효화합니다.
+    /// [물멍]: 특정 물댕봇 주소(Slug) 캐시를 강제로 무효화합니다.
     /// </summary>
     void InvalidateSlug(string slug);
 }

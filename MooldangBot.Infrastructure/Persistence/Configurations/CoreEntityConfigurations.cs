@@ -107,7 +107,7 @@ public class ChzzkCategoryAliasConfiguration : IEntityTypeConfiguration<ChzzkCat
     }
 }
 
-// [v4.9.4] 함교 개인화 설정 (Permanent Preferences)
+// [v4.9.4] 물댕봇 개인화 설정 (Permanent Preferences)
 public class StreamerPreferenceConfiguration : IEntityTypeConfiguration<StreamerPreference>
 {
     public void Configure(EntityTypeBuilder<StreamerPreference> builder)

@@ -39,7 +39,7 @@
     }
 
     const navItems = [
-        { id: 'home', icon: Home, label: '함교 홈', path: basePath },
+        { id: 'home', icon: Home, label: '대시보드', path: basePath },
         { id: 'song', icon: Music, label: '신청곡', path: `${basePath}/song` },
         { id: 'roulette', icon: FerrisWheel, label: '룰렛', path: `${basePath}/roulette` },
     ];

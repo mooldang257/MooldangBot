@@ -29,7 +29,7 @@
 </script>
 
 <svelte:head>
-    <title>{streamerId}의 함교 - 물댕 Viewer Hub</title>
+    <title>{streamerId}의 물댕봇 - 물댕 Viewer Hub</title>
 </svelte:head>
 
 <div class="flex flex-col items-center py-12 md:py-20 text-center">
@@ -43,7 +43,7 @@
             </div>
             <h1 class="text-4xl md:text-6xl font-[1000] text-slate-800 tracking-tighter leading-none">
                 환영합니다!<br/>
-                <span class="text-primary">{streamerId}</span>님의 함교입니다.
+                <span class="text-primary">{streamerId}</span>님의 물댕봇입니다.
             </h1>
             <p class="text-sm md:text-lg text-slate-500 font-bold max-w-lg mx-auto leading-relaxed">
                 선장님과 시청자가 함께 소통하는 특별한 공간입니다.<br class="hidden md:block" />
@@ -94,7 +94,7 @@
         <div class="flex flex-col items-center gap-2">
             <Star size={20} class="text-primary" />
             <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Premium</span>
-            <p class="text-xs font-bold text-slate-500">정순한 함교 경험</p>
+            <p class="text-xs font-bold text-slate-500">정순한 물댕봇 경험</p>
         </div>
     </div>
 </div>

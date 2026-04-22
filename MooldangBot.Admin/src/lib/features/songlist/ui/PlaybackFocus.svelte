@@ -403,7 +403,7 @@
                 <Music size={48} strokeWidth={1.5} class="opacity-40" />
             </div>
             <h2 class="text-2xl font-black opacity-80">현재 재생 중인 곡이 없습니다</h2>
-            <p class="text-sm font-bold opacity-60 mt-2 text-primary/60">우측 대기열에서 함교의 첫 곡을 선택하세요 🚢</p>
+            <p class="text-sm font-bold opacity-60 mt-2 text-primary/60">우측 대기열에서 물댕봇의 첫 곡을 선택하세요 🚢</p>
         </div>
     {/if}
 </div>

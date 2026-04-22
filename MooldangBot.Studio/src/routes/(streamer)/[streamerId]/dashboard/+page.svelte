@@ -74,7 +74,7 @@
         if (!newSlug || isSavingSlug) return;
         
         isSavingSlug = true;
-        slugFeedback = '함교의 대지에 새 주소를 기록 중...';
+        slugFeedback = '물댕봇의 대지에 새 주소를 기록 중...';
 
         try {
             const res: any = await apiFetch(`/api/config/bot/${streamerId}/slug`, {
@@ -83,7 +83,7 @@
             });
 
             currentSlug = res.slug;
-            slugFeedback = '✨ 함교의 정문 주소가 변경되었습니다!';
+            slugFeedback = '✨ 물댕봇의 정문 주소가 변경되었습니다!';
             // [물멍]: 주소가 변경되면 페이지 전체의 문맥이 바뀔 수 있으므로 새로고침 권장
         } catch (e: any) {
             slugFeedback = `❌ 실패: ${e.message}`;
@@ -152,10 +152,10 @@
 </script>
 
 <svelte:head>
-    <title>함교 관제 데스크 - 물댕 Studio</title>
+    <title>물댕봇 관제 데스크 - 물댕 Studio</title>
 </svelte:head>
 
-<!-- [함교 대시보드 본문] -->
+<!-- [물댕봇 대시보드 본문] -->
 <div class="space-y-8 md:space-y-12 pb-20">
     
     <!-- [헤더 섹션] -->
@@ -168,7 +168,7 @@
                     <span class="text-xs font-bold text-slate-400">시스템 정상 가동 중</span>
                 </div>
             </div>
-            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">함교 <span class="text-primary">관제 데스크</span></h1>
+            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">물댕봇 <span class="text-primary">관제 데스크</span></h1>
             <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">선장님, 현재 오시리스 함선의 모든 시스템이 최적의 상태로 방송을 보조하고 있습니다.</p>
         </div>
 
@@ -259,14 +259,14 @@
             <h3 class="text-xl font-black text-slate-800 px-4">퀵 컨트롤</h3>
             <div class="grid grid-cols-1 gap-6">
                 
-                <!-- [물멍]: 함교 주소(Slug) 설정 센터 -->
+                <!-- [물멍]: 물댕봇 주소(Slug) 설정 센터 -->
                 <div class="group flex flex-col p-8 bg-white/70 backdrop-blur-xl border border-white rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all overflow-hidden relative">
                     <div class="relative z-10 space-y-4">
                         <div class="flex items-center gap-3 mb-2">
                             <div class="p-2.5 bg-sky-100 text-primary rounded-xl">
                                 <Settings2 size={18} />
                             </div>
-                            <h4 class="font-black text-lg text-slate-800 tracking-tight">함교 주소 설정</h4>
+                            <h4 class="font-black text-lg text-slate-800 tracking-tight">물댕봇 주소 설정</h4>
                         </div>
                         
                         <div class="space-y-3">
@@ -325,7 +325,7 @@
                 <div class="p-10 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden group shadow-xl">
                     <div class="relative z-10">
                         <p class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4">Support OSIRIS</p>
-                        <h4 class="text-xl font-[1000] leading-tight mb-8">물댕 함교<br/>가이드 라인 확인</h4>
+                        <h4 class="text-xl font-[1000] leading-tight mb-8">물댕봇<br/>가이드 라인 확인</h4>
                         <button class="px-8 py-3 bg-emerald-500 text-white text-[10px] font-[1000] rounded-full hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
                             READ DOCUMENT
                         </button>

@@ -13,7 +13,7 @@
     let message = '';
     let status: 'idle' | 'success' | 'error' = 'idle';
 
-    // [물멍]: 함교 정보 초기 로드
+    // [물멍]: 물댕봇 정보 초기 로드
     onMount(async () => {
         try {
             const res = await fetch(`/api/config/bot/${streamerId}/slug`);
@@ -68,7 +68,7 @@
 </script>
 
 <svelte:head>
-    <title>함교 설정 | MooldangBot</title>
+    <title>물댕봇 설정 | MooldangBot</title>
 </svelte:head>
 
 <div class="space-y-8" in:fade>
@@ -78,7 +78,7 @@
             <div class="p-2 bg-primary/10 rounded-xl">
                 <Globe class="text-primary" size={28} />
             </div>
-            함교 설정
+            물댕봇 설정
         </h1>
         <p class="text-slate-500 font-medium">함선(채널)의 고유 주소와 기초 운항 설정을 관리합니다.</p>
     </header>
@@ -86,7 +86,7 @@
     {#if isLoading}
         <div class="flex flex-col items-center justify-center p-20 bg-white/50 backdrop-blur-md rounded-[2.5rem] border border-sky-100/50 shadow-xl gap-4">
             <Loader2 class="animate-spin text-primary" size={48} />
-            <p class="text-slate-400 font-bold animate-pulse">함교 정보를 수신 중...</p>
+            <p class="text-slate-400 font-bold animate-pulse">물댕봇 정보를 수신 중...</p>
         </div>
     {:else}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -100,7 +100,7 @@
                         <div class="flex items-center gap-4">
                             <div class="h-12 w-1.5 bg-primary rounded-full"></div>
                             <div>
-                                <h2 class="text-xl font-black text-slate-800">커스텀 함교 주소</h2>
+                                <h2 class="text-xl font-black text-slate-800">커스텀 물댕봇 주소</h2>
                                 <p class="text-sm text-slate-400 font-bold mt-1">시청자들이 접속할 당신만의 고유 URL을 설정하세요.</p>
                             </div>
                         </div>
@@ -109,7 +109,7 @@
                         <div class="p-6 rounded-[2rem] bg-sky-50/50 border border-sky-100/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <MapPin class="text-sky-400" size={20} />
-                                <span class="text-sm font-bold text-slate-500">현재 함교 주소</span>
+                                <span class="text-sm font-bold text-slate-500">현재 물댕봇 주소</span>
                             </div>
                             <code class="px-5 py-2 rounded-xl bg-white border border-sky-100 text-primary font-black tracking-tight text-sm md:text-base">
                                 https://mooldang.tv/{currentSlug || streamerId}
@@ -188,9 +188,9 @@
                         <div class="p-3 bg-white/20 rounded-2xl w-fit">
                             <AlertCircle size={24} />
                         </div>
-                        <h3 class="text-xl font-black">함교 주소란?</h3>
+                        <h3 class="text-xl font-black">물댕봇 주소란?</h3>
                         <p class="text-sm font-bold text-white/80 leading-relaxed">
-                            복잡한 ID 대신 'mooldang-bot'과 같이 기억하기 쉬운 이름을 사용하여 시청자들이 함교(Viewer Hub)에 더 쉽게 찾아올 수 있게 합니다.
+                            복잡한 ID 대신 'mooldang-bot'과 같이 기억하기 쉬운 이름을 사용하여 시청자들이 물댕봇(Viewer Hub)에 더 쉽게 찾아올 수 있게 합니다.
                         </p>
                         <div class="flex flex-col gap-3 pt-2">
                             <div class="flex items-center gap-3 text-xs font-black bg-black/10 p-3 rounded-xl">

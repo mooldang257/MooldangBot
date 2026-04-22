@@ -121,7 +121,7 @@
                     .catch(() => {});
             }
         } catch (e: any) {
-            console.error("[물멍] 함교 데스크 동기화 실패:", e);
+            console.error("[물멍] 물댕봇 데스크 동기화 실패:", e);
         } finally {
             isLoaded = true;
         }
@@ -205,7 +205,7 @@
                 🛠️ 명령어 <span class="text-primary">관리소</span>
             </h1>
             <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">
-                함교의 모든 명령 체계와 정기 방송 메세지를 정교하게 조립하는
+                물댕봇의 모든 명령 체계와 정기 방송 메세지를 정교하게 조립하는
                 부품 공장입니다.
             </p>
         </div>
@@ -276,12 +276,12 @@
                     <h3 class="text-xl font-black text-slate-800 mb-2">
                         {chzzkUid
                             ? "시스템 동기화 오류"
-                            : "함교 인증 기록 유실"}
+                            : "물댕봇 인증 기록 유실"}
                     </h3>
                     <p class="text-slate-500 font-bold mb-6 text-center">
                         {chzzkUid
-                            ? "함교 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
-                            : "선장님의 함교 기록(Profile)을 찾을 수 없습니다. DB 초기화 후에는 재로그인이 필요합니다."}
+                            ? "물댕봇 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
+                            : "선장님의 물댕봇 기록(Profile)을 찾을 수 없습니다. DB 초기화 후에는 재로그인이 필요합니다."}
                     </p>
                     <div class="flex gap-4">
                         <button
@@ -295,7 +295,7 @@
                             href="/api/auth/chzzk-login?type=streamer"
                             class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-sm"
                         >
-                            🔐 함교 재로그인
+                            🔐 물댕봇 재로그인
                         </a>
                     </div>
                 </div>
@@ -315,7 +315,7 @@
                 class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"
             ></div>
             <p class="text-sm font-bold animate-pulse">
-                함교 통신망 동기화 중...
+                물댕봇 통신망 동기화 중...
             </p>
         </div>
     {/if}

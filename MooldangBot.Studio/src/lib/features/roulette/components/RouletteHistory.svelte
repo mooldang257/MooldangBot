@@ -101,7 +101,7 @@
             </div>
             <div>
                 <h3 class="text-xl font-[1000] text-slate-800 tracking-tight">당첨 및 실행 기록</h3>
-                <p class="text-sm text-slate-400 font-bold">누가 함교의 보급품을 획득했는지 실시간으로 기록됩니다.</p>
+                <p class="text-sm text-slate-400 font-bold">누가 물댕봇의 보급품을 획득했는지 실시간으로 기록됩니다.</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -259,7 +259,7 @@
                             <div class="flex flex-col items-center justify-center text-slate-300">
                                 <Search size={48} strokeWidth={1} class="mb-4 opacity-20" />
                                 <p class="font-black text-slate-400">기록이 없습니다.</p>
-                                <p class="text-sm font-bold">필터를 조정하거나 함교에서 룰렛 연성이 시작되길 기다려주세요.</p>
+                                <p class="text-sm font-bold">필터를 조정하거나 물댕봇에서 룰렛 연성이 시작되길 기다려주세요.</p>
                             </div>
                         </td>
                     </tr>

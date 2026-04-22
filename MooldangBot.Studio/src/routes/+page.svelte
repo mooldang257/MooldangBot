@@ -31,7 +31,7 @@
 </script>
 
 <svelte:head>
-    <title>물댕 함교 - 나만의 치지직 봇 관리 센터</title>
+    <title>물댕봇 - 나만의 치지직 봇 관리 센터</title>
 </svelte:head>
 
 <div class="w-full max-w-6xl mx-auto px-4 md:px-8 py-8 md:py-20 box-border overflow-hidden">

@@ -23,7 +23,7 @@
 - **심장 (Core Engine)**: C# .NET 10 기반의 고성능 비동기 상태 머신
 - **기억 (Persistence)**: Entity Framework Core & MariaDB (Dapper를 통한 고속 공명)
 - **신경망 (Communication)**: SignalR & RabbitMQ를 통한 실시간 양방향 맥박(Pulse) 통신
-- **표면 (Front-end)**: SvelteKit 기반의 관리자 함교(Dashboard)와 PixiJS 오버레이
+- **표면 (Front-end)**: SvelteKit 기반의 관리자 물댕봇(Dashboard)와 PixiJS 오버레이
 
 ## 🛡️ 3. 3대 설계 철학 (Core Philosophy)
 
@@ -32,7 +32,7 @@
 2. **Resonance Overdrive (극한의 성능 최적화)**
    채팅 폭주로 인한 DB의 병목을 원천 차단합니다. 비차단 채널(`System.Threading.Channels`)을 이용해 수만 개의 요청을 메모리에서 병합(Aggregation)하여 단일 쿼리로 처리하는 '공명 엔진'을 탑재했습니다.
 3. **Self-Awareness (자각과 관측성)**
-   함선은 스스로의 맥박을 느낍니다. 60fps의 ECG 파동으로 함교에 상태를 보고하며, 심정지가 감지되면 즉각 디스코드 웹훅을 통해 선장에게 구조 신호를 보냅니다.
+   함선은 스스로의 맥박을 느낍니다. 60fps의 ECG 파동으로 물댕봇에 상태를 보고하며, 심정지가 감지되면 즉각 디스코드 웹훅을 통해 선장에게 구조 신호를 보냅니다.
 
 ---
 
@@ -184,7 +184,7 @@ Redis 컨테이너 장애라는 극한의 카오스 상황에서도 시스템이
 
 ---
 
-### Phase 10: Command Bridge (함교)
+### Phase 10: Command Bridge (물댕봇)
 **목표**: 보이지 않는 맥박을 시각화하여 직관적인 실시간 관제 환경 구축.
 
 - **핵심 성과**: SignalR 양방향 Heartbeat 및 Admin 대시보드의 **60fps ECG 실시간 파동** 시각화.

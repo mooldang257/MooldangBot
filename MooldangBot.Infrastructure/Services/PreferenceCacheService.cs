@@ -27,7 +27,7 @@ public class PreferenceCacheService(IConnectionMultiplexer redis) : IPreferenceC
         }
         catch (Exception ex)
         {
-            // [Fallback]: 함교 운용은 계속되어야 하므로 에러만 기록
+            // [Fallback]: 물댕봇 운용은 계속되어야 하므로 에러만 기록
             Console.WriteLine($"[물멍의 경보] Redis Preference 저장 실패 (UserId: {userId}, Key: {key}): {ex.Message}");
         }
     }

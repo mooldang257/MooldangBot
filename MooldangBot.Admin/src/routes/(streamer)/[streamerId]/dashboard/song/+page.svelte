@@ -165,7 +165,7 @@
         // 500ms 이후에도 uid가 없으면 에러를 띄우는 Fail-safe 전략을 취합니다.
         setTimeout(() => {
             if (!streamerId && !isLoaded) {
-                errorMessage = "로그인 정보가 유효하지 않거나 함교 연결이 지연되고 있습니다. 다시 로그인해 주세요.";
+                errorMessage = "로그인 정보가 유효하지 않거나 물댕봇 연결이 지연되고 있습니다. 다시 로그인해 주세요.";
             }
         }, 1000);
     });

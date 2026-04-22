@@ -31,7 +31,7 @@ namespace MooldangBot.Domain.DTOs
         public string TopCommand { get; set; } = "-";
     }
 
-    // 📜 [Osiris]: 함교 활동 로그 DTO (Blackbox)
+    // 📜 [Osiris]: 물댕봇 활동 로그 DTO (Blackbox)
     public class DashboardActivityDto
     {
         [JsonPropertyName("id")]

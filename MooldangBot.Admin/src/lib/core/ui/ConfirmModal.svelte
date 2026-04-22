@@ -10,7 +10,7 @@
     export let message = "정말 이 명령어를 삭제하시겠습니까?";
     export let keyword = ""; // 🎯 삭제 대상 키워드 강조
     export let confirmText = "과감하게 삭제";
-    export let cancelText = "함교로 복귀";
+    export let cancelText = "메인 화면으로";
 
     let dontAskAgain = false;
 

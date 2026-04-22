@@ -9,11 +9,11 @@
 함선과 오버레이 사이의 연결 상태를 실시간으로 감시하여 장애를 즉각 감지합니다.
 
 ### 🧱 ECG 차트 및 맥박 체크
-오버레이가 죽었을 때 서버가 이를 감지하여 룰렛 결과를 대신 확정하거나, 함교(Admin)에 시각적으로 보고합니다.
+오버레이가 죽었을 때 서버가 이를 감지하여 룰렛 결과를 대신 확정하거나, 물댕봇(Admin)에 시각적으로 보고합니다.
 
 **[핵심 코드: SignalR Pulse]**
 ```csharp
-// [v10.0] 함교(Admin) 대시보드에 실시간 ECG 파동을 전송합니다.
+// [v10.0] 물댕봇(Admin) 대시보드에 실시간 ECG 파동을 전송합니다.
 public async Task ReportPulse(string overlayToken) {
     _logger.LogDebug($"[맥박 확인] {overlayToken} 생존 신호 수신");
     await Clients.All.SendAsync("OnPulseReceived", overlayToken, DateTime.UtcNow);

@@ -8,7 +8,7 @@
         message = "정말 이 명령어를 삭제하시겠습니까?",
         keyword = "",
         confirmText = "과감하게 삭제",
-        cancelText = "함교로 복귀",
+        cancelText = "메인 화면으로",
         onconfirm,
         oncancel
     } = $props<{

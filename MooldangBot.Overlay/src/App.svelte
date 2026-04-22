@@ -77,7 +77,7 @@
             layout={layout.songQueue}
         />
         
-        <NoticeWidget message="함교 시스템 온라인" />
+        <NoticeWidget message="물댕봇 시스템 온라인" />
     </div>
   {:else}
     <div class="unauthorized">

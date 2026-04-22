@@ -68,7 +68,7 @@
             class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter mb-4 flex items-center gap-4"
         >
             <Activity class="text-primary w-8 h-8 md:w-12 md:h-12" />
-            함교 <span class="text-primary">관제 센터</span>
+            물댕봇 <span class="text-primary">관제 센터</span>
         </h1>
         <p class="text-sm md:text-lg text-slate-500 font-medium max-w-2xl">
             오시리스 함선의 모든 기관과 워커의 맥박을 실시간으로 감시합니다.

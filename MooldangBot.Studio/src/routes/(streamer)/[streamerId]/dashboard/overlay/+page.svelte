@@ -77,7 +77,7 @@
 
             designSettings = updatedSettings;
             layoutData = newLayout;
-            alert("레이아웃 설정이 함교에 저장되었습니다! ✅");
+            alert("레이아웃 설정이 물댕봇에 저장되었습니다! ✅");
         } catch (err) {
             console.error("[물멍] 레이아웃 저장 실패:", err);
             alert("저장 중 오류가 발생했습니다.");
@@ -92,11 +92,11 @@
 </script>
 
 <div class="space-y-8 p-2">
-    <!-- [함교 헤더] -->
+    <!-- [물댕봇 헤더] -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="space-y-1">
             <h1 class="text-3xl font-black text-slate-800 tracking-tight">마스터 오버레이 관제</h1>
-            <p class="text-slate-500 font-bold">함교의 모든 시각적 요소를 표준 해상도 캔버스에서 정밀하게 배치합니다.</p>
+            <p class="text-slate-500 font-bold">물댕봇의 모든 시각적 요소를 표준 해상도 캔버스에서 정밀하게 배치합니다.</p>
         </div>
 
         <div class="flex items-center gap-3">

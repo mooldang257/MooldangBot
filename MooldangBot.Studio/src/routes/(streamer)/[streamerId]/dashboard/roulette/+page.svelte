@@ -328,7 +328,7 @@
     {:else}
         <div class="py-20 flex flex-col items-center justify-center text-slate-300">
             <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-            <p class="text-sm font-bold animate-pulse">함교 통신망 동기화 중...</p>
+            <p class="text-sm font-bold animate-pulse">물댕봇 통신망 동기화 중...</p>
         </div>
     {/if}
 </div>

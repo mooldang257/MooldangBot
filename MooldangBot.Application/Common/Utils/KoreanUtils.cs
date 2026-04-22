@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace MooldangBot.Application.Common.Utils;
 
 /// <summary>
-/// [v13.0] 함교 지능형 언어 처리 및 별칭 추출 유틸리티 (Linguistic Resonance)
+/// [v13.0] 물댕봇 지능형 언어 처리 및 별칭 추출 유틸리티 (Linguistic Resonance)
 /// </summary>
 public static class KoreanUtils
 {

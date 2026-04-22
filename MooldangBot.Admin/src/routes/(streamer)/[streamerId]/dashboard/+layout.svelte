@@ -50,7 +50,7 @@
         { id: 'roulette', icon: FerrisWheel, label: '룰렛 관리', path: `${basePath}/roulette` },
         { id: 'chatpoint', icon: Gem, label: '채팅 포인트 관리', path: `${basePath}/chatpoint` },
         { id: 'overlay', icon: Monitor, label: '마스터 오버레이', path: `${basePath}/overlay` },
-        { id: 'settings', icon: Settings, label: '함교 설정', path: `${basePath}/settings` },
+        { id: 'settings', icon: Settings, label: '물댕봇 설정', path: `${basePath}/settings` },
     ]);
 
     // 현재 경로 확인 (메뉴 하이라이트용)

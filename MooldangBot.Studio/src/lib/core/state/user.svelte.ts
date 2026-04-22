@@ -1,6 +1,6 @@
 // src/lib/core/state/user.svelte.ts
 /**
- * 🌊 [Osiris]: 함교 전역 상태 엔진 (Bridge Global State Engine)
+ * 🌊 [Osiris]: 물댕봇 전역 상태 엔진 (Bridge Global State Engine)
  * Svelte 5 Runes ($state)를 활용하여 스트리머 정보를 싱글톤으로 관리합니다.
  */
 class UserState {
@@ -43,7 +43,7 @@ class UserState {
         this.isAuthenticated = (data.isAuthenticated !== undefined) ? data.isAuthenticated : true;
         this.overlayToken = data.overlayToken || "";
         
-        console.log(`🛡️ [Bridge] 함교 관제 시스템 가동 - 접속자: ${this.channelName} (${this.uid})`);
+        console.log(`🛡️ [Bridge] 물댕봇 관제 시스템 가동 - 접속자: ${this.channelName} (${this.uid})`);
     }
 
     /**

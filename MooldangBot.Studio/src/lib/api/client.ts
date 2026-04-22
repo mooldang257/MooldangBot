@@ -43,12 +43,12 @@ export async function apiFetch<T>(
 
     const result: Result<T> = await response.json().catch(err => {
         console.error("[apiFetch] JSON 파싱 실패:", err, "Response:", response);
-        throw new Error("함교 데이터 형식 오류");
+        throw new Error("물댕봇 데이터 형식 오류");
     });
     
     if (!result.isSuccess) {
         console.warn("[apiFetch] 비즈니스 로직 실패:", result.error);
-        throw new Error(result.error || '함교 통신 오류 발생');
+        throw new Error(result.error || '물댕봇 통신 오류 발생');
     }
     
     return result.value;

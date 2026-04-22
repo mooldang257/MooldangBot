@@ -53,7 +53,7 @@ namespace MooldangBot.Application.Controllers.Config
             }));
         }
 
-        // 3. 함교 주소(Slug) 조회
+        // 3. 물댕봇 주소(Slug) 조회
         [HttpGet("slug")]
         public async Task<IActionResult> GetStreamerSlug([FromRoute] string uid)
         {
@@ -69,7 +69,7 @@ namespace MooldangBot.Application.Controllers.Config
             }));
         }
 
-        // 4. 함교 주소(Slug) 변경
+        // 4. 물댕봇 주소(Slug) 변경
         [HttpPatch("slug")]
         public async Task<IActionResult> UpdateStreamerSlug([FromRoute] string uid, [FromBody] SlugUpdateRequest req)
         {
@@ -103,7 +103,7 @@ namespace MooldangBot.Application.Controllers.Config
             { 
                 success = true, 
                 slug = streamer.Slug, 
-                message = "함교의 새로운 주소가 등록되었습니다." 
+                message = "물댕봇의 새로운 주소가 등록되었습니다." 
             }));
         }
 
