@@ -98,6 +98,7 @@ public static class ConfigurationExtensions
             "JwtSettings:Issuer",
             "ChzzkApi:ClientId",
             "ChzzkApi:ClientSecret",
+            "YouTube:ApiKey",
             "REDIS_URL",
             "BASE_DOMAIN", 
             "RABBITMQ_HOST",

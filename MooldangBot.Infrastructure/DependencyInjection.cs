@@ -19,6 +19,7 @@ using MooldangBot.Infrastructure.Persistence;
 using MooldangBot.Infrastructure.ApiClients.Philosophy;
 using MooldangBot.Application.Services.Philosophy;
 using MooldangBot.Infrastructure.Services;
+using MooldangBot.Domain.Common.Models;
 using StackExchange.Redis;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -30,6 +31,7 @@ using MooldangBot.Infrastructure.Security;
 using MassTransit;
 using MassTransit.EntityFrameworkCoreIntegration;
 using System.Reflection;
+using MooldangBot.Infrastructure.Workers.AI;
 
 namespace MooldangBot.Infrastructure
 {
@@ -145,14 +147,14 @@ namespace MooldangBot.Infrastructure
             // [오시리스의 영혼]: 실제 치지직 API 클라이언트 등록 (게이트웨이 위임 방식)
             services.AddSingleton<IChzzkApiClient, ChzzkApiClient>();
 
-            // [피닉스의 심장]: 실전 채팅 클라이언트 (게이트웨이 프록시 기반으로 전환 - 1단계)
-            // [네임스페이스 명시]: Application.Interfaces의 규격을 구현한 프록시를 주입합니다.
+            // [피닉스의 심장]: 실전 채팅 클라이언트
             services.AddSingleton<MooldangBot.Domain.Abstractions.IChzzkChatClient, GatewayChatClientProxy>();
-            // 향후 AI 답변 기능을 재활성화하려면 아래 줄의 주석을 해제하고 Mock 등록을 제거하십시오.
-            // services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
-            
-            // AI 기능 호출 시 무응답(Silence) 처리를 위해 Mock 서비스를 등록합니다.
-            services.AddSingleton<ILlmService, LlmServiceMock>();
+
+            // [거울의 신경망]: 실전 Gemini AI 서비스 등록
+            services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
+
+            // [거울의 집사]: AI 백그라운드 워커 등록 (가변 속도 제한 및 순차 처리)
+            services.AddHostedService<AiEnrichmentBackgroundWorker>();
 
             // [v2.4.5] ShardedWebSocketManager 등록 이관
 
@@ -192,7 +194,8 @@ namespace MooldangBot.Infrastructure
             // [v16.1] 지휘관 영구 선호도 저장소 (MariaDB Preference)
             services.AddScoped<IPreferenceDbService, PreferenceDbService>();
 
-            // [v13.0] 유튜브 실시간 정찰기(YouTube Recon Synergy) 등록
+            // [v13.0] 유튜브 설정 및 실시간 정찰기(YouTube Recon Synergy) 등록
+            services.Configure<YouTubeSettings>(configuration.GetSection("YouTube"));
             services.AddScoped<IYouTubeSearchService, YouTubeSearchService>();
 
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록

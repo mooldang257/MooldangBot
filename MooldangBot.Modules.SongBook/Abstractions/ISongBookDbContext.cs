@@ -20,6 +20,7 @@ public interface ISongBookDbContext
     DbSet<StreamerOmakaseItem> StreamerOmakases { get; }
     DbSet<StreamerPreference> StreamerPreferences { get; }
     DbSet<Master_SongLibrary> MasterSongLibraries { get; }
+    DbSet<Streamer_SongLibrary> StreamerSongLibraries { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

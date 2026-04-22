@@ -5,17 +5,31 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Contracts.AI.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MooldangBot.Application.Services;
 
 /// <summary>
 /// [v13.0] 중앙 병기창 하이브리드 검색 및 정밀 징집 구현체 (Linguistic Resonance)
 /// </summary>
-public class SongLibraryService(IAppDbContext dbContext, IYouTubeSearchService youtubeService, ISongLibraryIdGenerator idGenerator) : ISongLibraryService
+public class SongLibraryService(
+    IAppDbContext dbContext, 
+    IYouTubeSearchService youtubeService, 
+    ISongLibraryIdGenerator idGenerator,
+    ILlmService llmService,
+    CommandBackgroundTaskQueue taskQueue,
+    AdaptiveAiRateLimiter rateLimiter,
+    IServiceProvider serviceProvider) : ISongLibraryService
 {
     private readonly IAppDbContext _context = dbContext;
     private readonly IYouTubeSearchService _youtube = youtubeService;
     private readonly ISongLibraryIdGenerator _idGenerator = idGenerator; // [v13.1] Snowflake ID 생성기 주입
+    private readonly ILlmService _llm = llmService; // [v18.0] AI 신경망 주입
+    private readonly CommandBackgroundTaskQueue _taskQueue = taskQueue; // [v18.1] 백그라운드 큐 오프로딩
+    private readonly AdaptiveAiRateLimiter _rateLimiter = rateLimiter; // [v18.1] 지능형 속도 제한
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public async Task<List<SongLibrarySearchResultDto>> SearchLibraryAsync(string query)
     {
@@ -101,6 +115,13 @@ public class SongLibraryService(IAppDbContext dbContext, IYouTubeSearchService y
             CreatedAt = KstClock.Now
         };
 
+        // 4. [v18.1] AI 메타데이터 보강 (백그라운드 오프로딩 + 가변 지연)
+        // 시청자 응답 속도 향상을 위해 별칭 및 벡터 생성은 백그라운드에서 처리합니다.
+        _ = _taskQueue.QueueBackgroundWorkItemAsync(async ct => 
+        {
+            await EnrichWithAiMetadataInBackgroundAsync(newLibraryId);
+        });
+
         _context.MasterSongStagings.Add(staging);
         await _context.SaveChangesAsync();
 
@@ -139,6 +160,15 @@ public class SongLibraryService(IAppDbContext dbContext, IYouTubeSearchService y
             if (dto.Lyrics != null) staging.Lyrics = dto.Lyrics;
             
             staging.CreatedAt = KstClock.Now; // 수명 연장
+
+            // [v18.1] 제목이 바뀌었다면 AI 메타데이터 재생성 (백그라운드)
+            if (!string.IsNullOrWhiteSpace(dto.Title))
+            {
+                _ = _taskQueue.QueueBackgroundWorkItemAsync(async ct => 
+                {
+                    await EnrichWithAiMetadataInBackgroundAsync(libraryIdToUse);
+                });
+            }
         }
         else
         {
@@ -156,10 +186,65 @@ public class SongLibraryService(IAppDbContext dbContext, IYouTubeSearchService y
                 SourceId = dto.SourceId ?? "system_recovery",
                 CreatedAt = KstClock.Now
             };
+
+            // [v18.1] AI 메타데이터 보강 (백그라운드)
+            _ = _taskQueue.QueueBackgroundWorkItemAsync(async ct => 
+            {
+                await EnrichWithAiMetadataInBackgroundAsync(libraryIdToUse);
+            });
+
             _context.MasterSongStagings.Add(staging);
         }
 
         await _context.SaveChangesAsync();
         return libraryIdToUse;
+    }
+
+    /// <summary>
+    /// [v18.1] 백그라운드에서 안전하게 AI 보강 작업을 수행합니다. (지능형 리미터 적용)
+    /// </summary>
+    private async Task EnrichWithAiMetadataInBackgroundAsync(long libraryId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var llm = scope.ServiceProvider.GetRequiredService<ILlmService>();
+        var limiter = scope.ServiceProvider.GetRequiredService<AdaptiveAiRateLimiter>();
+
+        var staging = await db.MasterSongStagings.FirstOrDefaultAsync(s => s.SongLibraryId == libraryId);
+        if (staging == null) return;
+
+        try 
+        {
+            // 1. 속도 제한 확인 및 획득 (RPM 15 한도 도달 시 여기서 대기)
+            await limiter.AcquireAsync();
+
+            // 2. 벡터 데이터 생성
+            string embeddingText = $"{staging.Title} - {staging.Artist}";
+            var vector = await llm.GetEmbeddingAsync(embeddingText);
+            if (vector != null && vector.Length > 0)
+            {
+                var byteArray = new byte[vector.Length * 4];
+                Buffer.BlockCopy(vector, 0, byteArray, 0, byteArray.Length);
+                staging.TitleVector = byteArray;
+            }
+
+            // 3. AI 기반 별칭 생성
+            var systemPrompt = "당신은 음악 전문가입니다. 노래 제목을 받으면 한국 사람들이 흔히 부를 법한 줄임말이나 별칭을 생성하세요. " +
+                               "답변은 반드시 별칭들만 쉼표로 구분하여 출력하고, 다른 설명은 하지 마세요. (예: '우리는 언젠가 죽어요' -> '우언죽, 언젠가죽어요')";
+            
+            var aiAlias = await llm.GenerateResponseAsync(systemPrompt, staging.Title);
+            if (!string.IsNullOrWhiteSpace(aiAlias))
+            {
+                var existingAlias = staging.Alias ?? "";
+                var finalAlias = (existingAlias + (string.IsNullOrWhiteSpace(existingAlias) ? "" : ", ") + aiAlias).Trim(',', ' ');
+                staging.Alias = finalAlias;
+            }
+
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // 백그라운드 작업이므로 예외는 로깅만 하고 종료
+        }
     }
 }

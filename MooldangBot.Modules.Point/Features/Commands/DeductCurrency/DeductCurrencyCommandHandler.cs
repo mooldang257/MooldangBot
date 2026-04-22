@@ -117,19 +117,21 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         if (conn.State != ConnectionState.Open) await conn.OpenAsync(ct);
         
         // 🛡️ [철옹성 쿼리]: 현장 결제 시스템(Real-time Donation Credit)
-        // 후원을 통해 증가된 잔액에서 명령어 비용(request.Amount)을 차감합니다.
+        // [복구]: 사용자께서 구현하셨던 '후원금을 가용 금액으로 설정'하는 로직을 통합 구조에 맞게 적용합니다.
+        // 현재 DB 잔액이 부족하더라도, 이번 요청에서 함께 들어온 후원금(@DonationAmount)이 있다면 결제를 허용합니다.
         const string updateSql = @"
             UPDATE viewer_donations 
             SET balance = balance - @DeductAmount, updated_at = NOW()
             WHERE streamer_profile_id = @StreamerId 
               AND global_viewer_id = @GlobalId 
-              AND balance >= @DeductAmount";
+              AND (balance + @DonationAmount >= @DeductAmount)";
 
         var affectedRows = await conn.ExecuteAsync(updateSql, new 
         { 
             StreamerId = streamer.Id, 
             GlobalId = globalViewerId, 
-            DeductAmount = request.Amount 
+            DeductAmount = request.Amount,
+            DonationAmount = request.DonationAmount
         });
 
         if (affectedRows == 0)

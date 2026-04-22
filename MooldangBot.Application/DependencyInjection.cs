@@ -40,8 +40,6 @@ namespace MooldangBot.Application
             services.AddScoped<IPhoenixRecorder, PhoenixSystem>();
             services.AddSingleton<IResonanceService, ResonanceService>();
             services.AddSingleton<IChatTrafficAnalyzer, ChatTrafficAnalyzer>();
-            services.AddScoped<IPersonaPromptBuilder, PersonaPromptBuilder>();
-            services.AddScoped<IChatIntentRouter, ChatIntentRouter>();
             services.AddScoped<IChzzkChatService, ChzzkChatService>();
 
             // [v3.6.3] 로깅 버퍼 및 포인트 통계 (API측에서 집계용으로 사용할 수 있으므로 유지)
@@ -49,6 +47,7 @@ namespace MooldangBot.Application
             services.AddSingleton<IPointBatchService, PointBatchService>();
 
             services.AddSingleton<CommandBackgroundTaskQueue>();
+            services.AddSingleton<AdaptiveAiRateLimiter>();
 
             // [v3.0] Legacy Persistence: 방송 상태 관리 및 오버레이 알림 서비스 등록
             services.AddSingleton<MooldangBot.Application.Features.SongBook.SongBookState>();

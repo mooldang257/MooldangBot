@@ -39,7 +39,8 @@ public class InternalTokenController : ControllerBase
     {
         if (!IsAuthorized()) return Unauthorized();
 
-        _logger.LogInformation("📡 [Gateway] 통합 클라이언트를 통한 토큰 교환 시도... (State: {State})", request.State);
+        _logger.LogInformation("📡 [Gateway] 통합 클라이언트를 통한 토큰 교환 시도... (State: {State}, Code: {Code}, RedirectUri: {RedirectUri})", 
+            request.State, request.Code, request.RedirectUri);
 
         // [오시리스의 통합]: 지휘관님의 지침에 따라 통합 클라이언트(_apiClient)로 호출을 일원화합니다.
         // ChzzkApiClient 내부에서 이제 봉투 유무를 자동으로 판단하여 처리합니다.

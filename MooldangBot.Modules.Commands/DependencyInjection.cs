@@ -26,7 +26,6 @@ public static class DependencyInjection
         services.AddScoped<ICommandFeatureStrategy, CategoryStrategy>();
         services.AddScoped<ICommandFeatureStrategy, AttendanceStrategy>();
         services.AddScoped<ICommandFeatureStrategy, OmakaseStrategy>();
-        services.AddScoped<ICommandFeatureStrategy, AiResponseStrategy>();
 
         return services;
     }

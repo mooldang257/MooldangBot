@@ -16,6 +16,13 @@ public class LlmServiceMock(ILogger<LlmServiceMock> logger) : ILlmService
         logger.LogInformation($"[LLM Mock 호출 - 무응답 상태] System: {systemPrompt.Substring(0, Math.Min(20, systemPrompt.Length))}...");
         return string.Empty;
     }
+
+    public Task<float[]> GetEmbeddingAsync(string text)
+    {
+        // 🤫 [Mock 벡터]: 임베딩 요청 시 빈 배열을 반환하여 시스템 오류를 방지합니다.
+        logger.LogInformation($"[LLM Mock 벡터 추출] Input: {text}");
+        return Task.FromResult(Array.Empty<float>());
+    }
 }
 
 /// <summary>

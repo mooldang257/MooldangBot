@@ -43,6 +43,24 @@ public class Streamer_SongLibrary : IAuditable
     [Column(TypeName = "TEXT")]
     public string? Lyrics { get; set; }
 
+    /// <summary>
+    /// [v18.0] 검색용 별칭 및 줄임말 (예: "우언죽")
+    /// </summary>
+    [MaxLength(500)]
+    public string? Alias { get; set; }
+
+    /// <summary>
+    /// [v18.0] 제목 초성 (예: "ㅇㄹㄴㅇㅈㄱ")
+    /// </summary>
+    [MaxLength(200)]
+    public string? TitleChosung { get; set; }
+
+    /// <summary>
+    /// [v11.7] 의미 기반 검색을 위한 벡터 데이터 (MariaDB 11.7 전용)
+    /// </summary>
+    [Column(TypeName = "VECTOR(768)")]
+    public byte[]? TitleVector { get; set; }
+
     public KstClock CreatedAt { get; set; } = KstClock.Now;
     public KstClock? UpdatedAt { get; set; }
 }
