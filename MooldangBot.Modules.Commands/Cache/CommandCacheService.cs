@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MooldangBot.Modules.Commands.Cache;
 
@@ -16,14 +17,14 @@ namespace MooldangBot.Modules.Commands.Cache;
 /// </summary>
 public class CommandCacheService : ICommandCache
 {
-    private readonly ICommandDbContext _db;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CommandCacheService> _logger;
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, CommandMetadata>> _unifiedCache = new();
     private readonly ConcurrentDictionary<string, Regex> _regexCache = new();
 
-    public CommandCacheService(ICommandDbContext db, ILogger<CommandCacheService> logger)
+    public CommandCacheService(IServiceScopeFactory scopeFactory, ILogger<CommandCacheService> logger)
     {
-        _db = db;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -70,7 +71,10 @@ public class CommandCacheService : ICommandCache
         var normalizedUid = chzzkUid.Trim().ToLower();
         try
         {
-            var commandEntities = await _db.UnifiedCommands
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
+
+            var commandEntities = await db.UnifiedCommands
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
                 .Where(c => c.StreamerProfile!.ChzzkUid == normalizedUid)

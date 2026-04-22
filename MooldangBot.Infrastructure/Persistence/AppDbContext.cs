@@ -11,17 +11,14 @@ namespace MooldangBot.Infrastructure.Persistence;
 // partial 키워드를 사용하여 DbSet 선언부를 분리했습니다.
 public partial class AppDbContext : DbContext
 {
-    private readonly IUserSession _userSession; // 추가
     private readonly IDataProtector _protector;
 
-    // 생성자 매개변수를 3개(options, userSession, provider)로 맞춤
+    // 생성자 매개변수를 Pooling에 적합하게 조정
     public AppDbContext(
         DbContextOptions<AppDbContext> options, 
-        IUserSession userSession, 
         IDataProtectionProvider provider) 
         : base(options)
     {
-        _userSession = userSession;
         _protector = provider.CreateProtector("MooldangBot.TokenEncryption.v1");
     }
 

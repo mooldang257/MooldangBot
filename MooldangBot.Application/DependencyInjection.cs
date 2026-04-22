@@ -48,13 +48,10 @@ namespace MooldangBot.Application
             services.AddSingleton<LogBulkBuffer>();
             services.AddSingleton<IPointBatchService, PointBatchService>();
 
-            // [v4.1] 과잉 추상화 정리: 구체 클래스 전면 등록
-            services.AddSingleton<ChaosManager>();
-            services.AddSingleton<IdempotencyService>();
-            services.AddSingleton<PulseService>();
             services.AddSingleton<CommandBackgroundTaskQueue>();
 
-            // [Phase 3] Presentation 레이어 통합: 오버레이 알림 서비스 등록
+            // [v3.0] Legacy Persistence: 방송 상태 관리 및 오버레이 알림 서비스 등록
+            services.AddSingleton<MooldangBot.Application.Features.SongBook.SongBookState>();
             services.AddScoped<IOverlayNotificationService, OverlayNotificationService>();
 
             return services;

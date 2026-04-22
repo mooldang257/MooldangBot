@@ -17,7 +17,7 @@ providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false # 명시적으로 라벨을 붙인 서비스만 노출
-    network: mooldangbot_osiris_net
+    network: mooldang_prod_net
   file:
     filename: "/etc/traefik/dynamic.yml"
     watch: true

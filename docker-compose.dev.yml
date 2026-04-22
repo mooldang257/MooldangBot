@@ -1,23 +1,270 @@
-version: '3.8'
+# [MooldangBot]: Development Environment (Production Mirroring)
+# 운영 환경과 1:1 대응하도록 구조화되었으며 리소스 사용량만 제한됨.
 
 services:
-  # [오시리스의 대시보드]: UI 개발 모드 최적화 (Hot-Reload 활성화)
-  studio:
-    build:
-      context: ./MooldangBot.Studio
-      dockerfile: Dockerfile
-      target: builder # [물멍]: Vite 등 개발 의존성이 포함된 빌드 단계를 사용하도록 설정
-    command: npm run dev -- --host 0.0.0.0 --port 3000
+  db-dev:
+    image: mariadb:11.7
+    container_name: mooldang-db-dev
+    command:
+      - --local-infile=1
+      - --innodb-flush-method=O_DIRECT
+      - --max-connections=512
+      - --innodb-buffer-pool-size=768M
+      - --innodb-log-file-size=256M
+      - --innodb-flush-log-at-trx-commit=2
+    restart: always
+    env_file:
+      - .env.dev
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_ROOT_HOST: '%'
     volumes:
-      # 1. 로컬 소스 코드를 컨테이너 내부와 실질적으로 연결합니다.
-      - ./MooldangBot.Studio:/app
-      # 2. 컨테이너 내부의 의존성(node_modules)은 로컬에 의해 투명하게 덮어써지지 않도록 익명 볼륨으로 보호합니다.
-      - /app/node_modules
+      - /mnt/ssd_db/dev/mariadb:/var/lib/mysql
+    networks:
+      - mooldang_dev_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    healthcheck:
+      test: [ "CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis-dev:
+    image: redis:7-alpine
+    container_name: mooldang-redis-dev
+    restart: always
+    networks:
+      - mooldang_dev_net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq-dev:
+    image: rabbitmq:3-management-alpine
+    container_name: mooldang-rabbitmq-dev
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    networks:
+      - mooldang_dev_net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  migration-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mooldang-app:dev
+    container_name: mooldang-migration-dev
+    restart: "no"
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db-dev;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
+    networks:
+      - mooldang_dev_net
+    depends_on:
+      db-dev:
+        condition: service_healthy
+    volumes:
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mooldang-app:dev
+    container_name: mooldang-app-dev
+    restart: always
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=db-dev
+      - REDIS_URL=redis-dev:6379
+      - RABBITMQ_HOST=rabbitmq-dev
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db-dev;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s # [오시르스의 영찰]: 샤드 로딩 시간 고려하여 연장
+      retries: 5
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app-dev.rule=Host(`www.mooldang.store`) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/overlayHub`) || PathPrefix(`/swagger`))"
+      - "traefik.http.routers.app-dev.entrypoints=web"
+      - "traefik.http.services.app-dev.loadbalancer.server.port=8080"
+      - "traefik.http.services.app-dev.loadbalancer.sticky.cookie=true"
+      - "traefik.http.middlewares.app-upgrade-dev.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.app-dev.middlewares=app-upgrade-dev,cloudflare-real-ip@file"
+      - "traefik.docker.network=mooldang_dev_net"
+    networks:
+      - mooldang_dev_net
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_started
+      rabbitmq-dev:
+        condition: service_healthy
+      migration-dev:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    volumes:
+      - ${AVATAR_DATA_PATH:-./data/avatars}:/app/wwwroot/images/avatars
+      - ${UPLOAD_DATA_PATH:-./data/uploads}:/app/wwwroot/uploads
+      - ${APP_DATA_PATH:-./data/app}:/app/data
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+
+  chzzk-bot-dev:
+    build:
+      context: .
+      dockerfile: MooldangBot.ChzzkAPI/Dockerfile
+    image: mooldang-chzzk-bot:dev
+    container_name: mooldang-chzzk-bot-dev
+    restart: always
+    env_file:
+      - .env.dev
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - DB_HOST=db-dev
+      - REDIS_URL=redis-dev:6379
+      - RABBITMQ_HOST=rabbitmq-dev
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
+      - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
+      - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db-dev;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    networks:
+      - mooldang_dev_net
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      rabbitmq-dev:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    volumes:
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  studio-dev:
+    build:
+      context: .
+      dockerfile: MooldangBot.Studio/Dockerfile
+    image: mooldang-studio:dev
+    container_name: mooldang-studio-dev
+    restart: always
+    env_file:
+      - .env.dev
     environment:
       - NODE_ENV=development
-      # 3. Windows 환경에서의 파일 시스템 변경 감지 성능을 위해 폴링 모드를 활성화합니다.
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
-    # 개발 모드에서는 리소스 제약을 완화하거나 필요한 포트를 직접 열어줄 수 있습니다.
-    ports:
-      - "3001:3000" # (선택사항) Nginx를 거치지 않고 직접 접근하고 싶을 때 대비
+      - ORIGIN=https://www.mooldang.store
+      - INTERNAL_API_URL=http://app-dev:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.studio-dev.rule=Host(`www.mooldang.store`) && PathPrefix(`/`)"
+      - "traefik.http.routers.studio-dev.entrypoints=web"
+      - "traefik.http.services.studio-dev.loadbalancer.server.port=3000"
+      - "traefik.http.routers.studio-dev.middlewares=cloudflare-real-ip@file"
+      - "traefik.docker.network=mooldang_dev_net"
+    networks:
+      - mooldang_dev_net
+    depends_on:
+      - app-dev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  overlay-dev:
+    build:
+      context: ./MooldangBot.Overlay
+      dockerfile: Dockerfile
+    image: mooldang-overlay:dev
+    container_name: mooldang-overlay-dev
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.overlay-dev.rule=Host(`www.mooldang.store`) && PathPrefix(`/overlay`)"
+      - "traefik.http.routers.overlay-dev.entrypoints=web"
+      - "traefik.http.services.overlay-dev.loadbalancer.server.port=80"
+      - "traefik.http.routers.overlay-dev.middlewares=cloudflare-real-ip@file"
+      - "traefik.docker.network=mooldang_dev_net"
+    networks:
+      - mooldang_dev_net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  admin-dev:
+    build:
+      context: .
+      dockerfile: MooldangBot.Admin/Dockerfile
+    image: mooldang-admin:dev
+    container_name: mooldang-admin-dev
+    restart: always
+    env_file:
+      - .env.dev
+    environment:
+      - NODE_ENV=development
+      - ORIGIN=https://www.mooldang.store
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-dev.rule=Host(`www.mooldang.store`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin-dev.entrypoints=web"
+      - "traefik.http.routers.admin-dev.middlewares=admin-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.admin-dev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=mooldang_dev_net"
+    networks:
+      - mooldang_dev_net
+    depends_on:
+      - app-dev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  mooldang_dev_net:
+    name: mooldang_dev_net
+    driver: bridge

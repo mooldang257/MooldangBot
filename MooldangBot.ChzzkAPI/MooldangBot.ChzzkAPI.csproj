@@ -38,6 +38,8 @@
     <ProjectReference Include="..\MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Point\MooldangBot.Modules.Point.csproj" />
     <ProjectReference Include="..\MooldangBot.Modules.Commands\MooldangBot.Modules.Commands.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.SongBook\MooldangBot.Modules.SongBook.csproj" />
+    <ProjectReference Include="..\MooldangBot.Modules.Roulette\MooldangBot.Modules.Roulette.csproj" />
   </ItemGroup>
 
 </Project>

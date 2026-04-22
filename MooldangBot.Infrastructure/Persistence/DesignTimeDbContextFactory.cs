@@ -88,7 +88,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var sp = services.BuildServiceProvider();
         var protector = sp.GetRequiredService<IDataProtectionProvider>();
 
-        return new AppDbContext(optionsBuilder.Options, new DesignTimeUserSession(), protector);
+        return new AppDbContext(optionsBuilder.Options, protector);
     }
 
     private class DesignTimeUserSession : IUserSession

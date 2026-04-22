@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # ---------------------------------------------------------
-# 🌊 [오시리스의 함대] 물댕봇 무중단(Zero-Downtime) 배포 스크립트 v3.0 (Traefik Edition)
+# 🌊 [MooldangBot] 개발 환경 빌드 스크립트 v3.0 (Development Only)
+# 이 스크립트는 개발(dev) 환경 구동 및 이미지 빌드에만 사용됩니다.
+# 운영 배포는 scripts/promote-to-prod.sh를 사용하세요.
 # ---------------------------------------------------------
 
 GREEN='\033[0;32m'
@@ -12,8 +14,8 @@ NC='\033[0m'
 echo -e "${GREEN}🚀 물댕봇 Traefik 관제 시스템 기반 배포를 가동합니다...${NC}"
 
 # 1. 환경 변수 체크
-if [ ! -f .env ]; then
-    echo -e "${RED}❌ 오류: .env 파일이 없습니다. .env.sample을 복사하여 생성해주세요.${NC}"
+if [ ! -f .env.dev ]; then
+    echo -e "${RED}❌ 오류: .env.dev 파일이 없습니다. .env를 복사하여 생성해주세요.${NC}"
     exit 1
 fi
 
@@ -59,15 +61,14 @@ fi
 
 # 4. Traefik 지휘부 상태 확인
 if ! docker ps | grep -q "mooldang-traefik"; then
-    echo -e "${YELLOW}⚠️ Traefik 지휘부가 가동 중이지 않습니다. 필수 인프라와 함께 시작합니다.${NC}"
-    DEPLOY_TARGETS+=("traefik" "redis" "rabbitmq" "db")
+    echo -e "${YELLOW}⚠️ Traefik 지휘부가 가동 중이지 않습니다. 운영용 docker-compose.yml에서 먼저 가동해야 합니다.${NC}"
 fi
 
 # 5. [중요] 사전 검증 (Shift-Left Verification)
 if [[ " ${DEPLOY_TARGETS[@]} " =~ " app " || -z "${DEPLOY_TARGETS[*]}" ]]; then
     echo -e "${YELLOW}⚖️ Verifier: 배포 전 오시리스의 저울로 Contract 정합성을 검증합니다...${NC}"
-    docker compose build chzzk-bot
-    docker compose run --rm --no-deps --entrypoint "dotnet" chzzk-bot verifier/MooldangBot.Verifier.dll
+    docker compose -f docker-compose.dev.yml --env-file .env.dev build chzzk-bot-dev
+    docker compose -f docker-compose.dev.yml --env-file .env.dev run --rm --no-deps --entrypoint "dotnet" chzzk-bot-dev verifier/MooldangBot.Verifier.dll
     
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ 치명적 오류: 정합성 검증 실패! 배포를 취소합니다.${NC}"
@@ -80,8 +81,16 @@ fi
 BUILD_OPTS=""
 [ "$CLEAN_BUILD" = true ] && BUILD_OPTS="--no-cache"
 
-echo -e "${GREEN}🐳 Docker: 선택된 함대 기동 중 [${DEPLOY_TARGETS[*]}]...${NC}"
-docker compose up -d --build $BUILD_OPTS ${DEPLOY_TARGETS[@]}
+echo -e "${GREEN}🐳 Docker: 개발 함대 기동 중 [${DEPLOY_TARGETS[*]}]...${NC}"
+# 개발팀은 접미사 -dev가 붙은 서비스를 대상으로 합니다.
+DEV_TARGETS=()
+for target in "${DEPLOY_TARGETS[@]}"; do
+    if [ -n "$target" ]; then
+        DEV_TARGETS+=("${target}-dev")
+    fi
+done
+
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build $BUILD_OPTS ${DEV_TARGETS[@]}
 
 # 7. 마무리
 echo -e "${GREEN}🧹 System: 불필요한 이미지 잔해 청소...${NC}"

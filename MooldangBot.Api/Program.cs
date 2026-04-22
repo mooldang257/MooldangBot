@@ -98,7 +98,6 @@ try
 
     // 🏗️ [기타 필수 서비스]
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddScoped<IUserSession, UserSession>();
     builder.Services.AddSingleton<SongQueueState>();
     builder.Services.AddHealthChecks().AddCheck<BotHealthCheck>("MooldangBot_Shards");
     

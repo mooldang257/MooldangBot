@@ -1,22 +1,16 @@
 using MooldangBot.Modules.Roulette.Abstractions;
-using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Domain.Common.Services;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.AI.Interfaces;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Point.Interfaces;
-using MooldangBot.Domain.Abstractions;
-using MooldangBot.Domain.Abstractions;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Services;
 using MooldangBot.Infrastructure.ApiClients;
@@ -41,17 +35,23 @@ namespace MooldangBot.Infrastructure
 {
     public static class DependencyInjection
     {
-
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             // [이지스 파이프라인]: 표준 분산 캐시 인터페이스 등록 (현재는 메모리 기반)
             services.AddMemoryCache();
             services.AddDistributedMemoryCache();
+
             services.AddSingleton<IIdentityCacheService, IdentityCacheService>();
             services.AddSingleton<INotificationService, NotificationService>();
+            
+            // [v4.1] 과잉 추상화 정리: 구체 클래스 전면 등록
+            services.AddSingleton<ChaosManager>();
+            services.AddSingleton<IdempotencyService>();
+            services.AddSingleton<PulseService>();
 
             // [v2.4.6] 오시리스의 세션: 봇 엔진 등 백그라운드 환경용 기본 세션 등록
-            // API 환경에서는 Presentation 레이어에서 등록된 실제 UserSession으로 덮어씌워집니다.
+            // API 환경에서는 HttpContextAccessor를 사용하는 UserSession이 우선됩니다.
+            services.AddScoped<IUserSession, UserSession>();
             services.TryAddScoped<IUserSession, BotUserSession>();
 
             // [v2.4.8] 오시리스의 전령: 백그라운드 환경용 더미 알림 서비스 등록

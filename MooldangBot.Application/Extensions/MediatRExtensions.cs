@@ -7,31 +7,19 @@ public static class MediatRExtensions
 {
     public static IServiceCollection AddMooldangMediatR(this IServiceCollection services)
     {
-        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
-        var executionPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        
-        if (executionPath != null)
+        // [이지스의 집결]: 유효한 어셈블리만 명시적으로 스캔하여 '유령 핸들러' 문제를 차단합니다.
+        var assemblies = new[]
         {
-            foreach (var dll in Directory.GetFiles(executionPath, "MooldangBot.*.dll"))
-            {
-                try
-                {
-                    var assemblyName = AssemblyName.GetAssemblyName(dll);
-                    if (loadedAssemblies.All(a => a.FullName != assemblyName.FullName))
-                    {
-                        loadedAssemblies.Add(Assembly.Load(assemblyName));
-                    }
-                }
-                catch { /* Ignore load errors */ }
-            }
-        }
-
-        var finalAssemblies = loadedAssemblies
-            .Where(a => a.FullName != null && a.FullName.StartsWith("MooldangBot"))
-            .ToArray();
+            typeof(MediatRExtensions).Assembly,                             // MooldangBot.Application
+            typeof(MooldangBot.Domain.Abstractions.IOverlayState).Assembly, // MooldangBot.Domain
+            typeof(MooldangBot.Modules.SongBook.Abstractions.ISongBookRepository).Assembly,
+            typeof(MooldangBot.Modules.Roulette.Abstractions.IRouletteDbContext).Assembly,
+            typeof(MooldangBot.Modules.Point.Abstractions.IPointDbContext).Assembly,
+            typeof(MooldangBot.Modules.Commands.DependencyInjection).Assembly
+        }.Distinct().ToArray();
 
         services.AddMediatR(cfg => {
-            cfg.RegisterServicesFromAssemblies(finalAssemblies);
+            cfg.RegisterServicesFromAssemblies(assemblies);
         });
 
         return services;
