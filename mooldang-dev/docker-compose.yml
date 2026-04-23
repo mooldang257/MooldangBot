@@ -37,8 +37,6 @@ services:
     image: redis:7-alpine
     container_name: mooldang-dev-redis
     restart: always
-    ports:
-      - "6380:6379"
     networks:
       - mooldang_dev_net
     healthcheck:
@@ -52,9 +50,6 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: mooldang-dev-rabbitmq
     restart: always
-    ports:
-      - "5673:5672"
-      - "15673:15672"
     volumes:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     environment:
@@ -241,8 +236,6 @@ services:
     image: grafana/grafana-oss:latest
     container_name: mooldang-dev-grafana
     restart: always
-    ports:
-      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -265,8 +258,6 @@ services:
     image: grafana/loki:latest
     container_name: mooldang-dev-loki
     restart: always
-    ports:
-      - "3101:3100"
     networks:
       - mooldang_dev_net
     volumes:
@@ -292,7 +283,6 @@ services:
     restart: always
     ports:
       - "81:80"
-      - "8081:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -315,8 +305,6 @@ services:
       - ADMINER_DEFAULT_SERVER=db
     networks:
       - mooldang_dev_net
-    ports:
-      - "8889:8080"
 
 networks:
   mooldang_dev_net:
