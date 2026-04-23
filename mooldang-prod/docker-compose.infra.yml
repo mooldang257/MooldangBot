@@ -99,6 +99,7 @@ services:
       - "traefik.http.routers.grafana.entrypoints=web"
       - "traefik.http.routers.grafana.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.env=prod"
     networks:
       - mooldang_prod_net
     volumes:
@@ -163,6 +164,7 @@ services:
       - "traefik.http.routers.dashboard.entrypoints=traefik"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=dashboard-shield@file"
+      - "traefik.env=prod"
     logging:
       driver: "json-file"
       options:
