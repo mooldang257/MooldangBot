@@ -12,7 +12,16 @@ NC='\033[0m'
 
 echo -e "${GREEN}⚓ 물댕 함대 운영 제어 시스템에 접속했습니다.${NC}"
 
-# 1. 사용 가능한 버전 스캔 (images 폴더에서 mooldang-app-*.tar 파일 기반)
+# 1. 현재 가동 버전 확인 및 이력 관리
+HISTORY_FILE="release_history.log"
+[ ! -f "$HISTORY_FILE" ] && touch "$HISTORY_FILE"
+
+CURRENT_APP_VERSION=$(grep "^VERSION_APP=" .env 2>/dev/null | cut -d'=' -f2)
+CURRENT_UI_VERSION=$(grep "^VERSION_UI=" .env 2>/dev/null | cut -d'=' -f2)
+
+echo -e "${YELLOW}📍 현재 가동 버전: API(${CURRENT_APP_VERSION:-N/A}) / UI(${CURRENT_UI_VERSION:-N/A})${NC}"
+
+# 1.2 사용 가능한 버전 스캔 (images 폴더에서 mooldang-app-*.tar 파일 기반)
 if [ ! -d "images" ]; then
     echo -e "${RED}❌ 오류: images 폴더가 없습니다.${NC}"
     exit 1
@@ -27,9 +36,13 @@ if [ ${#VERSIONS[@]} -eq 0 ]; then
 fi
 
 # 2. 버전 선택 메뉴
-echo -e "\n${YELLOW}🚢 가동할 버전을 선택해주세요:${NC}"
+echo -e "\n${YELLOW}🚢 가동할 버전을 선택해주세요 (${GREEN}*표시${NC}는 현재 가동 버전):${NC}"
 for i in "${!VERSIONS[@]}"; do
-    echo "$((i+1))) ${VERSIONS[$i]}"
+    MARK=""
+    if [[ "${VERSIONS[$i]}" == "$CURRENT_APP_VERSION" ]] || [[ "${VERSIONS[$i]}" == "$CURRENT_UI_VERSION" ]]; then
+        MARK=" (★현재 가동 중)"
+    fi
+    echo -e "$((i+1))) ${VERSIONS[$i]}${GREEN}$MARK${NC}"
 done
 echo "q) 종료"
 
@@ -105,4 +118,11 @@ echo -e "${GREEN}🚀 선택한 대상에게 버전($SELECTED_VERSION)을 적용
 docker compose up -d ${DEPLOY_SERVICES[@]}
 
 echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
+
+# 6. 배포 이력 기록
+DEPLOY_DESC="All"
+[ "$target_choice" == "2" ] && DEPLOY_DESC="Backend Only"
+[ "$target_choice" == "3" ] && DEPLOY_DESC="Frontend Only"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] DEPLOYED: Version=$SELECTED_VERSION, Target=$DEPLOY_DESC" >> "$HISTORY_FILE"
+
 docker compose ps
