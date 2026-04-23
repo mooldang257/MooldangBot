@@ -45,7 +45,7 @@
     const menuItems = $derived([
         { id: 'dashboard', icon: LayoutDashboard, label: '대시보드', path: `${basePath}` },
         { id: 'songbook', icon: BookOpen, label: '노래책', path: `${basePath}/songbook` },
-        { id: 'song', icon: Music, label: '신청곡 관리', path: `${basePath}/song` },
+        { id: 'song', icon: Music, label: '신청곡 관리', path: `${basePath}/requests` },
         { id: 'cmd', icon: Zap, label: '명령어 관리', path: `${basePath}/cmd` },
         { id: 'avatar', icon: User, label: '팬 캐릭터 설정', path: `${basePath}/avatar` },
         { id: 'roulette', icon: FerrisWheel, label: '룰렛 관리', path: `${basePath}/roulette` },
@@ -63,7 +63,9 @@
         const normCurrent = current.replace(/\/$/, '');
         
         if (normPath === basePath) return normCurrent === basePath;
-        return normCurrent.startsWith(normPath);
+        
+        // [v19.1] 경로 겹침 방지 (예: /song 과 /songbook 구분)
+        return normCurrent === normPath || normCurrent.startsWith(normPath + '/');
     }
 </script>
 
