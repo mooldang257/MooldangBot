@@ -8,12 +8,16 @@ services:
       - --local-infile=1
       - --innodb-flush-method=O_DIRECT
       - --max-connections=4096
-      - --innodb-buffer-pool-size=16G
-      - --innodb-log-file-size=2G
+      - --innodb-buffer-pool-size=1G
+      - --innodb-log-file-size=512M
       - --innodb-flush-log-at-trx-commit=2
       - --innodb-autoinc-lock-mode=2
-      - --bulk_insert_buffer_size=268435456
+      - --bulk_insert_buffer_size=64M
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
@@ -37,6 +41,10 @@ services:
     image: redis:7-alpine
     container_name: mooldang-dev-redis
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - mooldang_dev_net
     healthcheck:
@@ -50,6 +58,10 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: mooldang-dev-rabbitmq
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     volumes:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     environment:
@@ -93,6 +105,10 @@ services:
     image: mooldang-app:latest
     container_name: mooldang-dev-app
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     env_file:
       - .env
     environment:
@@ -142,6 +158,10 @@ services:
     image: mooldang-chzzk-bot:latest
     container_name: mooldang-dev-chzzk-bot
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     env_file:
       - .env
     environment:
@@ -177,6 +197,10 @@ services:
     image: mooldang-studio:latest
     container_name: mooldang-dev-studio
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       - NODE_ENV=development
       - ORIGIN=${BASE_DOMAIN}
@@ -202,6 +226,10 @@ services:
     image: mooldang-overlay:latest
     container_name: mooldang-dev-overlay
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.overlay-dev.rule=(Host(`dev.mooldang.store`)) && PathPrefix(`/overlay`)"
@@ -218,6 +246,10 @@ services:
     image: mooldang-admin:latest
     container_name: mooldang-dev-admin
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       - NODE_ENV=development
       - ORIGIN=${BASE_DOMAIN}
@@ -236,6 +268,10 @@ services:
     image: grafana/grafana-oss:latest
     container_name: mooldang-dev-grafana
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -258,6 +294,10 @@ services:
     image: grafana/loki:latest
     container_name: mooldang-dev-loki
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - mooldang_dev_net
     volumes:
@@ -268,6 +308,10 @@ services:
     image: prom/prometheus:latest
     container_name: mooldang-dev-prometheus
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - mooldang_dev_net
     volumes:
@@ -281,6 +325,10 @@ services:
     image: traefik:v3.6.13
     container_name: mooldang-dev-traefik
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     ports:
       - "81:80"
     volumes:
