@@ -96,8 +96,8 @@ public class SongQueueViewDto : SongQueueDto
     [JsonPropertyName("url")]
     public string? Url { get; set; }
 
-    [JsonPropertyName("lyrics")]
-    public string? Lyrics { get; set; }
+    [JsonPropertyName("lyricsUrl")]
+    public string? LyricsUrl { get; set; }
 
     [JsonPropertyName("createdAt")]
     public KstClock CreatedAt { get; set; }
@@ -122,14 +122,14 @@ public class SonglistDataDto
 }
 
 // ?렦 ?湲곗뿴 怨??뺣낫 ?섏젙???꾪븳 DTO (.NET 10 record ?쒖슜)
-public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? Lyrics);
+public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? LyricsUrl);
 
 // ?렦 ?湲곗뿴 怨?異붽?瑜??꾪븳 DTO
 public record SongAddRequest(
     string Title, 
     string? Artist, 
     string? Url, 
-    string? Lyrics, 
+    string? LyricsUrl, 
     int? GlobalViewerId = null,
     string? RequesterNickname = null,
     int? Cost = null,

@@ -40,8 +40,8 @@ public class Streamer_SongLibrary : IAuditable
     [MaxLength(500)]
     public string? YoutubeTitle { get; set; }
 
-    [Column(TypeName = "TEXT")]
-    public string? Lyrics { get; set; }
+    [MaxLength(1000)]
+    public string? LyricsUrl { get; set; }
 
     /// <summary>
     /// [v18.0] 검색용 별칭 및 줄임말 (예: "우언죽")

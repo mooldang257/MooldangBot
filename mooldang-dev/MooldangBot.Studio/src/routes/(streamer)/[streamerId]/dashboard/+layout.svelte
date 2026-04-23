@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
     import { fade, fly, slide } from 'svelte/transition';
-    import { Menu, ChevronLeft, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings } from 'lucide-svelte';
+    import { Menu, ChevronLeft, BookOpen, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings } from 'lucide-svelte';
 
     // [물멍]: Svelte 5 표준에 맞춰 children props 수신
     let { children } = $props();
@@ -47,6 +47,7 @@
     // [물멍]: 스트리머 전용 메뉴 데이터 (동적 경로 적용)
     const menuItems = $derived([
         { id: 'dashboard', icon: LayoutDashboard, label: '대시보드', path: `${basePath}` },
+        { id: 'songbook', icon: BookOpen, label: '노래책', path: `${basePath}/songbook` },
         { id: 'song', icon: Music, label: '신청곡 관리', path: `${basePath}/song` },
         { id: 'cmd', icon: Zap, label: '명령어 관리', path: `${basePath}/cmd` },
         { id: 'avatar', icon: User, label: '팬 캐릭터 설정', path: `${basePath}/avatar` },

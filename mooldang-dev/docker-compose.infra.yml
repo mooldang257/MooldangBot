@@ -1,0 +1,181 @@
+# [오시리스의 함대 v2.6] - INFRA LAYER (Infrastructure & Monitoring)
+# 데이터베이스, 캐시, 메시지 브로커, 리버스 프록시 및 관제 시스템을 담당합니다.
+
+services:
+  db:
+    image: mariadb:11.7
+    container_name: mooldang-dev-db
+    command:
+      - --local-infile=1
+      - --innodb-flush-method=O_DIRECT
+      - --max-connections=4096
+      - --innodb-buffer-pool-size=1G
+      - --innodb-log-file-size=512M
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-autoinc-lock-mode=2
+      - --bulk_insert_buffer_size=64M
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_ROOT_HOST: '%'
+    ports:
+      - "3307:3306"
+    volumes:
+      - ${DB_DATA_PATH}:/var/lib/mysql
+    networks:
+      - mooldang_dev_net
+    healthcheck:
+      test: [ "CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: mooldang-dev-redis
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - mooldang_dev_net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: mooldang-dev-rabbitmq
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    networks:
+      - mooldang_dev_net
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  traefik:
+    image: traefik:v3.6.13
+    container_name: mooldang-dev-traefik
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    ports:
+      - "81:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /var/log/traefik:/var/log/traefik
+    networks:
+      - mooldang_dev_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard-dev.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard-dev.entrypoints=traefik"
+      - "traefik.http.routers.dashboard-dev.service=api@internal"
+      - "traefik.http.routers.dashboard-dev.middlewares=dashboard-shield@file"
+
+  adminer:
+    image: adminer:latest
+    container_name: mooldang-dev-adminer
+    restart: always
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    networks:
+      - mooldang_dev_net
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: mooldang-dev-grafana
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${BASE_DOMAIN}/admin/monitoring/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana-dev.rule=(Host(`dev.mooldang.store`)) && PathPrefix(`/admin/monitoring`)"
+      - "traefik.http.routers.grafana-dev.entrypoints=web"
+      - "traefik.http.routers.grafana-dev.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.grafana-dev.loadbalancer.server.port=3000"
+    networks:
+      - mooldang_dev_net
+    volumes:
+      - grafana-data-dev:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  loki:
+    image: grafana/loki:latest
+    container_name: mooldang-dev-loki
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - mooldang_dev_net
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mooldang-dev-prometheus
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - mooldang_dev_net
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data-dev:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+networks:
+  mooldang_dev_net:
+    name: mooldang_dev_net
+    driver: bridge
+
+volumes:
+  grafana-data-dev:
+  prometheus-data-dev:

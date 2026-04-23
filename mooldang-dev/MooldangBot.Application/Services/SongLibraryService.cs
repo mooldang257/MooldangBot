@@ -109,7 +109,7 @@ public class SongLibraryService(
             Alias = string.IsNullOrWhiteSpace(aliasString) ? null : aliasString,
             YoutubeUrl = dto.YoutubeUrl,
             YoutubeTitle = dto.YoutubeTitle,
-            Lyrics = dto.Lyrics,
+            LyricsUrl = dto.LyricsUrl,
             SourceType = (MetadataSourceType)dto.SourceType,
             SourceId = dto.SourceId,
             CreatedAt = KstClock.Now
@@ -157,7 +157,7 @@ public class SongLibraryService(
                 staging.ArtistChosung = KoreanUtils.NormalizeForSearch(dto.Artist);
             }
             if (dto.YoutubeUrl != null) staging.YoutubeUrl = dto.YoutubeUrl;
-            if (dto.Lyrics != null) staging.Lyrics = dto.Lyrics;
+            if (dto.LyricsUrl != null) staging.LyricsUrl = dto.LyricsUrl;
             
             staging.CreatedAt = KstClock.Now; // 수명 연장
 
@@ -181,7 +181,7 @@ public class SongLibraryService(
                 TitleChosung = KoreanUtils.NormalizeForSearch(dto.Title),
                 ArtistChosung = KoreanUtils.NormalizeForSearch(dto.Artist),
                 YoutubeUrl = dto.YoutubeUrl,
-                Lyrics = dto.Lyrics,
+                LyricsUrl = dto.LyricsUrl,
                 SourceType = (MetadataSourceType)dto.SourceType,
                 SourceId = dto.SourceId ?? "system_recovery",
                 CreatedAt = KstClock.Now

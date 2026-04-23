@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MooldangBot.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423012541_EnhanceSongBookWithSharedStorage")]
+    partial class EnhanceSongBookWithSharedStorage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -340,6 +343,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("alias");
 
                     b.Property<string>("Artist")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("artist");
@@ -412,6 +416,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("youtube_title");
 
                     b.Property<string>("YoutubeUrl")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)")
                         .HasColumnName("youtube_url");
@@ -462,6 +467,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("alias");
 
                     b.Property<string>("Artist")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("artist");
@@ -514,6 +520,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("youtube_title");
 
                     b.Property<string>("YoutubeUrl")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)")
                         .HasColumnName("youtube_url");
@@ -1527,6 +1534,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("alias");
 
                     b.Property<string>("Artist")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
                         .HasColumnName("artist");

@@ -93,17 +93,17 @@ namespace MooldangBot.Application.Controllers.SongQueue
                             .Where(m => m.SongLibraryId == s.SongLibraryId)
                             .Select(m => m.YoutubeUrl)
                             .FirstOrDefault(),
-                    Lyrics = db.MasterSongStagings
+                    LyricsUrl = db.MasterSongStagings
                             .Where(l => l.SongLibraryId == s.SongLibraryId)
-                            .Select(l => l.Lyrics)
+                            .Select(l => l.LyricsUrl)
                             .FirstOrDefault()
                         ?? db.StreamerSongLibraries
                             .Where(l => l.StreamerProfileId == s.StreamerProfileId && l.SongLibraryId == s.SongLibraryId)
-                            .Select(l => l.Lyrics)
+                            .Select(l => l.LyricsUrl)
                             .FirstOrDefault()
                         ?? db.MasterSongLibraries
                             .Where(m => m.SongLibraryId == s.SongLibraryId)
-                            .Select(m => m.Lyrics)
+                            .Select(m => m.LyricsUrl)
                             .FirstOrDefault()
                 });
 
@@ -125,7 +125,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 Artist = request.Artist ?? "Unknown",
                 YoutubeUrl = request.Url ?? string.Empty,
                 YoutubeTitle = request.Title,
-                Lyrics = request.Lyrics,
+                LyricsUrl = request.LyricsUrl,
                 SourceType = (int)MetadataSourceType.Viewer,
                 SourceId = request.GlobalViewerId?.ToString()
             });
@@ -302,7 +302,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 Title = request.Title ?? songItem.Title,
                 Artist = request.Artist ?? songItem.Artist ?? "Unknown",
                 YoutubeUrl = request.Url ?? string.Empty,
-                Lyrics = request.Lyrics,
+                LyricsUrl = request.LyricsUrl,
                 SourceType = (int)MetadataSourceType.Streamer,
                 SourceId = "system_edit"
             });

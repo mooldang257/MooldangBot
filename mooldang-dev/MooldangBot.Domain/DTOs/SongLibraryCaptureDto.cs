@@ -10,7 +10,7 @@ public record SongLibraryCaptureDto
     public string? Alias { get; init; }
     public required string YoutubeUrl { get; init; }
     public string? YoutubeTitle { get; init; }
-    public string? Lyrics { get; init; }
+    public string? LyricsUrl { get; init; }
     
     // [Source Identity] 유입 경로 및 식별자 (Admin: 1, Streamer: 2, Viewer: 3)
     public int SourceType { get; init; }

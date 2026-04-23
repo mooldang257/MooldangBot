@@ -4,14 +4,20 @@ using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
-// [v4.5.1] 송북(노래책) 기본 매핑
+// [v19.0] 고도화된 송북 매핑: '완성형' 구조 반영
 public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
 {
     public void Configure(EntityTypeBuilder<SongBook> builder)
     {
-        builder.ToTable("song_book_main");
+        builder.ToTable("song_books"); // 기존 song_book_main에서 변경 (고도화 반영)
         
         builder.HasIndex(s => new { s.StreamerProfileId, s.Id });
+        builder.HasIndex(s => s.Title);
+        builder.HasIndex(s => s.TitleChosung);
+        builder.HasIndex(s => s.Alias);
+        builder.HasIndex(s => s.Category);
+        builder.HasIndex(s => s.IsRequestable);
+        builder.HasIndex(s => s.SongLibraryId);
     }
 }
 
@@ -91,6 +97,8 @@ public class MasterSongLibraryConfiguration : IEntityTypeConfiguration<Master_So
         builder.HasIndex(e => e.SongLibraryId).IsUnique(); 
         builder.HasIndex(e => e.YoutubeUrl);
         builder.HasIndex(e => e.Title);
+        builder.HasIndex(e => e.Category);
+        builder.HasIndex(e => e.Album);
         builder.HasIndex(e => e.Alias);
         builder.HasIndex(e => e.TitleChosung);
         builder.HasIndex(e => e.ArtistChosung);

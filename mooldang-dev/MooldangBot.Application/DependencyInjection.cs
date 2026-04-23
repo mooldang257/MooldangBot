@@ -25,6 +25,7 @@ namespace MooldangBot.Application
             services.AddScoped<IChzzkBotService, ChzzkBotService>();
             // [Phase 2] ISongBookService는 SongBook 모듈에서 등록됩니다.
             services.AddScoped<ISongLibraryService, SongLibraryService>();
+            services.AddScoped<ISongBookExcelService, SongBookExcelService>();
             // [Phase 3] IRouletteService 및 관련 로직은 Roulette 모듈로 적출되었습니다.
             // [Phase 4] IPointTransactionService 및 관련 로직은 Point 모듈로 적출되었습니다.
             // [Phase 5] 명령어 코어 시스템(Cache, Router, Strategies)은 Commands 모듈로 적출되었습니다.

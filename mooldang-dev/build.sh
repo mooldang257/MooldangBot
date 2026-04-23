@@ -61,8 +61,15 @@ fi
 BUILD_OPTS=""
 [ "$CLEAN_BUILD" = true ] && BUILD_OPTS="--no-cache"
 
-echo -e "${GREEN}🐳 Docker: 통합 함대 기동 중 [${DEPLOY_TARGETS[*]}]...${NC}"
-docker compose -f docker-compose.yml --env-file .env up -d --build $BUILD_OPTS ${DEPLOY_TARGETS[@]}
+# [v4.2] 계층형 아키텍처 지원: 서비스 선택에 따라 필요한 파일만 포함하거나 전체 함대 운용
+COMPOSE_INFRA="-f docker-compose.infra.yml"
+COMPOSE_BACKEND="-f docker-compose.backend.yml"
+COMPOSE_FRONTEND="-f docker-compose.frontend.yml"
+
+echo -e "${GREEN}🐳 Docker: 계층형 함대 기동 중 [${DEPLOY_TARGETS[*]}]...${NC}"
+
+# 항상 인프라 레이어를 포함하여 네트워크 및 기본 공조 체계 유지
+docker compose $COMPOSE_INFRA $COMPOSE_BACKEND $COMPOSE_FRONTEND --env-file .env up -d --build $BUILD_OPTS ${DEPLOY_TARGETS[@]}
 
 # 5. 이미지 자동 추출 (명시적 관리 폴더로 저장)
 IMAGE_EXPORT_DIR="./images"
@@ -70,8 +77,13 @@ mkdir -p "$IMAGE_EXPORT_DIR"
 
 echo -e "${YELLOW}📦 빌드된 이미지를 $IMAGE_EXPORT_DIR 폴더로 자동 추출합니다...${NC}"
 
-# 추출 대상 주요 서비스 목록
-SERVICES_TO_EXPORT=("app" "chzzk-bot" "studio" "overlay" "admin")
+# [v4.3] 지능형 추출 로직: 선택된 배포 대상이 있으면 해당 서비스만, 없으면(전체) 기본 목록 추출
+if [[ ${#DEPLOY_TARGETS[@]} -eq 0 || "${DEPLOY_TARGETS[0]}" == "" ]]; then
+    SERVICES_TO_EXPORT=("app" "chzzk-bot" "studio" "overlay" "admin")
+else
+    # 사용자가 개별 선택한 서비스들만 추출 대상으로 선정
+    SERVICES_TO_EXPORT=("${DEPLOY_TARGETS[@]}")
+fi
 
 for svc in "${SERVICES_TO_EXPORT[@]}"; do
     IMG_NAME="mooldang-$svc"

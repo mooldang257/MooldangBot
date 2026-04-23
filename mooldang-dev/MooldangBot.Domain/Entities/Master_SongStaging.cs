@@ -23,9 +23,8 @@ public class Master_SongStaging
     [MaxLength(200)]
     public string Title { get; set; } = string.Empty;
 
-    [Required]
     [MaxLength(200)]
-    public string Artist { get; set; } = string.Empty;
+    public string? Artist { get; set; }
 
     [MaxLength(200)]
     public string? TitleChosung { get; set; }
@@ -39,15 +38,14 @@ public class Master_SongStaging
     [MaxLength(500)]
     public string? Alias { get; set; }
 
-    [Required]
     [MaxLength(500)]
-    public string YoutubeUrl { get; set; } = string.Empty;
+    public string? YoutubeUrl { get; set; }
 
     [MaxLength(500)]
     public string? YoutubeTitle { get; set; }
 
-    [Column(TypeName = "TEXT")]
-    public string? Lyrics { get; set; }
+    [MaxLength(1000)]
+    public string? LyricsUrl { get; set; }
 
     /// <summary>
     /// 데이터 출처 (Streamer, Viewer 등)

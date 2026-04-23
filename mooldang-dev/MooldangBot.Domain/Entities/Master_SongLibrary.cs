@@ -22,9 +22,8 @@ public class Master_SongLibrary : IAuditable
     [MaxLength(200)]
     public string Title { get; set; } = string.Empty;
 
-    [Required]
     [MaxLength(200)]
-    public string Artist { get; set; } = string.Empty;
+    public string? Artist { get; set; }
 
     [MaxLength(200)]
     public string? TitleChosung { get; set; }
@@ -38,15 +37,41 @@ public class Master_SongLibrary : IAuditable
     [MaxLength(500)]
     public string? Alias { get; set; }
 
-    [Required]
+    [MaxLength(255)]
+    public string? Album { get; set; }
+
+    [MaxLength(100)]
+    public string? Category { get; set; }
+
     [MaxLength(500)]
-    public string YoutubeUrl { get; set; } = string.Empty;
+    public string? YoutubeUrl { get; set; }
 
     [MaxLength(500)]
     public string? YoutubeTitle { get; set; }
 
-    [Column(TypeName = "TEXT")]
-    public string? Lyrics { get; set; }
+    /// <summary>
+    /// [v19.0] 썸네일 주소 (원본 출처)
+    /// </summary>
+    [MaxLength(1000)]
+    public string? ThumbnailUrl { get; set; }
+
+    /// <summary>
+    /// [v19.0] 공용 서버 저장 경로 (예: /images/library/songs/{id}.jpg)
+    /// </summary>
+    [MaxLength(500)]
+    public string? ThumbnailPath { get; set; }
+
+    [MaxLength(1000)]
+    public string? MrUrl { get; set; }
+
+    /// <summary>
+    /// [v19.0] 저작권 준수를 위해 텍스트 대신 외부 가사 링크 제공
+    /// </summary>
+    [MaxLength(1000)]
+    public string? LyricsUrl { get; set; }
+
+    [MaxLength(1000)]
+    public string? ReferenceUrl { get; set; }
 
     /// <summary>
     /// [v11.7] 의미 기반 검색을 위한 벡터 데이터 (MariaDB 11.7 신기능)
