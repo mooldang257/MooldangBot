@@ -197,8 +197,7 @@ services:
 
 networks:
   mooldang_prod_net:
-    name: mooldang_prod_net
-    driver: bridge
+    external: true
 
 volumes:
   grafana-data:
