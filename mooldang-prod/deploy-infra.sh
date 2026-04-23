@@ -12,6 +12,10 @@ NC='\033[0m'
 
 echo -e "${GREEN}🏗️ 물댕 함대 핵심 인프라 기동 시스템을 시작합니다...${NC}"
 
+# 0. 필수 네트워크 자동 생성
+echo -e "${YELLOW}🌐 Network: 외부 공유 네트워크(mooldang_prod_net) 상태 확인 중...${NC}"
+docker network ls | grep -q "mooldang_prod_net" || docker network create mooldang_prod_net
+
 # 1. 인프라 가동
 echo -e "${YELLOW}🐳 Docker: 인프라 계층(docker-compose.infra.yml) 적용 중...${NC}"
 docker compose -f docker-compose.infra.yml up -d

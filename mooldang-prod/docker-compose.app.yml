@@ -16,6 +16,11 @@ services:
       - mooldang_prod_net
     volumes:
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   app:
     image: mooldang-app:${VERSION_APP:-latest}
@@ -55,6 +60,11 @@ services:
       - ${UPLOAD_DATA_PATH}:/app/wwwroot/uploads
       - ${APP_DATA_PATH}:/app/data
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   chzzk-bot:
     image: mooldang-chzzk-bot:${VERSION_APP:-latest}
@@ -84,6 +94,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   studio:
     image: mooldang-studio:${VERSION_UI:-latest}
@@ -103,6 +118,11 @@ services:
       - mooldang_prod_net
     depends_on:
       - app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   overlay:
     image: mooldang-overlay:${VERSION_UI:-latest}
@@ -116,6 +136,11 @@ services:
       - "traefik.http.routers.overlay.middlewares=cloudflare-real-ip@file"
     networks:
       - mooldang_prod_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   admin:
     image: mooldang-admin:${VERSION_UI:-latest}
@@ -134,6 +159,11 @@ services:
       - mooldang_prod_net
     depends_on:
       - app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   mooldang_prod_net:
