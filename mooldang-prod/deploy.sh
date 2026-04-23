@@ -61,21 +61,20 @@ fi
 SELECTED_VERSION=${VERSIONS[$((choice-1))]}
 echo -e "${GREEN}▶️ 선택된 버전: $SELECTED_VERSION${NC}"
 
-# 2.5 배포 대상 선택
-echo -e "\n${YELLOW}🎯 배포 대상을 선택해주세요:${NC}"
-echo "1) 전체 배포 (App + UI)"
-echo "2) 백엔드만 (app, chzzk-bot)"
-echo "3) 프론트엔드만 (studio, admin, overlay)"
-read -p "선택 (기본값: 1): " target_choice
+# 2.5 배포 대상 선택 (안정성을 위해 전체 배포 옵션 제거)
+echo -e "\n${YELLOW}🎯 배포 대상을 선택해주세요 (실수 방지를 위해 개별 그룹 선택만 가능):${NC}"
+echo "1) 백엔드만 (app, chzzk-bot)"
+echo "2) 프론트엔드만 (studio, admin, overlay)"
+read -p "선택 (번호 입력): " target_choice
 
 DEPLOY_APPS=false
 DEPLOY_UI=false
 DEPLOY_SERVICES=()
 
 case $target_choice in
-    2) DEPLOY_APPS=true; DEPLOY_SERVICES=("app" "chzzk-bot") ;;
-    3) DEPLOY_UI=true; DEPLOY_SERVICES=("studio" "admin" "overlay") ;;
-    *) DEPLOY_APPS=true; DEPLOY_UI=true; DEPLOY_SERVICES=("app" "chzzk-bot" "studio" "admin" "overlay") ;;
+    1) DEPLOY_APPS=true; DEPLOY_SERVICES=("app" "chzzk-bot") ;;
+    2) DEPLOY_UI=true; DEPLOY_SERVICES=("studio" "admin" "overlay") ;;
+    *) echo -e "${RED}❌ 올바른 대상을 선택해야 합니다.${NC}"; exit 1 ;;
 esac
 
 # 3. 이미지 로드
@@ -120,9 +119,9 @@ docker compose up -d ${DEPLOY_SERVICES[@]}
 echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
 
 # 6. 배포 이력 기록
-DEPLOY_DESC="All"
-[ "$target_choice" == "2" ] && DEPLOY_DESC="Backend Only"
-[ "$target_choice" == "3" ] && DEPLOY_DESC="Frontend Only"
+DEPLOY_DESC="Unknown"
+[ "$target_choice" == "1" ] && DEPLOY_DESC="Backend Only"
+[ "$target_choice" == "2" ] && DEPLOY_DESC="Frontend Only"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] DEPLOYED: Version=$SELECTED_VERSION, Target=$DEPLOY_DESC" >> "$HISTORY_FILE"
 
 docker compose ps

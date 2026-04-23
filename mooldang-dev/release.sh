@@ -18,7 +18,6 @@ RELEASE_TARGETS=()
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --all) RELEASE_TARGETS=("app" "chzzk-bot" "studio" "overlay" "admin") ;;
         --app) RELEASE_TARGETS+=("app" "chzzk-bot") ;;
         --ui) RELEASE_TARGETS+=("studio" "admin" "overlay") ;;
         --version|-v) shift; IMAGE_VERSION=$1 ;;
@@ -38,7 +37,8 @@ if [ -z "$IMAGE_VERSION" ]; then
 fi
 
 if [ ${#RELEASE_TARGETS[@]} -eq 0 ]; then
-    RELEASE_TARGETS=("app" "chzzk-bot" "studio" "overlay" "admin")
+    echo -e "${RED}❌ 오류: 배포 대상(--app 또는 --ui)을 지정해야 합니다.${NC}"
+    exit 1
 fi
 
 if [ -z "$IMAGE_VERSION" ]; then
