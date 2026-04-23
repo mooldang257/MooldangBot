@@ -19,6 +19,9 @@ services:
     # 따라서 여기서는 외부 서비스 존재 여부만 체크하게 됩니다.)
 
   app:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Api/Dockerfile
     image: mooldang-app:latest
     container_name: mooldang-dev-app
     restart: always
@@ -37,20 +40,21 @@ services:
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app-dev.rule=(Host(`dev.mooldang.store`)) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/overlayHub`) || PathPrefix(`/swagger`))"
+      - "traefik.http.routers.app-dev.rule=(Host(`${BASE_DOMAIN}`)) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/swagger`))"
       - "traefik.http.routers.app-dev.entrypoints=web"
       - "traefik.http.services.app-dev.loadbalancer.server.port=8080"
       - "traefik.http.services.app-dev.loadbalancer.sticky.cookie=true"
       - "traefik.http.middlewares.app-upgrade.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"
       - "traefik.http.routers.app-dev.middlewares=app-upgrade,cloudflare-real-ip@file,dev-noindex"
+      - "traefik.env=dev"
     networks:
       - mooldang_dev_net
     volumes:
@@ -61,6 +65,9 @@ services:
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
 
   chzzk-bot:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Api/Dockerfile  # Note: often shared with app, adjust if needed
     image: mooldang-chzzk-bot:latest
     container_name: mooldang-dev-chzzk-bot
     restart: always
@@ -85,7 +92,7 @@ services:
     volumes:
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5

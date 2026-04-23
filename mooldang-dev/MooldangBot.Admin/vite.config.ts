@@ -14,7 +14,7 @@ export default defineConfig({
 			'/overlay': 'http://localhost:8080',
 			'/Auth/callback': 'http://localhost:8080', // [물멍]: OAuth 콜백 중계 추가
 			// SignalR WebSocket 중계
-			'/overlayHub': {
+			'/api/hubs/overlay': {
 				target: 'http://localhost:8080',
 				ws: true
 			}

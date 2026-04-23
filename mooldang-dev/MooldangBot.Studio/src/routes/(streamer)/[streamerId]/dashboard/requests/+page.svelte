@@ -153,7 +153,7 @@
             // 2. SignalR 연결 활성화
             try {
                 hubConnection = new signalR.HubConnectionBuilder()
-                    .withUrl("/overlayHub", {
+                    .withUrl("/api/hubs/overlay", {
                         accessTokenFactory: () => localStorage.getItem("token") || "",
                     })
                     .withAutomaticReconnect()

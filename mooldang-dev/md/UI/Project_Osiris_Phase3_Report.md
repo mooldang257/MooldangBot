@@ -17,7 +17,7 @@
 
 ```nginx
 # [오시리스의 공명]: SignalR WebSocket 전용 라우팅
-location /overlayHub {
+location /api/hubs/overlay {
     proxy_pass http://backend;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -50,7 +50,7 @@ SignalR 이벤트를 Svelte의 반응형 스토어로 래핑하여 선언적인 
 export const createSignalRStore = (token: string): Readable<OverlayState> => {
     return readable(initialState, (set) => {
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/overlayHub", { accessTokenFactory: () => token }) // [Aegis of Resonance]
+            .withUrl("/api/hubs/overlay", { accessTokenFactory: () => token }) // [Aegis of Resonance]
             .withAutomaticReconnect()
             .build();
 

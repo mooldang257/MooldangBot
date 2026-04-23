@@ -131,7 +131,7 @@ try
     app.MapControllers();
     app.MapMetrics();
     app.MapHealthChecks("/health");
-    app.MapHub<OverlayHub>("/overlayHub");
+    app.MapHub<OverlayHub>("/api/hubs/overlay");
 
 
     // 🕊️ [오시리스의 시동]: 시스템 초기화 (DB 시딩)

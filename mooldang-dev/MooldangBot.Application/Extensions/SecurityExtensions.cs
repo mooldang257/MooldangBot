@@ -59,7 +59,7 @@ public static class SecurityExtensions
                     var path = context.HttpContext.Request.Path;
                     
                     // [오시리스의 선별]: 토큰이 존재하고 JWT 규격(16자 초과)일 때만 JWT Bearer가 처리하도록 합니다.
-                    if (!string.IsNullOrEmpty(accessToken) && accessToken.ToString().Length > 16 && path.StartsWithSegments("/overlayHub"))
+                    if (!string.IsNullOrEmpty(accessToken) && accessToken.ToString().Length > 16 && path.StartsWithSegments("/api/hubs/overlay"))
                     {
                         context.Token = accessToken;
                     }

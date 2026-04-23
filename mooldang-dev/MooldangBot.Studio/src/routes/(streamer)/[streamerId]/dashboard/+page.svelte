@@ -109,7 +109,7 @@
         
         try {
             hubConnection = new signalR.HubConnectionBuilder()
-                .withUrl("/overlayHub")
+                .withUrl("/api/hubs/overlay")
                 .withAutomaticReconnect()
                 .build();
 

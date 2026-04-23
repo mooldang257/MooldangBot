@@ -486,7 +486,7 @@
             }
         }
 
-        const connection = new signalR.HubConnectionBuilder().withUrl("/overlayHub").withAutomaticReconnect().build();
+        const connection = new signalR.HubConnectionBuilder().withUrl("/api/hubs/overlay").withAutomaticReconnect().build();
 
         connection.on("ReceiveOverlayState", (jsonState) => { dashState = createSafeData(JSON.parse(jsonState)); renderOverlay(); });
         connection.on("ReceiveOverlayStyle", async (jsonStyle) => { 

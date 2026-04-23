@@ -266,7 +266,7 @@
 
         // SignalR 설정 및 연결
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/overlayHub")
+            .withUrl("/api/hubs/overlay")
             .withAutomaticReconnect()
             .build();
 

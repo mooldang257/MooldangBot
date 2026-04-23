@@ -93,7 +93,7 @@ services:
       - "81:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/traefik.dev.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
       - /var/log/traefik:/var/log/traefik
     networks:
@@ -104,6 +104,7 @@ services:
       - "traefik.http.routers.dashboard-dev.entrypoints=traefik"
       - "traefik.http.routers.dashboard-dev.service=api@internal"
       - "traefik.http.routers.dashboard-dev.middlewares=dashboard-shield@file"
+      - "traefik.env=dev"
 
   adminer:
     image: adminer:latest
@@ -133,6 +134,7 @@ services:
       - "traefik.http.routers.grafana-dev.entrypoints=web"
       - "traefik.http.routers.grafana-dev.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.grafana-dev.loadbalancer.server.port=3000"
+      - "traefik.env=dev"
     networks:
       - mooldang_dev_net
     volumes:

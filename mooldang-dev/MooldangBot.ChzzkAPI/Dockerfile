@@ -4,6 +4,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
 WORKDIR /app
 EXPOSE 8080
+# [v19.5] 리눅스 타임존 데이터베이스 설치
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src

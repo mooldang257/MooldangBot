@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Application.Controllers.SongQueue;

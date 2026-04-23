@@ -49,6 +49,7 @@ else
             --clean) CLEAN_BUILD=true ;;
             *) DEPLOY_TARGETS+=("$1") ;;
         esac
+        shift
     done
 fi
 

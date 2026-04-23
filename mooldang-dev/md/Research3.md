@@ -138,7 +138,7 @@ MooldangBot/
 │   └── CommandCacheService.cs        ← 인메모리 명령어 캐시 구현체 (Singleton)
 │
 ├── Hubs/
-│   └── OverlayHub.cs                  ← SignalR Hub (/overlayHub 엔드포인트)
+│   └── OverlayHub.cs                  ← SignalR Hub (/api/hubs/overlay 엔드포인트)
 │
 ├── Strategies/
 │   └── IOverlayRenderStrategy.cs      ← 오버레이 렌더링 전략 인터페이스 + 기본 구현
@@ -197,7 +197,7 @@ flowchart TD
     end
 
     subgraph SignalR
-        OH[OverlayHub\n/overlayHub]
+        OH[OverlayHub\n/api/hubs/overlay]
     end
 
     subgraph DB[MariaDB - EF Core]

@@ -2,6 +2,8 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
+# [v19.5] 리눅스 타임존 데이터베이스 설치
+RUN apk add --no-cache tzdata
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src

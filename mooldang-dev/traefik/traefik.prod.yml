@@ -1,0 +1,37 @@
+api:
+  dashboard: true
+
+entryPoints:
+  web:
+    address: ":80"
+    transport:
+      respondingTimeouts:
+        readTimeout: "60s"
+        writeTimeout: "60s"
+        idleTimeout: "120s"
+  traefik:
+    address: ":8080"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: mooldang_prod_net
+    constraints: "Label(`traefik.env`, `prod`)" # [격리] prod 라벨이 붙은 컨테이너만 관리
+  file:
+    filename: "/etc/traefik/dynamic.yml"
+    watch: true
+
+transport:
+  maxIdleConnsPerHost: 2048
+
+log:
+  level: INFO
+  format: common
+
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  bufferingSize: 100
+  fields:
+    names:
+      StartUTC: drop

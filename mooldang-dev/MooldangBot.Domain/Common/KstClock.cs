@@ -31,10 +31,18 @@ public readonly record struct KstClock : IFormattable
             // 1. IANA 표준 (Linux/Mac/Docker)
             return TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul"); 
         }
-        catch (TimeZoneNotFoundException) 
+        catch 
         { 
-            // 2. Windows Fallback
-            return TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time"); 
+            try 
+            {
+                // 2. Windows Fallback
+                return TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time"); 
+            }
+            catch
+            {
+                // 3. [v19.5] 최종 수단: 시스템에 타임존 데이터가 없을 경우 강제 생성 (UTC+9)
+                return TimeZoneInfo.CreateCustomTimeZone("KST", TimeSpan.FromHours(9), "KST", "KST");
+            }
         }
     }
 

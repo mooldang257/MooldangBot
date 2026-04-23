@@ -36,7 +36,7 @@
 
 ## 4. 라우팅 전략
 - **MapControllers**: `Presentation` 계층의 컨트롤러들을 API 엔드포인트로 노출합니다.
-- **MapHub**: `/overlayHub` 경로를 통해 실시간 웹소켓 통신을 제공합니다.
+- **MapHub**: `/api/hubs/overlay` 경로를 통해 실시간 웹소켓 통신을 제공합니다.
 - **MapGet("/")**: 루트 접속 시 자동으로 대시보드(`/bot`)로 리다이렉트합니다.
 
 ---

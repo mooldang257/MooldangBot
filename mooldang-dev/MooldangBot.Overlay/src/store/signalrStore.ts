@@ -28,7 +28,7 @@ export const createSignalRStore = (token: string) => {
 
     // 1. [공명관 구축]: HubConnectionBuilder 설정
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`/overlayHub?access_token=${token}`)
+        .withUrl(`/api/hubs/overlay?access_token=${token}`)
         .withAutomaticReconnect({
             // 지휘관 지시: 일시적 단절 시 시스템 레벨에서 0, 2, 10, 30초 간격으로 즉시 재시도
             nextRetryDelayInMilliseconds: retryContext => {

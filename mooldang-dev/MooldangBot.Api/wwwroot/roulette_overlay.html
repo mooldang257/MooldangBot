@@ -175,7 +175,7 @@
         const historyBar = document.getElementById('history-bar');
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/overlayHub")
+            .withUrl("/api/hubs/overlay")
             .withAutomaticReconnect()
             .build();
 
