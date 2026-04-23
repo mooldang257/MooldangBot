@@ -12,18 +12,38 @@ NC='\033[0m'
 
 echo -e "${GREEN}📦 운영 환경 이관을 위한 이미지 버전 관리를 시작합니다...${NC}"
 
-# 1. 인자 및 버전 입력 받기
+# 0. 버전 자동 증가 함수
+increment_version() {
+    local v=$1
+    local clean_v=${v#v}
+    IFS='.' read -r major minor patch <<< "$clean_v"
+    patch=$((patch + 1))
+    echo "v${major:-0}.${minor:-0}.${patch:-1}"
+}
+
+# 1. 환경 변수에서 현재 버전 읽기
+if [ ! -f .env ]; then
+    echo -e "${RED}❌ 오류: .env 파일이 없습니다.${NC}"
+    exit 1
+fi
+
+CUR_APP_VER=$(grep "^VERSION_APP=" .env | cut -d'=' -f2)
+CUR_UI_VER=$(grep "^VERSION_UI=" .env | cut -d'=' -f2)
+
+# 1.2 인자 분석
 IMAGE_VERSION=""
 RELEASE_TARGETS=()
+AUTO_INCREMENT=true
+TARGET_TYPE="" # app or ui
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --app) RELEASE_TARGETS+=("app" "chzzk-bot") ;;
-        --ui) RELEASE_TARGETS+=("studio" "admin" "overlay") ;;
-        --version|-v) shift; IMAGE_VERSION=$1 ;;
+        --app) RELEASE_TARGETS+=("app" "chzzk-bot"); TARGET_TYPE="app" ;;
+        --ui) RELEASE_TARGETS+=("studio" "admin" "overlay"); TARGET_TYPE="ui" ;;
+        --version|-v) shift; IMAGE_VERSION=$1; AUTO_INCREMENT=false ;;
         *) 
             if [[ "$1" == v* ]]; then
-                IMAGE_VERSION=$1
+                IMAGE_VERSION=$1; AUTO_INCREMENT=false
             else
                 RELEASE_TARGETS+=("$1")
             fi
@@ -32,18 +52,30 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ -z "$IMAGE_VERSION" ]; then
-    read -p "배포할 버전명을 입력하세요 (예: v1.0.0): " IMAGE_VERSION
-fi
-
 if [ ${#RELEASE_TARGETS[@]} -eq 0 ]; then
     echo -e "${RED}❌ 오류: 배포 대상(--app 또는 --ui)을 지정해야 합니다.${NC}"
     exit 1
 fi
 
+# 1.3 버전 결정
+if [ "$AUTO_INCREMENT" = true ]; then
+    if [ "$TARGET_TYPE" == "app" ]; then
+        IMAGE_VERSION=$(increment_version ${CUR_APP_VER:-v0.0.0})
+        echo -e "${YELLOW}🔄 백엔드 버전 자동 증가: $CUR_APP_VER -> $IMAGE_VERSION${NC}"
+        sed -i "s/^VERSION_APP=.*/VERSION_APP=$IMAGE_VERSION/" .env
+    elif [ "$TARGET_TYPE" == "ui" ]; then
+        IMAGE_VERSION=$(increment_version ${CUR_UI_VER:-v0.0.0})
+        echo -e "${YELLOW}🔄 프론트엔드 버전 자동 증가: $CUR_UI_VER -> $IMAGE_VERSION${NC}"
+        sed -i "s/^VERSION_UI=.*/VERSION_UI=$IMAGE_VERSION/" .env
+    else
+        # 혼합 배포의 경우 (둘 다 지정 또는 개별 서비스 지정)
+        echo -e "${YELLOW}⚠️ 여러 대상이 섞여 있어 자동 증가를 위해 버전을 직접 입력받아야 합니다.${NC}"
+        read -p "배포할 버전명을 입력하세요 (예: v1.0.0): " IMAGE_VERSION
+    fi
+fi
+
 if [ -z "$IMAGE_VERSION" ]; then
-    echo -e "${RED}❌ 오류: 버전명이 입력되지 않았습니다.${NC}"
-    exit 1
+    read -p "배포할 버전명을 입력하세요 (예: v1.0.0): " IMAGE_VERSION
 fi
 
 # 2. 추출 대상 및 경로 설정
