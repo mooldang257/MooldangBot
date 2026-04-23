@@ -70,8 +70,6 @@ services:
     image: mooldang-chzzk-bot:${VERSION_APP:-latest}
     container_name: mooldang-prod-chzzk-bot
     restart: always
-    ports:
-      - "9081:8080"
     env_file:
       - .env
     environment:
