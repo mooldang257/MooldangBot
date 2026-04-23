@@ -104,7 +104,7 @@ public class InternalTokenController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "⚠️ [Realtime] 채널 {ChzzkUid} 즉시 연결 실패 (워커가 재접속을 관리함)");
+            _logger.LogWarning(ex, "⚠️ [Realtime] 채널 {ChzzkUid} 즉시 연결 실패 (워커가 재접속을 관리함)", request.ChzzkUid);
         }
 
         return Ok();

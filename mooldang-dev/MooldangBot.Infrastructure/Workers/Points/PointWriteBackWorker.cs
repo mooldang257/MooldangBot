@@ -23,7 +23,6 @@ namespace MooldangBot.Infrastructure.Workers.Points;
 /// </summary>
 public class PointWriteBackWorker(
     IServiceProvider serviceProvider, 
-    PulseService pulse,
     ChaosManager chaosManager,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
     ILogger<PointWriteBackWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(PointWriteBackWorker))
@@ -74,7 +73,7 @@ public class PointWriteBackWorker(
 
         try
         {
-            using var scope = serviceProvider.CreateScope();
+            using var scope = _serviceProvider.CreateScope();
             var cache = scope.ServiceProvider.GetRequiredService<IPointCacheService>();
 
             increments = await cache.ExtractAllIncrementalPointsAsync();
@@ -190,7 +189,7 @@ public class PointWriteBackWorker(
             var backupData = JsonSerializer.Deserialize<Dictionary<string, PointVariant>>(json);
             if (backupData != null && backupData.Count > 0)
             {
-                using var scope = serviceProvider.CreateScope();
+                using var scope = _serviceProvider.CreateScope();
                 await SyncToDatabaseAsync(backupData, scope, ct);
             }
             File.Delete(BackupFileName);

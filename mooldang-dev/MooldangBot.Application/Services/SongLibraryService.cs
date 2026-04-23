@@ -242,7 +242,7 @@ public class SongLibraryService(
 
             await db.SaveChangesAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // 백그라운드 작업이므로 예외는 로깅만 하고 종료
         }

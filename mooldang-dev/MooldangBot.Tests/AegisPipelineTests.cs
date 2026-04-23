@@ -61,9 +61,9 @@ public class AegisPipelineTests
 
         cache.GetFullVariablesAsync().Returns(variables);
         resolver.ResolveAsync("User", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
-                .Returns(Task.FromResult("Muldang"));
+                .Returns(Task.FromResult<string?>("Muldang"));
         resolver.ResolveAsync("Points", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
-                .Returns(Task.FromResult("1000"));
+                .Returns(Task.FromResult<string?>("1000"));
 
         // [Act]
         var result = await engine.ProcessMessageAsync("Hello $(user), you have $(points)P", "s1", "v1", "Muldang");

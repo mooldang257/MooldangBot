@@ -1,8 +1,6 @@
 using MooldangBot.Domain.Abstractions;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;

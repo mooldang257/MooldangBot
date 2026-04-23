@@ -1,7 +1,6 @@
 using MooldangBot.Application.Features.Chat.Handlers;
 using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Domain.Abstractions;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
 using Microsoft.Extensions.Logging;

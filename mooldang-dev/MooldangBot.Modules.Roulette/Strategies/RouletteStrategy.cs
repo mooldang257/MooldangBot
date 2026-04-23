@@ -11,7 +11,6 @@ namespace MooldangBot.Modules.Roulette.Strategies;
 /// [하모니의 회전]: 룰렛(Roulette) 명령어를 처리하는 전략입니다. (Thin Orchestrator)
 /// </summary>
 public class RouletteStrategy(
-    IMediator mediator,
     ILogger<RouletteStrategy> logger) : ICommandFeatureStrategy
 {
     public string FeatureType => "Roulette";

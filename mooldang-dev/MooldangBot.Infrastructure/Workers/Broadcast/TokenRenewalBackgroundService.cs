@@ -22,7 +22,7 @@ public class TokenRenewalBackgroundService(
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var renewalService = scope.ServiceProvider.GetRequiredService<ITokenRenewalService>();
 

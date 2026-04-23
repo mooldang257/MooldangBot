@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace MooldangBot.Api.Controllers.Philosophy;
 
 /// <summary>
-/// [지식의 서재]: 스트리머가 봇에게 주입할 의도 기반 지식(Q&A)을 관리하는 API입니다.
+/// [지식의 서재]: 스트리머가 봇에게 주입할 의도 기반 지식(Q&amp;A)을 관리하는 API입니다.
 /// </summary>
 [ApiController]
 [Route("api/iamf/knowledge")]

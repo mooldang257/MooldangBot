@@ -24,8 +24,6 @@ namespace MooldangBot.Modules.Roulette.Handlers;
 /// </summary>
 public class RouletteExecutionHandler(
     IMediator mediator,
-    IRouletteDbContext db,
-    IChzzkBotService botService,
     IServiceScopeFactory scopeFactory,
     ILogger<RouletteExecutionHandler> logger) : INotificationHandler<CommandExecutedEvent>
 {

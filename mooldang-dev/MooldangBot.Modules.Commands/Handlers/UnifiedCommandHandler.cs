@@ -3,7 +3,6 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Modules.Point.Requests.Commands;
 using MooldangBot.Modules.Commands.Events;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
@@ -14,7 +13,6 @@ using MooldangBot.Modules.Commands.Feature;
 using MooldangBot.Modules.Commands.General;
 using MooldangBot.Domain.Common.Services;
 using MooldangBot.Domain.Common.Security;
-using MooldangBot.Domain.Events; 
 using MooldangBot.Domain.Contracts.Chzzk.Models.Events; 
 using MassTransit;
 
@@ -27,11 +25,9 @@ public class UnifiedCommandHandler(
     ICommandCache cache,
     IChzzkBotService botService,
     IMediator mediator,
-    IIdentityCacheService identityCache,
     IPublishEndpoint publishEndpoint,
     IdempotencyService idempotency,
-    CommandArgumentParser parser,
-    ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChzzkEventReceived>
+    CommandArgumentParser parser) : INotificationHandler<ChzzkEventReceived>
 {
     public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {

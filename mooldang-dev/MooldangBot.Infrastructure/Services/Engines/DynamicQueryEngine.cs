@@ -66,7 +66,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
                     if (queryString.StartsWith("METHOD:", StringComparison.OrdinalIgnoreCase))
                     {
                         string methodName = queryString.Substring(7).Trim();
-                        queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, senderId, senderNickname);
+                        queryResult = await _resolver.ResolveAsync(methodName, streamerChzzkUid, senderId ?? "", senderNickname);
                     }
                     else if (queryString.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                     {

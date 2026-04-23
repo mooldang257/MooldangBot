@@ -16,7 +16,6 @@ public class HealthMonitorService(
     IServiceScopeFactory scopeFactory,
     IConnectionMultiplexer redis,
     IBusControl busControl,
-    PulseService pulseService,
     ILogger<HealthMonitorService> logger)
 {
     public async Task<HealthStatusReport> GetSystemPulseAsync(CancellationToken ct = default)

@@ -21,7 +21,7 @@ public class RouletteLogCleanupService(
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
         _logger.LogDebug("[룰렛 로그] 오래된 기록을 정찰합니다.");
-        using var scope = serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // 90일 경과 데이터 중 미수행(Pending) 상태가 아닌 것만 삭제

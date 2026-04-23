@@ -20,7 +20,9 @@ namespace MooldangBot.Infrastructure.ApiClients
         public bool HasAuthError(string chzzkUid) => false;
 
         public event Action<string, string, string>? OnChatMessageReceived;
+#pragma warning disable 0067
         public event Action<string, string>? OnDonationReceived;
+#pragma warning restore 0067
 
         public Task InitializeAsync()
         {

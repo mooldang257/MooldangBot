@@ -86,9 +86,9 @@ public class PointCacheService : IPointCacheService
             
             if (!val.IsNull)
             {
-                var response = (RedisValue[])val;
+                var response = (RedisValue[])val!;
                 var amount = (int)response[0];
-                var nickname = response[1].HasValue ? response[1].ToString() : "Unknown";
+                var nickname = response[1].HasValue ? response[1].ToString()! : "Unknown";
 
                 // Uid들 추출
                 var parts = keyStr.Split(':');

@@ -52,7 +52,7 @@ public class SystemWatchdogService(
 
     private async Task MonitorAndRenewPulseAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
         var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();

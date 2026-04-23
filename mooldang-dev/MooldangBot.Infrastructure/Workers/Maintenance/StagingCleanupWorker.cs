@@ -20,7 +20,7 @@ public class StagingCleanupWorker(
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
         _logger.LogDebug("[SongBook] 만료된 스테이징 데이터 정찰을 시작합니다.");
-        using var scope = serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // 30일 경과 데이터 기준

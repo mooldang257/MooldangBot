@@ -15,7 +15,6 @@ namespace MooldangBot.Application.Security
     public class StreamerAccessHandler(
         IUserSession _userSession, 
         IHttpContextAccessor _httpContextAccessor, 
-        IAppDbContext _db,
         IIdentityCacheService _identityCache,
         ILogger<StreamerAccessHandler> _logger) : AuthorizationHandler<StreamerAccessRequirement>
     {

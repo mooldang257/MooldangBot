@@ -17,10 +17,8 @@ namespace MooldangBot.Infrastructure.Workers.Points;
 /// [오버드라이브 워커]: 버퍼링된 채팅 포인트를 주기적으로 DB에 일관성 있게 저장하는 파수꾼입니다.
 /// </summary>
 public class PointBatchWorker(IServiceProvider serviceProvider,
-    
     IPointBatchService batchService,
     IServiceScopeFactory scopeFactory,
-    PulseService pulse,
     ChaosManager chaosManager,
     IOptionsMonitor<WorkerSettings> optionsMonitor,
     ILogger<PointBatchWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(PointBatchWorker))

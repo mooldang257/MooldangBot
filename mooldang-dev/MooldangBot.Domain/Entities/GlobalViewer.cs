@@ -17,7 +17,7 @@ public class GlobalViewer : ISoftDeletable, IAuditable
     /// <summary>
     /// 암호화되어 저장되는 시청자의 고유 UID (치지직 등)
     /// </summary>
-    public required string ViewerUid { get; set; }
+    public required string? ViewerUid { get; set; }
 
     /// <summary>
     /// 암호화된 Uid 검색을 위한 SHA-256 해시 필드

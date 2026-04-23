@@ -5,7 +5,6 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Modules.Point.Abstractions;
 using MooldangBot.Modules.Roulette.Abstractions;
 using MooldangBot.Modules.SongBook.Abstractions;
-using MooldangBot.Domain.Abstractions;
 using MooldangBot.Infrastructure.Sagas;
 
 namespace MooldangBot.Infrastructure.Persistence;
