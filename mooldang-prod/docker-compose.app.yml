@@ -1,78 +1,7 @@
-# [오시리스의 함대 v2.6]: 통합 완전판 (10k TPS 튜닝 + UI/Admin 복구) - PROD (이미지 기반)
+# [MooldangBot]: Application Layer
+# App, Chzzk-Bot, UI, Migration
 
 services:
-  db:
-    image: mariadb:11.7
-    container_name: mooldang-prod-db
-    command:
-      - --local-infile=1
-      - --innodb-flush-method=O_DIRECT
-      - --max-connections=4096
-      - --innodb-buffer-pool-size=16G
-      - --innodb-log-file-size=2G
-      - --innodb-flush-log-at-trx-commit=2
-      - --innodb-autoinc-lock-mode=2
-      - --bulk_insert_buffer_size=268435456
-    restart: always
-    environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-      MARIADB_ROOT_HOST: '%'
-    ports:
-      - "3306:3306"
-    volumes:
-      - ${DB_DATA_PATH}:/var/lib/mysql
-    networks:
-      - mooldang_prod_net
-    healthcheck:
-      test: [ "CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  redis:
-    image: redis:7-alpine
-    container_name: mooldang-prod-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - mooldang_prod_net
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: mooldang-prod-rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    networks:
-      - mooldang_prod_net
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-
   migration:
     image: mooldang-app:${VERSION_APP:-latest}
     container_name: mooldang-prod-migration
@@ -85,9 +14,6 @@ services:
     entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
     networks:
       - mooldang_prod_net
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
 
@@ -122,12 +48,6 @@ services:
     networks:
       - mooldang_prod_net
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
       migration:
         condition: service_completed_successfully
     volumes:
@@ -156,11 +76,6 @@ services:
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     networks:
       - mooldang_prod_net
-    depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     volumes:
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
     healthcheck:
@@ -220,92 +135,6 @@ services:
     depends_on:
       - app
 
-  grafana:
-    image: grafana/grafana-oss:latest
-    container_name: mooldang-prod-grafana
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=${BASE_DOMAIN}/admin/monitoring/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=(Host(`bot.mooldang.store`) || Host(`www.mooldang.store`)) && PathPrefix(`/admin/monitoring`)"
-      - "traefik.http.routers.grafana.entrypoints=web"
-      - "traefik.http.routers.grafana.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-    networks:
-      - mooldang_prod_net
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-
-  loki:
-    image: grafana/loki:latest
-    container_name: mooldang-prod-loki
-    restart: always
-    ports:
-      - "3100:3100"
-    networks:
-      - mooldang_prod_net
-    volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: mooldang-prod-prometheus
-    restart: always
-    networks:
-      - mooldang_prod_net
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-
-  traefik:
-    image: traefik:v3.6.13
-    container_name: mooldang-prod-traefik
-    restart: always
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - /var/log/traefik:/var/log/traefik
-    networks:
-      - mooldang_prod_net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.dashboard.entrypoints=traefik"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-shield@file"
-
-  adminer:
-    image: adminer:latest
-    container_name: mooldang-prod-adminer
-    restart: always
-    environment:
-      - ADMINER_DEFAULT_SERVER=db
-    networks:
-      - mooldang_prod_net
-    ports:
-      - "8888:8080"
-
 networks:
   mooldang_prod_net:
-    name: mooldang_prod_net
-    driver: bridge
-
-volumes:
-  grafana-data:
-  prometheus-data:
+    external: true
