@@ -48,39 +48,61 @@ fi
 SELECTED_VERSION=${VERSIONS[$((choice-1))]}
 echo -e "${GREEN}▶️ 선택된 버전: $SELECTED_VERSION${NC}"
 
+# 2.5 배포 대상 선택
+echo -e "\n${YELLOW}🎯 배포 대상을 선택해주세요:${NC}"
+echo "1) 전체 배포 (App + UI)"
+echo "2) 백엔드만 (app, chzzk-bot)"
+echo "3) 프론트엔드만 (studio, admin, overlay)"
+read -p "선택 (기본값: 1): " target_choice
+
+DEPLOY_APPS=false
+DEPLOY_UI=false
+DEPLOY_SERVICES=()
+
+case $target_choice in
+    2) DEPLOY_APPS=true; DEPLOY_SERVICES=("app" "chzzk-bot") ;;
+    3) DEPLOY_UI=true; DEPLOY_SERVICES=("studio" "admin" "overlay") ;;
+    *) DEPLOY_APPS=true; DEPLOY_UI=true; DEPLOY_SERVICES=("app" "chzzk-bot" "studio" "admin" "overlay") ;;
+esac
+
 # 3. 이미지 로드
-echo -e "${YELLOW}📥 이미지를 Docker 엔진에 로드하는 중...${NC}"
-SERVICES=("app" "chzzk-bot" "studio" "overlay" "admin")
-for svc in "${SERVICES[@]}"; do
+echo -e "${YELLOW}📥 선택한 서비스의 이미지를 로드합니다...${NC}"
+for svc in "${DEPLOY_SERVICES[@]}"; do
     FILE="images/mooldang-$svc-$SELECTED_VERSION.tar"
     if [ -f "$FILE" ]; then
-        echo "  - $svc (파일: $(basename $FILE)) 로딩 중..."
+        echo "  - $svc 로딩 중..."
         docker load -i "$FILE"
+    else
+        echo -e "${RED}  - $svc ($FILE): 파일을 찾을 수 없습니다. (로드 건너뜀)${NC}"
     fi
 done
 
-# 4. .env 파일 업데이트 (버전 동기화)
+# 4. .env 파일 업데이트 (선택된 대상만 업데이트)
 if [ -f .env ]; then
-    # 기존 변수 유무 확인 후 수정 또는 추가
-    if grep -q "^VERSION_APP=" .env; then
-        sed -i "s/^VERSION_APP=.*/VERSION_APP=$SELECTED_VERSION/" .env
-    else
-        echo "VERSION_APP=$SELECTED_VERSION" >> .env
+    if [ "$DEPLOY_APPS" = true ]; then
+        if grep -q "^VERSION_APP=" .env; then
+            sed -i "s/^VERSION_APP=.*/VERSION_APP=$SELECTED_VERSION/" .env
+        else
+            echo "VERSION_APP=$SELECTED_VERSION" >> .env
+        fi
+        echo -e "${GREEN}📝 [API] 버전을 $SELECTED_VERSION 으로 업데이트했습니다.${NC}"
     fi
 
-    if grep -q "^VERSION_UI=" .env; then
-        sed -i "s/^VERSION_UI=.*/VERSION_UI=$SELECTED_VERSION/" .env
-    else
-        echo "VERSION_UI=$SELECTED_VERSION" >> .env
+    if [ "$DEPLOY_UI" = true ]; then
+        if grep -q "^VERSION_UI=" .env; then
+            sed -i "s/^VERSION_UI=.*/VERSION_UI=$SELECTED_VERSION/" .env
+        else
+            echo "VERSION_UI=$SELECTED_VERSION" >> .env
+        fi
+        echo -e "${GREEN}📝 [UI] 버전을 $SELECTED_VERSION 으로 업데이트했습니다.${NC}"
     fi
-    echo -e "${GREEN}📝 .env 파일의 배포 버전을 $SELECTED_VERSION 으로 업데이트했습니다.${NC}"
 else
     echo -e "${YELLOW}⚠️ .env 파일이 없어 직접 업데이트하지 못했습니다.${NC}"
 fi
 
 # 5. 함대 기동
-echo -e "${GREEN}🚀 선택한 버전($SELECTED_VERSION)으로 함대 가동을 시작합니다...${NC}"
-docker compose up -d
+echo -e "${GREEN}🚀 선택한 대상에게 버전($SELECTED_VERSION)을 적용합니다...${NC}"
+docker compose up -d ${DEPLOY_SERVICES[@]}
 
 echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
 docker compose ps

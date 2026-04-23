@@ -12,19 +12,33 @@ NC='\033[0m'
 
 echo -e "${GREEN}📦 운영 환경 이관을 위한 이미지 버전 관리를 시작합니다...${NC}"
 
-# 1. 버전 입력 받기
+# 1. 인자 및 버전 입력 받기
 IMAGE_VERSION=""
+RELEASE_TARGETS=()
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --all) RELEASE_TARGETS=("app" "chzzk-bot" "studio" "overlay" "admin") ;;
+        --app) RELEASE_TARGETS+=("app" "chzzk-bot") ;;
+        --ui) RELEASE_TARGETS+=("studio" "admin" "overlay") ;;
         --version|-v) shift; IMAGE_VERSION=$1 ;;
-        *) IMAGE_VERSION=$1 ;; # 첫 번째 인자를 버전으로 간주
+        *) 
+            if [[ "$1" == v* ]]; then
+                IMAGE_VERSION=$1
+            else
+                RELEASE_TARGETS+=("$1")
+            fi
+            ;;
     esac
     shift
 done
 
 if [ -z "$IMAGE_VERSION" ]; then
     read -p "배포할 버전명을 입력하세요 (예: v1.0.0): " IMAGE_VERSION
+fi
+
+if [ ${#RELEASE_TARGETS[@]} -eq 0 ]; then
+    RELEASE_TARGETS=("app" "chzzk-bot" "studio" "overlay" "admin")
 fi
 
 if [ -z "$IMAGE_VERSION" ]; then
@@ -35,9 +49,9 @@ fi
 # 2. 추출 대상 및 경로 설정
 IMAGE_EXPORT_DIR="../mooldang-prod/images"
 mkdir -p "$IMAGE_EXPORT_DIR"
-SERVICES_TO_RELEASE=("app" "chzzk-bot" "studio" "overlay" "admin")
+SERVICES_TO_RELEASE=("${RELEASE_TARGETS[@]}")
 
-echo -e "${YELLOW}🏷️ 대상 이미지에 버전($IMAGE_VERSION) 태깅 및 추출을 진행합니다...${NC}"
+echo -e "${YELLOW}🏷️ 대상 서비스([${RELEASE_TARGETS[*]}])에 버전($IMAGE_VERSION) 태깅 및 추출을 진행합니다...${NC}"
 
 for svc in "${SERVICES_TO_RELEASE[@]}"; do
     IMG_NAME="mooldang-$svc"
