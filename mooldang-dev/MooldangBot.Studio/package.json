@@ -10,14 +10,14 @@
     "sync": "vite sync"
   },
   "devDependencies": {
-    "@microsoft/signalr": "^8.0.17",
+    "@microsoft/signalr": "^9.0.0",
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.56.1",
     "@sveltejs/vite-plugin-svelte": "^3.1.0",
     "@tailwindcss/vite": "^4.0.0",
     "esbuild": "^0.28.0",
     "gsap": "^3.14.2",
-    "lucide-svelte": "^0.300.0",
+    "lucide-svelte": "^0.479.0",
     "svelte": "^5.55.1",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.0.0",
@@ -26,6 +26,10 @@
     "zod": "^3.25.76"
   },
   "dependencies": {
-    "sortablejs": "^1.15.7"
+    "@tanstack/svelte-query": "^5.66.0",
+    "clsx": "^2.1.1",
+    "sortablejs": "^1.15.7",
+    "svelte-sonner": "^0.3.28",
+    "tailwind-merge": "^3.0.2"
   }
 }

@@ -18,8 +18,10 @@
     "vite": "^5.4.0"
   },
   "dependencies": {
-    "@microsoft/signalr": "^8.0.0",
-    "gsap": "^3.12.2"
+    "@microsoft/signalr": "^9.0.0",
+    "clsx": "^2.1.1",
+    "gsap": "^3.12.2",
+    "tailwind-merge": "^3.0.2"
   },
   "overrides": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0"

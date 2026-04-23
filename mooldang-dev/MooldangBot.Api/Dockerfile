@@ -1,11 +1,11 @@
 # [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net10.0 + Alpine)
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
 # [v19.5] 리눅스 타임존 데이터베이스 설치
 RUN apk add --no-cache tzdata
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
 # [오시리스의 가호]: 의존성 레이어 최적화

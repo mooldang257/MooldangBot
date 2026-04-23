@@ -1,7 +1,7 @@
 # ------------------------------------------
 # 🏗️ Build Stage
 # ------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # EF Core 도구 설치 (마이그레이션 번들 생성용)
@@ -48,7 +48,7 @@ RUN dotnet publish "MooldangBot.Cli.csproj" -c Release -o /app/publish/cli /p:Us
 # ------------------------------------------
 # 🚀 Runtime Stage
 # ------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 # efbundle 대신 MooldangBot.Cli.dll을 사용하므로 번들 복사 불필요
