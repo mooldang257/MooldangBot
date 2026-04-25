@@ -59,6 +59,7 @@ services:
     volumes:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
       - ${UPLOAD_DATA_PATH}:/app/wwwroot/uploads
+      - ${COMMON_SONG_DATA_PATH}:/app/wwwroot/uploads/library/songs
       - ${APP_DATA_PATH}:/app/data
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
     logging:
