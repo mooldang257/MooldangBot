@@ -32,16 +32,10 @@ COPY . .
 WORKDIR "/src/MooldangBot.Verifier"
 RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 
-WORKDIR "/src/MooldangBot.ChzzkAPI"
-RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build
-
-WORKDIR "/src/MooldangBot.Cli"
-RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/cli-build
-
-# 3. Publish
+WORKDIR /src
 FROM build AS publish
-RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
-RUN dotnet publish "/src/MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
 
 # 4. Final Image
 FROM base AS final

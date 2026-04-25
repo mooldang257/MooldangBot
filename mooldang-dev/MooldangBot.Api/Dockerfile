@@ -31,12 +31,10 @@ RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
 
-WORKDIR "/src/MooldangBot.Cli"
-RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/cli-build
-
+WORKDIR /src
 FROM build AS publish
-RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
-RUN dotnet publish "/src/MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.Api/MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
