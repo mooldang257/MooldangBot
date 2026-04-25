@@ -100,12 +100,6 @@ services:
         max-size: "20m"
         max-file: "3"
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
-
 networks:
   mooldang_prod_net:
     external: true
