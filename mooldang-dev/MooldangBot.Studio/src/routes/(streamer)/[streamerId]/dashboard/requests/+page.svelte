@@ -267,7 +267,7 @@
                     title: song.title,
                     artist: song.artist,
                     url: song.url,
-                    lyrics: song.lyrics,
+                    lyricsUrl: song.lyrics,
                     status: 0 // Pending
                 })
             });
@@ -306,7 +306,7 @@
                     title: updatedSong.title,
                     artist: updatedSong.artist,
                     url: updatedSong.url,
-                    lyrics: updatedSong.lyrics
+                    lyricsUrl: updatedSong.lyrics
                 })
             });
         } catch (err) {
@@ -457,6 +457,7 @@
                 style="isolation: isolate;"
             >
                 <ManualRequestForm
+                    {streamerId}
                     bind:selectedOmakase
                     bind:editingSong
                     bind:showResults={isManualSearching}

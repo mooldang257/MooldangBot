@@ -20,7 +20,7 @@ public class SongLibraryController(ISongLibraryService libraryService) : Control
     /// </summary>
     [HttpGet("search")]
     [AllowAnonymous]
-    public async Task<IActionResult> Search([FromQuery] string q)
+    public async Task<IActionResult> Search([FromQuery] string? q)
     {
         if (string.IsNullOrWhiteSpace(q))
             return Ok(Result<List<SongLibrarySearchResultDto>>.Success(new List<SongLibrarySearchResultDto>()));

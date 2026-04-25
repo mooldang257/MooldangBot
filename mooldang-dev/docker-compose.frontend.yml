@@ -19,7 +19,7 @@ services:
       - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.studio-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`)"
+      - "traefik.http.routers.studio-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`) && !PathPrefix(`/api`) && !PathPrefix(`/admin`) && !PathPrefix(`/overlay`)"
       - "traefik.http.routers.studio-dev.entrypoints=web"
       - "traefik.http.services.studio-dev.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"

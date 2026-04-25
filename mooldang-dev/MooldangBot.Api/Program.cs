@@ -119,11 +119,13 @@ try
     // Swagger UI 활성화
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger();
+        app.UseSwagger(options => {
+            options.RouteTemplate = "api/swagger/{documentName}/swagger.json";
+        });
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "MooldangBot API v1");
-            options.RoutePrefix = "swagger"; // 예: http://localhost:8010/swagger
+            options.SwaggerEndpoint("/api/swagger/v1/swagger.json", "MooldangBot API v1");
+            options.RoutePrefix = "api/swagger"; 
         });
     }
 

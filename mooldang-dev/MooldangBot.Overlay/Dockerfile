@@ -12,6 +12,6 @@ FROM nginx:alpine
 # 빌드된 정적 결과물 복사
 COPY --from=builder /app/MooldangBot.Overlay/dist /usr/share/nginx/html/overlay
 # Nginx 단일 경로 서빙을 위한 간단한 설정 (Overwrite default)
-RUN echo 'server { listen 80; location /overlay/ { alias /usr/share/nginx/html/overlay/; index index.html; try_files $uri $uri/ /overlay/index.html; } }' > /etc/nginx/conf.d/default.conf
+RUN echo 'server { listen 80; root /usr/share/nginx/html; location /overlay { index index.html; try_files $uri $uri/ /overlay/index.html; } }' > /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

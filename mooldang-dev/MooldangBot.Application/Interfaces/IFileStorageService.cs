@@ -16,6 +16,15 @@ namespace MooldangBot.Domain.Abstractions
         Task<string> SaveFileAsync(IFormFile file, string subDirectory);
 
         /// <summary>
+        /// 바이트 배열을 저장하고 외부에 공개 가능한 URL을 반환합니다.
+        /// </summary>
+        /// <param name="content">파일 바이트 데이터</param>
+        /// <param name="subDirectory">저장할 하위 디렉토리</param>
+        /// <param name="fileName">파일명</param>
+        /// <returns>파일 접근 URL</returns>
+        Task<string> SaveFileAsync(byte[] content, string subDirectory, string fileName);
+
+        /// <summary>
         /// 파일을 삭제합니다.
         /// </summary>
         /// <param name="fileUrl">삭제할 파일의 전체 URL</param>

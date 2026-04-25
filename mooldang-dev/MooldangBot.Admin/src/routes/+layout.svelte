@@ -4,6 +4,7 @@
     import { fade, fly, scale } from 'svelte/transition';
     import { gsap } from 'gsap';
     import { userState } from '$lib/core/state/user.svelte';
+    import ConfirmModal from '$lib/core/ui/ConfirmModal.svelte';
 
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
     let { data } = $props();
@@ -162,6 +163,9 @@
     <div class="fixed inset-0 -z-50 bg-[#f8fbff] overflow-hidden pointer-events-none">
         <div class="absolute inset-0 radial-mesh"></div>
     </div>
+
+    <!-- [Osiris]: 프리미엄 확인 모달 (브라우저 confirm 대체) -->
+    <ConfirmModal />
 </div>
 
 <style>

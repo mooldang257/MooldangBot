@@ -38,29 +38,42 @@
         flex-direction: column;
         justify-content: center;
         color: white;
-        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+        container-type: size; /* [오시리스의 확장]: 컨테이너 크기에 반응하는 폰트 시스템 구축 */
+        text-shadow: 
+            -1px -1px 0 rgba(0, 0, 0, 0.8),  
+             1px -1px 0 rgba(0, 0, 0, 0.8),
+            -1px  1px 0 rgba(0, 0, 0, 0.8),
+             1px  1px 0 rgba(0, 0, 0, 0.8),
+             2px 2px 5px rgba(0, 0, 0, 0.5);
         -webkit-font-smoothing: antialiased;
         pointer-events: none;
     }
 
     .live-title {
         font-family: var(--live-title-font);
-        font-size: 4rem;
+        font-size: clamp(1.5rem, 45cqh, 20rem); /* [물멍]: 높이의 약 45%까지 차지하도록 확대 */
         margin: 0;
         line-height: 1.1;
         letter-spacing: -1px;
+        font-weight: 900;
         background: linear-gradient(to bottom, #ffffff, #e0e0e0);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .live-artist {
         font-family: var(--live-artist-font);
-        font-size: 1.8rem;
+        font-size: clamp(0.8rem, 20cqh, 10rem); /* [물멍]: 높이의 약 20%까지 차지하도록 확대 */
         opacity: 0.9;
         margin-top: 5px;
         display: block;
         font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     @font-face {

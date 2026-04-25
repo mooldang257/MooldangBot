@@ -12,7 +12,7 @@ export default defineConfig({
 			// [오시리스의 중계]: 로컬 개발 시 /api 및 /overlay 요청을 Docker 백엔드로 전달
 			'/api': 'http://localhost:8080',
 			'/overlay': 'http://localhost:8080',
-			'/Auth/callback': 'http://localhost:8080', // [물멍]: OAuth 콜백 중계 추가
+
 			// SignalR WebSocket 중계
 			'/api/hubs/overlay': {
 				target: 'http://localhost:8080',

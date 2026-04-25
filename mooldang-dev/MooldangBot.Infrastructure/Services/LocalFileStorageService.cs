@@ -15,12 +15,31 @@ namespace MooldangBot.Infrastructure.Services
         private readonly IWebHostEnvironment _env;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private const string UploadsFolder = "uploads";
-        private const int MaxIconSize = 256; // [v25.7] 매우 가벼운 아이콘 규격
+        private const string PublicUrlPrefix = "/api/storage";
+        private const int MaxIconSize = 256; 
 
         public LocalFileStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
         {
             _env = env;
             _httpContextAccessor = httpContextAccessor;
+        }
+
+        public async Task<string> SaveFileAsync(byte[] content, string subDirectory, string fileName)
+        {
+            if (content == null || content.Length == 0) return string.Empty;
+
+            var wwwroot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+            var uploadsPath = Path.Combine(wwwroot, UploadsFolder, subDirectory);
+
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            var filePath = Path.Combine(uploadsPath, fileName);
+            await File.WriteAllBytesAsync(filePath, content);
+
+            return $"{PublicUrlPrefix}/{subDirectory}/{fileName}";
         }
 
         public async Task<string> SaveFileAsync(IFormFile file, string subDirectory)
@@ -61,14 +80,7 @@ namespace MooldangBot.Infrastructure.Services
                 }
             }
 
-            var request = _httpContextAccessor.HttpContext?.Request;
-            if (request != null)
-            {
-                var baseUrl = $"{request.Scheme}://{request.Host}";
-                return $"{baseUrl}/{UploadsFolder}/{subDirectory}/{fileName}";
-            }
-
-            return $"/{UploadsFolder}/{subDirectory}/{fileName}";
+            return $"{PublicUrlPrefix}/{subDirectory}/{fileName}";
         }
 
         private bool IsImageExtension(string ext)

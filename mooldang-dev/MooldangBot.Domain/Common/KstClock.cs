@@ -9,8 +9,10 @@ namespace MooldangBot.Domain.Common;
 /// DateTime과의 혼선을 방지하고 크로스 플랫폼(Windows/Linux) 호환성을 지원합니다.
 /// </summary>
 [JsonConverter(typeof(KstClockJsonConverter))]
-public readonly record struct KstClock : IFormattable
+public readonly record struct KstClock : IFormattable, IComparable<KstClock>
 {
+    public int CompareTo(KstClock other) => Value.CompareTo(other.Value);
+
     public DateTime Value { get; }
     public long Ticks => Value.Ticks;
     public DateTime Date => Value.Date;

@@ -40,6 +40,17 @@ if [[ "$#" -eq 0 ]]; then
                 ;;
         esac
     done
+
+    # [물멍]: 캐시 오염 방지를 위한 빌드 모드 선택
+    echo -e "${YELLOW}🛡️ 빌드 모드를 선택해주세요:${NC}"
+    echo "1) 일반 빌드 (빠름, 캐시 사용)"
+    echo "2) 클린 빌드 (안전, 캐시 미사용)"
+    read -p "선택 (기본값: 1): " build_choice
+    
+    if [[ "$build_choice" == "2" ]]; then
+        CLEAN_BUILD=true
+        echo -e "${YELLOW}⚠️ 클린 빌드 모드로 기동합니다. 시간이 조금 걸릴 수 있습니다.${NC}"
+    fi
 else
     while [[ "$#" -gt 0 ]]; do
         case $1 in
@@ -67,10 +78,13 @@ COMPOSE_INFRA="-f docker-compose.infra.yml"
 COMPOSE_BACKEND="-f docker-compose.backend.yml"
 COMPOSE_FRONTEND="-f docker-compose.frontend.yml"
 
-echo -e "${GREEN}🐳 Docker: 계층형 함대 기동 중 [${DEPLOY_TARGETS[*]}]...${NC}"
-
 # 항상 인프라 레이어를 포함하여 네트워크 및 기본 공조 체계 유지
-docker compose $COMPOSE_INFRA $COMPOSE_BACKEND $COMPOSE_FRONTEND --env-file .env up -d --build $BUILD_OPTS ${DEPLOY_TARGETS[@]}
+if [ "$CLEAN_BUILD" = true ]; then
+    echo -e "${YELLOW}🛠️  Docker: 클린 빌드 중 (캐시 미사용)...${NC}"
+    docker compose $COMPOSE_INFRA $COMPOSE_BACKEND $COMPOSE_FRONTEND --env-file .env build --no-cache ${DEPLOY_TARGETS[@]}
+fi
+
+docker compose $COMPOSE_INFRA $COMPOSE_BACKEND $COMPOSE_FRONTEND --env-file .env up -d --build ${DEPLOY_TARGETS[@]}
 
 # 5. 이미지 자동 추출 (명시적 관리 폴더로 저장)
 IMAGE_EXPORT_DIR="./images"
@@ -98,8 +112,11 @@ for svc in "${SERVICES_TO_EXPORT[@]}"; do
 done
 
 # 6. 마무리
-echo -e "${GREEN}🧹 System: 불필요한 이미지 잔해 청소...${NC}"
+echo -e "${GREEN}🧹 System: 불필요한 이미지, 컨테이너 및 빌드 캐시 청소...${NC}"
+# [Osiris]: 용량 방호를 위해 미사용 데이터 전체 소탕
+docker container prune -f
 docker image prune -f
+docker builder prune -f
 
 echo -e "${GREEN}✅ 통합 배포 및 이미지 자동 추출이 완료되었습니다!${NC}"
 echo -e "${YELLOW}📊 추출된 파일 확인: $IMAGE_EXPORT_DIR${NC}"

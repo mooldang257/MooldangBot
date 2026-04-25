@@ -37,9 +37,16 @@ namespace MooldangBot.Application.Controllers.Auth
         {
             get {
                 var val = _configuration["BASE_DOMAIN"];
-                if (!string.IsNullOrEmpty(val)) return val;
+                if (string.IsNullOrEmpty(val))
+                    throw new Exception("[오시리스의 거절]: 환경 설정 파일(.env 또는 appsettings)에서 'BASE_DOMAIN'이 설정되어 있지 않습니다.");
                 
-                throw new Exception("[오시리스의 거절]: 환경 설정 파일(.env 또는 appsettings)에서 'BASE_DOMAIN'이 설정되어 있지 않습니다.");
+                // [오시리스의 항로]: 프로토콜이 없으면 https://를 자동으로 붙여서 리다이렉트 오류를 방지합니다.
+                if (!val.StartsWith("http://") && !val.StartsWith("https://"))
+                {
+                    val = "https://" + val;
+                }
+                
+                return val;
             }
         }
 
@@ -88,7 +95,6 @@ namespace MooldangBot.Application.Controllers.Auth
         }
 
         [HttpGet("auth/callback")]
-        [HttpGet("/Auth/callback")] // [Aegis Bridge]: Nginx 우회 경로 지정 (404 방지)
         [AllowAnonymous]
         public async Task<IActionResult> AuthCallback([FromQuery] string? code, [FromQuery] string? state)
         {

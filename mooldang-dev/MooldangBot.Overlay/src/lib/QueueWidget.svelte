@@ -74,7 +74,12 @@
         flex-direction: column;
         align-items: flex-end;
         color: white;
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.4);
+        text-shadow: 
+            -1px -1px 0 rgba(0, 0, 0, 0.9),  
+             1px -1px 0 rgba(0, 0, 0, 0.9),
+            -1px  1px 0 rgba(0, 0, 0, 0.9),
+             1px  1px 0 rgba(0, 0, 0, 0.9),
+             2px 2px 4px rgba(0, 0, 0, 0.6);
         pointer-events: none;
     }
 

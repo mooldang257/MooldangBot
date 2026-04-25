@@ -66,7 +66,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
         [HttpPost]
         public async Task<IActionResult> UpdateSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest request)
         {
-            var profile = await GetCachedProfileAsync(chzzkUid);
+            // [오시리스의 영속]: 업데이트를 위해 DB에서 직접 조회하여 트래킹 상태로 만듭니다.
+            var profile = await db.StreamerProfiles
+                .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
+            
             if (profile == null)
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 

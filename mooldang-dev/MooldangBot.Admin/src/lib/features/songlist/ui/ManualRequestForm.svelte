@@ -1,10 +1,12 @@
 <script lang="ts">
     import { fade, fly } from 'svelte/transition';
     import { untrack } from 'svelte';
-    import { Send, Music, User, X, Check, Youtube } from 'lucide-svelte';
+    import { Send, Music, User, X, Check, Youtube, BookOpen } from 'lucide-svelte';
+    import { apiFetch } from '$lib/api/client';
 
     // [Osiris]: 부모 페이지와 상태 공유를 위한 props
     let { 
+        streamerId = "",
         selectedOmakase = $bindable(null),
         editingSong = $bindable(null), // [물멍]: 현재 편집 중인 곡 (양방향 바인딩 지원)
         showResults = $bindable(false),
@@ -20,6 +22,7 @@
 
     // [v12.0] 중앙 병기창 연동 상태
     let searchResults = $state<any[]>([]);
+    let songbookResults = $state<any[]>([]); // [물멍]: 스트리머 노래책 검색 결과
     let isSearching = $state(false);
     let searchTimeout: any;
 
@@ -39,43 +42,60 @@
     });
 
     // [물멍]: 노래 제목 입력 시 실시간 검색 (Debounced)
+    // 스트리머 본인 노래책(1순위) + 중앙 병기창(2순위) 동시 검색
     const handleSearch = () => {
         if (searchTimeout) clearTimeout(searchTimeout);
         if (!manualTitle.trim() || manualTitle.length < 2) {
             searchResults = [];
+            songbookResults = [];
             showResults = false;
             return;
         }
 
         searchTimeout = setTimeout(async () => {
+            if (!manualTitle.trim() || manualTitle.length < 2) return;
             isSearching = true;
             try {
-                const res = await fetch(`/api/song-library/search?q=${encodeURIComponent(manualTitle)}`);
-                if (res.ok) {
-                    searchResults = await res.json();
-                    // [물멍]: 비동기 작업 완료 시점에 아직도 포커스가 있는지 확인하여 목록 표시 결정
-                    showResults = isTitleFocused && searchResults.length > 0;
-                }
+                const [songbookRes, libraryRes] = await Promise.allSettled([
+                    streamerId 
+                        ? apiFetch<any>(`/api/songbook/${streamerId}?query=${encodeURIComponent(manualTitle)}`)
+                        : Promise.resolve([]),
+                    fetch(`/api/song-library/search?q=${encodeURIComponent(manualTitle)}`).then(r => r.ok ? r.json() : [])
+                ]);
+
+                songbookResults = songbookRes.status === 'fulfilled' ? (songbookRes.value || []) : [];
+                searchResults = libraryRes.status === 'fulfilled' ? (libraryRes.value || []) : [];
+
+                const hasResults = songbookResults.length > 0 || searchResults.length > 0;
+                showResults = isTitleFocused && hasResults;
             } catch (err) {
-                console.error("병기창 검색 실패:", err);
+                console.error("검색 실패:", err);
             } finally {
                 isSearching = false;
             }
         }, 300);
     };
 
-    // [물멍]: 검색 결과 선택 시 자동 장전
+    // [물멍]: 노래책 검색 결과 선택 시 자동 장전
+    const selectSongbookSong = (song: any) => {
+        manualTitle = song.title;
+        manualArtist = song.artist || "";
+        manualUrl = song.referenceUrl || "";
+        manualLyrics = "";
+        showLyricsInput = false;
+        showResults = false;
+    };
+
+    // [물멍]: 병기창/유튜브 검색 결과 선택 시 자동 장전
     const selectSong = (result: any) => {
         if (result.isExternal) {
-            // [v13.0] 유튜브 정찰 결과 장전 (2순위)
             const yt = result.externalSong;
             manualTitle = yt.title;
             manualArtist = yt.author;
             manualUrl = yt.url;
-            manualLyrics = ""; // 유튜브는 가사 정보 없음
+            manualLyrics = "";
             showLyricsInput = false;
         } else {
-            // [v12.0] 내부 병기창 데이터 장전 (1순위)
             const song = result.song;
             manualTitle = song.title;
             manualArtist = song.artist;
@@ -189,20 +209,62 @@
                         }}
                     />
 
-                    <!-- [v13.0] 하이브리드 검색 결과 (병기창 1순위 + 유튜브 2순위) -->
+                    <!-- [v13.0] 하이브리드 검색 결과 (노래책 0순위 + 병기창 1순위 + 유튜브 2순위) -->
                     {#if showResults}
                         <div 
                             class="absolute top-full left-[-2rem] right-0 mt-2 bg-white/90 backdrop-blur-xl border border-white/40 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden"
                             in:fly={{ y: -10, duration: 200 }}
                         >
                             <div class="max-h-[320px] overflow-y-auto custom-scrollbar">
+                                {#if songbookResults.length > 0}
+                                    <div class="px-5 py-2 bg-sky-50/80 border-b border-sky-100 flex items-center gap-1.5">
+                                        <BookOpen size={12} class="text-sky-500" />
+                                        <span class="text-[10px] font-black text-sky-600 uppercase">내 노래책</span>
+                                        <span class="text-[9px] font-bold text-sky-400 ml-auto">{songbookResults.length}곡</span>
+                                    </div>
+                                    {#each songbookResults as song}
+                                        <button 
+                                            class="w-full px-5 py-3 text-left hover:bg-sky-50/50 transition-colors border-b border-slate-100 last:border-none flex flex-col gap-0.5 group/result"
+                                            onclick={() => selectSongbookSong(song)}
+                                        >
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2.5">
+                                                    {#if song.thumbnailUrl}
+                                                        <img src={song.thumbnailUrl} alt="thumb" class="w-8 h-8 rounded-lg object-cover shadow-sm" />
+                                                    {:else}
+                                                        <div class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center">
+                                                            <Music size={12} class="text-sky-400" />
+                                                        </div>
+                                                    {/if}
+                                                    <span class="font-black text-slate-800 text-sm">{song.title}</span>
+                                                </div>
+                                                <span class="text-[10px] font-bold text-sky-600 bg-sky-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                                    <BookOpen size={10} /> 노래책
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold transition-colors group-hover/result:text-slate-600 ml-[42px]">
+                                                <span>{song.artist || 'Unknown'}</span>
+                                                {#if song.category}
+                                                    <span class="text-slate-300">•</span>
+                                                    <span class="truncate text-slate-300">{song.category}</span>
+                                                {/if}
+                                            </div>
+                                        </button>
+                                    {/each}
+                                {/if}
+
+                                {#if searchResults.length > 0 && songbookResults.length > 0}
+                                    <div class="px-5 py-2 bg-slate-50/80 border-b border-slate-100 flex items-center gap-1.5">
+                                        <Music size={12} class="text-slate-400" />
+                                        <span class="text-[10px] font-black text-slate-500 uppercase">전체 검색</span>
+                                    </div>
+                                {/if}
                                 {#each searchResults as result}
                                     <button 
                                         class="w-full px-5 py-3 text-left hover:bg-primary/5 transition-colors border-b border-slate-100 last:border-none flex flex-col gap-0.5 group/result"
                                         onclick={() => selectSong(result)}
                                     >
                                         {#if !result.isExternal}
-                                            <!-- [1순위] 내부 병기창 결과 -->
                                             <div class="flex items-center justify-between">
                                                 <span class="font-black text-slate-800 text-sm">{result.song.title}</span>
                                                 <div class="flex items-center gap-1.5">
@@ -222,7 +284,6 @@
                                                 {/if}
                                             </div>
                                         {:else}
-                                            <!-- [2순위] 유튜브 실시간 정찰 결과 -->
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center gap-3">
                                                     {#if result.externalSong.thumbnailUrl}

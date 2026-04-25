@@ -44,8 +44,21 @@ public class AuthService(
     private const string ClaimStreamerId = "StreamerId";
     private const string ClaimTokenVersion = "TokenVersion";
 
-    private string BaseDomain => _configuration["BASE_DOMAIN"] 
-        ?? throw new Exception("BASE_DOMAIN이 설정되어 있지 않습니다.");
+    private string BaseDomain 
+    {
+        get {
+            var val = _configuration["BASE_DOMAIN"];
+            if (string.IsNullOrEmpty(val))
+                throw new Exception("BASE_DOMAIN이 설정되어 있지 않습니다.");
+            
+            if (!val.StartsWith("http://") && !val.StartsWith("https://"))
+            {
+                val = "https://" + val;
+            }
+            
+            return val;
+        }
+    }
 
     public async Task<AuthMetadata> GenerateAuthMetadataAsync(string? targetUid = null, string? loginType = null)
     {

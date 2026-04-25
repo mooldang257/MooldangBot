@@ -23,7 +23,28 @@ public static class MiddlewareExtensions
 
         // 3. Standard Middlewares
         app.UseForwardedHeaders();
-        app.UseStaticFiles();
+        
+        // [오시리스의 저장소]: 외부 노출 경로(/api/storage)를 물리 폴더와 매핑
+        var wwwroot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+        
+        // /api/storage -> wwwroot/uploads 매핑
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.Combine(wwwroot, "uploads")),
+            RequestPath = "/api/storage"
+        });
+
+        // /api/storage/avatars -> wwwroot/images/avatars 매핑 (아바타 전용)
+        var avatarPath = Path.Combine(wwwroot, "images", "avatars");
+        if (Directory.Exists(avatarPath))
+        {
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(avatarPath),
+                RequestPath = "/api/storage/avatars"
+            });
+        }
+
         app.UseRouting();
 
         // 4. Rate Limiting & CORS

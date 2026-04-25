@@ -47,7 +47,7 @@ services:
       start_period: 20s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app-dev.rule=(Host(`${BASE_DOMAIN}`)) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/swagger`))"
+      - "traefik.http.routers.app-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.app-dev.entrypoints=web"
       - "traefik.http.services.app-dev.loadbalancer.server.port=8080"
       - "traefik.http.services.app-dev.loadbalancer.sticky.cookie=true"
@@ -60,14 +60,14 @@ services:
     volumes:
       - ${AVATAR_DATA_PATH}:/app/wwwroot/images/avatars
       - ${UPLOAD_DATA_PATH}:/app/wwwroot/uploads
-      - ${COMMON_SONG_DATA_PATH}:/app/wwwroot/images/library/songs
+      - ${COMMON_SONG_DATA_PATH}:/app/wwwroot/uploads/library/songs
       - ${APP_DATA_PATH}:/app/data
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
 
   chzzk-bot:
     build:
       context: .
-      dockerfile: ./MooldangBot.Api/Dockerfile  # Note: often shared with app, adjust if needed
+      dockerfile: ./MooldangBot.ChzzkAPI/Dockerfile
     image: mooldang-chzzk-bot:latest
     container_name: mooldang-dev-chzzk-bot
     restart: always

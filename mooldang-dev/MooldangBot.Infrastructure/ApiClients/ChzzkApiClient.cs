@@ -45,7 +45,12 @@ namespace MooldangBot.Infrastructure.ApiClients
 
         public async Task<TokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
         {
-            return await SafePostAsync<TokenResponse>("/api/internal/auth/exchange-token", new { Code = code, State = state });
+            return await SafePostAsync<TokenResponse>("/api/internal/auth/exchange-token", new 
+            { 
+                Code = code, 
+                State = state, 
+                RedirectUri = redirectUri 
+            });
         }
 
         public async Task<SendChatResponse?> SendChatMessageAsync(string chzzkUid, string message, string accessToken)

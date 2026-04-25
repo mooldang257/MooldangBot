@@ -9,6 +9,7 @@ using MooldangBot.Modules.Point.Interfaces;
 using Polly;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using MooldangBot.Domain.Contracts.SongBook;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Common.Interfaces;
@@ -118,11 +119,24 @@ namespace MooldangBot.Infrastructure
                         errorNumbersToAdd: null);
                     mysqlOptions.CommandTimeout(10);
                 })
-                .UseSnakeCaseNamingConvention(), poolSize: 1024);
+                .UseSnakeCaseNamingConvention()
+                .EnableDetailedErrors()
+                .EnableSensitiveDataLogging(), poolSize: 1024);
+
+            // [오시리스의 도서관]: 공용 이미지 자산 데이터베이스 등록
+            var commonConnectionString = configuration.GetConnectionString("CommonConnection");
+            services.AddPooledDbContextFactory<CommonDbContext>(options =>
+                options.UseMySql(commonConnectionString, serverVersion, mysqlOptions =>
+                {
+                    mysqlOptions.MigrationsHistoryTable("__EFCommonMigrationsHistory");
+                    mysqlOptions.EnableRetryOnFailure(3);
+                }));
             
             // 기존 Scoped 요청 및 concrete 클래스 주입을 위해 팩토리로부터 컨텍스트를 생성하는 브릿지 등록
             services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
+            services.AddScoped<CommonDbContext>(sp => sp.GetRequiredService<IDbContextFactory<CommonDbContext>>().CreateDbContext());
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+            services.AddScoped<ICommonDbContext>(sp => sp.GetRequiredService<CommonDbContext>()); // 인터페이스 등록 추가
             services.AddScoped<ISongBookDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<IRouletteDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<IPointDbContext>(sp => sp.GetRequiredService<AppDbContext>());
@@ -197,6 +211,11 @@ namespace MooldangBot.Infrastructure
             // [v13.0] 유튜브 설정 및 실시간 정찰기(YouTube Recon Synergy) 등록
             services.Configure<YouTubeSettings>(configuration.GetSection("YouTube"));
             services.AddScoped<IYouTubeSearchService, YouTubeSearchService>();
+
+            // [v19.2] 노래책 썸네일 검색 서비스 (플러그인 방식 - iTunes & YouTube/YoutubeExplode)
+            // YouTube 썸네일은 YoutubeExplode 기반으로 전환하여 API 할당량 소모 제거
+            services.AddHttpClient<ISongThumbnailService, ItunesThumbnailService>();
+            services.AddHttpClient<ISongThumbnailService, YoutubeThumbnailService>();
 
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();

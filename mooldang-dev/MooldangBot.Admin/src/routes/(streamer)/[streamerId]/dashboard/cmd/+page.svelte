@@ -3,6 +3,7 @@
     import { fade, fly } from "svelte/transition";
     import { Zap, Clock, AlertTriangle, RefreshCw } from "lucide-svelte"; // 아이콘 추가
     import ConfirmModal from "$lib/core/ui/ConfirmModal.svelte";
+    import { modal } from "$lib/core/state/modal.svelte";
     import VariableBadge from "$lib/core/ui/VariableBadge.svelte";
 
     import CommandForm from "$lib/features/command/components/CommandForm.svelte";
@@ -132,11 +133,16 @@
     async function handleDelete(id: number) {
         const cmd = allCommands.find((c) => c.id === id);
         if (!cmd) return;
-        if (skipDeleteConfirm) return await executeDelete(id);
-
-        deleteTargetId = id;
-        deleteTargetKeyword = cmd.keyword;
-        showDeleteModal = true;
+        
+        // [물멍]: 프리미엄 확인 모달 호출
+        if (skipDeleteConfirm || await modal.confirm({
+            title: "명령어 삭제",
+            message: `"${cmd.keyword}" 명령어를 정말로 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+            confirmText: "과감하게 삭제",
+            variant: "danger"
+        })) {
+            await executeDelete(id);
+        }
     }
 
     async function executeDelete(id: number) {
@@ -149,29 +155,11 @@
             alert(err.message || "삭제 실패!");
         }
     }
-
-    async function onConfirmDelete(event: any) {
-        if (event.detail.dontAskAgain) {
-            skipDeleteConfirm = true;
-            await apiFetch("/api/Preference/temporary/skipDeleteConfirm", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ value: "true" }),
-            }).catch(console.error);
-        }
-        if (deleteTargetId) await executeDelete(deleteTargetId);
-    }
 </script>
 
 <svelte:head>
     <title>명령어 관리소 - 물댕봇 Admin</title>
 </svelte:head>
-
-<ConfirmModal
-    bind:isOpen={showDeleteModal}
-    keyword={deleteTargetKeyword}
-    on:confirm={onConfirmDelete}
-/>
 
 <div class="space-y-12 pb-20 text-left">
     <header class="space-y-6">
