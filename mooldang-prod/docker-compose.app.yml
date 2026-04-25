@@ -44,7 +44,7 @@ services:
       start_period: 20s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=(Host(`bot.mooldang.store`) || Host(`www.mooldang.store`)) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/overlayHub`) || PathPrefix(`/swagger`))"
+      - "traefik.http.routers.app.rule=(Host(`bot.mooldang.com`) || Host(`www.mooldang.com`)) && (PathPrefix(`/api`) || PathPrefix(`/Auth/callback`) || PathPrefix(`/overlayHub`) || PathPrefix(`/swagger`))"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.services.app.loadbalancer.server.port=8080"
       - "traefik.http.services.app.loadbalancer.sticky.cookie=true"
@@ -110,7 +110,7 @@ services:
       - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.studio.rule=(Host(`bot.mooldang.store`) || Host(`www.mooldang.store`)) && PathPrefix(`/`)"
+      - "traefik.http.routers.studio.rule=(Host(`bot.mooldang.com`) || Host(`www.mooldang.com`)) && PathPrefix(`/`)"
       - "traefik.http.routers.studio.entrypoints=web"
       - "traefik.http.services.studio.loadbalancer.server.port=3000"
       - "traefik.http.routers.studio.middlewares=cloudflare-real-ip@file"
@@ -131,7 +131,7 @@ services:
     restart: always
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.overlay.rule=(Host(`bot.mooldang.store`) || Host(`www.mooldang.store`)) && PathPrefix(`/overlay`)"
+      - "traefik.http.routers.overlay.rule=(Host(`bot.mooldang.com`) || Host(`www.mooldang.com`)) && PathPrefix(`/overlay`)"
       - "traefik.http.routers.overlay.entrypoints=web"
       - "traefik.http.services.overlay.loadbalancer.server.port=80"
       - "traefik.http.routers.overlay.middlewares=cloudflare-real-ip@file"
@@ -153,7 +153,7 @@ services:
       - ORIGIN=${BASE_DOMAIN}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.admin.rule=(Host(`bot.mooldang.store`) || Host(`www.mooldang.store`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin.rule=(Host(`bot.mooldang.com`) || Host(`www.mooldang.com`)) && PathPrefix(`/admin`)"
       - "traefik.http.routers.admin.entrypoints=web"
       - "traefik.http.routers.admin.middlewares=admin-strip@file,traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.admin.loadbalancer.server.port=3000"
