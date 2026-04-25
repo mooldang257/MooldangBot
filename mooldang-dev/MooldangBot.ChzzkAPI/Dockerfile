@@ -20,8 +20,10 @@ COPY ["MooldangBot.Modules.SongBook/MooldangBot.Modules.SongBook.csproj", "Moold
 COPY ["MooldangBot.Modules.Roulette/MooldangBot.Modules.Roulette.csproj", "MooldangBot.Modules.Roulette/"]
 COPY ["MooldangBot.Modules.Point/MooldangBot.Modules.Point.csproj", "MooldangBot.Modules.Point/"]
 COPY ["MooldangBot.Modules.Commands/MooldangBot.Modules.Commands.csproj", "MooldangBot.Modules.Commands/"]
+COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
 
 RUN dotnet restore "MooldangBot.ChzzkAPI/MooldangBot.ChzzkAPI.csproj"
+RUN dotnet restore "MooldangBot.Cli/MooldangBot.Cli.csproj"
 
 # Copy source and build
 COPY . .
@@ -33,13 +35,18 @@ RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 WORKDIR "/src/MooldangBot.ChzzkAPI"
 RUN dotnet build "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/build
 
+WORKDIR "/src/MooldangBot.Cli"
+RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/cli-build
+
 # 3. Publish
 FROM build AS publish
 RUN dotnet publish "MooldangBot.ChzzkAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "/src/MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
 
 # 4. Final Image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 COPY --from=build /app/verifier ./verifier
+COPY --from=publish /app/cli ./cli
 ENTRYPOINT ["dotnet", "MooldangBot.ChzzkAPI.dll"]

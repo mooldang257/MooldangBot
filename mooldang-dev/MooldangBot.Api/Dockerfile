@@ -18,8 +18,10 @@ COPY ["MooldangBot.Modules.SongBook/MooldangBot.Modules.SongBook.csproj", "Moold
 COPY ["MooldangBot.Modules.Roulette/MooldangBot.Modules.Roulette.csproj", "MooldangBot.Modules.Roulette/"]
 COPY ["MooldangBot.Modules.Point/MooldangBot.Modules.Point.csproj", "MooldangBot.Modules.Point/"]
 COPY ["MooldangBot.Modules.Commands/MooldangBot.Modules.Commands.csproj", "MooldangBot.Modules.Commands/"]
+COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
 
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"
+RUN dotnet restore "MooldangBot.Cli/MooldangBot.Cli.csproj"
 COPY . .
 
 # Verifier 빌드 추가 (필요 시 운영 환경에서 자가진단 가능하도록)
@@ -29,10 +31,15 @@ RUN dotnet build "MooldangBot.Verifier.csproj" -c Release -o /app/verifier
 WORKDIR "/src/MooldangBot.Api"
 RUN dotnet build "MooldangBot.Api.csproj" -c Release -o /app/build
 
+WORKDIR "/src/MooldangBot.Cli"
+RUN dotnet build "MooldangBot.Cli.csproj" -c Release -o /app/cli-build
+
 FROM build AS publish
 RUN dotnet publish "MooldangBot.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "/src/MooldangBot.Cli/MooldangBot.Cli.csproj" -c Release -o /app/cli /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY --from=publish /app/cli ./cli
 ENTRYPOINT ["dotnet", "MooldangBot.Api.dll"]
