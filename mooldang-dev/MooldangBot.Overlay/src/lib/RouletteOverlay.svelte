@@ -10,11 +10,11 @@
 
     let props: Props = $props();
 
-    let containerRef: HTMLDivElement;
-    let mainCardRef: HTMLDivElement;
-    let gridItems: HTMLDivElement[] = [];
-    let particleContainer: HTMLDivElement;
-    let ctx: gsap.Context;
+    let containerRef: HTMLDivElement | null = $state(null);
+    let mainCardRef: HTMLDivElement | null = $state(null);
+    let gridItems: HTMLDivElement[] = $state([]);
+    let particleContainer: HTMLDivElement | null = $state(null);
+    let ctx: gsap.Context | null = $state(null);
 
     // [상태 제어]: 지휘관 설계안(아쿠아틱 메이크오버) 반영
     let activeSpin: any = $state(null);
@@ -34,7 +34,7 @@
         'Epic': 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',     // 화려한 벨
         'Legendary': 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3' // 웅장한 승리
     };
-    let audioCache: Map<string, HTMLAudioElement> = new Map();
+    let audioCache: Map<string, HTMLAudioElement> = $state(new Map());
 
     function preloadSounds(results: any[]) {
         const urls = new Set([

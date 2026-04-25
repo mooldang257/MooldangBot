@@ -27,9 +27,9 @@ public class SongBookState
     /// <summary>
     /// 현재 재생 중인 곡을 설정합니다. (DB 반영은 호출자 책임)
     /// </summary>
-    public void SetCurrentSong(string streamerUid, int id, string title, string artist)
+    public void SetCurrentSong(string streamerUid, int id, string title, string artist, string? videoId = null, string? thumbnailUrl = null)
     {
-        GetState(streamerUid).CurrentSong = new SongBufferItem(id, "System", title, artist);
+        GetState(streamerUid).CurrentSong = new SongBufferItem(id, "System", title, artist, videoId, thumbnailUrl);
     }
 
     public void ClearCurrentSong(string streamerUid)
@@ -40,12 +40,12 @@ public class SongBookState
     /// <summary>
     /// 대기열에 곡을 추가합니다. (DB 저장 성공 후 호출 권장)
     /// </summary>
-    public bool AddSong(string streamerUid, int id, string username, string title, string? artist = null)
+    public bool AddSong(string streamerUid, int id, string username, string title, string? artist = null, string? videoId = null, string? thumbnailUrl = null)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(title))
             return false;
 
-        GetState(streamerUid).Queue.Enqueue(new SongBufferItem(id, username, title, artist ?? string.Empty));
+        GetState(streamerUid).Queue.Enqueue(new SongBufferItem(id, username, title, artist ?? string.Empty, videoId, thumbnailUrl));
         return true;
     }
 
@@ -97,12 +97,32 @@ public class SongBookState
         while (state.Queue.TryDequeue(out _)) { }
         state.IsInitialized = false;
     }
+
+    /// <summary>
+    /// 대기열의 순서를 강제로 조정합니다. (드래그 앤 드롭 동기화용)
+    /// </summary>
+    public void ReorderSongs(string streamerUid, List<int> orderedIds)
+    {
+        var state = GetState(streamerUid);
+        var currentItems = state.Queue.ToDictionary(i => i.Id);
+        
+        // [물멍]: 기존 큐를 비우고 전달받은 ID 순서대로 재구성합니다.
+        while (state.Queue.TryDequeue(out _)) { }
+        
+        foreach (var id in orderedIds)
+        {
+            if (currentItems.TryGetValue(id, out var item))
+            {
+                state.Queue.Enqueue(item);
+            }
+        }
+    }
 }
 
 /// <summary>
 /// 버퍼에 보관되는 신청곡 항목 (ID 포함)
 /// </summary>
-public record SongBufferItem(int Id, string Username, string Title, string Artist);
+public record SongBufferItem(int Id, string Username, string Title, string Artist, string? VideoId = null, string? ThumbnailUrl = null);
 
 /// <summary>
 /// 개별 스트리머의 곡 상태 정보

@@ -83,7 +83,7 @@ namespace MooldangBot.Application.Services
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
                 .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)
-                .OrderBy(s => s.Id)
+                .OrderBy(s => s.SortOrder).ThenBy(s => s.Id)
                 .Take(5)
                 .ToListAsync(token);
 
@@ -99,8 +99,14 @@ namespace MooldangBot.Application.Services
 
             // 5. DTO 조립
             var dto = new SongOverlayDto(
-                currentSong != null ? new CurrentSongDto(currentSong.Title, currentSong.Artist) : null,
-                queueSongs.Select(s => new QueueSongDto(s.Title, s.Artist, s.RequesterNickname ?? s.GlobalViewer?.Nickname ?? "익명")).ToList(),
+                currentSong != null ? new CurrentSongDto(currentSong.Id, currentSong.Title, currentSong.Artist, currentSong.VideoId, currentSong.ThumbnailUrl) : null,
+                queueSongs.Select(s => new QueueSongDto(
+                    s.Id,
+                    s.Title, 
+                    s.Artist, 
+                    s.RequesterNickname ?? s.GlobalViewer?.Nickname ?? "익명",
+                    s.VideoId,
+                    s.ThumbnailUrl)).ToList(),
                 settings
             );
 

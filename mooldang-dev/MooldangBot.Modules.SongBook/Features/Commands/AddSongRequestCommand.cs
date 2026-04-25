@@ -78,10 +78,12 @@ public class AddSongRequestCommandHandler(
 
         // 5. [실시간 공명]: 오버레이 상태 브로드캐스트
         var current = state.GetCurrentSong(request.ChzzkUid);
-        var queue = state.GetQueue(request.ChzzkUid).Select(s => new QueueSongDto(s.Title, s.Artist, s.Username)).ToList();
+        var queue = state.GetQueue(request.ChzzkUid)
+            .Select(s => new QueueSongDto(s.Id, s.Title, s.Artist, s.Username, s.VideoId, s.ThumbnailUrl))
+            .ToList();
         
         var overlayData = new SongOverlayDto(
-            current != null ? new CurrentSongDto(current.Title, current.Artist) : null,
+            current != null ? new CurrentSongDto(current.Id, current.Title, current.Artist, current.VideoId, current.ThumbnailUrl) : null,
             queue,
             new SongOverlaySettings() // 기본 폰트 설정 사용
         );

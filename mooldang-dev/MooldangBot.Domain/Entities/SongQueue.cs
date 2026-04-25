@@ -58,6 +58,12 @@ namespace MooldangBot.Domain.Entities
         public int? Cost { get; set; } // [v14.1] 후원 금액
         public CommandCostType? CostType { get; set; } // [v14.1] 후원 수단 (치즈/포인트)
 
+        /// <summary>
+        /// [물멍]: 오버레이 표시를 위한 썸네일 정보 직접 보관
+        /// </summary>
+        public string? VideoId { get; set; }
+        public string? ThumbnailUrl { get; set; }
+
         public KstClock CreatedAt { get; set; } = KstClock.Now; 
         public KstClock? UpdatedAt { get; set; }
     }

@@ -18,6 +18,7 @@
     let manualArtist = $state("");
     let manualUrl = $state("");
     let manualLyrics = $state("");
+    let manualThumbnail = $state(""); // [물멍]: 썸네일 URL 상태 추가
     let showLyricsInput = $state(false);
 
     // [v12.0] 중앙 병기창 연동 상태
@@ -36,6 +37,7 @@
                 manualArtist = editingSong.artist || "";
                 manualUrl = editingSong.url || "";
                 manualLyrics = editingSong.lyrics || "";
+                manualThumbnail = editingSong.thumbnailUrl || "";
                 showLyricsInput = !!manualLyrics;
             });
         }
@@ -82,6 +84,7 @@
         manualTitle = song.title;
         manualArtist = song.artist || "";
         manualUrl = song.referenceUrl || "";
+        manualThumbnail = song.thumbnailUrl || ""; // [물멍] 썸네일 획득
         manualLyrics = "";
         showLyricsInput = false;
         showResults = false;
@@ -95,7 +98,8 @@
             manualTitle = yt.title;
             manualArtist = yt.author;
             manualUrl = yt.url;
-            manualLyrics = ""; // 유튜브는 가사 정보 없음
+            manualThumbnail = yt.thumbnailUrl || ""; // [물멍] 유튜브 썸네일 획득
+            manualLyrics = ""; 
             showLyricsInput = false;
         } else {
             // [v12.0] 내부 병기창 데이터 장전 (1순위)
@@ -103,6 +107,7 @@
             manualTitle = song.title;
             manualArtist = song.artist;
             manualUrl = song.youtubeUrl;
+            manualThumbnail = ""; // 병기창 데이터는 썸네일이 없을 수 있음
             manualLyrics = song.lyrics || "";
             if (manualLyrics) showLyricsInput = true;
         }
@@ -116,7 +121,8 @@
             title: manualTitle,
             artist: manualArtist || "Unknown",
             url: manualUrl.trim(),
-            lyrics: manualLyrics.trim()
+            lyrics: manualLyrics.trim(),
+            thumbnailUrl: manualThumbnail // [물멍] 썸네일 URL 전송 추가
         };
 
         // [v13.1] 이제 백엔드(AddSong)가 CaptureStagingAsync를 대행하므로 프론트엔드 중복 호출 제거
@@ -143,6 +149,7 @@
         manualArtist = "";
         manualUrl = "";
         manualLyrics = "";
+        manualThumbnail = ""; // [물멍] 초기화
         showLyricsInput = false;
         editingSong = null;
         selectedOmakase = null; 
@@ -183,7 +190,26 @@
         </div>
     {/if}
 
-    <div class="flex flex-col gap-4 relative z-10">
+    <div class="flex flex-col md:flex-row gap-6 relative z-10">
+        <!-- [물멍]: 썸네일 미리보기 영역 추가 -->
+        <div class="flex-shrink-0 w-32 h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group/thumb relative">
+            {#if manualThumbnail}
+                <img src={manualThumbnail} alt="Preview" class="w-full h-full object-cover" />
+                <button 
+                    class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white"
+                    onclick={() => manualThumbnail = ""}
+                >
+                    <X size={20} />
+                </button>
+            {:else}
+                <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-1">
+                    <Music size={32} strokeWidth={1} />
+                    <span class="text-[8px] font-black uppercase">No Thumbnail</span>
+                </div>
+            {/if}
+        </div>
+
+        <div class="flex-1 flex flex-col gap-4">
         <div class="flex flex-col lg:flex-row items-end gap-3 w-full">
             <!-- 제목 입력 -->
             <div class="flex-[2] w-full group/input relative">
@@ -246,7 +272,7 @@
                                                     <BookOpen size={10} /> 노래책
                                                 </span>
                                             </div>
-                                            <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold transition-colors group-hover/result:text-slate-600 {song.thumbnailUrl ? 'ml-[42px]' : 'ml-[42px]'}">
+                                            <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold transition-colors group-hover/result:text-slate-600 ml-[42px]">
                                                 <span>{song.artist || 'Unknown'}</span>
                                                 {#if song.category}
                                                     <span class="text-slate-300">•</span>
@@ -414,6 +440,7 @@
                     <X size={24} strokeWidth={3} />
                 </button>
             {/if}
+            </div>
         </div>
     </div>
 </div>

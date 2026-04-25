@@ -89,6 +89,9 @@ public class SongQueueDto
 
     [JsonPropertyName("costType")]
     public CommandCostType? CostType { get; set; }
+
+    [JsonPropertyName("thumbnailUrl")]
+    public string? ThumbnailUrl { get; set; }
 }
 
 public class SongQueueViewDto : SongQueueDto
@@ -121,10 +124,10 @@ public class SonglistDataDto
     public List<SongQueueDto> Songs { get; set; } = new();
 }
 
-// ?렦 ?湲곗뿴 怨??뺣낫 ?섏젙???꾪븳 DTO (.NET 10 record ?쒖슜)
-public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? LyricsUrl);
+// 탭 대기열 곡 정보 수정을 위한 DTO (.NET 10 record 사용)
+public record SongUpdateRequest(string? Title, string? Artist, string? Url, string? LyricsUrl, string? ThumbnailUrl = null);
 
-// ?렦 ?湲곗뿴 怨?異붽?瑜??꾪븳 DTO
+// 탭 대기열 곡 추가를 위한 DTO
 public record SongAddRequest(
     string Title, 
     string? Artist, 
@@ -133,7 +136,8 @@ public record SongAddRequest(
     int? GlobalViewerId = null,
     string? RequesterNickname = null,
     int? Cost = null,
-    CommandCostType? CostType = null
+    CommandCostType? CostType = null,
+    [property: System.Text.Json.Serialization.JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null
 );
 
 /// <summary>
@@ -145,14 +149,33 @@ public record SongOverlayDto(
     SongOverlaySettings Settings
 );
 
-public record CurrentSongDto(string Title, string? Artist);
+public record CurrentSongDto(
+    [property: JsonPropertyName("id")] int Id,
+    [property: JsonPropertyName("title")] string Title, 
+    [property: JsonPropertyName("artist")] string? Artist, 
+    [property: JsonPropertyName("videoId")] string? VideoId = null, 
+    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null);
 
-public record QueueSongDto(string Title, string? Artist, string? Requester);
+public record QueueSongDto(
+    [property: JsonPropertyName("id")] int Id,
+    [property: JsonPropertyName("title")] string Title, 
+    [property: JsonPropertyName("artist")] string? Artist, 
+    [property: JsonPropertyName("requester")] string? Requester, 
+    [property: JsonPropertyName("videoId")] string? VideoId = null, 
+    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null);
 
 public record SongOverlaySettings(
     string LiveTitleFont = "Gmarket Sans",
     string LiveArtistFont = "Gmarket Sans",
     string QueueFont = "Pretendard",
+    string LiveTitleColor = "#FFFFFF",
+    string LiveArtistColor = "#CCCCCC",
+    string QueueTitleColor = "#FFFFFF",
+    string QueueArtistColor = "#AAAAAA",
+    string QueueItemBgColor = "#0f172a",
+    string LiveCardBgColor = "#0f172a",
+    double LiveCardBgOpacity = 0.8,
+    double QueueItemBgOpacity = 0.8,
     Dictionary<string, OverlayElementDto>? Layout = null
 );
 

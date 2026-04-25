@@ -8,7 +8,7 @@
     }>();
 </script>
 
-{#if currentSong && layout?.visible !== false}
+{#if currentSong && layout?.visible !== false && settings.showCurrentSong !== false}
     <div 
         class="current-song-widget" 
         style="
@@ -19,6 +19,10 @@
             opacity: {layout?.opacity ?? 1};
             --live-title-font: {settings.liveTitleFont};
             --live-artist-font: {settings.liveArtistFont};
+            --live-title-color: {settings.liveTitleColor || '#FFFFFF'};
+            --live-artist-color: {settings.liveArtistColor || '#CCCCCC'};
+            --live-card-bg: {settings.liveCardBgColor || '#0f172a'};
+            --live-card-opacity: {settings.liveCardBgOpacity ?? 0.8};
         "
         in:fly={{ y: -20, duration: 800 }}
     >
@@ -37,16 +41,17 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
+        background: color-mix(in srgb, var(--live-card-bg) calc(var(--live-card-opacity) * 100%), transparent);
+        backdrop-filter: blur(calc(var(--live-card-opacity) * 12px));
+        border: 1px solid color-mix(in srgb, rgba(255, 255, 255, 0.15) calc(var(--live-card-opacity) * 100%), transparent);
+        border-radius: 24px;
+        padding: 24px 32px;
         color: white;
         container-type: size; /* [오시리스의 확장]: 컨테이너 크기에 반응하는 폰트 시스템 구축 */
-        text-shadow: 
-            -1px -1px 0 rgba(0, 0, 0, 0.8),  
-             1px -1px 0 rgba(0, 0, 0, 0.8),
-            -1px  1px 0 rgba(0, 0, 0, 0.8),
-             1px  1px 0 rgba(0, 0, 0, 0.8),
-             2px 2px 5px rgba(0, 0, 0, 0.5);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         -webkit-font-smoothing: antialiased;
         pointer-events: none;
+        box-shadow: 0 12px 40px color-mix(in srgb, rgba(0, 0, 0, 0.3) calc(var(--live-card-opacity) * 100%), transparent);
     }
 
     .live-title {
@@ -56,9 +61,7 @@
         line-height: 1.1;
         letter-spacing: -1px;
         font-weight: 900;
-        background: linear-gradient(to bottom, #ffffff, #e0e0e0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--live-title-color);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -67,6 +70,7 @@
     .live-artist {
         font-family: var(--live-artist-font);
         font-size: clamp(0.8rem, 20cqh, 10rem); /* [물멍]: 높이의 약 20%까지 차지하도록 확대 */
+        color: var(--live-artist-color);
         opacity: 0.9;
         margin-top: 5px;
         display: block;

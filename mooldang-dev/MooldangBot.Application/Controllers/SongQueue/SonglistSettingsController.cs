@@ -159,8 +159,15 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             await db.SaveChangesAsync();
             
-            // [물멍]: 설정 변경 알림 (필요 시 오버레이 등에 전파)
-            await notificationService.NotifySongQueueChangedAsync(profile.ChzzkUid);
+            // [이지스의 눈]: DB가 업데이트되었으므로 캐시를 무효화하여 다음 조회 시 최신 정보를 읽도록 합니다.
+            identityCache.InvalidateStreamer(profile.ChzzkUid);
+            if (!string.IsNullOrEmpty(profile.Slug))
+            {
+                identityCache.InvalidateSlug(profile.Slug);
+            }
+            
+            // [물멍]: 설정 변경 알림 및 오버레이 전체 동기화 (디자인 변경점 즉시 반영)
+            await notificationService.BroadcastSongOverlayUpdateAsync(profile.ChzzkUid);
 
             return Ok(Result<bool>.Success(true));
         }

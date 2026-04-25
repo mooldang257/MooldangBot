@@ -3,8 +3,8 @@
     import { page } from "$app/stores";
     import { apiFetch } from "$lib/api/client";
     import * as signalR from "@microsoft/signalr";
-    import { fade } from "svelte/transition";
-    import { Music, AlertCircle, ListOrdered, History } from "lucide-svelte";
+    import { fade, fly } from "svelte/transition";
+    import { Music, AlertCircle, ListOrdered, History, Settings, Settings2 } from "lucide-svelte";
 
     import AdminHeader from "$lib/features/songlist/ui/AdminHeader.svelte";
     import OmakaseManagement from "$lib/features/songlist/ui/OmakaseManagement.svelte";
@@ -12,6 +12,7 @@
     import CommandManagement from "$lib/features/songlist/ui/CommandManagement.svelte"; // [NEW]
     import PlaybackFocus from "$lib/features/songlist/ui/PlaybackFocus.svelte";
     import TimelineList from "$lib/features/songlist/ui/TimelineList.svelte";
+    import OverlaySettings from "$lib/features/songlist/ui/OverlaySettings.svelte";
     import { userState } from "$lib/core/state/user.svelte";
 
     // 🌊 [ Osiris ]: Mock Data (유튜브 MR과 LRC 가사가 포함된 영롱한 샘플들)
@@ -51,7 +52,7 @@
 
     let visibleOmakases = $derived(commandList.filter((c: any) => c.type === 'omakase'));
     let errorMessage = $state("");
-    let showCompleted = $state(false);
+    let activeTab = $state<'queue' | 'history' | 'settings'>('queue');
     let editingSong = $state<any | null>(null); 
     let isManualSearching = $state(false); 
 
@@ -141,6 +142,28 @@
         }
     });
 
+    // [물멍]: 대기열 순서 변경 감지 및 서버 동기화
+    let lastOrder = $state<string>("");
+    $effect(() => {
+        const currentOrder = queue.map(s => s.id).join(',');
+        if (isLoaded && currentOrder !== lastOrder) {
+            untrack(async () => {
+                lastOrder = currentOrder;
+                if (!streamerId) return;
+                
+                try {
+                    await apiFetch(`/api/song/${streamerId}/reorder`, {
+                        method: "PUT",
+                        body: JSON.stringify(queue.map(s => s.id))
+                    });
+                    console.log("🌊 [순서 동기화] 대기열 순서가 서버에 반영되었습니다.");
+                } catch (err) {
+                    console.error("순서 동기화 실패:", err);
+                }
+            });
+        }
+    });
+
     const initBridge = async () => {
         if (isLoaded) return;
         try {
@@ -177,8 +200,15 @@
     };
 
     onMount(async () => {
+        // [물멍]: URL 파라미터에서 초기 탭 상태 확인
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'settings') {
+            activeTab = 'settings';
+        }
+
         // [물멍]: onMount 시점에서 아직 userState가 준비되지 않았을 수 있으므로, 
-        // 500ms 이후에도 uid가 없으면 에러를 띄우는 Fail-safe 전략을 취합니다.
+        // 1000ms 이후에도 uid가 없으면 에러를 띄우는 Fail-safe 전략을 취합니다.
         setTimeout(() => {
             if (!streamerId && !isLoaded) {
                 errorMessage = "로그인 정보가 유효하지 않거나 물댕봇 연결이 지연되고 있습니다. 다시 로그인해 주세요.";
@@ -267,6 +297,7 @@
                     title: song.title,
                     artist: song.artist,
                     url: song.url,
+                    thumbnailUrl: song.thumbnailUrl, // [물멍] 썸네일 전송 추가
                     lyricsUrl: song.lyrics,
                     status: 0 // Pending
                 })
@@ -306,6 +337,7 @@
                     title: updatedSong.title,
                     artist: updatedSong.artist,
                     url: updatedSong.url,
+                    thumbnailUrl: updatedSong.thumbnailUrl, // [물멍] 수정 시 썸네일 유지
                     lyricsUrl: updatedSong.lyrics
                 })
             });
@@ -321,8 +353,9 @@
             const targetUid = streamerId;
             if (!targetUid) return;
 
+            const parsedDesign = JSON.parse(designSettings || "{}");
             const payload = {
-                designSettingsJson: designSettings,
+                designSettingsJson: JSON.stringify(parsedDesign),
                 songRequestCommands: commandList
                     .filter(c => c.type === 'songlist')
                     .map(c => ({ 
@@ -425,115 +458,142 @@
         <div
             class="max-w-screen-2xl mx-auto px-4 md:px-8 pt-2 md:pt-4 pb-8 space-y-4"
         >
-            <!-- (나머지 UI 섹션 원본 유지) -->
-            <div style="isolation: isolate;">
-                <AdminHeader 
-                    bind:isSonglistActive={isSonglistActive} 
-                    bind:isOmakaseActive={isOmakaseActive} 
-                    bind:isCommandActive={isCommandActive} 
-                />
-            </div>
-
-            {#if isCommandActive}
-                <div class="relative z-20">
-                    <CommandManagement 
-                        bind:commands={commandList} 
-                        onSync={handleSyncSettings}
-                    />
-                </div>
-            {/if}
-
-            {#if isOmakaseActive}
-                <div class="relative z-10">
-                    <OmakaseManagement omakases={visibleOmakases} bind:selectedOmakase />
-                </div>
-            {/if}
-
-            <div
-                id="manual-request-container"
-                class="scroll-mt-32 relative transition-all duration-300 {isManualSearching
-                    ? 'z-50'
-                    : 'z-0'}"
-                style="isolation: isolate;"
-            >
-                <ManualRequestForm
-                    {streamerId}
-                    bind:selectedOmakase
-                    bind:editingSong
-                    bind:showResults={isManualSearching}
-                    onAddManualSong={handleAddManualSong}
-                    onUpdateSong={handleUpdateSong}
-                />
-            </div>
-
-            <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
-                <section
-                    class="lg:col-span-8 flex flex-col gap-6 h-full"
-                    style="isolation: isolate;"
+            <!-- [물멍]: 프리미엄 탭 시스템 (룰렛/명령어 관리 스타일 계승) -->
+            <div class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar mb-6 px-1">
+                <button
+                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab !== 'settings' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                    onclick={() => activeTab = 'queue'}
                 >
-                    <PlaybackFocus
-                        bind:currentSong
-                        onComplete={handleCompleteSong}
-                    />
-                </section>
-
-                <section class="lg:col-span-4 h-full flex flex-col gap-4">
-                    <div
-                        class="flex p-1 bg-slate-100 rounded-2xl border border-slate-200 relative z-10 shadow-sm pointer-events-auto"
-                        style="isolation: isolate;"
-                    >
-                        <button
-                            type="button"
-                            onclick={() => {
-                                showCompleted = false;
-                                editingSong = null;
-                            }}
-                            class="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all relative z-10 focus:outline-none {!showCompleted
-                                ? 'bg-white shadow-lg text-primary ring-1 ring-black/5'
-                                : 'text-slate-500 hover:text-slate-700'}"
-                        >
-                            <ListOrdered size={16} />
-                            <span>대기열</span>
-                            <span
-                                class="bg-primary/10 px-2 py-0.5 rounded-full text-[10px]"
-                                >{queue.length}</span
-                            >
-                        </button>
-                        <button
-                            type="button"
-                            onclick={() => {
-                                showCompleted = true;
-                                editingSong = null;
-                            }}
-                            class="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all relative z-10 focus:outline-none {showCompleted
-                                ? 'bg-white shadow-lg text-coral-blue ring-1 ring-black/5'
-                                : 'text-slate-500 hover:text-slate-700'}"
-                        >
-                            <History size={16} />
-                            <span>완료 목록</span>
-                            <span
-                                class="bg-coral-blue/10 px-2 py-0.5 rounded-full text-[10px]"
-                                >{completed.length}</span
-                            >
-                        </button>
+                    <div class="flex items-center gap-2">
+                        <Music size={18} />
+                        <span class="text-lg tracking-tighter">신청곡 관리</span>
                     </div>
+                    {#if activeTab !== 'settings'}
+                        <div
+                            class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]"
+                            in:fly={{ y: 5 }}
+                        ></div>
+                    {/if}
+                </button>
 
-                    <div style="isolation: isolate;">
-                        <TimelineList
-                            bind:queue
-                            bind:completed
-                            {showCompleted}
-                            {editingSong}
-                            onPlay={handlePlaySong}
-                            onEdit={handleEditSong}
-                            onDeleteItems={handleDeleteItems}
-                            onRevert={handleRevertSong}
-                            onRemoveHistory={handleRemoveHistory}
-                            onClearHistory={handleClearHistory}
+                <button
+                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'settings' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                    onclick={() => activeTab = 'settings'}
+                >
+                    <div class="flex items-center gap-2">
+                        <Settings2 size={18} />
+                        <span class="text-lg tracking-tighter">오버레이 환경설정</span>
+                    </div>
+                    {#if activeTab === 'settings'}
+                        <div
+                            class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]"
+                            in:fly={{ y: 5 }}
+                        ></div>
+                    {/if}
+                </button>
+            </div>
+
+            {#if activeTab === 'settings'}
+                <div class="mt-6" in:fade>
+                    <OverlaySettings 
+                        bind:designSettings={designSettings} 
+                        onSave={handleSyncSettings} 
+                    />
+                </div>
+            {:else}
+                <div style="isolation: isolate;">
+                    <AdminHeader 
+                        bind:isSonglistActive={isSonglistActive} 
+                        bind:isOmakaseActive={isOmakaseActive} 
+                        bind:isCommandActive={isCommandActive} 
+                    />
+                </div>
+
+                {#if isCommandActive}
+                    <div class="relative z-20">
+                        <CommandManagement 
+                            bind:commands={commandList} 
+                            onSync={handleSyncSettings}
                         />
                     </div>
-                </section>
-            </main>
+                {/if}
+
+                {#if isOmakaseActive}
+                    <div class="relative z-10">
+                        <OmakaseManagement omakases={visibleOmakases} bind:selectedOmakase />
+                    </div>
+                {/if}
+
+                <div
+                    id="manual-request-container"
+                    class="scroll-mt-32 relative transition-all duration-300 {isManualSearching
+                        ? 'z-50'
+                        : 'z-0'}"
+                    style="isolation: isolate;"
+                >
+                    <ManualRequestForm
+                        {streamerId}
+                        bind:selectedOmakase
+                        bind:editingSong
+                        bind:showResults={isManualSearching}
+                        onAddManualSong={handleAddManualSong}
+                        onUpdateSong={handleUpdateSong}
+                    />
+                </div>
+
+                <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
+                    <section
+                        class="lg:col-span-8 flex flex-col gap-6 h-full"
+                        style="isolation: isolate;"
+                    >
+                        <PlaybackFocus
+                            bind:currentSong
+                            onComplete={handleCompleteSong}
+                        />
+                    </section>
+
+                    <section class="lg:col-span-4 h-full flex flex-col gap-4">
+                        <!-- [물멍]: 우측 사이드바 전용 탭 (대기열/기록만 유지) -->
+                        <div class="flex items-center bg-slate-200/50 p-1.5 rounded-[1.5rem] w-full shadow-inner border border-white/40">
+                            <button 
+                                onclick={() => activeTab = 'queue'}
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[1.2rem] text-xs font-black transition-all {activeTab === 'queue' ? 'bg-white text-primary shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}"
+                            >
+                                <ListOrdered size={14} />
+                                <span>대기열</span>
+                                {#if queue.length > 0}
+                                    <span class="px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px]">{queue.length}</span>
+                                {/if}
+                            </button>
+                            <button 
+                                onclick={() => activeTab = 'history'}
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[1.2rem] text-xs font-black transition-all {activeTab === 'history' ? 'bg-white text-primary shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}"
+                            >
+                                <History size={14} />
+                                <span>기록</span>
+                                {#if completed.length > 0}
+                                    <span class="px-1.5 py-0.5 bg-slate-400/10 text-slate-500 rounded-full text-[10px]">{completed.length}</span>
+                                {/if}
+                            </button>
+                        </div>
+
+                        <div style="isolation: isolate;" class="flex-1 min-h-[500px]">
+                            <TimelineList
+                                bind:queue
+                                bind:completed
+                                showCompleted={activeTab === 'history'}
+                                {editingSong}
+                                onPlay={handlePlaySong}
+                                onEdit={handleEditSong}
+                                onDeleteItems={handleDeleteItems}
+                                onRevert={handleRevertSong}
+                                onRemoveHistory={handleRemoveHistory}
+                                onClearHistory={handleClearHistory}
+                            />
+                        </div>
+                    </section>
+                </main>
+            {/if}
         </div>
     {/if}
 </div>

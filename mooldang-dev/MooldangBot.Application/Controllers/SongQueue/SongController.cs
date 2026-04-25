@@ -68,7 +68,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
 
             var pagedSource = (status == SongStatus.Pending 
-                ? query.OrderBy(s => s.Id) 
+                ? query.OrderBy(s => s.SortOrder).ThenBy(s => s.Id) 
                 : query.OrderByDescending(s => s.Id))
                 .Select(s => new SongQueueViewDto
                 {
@@ -104,7 +104,8 @@ namespace MooldangBot.Application.Controllers.SongQueue
                         ?? db.MasterSongLibraries
                             .Where(m => m.SongLibraryId == s.SongLibraryId)
                             .Select(m => m.LyricsUrl)
-                            .FirstOrDefault()
+                            .FirstOrDefault(),
+                    ThumbnailUrl = s.ThumbnailUrl
                 });
 
             var pagedResult = await pagedSource.ToPagedListAsync(effectiveLimit, s => s.Id);
@@ -141,6 +142,8 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 Cost = request.Cost,
                 CostType = request.CostType,
                 RequesterNickname = request.RequesterNickname, // [물멍] 자동 추가 시 전달된 닉네임 사용
+                VideoId = request.Url, // [물멍] URL을 VideoId로 활용
+                ThumbnailUrl = request.ThumbnailUrl, // [물멍] 전달된 썸네일 저장
                 CreatedAt = KstClock.Now
             };
             
@@ -309,6 +312,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             if (!string.IsNullOrWhiteSpace(request.Title)) songItem.Title = request.Title;
             if (request.Artist != null) songItem.Artist = request.Artist;
+            if (request.ThumbnailUrl != null) songItem.ThumbnailUrl = request.ThumbnailUrl;
             
             if (songItem.SongLibraryId != updatedLibraryId)
             {
@@ -364,6 +368,41 @@ namespace MooldangBot.Application.Controllers.SongQueue
             }
 
             return Ok(Result<string>.Success("삭제할 내역이 없습니다."));
+        }
+
+        [HttpPut("reorder")]
+        public async Task<IActionResult> ReorderSongs(string chzzkUid, [FromBody] List<int> ids)
+        {
+            var profile = await GetCachedProfileAsync(chzzkUid);
+            if (profile == null) 
+                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
+
+            var songs = await db.SongQueues
+                .Where(s => s.StreamerProfileId == profile.Id && ids.Contains(s.Id) && s.Status == SongStatus.Pending && !s.IsDeleted)
+                .ToListAsync();
+
+            if (!songs.Any())
+                return Ok(Result<bool>.Success(true));
+
+            // [물멍]: 전달받은 ID 순서대로 SortOrder 업데이트
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var id = ids[i];
+                var song = songs.FirstOrDefault(s => s.Id == id);
+                if (song != null)
+                {
+                    song.SortOrder = i + 1;
+                }
+            }
+
+            await db.SaveChangesAsync();
+
+            // [MODERN]: 인메모리 버퍼(SongBookState) 순서 동기화
+            songBuffer.ReorderSongs(chzzkUid, ids);
+
+            await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+            
+            return Ok(Result<bool>.Success(true));
         }
 
         private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)

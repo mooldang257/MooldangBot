@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { fade, fly } from 'svelte/transition';
-    import { Music, Radio, Waves, Play, Pause, ListMusic, Languages, RotateCcw, RotateCw, Subtitles, Volume2, VolumeX } from 'lucide-svelte';
+    import { Music, Radio, Waves, Play, Pause, ListMusic, Languages, RotateCcw, RotateCw, Subtitles, Volume2, VolumeX, ExternalLink } from 'lucide-svelte';
 
     // [Osiris]: 현재 재생 중인 곡 상태 공유
     let { 
@@ -22,6 +22,7 @@
     let isMuted = $state(false);
     let timer: any = null;
     let lastCuedId: string | null = null; // [물멍]: 중복 예약 방지를 위한 캐시
+    let isEmbedBlocked = $state(false); // [물멍]: 임베드 차단 감지 상태
 
     // [물멍]: LRC 가사 파싱 엔진
     const parsedLyrics = $derived.by(() => {
@@ -85,7 +86,8 @@
                     lastCuedId = youtubeId;
                     currentTime = 0;
                     duration = 0;
-                    playerState = -1; // [물멍]: 신규 곡 탑재 시 상태값을 초기화하여 세모(Play) 아이콘 유도
+                    playerState = -1;
+                    isEmbedBlocked = false; // [물멍]: 새 곡 로드 시 차단 상태 초기화
                 }
             } else {
                 initPlayer();
@@ -145,6 +147,9 @@
                 },
                 onError: (e: any) => {
                     console.error("[물멍] 유튜브 항해 오류:", e.data);
+                    if (e.data === 150 || e.data === 101) {
+                        isEmbedBlocked = true; // [물멍]: 임베드 차단 감지
+                    }
                 }
             }
         });
@@ -224,6 +229,16 @@
         }
     };
 
+    // [물멍]: 임베드 차단 우회용 팝업 윈도우
+    const openPopup = () => {
+        if (!currentSong?.url) return;
+        window.open(
+            currentSong.url,
+            'MR_Player',
+            'width=720,height=480,top=100,left=100,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+        );
+    };
+
     const activeMode = $derived(
         viewMode === 'auto' 
             ? (youtubeId ? 'video' : 'art') 
@@ -292,7 +307,7 @@
             </div>
 
             <!-- 스위처 버튼 -->
-            <div class="absolute top-6 right-6 z-40 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="absolute top-6 right-6 z-40 flex flex-col gap-2 transition-opacity {isEmbedBlocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}">
                 <!-- 자막(오버레이) 토글 버튼 -->
                 {#if currentSong.lyrics}
                     <button 
@@ -315,6 +330,13 @@
                 {#if currentSong.lyrics}
                     <button onclick={() => viewMode = 'lyrics'} class="p-2.5 rounded-xl {viewMode === 'lyrics' ? 'bg-emerald-500 text-white' : 'bg-white/40 text-white'} backdrop-blur-md transition-all">
                         <Languages size={18} />
+                    </button>
+                {/if}
+
+                <!-- [물멍]: 팝업으로 열기 (임베드 차단 시 강조) -->
+                {#if currentSong?.url}
+                    <button onclick={openPopup} class="p-2.5 rounded-xl backdrop-blur-md transition-all border {isEmbedBlocked ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/50 animate-pulse' : 'bg-white/20 text-white hover:bg-rose-500 hover:text-white border-white/20'}" title={isEmbedBlocked ? '⚠️ 임베드 차단됨 — 클릭하여 팝업으로 재생' : '팝업으로 열기'}>
+                        <ExternalLink size={18} />
                     </button>
                 {/if}
             </div>

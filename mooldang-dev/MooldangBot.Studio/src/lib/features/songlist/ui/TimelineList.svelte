@@ -42,7 +42,8 @@
                 sortableInstance = Sortable.create(queueEl, {
                     animation: 250,
                     easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    handle: '.drag-handle',
+                    filter: 'button', // [물멍]: 버튼 영역에서는 드래그가 시작되지 않도록 방어
+                    preventOnFilter: false,
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
                     dragClass: 'sortable-drag',
@@ -133,21 +134,14 @@
                     <div 
                         role="button"
                         tabindex="0"
-                        class="group/item flex items-center gap-3 p-4 bg-white/60 rounded-2xl border transition-all duration-300 w-full text-left {editingSong?.id === song.id ? 'border-amber-400 bg-amber-50/50 shadow-[0_0_20px_rgba(251,191,36,0.3)] ring-1 ring-amber-400' : selectedIds.includes(song.id) ? 'ring-2 ring-primary border-primary/20 bg-primary/5' : 'border-white/50 hover:border-primary/20 hover:bg-white/80'}"
+                        class="group/item flex items-center gap-3 p-4 bg-white/60 rounded-2xl border transition-all duration-300 w-full text-left cursor-grab active:cursor-grabbing {editingSong?.id === song.id ? 'border-amber-400 bg-amber-50/50 shadow-[0_0_20px_rgba(251,191,36,0.3)] ring-1 ring-amber-400' : selectedIds.includes(song.id) ? 'ring-2 ring-primary border-primary/20 bg-primary/5' : 'border-white/50 hover:border-primary/20 hover:bg-white/80'}"
                         onclick={() => toggleSelect(song.id)}
                         onkeydown={(e) => e.key === 'Enter' && toggleSelect(song.id)}
                     >
-                        <!-- 드래그 핸들 -->
-                        <div 
-                            role="button"
-                            tabindex="0"
-                            class="drag-handle cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 p-1 flex-shrink-0"
-                            onclick={(e) => e.stopPropagation()}
-                            onkeydown={(e) => e.key === 'Enter' && e.stopPropagation()}
-                        >
-                            <GripVertical size={18} />
-                        </div>
+
     
+
+
                         <!-- 곡 정보 -->
                         <div class="flex-1 min-w-0 pointer-events-none">
                             <div class="flex items-center gap-2 mb-0.5">
