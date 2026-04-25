@@ -1,0 +1,48 @@
+# [MooldangBot]: Gateway Layer
+# Traefik (Edge Router) & Cloudflare Tunnel (Secure Bridge)
+
+services:
+  traefik:
+    image: traefik:v3.6.13
+    container_name: mooldang-prod-traefik
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /var/log/traefik:/var/log/traefik
+    networks:
+      - mooldang_prod_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`bot.mooldang.com`) && PathPrefix(`/traefik`)" # 대시보드 접근 보호 강화 필요 시 수정
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-shield@file"
+      - "traefik.env=prod"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: mooldang-prod-tunnel
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    networks:
+      - mooldang_prod_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  mooldang_prod_net:
+    external: true

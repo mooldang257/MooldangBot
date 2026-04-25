@@ -114,7 +114,14 @@ fi
 
 # 5. 함대 기동
 echo -e "${GREEN}🚀 선택한 대상에게 버전($SELECTED_VERSION)을 적용합니다...${NC}"
-docker compose -f docker-compose.app.yml up -d ${DEPLOY_SERVICES[@]}
+
+if [ "$DEPLOY_APPS" = true ]; then
+    docker compose -f docker-compose.app.yml up -d ${DEPLOY_SERVICES[@]}
+fi
+
+if [ "$DEPLOY_UI" = true ]; then
+    docker compose -f docker-compose.ui.yml up -d ${DEPLOY_SERVICES[@]}
+fi
 
 echo -e "${GREEN}✅ 배포가 완료되었습니다!${NC}"
 
