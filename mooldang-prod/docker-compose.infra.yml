@@ -95,7 +95,7 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=(Host(`bot.mooldang.com`) || Host(`www.mooldang.com`)) && PathPrefix(`/admin/monitoring`)"
+      - "traefik.http.routers.grafana.rule=Host(`bot.mooldang.com`) && PathPrefix(`/admin/monitoring`)"
       - "traefik.http.routers.grafana.entrypoints=web"
       - "traefik.http.routers.grafana.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
