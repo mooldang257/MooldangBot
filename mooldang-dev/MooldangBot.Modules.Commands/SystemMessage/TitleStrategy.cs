@@ -46,12 +46,13 @@ public class TitleStrategy(
             // 2. [명령 하달]: 봇 엔진에게 방제 변경 명령 송출 (비동기 발행)
             await botService.UpdateTitleAsync(notification.Profile, newTitle, notification.SenderId, ct);
 
-            string template = string.IsNullOrEmpty(responseTemplate) 
-                ? "✅ 방송 제목 변경 명령이 전달되었습니다! {내용} 🖋️" 
-                : responseTemplate;
+            if (string.IsNullOrWhiteSpace(responseTemplate))
+            {
+                return CommandExecutionResult.Success();
+            }
             
             string processedReply = await dynamicEngine.ProcessMessageAsync(
-                template.Replace("{내용}", newTitle), 
+                responseTemplate.Replace("{내용}", newTitle).Replace("$(내용)", newTitle), 
                 notification.Profile.ChzzkUid, 
                 notification.SenderId
             );

@@ -96,18 +96,17 @@ public class OmakaseStrategy(
             logger.LogInformation("✅ [Omakase Success] {Nickname} -> {Title}", notification.Username, songTitle);
 
             // 4. [동적 응답]: 변수 치환 후 채팅 발송
-            string responseTemplate = string.IsNullOrEmpty(command.ResponseText)
-                ? "{닉네임}님이 '{곡제목}'을(를) 주문하셨습니다! 🍱"
-                : "{닉네임}님이 " + command.ResponseText + " 주문을 완료했습니다! ✨";
+            if (!string.IsNullOrWhiteSpace(command.ResponseText))
+            {
+                string processedReply = await dynamicEngine.ProcessMessageAsync(
+                    command.ResponseText.Replace("$(곡제목)", songTitle, StringComparison.OrdinalIgnoreCase),
+                    notification.Profile.ChzzkUid,
+                    notification.SenderId,
+                    notification.Username
+                );
 
-            string processedReply = await dynamicEngine.ProcessMessageAsync(
-                responseTemplate.Replace("{곡제목}", songTitle, StringComparison.OrdinalIgnoreCase),
-                notification.Profile.ChzzkUid,
-                notification.SenderId,
-                notification.Username
-            );
-
-            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+                await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            }
             
             return CommandExecutionResult.Success();
         }

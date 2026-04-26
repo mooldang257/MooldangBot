@@ -172,10 +172,8 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
         int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
         if (_shards.TryGetValue(shardId, out var shard))
         {
-            // WebSocketShard 내부에서 DisconnectAsync 구현 (토큰 취소 등)
-            // 현재는 ConnectAsync 내부 루프가 chzzkUid 일치 여부를 체크하므로 
-            // 직접적인 강제 종료 로직을 Shard에 추가하는 것이 좋습니다.
             _logger.LogInformation("🔌 [Sharding] 채널 {ChzzkUid}의 연결 해제를 요청합니다. (샤드 #{ShardId}).", chzzkUid, shardId);
+            await shard.DisconnectAsync(chzzkUid);
         }
     }
     

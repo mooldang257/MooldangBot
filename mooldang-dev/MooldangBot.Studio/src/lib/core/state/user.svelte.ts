@@ -11,6 +11,7 @@ class UserState {
     profileImageUrl = $state(""); // profileImageUrl
     overlayToken = $state("");    // overlayToken [v6.3.0]
     isAuthenticated = $state(false); // isAuthenticated
+    isActive = $state(false);        // isActive (봇 활성화 여부)
 
     /**
      * 서버 사이드 데이터를 전역 상태로 주입(Hydration)합니다.
@@ -23,6 +24,7 @@ class UserState {
             this.slug = "";
             this.profileImageUrl = "";
             this.isAuthenticated = false;
+            this.isActive = false;
             return;
         }
 
@@ -41,6 +43,7 @@ class UserState {
 
         // [물멍]: 백엔드가 보낸 인증 명시적 상태를 우선하고, 없으면 데이터 존재 여부로 판단
         this.isAuthenticated = (data.isAuthenticated !== undefined) ? data.isAuthenticated : true;
+        this.isActive = data.isActive || false;
         this.overlayToken = data.overlayToken || "";
         
         console.log(`🛡️ [Bridge] 물댕봇 관제 시스템 가동 - 접속자: ${this.channelName} (${this.uid})`);

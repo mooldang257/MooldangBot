@@ -21,17 +21,20 @@ public class ChzzkBotService : IChzzkBotService
     private readonly IChzzkCommandSender _commandSender;
     private readonly IDynamicQueryEngine _dynamicEngine; 
     private readonly ITokenRenewalService _renewalService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ChzzkBotService> _logger;
 
     public ChzzkBotService(
         IChzzkCommandSender commandSender, 
         IDynamicQueryEngine dynamicEngine, 
         ITokenRenewalService renewalService,
+        IServiceScopeFactory scopeFactory,
         ILogger<ChzzkBotService> logger)
     {
         _commandSender = commandSender;
         _dynamicEngine = dynamicEngine;
         _renewalService = renewalService;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -99,8 +102,19 @@ public class ChzzkBotService : IChzzkBotService
 
     public async Task EnsureConnectionAsync(string chzzkUid, bool forceFresh = false)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+
+        if (streamer == null || !streamer.IsActive || !streamer.IsMasterEnabled)
+        {
+            _logger.LogInformation($"🔌 [송신 엔드포인트 명령] {chzzkUid} 채널의 연결 해제를 요청합니다. (비활성/마스터비활성 상태)");
+            var disconnect = new DisconnectCommand(Guid.NewGuid(), chzzkUid, DateTimeOffset.UtcNow);
+            await _commandSender.SendAsync(disconnect);
+            return;
+        }
+
         _logger.LogInformation($"🔄 [송신 엔드포인트 명령] {chzzkUid} 채널에 대한 재연결을 시도합니다.");
-        
         var command = new ReconnectCommand(Guid.NewGuid(), chzzkUid, DateTimeOffset.UtcNow);
         await _commandSender.SendAsync(command);
     }

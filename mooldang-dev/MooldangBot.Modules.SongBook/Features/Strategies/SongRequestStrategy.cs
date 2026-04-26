@@ -36,7 +36,8 @@ public class SongRequestStrategy(IMediator mediator) : ICommandFeatureStrategy
 
         if (result.IsSuccess)
         {
-            return CommandExecutionResult.Success($"'{arguments}' 곡이 신청되었습니다.");
+            // [v19.1] 룰렛과 마찬가지로 신청 확인은 오버레이 알림으로 대체하고 채팅 응답은 생략합니다.
+            return CommandExecutionResult.Success();
         }
         else
         {

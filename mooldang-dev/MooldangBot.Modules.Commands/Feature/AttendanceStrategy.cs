@@ -95,30 +95,30 @@ public class AttendanceStrategy(
         await db.SaveChangesAsync(ct);
 
         // [Phase 5] 포인트 적립은 Point Module에게 이양
-        if (command.Cost > 0)
+        // [v19.2]: 명령어 비용(Cost)이 아닌 스트리머 프로필에 설정된 '출석 보너스'를 가중치로 사용합니다.
+        if (streamer.PointPerAttendance > 0)
         {
             var mediator = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
             await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
                 StreamerUid: notification.Profile.ChzzkUid,
                 ViewerUid: notification.SenderId,
                 Nickname: notification.Username,
-                Amount: command.Cost,
+                Amount: streamer.PointPerAttendance,
                 CurrencyType: MooldangBot.Modules.Point.Enums.PointCurrencyType.ChatPoint
             ), ct);
         }
 
-        string responseTemplate = string.IsNullOrWhiteSpace(command.ResponseText)
-            ? "{닉네임}님, 오늘 첫 출석! 현재 {출석일수}일차이며 {포인트}포인트를 보유 중입니다."
-            : command.ResponseText;
+        if (!string.IsNullOrWhiteSpace(command.ResponseText))
+        {
+            string processedReply = await dynamicEngine.ProcessMessageAsync(
+                command.ResponseText,
+                notification.Profile.ChzzkUid,
+                notification.SenderId,
+                notification.Username
+            );
 
-        string processedReply = await dynamicEngine.ProcessMessageAsync(
-            responseTemplate,
-            notification.Profile.ChzzkUid,
-            notification.SenderId,
-            notification.Username
-        );
-
-        await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+        }
         
         return CommandExecutionResult.Success();
     }

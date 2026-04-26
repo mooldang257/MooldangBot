@@ -357,14 +357,14 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         var (costType, cost, response, role) = keyword switch
         {
-            "!신청" => (CommandCostType.Cheese, 1000, "신청곡 룰렛", CommandRole.Viewer),
-            "!룰렛" => (CommandCostType.Cheese, 1000, "행운의 룰렛", CommandRole.Viewer),
-            "!출석" => (CommandCostType.None, 10, "{닉네임}님 출석 고마워요! 현재 {출석일수}일차이며 {포인트}포인트를 보유 중입니다.", CommandRole.Viewer),
-            "!포인트" => (CommandCostType.None, 0, "🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)", CommandRole.Viewer),
-            "!송리스트" => (CommandCostType.None, 0, "송리스트 상태 변경", CommandRole.Manager),
-            "!공지" => (CommandCostType.None, 0, "공지사항", CommandRole.Manager),
-            "!방제" => (CommandCostType.None, 0, "제목 변경", CommandRole.Manager),
-            "!카테고리" => (CommandCostType.None, 0, "카테고리 변경", CommandRole.Manager),
+            "!신청" => (CommandCostType.Cheese, 1000, "원하시는 노래를 신청합니다! 🎵", CommandRole.Viewer),
+            "!룰렛" => (CommandCostType.Cheese, 1000, "행운의 룰렛을 돌립니다! 🎁", CommandRole.Viewer),
+            "!출석" => (CommandCostType.None, 0, "$(닉네임)님 출석 고마워요! 현재 $(누적출석일수)일차이며 $(포인트)포인트를 보유 중입니다.", CommandRole.Viewer),
+            "!포인트" => (CommandCostType.None, 0, "🪙 $(닉네임)님의 보유 포인트는 $(포인트)점입니다! (누적 출석: $(누적출석일수)일)", CommandRole.Viewer),
+            "!송리스트" => (CommandCostType.None, 0, "$(닉네임)님, 곡 신청 기능이 $(송리스트상태) 되었습니다. 🎵", CommandRole.Manager),
+            "!공지" => (CommandCostType.None, 0, "", CommandRole.Manager),
+            "!방제" => (CommandCostType.None, 0, "✅ 방송 제목이 [$(내용)](으)로 변경되었습니다! 🖋️", CommandRole.Manager),
+            "!카테고리" => (CommandCostType.None, 0, "✅ 카테고리가 [$(내용)](으)로 변경되었습니다! 🏷️", CommandRole.Manager),
             _ => (CommandCostType.None, 0, "", CommandRole.Viewer)
         };
 

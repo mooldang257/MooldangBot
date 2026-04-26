@@ -5,6 +5,7 @@
     import { gsap } from 'gsap';
     import { userState } from '$lib/core/state/user.svelte';
     import ConfirmModal from '$lib/core/ui/ConfirmModal.svelte';
+    import { apiFetch } from '$lib/api/client';
 
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
     let { data, children } = $props();
@@ -32,6 +33,24 @@
 
     const logout = async () => {
         window.location.href = '/api/auth/logout';
+    };
+
+    const toggleBotActive = async () => {
+        if (!userState.uid) return;
+        
+        try {
+            const nextStatus = !userState.isActive;
+            const res = await apiFetch<any>(`/api/config/bot/${userState.uid}/status`, {
+                method: 'PATCH',
+                body: { isEnabled: nextStatus }
+            });
+            
+            if (res.success) {
+                userState.isActive = nextStatus;
+            }
+        } catch (error) {
+            console.error('Failed to toggle bot status:', error);
+        }
     };
 
     const handleRoleSelect = (roleId: string) => {
@@ -88,6 +107,22 @@
                 <span class="text-xl md:text-2xl font-[1000] text-primary tracking-tighter leading-none">물댕봇</span>
                 <span class="text-[8px] md:text-[10px] font-black text-primary/50 tracking-widest uppercase">Studio</span>
             </div>
+
+            <!-- [v19.2] 봇 활성화 토글 버튼 (개발/운영 분리용) -->
+            {#if userState.isAuthenticated}
+                <div class="ml-2 md:ml-4 flex items-center gap-2 bg-slate-50/50 p-1 md:p-1.5 px-2 md:px-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <span class="text-[8px] md:text-[10px] font-black {userState.isActive ? 'text-emerald-500' : 'text-slate-400'} uppercase tracking-tighter">
+                        {userState.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <button 
+                        onclick={toggleBotActive}
+                        class="relative inline-flex h-4 w-8 md:h-5 md:w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {userState.isActive ? 'bg-emerald-500' : 'bg-slate-300'}"
+                        aria-label="Toggle Bot Status"
+                    >
+                        <span class="pointer-events-none inline-block h-3 w-3 md:h-4 md:w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {userState.isActive ? 'translate-x-4 md:translate-x-5' : 'translate-x-0'}"></span>
+                    </button>
+                </div>
+            {/if}
         </a>
 
         <div class="flex items-center gap-4 shrink-0">

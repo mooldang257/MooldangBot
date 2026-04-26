@@ -79,7 +79,8 @@ namespace MooldangBot.Application.Controllers.Auth
                         profileImageUrl = profile.ProfileImageUrl ?? "",
                         chzzkUid = profile.ChzzkUid,
                         slug = profile.Slug,
-                        overlayToken = overlayToken
+                        overlayToken = overlayToken,
+                        isActive = profile.IsActive
                     }));
                 }
                 else

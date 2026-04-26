@@ -56,13 +56,14 @@ public class CategoryStrategy(
             // 3. [명령 하달]: 봇 엔진에게 수색 및 반영을 일임합니다. (비동기 발행)
             await botService.UpdateCategoryAsync(notification.Profile, searchKeyword, notification.SenderId, token: ct);
 
-            string template = string.IsNullOrEmpty(responseTemplate) 
-                ? "✅ 카테고리를 [{내용}](으)로 변경 요청했습니다! 🎈" 
-                : responseTemplate;
+            if (string.IsNullOrWhiteSpace(responseTemplate))
+            {
+                return CommandExecutionResult.Success();
+            }
             
             // [v2.7] 템플릿 변수 치환 정밀화: {내용}, ${내용}, $(내용) 등 모든 규격 지원
             string processedReply = System.Text.RegularExpressions.Regex.Replace(
-                template, 
+                responseTemplate, 
                 @"[\$]?[\{\(](내용|카테고리)[\}\)]", 
                 searchKeyword, 
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase

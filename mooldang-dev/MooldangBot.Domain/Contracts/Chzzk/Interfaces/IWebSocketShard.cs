@@ -16,4 +16,5 @@ public interface IWebSocketShard : IDisposable
     bool IsConnected(string chzzkUid);
 
     Task ConnectAsync(string chzzkUid, string url, string accessToken);
+    Task DisconnectAsync(string chzzkUid);
 }

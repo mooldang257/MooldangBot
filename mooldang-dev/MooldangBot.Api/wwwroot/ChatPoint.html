@@ -298,8 +298,8 @@
 
             <div class="form-group">
                 <label for="attendanceReply">출석 봇 응답 메시지 포맷 (선택)</label>
-                <span class="desc">시청자가 출석했을 때 봇이 회신할 메시지입니다. 비워두면 봇이 채팅을 치지 않습니다.<br><b>사용 가능 변수:</b> {닉네임}, {연속출석일수}, {누적출석일수}, {마지막출석일}</span>
-                <input type="text" id="attendanceReply" class="form-control" placeholder="{닉네임}님 출석 고마워요! ({연속출석일수}일 연속)">
+                <span class="desc">시청자가 출석했을 때 봇이 회신할 메시지입니다. 비워두면 봇이 채팅을 치지 않습니다.<br><b>사용 가능 변수:</b> $(닉네임), $(연속출석일수), $(누적출석일수), $(마지막출석일)</span>
+                <input type="text" id="attendanceReply" class="form-control" placeholder="$(닉네임)님 출석 고마워요! ($(연속출석일수)일 연속)">
             </div>
 
             <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
@@ -314,8 +314,8 @@
 
             <div class="form-group">
                 <label for="pointCheckReply">포인트 확인 봇 응답 메시지 포맷 (선택)</label>
-                <span class="desc"><b>사용 가능 변수:</b> {닉네임}, {포인트}, {출석일수}, {연속출석일수}, {팔로우일수}</span>
-                <input type="text" id="pointCheckReply" class="form-control" placeholder="🪙 {닉네임}님의 보유 포인트는 {포인트}점입니다! (누적 출석: {출석일수}일)">
+                <span class="desc"><b>사용 가능 변수:</b> $(닉네임), $(포인트), $(누적출석일수), $(연속출석일수), $(팔로우일수)</span>
+                <input type="text" id="pointCheckReply" class="form-control" placeholder="🪙 $(닉네임)님의 보유 포인트는 $(포인트)점입니다! (누적 출석: $(누적출석일수)일)">
             </div>
 
             <button id="btnSave" class="btn-save">설정 저장하기</button>

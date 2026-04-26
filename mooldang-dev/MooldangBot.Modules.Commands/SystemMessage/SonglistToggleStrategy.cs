@@ -53,18 +53,17 @@ public class SonglistToggleStrategy(
 
         await db.SaveChangesAsync(ct);
 
-        string template = string.IsNullOrWhiteSpace(responseTemplate)
-            ? "{닉네임}님, 곡 신청 기능이 {송리스트상태} 되었습니다. 🎵"
-            : responseTemplate;
+        if (!string.IsNullOrWhiteSpace(responseTemplate))
+        {
+            string processedReply = await dynamicEngine.ProcessMessageAsync(
+                responseTemplate.Replace("$(송리스트상태)", statusText, StringComparison.OrdinalIgnoreCase),
+                notification.Profile.ChzzkUid,
+                notification.SenderId,
+                notification.Username
+            );
 
-        string processedReply = await dynamicEngine.ProcessMessageAsync(
-            template.Replace("{송리스트상태}", statusText, StringComparison.OrdinalIgnoreCase),
-            notification.Profile.ChzzkUid,
-            notification.SenderId,
-            notification.Username
-        );
-
-        await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+            await botService.SendReplyChatAsync(notification.Profile, processedReply, notification.SenderId, ct);
+        }
 
         return CommandExecutionResult.Success();
     }

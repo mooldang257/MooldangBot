@@ -560,6 +560,34 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         _clients.Clear();
     }
 
+    public async Task DisconnectAsync(string chzzkUid)
+    {
+        if (_channelCts.TryRemove(chzzkUid, out var cts))
+        {
+            cts.Cancel();
+            _logger.LogInformation("🔌 [Shard {Id}] 연결 해제 명령 수행: {ChzzkUid}", _shardId, chzzkUid);
+        }
+
+        if (_clients.TryRemove(chzzkUid, out var client))
+        {
+            try
+            {
+                if (client.State == WebSocketState.Open)
+                {
+                    await client.CloseAsync(WebSocketCloseStatus.NormalClosure, "Requested by manager", CancellationToken.None);
+                }
+            }
+            catch { /* Ignore */ }
+            finally
+            {
+                client.Dispose();
+            }
+        }
+        
+        _isSubscribed.TryRemove(chzzkUid, out _);
+        _retryCounts.TryRemove(chzzkUid, out _);
+    }
+
     public bool IsConnected(string chzzkUid) => _clients.ContainsKey(chzzkUid) && _clients[chzzkUid].State == WebSocketState.Open;
 
     public int GetActiveConnectionCount()
