@@ -97,22 +97,24 @@
 
 <div class="app-container min-h-screen flex flex-col font-sans selection:bg-primary/20 relative">
     <!-- [통합 네비게이션]: 모든 화면에서 동일하게 유지 -->
-    <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 h-20 bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all">
-        <a href="/" class="flex items-center gap-3 no-underline group shrink-0">
-            <div class="relative">
-                <div class="absolute inset-0 bg-primary/20 blur-lg rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <img src="/images/wman_sd_transparent.png" alt="Logo" class="relative h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110" />
-            </div>
-            <div class="flex flex-col -gap-1">
-                <span class="text-xl md:text-2xl font-[1000] text-primary tracking-tighter leading-none">물댕봇</span>
-                <span class="text-[8px] md:text-[10px] font-black text-primary/50 tracking-widest uppercase">Studio</span>
-            </div>
+    <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 h-20 bg-amber-50/90 backdrop-blur-xl border-b border-amber-100/40 shadow-sm transition-all">
+        <div class="flex items-center gap-4 md:gap-6">
+            <a href="/" class="flex items-center gap-3 no-underline group shrink-0">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-primary/20 blur-lg rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <img src="/images/wman_sd_transparent.png" alt="Logo" class="relative h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110" />
+                </div>
+                <div class="flex flex-col -gap-1">
+                    <span class="text-xl md:text-2xl font-[1000] text-primary tracking-tighter leading-none">물댕봇</span>
+                    <span class="text-[8px] md:text-[10px] font-black text-primary/50 tracking-widest uppercase">Studio</span>
+                </div>
+            </a>
 
-            <!-- [v19.2] 봇 활성화 토글 버튼 (개발/운영 분리용) -->
+            <!-- [v19.4] 시각적 확인을 위한 한글화 및 위치 고정 -->
             {#if userState.isAuthenticated}
-                <div class="ml-2 md:ml-4 flex items-center gap-2 bg-slate-50/50 p-1 md:p-1.5 px-2 md:px-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-                    <span class="text-[8px] md:text-[10px] font-black {userState.isActive ? 'text-emerald-500' : 'text-slate-400'} uppercase tracking-tighter">
-                        {userState.isActive ? 'Active' : 'Inactive'}
+                <div class="flex items-center gap-2 bg-white/80 p-1.5 md:p-2 px-3 md:px-4 rounded-2xl border border-primary/10 shadow-sm transition-all hover:shadow-md">
+                    <span class="text-[10px] md:text-xs font-black {userState.isActive ? 'text-emerald-500' : 'text-slate-400'} tracking-tight">
+                        {userState.isActive ? '사용중' : '미사용'}
                     </span>
                     <button 
                         onclick={toggleBotActive}
@@ -123,7 +125,7 @@
                     </button>
                 </div>
             {/if}
-        </a>
+        </div>
 
         <div class="flex items-center gap-4 shrink-0">
             {#if isLoaded}

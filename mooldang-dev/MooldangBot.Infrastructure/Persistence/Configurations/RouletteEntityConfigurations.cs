@@ -38,7 +38,7 @@ public class RouletteLogConfiguration : IEntityTypeConfiguration<RouletteLog>
 {
     public void Configure(EntityTypeBuilder<RouletteLog> builder)
     {
-        builder.ToTable("func_roulette_logs");
+        builder.ToTable("log_roulette_results");
         // [v6.2] ViewerNickname 필드 제거됨
 
         builder.HasOne(l => l.StreamerProfile)

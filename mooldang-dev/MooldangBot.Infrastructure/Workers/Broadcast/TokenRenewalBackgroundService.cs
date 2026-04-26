@@ -27,7 +27,7 @@ public class TokenRenewalBackgroundService(
         var renewalService = scope.ServiceProvider.GetRequiredService<ITokenRenewalService>();
 
         // [우선순위 산정]: 봇 활성화된 스트리머 중 만료 임박순 정렬
-        var profiles = await db.StreamerProfiles
+        var profiles = await db.CoreStreamerProfiles
             .Where(p => p.IsActive && p.IsMasterEnabled)
             .ToListAsync(ct);
 

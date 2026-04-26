@@ -9,7 +9,7 @@ public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
 {
     public void Configure(EntityTypeBuilder<SongBook> builder)
     {
-        builder.ToTable("song_books"); // 기존 song_book_main에서 변경 (고도화 반영)
+        builder.ToTable("func_song_books"); // 기존 song_book_main에서 변경 (고도화 반영)
         
         builder.HasIndex(s => new { s.StreamerProfileId, s.Id });
         builder.HasIndex(s => s.Title);
@@ -25,7 +25,7 @@ public class SongQueueConfiguration : IEntityTypeConfiguration<SongQueue>
 {
     public void Configure(EntityTypeBuilder<SongQueue> builder)
     {
-        builder.ToTable("song_list_queues");
+        builder.ToTable("func_song_list_queues");
 
         builder.HasOne(s => s.StreamerProfile)
                .WithMany()
@@ -62,7 +62,7 @@ public class SonglistSessionConfiguration : IEntityTypeConfiguration<SonglistSes
 {
     public void Configure(EntityTypeBuilder<SonglistSession> builder)
     {
-        builder.ToTable("song_list_sessions");
+        builder.ToTable("func_song_list_sessions");
 
         builder.HasOne(s => s.StreamerProfile)
                .WithMany()
@@ -77,7 +77,7 @@ public class StreamerOmakaseItemConfiguration : IEntityTypeConfiguration<Streame
 {
     public void Configure(EntityTypeBuilder<StreamerOmakaseItem> builder)
     {
-        builder.ToTable("song_list_omakases");
+        builder.ToTable("func_song_list_omakases");
         
         builder.HasOne(o => o.StreamerProfile)
                .WithMany()

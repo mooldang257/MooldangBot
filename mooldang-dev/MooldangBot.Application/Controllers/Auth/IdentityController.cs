@@ -50,7 +50,7 @@ namespace MooldangBot.Application.Controllers.Auth
 
             try 
             {
-                var profile = await db.StreamerProfiles
+                var profile = await db.CoreStreamerProfiles
                                  .IgnoreQueryFilters() 
                                  .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid || p.Slug == chzzkUid);
 
@@ -88,7 +88,7 @@ namespace MooldangBot.Application.Controllers.Auth
                     // [이지스 통합]: 시청자 정보 조회 시 캐시를 우선 활용합니다.
                     // (조회 시점에는 닉네임을 모르므로 기존 데이터를 유지하기 위해 null 전달 가능하도록 설계됨)
                     var viewerId = await identityCache.SyncGlobalViewerIdAsync(chzzkUid, "viewer"); 
-                    var viewer = await db.GlobalViewers.AsNoTracking().FirstOrDefaultAsync(v => v.Id == viewerId);
+                    var viewer = await db.CoreGlobalViewers.AsNoTracking().FirstOrDefaultAsync(v => v.Id == viewerId);
 
                     if (viewer != null)
                     {

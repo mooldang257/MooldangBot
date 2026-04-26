@@ -18,18 +18,18 @@ namespace MooldangBot.Application.Controllers.Avatar
         [HttpGet("/api/avatar/settings/{chzzkUid}")]
         public async Task<IActionResult> GetAvatarSettings(string chzzkUid)
         {
-            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var p = await db.CoreStreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var setting = await db.AvatarSettings
+            var setting = await db.SysAvatarSettings
                 .Include(s => s.StreamerProfile)
                 .FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
                 
             if (setting == null)
             {
                 setting = new AvatarSetting { StreamerProfileId = p.Id };
-                db.AvatarSettings.Add(setting);
+                db.SysAvatarSettings.Add(setting);
                 await db.SaveChangesAsync();
             }
 
@@ -39,15 +39,15 @@ namespace MooldangBot.Application.Controllers.Avatar
         [HttpPut("/api/avatar/settings/{chzzkUid}")]
         public async Task<IActionResult> UpdateAvatarSettings(string chzzkUid, [FromBody] AvatarSetting req)
         {
-            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var p = await db.CoreStreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
                 return Unauthorized(Result<string>.Failure("인증되지 않은 사용자입니다."));
 
-            var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
+            var setting = await db.SysAvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
             if (setting == null)
             {
                 setting = new AvatarSetting { StreamerProfileId = p.Id };
-                db.AvatarSettings.Add(setting);
+                db.SysAvatarSettings.Add(setting);
             }
 
             setting.IsEnabled = req.IsEnabled;
@@ -68,7 +68,7 @@ namespace MooldangBot.Application.Controllers.Avatar
         public async Task<IActionResult> UploadAvatarImage([FromForm] string chzzkUid, [FromForm] string tier, IFormFile file)
         {
             // [이지스 가드]: 권한 확인 실패 시 Result.Failure 반환
-            var p = await db.StreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
+            var p = await db.CoreStreamerProfiles.FirstOrDefaultAsync(x => x.ChzzkUid == chzzkUid);
             if (p == null) 
                 return Unauthorized(Result<string>.Failure("인증되지 않은 사용자입니다."));
 
@@ -97,11 +97,11 @@ namespace MooldangBot.Application.Controllers.Avatar
                 string fileUrl = $"/images/avatars/{fileName}";
 
                 // DB 업데이트
-                var setting = await db.AvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
+                var setting = await db.SysAvatarSettings.FirstOrDefaultAsync(x => x.StreamerProfileId == p.Id);
                 if (setting == null)
                 {
                     setting = new AvatarSetting { StreamerProfileId = p.Id };
-                    db.AvatarSettings.Add(setting);
+                    db.SysAvatarSettings.Add(setting);
                 }
 
                 if (tier == "walking") setting.WalkingImageUrl = fileUrl;

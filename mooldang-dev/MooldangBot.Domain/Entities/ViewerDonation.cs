@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.Entities;
 /// [v7.0] 시청자 유료 재화 지갑: 치즈나 유료 별사탕 등 실제 현금 가치가 있는 재화를 관리합니다.
 /// 절대적인 무결성을 위해 낙관적 락(RowVersion) 및 동기식 DB 반영을 원칙으로 합니다.
 /// </summary>
-[Table("viewer_donations")]
+[Table("func_viewer_donations")]
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
 public class ViewerDonation : IAuditable
 {

@@ -103,7 +103,7 @@ public class PreferenceController(
     private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
     {
         var target = uid.ToLower();
-        return await db.StreamerProfiles
+        return await db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
     }

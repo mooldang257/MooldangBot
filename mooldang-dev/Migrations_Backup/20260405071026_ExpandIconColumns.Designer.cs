@@ -1647,7 +1647,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("func_roulette_spins", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteStatsAggregated", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteStats", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -2666,7 +2666,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Navigation("StreamerProfile");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteStatsAggregated", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteStats", b =>
                 {
                     b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
                         .WithMany()

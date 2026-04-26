@@ -57,7 +57,7 @@ public class SystemWatchdogService(
         var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
         var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
 
-        var inactiveSessions = await db.BroadcastSessions
+        var inactiveSessions = await db.SysBroadcastSessions
             .Include(s => s.StreamerProfile)
             .Where(s => s.IsActive && s.LastHeartbeatAt < KstClock.Now.AddMinutes(-5))
             .ToListAsync(ct);

@@ -27,7 +27,7 @@ public class StagingCleanupWorker(
         var cutoffDate = DateTime.UtcNow.AddDays(-30);
 
         // 고성능 벌크 삭제 (EF Core 7+ ExecuteDeleteAsync)
-        int deletedCount = await dbContext.MasterSongStagings
+        int deletedCount = await dbContext.FuncMasterSongStagings
             .Where(s => s.CreatedAt < cutoffDate)
             .ExecuteDeleteAsync(ct);
 

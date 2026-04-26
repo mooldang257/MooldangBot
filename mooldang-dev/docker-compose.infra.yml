@@ -41,11 +41,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: mooldang-dev-redis
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 256M
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data-dev:/data
     networks:
       - mooldang_dev_net
     healthcheck:
@@ -130,7 +128,7 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana-dev.rule=(Host(`dev.mooldang.store`)) && PathPrefix(`/admin/monitoring`)"
+      - "traefik.http.routers.grafana-dev.rule=(Host(`dev.mooldang.com`)) && PathPrefix(`/admin/monitoring`)"
       - "traefik.http.routers.grafana-dev.entrypoints=web"
       - "traefik.http.routers.grafana-dev.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.grafana-dev.loadbalancer.server.port=3000"
@@ -175,9 +173,9 @@ services:
 
 networks:
   mooldang_dev_net:
-    name: mooldang_dev_net
-    driver: bridge
+    external: true
 
 volumes:
   grafana-data-dev:
   prometheus-data-dev:
+  redis-data-dev:

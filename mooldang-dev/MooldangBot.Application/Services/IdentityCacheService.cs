@@ -45,7 +45,7 @@ public class IdentityCacheService(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
+        var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
         if (profile != null)
         {
             // [P0 Quick Win] Source Gen 경로: 10k TPS 핫패스 직렬화 최적화
@@ -75,7 +75,7 @@ public class IdentityCacheService(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var viewer = await db.GlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
+        var viewer = await db.CoreGlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
         bool isNew = viewer == null;
 
         if (isNew)
@@ -88,7 +88,7 @@ public class IdentityCacheService(
                 ProfileImageUrl = profileImageUrl,
                 CreatedAt = KstClock.Now
             };
-            db.GlobalViewers.Add(viewer);
+            db.CoreGlobalViewers.Add(viewer);
             logger.LogInformation("🆕 [이지스 신규 시청자 생성] {Nickname} (Hash: {Hash})", nickname, hash);
         }
         else
@@ -125,7 +125,7 @@ public class IdentityCacheService(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var uid = await db.StreamerProfiles
+        var uid = await db.CoreStreamerProfiles
             .AsNoTracking()
             .Where(p => p.Slug == slug)
             .Select(p => p.ChzzkUid)

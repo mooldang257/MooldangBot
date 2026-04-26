@@ -40,7 +40,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
         {
             logger.LogInformation("SaveSettings attempt for Uid: {Uid} by User: {User}", chzzkUid, User.Identity?.Name);
             
-            var profile = await context.StreamerProfiles
+            var profile = await context.CoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             
@@ -65,9 +65,9 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
-            var query = from r in context.ViewerRelations.AsNoTracking().IgnoreQueryFilters()
-                        join g in context.GlobalViewers.AsNoTracking().IgnoreQueryFilters() on r.GlobalViewerId equals g.Id
-                        join p in context.ViewerPoints.AsNoTracking().IgnoreQueryFilters() 
+            var query = from r in context.CoreViewerRelations.AsNoTracking().IgnoreQueryFilters()
+                        join g in context.CoreGlobalViewers.AsNoTracking().IgnoreQueryFilters() on r.GlobalViewerId equals g.Id
+                        join p in context.FuncViewerPoints.AsNoTracking().IgnoreQueryFilters() 
                            on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into pts
                         from p in pts.DefaultIfEmpty()
                         where r.StreamerProfile!.ChzzkUid == chzzkUid
@@ -117,7 +117,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
-            var query = context.ViewerDonations
+            var query = context.FuncViewerDonations
                         .AsNoTracking()
                         .IgnoreQueryFilters()
                         .Where(d => d.StreamerProfile!.ChzzkUid == chzzkUid)
@@ -162,7 +162,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             var profile = await identityCache.GetStreamerProfileAsync(uid);
             if (profile != null) return profile;
 
-            return await context.StreamerProfiles
+            return await context.CoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == uid);
         }

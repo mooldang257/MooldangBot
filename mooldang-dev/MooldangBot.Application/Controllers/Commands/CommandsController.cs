@@ -33,7 +33,7 @@ namespace MooldangBot.Application.Controllers.Commands
             string chzzkUid, 
             [FromQuery] CursorPagedRequest request)
         {
-            var streamer = await db.StreamerProfiles
+            var streamer = await db.CoreStreamerProfiles
                 .AsNoTracking()
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
@@ -45,7 +45,7 @@ namespace MooldangBot.Application.Controllers.Commands
             int maxLimit = config.GetValue<int>("Pagination:MaxLimit", 100);
             int effectiveLimit = Math.Min(request.Limit, maxLimit);
 
-            var query = db.UnifiedCommands
+            var query = db.SysUnifiedCommands
                 .AsNoTracking()
                 .Where(c => c.StreamerProfileId == streamerId);
 

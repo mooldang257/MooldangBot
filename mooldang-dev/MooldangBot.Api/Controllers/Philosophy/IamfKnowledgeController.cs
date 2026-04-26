@@ -21,7 +21,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetKnowledge([FromQuery] string chzzkUid = "SYSTEM")
     {
-        var list = await db.StreamerKnowledges
+        var list = await db.SysStreamerKnowledges
             .AsNoTracking()
             .Where(k => k.StreamerProfile!.ChzzkUid == chzzkUid)
             .OrderByDescending(k => k.CreatedAt)
@@ -42,7 +42,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
         }
 
         // [정규화] ChzzkUid 문자열로 실시간 프로필 조회
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == (request.ChzzkUid ?? "SYSTEM"));
 
@@ -58,7 +58,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
             IsActive = true
         };
 
-        db.StreamerKnowledges.Add(knowledge);
+        db.SysStreamerKnowledges.Add(knowledge);
         await db.SaveChangesAsync();
 
         return Ok(new { Message = "[지식의 수용] 서재에 새로운 지식이 기록되었습니다.", Knowledge = knowledge });
@@ -73,13 +73,13 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteKnowledge(int id)
     {
-        var knowledge = await db.StreamerKnowledges.FindAsync(id);
+        var knowledge = await db.SysStreamerKnowledges.FindAsync(id);
         if (knowledge == null)
         {
             return NotFound(new { Error = "[지식의 부재] 해당 ID의 지식을 찾을 수 없습니다." });
         }
 
-        db.StreamerKnowledges.Remove(knowledge);
+        db.SysStreamerKnowledges.Remove(knowledge);
         await db.SaveChangesAsync();
 
         return Ok(new { Message = "[지식의 소멸] 해당 지식이 서재에서 제거되었습니다." });

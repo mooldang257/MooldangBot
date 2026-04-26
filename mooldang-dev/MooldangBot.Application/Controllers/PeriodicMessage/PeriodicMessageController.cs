@@ -8,7 +8,7 @@ using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common.Models;
 
-namespace MooldangBot.Application.Controllers.PeriodicMessages
+namespace MooldangBot.Application.Controllers.SysPeriodicMessages
 {
     [ApiController]
     [Route("api/periodic-message/{chzzkUid}")]
@@ -19,7 +19,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
         [HttpGet]
         public async Task<IActionResult> GetList(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
-            var pagedResult = await db.PeriodicMessages
+            var pagedResult = await db.SysPeriodicMessages
                 .Include(m => m.StreamerProfile)
                 .Where(m => m.StreamerProfile!.ChzzkUid == chzzkUid)
                 .OrderByDescending(m => m.Id)
@@ -40,7 +40,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
         {
             if (req.Id > 0)
             {
-                var existing = await db.PeriodicMessages
+                var existing = await db.SysPeriodicMessages
                     .IgnoreQueryFilters()
                     .Include(m => m.StreamerProfile)
                     .FirstOrDefaultAsync(m => m.Id == req.Id && m.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -54,11 +54,11 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             }
             else
             {
-                var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
                 if (profile == null) 
                     return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
-                db.PeriodicMessages.Add(new PeriodicMessage
+                db.SysPeriodicMessages.Add(new PeriodicMessage
                 {
                     StreamerProfileId = profile.Id,
                     IntervalMinutes = req.IntervalMinutes,
@@ -74,7 +74,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string chzzkUid, int id)
         {
-            var item = await db.PeriodicMessages
+            var item = await db.SysPeriodicMessages
                 .IgnoreQueryFilters()
                 .Include(m => m.StreamerProfile)
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -82,7 +82,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
             if (item == null)
                 return NotFound(Result<string>.Failure("해당 메시지를 찾을 수 없습니다."));
 
-            db.PeriodicMessages.Remove(item);
+            db.SysPeriodicMessages.Remove(item);
             await db.SaveChangesAsync();
             
             return Ok(Result<bool>.Success(true));
@@ -91,7 +91,7 @@ namespace MooldangBot.Application.Controllers.PeriodicMessages
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> Toggle(string chzzkUid, int id)
         {
-            var item = await db.PeriodicMessages
+            var item = await db.SysPeriodicMessages
                 .IgnoreQueryFilters()
                 .Include(m => m.StreamerProfile)
                 .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);

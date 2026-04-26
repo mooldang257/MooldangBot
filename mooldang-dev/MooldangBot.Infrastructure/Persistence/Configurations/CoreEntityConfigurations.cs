@@ -129,7 +129,7 @@ public class ViewerRelationConfiguration : IEntityTypeConfiguration<ViewerRelati
 {
     public void Configure(EntityTypeBuilder<ViewerRelation> builder)
     {
-        builder.ToTable("viewer_relations");
+        builder.ToTable("core_viewer_relations");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()

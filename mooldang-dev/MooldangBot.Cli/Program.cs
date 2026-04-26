@@ -139,9 +139,9 @@ try
     Console.WriteLine("\n📋 [2/3] 명령어 마스터 데이터는 Registry 기반으로 전환되었습니다.");
 
     // 4. 통합 명령어 보정
-    Console.WriteLine("\n🧩 [3/3] 통합 명령어(UnifiedCommands) 정합성 전수 보정 중...");
+    Console.WriteLine("\n🧩 [3/3] 통합 명령어(SysUnifiedCommands) 정합성 전수 보정 중...");
 
-    var profiles = await db.StreamerProfiles.IgnoreQueryFilters().ToListAsync();
+    var profiles = await db.CoreStreamerProfiles.IgnoreQueryFilters().ToListAsync();
     int provisionCount = 0;
 
     foreach (var p in profiles) {
@@ -165,7 +165,7 @@ try
     Console.WriteLine("\n🌌 [5/5] v4.9 Philosophy² & Resilience Engine 정규화 고도화 중...");
     
     // 6-1. 관리자 프로필(ID:1) 확보
-    var adminProfile = await db.StreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == 1);
+    var adminProfile = await db.CoreStreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == 1);
     if (adminProfile == null)
     {
         adminProfile = new StreamerProfile 
@@ -176,7 +176,7 @@ try
             IsDeleted = false,
             IsMasterEnabled = true
         };
-        db.StreamerProfiles.Add(adminProfile);
+        db.CoreStreamerProfiles.Add(adminProfile);
         Console.WriteLine("   + [Admin] 관리자 프로필(ID:1)이 생성되었습니다.");
         await db.SaveChangesAsync();
     }
@@ -191,7 +191,7 @@ try
 
     // 6-3. StreamerProfile 복구 엔진용 플래그 초기화
     // [v6.2] 레거시 DelYn, MasterUseYn은 이미 삭제됨
-    int flagInits = await db.StreamerProfiles.Where(p => !p.IsMasterEnabled) // 비활성화된 것들만 대상 (예시)
+    int flagInits = await db.CoreStreamerProfiles.Where(p => !p.IsMasterEnabled) // 비활성화된 것들만 대상 (예시)
                                              .ExecuteUpdateAsync(s => s
                                                 .SetProperty(p => p.IsDeleted, false)
                                                 .SetProperty(p => p.IsMasterEnabled, true));
@@ -217,8 +217,8 @@ async Task<int> EnsureCommand(AppDbContext db, StreamerProfile streamer, string 
 
     int added = 0;
     foreach (var k in keywords) {
-        if (!await db.UnifiedCommands.IgnoreQueryFilters().AnyAsync(u => u.StreamerProfileId == streamer.Id && u.Keyword == k)) {
-            db.UnifiedCommands.Add(new UnifiedCommand {
+        if (!await db.SysUnifiedCommands.IgnoreQueryFilters().AnyAsync(u => u.StreamerProfileId == streamer.Id && u.Keyword == k)) {
+            db.SysUnifiedCommands.Add(new UnifiedCommand {
                 StreamerProfileId = streamer.Id, 
                 Keyword = k, 
                 FeatureType = masterFeature.Type,

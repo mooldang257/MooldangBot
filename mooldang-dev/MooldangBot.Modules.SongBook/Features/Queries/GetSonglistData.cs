@@ -19,22 +19,22 @@ public class GetSonglistDataHandler(
 {
     public async Task<Result<SonglistDataDto>> Handle(GetSonglistDataQuery request, CancellationToken ct)
     {
-        var profile = await db.StreamerProfiles.AsNoTracking()
+        var profile = await db.CoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
         if (profile == null)
             return Result<SonglistDataDto>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
 
-        var songs = await db.SongQueues.AsNoTracking()
+        var songs = await db.FuncSongQueues.AsNoTracking()
             .Where(s => s.StreamerProfileId == profile.Id && !s.IsDeleted)
             .OrderBy(s => s.SortOrder)
             .ToListAsync(ct);
 
-        var omakases = await db.StreamerOmakases.AsNoTracking()
+        var omakases = await db.FuncStreamerOmakases.AsNoTracking()
             .Where(o => o.StreamerProfileId == profile.Id)
             .ToListAsync(ct);
 
-        var omakaseCommands = await db.UnifiedCommands.AsNoTracking()
+        var omakaseCommands = await db.SysUnifiedCommands.AsNoTracking()
             .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted)
             .ToListAsync(ct);
 
@@ -74,7 +74,7 @@ public class GetSonglistDataHandler(
             }
         }
 
-        var memo = await db.StreamerPreferences.AsNoTracking()
+        var memo = await db.SysStreamerPreferences.AsNoTracking()
             .Where(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "SongList_Memo")
             .Select(p => p.PreferenceValue)
             .FirstOrDefaultAsync(ct) ?? "";

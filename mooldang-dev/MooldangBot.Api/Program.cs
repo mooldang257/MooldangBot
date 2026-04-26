@@ -132,7 +132,7 @@ try
     // 🎯 [엔드포인트 매핑]
     app.MapControllers();
     app.MapMetrics();
-    app.MapHealthChecks("/health");
+    app.MapHealthChecks("/api/health");
     app.MapHub<OverlayHub>("/api/hubs/overlay");
 
 

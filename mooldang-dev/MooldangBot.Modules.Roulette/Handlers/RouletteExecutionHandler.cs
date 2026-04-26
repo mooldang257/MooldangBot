@@ -89,7 +89,7 @@ public class RouletteExecutionHandler(
                     using var scope = scopeFactory.CreateScope();
                     var scopedDb = scope.ServiceProvider.GetRequiredService<IRouletteDbContext>();
                     
-                    var streamerProfile = await scopedDb.StreamerProfiles
+                    var streamerProfile = await scopedDb.CoreStreamerProfiles
                         .AsNoTracking()
                         .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, CancellationToken.None);
 

@@ -39,14 +39,14 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         var cleanedUid = (request.ViewerUid ?? "").Trim();
         var viewerHash = Sha256Hasher.ComputeHash(cleanedUid);
         
-        var streamer = await _db.StreamerProfiles.AsNoTracking()
+        var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
             .Select(s => new { s.Id, s.ChzzkUid })
             .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
         
         if (streamer == null) 
             return new DeductResult(false, 0, "스트리머 정보를 찾을 수 없습니다.");
 
-        var globalViewerId = await _db.GlobalViewers.AsNoTracking()
+        var globalViewerId = await _db.CoreGlobalViewers.AsNoTracking()
             .Where(g => g.ViewerUidHash == viewerHash)
             .Select(g => g.Id)
             .FirstOrDefaultAsync(ct);
@@ -62,14 +62,14 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
                     ViewerUidHash = viewerHash, 
                     Nickname = request.ViewerNickname ?? "시청자" 
                 };
-                _db.GlobalViewers.Add(newViewer);
+                _db.CoreGlobalViewers.Add(newViewer);
                 await _db.SaveChangesAsync(ct);
                 globalViewerId = newViewer.Id;
             }
             catch (DbUpdateException)
             {
                 // 🛡️ [동시성 방어]: 찰나의 순간에 다른 쓰레드가 생성했다면, 조용히 다시 조회합니다.
-                globalViewerId = await _db.GlobalViewers.AsNoTracking()
+                globalViewerId = await _db.CoreGlobalViewers.AsNoTracking()
                     .Where(g => g.ViewerUidHash == viewerHash)
                     .Select(g => g.Id)
                     .FirstOrDefaultAsync(ct);
@@ -81,7 +81,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         // 2. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
         {
-            var dbBalance = await _db.ViewerPoints.AsNoTracking()
+            var dbBalance = await _db.FuncViewerPoints.AsNoTracking()
                 .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId)
                 .Select(v => v.Points)
                 .FirstOrDefaultAsync(ct);
@@ -120,7 +120,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         // [복구]: 사용자께서 구현하셨던 '후원금을 가용 금액으로 설정'하는 로직을 통합 구조에 맞게 적용합니다.
         // 현재 DB 잔액이 부족하더라도, 이번 요청에서 함께 들어온 후원금(@DonationAmount)이 있다면 결제를 허용합니다.
         const string updateSql = @"
-            UPDATE viewer_donations 
+            UPDATE func_viewer_donations 
             SET balance = balance - @DeductAmount, updated_at = NOW()
             WHERE streamer_profile_id = @StreamerId 
               AND global_viewer_id = @GlobalId 
@@ -137,14 +137,14 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         if (affectedRows == 0)
         {
             var currentBalance = await conn.QueryFirstOrDefaultAsync<int>(
-                "SELECT balance FROM viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+                "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
                 new { StreamerId = streamer.Id, GlobalId = globalViewerId });
 
             return new DeductResult(false, currentBalance, "치즈 잔액이 부족합니다.");
         }
 
         var finalBalance = await conn.QueryFirstOrDefaultAsync<int>(
-            "SELECT balance FROM viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+            "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
             new { StreamerId = streamer.Id, GlobalId = globalViewerId });
 
         return new DeductResult(true, finalBalance);

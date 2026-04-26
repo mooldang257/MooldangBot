@@ -74,14 +74,14 @@ public class SpinRouletteHandler(
                 try
                 {
                     // 1. 컨텍스트 조회
-                    var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
+                    var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
                     if (streamer == null) return null;
 
                     // [이지스 통합]: 시청자 정보를 캐시 서비스에서 조회/생성합니다.
                     var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(viewerUid, viewerNickname ?? "비회원", null, ct);
 
                     // 2. 룰렛 및 항목 조회
-                    var roulette = await db.Roulettes
+                    var roulette = await db.FuncRoulettes
                         .Include(r => r.Items)
                         .FirstOrDefaultAsync(r => r.Id == rouletteId && r.StreamerProfileId == streamer.Id, ct);
 
@@ -95,7 +95,7 @@ public class SpinRouletteHandler(
                     var (results, logs) = ExecuteSpinLogic(roulette, globalViewerId, count);
 
                     // 4. 영속성 반영
-                    db.RouletteLogs.AddRange(logs);
+                    db.FuncRouletteLogs.AddRange(logs);
                     await db.SaveChangesAsync(ct);
 
                     var spinId = await CreateRouletteSpinAsync(streamer.Id, rouletteId, globalViewerId, results, chzzkUid, count, ct);
@@ -206,7 +206,7 @@ public class SpinRouletteHandler(
             ScheduledTime = (await rouletteState.GetAndSetNextEndTimeAsync(chzzkUid, count)).AddSeconds(3),
             CreatedAt = KstClock.Now
         };
-        db.RouletteSpins.Add(spin);
+        db.FuncRouletteSpins.Add(spin);
         await db.SaveChangesAsync(ct);
         return spin.Id;
     }

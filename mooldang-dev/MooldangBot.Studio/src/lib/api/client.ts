@@ -34,6 +34,11 @@ export async function apiFetch<T>(
         credentials: 'include' // 쿠키 전달을 위해 명시
     };
 
+    // [물멍]: body가 객체인 경우 자동으로 JSON.stringify 처리
+    if (options?.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+        fetchOptions.body = JSON.stringify(options.body);
+    }
+
     const response = await customFetch(finalUrl, fetchOptions);
     
     // HTTP 상태 코드가 2xx가 아닌 경우에 대한 기본 예외 처리

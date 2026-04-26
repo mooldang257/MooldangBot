@@ -19,6 +19,27 @@ public interface IPointCacheService
     Task<IDictionary<string, PointVariant>> ExtractAllIncrementalPointsAsync();
 
     /// <summary>
+    /// [v7.2] 2-Phase Commit: 동기화 대기 중인 데이터를 스냅샷으로 원자적 이동시킵니다.
+    /// </summary>
+    /// <returns>스냅샷 ID (없으면 null)</returns>
+    Task<string?> CreateSyncSnapshotAsync();
+
+    /// <summary>
+    /// [v7.2] 스냅샷 ID에 해당하는 데이터를 조회합니다.
+    /// </summary>
+    Task<IDictionary<string, PointVariant>> GetSnapshotDataAsync(string snapshotId);
+
+    /// <summary>
+    /// [v7.2] DB 저장이 완료된 스냅샷을 삭제합니다.
+    /// </summary>
+    Task RemoveSnapshotAsync(string snapshotId);
+
+    /// <summary>
+    /// [v7.2] 처리되지 못하고 남아있는 스냅샷 목록을 조회합니다 (복구용).
+    /// </summary>
+    Task<IEnumerable<string>> GetOrphanedSnapshotsAsync();
+
+    /// <summary>
     /// 특정 시청자의 Redis 미반영 포인트 잔액을 조회합니다.
     /// </summary>
     Task<int> GetIncrementalPointAsync(string streamerUid, string viewerUid);

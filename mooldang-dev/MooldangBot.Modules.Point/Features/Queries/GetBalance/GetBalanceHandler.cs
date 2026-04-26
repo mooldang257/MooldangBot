@@ -34,7 +34,7 @@ public class GetBalanceHandler : IRequestHandler<GetBalanceQuery, int>
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
         {
             // [무료 포인트]: DB 확정치 + Redis 증분치 합산
-            var dbBalance = await _db.ViewerPoints
+            var dbBalance = await _db.FuncViewerPoints
                 .AsNoTracking()
                 .Where(v => v.StreamerProfile!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == globalViewerId)
                 .Select(v => v.Points)
@@ -47,7 +47,7 @@ public class GetBalanceHandler : IRequestHandler<GetBalanceQuery, int>
         else
         {
             // [유료 재화]: MariaDB 실시간 잔액 반환
-            return await _db.ViewerDonations
+            return await _db.FuncViewerDonations
                 .AsNoTracking()
                 .Where(v => v.StreamerProfile!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == globalViewerId)
                 .Select(v => v.Balance)

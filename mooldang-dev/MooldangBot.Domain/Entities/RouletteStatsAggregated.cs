@@ -8,9 +8,9 @@ namespace MooldangBot.Domain.Entities;
 /// <summary>
 /// [천상의 장부]: 룰렛별 '이론적 확률'과 '실전 당첨율'을 비교 분석하는 지표 엔티티입니다.
 /// </summary>
-[Table("roulette_stats_aggregated")]
+[Table("log_roulette_stats")]
 [Index(nameof(RouletteId), nameof(ItemName), IsUnique = true)]
-public class RouletteStatsAggregated
+public class LogRouletteStats
 {
     [Key]
     public long Id { get; set; }

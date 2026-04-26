@@ -36,7 +36,7 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
     {
         try
         {
-            var streamer = await _db.StreamerProfiles.AsNoTracking()
+            var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
             if (streamer == null) return (false, 0);

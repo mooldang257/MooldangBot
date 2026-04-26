@@ -20,13 +20,13 @@ public class GetOmakaseListHandler(ISongBookDbContext db) : IRequestHandler<GetO
 {
     public async Task<Result<object>> Handle(GetOmakaseListQuery request, CancellationToken ct)
     {
-        var profile = await db.StreamerProfiles.AsNoTracking()
+        var profile = await db.CoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
         if (profile == null)
             return Result<object>.Failure("스트리머를 찾을 수 없습니다.");
 
-        var query = db.StreamerOmakases.AsNoTracking()
+        var query = db.FuncStreamerOmakases.AsNoTracking()
             .Where(o => o.StreamerProfileId == profile.Id);
 
         if (request.TargetId.HasValue)
@@ -43,7 +43,7 @@ public class GetOmakaseListHandler(ISongBookDbContext db) : IRequestHandler<GetO
         var items = await query
             .OrderByDescending(o => o.Id)
             .Take(request.PageSize + 1)
-            .Join(db.UnifiedCommands
+            .Join(db.SysUnifiedCommands
                 .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted),
                 o => o.Id,
                 c => c.TargetId,

@@ -17,7 +17,6 @@ public static class WorkerRegistry
         RegisterWorkerSettingsRecursive(services, rootSection);
 
         // 2. 모든 워커 일괄 등록 (Infrastructure/Workers 폴더 구조에 따름)
-        services.AddHostedService<PointBatchWorker>();
         services.AddHostedService<Points.PointWriteBackWorker>();
         
         // Chat Workers

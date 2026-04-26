@@ -13,59 +13,59 @@ namespace MooldangBot.Infrastructure.Persistence;
 public partial class AppDbContext : IAppDbContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext
 {
     // ────────── [Core & System] ──────────
-    public DbSet<StreamerProfile> StreamerProfiles { get; set; }
-    public DbSet<GlobalViewer> GlobalViewers { get; set; }
-    public DbSet<ViewerRelation> ViewerRelations { get; set; }
-    public DbSet<StreamerManager> StreamerManagers { get; set; }
-    public DbSet<ChzzkCategory> ChzzkCategories { get; set; }
-    public DbSet<ChzzkCategoryAlias> ChzzkCategoryAliases { get; set; }
-    public DbSet<StreamerPreference> StreamerPreferences { get; set; }
-    public DbSet<PeriodicMessage> PeriodicMessages { get; set; }
-    public DbSet<BroadcastSession> BroadcastSessions { get; set; }
-    public DbSet<BroadcastHistoryLog> BroadcastHistoryLogs { get; set; }
+    public DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
+    public DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
+    public DbSet<ViewerRelation> CoreViewerRelations { get; set; }
+    public DbSet<StreamerManager> CoreStreamerManagers { get; set; }
+    public DbSet<ChzzkCategory> SysChzzkCategories { get; set; }
+    public DbSet<ChzzkCategoryAlias> SysChzzkCategoryAliases { get; set; }
+    public DbSet<StreamerPreference> SysStreamerPreferences { get; set; }
+    public DbSet<PeriodicMessage> SysPeriodicMessages { get; set; }
+    public DbSet<BroadcastSession> SysBroadcastSessions { get; set; }
+    public DbSet<BroadcastHistoryLog> LogBroadcastHistory { get; set; }
 
     // ────────── [SongBook & Media] ──────────
-    public DbSet<SongQueue> SongQueues { get; set; }
-    public DbSet<SongBook> SongBooks { get; set; }
-    public DbSet<SonglistSession> SonglistSessions { get; set; }
-    public DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
-    public DbSet<Master_SongLibrary> MasterSongLibraries { get; set; }
-    public DbSet<Streamer_SongLibrary> StreamerSongLibraries { get; set; }
-    public DbSet<Master_SongStaging> MasterSongStagings { get; set; }
+    public DbSet<SongQueue> FuncSongQueues { get; set; }
+    public DbSet<SongBook> FuncSongBooks { get; set; }
+    public DbSet<SonglistSession> FuncSonglistSessions { get; set; }
+    public DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
+    public DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; set; }
+    public DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; set; }
+    public DbSet<Master_SongStaging> FuncMasterSongStagings { get; set; }
 
     // ────────── [Roulette] ──────────
-    public DbSet<Roulette> Roulettes { get; set; }
-    public DbSet<RouletteItem> RouletteItems { get; set; }
-    public DbSet<RouletteLog> RouletteLogs { get; set; }
-    public DbSet<RouletteSpin> RouletteSpins { get; set; }
-    public DbSet<SoundAsset> SoundAssets { get; set; }
+    public DbSet<Roulette> FuncRoulettes { get; set; }
+    public DbSet<RouletteItem> FuncRouletteItems { get; set; }
+    public DbSet<RouletteLog> FuncRouletteLogs { get; set; }
+    public DbSet<RouletteSpin> FuncRouletteSpins { get; set; }
+    public DbSet<SoundAsset> FuncSoundAssets { get; set; }
 
     // ────────── [Point & Wallet] ──────────
-    public DbSet<ViewerPoint> ViewerPoints { get; set; }
-    public DbSet<ViewerDonation> ViewerDonations { get; set; }
-    public DbSet<ViewerDonationHistory> ViewerDonationHistories { get; set; }
+    public DbSet<ViewerPoint> FuncViewerPoints { get; set; }
+    public DbSet<ViewerDonation> FuncViewerDonations { get; set; }
+    public DbSet<ViewerDonationHistory> FuncViewerDonationHistories { get; set; }
 
     // ────────── [Commands & Saga] ──────────
-    public DbSet<UnifiedCommand> UnifiedCommands { get; set; }
+    public DbSet<UnifiedCommand> SysUnifiedCommands { get; set; }
     public DbSet<CommandExecutionSagaState> CommandExecutionSagaStates { get; set; }
 
     // ────────── [Overlay] ──────────
-    public DbSet<AvatarSetting> AvatarSettings { get; set; }
-    public DbSet<OverlayPreset> OverlayPresets { get; set; }
-    public DbSet<SharedComponent> SharedComponents { get; set; }
+    public DbSet<AvatarSetting> SysAvatarSettings { get; set; }
+    public DbSet<OverlayPreset> SysOverlayPresets { get; set; }
+    public DbSet<SharedComponent> SysSharedComponents { get; set; }
 
     // ────────── [IAMF Philosophy] ──────────
     public DbSet<IamfScenario> IamfScenarios { get; set; }
     public DbSet<IamfGenosRegistry> IamfGenosRegistries { get; set; }
     public DbSet<IamfParhosCycle> IamfParhosCycles { get; set; }
-    public DbSet<IamfVibrationLog> IamfVibrationLogs { get; set; }
+    public DbSet<IamfVibrationLog> LogIamfVibrations { get; set; }
     public DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
-    public DbSet<StreamerKnowledge> StreamerKnowledges { get; set; }
+    public DbSet<StreamerKnowledge> SysStreamerKnowledges { get; set; }
 
     // ────────── [Ledger & Stats (천상의 장부)] ──────────
-    public DbSet<PointTransactionHistory> PointTransactionHistories { get; set; }
-    public DbSet<PointDailySummary> PointDailySummaries { get; set; }
-    public DbSet<RouletteStatsAggregated> RouletteStatsAggregated { get; set; }
-    public DbSet<CommandExecutionLog> CommandExecutionLogs { get; set; }
-    public DbSet<ChatInteractionLog> ChatInteractionLogs { get; set; }
+    public DbSet<PointTransactionHistory> LogPointTransactions { get; set; }
+    public DbSet<PointDailySummary> LogPointDailySummaries { get; set; }
+    public DbSet<LogRouletteStats> LogRouletteStats { get; set; }
+    public DbSet<CommandExecutionLog> LogCommandExecutions { get; set; }
+    public DbSet<ChatInteractionLog> LogChatInteractions { get; set; }
 }

@@ -17,13 +17,13 @@ public class UpdateOmakaseCountHandler(
 {
     public async Task<Result<object>> Handle(UpdateOmakaseCountCommand request, CancellationToken ct)
     {
-        var profile = await db.StreamerProfiles.AsNoTracking()
+        var profile = await db.CoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
         if (profile == null) 
             return Result<object>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
 
-        var item = await db.StreamerOmakases
+        var item = await db.FuncStreamerOmakases
             .FirstOrDefaultAsync(o => o.Id == request.Id && o.StreamerProfileId == profile.Id, ct);
         
         if (item == null)

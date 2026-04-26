@@ -43,7 +43,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
     {
         try
         {
-            var streamer = await _db.StreamerProfiles.AsNoTracking()
+            var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
             if (streamer == null) return (false, 0);
@@ -57,7 +57,7 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 await _pointCache.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Nickname ?? "Unknown", request.Amount);
                 
                 // 현재 잔액은 DB값 + Redis 증분값
-                var dbBalance = await _db.ViewerPoints.AsNoTracking()
+                var dbBalance = await _db.FuncViewerPoints.AsNoTracking()
                     .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId)
                     .Select(v => v.Points)
                     .FirstOrDefaultAsync(ct);
@@ -78,19 +78,20 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 {
                     // [1순위: Identity First] 시청자 관계 및 닉네임, 마지막 활동 시간 등록
                     const string relationUpsertSql = @"
-                        INSERT INTO viewer_relations (streamer_profile_id, global_viewer_id, first_visit_at, last_chat_at, created_at, updated_at)
-                        VALUES (@StreamerId, @GlobalId, NOW(), NOW(), NOW(), NOW())
+                        INSERT INTO core_viewer_relations (streamer_profile_id, global_viewer_id, nickname, is_active, is_deleted, attendance_count, consecutive_attendance_count, first_visit_at, last_chat_at, created_at, updated_at)
+                        VALUES (@StreamerId, @GlobalId, @Nickname, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW())
                         ON DUPLICATE KEY UPDATE 
+                            nickname = VALUES(nickname),
                             last_chat_at = NOW(),
                             updated_at = NOW();";
 
-                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
+                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId, Nickname = request.Nickname ?? "시청자" }, transaction);
 
                     // [2순위: 포인트/재화 정산]
                     int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
 
                     const string upsertSql = @"
-                        INSERT INTO viewer_donations (streamer_profile_id, global_viewer_id, balance, total_donated, created_at, updated_at)
+                        INSERT INTO func_viewer_donations (streamer_profile_id, global_viewer_id, balance, total_donated, created_at, updated_at)
                         VALUES (@StreamerId, @GlobalId, @Amount, @TotalIncrement, NOW(), NOW())
                         ON DUPLICATE KEY UPDATE 
                             balance = balance + @Amount,
@@ -107,12 +108,12 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
 
                     // 2. 최종 잔액 조회 (스냅샷 생성용)
                     var currentBalance = await connection.QueryFirstOrDefaultAsync<int>(
-                        "SELECT balance FROM viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+                        "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
                         new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
 
                     // 3. 감사 로그(ViewerDonationHistory) 기록
                     const string logSql = @"
-                        INSERT INTO viewer_donations_history (streamer_profile_id, global_viewer_id, platform_transaction_id, amount, balance_after, transaction_type, metadata, created_at, updated_at)
+                        INSERT INTO func_viewer_donation_histories (streamer_profile_id, global_viewer_id, platform_transaction_id, amount, balance_after, transaction_type, metadata, created_at, updated_at)
                         VALUES (@StreamerId, @GlobalId, @TxId, @Amount, @BalanceAfter, @Type, @Metadata, NOW(), NOW());";
 
                     await connection.ExecuteAsync(logSql, new

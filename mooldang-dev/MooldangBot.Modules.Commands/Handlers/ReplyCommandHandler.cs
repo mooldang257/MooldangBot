@@ -35,7 +35,7 @@ public class ReplyCommandHandler(
 
             // [2. Context Preparation]: 스트리머 프로필 획득
             // [v4.0] 지휘관 지시: DB를 통해 검증된 프로필을 직접 획득하여 안정성을 확보합니다.
-            var streamerProfile = await db.StreamerProfiles.AsNoTracking()
+            var streamerProfile = await db.CoreStreamerProfiles.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, ct);
 
             if (streamerProfile == null)

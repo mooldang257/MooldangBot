@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.Entities;
 /// [v7.0] 유료 재화 트랜잭션 로그: 치즈 등의 모든 변동 내역을 스냅샷과 함께 기록합니다.
 /// 플랫폼 대사(Reconciliation) 및 사후 감사용 핵심 데이터입니다.
 /// </summary>
-[Table("viewer_donations_history")]
+[Table("func_viewer_donation_histories")]
 [Index(nameof(StreamerProfileId))]
 [Index(nameof(GlobalViewerId))]
 [Index(nameof(PlatformTransactionId), IsUnique = true)]

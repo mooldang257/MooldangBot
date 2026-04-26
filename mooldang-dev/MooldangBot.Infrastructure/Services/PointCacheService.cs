@@ -20,6 +20,10 @@ public class PointCacheService : IPointCacheService
     // [세피로스의 지리]: 모든 채널의 변동분 키 목록을 관리하는 Set 키
     private const string GlobalUpdateSetKey = "viewer_points_pending_sync";
 
+    // [오시리스의 기록부]: 2-Phase Commit을 위한 스냅샷 접두사
+    private const string SnapshotPrefix = "viewer_points_snapshot:";
+    private const string ProcessingSetPrefix = "viewer_points_processing:";
+
     public PointCacheService(IConnectionMultiplexer redis, ILogger<PointCacheService> logger)
     {
         _redis = redis;
@@ -50,59 +54,109 @@ public class PointCacheService : IPointCacheService
         return val.HasValue ? (int)val : 0;
     }
 
-    public async Task<IDictionary<string, PointVariant>> ExtractAllIncrementalPointsAsync()
+    public async Task<string?> CreateSyncSnapshotAsync()
     {
         var db = _redis.GetDatabase();
-        var result = new Dictionary<string, PointVariant>();
+        
+        // 1. 대기 목록 존재 확인
+        if (!await db.KeyExistsAsync(GlobalUpdateSetKey)) return null;
 
-        // 1. 동기화가 필요한 모든 키 목록을 가져옴
-        var pendingKeys = await db.SetMembersAsync(GlobalUpdateSetKey);
-        if (pendingKeys.Length == 0) return result;
+        var snapshotId = Guid.NewGuid().ToString("n");
+        var processingKey = $"{ProcessingSetPrefix}{snapshotId}";
+        var snapshotKey = $"{SnapshotPrefix}{snapshotId}";
 
-        // [물멍의 지혜]: Lua 스크립트를 사용하여 포인트와 닉네임을 원자적으로 추출
-        const string extractScript = @"
+        // 2. 대기 목록을 처리 목록으로 원자적 이동 (Rename)
+        try 
+        {
+            await db.KeyRenameAsync(GlobalUpdateSetKey, processingKey);
+        }
+        catch (RedisServerException ex) when (ex.Message.Contains("no such key"))
+        {
+            return null; // 그 사이에 다른 워커가 가져감
+        }
+
+        // 3. 처리 목록의 키들을 스냅샷 해시에 백업하고 원본 키 삭제 (Atomic Snapshot)
+        var pendingKeys = await db.SetMembersAsync(processingKey);
+        const string backupScript = @"
             local p_val = redis.call('GET', @p_key)
             local n_val = redis.call('GET', @n_key)
             if p_val then
+                redis.call('HSET', @snapshot_key, @p_key, p_val)
+                redis.call('HSET', @snapshot_key, @n_key, n_val)
                 redis.call('DEL', @p_key)
                 redis.call('DEL', @n_key)
-                return {p_val, n_val}
-            else
-                return nil
-            end";
+                return 1
+            end
+            return 0";
+        var preparedBackup = LuaScript.Prepare(backupScript);
 
-        var preparedScript = LuaScript.Prepare(extractScript);
-
-        foreach (var redisKey in pendingKeys)
+        foreach (var key in pendingKeys)
         {
-            var keyStr = redisKey.ToString();
-            // "viewer_points:streamerUid:viewerUid" -> "viewer_nickname:streamerUid:viewerUid"
+            var keyStr = key.ToString();
             var nickKeyStr = keyStr.Replace(PointKeyPrefix, NicknameKeyPrefix);
-            
-            var val = await db.ScriptEvaluateAsync(preparedScript, new { 
+            await db.ScriptEvaluateAsync(preparedBackup, new { 
                 p_key = (RedisKey)keyStr, 
-                n_key = (RedisKey)nickKeyStr 
+                n_key = (RedisKey)nickKeyStr,
+                snapshot_key = (RedisKey)snapshotKey
             });
-            
-            if (!val.IsNull)
-            {
-                var response = (RedisValue[])val!;
-                var amount = (int)response[0];
-                var nickname = response[1].HasValue ? response[1].ToString()! : "Unknown";
+        }
 
-                // Uid들 추출
-                var parts = keyStr.Split(':');
-                if (parts.Length >= 3)
-                {
-                    var mapKey = $"{parts[1]}:{parts[2]}";
-                    result[mapKey] = new PointVariant(amount, nickname);
-                }
+        return snapshotId;
+    }
+
+    public async Task<IDictionary<string, PointVariant>> GetSnapshotDataAsync(string snapshotId)
+    {
+        var db = _redis.GetDatabase();
+        var snapshotKey = $"{SnapshotPrefix}{snapshotId}";
+        var result = new Dictionary<string, PointVariant>();
+
+        var allEntries = await db.HashGetAllAsync(snapshotKey);
+        var entryDict = allEntries.ToDictionary(x => x.Name.ToString(), x => x.Value);
+
+        // 해시 데이터를 PointVariant 맵으로 변환
+        foreach (var entry in entryDict)
+        {
+            var keyStr = entry.Key;
+            if (!keyStr.StartsWith(PointKeyPrefix)) continue;
+
+            var amount = (int)entry.Value;
+            var nickKey = keyStr.Replace(PointKeyPrefix, NicknameKeyPrefix);
+            var nickname = entryDict.TryGetValue(nickKey, out var nVal) ? nVal.ToString() : "Unknown";
+
+            var parts = keyStr.Split(':');
+            if (parts.Length >= 3)
+            {
+                var mapKey = $"{parts[1]}:{parts[2]}";
+                result[mapKey] = new PointVariant(amount, nickname);
             }
-            
-            // 처리된 키는 대기 목록에서 제거
-            await db.SetRemoveAsync(GlobalUpdateSetKey, redisKey);
         }
 
         return result;
+    }
+
+    public async Task RemoveSnapshotAsync(string snapshotId)
+    {
+        var db = _redis.GetDatabase();
+        await db.KeyDeleteAsync($"{SnapshotPrefix}{snapshotId}");
+        await db.KeyDeleteAsync($"{ProcessingSetPrefix}{snapshotId}");
+    }
+
+    public async Task<IEnumerable<string>> GetOrphanedSnapshotsAsync()
+    {
+        // Redis 서버에서 직접 패턴 검색 (서버 부하 주의, 실무에서는 별도 인덱싱 권장)
+        var server = _redis.GetServer(_redis.GetEndPoints()[0]);
+        var keys = server.Keys(pattern: $"{ProcessingSetPrefix}*");
+        return keys.Select(k => k.ToString().Replace(ProcessingSetPrefix, ""));
+    }
+
+    public async Task<IDictionary<string, PointVariant>> ExtractAllIncrementalPointsAsync()
+    {
+        // 하위 호환성을 위해 스냅샷 로직을 사용하여 구현
+        var snapshotId = await CreateSyncSnapshotAsync();
+        if (string.IsNullOrEmpty(snapshotId)) return new Dictionary<string, PointVariant>();
+
+        var data = await GetSnapshotDataAsync(snapshotId);
+        await RemoveSnapshotAsync(snapshotId);
+        return data;
     }
 }

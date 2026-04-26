@@ -30,7 +30,7 @@ namespace MooldangBot.Application.Controllers.Admin
         [HttpGet("streamers")]
         public async Task<IActionResult> GetStreamers()
         {
-            var streamersInDb = await db.StreamerProfiles
+            var streamersInDb = await db.CoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .ToListAsync();
 

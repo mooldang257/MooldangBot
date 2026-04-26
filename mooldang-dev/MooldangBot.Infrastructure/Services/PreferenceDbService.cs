@@ -11,12 +11,12 @@ public class PreferenceDbService(IAppDbContext context) : IPreferenceDbService
 {
     public async Task SetPermanentPreferenceAsync(string chzzkUid, string key, string value)
     {
-        var profile = await context.StreamerProfiles
+        var profile = await context.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
         if (profile == null) return;
 
-        var preference = await context.StreamerPreferences
+        var preference = await context.SysStreamerPreferences
             .FirstOrDefaultAsync(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == key);
 
         if (preference == null)
@@ -27,7 +27,7 @@ public class PreferenceDbService(IAppDbContext context) : IPreferenceDbService
                 PreferenceKey = key,
                 PreferenceValue = value
             };
-            context.StreamerPreferences.Add(preference);
+            context.SysStreamerPreferences.Add(preference);
         }
         else
         {
@@ -39,12 +39,12 @@ public class PreferenceDbService(IAppDbContext context) : IPreferenceDbService
 
     public async Task<string?> GetPermanentPreferenceAsync(string chzzkUid, string key)
     {
-        var profile = await context.StreamerProfiles
+        var profile = await context.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
         if (profile == null) return null;
 
-        var preference = await context.StreamerPreferences
+        var preference = await context.SysStreamerPreferences
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == key);
 
@@ -53,17 +53,17 @@ public class PreferenceDbService(IAppDbContext context) : IPreferenceDbService
 
     public async Task RemovePermanentPreferenceAsync(string chzzkUid, string key)
     {
-        var profile = await context.StreamerProfiles
+        var profile = await context.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
         if (profile == null) return;
 
-        var preference = await context.StreamerPreferences
+        var preference = await context.SysStreamerPreferences
             .FirstOrDefaultAsync(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == key);
 
         if (preference != null)
         {
-            context.StreamerPreferences.Remove(preference);
+            context.SysStreamerPreferences.Remove(preference);
             await context.SaveChangesAsync();
         }
     }

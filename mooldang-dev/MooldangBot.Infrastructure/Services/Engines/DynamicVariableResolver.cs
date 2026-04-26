@@ -55,7 +55,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveTitle_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedTitle)) return cachedTitle;
 
-            var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            var streamer = await _db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
             var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
@@ -77,7 +77,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveCategory_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedCategory)) return cachedCategory;
 
-            var streamer = await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
+            var streamer = await _db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == streamerUid);
             if (string.IsNullOrEmpty(streamer?.ChzzkAccessToken)) return null;
 
             var result = await _chzzkApi.GetLiveSettingAsync(streamer.ChzzkUid, streamer.ChzzkAccessToken);
@@ -99,7 +99,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_LiveNotice_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedNotice)) return cachedNotice;
 
-            var command = await _db.UnifiedCommands
+            var command = await _db.SysUnifiedCommands
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.StreamerProfile!.ChzzkUid == streamerUid && c.FeatureType == CommandFeatureType.Notice);
@@ -122,7 +122,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
             var cacheKey = $"Resolved_SonglistStatus_{streamerUid}";
             if (_cache.TryGetValue(cacheKey, out string? cachedStatus)) return cachedStatus;
 
-            var isActive = await _db.SonglistSessions
+            var isActive = await _db.FuncSonglistSessions
                 .AsNoTracking()
                 .Include(s => s.StreamerProfile)
                 .Where(s => s.StreamerProfile!.ChzzkUid == streamerUid)
@@ -142,7 +142,7 @@ namespace MooldangBot.Infrastructure.Services.Engines
         private async Task<string?> GetConsecutiveAttendanceAsync(string streamerUid, string viewerUid)
         {
             var hash = Sha256Hasher.ComputeHash(viewerUid);
-            var relation = await _db.ViewerRelations
+            var relation = await _db.CoreViewerRelations
                 .AsNoTracking()
                 .Include(r => r.StreamerProfile)
                 .Include(r => r.GlobalViewer)

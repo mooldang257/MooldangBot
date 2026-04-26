@@ -22,7 +22,7 @@ public class UpdateSonglistSettingsHandler(
     public async Task<Result<object>> Handle(UpdateSonglistSettingsCommand request, CancellationToken ct)
     {
         var targetUid = request.StreamerUid.ToLower();
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted, ct);
             
         if (profile == null) 
@@ -31,9 +31,9 @@ public class UpdateSonglistSettingsHandler(
         profile.DesignSettingsJson = request.Request.DesignSettingsJson;
 
         // 1. Omakase Items Sync
-        var existingItems = await db.StreamerOmakases
+        var existingItems = await db.FuncStreamerOmakases
             .Where(o => o.StreamerProfileId == profile.Id)
-            .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+            .Where(o => db.SysUnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
             .ToListAsync(ct);
 
         if (request.Request.Omakases != null)
@@ -51,7 +51,7 @@ public class UpdateSonglistSettingsHandler(
                         Icon = dto.Icon,
                         Count = 0
                     };
-                    db.StreamerOmakases.Add(item);
+                    db.FuncStreamerOmakases.Add(item);
                 }
                 else
                 {
@@ -64,11 +64,11 @@ public class UpdateSonglistSettingsHandler(
             }
 
             var toDelete = existingItems.Where(e => !processedIds.Contains(e.Id));
-            db.StreamerOmakases.RemoveRange(toDelete);
+            db.FuncStreamerOmakases.RemoveRange(toDelete);
         }
 
         // Sync Commands
-        var existingCmds = await db.UnifiedCommands
+        var existingCmds = await db.SysUnifiedCommands
             .Where(c => c.StreamerProfileId == profile.Id && (c.FeatureType == CommandFeatureType.SongRequest || c.FeatureType == CommandFeatureType.Omakase) && !c.IsDeleted)
             .ToListAsync(ct);
 

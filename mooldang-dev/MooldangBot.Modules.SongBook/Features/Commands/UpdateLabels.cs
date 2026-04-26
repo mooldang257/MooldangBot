@@ -16,7 +16,7 @@ public class UpdateLabelsHandler(ISongBookDbContext db) : IRequestHandler<Update
     public async Task<Result<object>> Handle(UpdateLabelsCommand request, CancellationToken ct)
     {
         var targetUid = request.StreamerUid.ToLower();
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted, ct);
         
         if (profile == null) 

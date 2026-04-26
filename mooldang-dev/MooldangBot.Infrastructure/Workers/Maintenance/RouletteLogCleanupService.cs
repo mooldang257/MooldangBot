@@ -26,7 +26,7 @@ public class RouletteLogCleanupService(
 
         // 90일 경과 데이터 중 미수행(Pending) 상태가 아닌 것만 삭제
         var thresholdDate = KstClock.Now.AddDays(-90);
-        int oldLogs = await db.RouletteLogs
+        int oldLogs = await db.FuncRouletteLogs
             .Where(l => l.CreatedAt < thresholdDate && l.Status != MooldangBot.Domain.Entities.RouletteLogStatus.Pending)
             .ExecuteDeleteAsync(ct);
 

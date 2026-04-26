@@ -141,10 +141,11 @@ public class WebSocketShard : IWebSocketShard, IDisposable
         finally
         {
             _clients.TryRemove(chzzkUid, out _);
-            if (_channelCts.TryRemove(chzzkUid, out var myCts)) myCts.Cancel();
+            bool wasActive = _channelCts.TryRemove(new KeyValuePair<string, CancellationTokenSource>(chzzkUid, cts));
+            if (wasActive) cts.Cancel();
             _isSubscribed[chzzkUid] = false;
             
-            if (!_disposed)
+            if (!_disposed && wasActive)
             {
                 client.Dispose();
                 await HandleReconnectWithBackoff(chzzkUid, url, accessToken);

@@ -27,7 +27,7 @@ public class RefundCurrencyCommandHandler(
         try
         {
             // 0. 기반 정보 조회 (오시리스의 탐색): Uid를 통해 실제 ProfileId와 GlobalViewerId를 확보합니다.
-            var streamerProfile = await dbContext.StreamerProfiles
+            var streamerProfile = await dbContext.CoreStreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
             
             // [이지스 통합]: UID 기반 시청자 식별 및 동기화
@@ -53,7 +53,7 @@ public class RefundCurrencyCommandHandler(
                 CreatedAt = KstClock.Now
             };
             
-            dbContext.PointTransactionHistories.Add(log);
+            dbContext.LogPointTransactions.Add(log);
 
             // 2. 캐시 메모리 복구
             // IPointCacheService 인터페이스 규격(AddPointAsync)을 사용합니다.

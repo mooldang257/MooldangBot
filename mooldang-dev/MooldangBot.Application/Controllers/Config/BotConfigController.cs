@@ -4,13 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.Common.Models;
+using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Configuration;
 
 namespace MooldangBot.Application.Controllers.Config
 {
     [ApiController]
     [Route("api/config/bot/{uid}")]
-    // [v10.1] Primary Constructor 활용
     public class BotConfigController(
         IAppDbContext db, 
         IChzzkBotService chzzkService, 
@@ -21,7 +21,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("status")]
         public async Task<IActionResult> GetBotStatus([FromRoute] string uid)
         {
-            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -35,21 +35,30 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpPatch("status")]
         public async Task<IActionResult> ToggleBotStatus([FromRoute] string uid, [FromBody] BotToggleRequest req)
         {
-            var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             streamer.IsActive = req.IsEnabled;
             await db.SaveChangesAsync();
 
-            // 백그라운드 서비스에 즉시 반영 요청
-            await chzzkService.RefreshChannelAsync(uid);
+            // 백그라운드 서비스에 상태 변경 신호 발송 (기존 인프라 활용)
+            try 
+            {
+                // RefreshChannelAsync가 내부적으로 IsActive 상태를 체크하여 
+                // 활성이면 Reconnect, 비활성이면 Disconnect 신호를 보냅니다.
+                await chzzkService.RefreshChannelAsync(uid);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, Result<string>.Failure($"DB 상태는 변경되었으나 서비스 신호 발송에 실패했습니다: {ex.Message}"));
+            }
 
             return Ok(Result<object>.Success(new 
             { 
                 success = true, 
                 isActive = streamer.IsActive, 
-                message = "설정이 즉시 변경되었습니다." 
+                message = req.IsEnabled ? "봇이 가동되었습니다." : "봇이 중지되었습니다." 
             }));
         }
 
@@ -57,7 +66,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("slug")]
         public async Task<IActionResult> GetStreamerSlug([FromRoute] string uid)
         {
-            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -76,17 +85,15 @@ namespace MooldangBot.Application.Controllers.Config
             if (string.IsNullOrWhiteSpace(req.Slug)) 
                 return BadRequest(Result<string>.Failure("주소는 비워둘 수 없습니다."));
             
-            // [물멍]: 보안 및 가독성을 위한 슬러그 형식 검증(알파벳 소문자, 숫자, 하이픈만 허용)
             var slugPattern = new System.Text.RegularExpressions.Regex("^[a-z0-9-]{3,20}$");
             if (!slugPattern.IsMatch(req.Slug)) 
                 return BadRequest(Result<string>.Failure("주소는 3~20자의 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다."));
 
-            var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            // 중복 체크
-            var isTaken = await db.StreamerProfiles.AnyAsync(p => p.Slug == req.Slug && p.ChzzkUid != uid);
+            var isTaken = await db.CoreStreamerProfiles.AnyAsync(p => p.Slug == req.Slug && p.ChzzkUid != uid);
             if (isTaken) 
                 return Conflict(Result<string>.Failure("이미 사용 중인 주소입니다."));
 
@@ -94,7 +101,6 @@ namespace MooldangBot.Application.Controllers.Config
             streamer.Slug = req.Slug;
             await db.SaveChangesAsync();
 
-            // [안정성의 평화]: 기존 캐시 무효화
             identityCache.InvalidateStreamer(uid);
             if (!string.IsNullOrEmpty(oldSlug)) identityCache.InvalidateSlug(oldSlug);
             identityCache.InvalidateSlug(req.Slug);
@@ -111,7 +117,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("config")]
         public async Task<IActionResult> GetApiConfig([FromRoute] string uid)
         {
-            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             return Ok(Result<object>.Success(new 
@@ -127,7 +133,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpPatch("config")]
         public async Task<IActionResult> UpdateApiConfig([FromRoute] string uid, [FromBody] BotConfigRequest req)
         {
-            var streamer = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             streamer.ClientId = req.ClientId;
@@ -142,7 +148,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("login")]
         public async Task<IActionResult> BotLogin([FromRoute] string uid)
         {
-            var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null || string.IsNullOrEmpty(streamer.ClientId)) 
                 return BadRequest(Result<string>.Failure("API 설정이 완료되지 않았습니다."));
 
@@ -151,22 +157,5 @@ namespace MooldangBot.Application.Controllers.Config
             
             return Redirect(authUrl);
         }
-    }
-
-    public class BotToggleRequest
-    {
-        public bool IsEnabled { get; set; }
-    }
-
-    public class BotConfigRequest
-    {
-        public string? ClientId { get; set; }
-        public string? ClientSecret { get; set; }
-        public string? RedirectUrl { get; set; }
-    }
-
-    public class SlugUpdateRequest
-    {
-        public string Slug { get; set; } = string.Empty;
     }
 }

@@ -9,16 +9,16 @@ namespace MooldangBot.Domain.Abstractions;
 /// </summary>
 public interface ICommandDbContext
 {
-    DbSet<UnifiedCommand> UnifiedCommands { get; set; }
-    DbSet<StreamerProfile> StreamerProfiles { get; set; }
-    DbSet<GlobalViewer> GlobalViewers { get; set; }
-    DbSet<ViewerRelation> ViewerRelations { get; set; }
-    DbSet<StreamerOmakaseItem> StreamerOmakases { get; set; }
-    DbSet<MooldangBot.Domain.Entities.Roulette> Roulettes { get; set; }
-    DbSet<MooldangBot.Domain.Entities.RouletteItem> RouletteItems { get; set; }
-    DbSet<SongQueue> SongQueues { get; set; }
-    DbSet<SonglistSession> SonglistSessions { get; set; }
-    DbSet<MooldangBot.Domain.Entities.Philosophy.BroadcastSession> BroadcastSessions { get; set; }
+    DbSet<UnifiedCommand> SysUnifiedCommands { get; set; }
+    DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
+    DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
+    DbSet<ViewerRelation> CoreViewerRelations { get; set; }
+    DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
+    DbSet<MooldangBot.Domain.Entities.Roulette> FuncRoulettes { get; set; }
+    DbSet<MooldangBot.Domain.Entities.RouletteItem> FuncRouletteItems { get; set; }
+    DbSet<SongQueue> FuncSongQueues { get; set; }
+    DbSet<SonglistSession> FuncSonglistSessions { get; set; }
+    DbSet<MooldangBot.Domain.Entities.Philosophy.BroadcastSession> SysBroadcastSessions { get; set; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

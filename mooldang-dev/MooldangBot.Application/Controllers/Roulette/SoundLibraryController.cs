@@ -22,7 +22,7 @@ public class SoundLibraryController(IRouletteDbContext db) : ControllerBase
         var chzzkUid = User.FindFirst("StreamerId")?.Value;
         if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-        var assets = await db.SoundAssets
+        var assets = await db.FuncSoundAssets
             .Include(a => a.StreamerProfile)
             .Where(a => a.StreamerProfile!.ChzzkUid == chzzkUid)
             .OrderByDescending(a => a.CreatedAt)
@@ -46,13 +46,13 @@ public class SoundLibraryController(IRouletteDbContext db) : ControllerBase
         var chzzkUid = User.FindFirst("StreamerId")?.Value;
         if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-        var asset = await db.SoundAssets
+        var asset = await db.FuncSoundAssets
             .Include(a => a.StreamerProfile)
             .FirstOrDefaultAsync(a => a.Id == id && a.StreamerProfile!.ChzzkUid == chzzkUid);
 
         if (asset == null) return NotFound(Result<string>.Failure("사운드를 찾을 수 없습니다."));
 
-        db.SoundAssets.Remove(asset);
+        db.FuncSoundAssets.Remove(asset);
         await db.SaveChangesAsync(default);
 
         return Ok(Result<bool>.Success(true));

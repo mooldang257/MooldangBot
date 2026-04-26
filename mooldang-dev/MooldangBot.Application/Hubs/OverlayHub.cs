@@ -54,7 +54,7 @@ public class OverlayHub(
                 using var scope = Context.GetHttpContext()?.RequestServices.CreateScope();
                 var db = scope?.ServiceProvider.GetRequiredService<IAppDbContext>();
                 
-                var streamer = await db!.StreamerProfiles
+                var streamer = await db!.CoreStreamerProfiles
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.OverlayToken == shortToken);
 

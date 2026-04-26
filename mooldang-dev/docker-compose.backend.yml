@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: ./MooldangBot.Api/Dockerfile
-    image: mooldang-app:latest
+    image: mooldang-app:${VERSION_APP:-latest}
     container_name: mooldang-dev-app
     restart: always
     deploy:
@@ -40,7 +40,7 @@ services:
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,7 +68,7 @@ services:
     build:
       context: .
       dockerfile: ./MooldangBot.ChzzkAPI/Dockerfile
-    image: mooldang-chzzk-bot:latest
+    image: mooldang-chzzk-bot:${VERSION_APP:-latest}
     container_name: mooldang-dev-chzzk-bot
     restart: always
     deploy:
@@ -86,6 +86,8 @@ services:
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
       - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
+      - DISABLE_POINT_WRITEBACK=true
+      - DISABLE_POINT_BATCH=true
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     networks:
       - mooldang_dev_net

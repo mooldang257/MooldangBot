@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: ./MooldangBot.Studio/Dockerfile
-    image: mooldang-studio:latest
+    image: mooldang-studio:${VERSION_UI:-latest}
     container_name: mooldang-dev-studio
     restart: always
     deploy:
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: ./MooldangBot.Overlay/Dockerfile
-    image: mooldang-overlay:latest
+    image: mooldang-overlay:${VERSION_UI:-latest}
     container_name: mooldang-dev-overlay
     restart: always
     deploy:
@@ -53,7 +53,7 @@ services:
     build:
       context: .
       dockerfile: ./MooldangBot.Admin/Dockerfile
-    image: mooldang-admin:latest
+    image: mooldang-admin:${VERSION_UI:-latest}
     container_name: mooldang-dev-admin
     restart: always
     deploy:

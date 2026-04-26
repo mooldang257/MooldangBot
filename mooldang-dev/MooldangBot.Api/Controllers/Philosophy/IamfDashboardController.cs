@@ -86,7 +86,7 @@ public class IamfDashboardController : ControllerBase
     [HttpGet("trends")]
     public async Task<IActionResult> GetTrends([FromQuery] string chzzkUid, [FromQuery] int limit = 50)
     {
-        var trends = await _db.IamfVibrationLogs
+        var trends = await _db.LogIamfVibrations
             .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
             .OrderByDescending(v => v.CreatedAt)
             .Take(limit)
@@ -142,7 +142,7 @@ public class IamfDashboardController : ControllerBase
 
         // 2. [기록 검색 및 생성]
         // [정규화] ChzzkUid 문자열로 실시간 프로필 조회
-        var profile = await _db.StreamerProfiles
+        var profile = await _db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid);
 

@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.Entities;
 /// [천상의 장부]: 일자별 포인트 유통량을 요약 집계한 테이블입니다.
 /// (P1: 효율성): 수백만 건의 로그 대신 이 테이블을 조회하여 대시보드 성능을 확보합니다.
 /// </summary>
-[Table("point_daily_summaries")]
+[Table("log_point_daily_summaries")]
 [Index(nameof(StreamerProfileId), nameof(Date), IsUnique = true)]
 public class PointDailySummary
 {

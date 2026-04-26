@@ -97,7 +97,7 @@ public class SongBookController : ControllerBase
         if (streamer == null) 
             return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-        var dbQuery = _db.SongBooks
+        var dbQuery = _db.FuncSongBooks
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamer.Id && !s.IsDeleted);
 
@@ -255,7 +255,7 @@ public class SongBookController : ControllerBase
             }
         }
 
-        _db.SongBooks.Add(song);
+        _db.FuncSongBooks.Add(song);
         await _db.SaveChangesAsync();
 
         return Ok(Result<object>.Success(new { id = song.Id, title = song.Title, localPath = song.ThumbnailUrl }));
@@ -270,7 +270,7 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
-        var song = await _db.SongBooks
+        var song = await _db.FuncSongBooks
             .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
@@ -298,7 +298,7 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
-        var song = await _db.SongBooks
+        var song = await _db.FuncSongBooks
             .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
@@ -323,7 +323,7 @@ public class SongBookController : ControllerBase
         if (profile != null) return profile;
 
         var target = uid.ToLower();
-        return await _db.StreamerProfiles
+        return await _db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
     }

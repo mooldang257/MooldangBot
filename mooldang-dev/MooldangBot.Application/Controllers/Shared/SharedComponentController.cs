@@ -28,7 +28,7 @@ namespace MooldangBot.Application.Controllers.Shared
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
-            var components = await db.SharedComponents
+            var components = await db.SysSharedComponents
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
                 .Where(c => c.StreamerProfile!.ChzzkUid == chzzkUid)
@@ -51,7 +51,7 @@ namespace MooldangBot.Application.Controllers.Shared
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
-            var component = await db.SharedComponents
+            var component = await db.SysSharedComponents
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -75,7 +75,7 @@ namespace MooldangBot.Application.Controllers.Shared
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
-            var profile = await db.StreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
@@ -88,7 +88,7 @@ namespace MooldangBot.Application.Controllers.Shared
                 CreatedAt = KstClock.Now
             };
 
-            db.SharedComponents.Add(component);
+            db.SysSharedComponents.Add(component);
             await db.SaveChangesAsync();
 
             return Ok(Result<SharedComponentDto>.Success(new SharedComponentDto
@@ -107,7 +107,7 @@ namespace MooldangBot.Application.Controllers.Shared
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
-            var component = await db.SharedComponents
+            var component = await db.SysSharedComponents
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             
@@ -130,14 +130,14 @@ namespace MooldangBot.Application.Controllers.Shared
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return Unauthorized(Result<string>.Failure("인증이 필요합니다."));
 
-            var component = await db.SharedComponents
+            var component = await db.SysSharedComponents
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == chzzkUid);
             
             if (component == null) 
                 return NotFound(Result<string>.Failure("컴포넌트를 찾을 수 없습니다."));
 
-            db.SharedComponents.Remove(component);
+            db.SysSharedComponents.Remove(component);
             await db.SaveChangesAsync();
 
             return Ok(Result<object>.Success(new { success = true, message = "컴포넌트가 삭제되었습니다." }));

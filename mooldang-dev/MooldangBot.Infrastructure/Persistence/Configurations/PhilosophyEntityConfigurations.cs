@@ -53,7 +53,7 @@ public class IamfVibrationLogConfiguration : IEntityTypeConfiguration<IamfVibrat
 {
     public void Configure(EntityTypeBuilder<IamfVibrationLog> builder)
     {
-        builder.ToTable("iamf_vibration_logs");
+        builder.ToTable("log_iamf_vibrations");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()
@@ -79,7 +79,7 @@ public class StreamerKnowledgeConfiguration : IEntityTypeConfiguration<StreamerK
 {
     public void Configure(EntityTypeBuilder<StreamerKnowledge> builder)
     {
-        builder.ToTable("streamer_knowledges");
+        builder.ToTable("sys_streamer_knowledges");
         
         builder.HasOne(k => k.StreamerProfile)
                .WithMany()
@@ -106,7 +106,7 @@ public class BroadcastHistoryLogConfiguration : IEntityTypeConfiguration<Broadca
 {
     public void Configure(EntityTypeBuilder<BroadcastHistoryLog> builder)
     {
-        builder.ToTable("sys_broadcast_history_logs");
+        builder.ToTable("log_broadcast_history");
         
         builder.HasOne(h => h.BroadcastSession)
                .WithMany()

@@ -11,15 +11,15 @@ public interface IPointDbContext
 {
     Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
     
-    DbSet<StreamerProfile> StreamerProfiles { get; set; }
-    DbSet<GlobalViewer> GlobalViewers { get; set; }
+    DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
+    DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
     
     // [v7.0] Wallet Architecture 분산화 엔티티
-    DbSet<ViewerRelation> ViewerRelations { get; set; }
-    DbSet<ViewerPoint> ViewerPoints { get; set; }
-    DbSet<ViewerDonation> ViewerDonations { get; set; }
-    DbSet<ViewerDonationHistory> ViewerDonationHistories { get; set; }
-    DbSet<PointTransactionHistory> PointTransactionHistories { get; set; }
+    DbSet<ViewerRelation> CoreViewerRelations { get; set; }
+    DbSet<ViewerPoint> FuncViewerPoints { get; set; }
+    DbSet<ViewerDonation> FuncViewerDonations { get; set; }
+    DbSet<ViewerDonationHistory> FuncViewerDonationHistories { get; set; }
+    DbSet<PointTransactionHistory> LogPointTransactions { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

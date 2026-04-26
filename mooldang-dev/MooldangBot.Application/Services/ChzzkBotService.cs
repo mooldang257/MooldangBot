@@ -104,7 +104,7 @@ public class ChzzkBotService : IChzzkBotService
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-        var streamer = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
         if (streamer == null || !streamer.IsActive || !streamer.IsMasterEnabled)
         {

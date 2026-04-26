@@ -52,20 +52,20 @@ namespace MooldangBot.Application.Controllers.Dashboard
             }
             
             // [물멍]: 통계 데이터 집계
-            var todaySongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
-            var pendingSongs = await db.SongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
+            var todaySongs = await db.FuncSongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
+            var pendingSongs = await db.FuncSongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
             
-            var todayPoints = await db.PointTransactionHistories
+            var todayPoints = await db.LogPointTransactions
                 .Where(t => t.StreamerProfileId == profile.Id && t.CreatedAt >= today)
                 .SumAsync(t => (long?)t.Amount) ?? 0;
 
-            var totalPoints = await db.ViewerPoints
+            var totalPoints = await db.FuncViewerPoints
                 .Where(v => v.StreamerProfileId == profile.Id)
                 .SumAsync(v => (long)v.Points);
 
-            var todayCommands = await db.CommandExecutionLogs.CountAsync(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today);
+            var todayCommands = await db.LogCommandExecutions.CountAsync(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today);
             
-            var topCommand = await db.CommandExecutionLogs
+            var topCommand = await db.LogCommandExecutions
                 .Where(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today)
                 .GroupBy(l => l.Keyword)
                 .OrderByDescending(g => g.Count())
@@ -99,7 +99,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             // [물멍]: 각 도메인별 원본 데이터를 먼저 가져온 후 메모리에서 매핑합니다. (DB 엔진 해석 오류 방지)
-            var rawSongs = await db.SongQueues
+            var rawSongs = await db.FuncSongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
                 .Where(s => s.StreamerProfileId == profile.Id)
@@ -107,7 +107,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 .Take(5)
                 .ToListAsync();
 
-            var rawPoints = await db.PointTransactionHistories
+            var rawPoints = await db.LogPointTransactions
                 .AsNoTracking()
                 .Include(t => t.GlobalViewer)
                 .Where(t => t.StreamerProfileId == profile.Id && t.Amount < 0)
@@ -115,7 +115,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
                 .Take(5)
                 .ToListAsync();
 
-            var rawRoulettes = await db.RouletteLogs
+            var rawRoulettes = await db.FuncRouletteLogs
                 .AsNoTracking()
                 .Include(l => l.GlobalViewer)
                 .Where(l => l.StreamerProfileId == profile.Id)
@@ -176,7 +176,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
 
             // 2. 캐시에 없으면 DB 조회 후 수동 캐시 (slug 대응)
             var target = uidOrSlug.ToLower();
-            profile = await db.StreamerProfiles
+            profile = await db.CoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
 

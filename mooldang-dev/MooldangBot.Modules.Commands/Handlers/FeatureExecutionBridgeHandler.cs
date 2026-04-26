@@ -36,7 +36,7 @@ public class FeatureExecutionBridgeHandler(
             if (!targets.Any()) return;
 
             // [2. Context Preparation]: 스트리머 프로필 획득 (전략 실행에 필요)
-            var streamerProfile = await db.StreamerProfiles.AsNoTracking()
+            var streamerProfile = await db.CoreStreamerProfiles.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, ct);
 
             if (streamerProfile == null)

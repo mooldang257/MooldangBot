@@ -54,7 +54,7 @@ public class ResonanceService : IResonanceService
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == profileId);
+            var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == profileId);
             
             if (profile != null)
             {
@@ -109,7 +109,7 @@ public class ResonanceService : IResonanceService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             
             // [정규화] ChzzkUid 문자열로 실시간 프로필 ID 조회
-            var profile = await db.StreamerProfiles
+            var profile = await db.CoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
@@ -188,7 +188,7 @@ public class ResonanceService : IResonanceService
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return new MooldangBot.Domain.Contracts.AI.Models.Parhos("NULL", "None", 10.01, 1, false, KstClock.Now);
             
             var state = await GetOrHydrateStateAsync(profile.Id);

@@ -8,7 +8,7 @@ namespace MooldangBot.Domain.Entities;
 /// <summary>
 /// [v7.0] 시청자 관계 엔티티: 스트리머와 시청자 간의 관계 및 활동 정보(출석 등)를 관리합니다.
 /// </summary>
-[Table("viewer_relations")]
+[Table("core_viewer_relations")]
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
 public class ViewerRelation : ISoftDeletable, IAuditable
 {

@@ -26,7 +26,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpGet("{chzzkUid}")]
         public async Task<IActionResult> GetRoulettes(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
-            var query = db.Roulettes
+            var query = db.FuncRoulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.StreamerProfile)
                 .Where(R => R.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -37,7 +37,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             }
 
             var pagedResult = await query
-                .Join(db.UnifiedCommands.IgnoreQueryFilters(),
+                .Join(db.SysUnifiedCommands.IgnoreQueryFilters(),
                     r => r.Id,
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
@@ -63,12 +63,12 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpGet("{chzzkUid}/{Id}")]
         public async Task<IActionResult> GetRoulette(string chzzkUid, int Id)
         {
-            var consolidated = await db.Roulettes
+            var consolidated = await db.FuncRoulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.Items)
                 .Include(R => R.StreamerProfile)
                 .Where(r => r.Id == Id && r.StreamerProfile!.ChzzkUid == chzzkUid)
-                .Join(db.UnifiedCommands.IgnoreQueryFilters(),
+                .Join(db.SysUnifiedCommands.IgnoreQueryFilters(),
                     r => r.Id,
                     c => c.TargetId,
                     (r, c) => new { Roulette = r, Command = c })
@@ -108,7 +108,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpPost("{chzzkUid}")]
         public async Task<IActionResult> CreateRoulette(string chzzkUid, [FromBody] RouletteUpdateRequest req)
         {
-            var streamer = await db.StreamerProfiles.IgnoreQueryFilters()
+            var streamer = await db.CoreStreamerProfiles.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
@@ -138,7 +138,7 @@ namespace MooldangBot.Application.Controllers.Roulette
                 }).ToList()
             };
 
-            db.Roulettes.Add(RouletteObj);
+            db.FuncRoulettes.Add(RouletteObj);
             await db.SaveChangesAsync();
 
             // 2. 연결된 통합 명령어(UnifiedCommand) 생성
@@ -159,7 +159,7 @@ namespace MooldangBot.Application.Controllers.Roulette
                 UpdatedAt = KstClock.Now
             };
 
-            db.UnifiedCommands.Add(UnifiedCmd);
+            db.SysUnifiedCommands.Add(UnifiedCmd);
             await db.SaveChangesAsync();
 
             return Ok(Result<RouletteResponseDto>.Success(new RouletteResponseDto
@@ -190,7 +190,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpPut("{chzzkUid}/{Id}")]
         public async Task<IActionResult> UpdateRoulette(string chzzkUid, int Id, [FromBody] RouletteUpdateRequest req)
         {
-            var RouletteObj = await db.Roulettes
+            var RouletteObj = await db.FuncRoulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.Items)
                 .Include(R => R.StreamerProfile)
@@ -202,7 +202,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             RouletteObj.Name = req.Name;
             RouletteObj.UpdatedAt = KstClock.Now;
 
-            db.RouletteItems.RemoveRange(RouletteObj.Items);
+            db.FuncRouletteItems.RemoveRange(RouletteObj.Items);
             RouletteObj.Items = req.Items.Select(i => new Domain.Entities.RouletteItem
             {
                 RouletteId = Id,
@@ -217,7 +217,7 @@ namespace MooldangBot.Application.Controllers.Roulette
                 UseDefaultSound = i.UseDefaultSound
             }).ToList();
 
-            var UnifiedCmd = await db.UnifiedCommands
+            var UnifiedCmd = await db.SysUnifiedCommands
                 .IgnoreQueryFilters()
                 .Include(c => c.StreamerProfile)
                 .FirstOrDefaultAsync(c => c.TargetId == Id 
@@ -263,13 +263,13 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpPatch("{chzzkUid}/{Id}/status")]
         public async Task<IActionResult> ToggleRouletteStatus(string chzzkUid, int Id, [FromBody] bool isActiveParam)
         {
-            var streamer = await db.StreamerProfiles.IgnoreQueryFilters()
+            var streamer = await db.CoreStreamerProfiles.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
 
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var AffectedRows = await db.UnifiedCommands.IgnoreQueryFilters()
+            var AffectedRows = await db.SysUnifiedCommands.IgnoreQueryFilters()
                     .Where(C => C.TargetId == Id 
                              && C.StreamerProfileId == streamer.Id 
                              && C.FeatureType == CommandFeatureType.Roulette)
@@ -297,13 +297,13 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpPatch("{chzzkUid}/items/{ItemId}/status")]
         public async Task<IActionResult> ToggleItemStatus(string chzzkUid, int ItemId, [FromBody] bool isActiveParam)
         {
-            var AffectedRows = await db.RouletteItems.IgnoreQueryFilters()
+            var AffectedRows = await db.FuncRouletteItems.IgnoreQueryFilters()
                     .Where(I => I.Id == ItemId && I.Roulette != null && I.Roulette.StreamerProfile!.ChzzkUid == chzzkUid)
                     .ExecuteUpdateAsync(S => S.SetProperty(I => I.IsActive, isActiveParam));
 
             if (AffectedRows > 0)
             {
-                await db.Roulettes.IgnoreQueryFilters()
+                await db.FuncRoulettes.IgnoreQueryFilters()
                         .Where(R => R.Items.Any(I => I.Id == ItemId))
                         .ExecuteUpdateAsync(S => S.SetProperty(R => R.UpdatedAt, KstClock.Now));
                     
@@ -316,7 +316,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpDelete("{chzzkUid}/{Id}")]
         public async Task<IActionResult> DeleteRoulette(string chzzkUid, int Id)
         {
-            var RouletteObj = await db.Roulettes
+            var RouletteObj = await db.FuncRoulettes
                 .IgnoreQueryFilters()
                 .Include(R => R.StreamerProfile)
                 .FirstOrDefaultAsync(R => R.Id == Id && R.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -324,7 +324,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             if (RouletteObj == null) 
                 return NotFound(Result<string>.Failure("룰렛을 찾을 수 없습니다."));
 
-            db.Roulettes.Remove(RouletteObj);
+            db.FuncRoulettes.Remove(RouletteObj);
             await db.SaveChangesAsync();
 
             return Ok(Result<object>.Success(new { success = true, message = "룰렛이 삭제되었습니다." }));
@@ -339,7 +339,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             [FromQuery] string? itemName = null,
             [FromQuery] CursorPagedRequest request = null!)
         {
-            var query = db.RouletteLogs
+            var query = db.FuncRouletteLogs
                 .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Include(l => l.StreamerProfile)
@@ -376,7 +376,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpPut("{chzzkUid}/history/{id}/status")]
         public async Task<IActionResult> UpdateStatus(string chzzkUid, long id, [FromBody] RouletteLogStatus status)
         {
-            var log = await db.RouletteLogs
+            var log = await db.FuncRouletteLogs
                 .IgnoreQueryFilters()
                 .Include(l => l.StreamerProfile)
                 .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -394,7 +394,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpDelete("{chzzkUid}/history/{id}")]
         public async Task<IActionResult> DeleteHistory(string chzzkUid, long id)
         {
-            var log = await db.RouletteLogs
+            var log = await db.FuncRouletteLogs
                 .IgnoreQueryFilters()
                 .Include(l => l.StreamerProfile)
                 .FirstOrDefaultAsync(l => l.Id == id && l.StreamerProfile!.ChzzkUid == chzzkUid);
@@ -402,7 +402,7 @@ namespace MooldangBot.Application.Controllers.Roulette
             if (log == null) 
                 return NotFound(Result<string>.Failure("삭제할 로그를 찾을 수 없거나 접근 권한이 없습니다."));
 
-            db.RouletteLogs.Remove(log);
+            db.FuncRouletteLogs.Remove(log);
             await db.SaveChangesAsync();
 
             return Ok(Result<bool>.Success(true));
@@ -411,7 +411,7 @@ namespace MooldangBot.Application.Controllers.Roulette
         [HttpDelete("{chzzkUid}/history/bulk")]
         public async Task<IActionResult> BulkDeleteHistory(string chzzkUid, [FromBody] List<long> ids)
         {
-            var affectedRows = await db.RouletteLogs
+            var affectedRows = await db.FuncRouletteLogs
                 .IgnoreQueryFilters()
                 .Where(l => ids.Contains(l.Id) && l.StreamerProfile!.ChzzkUid == chzzkUid)
                 .ExecuteDeleteAsync();

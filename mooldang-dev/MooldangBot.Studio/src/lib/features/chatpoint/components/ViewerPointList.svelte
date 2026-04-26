@@ -109,7 +109,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    {#each items as item, i (item.nickname)}
+                    {#each items as item, i (item.id)}
                         <tr class="hover:bg-slate-50/50 transition-colors group">
                             <td class="px-8 py-6 font-black text-slate-300 group-hover:text-primary transition-colors italic text-lg">
                                 {i + 1}

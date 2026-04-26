@@ -8,13 +8,13 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
 {
     public async Task<MooldangBot.Domain.Entities.SongBook?> GetByStreamerIdAsync(string streamerUid)
     {
-        return await db.SongBooks
+        return await db.FuncSongBooks
             .FirstOrDefaultAsync(s => s.StreamerProfile != null && s.StreamerProfile.ChzzkUid == streamerUid);
     }
 
     public async Task AddAsync(MooldangBot.Domain.Entities.SongBook songBook)
     {
-        db.SongBooks.Add(songBook);
+        db.FuncSongBooks.Add(songBook);
         await db.SaveChangesAsync(default);
     }
 
@@ -25,7 +25,7 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
     {
         var vectorString = "[" + string.Join(",", vector) + "]";
         
-        return await db.MasterSongLibraries
+        return await db.FuncMasterSongLibraries
             .FromSqlInterpolated($@"
                 SELECT * FROM master_song_library
                 ORDER BY VEC_DISTANCE_COSINE(TitleVector, VEC_FromText({vectorString}))
@@ -39,7 +39,7 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
     /// </summary>
     public async Task<List<Streamer_SongLibrary>> SearchStreamerSongsAsync(int streamerProfileId, string? query, float[]? vector, int limit = 20)
     {
-        var queryable = db.StreamerSongLibraries
+        var queryable = db.FuncStreamerSongLibraries
             .Where(s => s.StreamerProfileId == streamerProfileId);
 
         if (string.IsNullOrWhiteSpace(query) && vector == null)
@@ -58,7 +58,7 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
         if (vector != null)
         {
             var vectorString = "[" + string.Join(",", vector) + "]";
-            return await db.StreamerSongLibraries
+            return await db.FuncStreamerSongLibraries
                 .FromSqlInterpolated($@"
                     SELECT * FROM streamer_song_library
                     WHERE StreamerProfileId = {streamerProfileId}

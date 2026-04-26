@@ -24,16 +24,16 @@ public class PointDailySummaryConfiguration : IEntityTypeConfiguration<PointDail
 {
     public void Configure(EntityTypeBuilder<PointDailySummary> builder)
     {
-        builder.ToTable("stats_point_daily");
+        builder.ToTable("log_point_daily_summaries");
     }
 }
 
 // [v11.1] 천상의 장부 매핑 설정 - 룰렛 통계 집계
-public class RouletteStatsAggregatedConfiguration : IEntityTypeConfiguration<RouletteStatsAggregated>
+public class RouletteStatsAggregatedConfiguration : IEntityTypeConfiguration<LogRouletteStats>
 {
-    public void Configure(EntityTypeBuilder<RouletteStatsAggregated> builder)
+    public void Configure(EntityTypeBuilder<LogRouletteStats> builder)
     {
-        builder.ToTable("stats_roulette_audit");
+        builder.ToTable("log_roulette_stats");
     }
 }
 
@@ -56,7 +56,7 @@ public class ViewerDonationHistoryConfiguration : IEntityTypeConfiguration<Viewe
 {
     public void Configure(EntityTypeBuilder<ViewerDonationHistory> builder)
     {
-        builder.ToTable("viewer_donations_history");
+        builder.ToTable("func_viewer_donation_histories");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()

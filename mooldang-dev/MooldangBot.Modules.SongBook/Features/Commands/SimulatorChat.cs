@@ -19,7 +19,7 @@ public class SimulatorChatHandler(
 {
     public async Task<Result<object>> Handle(SimulatorChatCommand request, CancellationToken ct)
     {
-        var profile = await db.StreamerProfiles.AsNoTracking()
+        var profile = await db.CoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
             
         if (profile == null) 

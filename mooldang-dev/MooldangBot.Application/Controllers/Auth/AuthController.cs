@@ -160,7 +160,7 @@ namespace MooldangBot.Application.Controllers.Auth
                 else
                 {
                     var viewerHash = MooldangBot.Domain.Common.Security.Sha256Hasher.ComputeHash(chzzkUid);
-                    var managedChannels = await _db.StreamerManagers
+                    var managedChannels = await _db.CoreStreamerManagers
                         .Include(m => m.StreamerProfile)
                         .Include(m => m.GlobalViewer)
                         .Where(m => m.GlobalViewer!.ViewerUidHash == viewerHash)

@@ -38,6 +38,7 @@ TARGET_TYPE="" # app or ui
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --all) RELEASE_TARGETS+=("app" "chzzk-bot" "studio" "admin" "overlay"); TARGET_TYPE="all" ;;
         --app) RELEASE_TARGETS+=("app" "chzzk-bot"); TARGET_TYPE="app" ;;
         --ui) RELEASE_TARGETS+=("studio" "admin" "overlay"); TARGET_TYPE="ui" ;;
         --version|-v) shift; IMAGE_VERSION=$1; AUTO_INCREMENT=false ;;
@@ -78,12 +79,11 @@ if [ -z "$IMAGE_VERSION" ]; then
     read -p "배포할 버전명을 입력하세요 (예: v1.0.0): " IMAGE_VERSION
 fi
 
-# 2. 추출 대상 및 경로 설정
-IMAGE_EXPORT_DIR="../mooldang-prod/images"
-mkdir -p "$IMAGE_EXPORT_DIR"
+# 2. 운영 환경 설정 업데이트 및 태깅
+PROD_ENV="../mooldang-prod/.env"
 SERVICES_TO_RELEASE=("${RELEASE_TARGETS[@]}")
 
-echo -e "${YELLOW}🏷️ 대상 서비스([${RELEASE_TARGETS[*]}])에 버전($IMAGE_VERSION) 태깅 및 추출을 진행합니다...${NC}"
+echo -e "${YELLOW}🏷️ 대상 서비스([${RELEASE_TARGETS[*]}])에 버전($IMAGE_VERSION) 적용을 시작합니다...${NC}"
 
 for svc in "${SERVICES_TO_RELEASE[@]}"; do
     IMG_NAME="mooldang-$svc"
@@ -92,21 +92,36 @@ for svc in "${SERVICES_TO_RELEASE[@]}"; do
     if docker images -q "$IMG_NAME:latest" > /dev/null; then
         echo -e "  - $IMG_NAME: ${GREEN}latest -> $IMAGE_VERSION${NC} 태깅 중..."
         docker tag "$IMG_NAME:latest" "$IMG_NAME:$IMAGE_VERSION"
-        
-        echo -e "  - $IMG_NAME:$IMAGE_VERSION 추출 중..."
-        docker save -o "$IMAGE_EXPORT_DIR/$IMG_NAME-$IMAGE_VERSION.tar" "$IMG_NAME:$IMAGE_VERSION"
     else
-        echo -e "  - $IMG_NAME: ${RED}latest 이미지를 찾을 수 없어 건너뜁니다.${NC}"
+        echo -e "  - $IMG_NAME: ${RED}latest 이미지를 찾을 수 없습니다.${NC}"
     fi
 done
 
-echo -e "${GREEN}✅ 운영 이관용 이미지 추출이 완료되었습니다!${NC}"
-echo -e "${YELLOW}📊 위치: $IMAGE_EXPORT_DIR${NC}"
-echo -e "\n${YELLOW}💡 [다음 단계] 운영 서버에서:${NC}"
-echo -e "1. 이미지를 로드합니다: ${NC}docker load -i $IMG_NAME-$IMAGE_VERSION.tar (모든 파일 반복)"
-echo -e "2. mooldang-prod/.env 파일의 VERSION_APP 및 VERSION_UI를 $IMAGE_VERSION 으로 수정합니다."
-echo -e "3. 함대를 가동합니다: ${NC}docker compose up -d"
+# 3. 운영 환경 .env 파일 업데이트
+if [ -f "$PROD_ENV" ]; then
+    echo -e "${YELLOW}📝 운영 환경($PROD_ENV) 버전을 업데이트합니다...${NC}"
+    if [ "$TARGET_TYPE" == "app" ]; then
+        sed -i "s/^VERSION_APP=.*/VERSION_APP=$IMAGE_VERSION/" "$PROD_ENV"
+        echo -e "  - VERSION_APP -> ${GREEN}$IMAGE_VERSION${NC}"
+    elif [ "$TARGET_TYPE" == "ui" ]; then
+        sed -i "s/^VERSION_UI=.*/VERSION_UI=$IMAGE_VERSION/" "$PROD_ENV"
+        echo -e "  - VERSION_UI -> ${GREEN}$IMAGE_VERSION${NC}"
+    else
+        # 개별 또는 혼합 배포 시 둘 다 업데이트 시도 (안전책)
+        sed -i "s/^VERSION_APP=.*/VERSION_APP=$IMAGE_VERSION/" "$PROD_ENV"
+        sed -i "s/^VERSION_UI=.*/VERSION_UI=$IMAGE_VERSION/" "$PROD_ENV"
+        echo -e "  - VERSION_APP/UI -> ${GREEN}$IMAGE_VERSION${NC}"
+    fi
+else
+    echo -e "${RED}❌ 오류: 운영 환경 .env 파일을 찾을 수 없습니다 ($PROD_ENV).${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ 운영 이관 준비가 완료되었습니다! (이미지 태깅 및 .env 업데이트 완료)${NC}"
+echo -e "\n${YELLOW}🚢 [다음 단계] 운영 서버에서:${NC}"
+echo -e "1. cd ../mooldang-prod"
+echo -e "2. ./deploy.sh ${TARGET_TYPE:-all}"
 
 echo -e "\n${YELLOW}⏪ 롤백 방법:${NC}"
-echo -e "1. 이전 버전의 이미지를 로드합니다: ${NC}docker load -i images/mooldang-app-<이전버전>.tar"
-echo -e "2. .env 파일의 버전을 다시 이전 버전으로 수정 후 가동합니다."
+echo -e "./rollback.sh 명령어를 사용하여 이전 버전으로 즉시 복구할 수 있습니다."
+

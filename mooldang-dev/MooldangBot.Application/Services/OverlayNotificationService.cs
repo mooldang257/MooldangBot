@@ -65,21 +65,21 @@ namespace MooldangBot.Application.Services
             var normalizedUid = chzzkUid.ToLower();
             
             // 1. 스트리머 프로필 및 설정 조회
-            var profile = await db.StreamerProfiles
+            var profile = await db.CoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == normalizedUid, token);
 
             if (profile == null) return;
 
             // 2. 현재 재생 중인 곡 조회
-            var currentSong = await db.SongQueues
+            var currentSong = await db.FuncSongQueues
                 .AsNoTracking()
                 .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Playing && !s.IsDeleted)
                 .OrderByDescending(s => s.UpdatedAt)
                 .FirstOrDefaultAsync(token);
 
             // 3. 대기열 곡 조회 (상위 5개)
-            var queueSongs = await db.SongQueues
+            var queueSongs = await db.FuncSongQueues
                 .AsNoTracking()
                 .Include(s => s.GlobalViewer)
                 .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)

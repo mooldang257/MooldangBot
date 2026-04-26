@@ -21,7 +21,7 @@ public class AggregatePointStatsCommandHandler(
         var connection = db.Database.GetDbConnection();
 
         const string sql = @"
-            INSERT INTO stats_point_daily (streamer_profile_id, date, total_earned, total_spent, unique_viewer_count, top_command_stats_json, last_updated_at)
+            INSERT INTO log_point_daily_summaries (streamer_profile_id, date, total_earned, total_spent, unique_viewer_count, top_command_stats_json, last_updated_at)
             SELECT 
                 T.streamer_profile_id, 
                 DATE(T.created_at) as date,

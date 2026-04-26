@@ -39,7 +39,7 @@ public class OmakaseStrategy(
             int currentCount = await omakaseCache.GetCountAsync(command.StreamerProfileId, targetId, ct);
 
             // [S2]: 캐시 미스 시 또는 정합성 확보를 위해 DB 확인 (일회성 로드)
-            var menu = await db.StreamerOmakases
+            var menu = await db.FuncStreamerOmakases
                 .FirstOrDefaultAsync(o => o.StreamerProfileId == command.StreamerProfileId && o.Id == command.TargetId && o.IsActive, ct);
 
             if (menu == null)
@@ -67,7 +67,7 @@ public class OmakaseStrategy(
 
             // [통합]: 인메모리 SongBookState에 즉각 등록 (오버레이 노출용)
 
-            var queueCount = await db.SongQueues
+            var queueCount = await db.FuncSongQueues
                 .Where(q => q.StreamerProfileId == command.StreamerProfileId)
                 .CountAsync(ct);
 
@@ -84,7 +84,7 @@ public class OmakaseStrategy(
                 SortOrder = queueCount + 1
             };
 
-            db.SongQueues.Add(newRequest);
+            db.FuncSongQueues.Add(newRequest);
             await db.SaveChangesAsync(ct);
 
             // [통합]: 인메모리 SongBookState에 즉각 등록 (오버레이 노출용, ID 포함)

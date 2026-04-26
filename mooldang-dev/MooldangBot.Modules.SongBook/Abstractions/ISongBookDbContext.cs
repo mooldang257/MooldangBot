@@ -9,18 +9,18 @@ namespace MooldangBot.Modules.SongBook.Abstractions;
 /// </summary>
 public interface ISongBookDbContext
 {
-    DbSet<MooldangBot.Domain.Entities.SongBook> SongBooks { get; }
-    DbSet<SongQueue> SongQueues { get; }
-    DbSet<SonglistSession> SonglistSessions { get; }
-    DbSet<GlobalViewer> GlobalViewers { get; }
-    DbSet<StreamerProfile> StreamerProfiles { get; }
+    DbSet<MooldangBot.Domain.Entities.SongBook> FuncSongBooks { get; }
+    DbSet<SongQueue> FuncSongQueues { get; }
+    DbSet<StreamerProfile> CoreStreamerProfiles { get; }
+    DbSet<GlobalViewer> CoreGlobalViewers { get; }
+    DbSet<SonglistSession> FuncSonglistSessions { get; }
     
     // [v15.1]: 추가된 도메인 통합 테이블
-    DbSet<UnifiedCommand> UnifiedCommands { get; }
-    DbSet<StreamerOmakaseItem> StreamerOmakases { get; }
-    DbSet<StreamerPreference> StreamerPreferences { get; }
-    DbSet<Master_SongLibrary> MasterSongLibraries { get; }
-    DbSet<Streamer_SongLibrary> StreamerSongLibraries { get; }
+    DbSet<UnifiedCommand> SysUnifiedCommands { get; }
+    DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; }
+    DbSet<StreamerPreference> SysStreamerPreferences { get; }
+    DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; }
+    DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

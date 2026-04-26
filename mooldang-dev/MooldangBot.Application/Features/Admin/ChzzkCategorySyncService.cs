@@ -44,7 +44,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
             // [오시리스 v10.1]: 현재 DB에 등록된 별칭(Alias) 기반으로 최신 카테고리 정보 업데이트
-            var aliases = await db.ChzzkCategoryAliases
+            var aliases = await db.SysChzzkCategoryAliases
                 .Include(a => a.Category)
                 .ToListAsync(stoppingToken);
 
@@ -92,7 +92,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
 
         foreach (var data in result.Data)
         {
-            var existing = await db.ChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
+            var existing = await db.SysChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
             if (existing == null)
             {
                 var newCategory = new ChzzkCategory
@@ -102,7 +102,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
                     CategoryValue = data.CategoryValue,
                     UpdatedAt = KstClock.Now
                 };
-                db.ChzzkCategories.Add(newCategory);
+                db.SysChzzkCategories.Add(newCategory);
                 savedCategories.Add(newCategory);
                 added++;
             }

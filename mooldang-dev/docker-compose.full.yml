@@ -1,4 +1,4 @@
-﻿services:
+services:
   # --- [1. Infrastructure Layer: 이계의 보급소] ---
   db:
     image: mariadb:11.4
@@ -10,7 +10,7 @@
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mariadb-data:/var/lib/mysql
     networks:
@@ -54,6 +54,8 @@
       - rabbitmq
     networks:
       - mooldang-net
+    volumes:
+      - ./.env:/app/.env
 
   bot-engine:
     build:
@@ -75,6 +77,8 @@
       - chzzkapi
     networks:
       - mooldang-net
+    volumes:
+      - ./.env:/app/.env
 
   # --- [3. Frontend Layer: 시각 및 조정석] ---
   studio:
@@ -107,8 +111,6 @@
 #      - VITE_API_URL=http://localhost:8080
 #    depends_on:
 #      - bot-engine
-#    networks:
-      - mooldang-net
 
   admin:
     build:

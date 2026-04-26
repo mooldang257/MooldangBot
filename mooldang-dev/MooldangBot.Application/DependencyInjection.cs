@@ -42,9 +42,8 @@ namespace MooldangBot.Application
             services.AddSingleton<IChatTrafficAnalyzer, ChatTrafficAnalyzer>();
             services.AddScoped<IChzzkChatService, ChzzkChatService>();
 
-            // [v3.6.3] 로깅 버퍼 및 포인트 통계 (API측에서 집계용으로 사용할 수 있으므로 유지)
+            // [v3.6.3] 로깅 버퍼
             services.AddSingleton<LogBulkBuffer>();
-            services.AddSingleton<IPointBatchService, PointBatchService>();
 
             services.AddSingleton<CommandBackgroundTaskQueue>();
             services.AddSingleton<AdaptiveAiRateLimiter>();

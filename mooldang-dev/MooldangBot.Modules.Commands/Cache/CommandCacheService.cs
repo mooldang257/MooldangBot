@@ -72,7 +72,7 @@ public class CommandCacheService : ICommandCache
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
 
-            var commandEntities = await db.UnifiedCommands
+            var commandEntities = await db.SysUnifiedCommands
                 .AsNoTracking()
                 .Include(c => c.StreamerProfile)
                 .Where(c => c.StreamerProfile!.ChzzkUid == normalizedUid)

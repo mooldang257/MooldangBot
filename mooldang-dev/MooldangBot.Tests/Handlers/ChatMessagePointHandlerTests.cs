@@ -3,22 +3,19 @@ using MooldangBot.Modules.Commands.Events;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Events;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Modules.Point.Interfaces;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 
 namespace MooldangBot.Tests.Handlers;
 
-/// <summary>
-/// [테스트 경제 수호자]: ChatMessagePointHandler의 포인트 적립 로직을 검증합니다.
-/// 10k TPS에서 매초 수천 번 호출되는 핫패스이며, 비채팅 이벤트 필터링이 핵심입니다.
-/// </summary>
 public class ChatMessagePointHandlerTests
 {
-    private readonly IPointBatchService _batchService = Substitute.For<IPointBatchService>();
+    private readonly IPointCacheService _cacheService = Substitute.For<IPointCacheService>();
     private readonly ILogger<ChatMessagePointHandler> _logger = Substitute.For<ILogger<ChatMessagePointHandler>>();
 
-    private ChatMessagePointHandler CreateSut() => new(_batchService, _logger);
+    private ChatMessagePointHandler CreateSut() => new(_cacheService, _logger);
 
     private static StreamerProfile CreateProfile() => new()
     {
@@ -47,8 +44,8 @@ public class ChatMessagePointHandlerTests
         // [Act]
         await handler.Handle(notification, CancellationToken.None);
 
-        // [Assert]: EnqueueIncrement가 정확한 파라미터로 1회 호출되어야 함
-        _batchService.Received(1).EnqueueIncrement("streamer1", "viewer123", "물댕이", 1);
+        // [Assert]: AddPointAsync가 정확한 파라미터로 1회 호출되어야 함
+        await _cacheService.Received(1).AddPointAsync("streamer1", "viewer123", "물댕이", 1);
     }
 
     [Fact]
@@ -73,7 +70,7 @@ public class ChatMessagePointHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]: 후원 이벤트는 포인트 적립 대상이 아님
-        _batchService.DidNotReceive().EnqueueIncrement(
+        await _cacheService.DidNotReceive().AddPointAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>());
     }
 
@@ -98,7 +95,7 @@ public class ChatMessagePointHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]: SenderId가 없으면 포인트 적립 안 함
-        _batchService.DidNotReceive().EnqueueIncrement(
+        await _cacheService.DidNotReceive().AddPointAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>());
     }
 }

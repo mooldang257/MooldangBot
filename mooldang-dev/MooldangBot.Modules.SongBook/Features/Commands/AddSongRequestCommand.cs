@@ -41,14 +41,14 @@ public class AddSongRequestCommandHandler(
         // 여기선 가입 가능 여부만 체크하고 실제 추가는 DB 저장 후에 수행합니다.
         
         // 3. [영속화]: DB에 신청 내역 저장
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid, ct);
 
         int newSongId = 0;
         if (profile != null)
         {
-            var queueCount = await db.SongQueues
+            var queueCount = await db.FuncSongQueues
                 .Where(q => q.StreamerProfileId == profile.Id)
                 .CountAsync(ct);
 
@@ -62,7 +62,7 @@ public class AddSongRequestCommandHandler(
                 SortOrder = queueCount + 1
             };
 
-            db.SongQueues.Add(newRequest);
+            db.FuncSongQueues.Add(newRequest);
             await db.SaveChangesAsync(ct);
             newSongId = newRequest.Id;
         }

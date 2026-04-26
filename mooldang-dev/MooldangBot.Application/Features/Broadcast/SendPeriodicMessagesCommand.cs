@@ -21,7 +21,7 @@ public class SendPeriodicMessagesCommandHandler(
     {
         logger.LogInformation("🚀 [Broadcast] 정기 메시지 송출 작업 시작...");
 
-        var profiles = await db.StreamerProfiles
+        var profiles = await db.CoreStreamerProfiles
             .AsNoTracking()
             .Where(p => p.IsActive && p.IsMasterEnabled)
             .ToListAsync(ct);
@@ -29,7 +29,7 @@ public class SendPeriodicMessagesCommandHandler(
         if (profiles.Count == 0) return;
 
         var profileIds = profiles.Select(p => p.Id).ToList();
-        var allMessages = await db.PeriodicMessages
+        var allMessages = await db.SysPeriodicMessages
             .Where(m => profileIds.Contains(m.StreamerProfileId) && m.IsEnabled)
             .ToListAsync(ct);
 
@@ -51,7 +51,7 @@ public class SendPeriodicMessagesCommandHandler(
                         await botService.SendReplyChatAsync(profile, msg.Message, "", ct);
                         
                         // 추적을 위해 DbContext에 다시 붙여서 업데이트
-                        db.PeriodicMessages.Attach(msg);
+                        db.SysPeriodicMessages.Attach(msg);
                         msg.LastSentAt = now;
                         await db.SaveChangesAsync(ct);
                         

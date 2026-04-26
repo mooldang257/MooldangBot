@@ -11,7 +11,7 @@ namespace MooldangBot.Domain.Entities;
 /// 마스터 라이브러리 정보를 스냅샷으로 가지며, 스트리머 특화 퍼포먼스 데이터를 포함합니다.
 /// </summary>
 [Index(nameof(StreamerProfileId), nameof(Id))]
-[Table("SongBooks")]
+[Table("func_song_books")]
 public class SongBook : ISoftDeletable, IAuditable
 {
     [Key]

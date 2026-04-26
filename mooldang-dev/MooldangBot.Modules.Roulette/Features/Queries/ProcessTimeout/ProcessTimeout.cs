@@ -27,7 +27,7 @@ public class ProcessTimeoutSpinsHandler(
         var now = KstClock.Now;
 
         // 1. 미완료 상태인 룰렛 세션 쿼리 (가볍게 10건씩)
-        var pendingSpins = await db.RouletteSpins
+        var pendingSpins = await db.FuncRouletteSpins
             .Include(s => s.StreamerProfile)
             .Where(s => !s.IsCompleted && s.ScheduledTime < now.AddSeconds(5))
             .OrderBy(s => s.ScheduledTime)

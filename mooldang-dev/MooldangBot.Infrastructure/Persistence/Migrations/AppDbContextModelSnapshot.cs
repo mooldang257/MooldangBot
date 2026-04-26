@@ -69,13 +69,13 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("walking_image_url");
 
                     b.HasKey("Id")
-                        .HasName("pk_overlay_avatar_settings");
+                        .HasName("pk_sys_avatar_settings");
 
                     b.HasIndex("StreamerProfileId")
                         .IsUnique()
-                        .HasDatabaseName("ix_overlay_avatar_settings_streamer_profile_id");
+                        .HasDatabaseName("ix_sys_avatar_settings_streamer_profile_id");
 
-                    b.ToTable("overlay_avatar_settings", (string)null);
+                    b.ToTable("sys_avatar_settings", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ChatInteractionLog", b =>
@@ -317,6 +317,51 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_GlobalViewer_ViewerUidHash");
 
                     b.ToTable("core_global_viewers", (string)null);
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteStats", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("item_name");
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_updated_at");
+
+                    b.Property<int>("RouletteId")
+                        .HasColumnType("int")
+                        .HasColumnName("roulette_id");
+
+                    b.Property<double>("TheoreticalProbability")
+                        .HasColumnType("double")
+                        .HasColumnName("theoretical_probability");
+
+                    b.Property<int>("TotalSpins")
+                        .HasColumnType("int")
+                        .HasColumnName("total_spins");
+
+                    b.Property<int>("WinCount")
+                        .HasColumnType("int")
+                        .HasColumnName("win_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_log_roulette_stats");
+
+                    b.HasIndex("RouletteId", "ItemName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_log_roulette_stats_roulette_id_item_name");
+
+                    b.ToTable("log_roulette_stats", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Master_SongLibrary", b =>
@@ -572,12 +617,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_overlay_presets");
+                        .HasName("pk_sys_overlay_presets");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_overlay_presets_streamer_profile_id");
+                        .HasDatabaseName("ix_sys_overlay_presets_streamer_profile_id");
 
-                    b.ToTable("overlay_presets", (string)null);
+                    b.ToTable("sys_overlay_presets", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.PeriodicMessage", b =>
@@ -611,12 +656,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("streamer_profile_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_view_periodic_messages");
+                        .HasName("pk_sys_periodic_messages");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_view_periodic_messages_streamer_profile_id");
+                        .HasDatabaseName("ix_sys_periodic_messages_streamer_profile_id");
 
-                    b.ToTable("view_periodic_messages", (string)null);
+                    b.ToTable("sys_periodic_messages", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastHistoryLog", b =>
@@ -647,12 +692,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("title");
 
                     b.HasKey("Id")
-                        .HasName("pk_sys_broadcast_history_logs");
+                        .HasName("pk_log_broadcast_history");
 
                     b.HasIndex("BroadcastSessionId", "LogDate")
-                        .HasDatabaseName("ix_sys_broadcast_history_logs_broadcast_session_id_log_date");
+                        .HasDatabaseName("ix_log_broadcast_history_broadcast_session_id_log_date");
 
-                    b.ToTable("sys_broadcast_history_logs", (string)null);
+                    b.ToTable("log_broadcast_history", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", b =>
@@ -986,12 +1031,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("streamer_profile_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_iamf_vibration_logs");
+                        .HasName("pk_log_iamf_vibrations");
 
                     b.HasIndex("StreamerProfileId", "CreatedAt")
-                        .HasDatabaseName("ix_iamf_vibration_logs_streamer_profile_id_created_at");
+                        .HasDatabaseName("ix_log_iamf_vibrations_streamer_profile_id_created_at");
 
-                    b.ToTable("iamf_vibration_logs", (string)null);
+                    b.ToTable("log_iamf_vibrations", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.StreamerKnowledge", b =>
@@ -1031,12 +1076,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_streamer_knowledges");
+                        .HasName("pk_sys_streamer_knowledges");
 
                     b.HasIndex("StreamerProfileId", "Keyword")
-                        .HasDatabaseName("ix_streamer_knowledges_streamer_profile_id_keyword");
+                        .HasDatabaseName("ix_sys_streamer_knowledges_streamer_profile_id_keyword");
 
-                    b.ToTable("streamer_knowledges", (string)null);
+                    b.ToTable("sys_streamer_knowledges", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.PointDailySummary", b =>
@@ -1078,13 +1123,13 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("unique_viewer_count");
 
                     b.HasKey("Id")
-                        .HasName("pk_stats_point_daily");
+                        .HasName("pk_log_point_daily_summaries");
 
                     b.HasIndex("StreamerProfileId", "Date")
                         .IsUnique()
-                        .HasDatabaseName("ix_stats_point_daily_streamer_profile_id_date");
+                        .HasDatabaseName("ix_log_point_daily_summaries_streamer_profile_id_date");
 
-                    b.ToTable("stats_point_daily", (string)null);
+                    b.ToTable("log_point_daily_summaries", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.PointTransactionHistory", b =>
@@ -1339,25 +1384,25 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("streamer_profile_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_func_roulette_logs");
+                        .HasName("pk_log_roulette_results");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_func_roulette_logs_global_viewer_id");
+                        .HasDatabaseName("ix_log_roulette_results_global_viewer_id");
 
                     b.HasIndex("RouletteId")
-                        .HasDatabaseName("ix_func_roulette_logs_roulette_id");
+                        .HasDatabaseName("ix_log_roulette_results_roulette_id");
 
                     b.HasIndex("RouletteItemId")
-                        .HasDatabaseName("ix_func_roulette_logs_roulette_item_id");
+                        .HasDatabaseName("ix_log_roulette_results_roulette_item_id");
 
                     b.HasIndex("StreamerProfileId", "GlobalViewerId")
-                        .HasDatabaseName("ix_func_roulette_logs_streamer_profile_id_global_viewer_id");
+                        .HasDatabaseName("ix_log_roulette_results_streamer_profile_id_global_viewer_id");
 
                     b.HasIndex("StreamerProfileId", "Status", "Id")
                         .IsDescending(false, false, true)
                         .HasDatabaseName("IX_RouletteLog_Status_Cursor");
 
-                    b.ToTable("func_roulette_logs", (string)null);
+                    b.ToTable("log_roulette_results", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
@@ -1418,51 +1463,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     b.ToTable("func_roulette_spins", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteStatsAggregated", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("item_name");
-
-                    b.Property<DateTime>("LastUpdatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("last_updated_at");
-
-                    b.Property<int>("RouletteId")
-                        .HasColumnType("int")
-                        .HasColumnName("roulette_id");
-
-                    b.Property<double>("TheoreticalProbability")
-                        .HasColumnType("double")
-                        .HasColumnName("theoretical_probability");
-
-                    b.Property<int>("TotalSpins")
-                        .HasColumnType("int")
-                        .HasColumnName("total_spins");
-
-                    b.Property<int>("WinCount")
-                        .HasColumnType("int")
-                        .HasColumnName("win_count");
-
-                    b.HasKey("Id")
-                        .HasName("pk_stats_roulette_audit");
-
-                    b.HasIndex("RouletteId", "ItemName")
-                        .IsUnique()
-                        .HasDatabaseName("ix_stats_roulette_audit_roulette_id_item_name");
-
-                    b.ToTable("stats_roulette_audit", (string)null);
-                });
-
             modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
                 {
                     b.Property<int>("Id")
@@ -1498,12 +1498,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("type");
 
                     b.HasKey("Id")
-                        .HasName("pk_overlay_components");
+                        .HasName("pk_sys_shared_components");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_overlay_components_streamer_profile_id");
+                        .HasDatabaseName("ix_sys_shared_components_streamer_profile_id");
 
-                    b.ToTable("overlay_components", (string)null);
+                    b.ToTable("sys_shared_components", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
@@ -1626,30 +1626,30 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_song_books");
+                        .HasName("pk_func_song_books");
 
                     b.HasIndex("Alias")
-                        .HasDatabaseName("ix_song_books_alias");
+                        .HasDatabaseName("ix_func_song_books_alias");
 
                     b.HasIndex("Category")
-                        .HasDatabaseName("ix_song_books_category");
+                        .HasDatabaseName("ix_func_song_books_category");
 
                     b.HasIndex("IsRequestable")
-                        .HasDatabaseName("ix_song_books_is_requestable");
+                        .HasDatabaseName("ix_func_song_books_is_requestable");
 
                     b.HasIndex("SongLibraryId")
-                        .HasDatabaseName("ix_song_books_song_library_id");
+                        .HasDatabaseName("ix_func_song_books_song_library_id");
 
                     b.HasIndex("Title")
-                        .HasDatabaseName("ix_song_books_title");
+                        .HasDatabaseName("ix_func_song_books_title");
 
                     b.HasIndex("TitleChosung")
-                        .HasDatabaseName("ix_song_books_title_chosung");
+                        .HasDatabaseName("ix_func_song_books_title_chosung");
 
                     b.HasIndex("StreamerProfileId", "Id")
-                        .HasDatabaseName("ix_song_books_streamer_profile_id_id");
+                        .HasDatabaseName("ix_func_song_books_streamer_profile_id_id");
 
-                    b.ToTable("song_books", (string)null);
+                    b.ToTable("func_song_books", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SongQueue", b =>
@@ -1737,31 +1737,31 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("video_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_song_list_queues");
+                        .HasName("pk_func_song_list_queues");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_song_list_queues_global_viewer_id");
+                        .HasDatabaseName("ix_func_song_list_queues_global_viewer_id");
 
                     b.HasIndex("SongBookId")
-                        .HasDatabaseName("ix_song_list_queues_song_book_id");
+                        .HasDatabaseName("ix_func_song_list_queues_song_book_id");
 
                     b.HasIndex("SongLibraryId")
-                        .HasDatabaseName("ix_song_list_queues_song_library_id");
+                        .HasDatabaseName("ix_func_song_list_queues_song_library_id");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_song_list_queues_streamer_profile_id");
+                        .HasDatabaseName("ix_func_song_list_queues_streamer_profile_id");
 
                     b.HasIndex("StreamerProfileId", "Id")
-                        .HasDatabaseName("ix_song_list_queues_streamer_profile_id_id");
+                        .HasDatabaseName("ix_func_song_list_queues_streamer_profile_id_id");
 
                     b.HasIndex("StreamerProfileId", "Status", "CreatedAt")
-                        .HasDatabaseName("ix_song_list_queues_streamer_profile_id_status_created_at");
+                        .HasDatabaseName("ix_func_song_list_queues_streamer_profile_id_status_created_at");
 
                     b.HasIndex("StreamerProfileId", "Status", "Id")
                         .IsDescending(false, false, true)
                         .HasDatabaseName("IX_SongQueue_Status_Cursor");
 
-                    b.ToTable("song_list_queues", (string)null);
+                    b.ToTable("func_song_list_queues", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SonglistSession", b =>
@@ -1814,12 +1814,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_song_list_sessions");
+                        .HasName("pk_func_song_list_sessions");
 
                     b.HasIndex("StreamerProfileId", "IsActive")
-                        .HasDatabaseName("ix_song_list_sessions_streamer_profile_id_is_active");
+                        .HasDatabaseName("ix_func_song_list_sessions_streamer_profile_id_is_active");
 
-                    b.ToTable("song_list_sessions", (string)null);
+                    b.ToTable("func_song_list_sessions", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.SoundAsset", b =>
@@ -1862,12 +1862,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_sound_assets");
+                        .HasName("pk_func_sound_assets");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_sound_assets_streamer_profile_id");
+                        .HasDatabaseName("ix_func_sound_assets_streamer_profile_id");
 
-                    b.ToTable("sound_assets", (string)null);
+                    b.ToTable("func_sound_assets", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
@@ -1939,12 +1939,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("streamer_profile_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_song_list_omakases");
+                        .HasName("pk_func_song_list_omakases");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_song_list_omakases_streamer_profile_id");
+                        .HasDatabaseName("ix_func_song_list_omakases_streamer_profile_id");
 
-                    b.ToTable("song_list_omakases", (string)null);
+                    b.ToTable("func_song_list_omakases", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerPreference", b =>
@@ -2356,16 +2356,16 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_viewer_donations");
+                        .HasName("pk_func_viewer_donations");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_viewer_donations_global_viewer_id");
+                        .HasDatabaseName("ix_func_viewer_donations_global_viewer_id");
 
                     b.HasIndex("StreamerProfileId", "GlobalViewerId")
                         .IsUnique()
-                        .HasDatabaseName("ix_viewer_donations_streamer_profile_id_global_viewer_id");
+                        .HasDatabaseName("ix_func_viewer_donations_streamer_profile_id_global_viewer_id");
 
-                    b.ToTable("viewer_donations", (string)null);
+                    b.ToTable("func_viewer_donations", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerDonationHistory", b =>
@@ -2418,19 +2418,19 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_viewer_donations_history");
+                        .HasName("pk_func_viewer_donation_histories");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_viewer_donations_history_global_viewer_id");
+                        .HasDatabaseName("ix_func_viewer_donation_histories_global_viewer_id");
 
                     b.HasIndex("PlatformTransactionId")
                         .IsUnique()
-                        .HasDatabaseName("ix_viewer_donations_history_platform_transaction_id");
+                        .HasDatabaseName("ix_func_viewer_donation_histories_platform_transaction_id");
 
                     b.HasIndex("StreamerProfileId")
-                        .HasDatabaseName("ix_viewer_donations_history_streamer_profile_id");
+                        .HasDatabaseName("ix_func_viewer_donation_histories_streamer_profile_id");
 
-                    b.ToTable("viewer_donations_history", (string)null);
+                    b.ToTable("func_viewer_donation_histories", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerPoint", b =>
@@ -2463,16 +2463,16 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_viewer_points");
+                        .HasName("pk_func_viewer_points");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_viewer_points_global_viewer_id");
+                        .HasDatabaseName("ix_func_viewer_points_global_viewer_id");
 
                     b.HasIndex("StreamerProfileId", "GlobalViewerId")
                         .IsUnique()
-                        .HasDatabaseName("ix_viewer_points_streamer_profile_id_global_viewer_id");
+                        .HasDatabaseName("ix_func_viewer_points_streamer_profile_id_global_viewer_id");
 
-                    b.ToTable("viewer_points", (string)null);
+                    b.ToTable("func_viewer_points", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerRelation", b =>
@@ -2539,16 +2539,16 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_viewer_relations");
+                        .HasName("pk_core_viewer_relations");
 
                     b.HasIndex("GlobalViewerId")
-                        .HasDatabaseName("ix_viewer_relations_global_viewer_id");
+                        .HasDatabaseName("ix_core_viewer_relations_global_viewer_id");
 
                     b.HasIndex("StreamerProfileId", "GlobalViewerId")
                         .IsUnique()
-                        .HasDatabaseName("ix_viewer_relations_streamer_profile_id_global_viewer_id");
+                        .HasDatabaseName("ix_core_viewer_relations_streamer_profile_id_global_viewer_id");
 
-                    b.ToTable("viewer_relations", (string)null);
+                    b.ToTable("core_viewer_relations", (string)null);
                 });
 
             modelBuilder.Entity("MooldangBot.Infrastructure.Sagas.CommandExecutionSagaState", b =>
@@ -2613,7 +2613,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .WithOne()
                         .HasForeignKey("MooldangBot.Domain.Entities.AvatarSetting", "StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_overlay_avatar_settings_core_streamer_profiles_streamer_prof");
+                        .HasConstraintName("fk_sys_avatar_settings_core_streamer_profiles_streamer_profile_");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2625,7 +2625,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_log_chat_interactions_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_log_chat_interactions_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2637,7 +2637,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_sys_chzzk_category_aliases_chzzk_categories_category_id");
+                        .HasConstraintName("fk_sys_chzzk_category_aliases_sys_chzzk_categories_category_id");
 
                     b.Navigation("Category");
                 });
@@ -2649,17 +2649,29 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_log_command_executions_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_log_command_executions_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_log_command_executions_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_log_command_executions_core_streamer_profiles_streamer_profi");
 
                     b.Navigation("GlobalViewer");
 
                     b.Navigation("StreamerProfile");
+                });
+
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteStats", b =>
+                {
+                    b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
+                        .WithMany()
+                        .HasForeignKey("RouletteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_log_roulette_stats_func_roulette_main_roulette_id");
+
+                    b.Navigation("Roulette");
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.OverlayPreset", b =>
@@ -2669,7 +2681,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_overlay_presets_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_sys_overlay_presets_core_streamer_profiles_streamer_profile_");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2681,7 +2693,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_view_periodic_messages_core_streamer_profiles_streamer_profi");
+                        .HasConstraintName("fk_sys_periodic_messages_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2693,7 +2705,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("BroadcastSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_sys_broadcast_history_logs_broadcast_sessions_broadcast_sess");
+                        .HasConstraintName("fk_log_broadcast_history_sys_broadcast_sessions_broadcast_sessi");
 
                     b.Navigation("BroadcastSession");
                 });
@@ -2728,7 +2740,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_iamf_parhos_cycles_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_iamf_parhos_cycles_core_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2740,7 +2752,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_iamf_scenarios_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_iamf_scenarios_core_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2752,7 +2764,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", "StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_iamf_streamer_settings_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_iamf_streamer_settings_core_streamer_profiles_streamer_profi");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2764,7 +2776,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_iamf_vibration_logs_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_log_iamf_vibrations_core_streamer_profiles_streamer_profile_");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2776,7 +2788,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_streamer_knowledges_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_sys_streamer_knowledges_core_streamer_profiles_streamer_prof");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2788,7 +2800,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_stats_point_daily_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_log_point_daily_summaries_core_streamer_profiles_streamer_pr");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2831,7 +2843,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RouletteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_func_roulette_items_func_roulette_main_roulette_id");
+                        .HasConstraintName("fk_func_roulette_items_func_roulettes_roulette_id");
 
                     b.Navigation("Roulette");
                 });
@@ -2843,20 +2855,20 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_func_roulette_logs_core_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_log_roulette_results_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.RouletteItem", "RouletteItem")
                         .WithMany()
                         .HasForeignKey("RouletteItemId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_func_roulette_logs_func_roulette_items_roulette_item_id");
+                        .HasConstraintName("fk_log_roulette_results_func_roulette_items_roulette_item_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_func_roulette_logs_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_log_roulette_results_core_streamer_profiles_streamer_profile");
 
                     b.Navigation("GlobalViewer");
 
@@ -2886,18 +2898,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     b.Navigation("StreamerProfile");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteStatsAggregated", b =>
-                {
-                    b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
-                        .WithMany()
-                        .HasForeignKey("RouletteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_stats_roulette_audit_func_roulette_main_roulette_id");
-
-                    b.Navigation("Roulette");
-                });
-
             modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
                 {
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
@@ -2905,7 +2905,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_overlay_components_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_sys_shared_components_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2917,7 +2917,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_song_books_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_song_books_core_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2928,20 +2928,20 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_song_list_queues_core_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_func_song_list_queues_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.SongBook", "SongBook")
                         .WithMany()
                         .HasForeignKey("SongBookId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_song_list_queues_song_books_song_book_id");
+                        .HasConstraintName("fk_func_song_list_queues_func_song_books_song_book_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_song_list_queues_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_song_list_queues_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("GlobalViewer");
 
@@ -2957,7 +2957,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_song_list_sessions_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_song_list_sessions_core_streamer_profiles_streamer_prof");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -2969,7 +2969,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_sound_assets_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_sound_assets_core_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -3000,7 +3000,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_song_list_omakases_core_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_song_list_omakases_core_streamer_profiles_streamer_prof");
 
                     b.Navigation("StreamerProfile");
                 });
@@ -3047,14 +3047,14 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_donations_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_func_viewer_donations_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_donations_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_viewer_donations_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("GlobalViewer");
 
@@ -3068,14 +3068,14 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_donations_history_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_func_viewer_donation_histories_core_global_viewers_global_vi");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_donations_history_streamer_profiles_streamer_profile_");
+                        .HasConstraintName("fk_func_viewer_donation_histories_core_streamer_profiles_stream");
 
                     b.Navigation("GlobalViewer");
 
@@ -3089,14 +3089,14 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_points_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_func_viewer_points_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_points_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_func_viewer_points_core_streamer_profiles_streamer_profile_id");
 
                     b.Navigation("GlobalViewer");
 
@@ -3110,14 +3110,14 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_relations_global_viewers_global_viewer_id");
+                        .HasConstraintName("fk_core_viewer_relations_core_global_viewers_global_viewer_id");
 
                     b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_viewer_relations_streamer_profiles_streamer_profile_id");
+                        .HasConstraintName("fk_core_viewer_relations_core_streamer_profiles_streamer_profil");
 
                     b.Navigation("GlobalViewer");
 

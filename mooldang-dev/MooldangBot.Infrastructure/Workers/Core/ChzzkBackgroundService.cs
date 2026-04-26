@@ -55,7 +55,7 @@ public class ChzzkBackgroundService(IServiceProvider serviceProvider,
             {
                 var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
                 // [물멍]: 감시 워커는 활성 상태이며 마스터 승인이 된 스트리머만 추적합니다.
-                activeUids = await db.StreamerProfiles
+                activeUids = await db.CoreStreamerProfiles
                     .Where(p => p.IsActive && p.IsMasterEnabled)
                     .Select(p => p.ChzzkUid)
                     .ToListAsync(ct);
@@ -93,9 +93,9 @@ public class ChzzkBackgroundService(IServiceProvider serviceProvider,
             await botService.EnsureConnectionAsync(chzzkUid);
 
             // 세션 기록이 없거나, 최근 기록이 있거나, 봇이 최근 채팅을 받았을 경우 API 호출 (부하 분산)
-            bool hasAnySession = await db.BroadcastSessions
+            bool hasAnySession = await db.SysBroadcastSessions
                 .AnyAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid, ct);
-            bool hasRecentSession = hasAnySession && await db.BroadcastSessions
+            bool hasRecentSession = hasAnySession && await db.SysBroadcastSessions
                 .AnyAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid && s.StartTime > KstClock.Now.AddDays(-7), ct);
             
             bool isRecentlyActive = scribe.IsRecentlyActive(chzzkUid);

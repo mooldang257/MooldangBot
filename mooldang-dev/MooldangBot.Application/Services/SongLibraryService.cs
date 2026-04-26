@@ -41,7 +41,7 @@ public class SongLibraryService(
         string rawQuery = query.ToLowerInvariant().Trim();
 
         // 🚀 [1차 - 내부 병기창(DB)]: 제목, 별칭, 초성 필터링 (최우선 순위)
-        var candidates = await _context.MasterSongLibraries
+        var candidates = await _context.FuncMasterSongLibraries
             .Where(s => s.Title.Contains(rawQuery) || 
                         (s.Alias != null && s.Alias.Contains(rawQuery)) ||
                         (s.TitleChosung != null && s.TitleChosung.Contains(normalizedQuery)))
@@ -85,7 +85,7 @@ public class SongLibraryService(
         // 1. [v13.1] 멱등성 확인 (최근 1개월 내 동일 URL 존재 여부)
         if (!string.IsNullOrWhiteSpace(dto.YoutubeUrl))
         {
-            var existing = await _context.MasterSongStagings
+            var existing = await _context.FuncMasterSongStagings
                 .FirstOrDefaultAsync(s => s.YoutubeUrl == dto.YoutubeUrl);
             if (existing != null) return existing.SongLibraryId;
         }
@@ -122,7 +122,7 @@ public class SongLibraryService(
             await EnrichWithAiMetadataInBackgroundAsync(newLibraryId);
         });
 
-        _context.MasterSongStagings.Add(staging);
+        _context.FuncMasterSongStagings.Add(staging);
         await _context.SaveChangesAsync();
 
         return newLibraryId;
@@ -140,7 +140,7 @@ public class SongLibraryService(
         }
 
         // 2. 기존 Staging 조회
-        var staging = await _context.MasterSongStagings
+        var staging = await _context.FuncMasterSongStagings
             .FirstOrDefaultAsync(s => s.SongLibraryId == libraryIdToUse);
 
         if (staging != null)
@@ -193,7 +193,7 @@ public class SongLibraryService(
                 await EnrichWithAiMetadataInBackgroundAsync(libraryIdToUse);
             });
 
-            _context.MasterSongStagings.Add(staging);
+            _context.FuncMasterSongStagings.Add(staging);
         }
 
         await _context.SaveChangesAsync();
@@ -210,7 +210,7 @@ public class SongLibraryService(
         var llm = scope.ServiceProvider.GetRequiredService<ILlmService>();
         var limiter = scope.ServiceProvider.GetRequiredService<AdaptiveAiRateLimiter>();
 
-        var staging = await db.MasterSongStagings.FirstOrDefaultAsync(s => s.SongLibraryId == libraryId);
+        var staging = await db.FuncMasterSongStagings.FirstOrDefaultAsync(s => s.SongLibraryId == libraryId);
         if (staging == null) return;
 
         try 

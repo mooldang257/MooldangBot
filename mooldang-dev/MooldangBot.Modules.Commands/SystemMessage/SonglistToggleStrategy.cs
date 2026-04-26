@@ -30,7 +30,7 @@ public class SonglistToggleStrategy(
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
 
-        var activeSession = await db.SonglistSessions
+        var activeSession = await db.FuncSonglistSessions
             .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, ct);
 
         string statusText = "";
@@ -42,7 +42,7 @@ public class SonglistToggleStrategy(
         }
         else
         {
-            db.SonglistSessions.Add(new SonglistSession
+            db.FuncSonglistSessions.Add(new SonglistSession
             {
                 StreamerProfileId = notification.Profile.Id,
                 StartedAt = KstClock.Now,

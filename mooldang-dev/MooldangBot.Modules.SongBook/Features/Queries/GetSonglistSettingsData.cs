@@ -16,24 +16,24 @@ public class GetSonglistSettingsDataHandler(ISongBookDbContext db) : IRequestHan
     public async Task<Result<object>> Handle(GetSonglistSettingsDataQuery request, CancellationToken ct)
     {
         var targetUid = request.StreamerUid.ToLower();
-        var profile = await db.StreamerProfiles.AsNoTracking()
+        var profile = await db.CoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted, ct);
         
         if (profile == null) 
             return Result<object>.Failure("議댁옱?섏? ?딅뒗 梨꾨꼸?낅땲??");
 
-        var omakaseItems = await db.StreamerOmakases.AsNoTracking()
+        var omakaseItems = await db.FuncStreamerOmakases.AsNoTracking()
             .Where(o => o.StreamerProfileId == profile.Id)
-            .Where(o => db.UnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
+            .Where(o => db.SysUnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted))
             .ToListAsync(ct);
 
-        var songCommands = await db.UnifiedCommands
+        var songCommands = await db.SysUnifiedCommands
             .AsNoTracking()
             .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest && !c.IsDeleted)
             .Select(c => new { Keyword = c.Keyword, Price = c.Cost, Name = c.ResponseText })
             .ToListAsync(ct);
 
-        var omakaseCommands = await db.UnifiedCommands
+        var omakaseCommands = await db.SysUnifiedCommands
             .AsNoTracking()
             .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted)
             .ToListAsync(ct);

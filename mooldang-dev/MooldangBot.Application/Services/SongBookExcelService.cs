@@ -27,7 +27,7 @@ public class SongBookExcelService(
     public async Task<Stream> ExportSongBookAsync(int streamerProfileId)
     {
         // 1. 현재 노래책 데이터 조회 (가장 최근 등록순)
-        var songs = await _db.SongBooks
+        var songs = await _db.FuncSongBooks
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamerProfileId && !s.IsDeleted)
             .OrderByDescending(s => s.Id)
@@ -91,7 +91,7 @@ public class SongBookExcelService(
                     });
 
                     // 3. [중복 체크]: 이미 노래책에 동일한 LibraryId가 있는지 확인
-                    var isExists = await _db.SongBooks
+                    var isExists = await _db.FuncSongBooks
                         .AnyAsync(s => s.StreamerProfileId == streamerProfileId && 
                                        s.SongLibraryId == capturedId && 
                                        !s.IsDeleted);
@@ -119,7 +119,7 @@ public class SongBookExcelService(
                         CreatedAt = KstClock.Now
                     };
 
-                    _db.SongBooks.Add(songBook);
+                    _db.FuncSongBooks.Add(songBook);
                     result.SuccessCount++;
                 }
                 catch (Exception ex)

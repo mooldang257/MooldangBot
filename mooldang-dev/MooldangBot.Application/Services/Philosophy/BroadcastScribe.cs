@@ -112,7 +112,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
 
@@ -121,7 +121,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         // [v4.9] 역매핑 캐시 갱신
         _uidToProfileId[chzzkUid] = profile.Id;
 
-        var session = await db.BroadcastSessions
+        var session = await db.SysBroadcastSessions
             .Where(s => s.StreamerProfileId == profile.Id) // [v6.1] 전역 필터가 IsDeleted == false를 자동 처리
             .OrderByDescending(s => s.StartTime)
             .FirstOrDefaultAsync();
@@ -135,7 +135,7 @@ public partial class BroadcastScribe : IBroadcastScribe
                 LastHeartbeatAt = KstClock.Now,
                 IsDeleted = false
             };
-            db.BroadcastSessions.Add(session);
+            db.SysBroadcastSessions.Add(session);
             _activeStats[profile.Id] = new SessionStats();
             await db.SaveChangesAsync(ct); // ID 확보를 위해 선 저장
         }
@@ -168,7 +168,7 @@ public partial class BroadcastScribe : IBroadcastScribe
                     session.CurrentCategory = newCategory;
 
                     // 최초 로그 생성
-                    db.BroadcastHistoryLogs.Add(new BroadcastHistoryLog {
+                    db.LogBroadcastHistory.Add(new BroadcastHistoryLog {
                         BroadcastSessionId = session.Id,
                         Title = newTitle,
                         CategoryName = newCategory,
@@ -181,7 +181,7 @@ public partial class BroadcastScribe : IBroadcastScribe
                 {
                     _logger.LogInformation($"📝 [{chzzkUid}] 방송 정보 변경 감지: {session.CurrentTitle} -> {newTitle} / {session.CurrentCategory} -> {newCategory}");
                     
-                    db.BroadcastHistoryLogs.Add(new BroadcastHistoryLog {
+                    db.LogBroadcastHistory.Add(new BroadcastHistoryLog {
                         BroadcastSessionId = session.Id,
                         Title = newTitle,
                         CategoryName = newCategory,
@@ -206,7 +206,7 @@ public partial class BroadcastScribe : IBroadcastScribe
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (profile == null) return null;
 
         return await FinalizeSessionByIdAsync(profile.Id);
@@ -217,7 +217,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var session = await db.BroadcastSessions
+        var session = await db.SysBroadcastSessions
             .FirstOrDefaultAsync(s => s.StreamerProfileId == profileId); // [v6.1] Global filter handles Active state
 
         if (session == null) return null;
@@ -251,7 +251,7 @@ public partial class BroadcastScribe : IBroadcastScribe
         // [v4.9] 트리거 시점에서도 ProfileId 확인 선행
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-        var profile = await db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (profile == null || !profile.IsActive || !profile.IsMasterEnabled) return; // [v6.1.6] 비활성 스트리머 트리거 무시
 
         int profileId = profile.Id;

@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.Entities;
 /// [v7.0] 시청자 무료 포인트 지갑: 채팅 등으로 얻는 비유료 포인트를 관리합니다. 
 /// 초고빈도 쓰기 성능을 위해 인덱스를 최소화하고 Write-Back 패턴으로 동기화됩니다.
 /// </summary>
-[Table("viewer_points")]
+[Table("func_viewer_points")]
 [Index(nameof(StreamerProfileId), nameof(GlobalViewerId), IsUnique = true)]
 public class ViewerPoint : IAuditable
 {

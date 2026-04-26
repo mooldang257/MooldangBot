@@ -23,7 +23,7 @@ public class CompleteRouletteHandler(
     {
         try
         {
-            var spin = await db.RouletteSpins
+            var spin = await db.FuncRouletteSpins
                 .Include(s => s.StreamerProfile)
                 .Include(s => s.GlobalViewer)
                 .FirstOrDefaultAsync(s => s.Id == request.SpinId, ct);
@@ -32,7 +32,7 @@ public class CompleteRouletteHandler(
             if (spin == null || spin.IsCompleted) return false;
 
             // [원자적 업데이트]: 서버 레벨에서 경쟁을 벌이는 여러 오버레이 중 단 하나만 성공을 기록합니다.
-            var affectedRows = await db.RouletteSpins
+            var affectedRows = await db.FuncRouletteSpins
                 .Where(s => s.Id == request.SpinId && !s.IsCompleted)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(s => s.IsCompleted, true), ct);
 

@@ -16,13 +16,13 @@ public class ToggleSonglistStatusHandler(ISongBookDbContext db) : IRequestHandle
 {
     public async Task<Result<object>> Handle(ToggleSonglistStatusCommand request, CancellationToken ct)
     {
-        var profile = await db.StreamerProfiles
+        var profile = await db.CoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
         if (profile == null) 
             return Result<object>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
 
-        var activeSession = await db.SonglistSessions
+        var activeSession = await db.FuncSonglistSessions
                             .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
                             .FirstOrDefaultAsync(ct);
 
@@ -35,7 +35,7 @@ public class ToggleSonglistStatusHandler(ISongBookDbContext db) : IRequestHandle
         }
         else
         {
-            db.SonglistSessions.Add(new SonglistSession
+            db.FuncSonglistSessions.Add(new SonglistSession
             {
                 StreamerProfileId = profile.Id,
                 StartedAt = KstClock.Now,

@@ -81,7 +81,7 @@ namespace MooldangBot.Api.Controllers
             var chzzkUid = User.FindFirst("StreamerId")?.Value;
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-            var streamer = await _db.StreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+            var streamer = await _db.CoreStreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
             if (streamer == null) return NotFound("스트리머 정보를 찾을 수 없습니다.");
 
             try
@@ -99,7 +99,7 @@ namespace MooldangBot.Api.Controllers
                     CreatedAt = KstClock.Now
                 };
 
-                _db.SoundAssets.Add(asset);
+                _db.FuncSoundAssets.Add(asset);
                 await _db.SaveChangesAsync();
 
                 return Ok(new { url = fileUrl, assetId = asset.Id, name = asset.Name });
