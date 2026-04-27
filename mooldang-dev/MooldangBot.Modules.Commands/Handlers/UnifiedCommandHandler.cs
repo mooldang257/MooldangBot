@@ -52,14 +52,36 @@ public class UnifiedCommandHandler(
         // [1. Scan]: 모든 매칭되는 명령어 리스트 확보
         var matches = (await cache.GetMatchesAsync(targetUid, msg)).ToList();
 
-        // [v1.9.7] 후원 자동 매칭 (매칭된 명령어가 없고 후원금이 있는 경우)
-        if (!matches.Any() && chatEvent.DonationAmount > 0)
-        {
-            var autoCmd = await cache.GetAutoMatchDonationCommandAsync(targetUid, "Roulette");
-            if (autoCmd != null) matches.Add(autoCmd);
-        }
+        // [v4.5] 통합 정산(Net Settlement) 로직 적용
+        int totalCost = 0;
+        CommandMetadata primary;
 
-        if (!matches.Any())
+        if (matches.Any())
+        {
+            // [지휘관 지시]: 동일 기능은 1회만 차감하도록 그룹화하여 비용 합산 (중복 차감 방지)
+            var uniqueFeatures = matches
+                .GroupBy(m => m.FeatureType)
+                .Select(g => g.First())
+                .ToList();
+
+            primary = matches.First();
+            totalCost = uniqueFeatures.Sum(f => f.Cost);
+        }
+        else if (chatEvent.DonationAmount > 0)
+        {
+            // [v4.5] 명령어는 없지만 후원금이 있는 경우 -> 적립 전용 가상 명령어 생성
+            // 룰렛 자동 매칭은 제거되어, 이제 키워드 확인 없이는 실행되지 않습니다.
+            primary = new CommandMetadata
+            {
+                Keyword = "[Donation]",
+                FeatureType = CommandFeatureType.Donation,
+                Cost = 0,
+                CostType = CommandCostType.Cheese,
+                IsActive = true
+            };
+            totalCost = 0;
+        }
+        else
         {
             if (msg.StartsWith("!"))
             {
@@ -71,7 +93,6 @@ public class UnifiedCommandHandler(
         }
 
         // [2. Primary Selection]: [Strictness First] 원칙에 의해 Cache에서 이미 정렬됨
-        var primary = matches.First();
         var args = parser.Parse(msg, primary);
 
         // [물멍]: 선장님 지시에 따라 '후원 적립 모드'와 '후원 전용 명령어' 여부를 판단합니다.
@@ -81,7 +102,7 @@ public class UnifiedCommandHandler(
 
         // [3. Single Billing]: 통합 결제 (지휘관 지침: 하이브리드 동기 방식 유지)
         var billingResult = await mediator.Send(new ProcessCommandBillingCommand(
-            targetUid, chatEvent.SenderId, chatEvent.Username, primary.Cost, primary.CostType, (int)chatEvent.DonationAmount, accumulateTotal), ct);
+            targetUid, chatEvent.SenderId, chatEvent.Username, totalCost, primary.CostType, (int)chatEvent.DonationAmount, accumulateTotal), ct);
 
         if (!billingResult.Success)
         {
