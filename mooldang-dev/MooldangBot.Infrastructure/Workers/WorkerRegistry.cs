@@ -29,7 +29,6 @@ public static class WorkerRegistry
 
         // Broadcast Workers
         services.AddHostedService<Broadcast.TokenRenewalBackgroundService>();
-        services.AddHostedService<Broadcast.CategorySyncBackgroundService>();
         services.AddHostedService<Broadcast.PeriodicMessageWorker>();
 
         // Maintenance Workers
