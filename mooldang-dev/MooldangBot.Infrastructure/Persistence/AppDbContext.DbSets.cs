@@ -27,7 +27,7 @@ public partial class AppDbContext : IAppDbContext, ISongBookDbContext, IRoulette
     // ────────── [SongBook & Media] ──────────
     public DbSet<SongQueue> FuncSongQueues { get; set; }
     public DbSet<SongBook> FuncSongBooks { get; set; }
-    public DbSet<SongAccumulation> SongAccumulations { get; set; }
+
     public DbSet<SonglistSession> FuncSonglistSessions { get; set; }
     public DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
     public DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; set; }

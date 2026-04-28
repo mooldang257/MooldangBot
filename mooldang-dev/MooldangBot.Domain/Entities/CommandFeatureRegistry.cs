@@ -36,7 +36,8 @@ public record CommandFeatureMetadata(
     string DisplayName,
     int DefaultCost,
     CommandRole RequiredRole,
-    bool IsEnabled = true
+    bool IsEnabled = true,
+    bool IsDynamicCost = false
 );
 
 /// <summary>
@@ -50,7 +51,7 @@ public static class CommandFeatureRegistry
         new CommandFeatureMetadata(CommandFeatureType.Title, 2, "Title", "방제", 0, CommandRole.Manager),
         new CommandFeatureMetadata(CommandFeatureType.Category, 2, "Category", "카테고리", 0, CommandRole.Manager),
         new CommandFeatureMetadata(CommandFeatureType.SonglistToggle, 2, "SonglistToggle", "송리스트", 0, CommandRole.Manager),
-        new CommandFeatureMetadata(CommandFeatureType.SongRequest, 3, "SongRequest", "노래신청", 1000, CommandRole.Viewer),
+        new CommandFeatureMetadata(CommandFeatureType.SongRequest, 3, "SongRequest", "노래신청", 1000, CommandRole.Viewer, true, true), // IsDynamicCost = true
         new CommandFeatureMetadata(CommandFeatureType.Omakase, 3, "Omakase", "오마카세", 1000, CommandRole.Viewer),
         new CommandFeatureMetadata(CommandFeatureType.Roulette, 3, "Roulette", "룰렛", 500, CommandRole.Viewer),
         new CommandFeatureMetadata(CommandFeatureType.ChatPoint, 3, "ChatPoint", "채팅포인트", 0, CommandRole.Viewer),

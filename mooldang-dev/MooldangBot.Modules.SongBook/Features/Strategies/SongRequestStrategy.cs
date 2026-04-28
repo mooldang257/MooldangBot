@@ -32,7 +32,7 @@ public class SongRequestStrategy(IMediator mediator) : ICommandFeatureStrategy
         if (string.IsNullOrWhiteSpace(arguments))
             return CommandExecutionResult.Failure("신청할 곡 제목을 입력해주세요.");
 
-        var result = await mediator.Send(new AddSongRequestCommand(notification.SenderId, notification.Username, arguments, (int)notification.DonationAmount, command.Cost), ct);
+        var result = await mediator.Send(new AddSongRequestCommand(notification.Profile.ChzzkUid, notification.SenderId, notification.Username, arguments, (int)notification.DonationAmount, command.Cost), ct);
 
         if (result.IsSuccess)
         {

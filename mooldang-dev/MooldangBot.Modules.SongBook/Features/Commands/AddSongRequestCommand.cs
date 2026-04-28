@@ -16,7 +16,7 @@ namespace MooldangBot.Modules.SongBook.Features.Commands;
 /// [곡 신청 명령]: 시청자가 노래를 신청할 때 처리되는 로직입니다.
 /// (v15.1: 모듈화 및 이벤트 기반 알림으로 전환되었습니다.)
 /// </summary>
-public record AddSongRequestCommand(string ChzzkUid, string Username, string SongTitle, int DonationAmount = 0, int DefaultCost = 0) : IRequest<Result<bool>>;
+public record AddSongRequestCommand(string StreamerUid, string ViewerUid, string Username, string SongTitle, int DonationAmount = 0, int DefaultCost = 0) : IRequest<Result<bool>>;
 
 public class AddSongRequestCommandHandler(
     SongBookState state, 
@@ -34,7 +34,7 @@ public class AddSongRequestCommandHandler(
         // 1. 스트리머 프로필 확인
         var profile = await db.CoreStreamerProfiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid, ct);
+            .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
 
         if (profile == null) return Result<bool>.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
@@ -83,100 +83,85 @@ public class AddSongRequestCommandHandler(
             }
         }
 
-        // [v23.0] 비용 검증 및 누적 로직
+        // [v24.0] 지갑 연동 단일 결제 로직 (정책 B)
         if (requiredPoints > 0)
         {
-            // 기존 누적액 확인 (노래책에 있는 곡만 누적 지원)
-            int accumulated = 0;
-            SongAccumulation? existingAcc = null;
+            // 2. 지갑 잔액 차감 (Atomic DB Update)
+            // DeductDonationPointsCommand 내부에서 잔액 >= requiredPoints 조건을 통해 안전하게 차감합니다.
+            // (이미 실시간 DonationAmount는 선결제 단계에서 지갑에 전액 적립된 상태입니다.)
+            var deductRequest = new MooldangBot.Modules.Point.Requests.Commands.DeductDonationPointsCommand(
+                request.StreamerUid,
+                request.ViewerUid,
+                requiredPoints
+            );
+            
+            var deductResult = await mediator.Send(deductRequest, ct);
 
-            if (matchedSong != null)
+            if (!deductResult.Success)
             {
-                existingAcc = await db.SongAccumulations
-                    .FirstOrDefaultAsync(a => a.StreamerProfileId == profile.Id && a.SongBookId == matchedSong.Id, ct);
-                accumulated = existingAcc?.CurrentPoints ?? 0;
+                return Result<bool>.Failure($"신청 비용이 부족합니다. (현재 잔액: {deductResult.CurrentBalance} / 필요: {requiredPoints} 치즈 🧀)");
             }
-
-            int totalDonation = accumulated + request.DonationAmount;
-
-            if (totalDonation < requiredPoints)
-            {
-                // [부족]: 누적 처리
-                if (matchedSong != null)
-                {
-                    if (existingAcc == null)
-                    {
-                        existingAcc = new SongAccumulation
-                        {
-                            StreamerProfileId = profile.Id,
-                            SongBookId = matchedSong.Id,
-                            CurrentPoints = request.DonationAmount,
-                            LastDonatorName = request.Username,
-                            CreatedAt = KstClock.Now
-                        };
-                        db.SongAccumulations.Add(existingAcc);
-                    }
-                    else
-                    {
-                        existingAcc.CurrentPoints += request.DonationAmount;
-                        existingAcc.LastDonatorName = request.Username;
-                        existingAcc.UpdatedAt = KstClock.Now;
-                    }
-                    await db.SaveChangesAsync(ct);
-                    
-                    return Result<bool>.Failure($"신청 비용이 부족합니다. (현재 {existingAcc.CurrentPoints}/{requiredPoints} 치즈 누적 중 🧀)");
-                }
-                else
-                {
-                    return Result<bool>.Failure($"노래책에 없는 곡은 최소 {requiredPoints} 치즈 후원이 필요합니다.");
-                }
-            }
-            else
-            {
-                // [성공]: 누적 데이터 삭제 (있다면)
-                if (existingAcc != null)
-                {
-                    db.SongAccumulations.Remove(existingAcc);
-                    // Save는 아래 전체 저장 시 함께 처리
-                }
-            }
+            
+            // 결제(차감) 성공! 아래 영속화 단계로 진행합니다.
         }
 
         // 3. [영속화]: DB에 신청 내역 저장
-        var queueCount = await db.FuncSongQueues
-            .Where(q => q.StreamerProfileId == profile.Id)
-            .CountAsync(ct);
-
-        var finalTitle = string.IsNullOrEmpty(artist) ? title : $"{title} - {artist}";
-
-        var newRequest = new SongQueue
+        try 
         {
-            StreamerProfileId = profile.Id,
-            RequesterNickname = request.Username,
-            Title = finalTitle,
-            Status = SongStatus.Pending,
-            CreatedAt = KstClock.Now,
-            SortOrder = queueCount + 1,
-            VideoId = matchedSong?.ReferenceUrl, 
-            ThumbnailUrl = thumbnailUrl,
-            Pitch = pitch
-        };
+            var queueCount = await db.FuncSongQueues
+                .Where(q => q.StreamerProfileId == profile.Id)
+                .CountAsync(ct);
 
-        db.FuncSongQueues.Add(newRequest);
-        await db.SaveChangesAsync(ct);
-        int newSongId = newRequest.Id;
+            var finalTitle = string.IsNullOrEmpty(artist) ? title : $"{title} - {artist}";
 
-        // 인메모리 버퍼 실제 추가
-        var added = state.AddSong(request.ChzzkUid, newSongId, request.Username, title, artist, matchedSong?.ReferenceUrl, thumbnailUrl, pitch);
-        
-        if (!added)
-            return Result<bool>.Failure("이미 신청된 곡입니다.");
+            var newRequest = new SongQueue
+            {
+                StreamerProfileId = profile.Id,
+                RequesterNickname = request.Username,
+                Title = finalTitle,
+                Status = SongStatus.Pending,
+                CreatedAt = KstClock.Now,
+                SortOrder = queueCount + 1,
+                VideoId = matchedSong?.ReferenceUrl, 
+                ThumbnailUrl = thumbnailUrl,
+                Pitch = pitch
+            };
+
+            db.FuncSongQueues.Add(newRequest);
+            await db.SaveChangesAsync(ct);
+            int newSongId = newRequest.Id;
+
+            // 인메모리 버퍼 실제 추가
+            var added = state.AddSong(request.StreamerUid, newSongId, request.Username, title, artist, matchedSong?.ReferenceUrl, thumbnailUrl, pitch);
+            
+            if (!added)
+            {
+                throw new InvalidOperationException("이미 신청된 곡이거나 큐 추가에 실패했습니다.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // 🚨 [보상 트랜잭션]: 곡 등록 실패 시 차감했던 포인트(치즈) 환불
+            if (requiredPoints > 0)
+            {
+                await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
+                    request.StreamerUid,
+                    request.ViewerUid,
+                    request.Username,
+                    requiredPoints,
+                    MooldangBot.Modules.Point.Enums.PointCurrencyType.DonationPoint,
+                    "곡 신청 등록 실패로 인한 환불",
+                    false
+                ), ct);
+            }
+            return Result<bool>.Failure("곡 등록 중 오류가 발생하여 결제된 금액이 환불되었습니다.");
+        }
 
         // 4. 이벤트 발행 및 오버레이 알림
-        await mediator.Publish(new SongAddedEvent(request.Username, title, request.ChzzkUid), ct);
+        await mediator.Publish(new SongAddedEvent(request.Username, title, request.StreamerUid), ct);
 
-        var current = state.GetCurrentSong(request.ChzzkUid);
-        var queue = state.GetQueue(request.ChzzkUid)
+        var current = state.GetCurrentSong(request.StreamerUid);
+        var queue = state.GetQueue(request.StreamerUid)
             .Select(s => new QueueSongDto(s.Id, s.Title, s.Artist, s.Username, s.VideoId, s.ThumbnailUrl, s.Pitch))
             .ToList();
         
@@ -186,7 +171,7 @@ public class AddSongRequestCommandHandler(
             new SongOverlaySettings()
         );
 
-        await overlayNotification.NotifySongOverlayUpdateAsync(request.ChzzkUid, overlayData, ct);
+        await overlayNotification.NotifySongOverlayUpdateAsync(request.StreamerUid, overlayData, ct);
 
         return Result<bool>.Success(true);
     }
