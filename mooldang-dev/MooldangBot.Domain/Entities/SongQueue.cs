@@ -63,6 +63,7 @@ namespace MooldangBot.Domain.Entities
         /// </summary>
         public string? VideoId { get; set; }
         public string? ThumbnailUrl { get; set; }
+        public string? Pitch { get; set; } // [v19.0] 키 정보 (예: -2, 원키)
 
         public KstClock CreatedAt { get; set; } = KstClock.Now; 
         public KstClock? UpdatedAt { get; set; }

@@ -78,7 +78,21 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
             }
         }
 
-        // 2. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
+        // 2. [물멍]: 먼저 후원금을 지갑에 적립합니다. (후원 적립 여부 반영)
+        // ChatPoint 결제이든 DonationPoint 결제이든 후원금이 왔으면 무조건 적립해야 합니다.
+        if (request.DonationAmount > 0)
+        {
+            await _mediator.Send(new AddPointsCommand(
+                request.StreamerUid,
+                cleanedUid,
+                request.ViewerNickname ?? "시청자",
+                request.DonationAmount,
+                PointCurrencyType.DonationPoint,
+                null,
+                request.AccumulateTotal), ct);
+        }
+
+        // 3. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
         {
             var dbBalance = await _db.FuncViewerPoints.AsNoTracking()
@@ -99,39 +113,25 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
             return new DeductResult(true, totalBalance - request.Amount);
         }
 
-        // 3. [유료 재화(DonationPoint) 원자적 처리]
-        // [물멍]: 먼저 후원금을 지갑에 적립합니다. (후원 적립 여부 반영)
-        if (request.DonationAmount > 0)
-        {
-            await _mediator.Send(new AddPointsCommand(
-                request.StreamerUid,
-                cleanedUid,
-                request.ViewerNickname ?? "시청자",
-                request.DonationAmount,
-                PointCurrencyType.DonationPoint,
-                null,
-                request.AccumulateTotal), ct);
-        }
-
+        // 4. [유료 재화(DonationPoint) 원자적 차감 처리]
         var conn = _db.Database.GetDbConnection();
         if (conn.State != ConnectionState.Open) await conn.OpenAsync(ct);
         
         // 🛡️ [철옹성 쿼리]: 현장 결제 시스템(Real-time Donation Credit)
-        // [복구]: 사용자께서 구현하셨던 '후원금을 가용 금액으로 설정'하는 로직을 통합 구조에 맞게 적용합니다.
-        // 현재 DB 잔액이 부족하더라도, 이번 요청에서 함께 들어온 후원금(@DonationAmount)이 있다면 결제를 허용합니다.
+        // [수정]: 위 AddPointsCommand에서 이미 후원금이 가산되어 DB에 반영되었으므로, 
+        // 여기서는 순수하게 현재 DB의 balance 기준으로 차감을 진행합니다.
         const string updateSql = @"
             UPDATE func_viewer_donations 
             SET balance = balance - @DeductAmount, updated_at = NOW()
             WHERE streamer_profile_id = @StreamerId 
               AND global_viewer_id = @GlobalId 
-              AND (balance + @DonationAmount >= @DeductAmount)";
+              AND balance >= @DeductAmount";
 
         var affectedRows = await conn.ExecuteAsync(updateSql, new 
         { 
             StreamerId = streamer.Id, 
             GlobalId = globalViewerId, 
-            DeductAmount = request.Amount,
-            DonationAmount = request.DonationAmount
+            DeductAmount = request.Amount
         });
 
         if (affectedRows == 0)

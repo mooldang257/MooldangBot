@@ -27,7 +27,7 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
         
         return await db.FuncMasterSongLibraries
             .FromSqlInterpolated($@"
-                SELECT * FROM master_song_library
+                SELECT * FROM func_song_master_library
                 ORDER BY VEC_DISTANCE_COSINE(TitleVector, VEC_FromText({vectorString}))
                 LIMIT {limit}")
             .AsNoTracking()
@@ -60,7 +60,7 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
             var vectorString = "[" + string.Join(",", vector) + "]";
             return await db.FuncStreamerSongLibraries
                 .FromSqlInterpolated($@"
-                    SELECT * FROM streamer_song_library
+                    SELECT * FROM func_song_streamer_library
                     WHERE StreamerProfileId = {streamerProfileId}
                     ORDER BY VEC_DISTANCE_COSINE(TitleVector, VEC_FromText({vectorString}))
                     LIMIT {limit}")
@@ -68,6 +68,26 @@ public class SongBookRepository(ISongBookDbContext db) : ISongBookRepository
                 .ToListAsync();
         }
 
+        return await queryable.OrderBy(s => s.Title).Take(limit).ToListAsync();
+    }
+
+    /// <summary>
+    /// [v19.0] 개인 노래책(SongBook) 통합 검색 (Pitch 정보 포함)
+    /// </summary>
+    public async Task<List<MooldangBot.Domain.Entities.SongBook>> SearchPersonalSongBookAsync(int streamerProfileId, string? query, float[]? vector, int limit = 20)
+    {
+        var queryable = db.FuncSongBooks
+            .Where(s => s.StreamerProfileId == streamerProfileId);
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            queryable = queryable.Where(s => 
+                EF.Functions.Like(s.Title, $"%{query}%") || 
+                EF.Functions.Like(s.Alias ?? "", $"%{query}%") || 
+                EF.Functions.Like(s.TitleChosung ?? "", $"%{query}%"));
+        }
+
+        // [v19.0]: 개인 노래책은 현재 벡터 검색 컬럼이 없으므로 텍스트 검색 결과만 반환합니다.
         return await queryable.OrderBy(s => s.Title).Take(limit).ToListAsync();
     }
 }

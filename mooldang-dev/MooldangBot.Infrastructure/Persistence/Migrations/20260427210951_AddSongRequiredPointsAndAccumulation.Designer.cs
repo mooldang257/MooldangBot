@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MooldangBot.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using MooldangBot.Infrastructure.Persistence;
 namespace MooldangBot.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260427210951_AddSongRequiredPointsAndAccumulation")]
+    partial class AddSongRequiredPointsAndAccumulation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -286,11 +289,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("nickname")
                         .UseCollation("utf8mb4_unicode_ci");
-
-                    b.Property<string>("PreviousNickname")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("previous_nickname");
 
                     b.Property<string>("ProfileImageUrl")
                         .HasMaxLength(500)
@@ -2592,6 +2590,12 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("LastChatAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("last_chat_at");
+
+                    b.Property<string>("Nickname")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("nickname");
 
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int")

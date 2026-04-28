@@ -7,8 +7,9 @@
         BookOpen, Search, Plus, Filter, SortAsc, 
         Download, Upload, Loader2, Music, User, 
         Tag, X, Check, Trash2, Edit2, ExternalLink, Youtube, FileText, Image as ImageIcon,
-        Sparkles, RefreshCw, Link2, Send
+        Sparkles, RefreshCw, Link2, Send, Copy
     } from 'lucide-svelte';
+    import { toast } from 'svelte-sonner';
 
     // [물멍]: Studio 전용 고도화된 노래책 관리 페이지 (Svelte 5)
     let streamerId = $derived($page.params.streamerId);
@@ -40,7 +41,8 @@
         proficiency: "완창",
         lyricsUrl: "",
         referenceUrl: "",
-        thumbnailUrl: ""
+        thumbnailUrl: "",
+        requiredPoints: 0
     });
 
     const categories = ["전체", "J-POP", "K-POP", "애니메이션", "게임 OST", "연습중"];
@@ -141,7 +143,8 @@
             newSong = { 
                 title: "", artist: "", 
                 pitch: "원키", proficiency: "완창", 
-                lyricsUrl: "", referenceUrl: "", thumbnailUrl: "" 
+                lyricsUrl: "", referenceUrl: "", thumbnailUrl: "",
+                requiredPoints: 0
             };
             selectedCategories = ["K-POP"];
             customCategory = "";
@@ -250,6 +253,16 @@
             alert("곡 삭제 중 오류가 발생했습니다.");
         }
     }
+    // [오시리스의 열쇠]: 시청자용 노래책 URL 복사
+    function copyViewerUrl() {
+        const url = `${window.location.origin}/${streamerId}/songbook`;
+        navigator.clipboard.writeText(url).then(() => {
+            toast.success("주소가 복사되었습니다!", {
+                description: "시청자들에게 이 주소를 공유해 주세요.",
+                icon: Link2
+            });
+        });
+    }
 </script>
 
 <div class="flex flex-col gap-8 pb-20" in:fade>
@@ -266,6 +279,11 @@
         </div>
 
         <div class="flex items-center gap-3">
+            <button onclick={copyViewerUrl} class="flex items-center gap-2 px-5 py-3 bg-white text-primary border border-primary/10 font-bold rounded-2xl shadow-sm hover:bg-primary/5 transition-all active:scale-95 group">
+                <Copy size={18} class="group-hover:rotate-12 transition-transform" />
+                <span class="hidden sm:inline text-primary/80">시청자용 주소 복사</span>
+            </button>
+
             <button onclick={exportExcel} class="flex items-center gap-2 px-5 py-3 bg-white text-slate-600 border border-sky-100 font-bold rounded-2xl shadow-sm hover:bg-sky-50 transition-all active:scale-95">
                 <Download size={18} />
                 <span class="hidden sm:inline">엑셀 다운로드</span>
@@ -322,6 +340,7 @@
                         <th class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">키 (Pitch)</th>
                         <th class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center hidden md:table-cell">숙련도</th>
                         <th class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center hidden lg:table-cell">링크</th>
+                        <th class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">비용 (치즈)</th>
                         <th class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right hidden 2xl:table-cell">등록일</th>
                         <th class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">관리</th>
                     </tr>
@@ -400,6 +419,11 @@
                                             <span class="text-slate-200">-</span>
                                         {/if}
                                     </div>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span class="px-2 py-1 bg-sky-50 text-primary text-[10px] font-black rounded-lg border border-sky-100">
+                                        {song.requiredPoints?.toLocaleString() || "무료"} 🧀
+                                    </span>
                                 </td>
                                 <td class="px-6 py-5 text-right text-[10px] font-bold text-slate-400 hidden 2xl:table-cell">
                                     {new Date(song.updatedAt).toLocaleDateString()}
@@ -494,6 +518,12 @@
                                     <input type="text" bind:value={newSong.lyricsUrl} placeholder="가사 URL (https://...)" class="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none font-bold text-slate-700 transition-all text-xs" />
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-slate-400 uppercase ml-1">신청 비용 (치즈 🧀)</label>
+                            <input type="number" bind:value={newSong.requiredPoints} min="0" placeholder="0 (무료)" class="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none font-bold text-slate-700 transition-all" />
+                            <p class="text-[10px] text-slate-400 font-bold ml-1">이 금액 이상의 치즈가 후원되어야 대기열에 추가됩니다. (미달 시 누적)</p>
                         </div>
                     </div>
 
@@ -629,6 +659,10 @@
                 <div class="space-y-2">
                     <label class="text-xs font-black text-slate-400 uppercase ml-1">가사 URL</label>
                     <input type="text" bind:value={editingSong.lyricsUrl} placeholder="https://..." class="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none font-bold text-slate-700 transition-all text-xs" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-slate-400 uppercase ml-1">신청 비용 (치즈 🧀)</label>
+                    <input type="number" bind:value={editingSong.requiredPoints} min="0" placeholder="0 (무료)" class="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none font-bold text-slate-700 transition-all" />
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button onclick={() => { showEditModal = false; editingSong = null; }} class="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all">

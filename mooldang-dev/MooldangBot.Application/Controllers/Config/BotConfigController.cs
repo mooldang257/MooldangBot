@@ -42,6 +42,9 @@ namespace MooldangBot.Application.Controllers.Config
             streamer.IsActive = req.IsEnabled;
             await db.SaveChangesAsync();
 
+            // [물멍]: 설정이 변경되었으므로 즉시 봇에 반영되도록 캐시 무효화
+            identityCache.InvalidateStreamer(uid);
+
             // 백그라운드 서비스에 상태 변경 신호 발송 (기존 인프라 활용)
             try 
             {
@@ -141,6 +144,9 @@ namespace MooldangBot.Application.Controllers.Config
             streamer.RedirectUrl = req.RedirectUrl;
 
             await db.SaveChangesAsync();
+
+            // [물멍]: 설정이 변경되었으므로 즉시 봇에 반영되도록 캐시 무효화
+            identityCache.InvalidateStreamer(uid);
             return Ok(Result<bool>.Success(true));
         }
 

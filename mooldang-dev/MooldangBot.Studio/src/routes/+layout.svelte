@@ -10,6 +10,8 @@
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
     let { data, children } = $props();
 
+    import { page } from '$app/stores';
+
     // [Osiris]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
     $effect(() => {
         if (data && data.userData) {
@@ -17,6 +19,8 @@
         }
     });
 
+    // [물멍]: 시청자 페이지 판별 (경로에 /songbook이 포함되거나 (viewer) 그룹인 경우)
+    const isViewerPage = $derived($page.url.pathname.includes('/songbook') && !$page.url.pathname.includes('/dashboard'));
     const isLoaded = $derived(!!data);
 
     // [물멍]: 모달 상태 관리 (Svelte 5 $state)
@@ -96,21 +100,19 @@
 </svelte:head>
 
 <div class="app-container min-h-screen flex flex-col font-sans selection:bg-primary/20 relative">
-    <!-- [통합 네비게이션]: 모든 화면에서 동일하게 유지 -->
+    <!-- [스트리머용 네비게이션]: h-20 (5rem) -->
+    {#if !isViewerPage}
     <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 h-20 bg-amber-50/90 backdrop-blur-xl border-b border-amber-100/40 shadow-sm transition-all">
         <div class="flex items-center gap-4 md:gap-6">
             <a href="/" class="flex items-center gap-3 no-underline group shrink-0">
-                <div class="relative">
-                    <div class="absolute inset-0 bg-primary/20 blur-lg rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <img src="/images/wman_sd_transparent.png" alt="Logo" class="relative h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110" />
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-300">
+                    <img src="/images/wman_sd_transparent.png" alt="Logo" class="w-8 h-8 object-contain" />
                 </div>
-                <div class="flex flex-col -gap-1">
-                    <span class="text-xl md:text-2xl font-[1000] text-primary tracking-tighter leading-none">물댕봇</span>
-                    <span class="text-[8px] md:text-[10px] font-black text-primary/50 tracking-widest uppercase">Studio</span>
+                <div class="flex flex-col">
+                    <span class="text-lg font-black text-slate-800 tracking-tighter leading-tight">물댕봇</span>
+                    <span class="text-[10px] font-bold text-primary tracking-widest uppercase opacity-80">STUDIO</span>
                 </div>
             </a>
-
-            <!-- [v19.4] 시각적 확인을 위한 한글화 및 위치 고정 -->
             {#if userState.isAuthenticated}
                 <div class="flex items-center gap-2 bg-white/80 p-1.5 md:p-2 px-3 md:px-4 rounded-2xl border border-primary/10 shadow-sm transition-all hover:shadow-md">
                     <span class="text-[10px] md:text-xs font-black {userState.isActive ? 'text-emerald-500' : 'text-slate-400'} tracking-tight">
@@ -150,6 +152,31 @@
             {/if}
         </div>
     </nav>
+    {:else}
+    <!-- [시청자용 네비게이션]: h-10 (2.5rem) 초슬림 버전 -->
+    <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-8 h-10 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
+        <a href="/" class="flex items-center gap-2 no-underline group shrink-0">
+            <img src="/images/wman_sd_transparent.png" alt="Logo" class="w-6 h-6 object-contain" />
+            <span class="text-sm font-black text-slate-800 tracking-tighter">물댕봇</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            {#if !userState.isAuthenticated}
+                <a 
+                    href="/api/auth/chzzk-login?type=viewer&redirect={$page.url.pathname}"
+                    class="px-3 py-1 bg-chzzk text-white text-[10px] font-black rounded-full shadow-sm hover:shadow-md transition-all no-underline"
+                >
+                    로그인
+                </a>
+            {:else}
+                <div class="flex items-center gap-2 bg-slate-50 py-0.5 px-2 rounded-full border border-slate-100">
+                    <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="P" class="w-5 h-5 rounded-full border border-white" />
+                    <span class="text-[10px] font-extrabold text-slate-600 truncate max-w-[80px]">{userState.channelName}</span>
+                </div>
+            {/if}
+        </div>
+    </nav>
+    {/if}
 
     <!-- [역할 선택 모달]: 전역 모달 -->
     {#if isLoginModalOpen}
@@ -193,8 +220,8 @@
         </div>
     {/if}
 
-    <!-- [메인 콘텐츠 영역]: pt-20으로 헤더 공간 확보 -->
-    <main class="main-layout flex-1 w-full pt-20">
+    <!-- [메인 콘텐츠 영역]: 네비게이션 높이만큼 패딩 확보 -->
+    <main class="flex-1 w-full {isViewerPage ? 'pt-10' : 'pt-20'}">
         {@render children()}
     </main>
 

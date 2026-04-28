@@ -35,8 +35,7 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     command: tunnel --no-autoupdate run
-    networks:
-      - mooldang_prod_net
+    network_mode: host
     logging:
       driver: "json-file"
       options:

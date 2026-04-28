@@ -37,7 +37,7 @@ services:
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -21,6 +21,7 @@ public interface ISongBookDbContext
     DbSet<StreamerPreference> SysStreamerPreferences { get; }
     DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; }
     DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; }
+    DbSet<SongAccumulation> SongAccumulations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

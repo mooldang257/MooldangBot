@@ -53,8 +53,10 @@ public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
 
         // 데이터베이스 엔진별 ColumnType은 명시적으로 지정
         builder.Property(e => e.ViewerUid)
-               .HasColumnType("longtext")
+               .HasMaxLength(500)
                .HasConversion<string?>(_converter);
+
+        builder.HasIndex(e => e.ViewerUid).IsUnique().HasDatabaseName("IX_GlobalViewer_ViewerUid");
                
         builder.Property(e => e.Nickname).UseCollation(ciCollation); // [v6.2] 중앙 닉네임
         

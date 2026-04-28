@@ -56,6 +56,10 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             profile.IsAutoAccumulateDonation = dto.IsAutoAccumulateDonation;
 
             await context.SaveChangesAsync();
+            
+            // [물멍]: 설정이 변경되었으므로 즉시 봇에 반영되도록 캐시 무효화
+            identityCache.InvalidateStreamer(chzzkUid);
+
             return Ok(Result<object>.Success(new { success = true, message = "포인트 설정이 저장되었습니다." }));
         }
 
@@ -71,13 +75,14 @@ namespace MooldangBot.Application.Controllers.ChatPoints
                            on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into pts
                         from p in pts.DefaultIfEmpty()
                         where r.StreamerProfile!.ChzzkUid == chzzkUid
+                        group new { r, g, p } by r.Id into grouped
                         select new {
-                            id = r.Id,
-                            nickname = g.Nickname,
-                            points = p != null ? p.Points : 0,
-                            attendanceCount = r.AttendanceCount,
-                            consecutiveAttendanceCount = r.ConsecutiveAttendanceCount,
-                            lastAttendanceAt = r.LastAttendanceAt
+                            id = grouped.Key,
+                            nickname = grouped.Max(x => x.g.Nickname),
+                            points = grouped.Sum(x => x.p != null ? x.p.Points : 0),
+                            attendanceCount = grouped.Max(x => x.r.AttendanceCount),
+                            consecutiveAttendanceCount = grouped.Max(x => x.r.ConsecutiveAttendanceCount),
+                            lastAttendanceAt = grouped.Max(x => x.r.LastAttendanceAt)
                         };
 
             if (!string.IsNullOrWhiteSpace(request.Search))

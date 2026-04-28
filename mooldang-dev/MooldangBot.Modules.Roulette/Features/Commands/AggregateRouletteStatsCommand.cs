@@ -21,7 +21,7 @@ public class AggregateRouletteStatsCommandHandler(
         var connection = db.Database.GetDbConnection();
 
         const string sql = @"
-            INSERT INTO stats_roulette_audit (roulette_id, item_name, theoretical_probability, total_spins, win_count, last_updated_at)
+            INSERT INTO log_roulette_stats (roulette_id, item_name, theoretical_probability, total_spins, win_count, last_updated_at)
             SELECT 
                 L.roulette_id,
                 L.item_name,
@@ -29,7 +29,7 @@ public class AggregateRouletteStatsCommandHandler(
                 COUNT(*) as total_spins,
                 COUNT(*) as win_count,
                 NOW()
-            FROM func_roulette_logs L
+            FROM log_roulette_results L
             LEFT JOIN func_roulette_items I ON L.roulette_item_id = I.id
             WHERE L.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
             GROUP BY L.roulette_id, L.item_name

@@ -17,6 +17,7 @@ public class GlobalViewer : ISoftDeletable, IAuditable
     /// <summary>
     /// 암호화되어 저장되는 시청자의 고유 UID (치지직 등)
     /// </summary>
+    [MaxLength(500)]
     public required string? ViewerUid { get; set; }
 
     /// <summary>
@@ -30,6 +31,13 @@ public class GlobalViewer : ISoftDeletable, IAuditable
     /// </summary>
     [MaxLength(100)]
     public string Nickname { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [v8.0] 닉네임 변경 시 백업되는 직전 닉네임
+    /// </summary>
+    [MaxLength(100)]
+    public string? PreviousNickname { get; set; }
+
 
     /// <summary>
     /// [v6.2] 시청자 프로필 이미지 URL

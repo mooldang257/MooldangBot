@@ -125,6 +125,7 @@ public class SongBookController : ControllerBase
                 LyricsUrl = s.LyricsUrl,
                 ReferenceUrl = s.ReferenceUrl,
                 ThumbnailUrl = s.ThumbnailUrl,
+                RequiredPoints = s.RequiredPoints,
                 UpdatedAt = s.UpdatedAt
             })
             .ToListAsync();
@@ -190,7 +191,8 @@ public class SongBookController : ControllerBase
             Pitch = request.Pitch,
             Proficiency = request.Proficiency,
             LyricsUrl = request.LyricsUrl,
-            ReferenceUrl = request.ReferenceUrl
+            ReferenceUrl = request.ReferenceUrl,
+            RequiredPoints = request.RequiredPoints
         };
 
         // [v19.5] 지능형 썸네일 처리 (공용 도서관 연동)
@@ -284,6 +286,7 @@ public class SongBookController : ControllerBase
         if (request.LyricsUrl != null) song.LyricsUrl = request.LyricsUrl;
         if (request.ReferenceUrl != null) song.ReferenceUrl = request.ReferenceUrl;
         if (request.ThumbnailUrl != null) song.ThumbnailUrl = request.ThumbnailUrl;
+        song.RequiredPoints = request.RequiredPoints;
 
         await _db.SaveChangesAsync();
         return Ok(Result<object>.Success(new { id = song.Id, title = song.Title }));

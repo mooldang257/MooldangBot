@@ -65,7 +65,11 @@ public class UnifiedCommandHandler(
                 .ToList();
 
             primary = matches.First();
-            totalCost = uniqueFeatures.Sum(f => f.Cost);
+            // [물멍]: SongRequest 등 곡/아이템마다 비용이 동적으로 결정되는 기능은 선결제(Pre-billing)에서 제외합니다.
+            // 비용 차감 및 누적 로직은 AddSongRequestCommand 내부에서 실시간 후원금(DonationAmount)을 기준으로 안전하게 처리됩니다.
+            totalCost = uniqueFeatures
+                .Where(f => f.FeatureType != CommandFeatureType.SongRequest)
+                .Sum(f => f.Cost);
         }
         else if (chatEvent.DonationAmount > 0)
         {

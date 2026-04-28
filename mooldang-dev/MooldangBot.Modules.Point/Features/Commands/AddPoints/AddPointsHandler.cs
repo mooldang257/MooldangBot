@@ -78,14 +78,13 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 {
                     // [1순위: Identity First] 시청자 관계 및 닉네임, 마지막 활동 시간 등록
                     const string relationUpsertSql = @"
-                        INSERT INTO core_viewer_relations (streamer_profile_id, global_viewer_id, nickname, is_active, is_deleted, attendance_count, consecutive_attendance_count, first_visit_at, last_chat_at, created_at, updated_at)
-                        VALUES (@StreamerId, @GlobalId, @Nickname, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW())
+                        INSERT INTO core_viewer_relations (streamer_profile_id, global_viewer_id, is_active, is_deleted, attendance_count, consecutive_attendance_count, first_visit_at, last_chat_at, created_at, updated_at)
+                        VALUES (@StreamerId, @GlobalId, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW())
                         ON DUPLICATE KEY UPDATE 
-                            nickname = VALUES(nickname),
                             last_chat_at = NOW(),
                             updated_at = NOW();";
 
-                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId, Nickname = request.Nickname ?? "시청자" }, transaction);
+                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
 
                     // [2순위: 포인트/재화 정산]
                     int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;

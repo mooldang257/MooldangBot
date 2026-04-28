@@ -8,7 +8,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - ORIGIN=${BASE_DOMAIN}
+      - ORIGIN=https://${BASE_DOMAIN}
       - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
@@ -50,7 +50,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - ORIGIN=${BASE_DOMAIN}
+      - ORIGIN=https://${BASE_DOMAIN}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=Host(`bot.mooldang.com`) && PathPrefix(`/admin`)"

@@ -13,7 +13,7 @@ namespace MooldangBot.Modules.SongBook.Controllers;
 /// (v15.1: 핀 테크니컬 아키텍처에 따라 모든 비즈니스 로직을 MediatR 핸들러로 위임합니다.)
 /// </summary>
 [ApiController]
-[Route("api/v1/songbook")]
+[Route("api/songbook")]
 [Authorize]
 public class SongBookController(IMediator mediator) : ControllerBase
 {
@@ -53,6 +53,22 @@ public class SongBookController(IMediator mediator) : ControllerBase
     /// </summary>
     [HttpPost("omakase/count")]
     public async Task<ActionResult<Result<object>>> UpdateOmakaseCount([FromBody] UpdateOmakaseCountCommand command)
+        => Ok(await mediator.Send(command));
+
+    /// <summary>
+    /// [노래책 목록 조회]: 스트리머의 전체 노래 도서관 목록을 조회합니다.
+    /// </summary>
+    [HttpGet("library/{chzzkUid}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<Result<SongBookLibraryResponseDto>>> GetSongBookLibrary(string chzzkUid, [FromQuery] string? query = null)
+        => Ok(await mediator.Send(new GetSongBookLibraryQuery(chzzkUid, query)));
+
+    /// <summary>
+    /// [노래 신청]: 시청자가 노래를 신청합니다.
+    /// </summary>
+    [HttpPost("request")]
+    [AllowAnonymous]
+    public async Task<ActionResult<Result<bool>>> RequestSong([FromBody] AddSongRequestCommand command)
         => Ok(await mediator.Send(command));
 
     /// <summary>

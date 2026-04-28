@@ -95,7 +95,11 @@ public class IdentityCacheService(
         {
             // 정보가 바뀌었는지 확인 후 업데이트 (Dirty Check)
             bool isUpdated = false;
-            if (viewer!.Nickname != nickname) { viewer.Nickname = nickname; isUpdated = true; }
+            if (viewer!.Nickname != nickname) { 
+                viewer.PreviousNickname = viewer.Nickname;
+                viewer.Nickname = nickname; 
+                isUpdated = true; 
+            }
             if (profileImageUrl != null && viewer.ProfileImageUrl != profileImageUrl) { viewer.ProfileImageUrl = profileImageUrl; isUpdated = true; }
 
             if (isUpdated)

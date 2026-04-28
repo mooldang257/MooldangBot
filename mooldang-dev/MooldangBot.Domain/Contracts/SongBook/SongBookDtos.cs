@@ -92,6 +92,9 @@ public class SongQueueDto
 
     [JsonPropertyName("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
+
+    [JsonPropertyName("pitch")]
+    public string? Pitch { get; set; }
 }
 
 public class SongQueueViewDto : SongQueueDto
@@ -154,7 +157,8 @@ public record CurrentSongDto(
     [property: JsonPropertyName("title")] string Title, 
     [property: JsonPropertyName("artist")] string? Artist, 
     [property: JsonPropertyName("videoId")] string? VideoId = null, 
-    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null);
+    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null,
+    [property: JsonPropertyName("pitch")] string? Pitch = null);
 
 public record QueueSongDto(
     [property: JsonPropertyName("id")] int Id,
@@ -162,7 +166,8 @@ public record QueueSongDto(
     [property: JsonPropertyName("artist")] string? Artist, 
     [property: JsonPropertyName("requester")] string? Requester, 
     [property: JsonPropertyName("videoId")] string? VideoId = null, 
-    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null);
+    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null,
+    [property: JsonPropertyName("pitch")] string? Pitch = null);
 
 public record SongOverlaySettings(
     string LiveTitleFont = "Gmarket Sans",
@@ -216,6 +221,9 @@ public class SongBookDto
 
     [JsonPropertyName("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
+
+    [JsonPropertyName("requiredPoints")]
+    public int RequiredPoints { get; set; } = 0;
 
     [JsonPropertyName("updatedAt")]
     public KstClock? UpdatedAt { get; set; }

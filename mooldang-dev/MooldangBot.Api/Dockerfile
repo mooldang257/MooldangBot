@@ -1,4 +1,4 @@
-# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net10.0 + Alpine)
+# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net9.0 + Alpine)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080

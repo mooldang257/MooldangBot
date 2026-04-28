@@ -19,7 +19,7 @@ public class ProcessCommandBillingCommandHandler(
 {
     public async Task<BillingResult> Handle(ProcessCommandBillingCommand request, CancellationToken ct)
     {
-        if (request.Cost <= 0) return new BillingResult(true);
+        if (request.Cost <= 0 && request.DonationAmount <= 0) return new BillingResult(true);
 
         logger.LogInformation("💳 [Billing] Processing: {Cost} {Type} for {User}", request.Cost, request.CostType, request.StreamerUid);
 

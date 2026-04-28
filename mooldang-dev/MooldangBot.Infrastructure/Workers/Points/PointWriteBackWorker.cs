@@ -117,10 +117,13 @@ public class PointWriteBackWorker : BackgroundService
         var items = data.Select(kvp => {
             var parts = kvp.Key.Split(':');
             var streamerUid = parts[0];
-            var viewerUid = parts.Length > 1 ? parts[1] : "unknown";
+            var rawViewerUid = parts.Length > 1 ? parts[1] : "unknown";
+            
+            // [v6.2.3] UID 정규화: 대소문자 무관 및 공백 제거 처리
+            var viewerUid = rawViewerUid.Trim().ToLowerInvariant();
             
             return new {
-                StreamerUid = streamerUid,
+                StreamerUid = streamerUid, 
                 ViewerUid = viewerUid,
                 Hash = Sha256Hasher.ComputeHash(viewerUid),
                 Nickname = kvp.Value.Nickname,
@@ -146,12 +149,12 @@ public class PointWriteBackWorker : BackgroundService
 
                 // Step 2: Relations Bulk Upsert
                 const string relationUpsertSql = @"
-                    INSERT INTO core_viewer_relations (streamer_profile_id, global_viewer_id, nickname, is_active, is_deleted, attendance_count, consecutive_attendance_count, first_visit_at, last_chat_at, created_at, updated_at)
-                    SELECT s.id, g.id, @Nickname, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW()
+                    INSERT INTO core_viewer_relations (streamer_profile_id, global_viewer_id, is_active, is_deleted, attendance_count, consecutive_attendance_count, first_visit_at, last_chat_at, created_at, updated_at)
+                    SELECT s.id, g.id, 1, 0, 0, 0, NOW(), NOW(), NOW(), NOW()
                     FROM core_streamer_profiles s
                     JOIN core_global_viewers g ON g.viewer_uid_hash = @Hash
                     WHERE s.chzzk_uid = @StreamerUid
-                    ON DUPLICATE KEY UPDATE nickname = VALUES(nickname), last_chat_at = NOW(), updated_at = NOW();";
+                    ON DUPLICATE KEY UPDATE last_chat_at = NOW(), updated_at = NOW();";
                 await connection.ExecuteAsync(relationUpsertSql, chunk, transaction);
 
                 // Step 3: Points Bulk Upsert

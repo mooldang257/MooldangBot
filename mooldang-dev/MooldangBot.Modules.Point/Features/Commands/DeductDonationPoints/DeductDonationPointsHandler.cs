@@ -53,7 +53,7 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
             {
                 // [오시리스의 철퇴]: 잔액이 부족하면 차감하지 않는 원자적 쿼리 (Atomic Update)
                 var sql = @"
-                    UPDATE viewer_donations 
+                    UPDATE func_viewer_donations 
                     SET balance = balance - @Amount, updated_at = NOW()
                     WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId 
                       AND balance >= @Amount;";
@@ -66,7 +66,7 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
                 }, transaction);
 
                 var currentBalance = await connection.QueryFirstOrDefaultAsync<int>(
-                    "SELECT balance FROM viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+                    "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
                     new { StreamerId = streamer.Id, GlobalId = globalId }, transaction);
 
                 if (affectedRows == 0) 
@@ -78,7 +78,7 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
 
                 // [v7.0] 감사 로그(ViewerDonationHistory) 자동 생성
                 const string logSql = @"
-                    INSERT INTO viewer_donations_history (streamer_profile_id, global_viewer_id, platform_transaction_id, amount, balance_after, transaction_type, metadata, created_at, updated_at)
+                    INSERT INTO func_viewer_donation_histories (streamer_profile_id, global_viewer_id, platform_transaction_id, amount, balance_after, transaction_type, metadata, created_at, updated_at)
                     VALUES (@StreamerId, @GlobalId, @TxId, @Amount, @BalanceAfter, @Type, @Metadata, NOW(), NOW());";
 
                 await connection.ExecuteAsync(logSql, new

@@ -71,6 +71,11 @@ public class SongBook : ISoftDeletable, IAuditable
     [Column("sing_count")]
     public int SingCount { get; set; } = 0; // 기존 UsageCount를 계승
 
+    /// <summary>
+    /// 곡 신청에 필요한 최소 포인트(치즈). 0이면 무료 신청 가능.
+    /// </summary>
+    public int RequiredPoints { get; set; } = 0;
+
     public DateTime? LastSungAt { get; set; }
 
     // [지능형 검색 필드 - 스냅샷]

@@ -35,10 +35,21 @@ if [ -z "$TARGET" ]; then
     esac
 fi
 
-# 버전 자동 생성 (인자가 없을 때)
+# 버전 자동 생성 (인자가 없을 때: v0.0.x 형태 자동 증가)
 if [ -z "$IMAGE_VERSION" ] && [ "$TARGET" != "infra" ]; then
-    IMAGE_VERSION="v$(date +%Y%m%d-%H%M)"
-    echo -e "${YELLOW}🔔 버전이 지정되지 않아 자동으로 생성합니다: $IMAGE_VERSION${NC}"
+    # .env에서 현재 버전 읽기
+    CURRENT_VERSION=$(grep "^VERSION_APP=" .env | cut -d'=' -f2)
+    if [[ $CURRENT_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+        MAJOR=${BASH_REMATCH[1]}
+        MINOR=${BASH_REMATCH[2]}
+        PATCH=${BASH_REMATCH[3]}
+        NEXT_PATCH=$((PATCH + 1))
+        IMAGE_VERSION="v$MAJOR.$MINOR.$NEXT_PATCH"
+    else
+        # 파싱 실패 시 기본값 또는 타임스탬프 (폴백)
+        IMAGE_VERSION="v$(date +%Y%m%d-%H%M)"
+    fi
+    echo -e "${YELLOW}🔔 버전을 자동으로 증가시킵니다: $CURRENT_VERSION -> $IMAGE_VERSION${NC}"
 fi
 
 # 2. 빌드 대상별 컴포즈 파일 및 서비스 설정
@@ -89,6 +100,16 @@ if [ "$IMAGE_VERSION" != "latest" ]; then
             echo -e "  - $IMG_NAME:$IMAGE_VERSION ${GREEN}완료${NC}"
         fi
     done
+    # [오시리스의 기록]: .env 파일에 새로운 버전 정보 자동 업데이트
+    echo -e "${YELLOW}📝 .env 파일에 버전 정보 동기화 중...${NC}"
+    if [ "$TARGET" == "all" ] || [ "$TARGET" == "backend" ]; then
+        sed -i "s/^VERSION_APP=.*/VERSION_APP=$IMAGE_VERSION/" .env
+        echo -e "  - VERSION_APP -> ${GREEN}$IMAGE_VERSION${NC}"
+    fi
+    if [ "$TARGET" == "all" ] || [ "$TARGET" == "frontend" ]; then
+        sed -i "s/^VERSION_UI=.*/VERSION_UI=$IMAGE_VERSION/" .env
+        echo -e "  - VERSION_UI -> ${GREEN}$IMAGE_VERSION${NC}"
+    fi
 fi
 
 echo -e "${GREEN}✅ 빌드가 완료되었습니다!${NC}"

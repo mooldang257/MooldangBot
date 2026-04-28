@@ -40,12 +40,12 @@ public class SongBookState
     /// <summary>
     /// 대기열에 곡을 추가합니다. (DB 저장 성공 후 호출 권장)
     /// </summary>
-    public bool AddSong(string streamerUid, int id, string username, string title, string? artist = null, string? videoId = null, string? thumbnailUrl = null)
+    public bool AddSong(string streamerUid, int id, string username, string title, string? artist = null, string? videoId = null, string? thumbnailUrl = null, string? pitch = null)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(title))
             return false;
 
-        GetState(streamerUid).Queue.Enqueue(new SongBufferItem(id, username, title, artist ?? string.Empty, videoId, thumbnailUrl));
+        GetState(streamerUid).Queue.Enqueue(new SongBufferItem(id, username, title, artist ?? string.Empty, videoId, thumbnailUrl, pitch));
         return true;
     }
 
@@ -122,7 +122,7 @@ public class SongBookState
 /// <summary>
 /// 버퍼에 보관되는 신청곡 항목 (ID 포함)
 /// </summary>
-public record SongBufferItem(int Id, string Username, string Title, string Artist, string? VideoId = null, string? ThumbnailUrl = null);
+public record SongBufferItem(int Id, string Username, string Title, string Artist, string? VideoId = null, string? ThumbnailUrl = null, string? Pitch = null);
 
 /// <summary>
 /// 개별 스트리머의 곡 상태 정보
