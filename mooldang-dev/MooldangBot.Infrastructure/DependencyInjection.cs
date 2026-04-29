@@ -107,7 +107,7 @@ namespace MooldangBot.Infrastructure
             // Database — [v11.7.2] AddPooledDbContextFactory 전환 (poolSize: 1024)
             // [오시리스의 영속]: MariaDB 11.7 엔진의 최신 옵티마이저와 Vector Search 기능을 활용합니다.
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            var serverVersion = ServerVersion.Parse("11.7.2-mariadb");
+            var serverVersion = new MariaDbServerVersion(new Version(11, 8, 0));
             
             services.AddPooledDbContextFactory<AppDbContext>(options =>
                 options.UseMySql(connectionString, serverVersion, mysqlOptions =>

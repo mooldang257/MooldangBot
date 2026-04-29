@@ -30,15 +30,19 @@ public class SongBookExcelService(
         var songs = await _db.FuncSongBooks
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamerProfileId && !s.IsDeleted)
-            .OrderByDescending(s => s.Id)
+            .OrderBy(s => s.SongNo)
             .Select(s => new SongBookExcelRow
             {
+                Id = s.SongNo,
                 Title = s.Title,
                 Artist = s.Artist,
                 Category = s.Category,
                 Pitch = s.Pitch,
                 Proficiency = s.Proficiency,
-                YoutubeUrl = s.ReferenceUrl ?? s.ThumbnailUrl, // 유튜브 URL은 레퍼런스로 관리
+                YoutubeUrl = s.ReferenceUrl ?? s.ThumbnailUrl, 
+                LyricsUrl = s.LyricsUrl,
+                ThumbnailUrl = s.ThumbnailUrl,
+                RequiredPoints = s.RequiredPoints,
                 Alias = s.Alias
             })
             .ToListAsync();
@@ -63,13 +67,19 @@ public class SongBookExcelService(
         
         try
         {
-            // 1. 엑셀 데이터 읽기 (강력한 매핑)
+            // 1. 엑셀 데이터 읽기
             var rows = excelStream.Query<SongBookExcelRow>().ToList();
             result.TotalCount = rows.Count;
 
+            // 2. 현재 스트리머의 곡 목록 미리 로드 (업데이트 및 SongNo 관리를 위해)
+            var existingSongs = await _db.FuncSongBooks
+                .Where(s => s.StreamerProfileId == streamerProfileId)
+                .ToListAsync();
+
+            var maxSongNo = existingSongs.Any() ? existingSongs.Max(s => s.SongNo) : 0;
+
             foreach (var row in rows)
             {
-                // [검증]: 제목은 무조건 있어야 함
                 if (string.IsNullOrWhiteSpace(row.Title))
                 {
                     result.Errors.Add($"{result.TotalCount}번째 행: 제목이 없습니다. 건너뜁니다.");
@@ -78,48 +88,63 @@ public class SongBookExcelService(
 
                 try
                 {
-                    // 2. [지능형 매칭 Phase]: SongLibraryId 확보
-                    // 제목/가수를 기반으로 마스터 DB에서 최적의 라이브러리 ID를 징집합니다.
+                    // 3. 라이브러리 ID 확보 (지능형 매칭)
                     long capturedId = await _libraryService.CaptureStagingAsync(new SongLibraryCaptureDto
                     {
                         Title = row.Title.Trim(),
                         Artist = row.Artist?.Trim() ?? "Unknown",
                         YoutubeUrl = row.YoutubeUrl?.Trim() ?? string.Empty,
+                        LyricsUrl = row.LyricsUrl?.Trim(),
                         Alias = row.Alias,
                         SourceType = (int)MetadataSourceType.Streamer,
                         SourceId = streamerProfileId.ToString()
                     });
 
-                    // 3. [중복 체크]: 이미 노래책에 동일한 LibraryId가 있는지 확인
-                    var isExists = await _db.FuncSongBooks
-                        .AnyAsync(s => s.StreamerProfileId == streamerProfileId && 
-                                       s.SongLibraryId == capturedId && 
-                                       !s.IsDeleted);
+                    // 4. [SongNo 기반 업데이트 또는 신규 생성]
+                    SongBook? songBook = null;
+                    bool isNew = false;
 
-                    if (isExists)
+                    if (row.Id.HasValue)
                     {
-                        result.Errors.Add($"[{row.Title}]: 이미 노래책에 등록된 곡입니다.");
-                        continue;
+                        // 엑셀에 Id(SongNo)가 명시된 경우 기존 곡 찾기
+                        songBook = existingSongs.FirstOrDefault(s => s.SongNo == (int)row.Id.Value);
+                    }
+                    
+                    if (songBook == null)
+                    {
+                        // 기존 곡이 없으면 중복 체크 (LibraryId 기준)
+                        songBook = existingSongs.FirstOrDefault(s => s.SongLibraryId == capturedId);
                     }
 
-                    // 4. [엔터티 생성 및 저장]
-                    var songBook = new SongBook
+                    if (songBook == null)
                     {
-                        StreamerProfileId = streamerProfileId,
-                        SongLibraryId = capturedId,
-                        Title = row.Title.Trim(),
-                        Artist = row.Artist?.Trim(),
-                        Category = row.Category?.Trim(),
-                        Pitch = row.Pitch?.Trim(),
-                        Proficiency = row.Proficiency?.Trim(),
-                        ReferenceUrl = row.YoutubeUrl?.Trim(),
-                        Alias = row.Alias?.Trim(),
-                        TitleChosung = KoreanUtils.NormalizeForSearch(row.Title),
-                        IsRequestable = true,
-                        CreatedAt = KstClock.Now
-                    };
+                        // 완전히 새로운 곡 생성
+                        songBook = new SongBook
+                        {
+                            StreamerProfileId = streamerProfileId,
+                            SongNo = row.Id.HasValue ? (int)row.Id.Value : ++maxSongNo,
+                            CreatedAt = KstClock.Now
+                        };
+                        isNew = true;
+                        _db.FuncSongBooks.Add(songBook);
+                    }
 
-                    _db.FuncSongBooks.Add(songBook);
+                    // 5. 정보 업데이트
+                    songBook.SongLibraryId = capturedId;
+                    songBook.Title = row.Title.Trim();
+                    songBook.Artist = row.Artist?.Trim();
+                    songBook.Category = row.Category?.Trim();
+                    songBook.Pitch = row.Pitch?.Trim();
+                    songBook.Proficiency = row.Proficiency?.Trim();
+                    songBook.ReferenceUrl = row.YoutubeUrl?.Trim();
+                    songBook.LyricsUrl = row.LyricsUrl?.Trim();
+                    songBook.ThumbnailUrl = row.ThumbnailUrl?.Trim();
+                    songBook.RequiredPoints = row.RequiredPoints ?? 0;
+                    songBook.Alias = row.Alias?.Trim();
+                    songBook.TitleChosung = KoreanUtils.NormalizeForSearch(row.Title);
+                    songBook.IsRequestable = true;
+                    songBook.UpdatedAt = KstClock.Now;
+
                     result.SuccessCount++;
                 }
                 catch (Exception ex)

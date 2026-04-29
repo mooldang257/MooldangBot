@@ -87,8 +87,8 @@ esac
 
 # 3. 빌드 실행
 echo -e "${GREEN}🚀 빌드 시작 ($TARGET, Version: $IMAGE_VERSION)...${NC}"
-# [v5.6] 빌드 시에는 강제로 latest 태그를 사용하도록 환경 변수 주입
-VERSION_APP=latest VERSION_UI=latest docker compose $FILES --env-file .env build $SERVICES
+# [v5.7] 빌드 시에는 강제로 latest 태그를 사용하도록 환경 변수 주입 및 캐시 미사용 설정
+VERSION_APP=latest VERSION_UI=latest docker compose $FILES --env-file .env build --no-cache $SERVICES
 
 # 4. 버전 태깅
 if [ "$IMAGE_VERSION" != "latest" ]; then

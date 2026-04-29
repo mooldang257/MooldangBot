@@ -3,7 +3,7 @@
 
 services:
   db:
-    image: mariadb:11.7
+    image: mariadb:11.8
     container_name: mooldang-dev-db
     command:
       - --local-infile=1

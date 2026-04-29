@@ -5,14 +5,14 @@
 namespace MooldangBot.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPointPerAttendanceAndDonationFeature : Migration
+    public partial class AddSongNoToSongBook : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "point_per_attendance",
-                table: "core_streamer_profiles",
+                name: "song_no",
+                table: "func_song_books",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
@@ -22,8 +22,8 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "point_per_attendance",
-                table: "core_streamer_profiles");
+                name: "song_no",
+                table: "func_song_books");
         }
     }
 }

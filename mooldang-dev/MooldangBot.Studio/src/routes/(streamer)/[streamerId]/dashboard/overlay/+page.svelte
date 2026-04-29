@@ -4,8 +4,9 @@
     import { apiFetch } from '$lib/api/client';
     import { userState } from '$lib/core/state/user.svelte';
     import { fade } from 'svelte/transition';
-    import { AlertCircle, Monitor, ExternalLink, Copy, Check } from 'lucide-svelte';
+    import { AlertCircle, Monitor, ExternalLink, Copy, Check, Type } from 'lucide-svelte';
     import LayoutEditor from '$lib/features/overlay/ui/LayoutEditor.svelte';
+    import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
 
     // [Osiris]: 데이터 상태 관리
     let isLoaded = $state(false);
@@ -91,6 +92,19 @@
     }
 </script>
 
+<!-- [폰트 로더]: 선택된 폰트의 미리보기를 위해 스타일 주입 -->
+<svelte:head>
+    {#each MOOLDANG_FONTS as font}
+        {#if font.url && (designSettings?.liveTitleFont === font.family || designSettings?.queueFont === font.family || designSettings?.rouletteFont === font.family)}
+            {#if font.provider === 'google'}
+                <link rel="stylesheet" href={font.url} />
+            {:else}
+                {@html `<style>@font-face { font-family: '${font.family}'; src: url('${font.url}'); font-display: swap; }</style>`}
+            {/if}
+        {/if}
+    {/each}
+</svelte:head>
+
 <div class="space-y-8 p-2">
     <!-- [물댕봇 헤더] -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -148,6 +162,76 @@
             layout={layoutData} 
             onSave={handleSaveLayout} 
         />
+
+        <!-- [서체 및 디자인 세부 설정] -->
+        <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-sky-100/50 shadow-sm space-y-8" in:fade>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-500">
+                    <span class="text-xl">✍️</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-800 tracking-tight">오시리스의 서체 (Typography)</h3>
+                    <p class="text-xs font-bold text-slate-400">81종의 다양한 한글 서체로 오버레이의 개성을 더하세요.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 1. 현재 재생 곡 제목 폰트 -->
+                <div class="space-y-3">
+                    <label class="text-sm font-black text-slate-500 uppercase tracking-wider">현재 재생 곡 폰트</label>
+                    <select 
+                        bind:value={designSettings.liveTitleFont}
+                        class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                        style="font-family: {designSettings.liveTitleFont || 'inherit'}"
+                    >
+                        <option value="">기본 (Pretendard)</option>
+                        {#each MOOLDANG_FONTS as font}
+                            <option value={font.family}>{font.name}</option>
+                        {/each}
+                    </select>
+                </div>
+
+                <!-- 2. 신청곡 대기열 폰트 -->
+                <div class="space-y-3">
+                    <label class="text-sm font-black text-slate-500 uppercase tracking-wider">대기열 리스트 폰트</label>
+                    <select 
+                        bind:value={designSettings.queueFont}
+                        class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                        style="font-family: {designSettings.queueFont || 'inherit'}"
+                    >
+                        <option value="">기본 (Pretendard)</option>
+                        {#each MOOLDANG_FONTS as font}
+                            <option value={font.family}>{font.name}</option>
+                        {/each}
+                    </select>
+                </div>
+
+                <!-- 3. 룰렛 알림 폰트 -->
+                <div class="space-y-3">
+                    <label class="text-sm font-black text-slate-500 uppercase tracking-wider">룰렛/알림 폰트</label>
+                    <select 
+                        bind:value={designSettings.rouletteFont}
+                        class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                        style="font-family: {designSettings.rouletteFont || 'inherit'}"
+                    >
+                        <option value="">기본 (Pretendard)</option>
+                        {#each MOOLDANG_FONTS as font}
+                            <option value={font.family}>{font.name}</option>
+                        {/each}
+                    </select>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-50 flex justify-end">
+                <button 
+                    onclick={() => handleSaveLayout(layoutData)}
+                    class="px-8 py-3 rounded-2xl bg-slate-800 text-white font-black text-sm hover:bg-slate-900 transition-all shadow-lg shadow-slate-200"
+                >
+                    디자인 설정 저장
+                </button>
+            </div>
+        </div>
+
     {/if}
 </div>
 

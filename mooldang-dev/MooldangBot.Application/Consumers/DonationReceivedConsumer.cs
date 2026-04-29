@@ -19,11 +19,20 @@ public sealed class DonationReceivedConsumer(
     public async Task Consume(ConsumeContext<ChzzkDonationEvent> context)
     {
         var donationEvent = context.Message;
+        logger.LogInformation("💰 [DonationConsumer] Starting to consume donation: {Amount} from {User} (Msg: {Msg})", donationEvent.PayAmount, donationEvent.Nickname, donationEvent.DonationMessage);
 
         try
         {
+            logger.LogDebug("[DonationConsumer] Fetching profile for ChannelId: {ChannelId}", donationEvent.ChannelId);
             var profile = await identityCache.GetStreamerProfileAsync(donationEvent.ChannelId);
-            if (profile == null) return;
+            
+            if (profile == null)
+            {
+                logger.LogWarning("⚠️ [DonationConsumer] Profile not found for ChannelId: {ChannelId}", donationEvent.ChannelId);
+                return;
+            }
+
+            logger.LogInformation("💰 [DonationConsumer] Profile found: {ProfileName}. Publishing internal event.", profile.ChannelName);
 
             var internalEvent = new ChzzkEventReceived(
                 context.CorrelationId ?? Guid.NewGuid(),

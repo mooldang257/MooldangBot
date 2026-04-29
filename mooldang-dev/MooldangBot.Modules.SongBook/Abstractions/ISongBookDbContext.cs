@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Modules.SongBook.Abstractions;
@@ -23,5 +24,6 @@ public interface ISongBookDbContext
     DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; }
 
 
+    DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -75,8 +75,8 @@ namespace MooldangBot.Domain.Entities
     /// </summary>
     public enum CommandMatchType
     {
-        Exact = 0,    // 정확히 일치
-        Prefix = 1,   // 키워드로 시작
+        Prefix = 0,   // 키워드로 시작 (기본값)
+        Exact = 1,    // 정확히 일치
         Contains = 2, // 키워드 포함
         Regex = 3     // 정규식 매칭
     }

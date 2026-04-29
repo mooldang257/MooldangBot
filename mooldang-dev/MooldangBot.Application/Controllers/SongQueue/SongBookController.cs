@@ -113,10 +113,10 @@ public class SongBookController : ControllerBase
         }
 
         var songs = await dbQuery
-            .OrderByDescending(s => s.Id)
+            .OrderBy(s => s.SongNo)
             .Select(s => new SongBookDto
             {
-                Id = s.Id,
+                Id = s.SongNo,
                 Title = s.Title,
                 Artist = s.Artist,
                 Category = s.Category,
@@ -182,9 +182,16 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
+        // [v19.1] 다음 SongNo 계산 (1부터 시작)
+        var maxSongNo = await _db.FuncSongBooks
+            .Where(s => s.StreamerProfileId == profile.Id)
+            .Select(s => (int?)s.SongNo)
+            .MaxAsync() ?? 0;
+
         var song = new SongBook
         {
             StreamerProfileId = profile.Id,
+            SongNo = maxSongNo + 1,
             Title = request.Title,
             Artist = request.Artist,
             Category = request.Category,
@@ -260,7 +267,7 @@ public class SongBookController : ControllerBase
         _db.FuncSongBooks.Add(song);
         await _db.SaveChangesAsync();
 
-        return Ok(Result<object>.Success(new { id = song.Id, title = song.Title, localPath = song.ThumbnailUrl }));
+        return Ok(Result<object>.Success(new { id = song.SongNo, title = song.Title, localPath = song.ThumbnailUrl }));
     }
 
     /// <summary>
@@ -273,7 +280,7 @@ public class SongBookController : ControllerBase
         if (profile == null) return Unauthorized();
 
         var song = await _db.FuncSongBooks
-            .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
+            .FirstOrDefaultAsync(s => s.SongNo == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
             return NotFound(Result<string>.Failure("곡을 찾을 수 없습니다."));
@@ -289,7 +296,7 @@ public class SongBookController : ControllerBase
         song.RequiredPoints = request.RequiredPoints;
 
         await _db.SaveChangesAsync();
-        return Ok(Result<object>.Success(new { id = song.Id, title = song.Title }));
+        return Ok(Result<object>.Success(new { id = song.SongNo, title = song.Title }));
     }
 
     /// <summary>
@@ -302,7 +309,7 @@ public class SongBookController : ControllerBase
         if (profile == null) return Unauthorized();
 
         var song = await _db.FuncSongBooks
-            .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
+            .FirstOrDefaultAsync(s => s.SongNo == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
             return NotFound(Result<string>.Failure("곡을 찾을 수 없습니다."));
@@ -310,7 +317,7 @@ public class SongBookController : ControllerBase
         song.IsDeleted = true;
         await _db.SaveChangesAsync();
 
-        return Ok(Result<object>.Success(new { id = song.Id }));
+        return Ok(Result<object>.Success(new { id = song.SongNo }));
     }
 
     private string ComputeHash(byte[] data)

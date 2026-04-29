@@ -39,7 +39,13 @@ public class CommandCacheService : ICommandCache
 
         // [v3.0]: 3단계 정밀 필터링 (Priority -> MatchWeight -> Cost)
         var matches = commands.Values
-            .Where(c => c.IsActive && IsMatch(message, c))
+            .Where(c => {
+                bool matched = c.IsActive && IsMatch(message, c);
+                if (message.Contains(c.Keyword)) {
+                    _logger.LogDebug("🤔 [CommandCache] Checking '{Keyword}' against '{Message}': Matched={Matched}", c.Keyword, message, matched);
+                }
+                return matched;
+            })
             .OrderBy(c => c.Priority)                    // 1. 지휘관의 의도 (우선순위)
             .ThenByDescending(c => GetMatchWeight(c.MatchType)) // 2. 매칭의 정밀도
             .ThenByDescending(c => c.Cost)               // 3. 자원 가치 (비용)
@@ -111,7 +117,7 @@ public class CommandCacheService : ICommandCache
     {
         if (string.IsNullOrEmpty(message) || string.IsNullOrEmpty(command.Keyword)) return false;
 
-        return command.MatchType switch
+        var result = command.MatchType switch
         {
             CommandMatchType.Exact => message.Equals(command.Keyword, StringComparison.OrdinalIgnoreCase),
             CommandMatchType.Prefix => MatchPrefix(message, command.Keyword, command.RequiresSpace),
@@ -119,6 +125,11 @@ public class CommandCacheService : ICommandCache
             CommandMatchType.Regex => MatchRegex(message, command.Keyword),
             _ => false
         };
+
+        if (result || message.StartsWith(command.Keyword)) {
+             _logger.LogInformation("💡 [CommandCache] IsMatch('{Message}', '{Keyword}') MatchType={Type} Result={Result}", message, command.Keyword, command.MatchType, result);
+        }
+        return result;
     }
 
     private bool MatchPrefix(string message, string keyword, bool requiresSpace)

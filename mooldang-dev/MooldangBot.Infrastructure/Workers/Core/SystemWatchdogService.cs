@@ -95,6 +95,13 @@ public class SystemWatchdogService(
             {
                 string msg = $"🚨 [함대 이탈] 인스턴스 [{machine}]의 신호가 끊겼습니다! (5분 경과)";
                 await notificationService.SendAlertAsync(msg, true, $"lost:{machine}", TimeSpan.FromHours(1));
+
+                // [v15.2] 10분 이상 부재 시 유령 데이터 자동 청소
+                if ((DateTime.UtcNow - instance.LastSeenAt).TotalMinutes >= 10)
+                {
+                    _logger.LogInformation("[Watchdog] 인스턴스 [{Machine}] 장기 부재. Redis 유령 데이터 청소.", machine);
+                    await healthMonitor.CleanupInstanceAsync(machine, ct);
+                }
                 continue;
             }
 

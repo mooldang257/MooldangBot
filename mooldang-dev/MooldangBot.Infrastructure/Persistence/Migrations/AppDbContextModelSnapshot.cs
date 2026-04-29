@@ -452,10 +452,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
 
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(768)")
-                        .HasColumnName("title_vector");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
@@ -557,10 +553,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
-
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(768)")
-                        .HasColumnName("title_vector");
 
                     b.Property<string>("YoutubeTitle")
                         .HasMaxLength(500)
@@ -1516,57 +1508,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     b.ToTable("sys_shared_components", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongAccumulation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("CurrentPoints")
-                        .HasColumnType("int")
-                        .HasColumnName("current_points");
-
-                    b.Property<string>("LastDonatorName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("last_donator_name");
-
-                    b.Property<int?>("SongBookId")
-                        .HasColumnType("int")
-                        .HasColumnName("song_book_id");
-
-                    b.Property<string>("SongTitle")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("song_title");
-
-                    b.Property<int>("StreamerProfileId")
-                        .HasColumnType("int")
-                        .HasColumnName("streamer_profile_id");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_func_song_accumulations");
-
-                    b.HasIndex("SongBookId")
-                        .HasDatabaseName("ix_func_song_accumulations_song_book_id");
-
-                    b.HasIndex("StreamerProfileId", "SongBookId")
-                        .HasDatabaseName("ix_func_song_accumulations_streamer_profile_id_song_book_id");
-
-                    b.ToTable("func_song_accumulations", (string)null);
-                });
-
             modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
                 {
                     b.Property<int>("Id")
@@ -1657,6 +1598,10 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("song_library_id");
 
+                    b.Property<int>("SongNo")
+                        .HasColumnType("int")
+                        .HasColumnName("song_no");
+
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int")
                         .HasColumnName("streamer_profile_id");
@@ -1681,10 +1626,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
-
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(768)")
-                        .HasColumnName("title_vector");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -2243,10 +2184,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
-
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(768)")
-                        .HasColumnName("title_vector");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -2969,25 +2906,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_sys_shared_components_core_streamer_profiles_streamer_profil");
-
-                    b.Navigation("StreamerProfile");
-                });
-
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongAccumulation", b =>
-                {
-                    b.HasOne("MooldangBot.Domain.Entities.SongBook", "SongBook")
-                        .WithMany()
-                        .HasForeignKey("SongBookId")
-                        .HasConstraintName("fk_func_song_accumulations_func_song_books_song_book_id");
-
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
-                        .WithMany()
-                        .HasForeignKey("StreamerProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_func_song_accumulations_core_streamer_profiles_streamer_prof");
-
-                    b.Navigation("SongBook");
 
                     b.Navigation("StreamerProfile");
                 });

@@ -10,6 +10,7 @@ public interface ISongBookRepository
     Task<MooldangBot.Domain.Entities.SongBook?> GetByStreamerIdAsync(string streamerUid);
     Task AddAsync(MooldangBot.Domain.Entities.SongBook songBook);
     Task<List<Master_SongLibrary>> SearchByVectorAsync(float[] vector, int limit = 10);
+    Task<Master_SongLibrary?> GetMasterSongByLibraryIdAsync(long songLibraryId);
     Task<List<Streamer_SongLibrary>> SearchStreamerSongsAsync(int streamerProfileId, string? query, float[]? vector, int limit = 20);
     Task<List<MooldangBot.Domain.Entities.SongBook>> SearchPersonalSongBookAsync(int streamerProfileId, string? query, float[]? vector, int limit = 20);
 }

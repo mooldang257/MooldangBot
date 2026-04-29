@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Dapper;
 using FuzzySharp;
 using MooldangBot.Application.Common.Utils;
 using MooldangBot.Domain.Abstractions;
@@ -223,9 +224,15 @@ public class SongLibraryService(
             var vector = await llm.GetEmbeddingAsync(embeddingText);
             if (vector != null && vector.Length > 0)
             {
-                var byteArray = new byte[vector.Length * 4];
-                Buffer.BlockCopy(vector, 0, byteArray, 0, byteArray.Length);
-                staging.TitleVector = byteArray;
+                staging.TitleVector = vector; // 메모리 상에만 유지
+                
+                // [v11.7-Fix] EF Core에서 매핑을 제거했으므로 수동으로(Dapper) 업데이트합니다.
+                var binaryVector = new byte[vector.Length * 4];
+                Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
+                
+                await db.Database.GetDbConnection().ExecuteAsync(
+                    "UPDATE func_song_master_staging SET title_vector = @vector WHERE id = @id",
+                    new { vector = binaryVector, id = staging.Id });
             }
 
             // 3. AI 기반 별칭 생성

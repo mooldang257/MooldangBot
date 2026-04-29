@@ -27,18 +27,31 @@ public class UnifiedCommandHandler(
     IMediator mediator,
     IPublishEndpoint publishEndpoint,
     IdempotencyService idempotency,
-    CommandArgumentParser parser) : INotificationHandler<ChzzkEventReceived>
+    CommandArgumentParser parser,
+    ILogger<UnifiedCommandHandler> logger) : INotificationHandler<ChzzkEventReceived>
 {
     public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
+        logger.LogInformation("📡 [UnifiedCommand] Received internal event: {CorrelationId} (Payload: {PayloadType})", notification.CorrelationId, notification.Payload?.GetType().Name);
+        
         var chatEvent = ConvertToEvent(notification);
-        if (chatEvent == null) return;
+        if (chatEvent == null) 
+        {
+            logger.LogWarning("⚠️ [UnifiedCommand] Failed to convert notification to ChatMessageEvent.");
+            return;
+        }
 
         // 📡 [전사적 전파]: IAMF 및 OBS 핸들러 등 다른 모듈에서 이벤트를 수신할 수 있도록 공표합니다.
         await mediator.Publish(chatEvent, ct);
 
-        if (!await idempotency.TryAcquireAsync(chatEvent.CorrelationId.ToString(), TimeSpan.FromMinutes(10)))
+        string idempotencyKey = chatEvent.CorrelationId.ToString();
+        // [v4.7] Race Condition Fix: Chat/Donation 동시 발생 시 Donation 이벤트를 우선하기 위해 키 분리
+        if (chatEvent.DonationAmount > 0) idempotencyKey += ":donation";
+
+        logger.LogDebug("[UnifiedCommand] Attempting to acquire idempotency: {Key}", idempotencyKey);
+        if (!await idempotency.TryAcquireAsync(idempotencyKey, TimeSpan.FromMinutes(10)))
         {
+            logger.LogWarning("🛑 [UnifiedCommand] Idempotency check failed (Blocked): {Key}", idempotencyKey);
             return; 
         }
 
@@ -47,10 +60,22 @@ public class UnifiedCommandHandler(
         string msg = (chatEvent.Message ?? "").Trim();
         string targetUid = (chatEvent.Profile.ChzzkUid ?? "").ToLower(); 
         
+        logger.LogInformation("🔍 [UnifiedCommand] Scanning for commands: '{Message}' (Channel: {Channel})", msg, targetUid);
+        
         if (string.IsNullOrEmpty(msg) && chatEvent.DonationAmount <= 0) return;
 
         // [1. Scan]: 모든 매칭되는 명령어 리스트 확보
         var matches = (await cache.GetMatchesAsync(targetUid, msg)).ToList();
+
+        if (matches.Any())
+        {
+            var first = matches.First();
+            logger.LogInformation("🔍 [UnifiedCommand] Matched {Count} commands. Primary: {Keyword} (Feature: {Feature})", matches.Count, first.Keyword, first.FeatureType);
+        }
+        else
+        {
+            logger.LogInformation("🔍 [UnifiedCommand] No command matches found for message: '{Message}'", msg);
+        }
 
         // [v4.5] 통합 정산(Net Settlement) 로직 적용
         int totalCost = 0;

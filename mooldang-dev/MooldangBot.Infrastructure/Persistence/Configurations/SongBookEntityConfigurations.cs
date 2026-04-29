@@ -11,7 +11,7 @@ public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
     {
         builder.ToTable("func_song_books"); // 기존 song_book_main에서 변경 (고도화 반영)
         
-        builder.HasIndex(s => new { s.StreamerProfileId, s.Id });
+        builder.HasIndex(s => new { s.StreamerProfileId, s.SongNo }).IsUnique();
         builder.HasIndex(s => s.Title);
         builder.HasIndex(s => s.TitleChosung);
         builder.HasIndex(s => s.Alias);

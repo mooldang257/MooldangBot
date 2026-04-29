@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -21,11 +21,13 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    viewer_uid = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                    viewer_uid = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     viewer_uid_hash = table.Column<string>(type: "varchar(64)", maxLength: 64, nullable: false, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     nickname = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    previous_nickname = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     profile_image_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -67,6 +69,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     point_per_chat = table.Column<int>(type: "int", nullable: false),
                     is_auto_accumulate_donation = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     point_per_donation1000 = table.Column<int>(type: "int", nullable: false),
+                    point_per_attendance = table.Column<int>(type: "int", nullable: false),
                     is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -74,29 +77,21 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     active_overlay_preset_id = table.Column<int>(type: "int", nullable: true),
-                    overlay_token_version = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_core_streamer_profiles", x => x.id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "data_protection_keys",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    friendly_name = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                    overlay_token_version = table.Column<int>(type: "int", nullable: false),
+                    overlay_token = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    xml = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                    client_id = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    client_secret = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    redirect_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    bot_nickname = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_data_protection_keys", x => x.id);
+                    table.PrimaryKey("pk_core_streamer_profiles", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
@@ -110,7 +105,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     song_library_id = table.Column<long>(type: "bigint", nullable: false),
                     title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    artist = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
+                    artist = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     title_chosung = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -118,11 +113,23 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     alias = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    youtube_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false, collation: "utf8mb4_unicode_ci")
+                    album = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    category = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    youtube_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     youtube_title = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    lyrics = table.Column<string>(type: "TEXT", nullable: true, collation: "utf8mb4_unicode_ci")
+                    thumbnail_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    thumbnail_path = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    mr_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    lyrics_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    reference_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -143,7 +150,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     song_library_id = table.Column<long>(type: "bigint", nullable: false),
                     title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    artist = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
+                    artist = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     title_chosung = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -151,11 +158,11 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     alias = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    youtube_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false, collation: "utf8mb4_unicode_ci")
+                    youtube_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     youtube_title = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    lyrics = table.Column<string>(type: "TEXT", nullable: true, collation: "utf8mb4_unicode_ci")
+                    lyrics_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     source_type = table.Column<int>(type: "int", nullable: false),
                     source_id = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
@@ -191,6 +198,32 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
+                name: "sys_saga_command_executions",
+                columns: table => new
+                {
+                    correlation_id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    current_state = table.Column<string>(type: "varchar(255)", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    streamer_uid = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    viewer_uid = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    viewer_nickname = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    charged_amount = table.Column<int>(type: "int", nullable: false),
+                    cost_type = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sys_saga_command_executions", x => x.correlation_id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
                 name: "core_streamer_managers",
                 columns: table => new
                 {
@@ -206,13 +239,51 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_core_streamer_managers", x => x.id);
                     table.ForeignKey(
-                        name: "fk_core_streamer_managers_global_viewers_global_viewer_id",
+                        name: "fk_core_streamer_managers_core_global_viewers_global_viewer_id",
                         column: x => x.global_viewer_id,
                         principalTable: "core_global_viewers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "fk_core_streamer_managers_streamer_profiles_streamer_profile_id",
+                        name: "fk_core_streamer_managers_core_streamer_profiles_streamer_profi",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "core_viewer_relations",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
+                    attendance_count = table.Column<int>(type: "int", nullable: false),
+                    consecutive_attendance_count = table.Column<int>(type: "int", nullable: false),
+                    last_attendance_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    first_visit_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    last_chat_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_core_viewer_relations", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_core_viewer_relations_core_global_viewers_global_viewer_id",
+                        column: x => x.global_viewer_id,
+                        principalTable: "core_global_viewers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_core_viewer_relations_core_streamer_profiles_streamer_profil",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -240,6 +311,10 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     response_text = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     target_id = table.Column<int>(type: "int", nullable: true),
+                    priority = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    match_type = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    requires_space = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     required_role = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -252,7 +327,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_func_cmd_unified", x => x.id);
                     table.ForeignKey(
-                        name: "fk_func_cmd_unified_streamer_profiles_streamer_profile_id",
+                        name: "fk_func_cmd_unified_core_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -280,7 +355,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_func_roulette_main", x => x.id);
                     table.ForeignKey(
-                        name: "fk_func_roulette_main_streamer_profiles_streamer_profile_id",
+                        name: "fk_func_roulette_main_core_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -293,8 +368,8 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "func_roulette_spins",
                 columns: table => new
                 {
-                    id = table.Column<string>(type: "varchar(255)", nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     streamer_profile_id = table.Column<int>(type: "int", nullable: false),
                     roulette_id = table.Column<int>(type: "int", nullable: false),
                     global_viewer_id = table.Column<int>(type: "int", nullable: false),
@@ -316,7 +391,119 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_func_roulette_spins_streamer_profiles_streamer_profile_id",
+                        name: "fk_func_roulette_spins_core_streamer_profiles_streamer_profile_",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_song_books",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    song_library_id = table.Column<long>(type: "bigint", nullable: true),
+                    title = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    artist = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    album = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    category = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    pitch = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    proficiency = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    thumbnail_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    thumbnail_path = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    mr_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    lyrics_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    reference_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    is_requestable = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    sing_count = table.Column<int>(type: "int", nullable: false),
+                    required_points = table.Column<int>(type: "int", nullable: false),
+                    last_sung_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    alias = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    title_chosung = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_song_books", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_song_books_core_streamer_profiles_streamer_profile_id",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_song_list_omakases",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    icon = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    count = table.Column<int>(type: "int", nullable: false),
+                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_song_list_omakases", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_song_list_omakases_core_streamer_profiles_streamer_prof",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_song_list_sessions",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    started_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ended_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    request_count = table.Column<int>(type: "int", nullable: false),
+                    complete_count = table.Column<int>(type: "int", nullable: false),
+                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_song_list_sessions", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_song_list_sessions_core_streamer_profiles_streamer_prof",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -341,7 +528,11 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     youtube_title = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    lyrics = table.Column<string>(type: "TEXT", nullable: true, collation: "utf8mb4_unicode_ci")
+                    lyrics_url = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    alias = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    title_chosung = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -350,7 +541,138 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_func_song_streamer_library", x => x.id);
                     table.ForeignKey(
-                        name: "fk_func_song_streamer_library_streamer_profiles_streamer_profil",
+                        name: "fk_func_song_streamer_library_core_streamer_profiles_streamer_p",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_sound_assets",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    sound_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    asset_type = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_sound_assets", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_sound_assets_core_streamer_profiles_streamer_profile_id",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_viewer_donation_histories",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
+                    platform_transaction_id = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    amount = table.Column<int>(type: "int", nullable: false),
+                    balance_after = table.Column<int>(type: "int", nullable: false),
+                    transaction_type = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    metadata = table.Column<string>(type: "json", nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_viewer_donation_histories", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_donation_histories_core_global_viewers_global_vi",
+                        column: x => x.global_viewer_id,
+                        principalTable: "core_global_viewers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_donation_histories_core_streamer_profiles_stream",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_viewer_donations",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
+                    balance = table.Column<int>(type: "int", nullable: false),
+                    total_donated = table.Column<long>(type: "bigint", nullable: false),
+                    row_version = table.Column<DateTime>(type: "timestamp(6)", rowVersion: true, nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_viewer_donations", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_donations_core_global_viewers_global_viewer_id",
+                        column: x => x.global_viewer_id,
+                        principalTable: "core_global_viewers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_donations_core_streamer_profiles_streamer_profil",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "func_viewer_points",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
+                    points = table.Column<int>(type: "int", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_func_viewer_points", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_points_core_global_viewers_global_viewer_id",
+                        column: x => x.global_viewer_id,
+                        principalTable: "core_global_viewers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_func_viewer_points_core_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -412,7 +734,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_iamf_parhos_cycles", x => x.id);
                     table.ForeignKey(
-                        name: "fk_iamf_parhos_cycles_streamer_profiles_streamer_profile_id",
+                        name: "fk_iamf_parhos_cycles_core_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -444,7 +766,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_iamf_scenarios", x => x.id);
                     table.ForeignKey(
-                        name: "fk_iamf_scenarios_streamer_profiles_streamer_profile_id",
+                        name: "fk_iamf_scenarios_core_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -469,36 +791,11 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_iamf_streamer_settings", x => x.streamer_profile_id);
                     table.ForeignKey(
-                        name: "fk_iamf_streamer_settings_streamer_profiles_streamer_profile_id",
+                        name: "fk_iamf_streamer_settings_core_streamer_profiles_streamer_profi",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "iamf_vibration_logs",
-                columns: table => new
-                {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    raw_hz = table.Column<double>(type: "double", nullable: false),
-                    ema_hz = table.Column<double>(type: "double", nullable: false),
-                    stability_score = table.Column<double>(type: "double", nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_iamf_vibration_logs", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_iamf_vibration_logs_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
@@ -523,7 +820,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_log_chat_interactions", x => x.id);
                     table.ForeignKey(
-                        name: "fk_log_chat_interactions_streamer_profiles_streamer_profile_id",
+                        name: "fk_log_chat_interactions_core_streamer_profiles_streamer_profil",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -546,19 +843,76 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     error_message = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     donation_amount = table.Column<int>(type: "int", nullable: false),
+                    arguments = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    raw_message = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_log_command_executions", x => x.id);
                     table.ForeignKey(
-                        name: "fk_log_command_executions_global_viewers_global_viewer_id",
+                        name: "fk_log_command_executions_core_global_viewers_global_viewer_id",
                         column: x => x.global_viewer_id,
                         principalTable: "core_global_viewers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "fk_log_command_executions_streamer_profiles_streamer_profile_id",
+                        name: "fk_log_command_executions_core_streamer_profiles_streamer_profi",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "log_iamf_vibrations",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    raw_hz = table.Column<double>(type: "double", nullable: false),
+                    ema_hz = table.Column<double>(type: "double", nullable: false),
+                    stability_score = table.Column<double>(type: "double", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_log_iamf_vibrations", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_log_iamf_vibrations_core_streamer_profiles_streamer_profile_",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "log_point_daily_summaries",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    total_earned = table.Column<long>(type: "bigint", nullable: false),
+                    total_spent = table.Column<long>(type: "bigint", nullable: false),
+                    unique_viewer_count = table.Column<int>(type: "int", nullable: false),
+                    top_command_stats_json = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    last_updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_log_point_daily_summaries", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_log_point_daily_summaries_core_streamer_profiles_streamer_pr",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -586,13 +940,13 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_log_point_transactions", x => x.id);
                     table.ForeignKey(
-                        name: "fk_log_point_transactions_global_viewers_global_viewer_id",
+                        name: "fk_log_point_transactions_core_global_viewers_global_viewer_id",
                         column: x => x.global_viewer_id,
                         principalTable: "core_global_viewers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "fk_log_point_transactions_streamer_profiles_streamer_profile_id",
+                        name: "fk_log_point_transactions_core_streamer_profiles_streamer_profi",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -602,7 +956,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
-                name: "overlay_avatar_settings",
+                name: "sys_avatar_settings",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
@@ -621,208 +975,9 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_overlay_avatar_settings", x => x.id);
+                    table.PrimaryKey("pk_sys_avatar_settings", x => x.id);
                     table.ForeignKey(
-                        name: "fk_overlay_avatar_settings_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "overlay_components",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    type = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    config_json = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_overlay_components", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_overlay_components_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "overlay_presets",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    config_json = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_overlay_presets", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_overlay_presets_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "song_book_main",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    artist = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    genre = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    usage_count = table.Column<int>(type: "int", nullable: false),
-                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_song_book_main", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_song_book_main_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "song_list_omakases",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    icon = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    count = table.Column<int>(type: "int", nullable: false),
-                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_song_list_omakases", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_song_list_omakases_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "song_list_sessions",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    started_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ended_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    request_count = table.Column<int>(type: "int", nullable: false),
-                    complete_count = table.Column<int>(type: "int", nullable: false),
-                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_song_list_sessions", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_song_list_sessions_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "stats_point_daily",
-                columns: table => new
-                {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    total_earned = table.Column<long>(type: "bigint", nullable: false),
-                    total_spent = table.Column<long>(type: "bigint", nullable: false),
-                    unique_viewer_count = table.Column<int>(type: "int", nullable: false),
-                    top_command_stats_json = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    last_updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_stats_point_daily", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_stats_point_daily_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "streamer_knowledges",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    keyword = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    intent_answer = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_streamer_knowledges", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_streamer_knowledges_streamer_profiles_streamer_profile_id",
+                        name: "fk_sys_avatar_settings_core_streamer_profiles_streamer_profile_",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -874,6 +1029,115 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
+                name: "sys_overlay_presets",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    config_json = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sys_overlay_presets", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sys_overlay_presets_core_streamer_profiles_streamer_profile_",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "sys_periodic_messages",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    interval_minutes = table.Column<int>(type: "int", nullable: false),
+                    message = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    is_enabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    last_sent_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sys_periodic_messages", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sys_periodic_messages_core_streamer_profiles_streamer_profil",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "sys_shared_components",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    type = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    config_json = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sys_shared_components", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sys_shared_components_core_streamer_profiles_streamer_profil",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
+                name: "sys_streamer_knowledges",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
+                    keyword = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    intent_answer = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sys_streamer_knowledges", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sys_streamer_knowledges_core_streamer_profiles_streamer_prof",
+                        column: x => x.streamer_profile_id,
+                        principalTable: "core_streamer_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
+
+            migrationBuilder.CreateTable(
                 name: "sys_streamer_preferences",
                 columns: table => new
                 {
@@ -892,172 +1156,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                     table.PrimaryKey("pk_sys_streamer_preferences", x => x.id);
                     table.ForeignKey(
                         name: "fk_sys_streamer_preferences_core_streamer_profiles_streamer_pro",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "view_periodic_messages",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    interval_minutes = table.Column<int>(type: "int", nullable: false),
-                    message = table.Column<string>(type: "longtext", nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    is_enabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    last_sent_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_view_periodic_messages", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_view_periodic_messages_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "viewer_donations",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
-                    balance = table.Column<int>(type: "int", nullable: false),
-                    total_donated = table.Column<long>(type: "bigint", nullable: false),
-                    row_version = table.Column<DateTime>(type: "timestamp(6)", rowVersion: true, nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_viewer_donations", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_viewer_donations_global_viewers_global_viewer_id",
-                        column: x => x.global_viewer_id,
-                        principalTable: "core_global_viewers",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_viewer_donations_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "viewer_donations_history",
-                columns: table => new
-                {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
-                    platform_transaction_id = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    amount = table.Column<int>(type: "int", nullable: false),
-                    balance_after = table.Column<int>(type: "int", nullable: false),
-                    transaction_type = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    metadata = table.Column<string>(type: "json", nullable: true, collation: "utf8mb4_unicode_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_viewer_donations_history", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_viewer_donations_history_global_viewers_global_viewer_id",
-                        column: x => x.global_viewer_id,
-                        principalTable: "core_global_viewers",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_viewer_donations_history_streamer_profiles_streamer_profile_",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "viewer_points",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
-                    points = table.Column<int>(type: "int", nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_viewer_points", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_viewer_points_global_viewers_global_viewer_id",
-                        column: x => x.global_viewer_id,
-                        principalTable: "core_global_viewers",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_viewer_points_streamer_profiles_streamer_profile_id",
-                        column: x => x.streamer_profile_id,
-                        principalTable: "core_streamer_profiles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
-
-            migrationBuilder.CreateTable(
-                name: "viewer_relations",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    streamer_profile_id = table.Column<int>(type: "int", nullable: false),
-                    global_viewer_id = table.Column<int>(type: "int", nullable: false),
-                    attendance_count = table.Column<int>(type: "int", nullable: false),
-                    consecutive_attendance_count = table.Column<int>(type: "int", nullable: false),
-                    last_attendance_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    first_visit_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    last_chat_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    is_deleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    deleted_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_viewer_relations", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_viewer_relations_global_viewers_global_viewer_id",
-                        column: x => x.global_viewer_id,
-                        principalTable: "core_global_viewers",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "fk_viewer_relations_streamer_profiles_streamer_profile_id",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
@@ -1105,6 +1203,11 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     is_mission = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     is_active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    template = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    sound_url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    use_default_sound = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
@@ -1112,7 +1215,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("pk_func_roulette_items", x => x.id);
                     table.ForeignKey(
-                        name: "fk_func_roulette_items_func_roulette_main_roulette_id",
+                        name: "fk_func_roulette_items_func_roulettes_roulette_id",
                         column: x => x.roulette_id,
                         principalTable: "func_roulette_main",
                         principalColumn: "id",
@@ -1122,7 +1225,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
-                name: "stats_roulette_audit",
+                name: "log_roulette_stats",
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
@@ -1137,9 +1240,9 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_stats_roulette_audit", x => x.id);
+                    table.PrimaryKey("pk_log_roulette_stats", x => x.id);
                     table.ForeignKey(
-                        name: "fk_stats_roulette_audit_func_roulette_main_roulette_id",
+                        name: "fk_log_roulette_stats_func_roulettes_roulette_id",
                         column: x => x.roulette_id,
                         principalTable: "func_roulette_main",
                         principalColumn: "id",
@@ -1149,7 +1252,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
-                name: "song_list_queues",
+                name: "func_song_list_queues",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
@@ -1171,36 +1274,42 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     cost = table.Column<int>(type: "int", nullable: true),
                     cost_type = table.Column<int>(type: "int", nullable: true),
+                    video_id = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    thumbnail_url = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    pitch = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_unicode_ci")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_song_list_queues", x => x.id);
+                    table.PrimaryKey("pk_func_song_list_queues", x => x.id);
                     table.ForeignKey(
-                        name: "fk_song_list_queues_core_global_viewers_global_viewer_id",
+                        name: "fk_func_song_list_queues_core_global_viewers_global_viewer_id",
                         column: x => x.global_viewer_id,
                         principalTable: "core_global_viewers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_song_list_queues_song_books_song_book_id",
-                        column: x => x.song_book_id,
-                        principalTable: "song_book_main",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "fk_song_list_queues_streamer_profiles_streamer_profile_id",
+                        name: "fk_func_song_list_queues_core_streamer_profiles_streamer_profil",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_func_song_list_queues_func_song_books_song_book_id",
+                        column: x => x.song_book_id,
+                        principalTable: "func_song_books",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
-                name: "sys_broadcast_history_logs",
+                name: "log_broadcast_history",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
@@ -1214,9 +1323,9 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_sys_broadcast_history_logs", x => x.id);
+                    table.PrimaryKey("pk_log_broadcast_history", x => x.id);
                     table.ForeignKey(
-                        name: "fk_sys_broadcast_history_logs_sys_broadcast_sessions_broadcast_",
+                        name: "fk_log_broadcast_history_sys_broadcast_sessions_broadcast_sessi",
                         column: x => x.broadcast_session_id,
                         principalTable: "sys_broadcast_sessions",
                         principalColumn: "id",
@@ -1226,7 +1335,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateTable(
-                name: "func_roulette_logs",
+                name: "log_roulette_results",
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
@@ -1246,39 +1355,45 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_func_roulette_logs", x => x.id);
+                    table.PrimaryKey("pk_log_roulette_results", x => x.id);
                     table.ForeignKey(
-                        name: "fk_func_roulette_logs_global_viewers_global_viewer_id",
+                        name: "fk_log_roulette_results_core_global_viewers_global_viewer_id",
                         column: x => x.global_viewer_id,
                         principalTable: "core_global_viewers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_func_roulette_logs_roulette_items_roulette_item_id",
-                        column: x => x.roulette_item_id,
-                        principalTable: "func_roulette_items",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "fk_func_roulette_logs_streamer_profiles_streamer_profile_id",
+                        name: "fk_log_roulette_results_core_streamer_profiles_streamer_profile",
                         column: x => x.streamer_profile_id,
                         principalTable: "core_streamer_profiles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_log_roulette_results_func_roulette_items_roulette_item_id",
+                        column: x => x.roulette_item_id,
+                        principalTable: "func_roulette_items",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .Annotation("Relational:Collation", "utf8mb4_unicode_ci");
 
             migrationBuilder.CreateIndex(
-                name: "ix_core_global_viewers_viewer_uid_hash",
-                table: "core_global_viewers",
-                column: "viewer_uid_hash",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_GlobalViewer_Nickname",
                 table: "core_global_viewers",
                 column: "nickname");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlobalViewer_ViewerUid",
+                table: "core_global_viewers",
+                column: "viewer_uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlobalViewer_ViewerUidHash",
+                table: "core_global_viewers",
+                column: "viewer_uid_hash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_core_streamer_managers_global_viewer_id",
@@ -1304,16 +1419,25 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_func_cmd_unified_streamer_profile_id_keyword",
-                table: "func_cmd_unified",
-                columns: new[] { "streamer_profile_id", "keyword" },
+                name: "ix_core_viewer_relations_global_viewer_id",
+                table: "core_viewer_relations",
+                column: "global_viewer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_core_viewer_relations_streamer_profile_id_global_viewer_id",
+                table: "core_viewer_relations",
+                columns: new[] { "streamer_profile_id", "global_viewer_id" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Command_Search",
+                table: "func_cmd_unified",
+                columns: new[] { "streamer_profile_id", "keyword", "is_active", "is_deleted" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_func_cmd_unified_streamer_profile_id_keyword_feature_type",
                 table: "func_cmd_unified",
-                columns: new[] { "streamer_profile_id", "keyword", "feature_type" },
-                unique: true);
+                columns: new[] { "streamer_profile_id", "keyword", "feature_type" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_func_cmd_unified_streamer_profile_id_target_id",
@@ -1330,32 +1454,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "ix_func_roulette_items_roulette_id",
                 table: "func_roulette_items",
                 column: "roulette_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_func_roulette_logs_global_viewer_id",
-                table: "func_roulette_logs",
-                column: "global_viewer_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_func_roulette_logs_roulette_id",
-                table: "func_roulette_logs",
-                column: "roulette_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_func_roulette_logs_roulette_item_id",
-                table: "func_roulette_logs",
-                column: "roulette_item_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_func_roulette_logs_streamer_profile_id_global_viewer_id",
-                table: "func_roulette_logs",
-                columns: new[] { "streamer_profile_id", "global_viewer_id" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RouletteLog_Status_Cursor",
-                table: "func_roulette_logs",
-                columns: new[] { "streamer_profile_id", "status", "id" },
-                descending: new[] { false, false, true });
 
             migrationBuilder.CreateIndex(
                 name: "ix_func_roulette_main_streamer_profile_id",
@@ -1384,6 +1482,92 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 column: "streamer_profile_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_alias",
+                table: "func_song_books",
+                column: "alias");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_category",
+                table: "func_song_books",
+                column: "category");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_is_requestable",
+                table: "func_song_books",
+                column: "is_requestable");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_song_library_id",
+                table: "func_song_books",
+                column: "song_library_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_streamer_profile_id_id",
+                table: "func_song_books",
+                columns: new[] { "streamer_profile_id", "id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_title",
+                table: "func_song_books",
+                column: "title");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_books_title_chosung",
+                table: "func_song_books",
+                column: "title_chosung");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_omakases_streamer_profile_id",
+                table: "func_song_list_omakases",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_global_viewer_id",
+                table: "func_song_list_queues",
+                column: "global_viewer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_song_book_id",
+                table: "func_song_list_queues",
+                column: "song_book_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_song_library_id",
+                table: "func_song_list_queues",
+                column: "song_library_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_streamer_profile_id",
+                table: "func_song_list_queues",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_streamer_profile_id_id",
+                table: "func_song_list_queues",
+                columns: new[] { "streamer_profile_id", "id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_queues_streamer_profile_id_status_created_at",
+                table: "func_song_list_queues",
+                columns: new[] { "streamer_profile_id", "status", "created_at" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SongQueue_Status_Cursor",
+                table: "func_song_list_queues",
+                columns: new[] { "streamer_profile_id", "status", "id" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_list_sessions_streamer_profile_id_is_active",
+                table: "func_song_list_sessions",
+                columns: new[] { "streamer_profile_id", "is_active" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_master_library_album",
+                table: "func_song_master_library",
+                column: "album");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_func_song_master_library_alias",
                 table: "func_song_master_library",
                 column: "alias");
@@ -1392,6 +1576,11 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "ix_func_song_master_library_artist_chosung",
                 table: "func_song_master_library",
                 column: "artist_chosung");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_song_master_library_category",
+                table: "func_song_master_library",
+                column: "category");
 
             migrationBuilder.CreateIndex(
                 name: "ix_func_song_master_library_song_library_id",
@@ -1453,6 +1642,49 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_func_sound_assets_streamer_profile_id",
+                table: "func_sound_assets",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_donation_histories_global_viewer_id",
+                table: "func_viewer_donation_histories",
+                column: "global_viewer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_donation_histories_platform_transaction_id",
+                table: "func_viewer_donation_histories",
+                column: "platform_transaction_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_donation_histories_streamer_profile_id",
+                table: "func_viewer_donation_histories",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_donations_global_viewer_id",
+                table: "func_viewer_donations",
+                column: "global_viewer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_donations_streamer_profile_id_global_viewer_id",
+                table: "func_viewer_donations",
+                columns: new[] { "streamer_profile_id", "global_viewer_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_points_global_viewer_id",
+                table: "func_viewer_points",
+                column: "global_viewer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_func_viewer_points_streamer_profile_id_global_viewer_id",
+                table: "func_viewer_points",
+                columns: new[] { "streamer_profile_id", "global_viewer_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_iamf_genos_registry_streamer_profile_id",
                 table: "iamf_genos_registry",
                 column: "streamer_profile_id");
@@ -1469,9 +1701,9 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 column: "streamer_profile_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_iamf_vibration_logs_streamer_profile_id_created_at",
-                table: "iamf_vibration_logs",
-                columns: new[] { "streamer_profile_id", "created_at" });
+                name: "ix_log_broadcast_history_broadcast_session_id_log_date",
+                table: "log_broadcast_history",
+                columns: new[] { "broadcast_session_id", "log_date" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_log_chat_interactions_is_command_created_at",
@@ -1499,6 +1731,17 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 columns: new[] { "streamer_profile_id", "created_at" });
 
             migrationBuilder.CreateIndex(
+                name: "ix_log_iamf_vibrations_streamer_profile_id_created_at",
+                table: "log_iamf_vibrations",
+                columns: new[] { "streamer_profile_id", "created_at" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_log_point_daily_summaries_streamer_profile_id_date",
+                table: "log_point_daily_summaries",
+                columns: new[] { "streamer_profile_id", "date" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_log_point_transactions_global_viewer_id_created_at",
                 table: "log_point_transactions",
                 columns: new[] { "global_viewer_id", "created_at" });
@@ -1509,93 +1752,42 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 columns: new[] { "streamer_profile_id", "created_at" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_overlay_avatar_settings_streamer_profile_id",
-                table: "overlay_avatar_settings",
-                column: "streamer_profile_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_overlay_components_streamer_profile_id",
-                table: "overlay_components",
-                column: "streamer_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_overlay_presets_streamer_profile_id",
-                table: "overlay_presets",
-                column: "streamer_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_song_book_main_streamer_profile_id_id",
-                table: "song_book_main",
-                columns: new[] { "streamer_profile_id", "id" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_song_list_omakases_streamer_profile_id",
-                table: "song_list_omakases",
-                column: "streamer_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_global_viewer_id",
-                table: "song_list_queues",
+                name: "ix_log_roulette_results_global_viewer_id",
+                table: "log_roulette_results",
                 column: "global_viewer_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_song_book_id",
-                table: "song_list_queues",
-                column: "song_book_id");
+                name: "ix_log_roulette_results_roulette_id",
+                table: "log_roulette_results",
+                column: "roulette_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_song_library_id",
-                table: "song_list_queues",
-                column: "song_library_id");
+                name: "ix_log_roulette_results_roulette_item_id",
+                table: "log_roulette_results",
+                column: "roulette_item_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_streamer_profile_id",
-                table: "song_list_queues",
-                column: "streamer_profile_id");
+                name: "ix_log_roulette_results_streamer_profile_id_global_viewer_id",
+                table: "log_roulette_results",
+                columns: new[] { "streamer_profile_id", "global_viewer_id" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_streamer_profile_id_id",
-                table: "song_list_queues",
-                columns: new[] { "streamer_profile_id", "id" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_song_list_queues_streamer_profile_id_status_created_at",
-                table: "song_list_queues",
-                columns: new[] { "streamer_profile_id", "status", "created_at" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SongQueue_Status_Cursor",
-                table: "song_list_queues",
+                name: "IX_RouletteLog_Status_Cursor",
+                table: "log_roulette_results",
                 columns: new[] { "streamer_profile_id", "status", "id" },
                 descending: new[] { false, false, true });
 
             migrationBuilder.CreateIndex(
-                name: "ix_song_list_sessions_streamer_profile_id_is_active",
-                table: "song_list_sessions",
-                columns: new[] { "streamer_profile_id", "is_active" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_stats_point_daily_streamer_profile_id_date",
-                table: "stats_point_daily",
-                columns: new[] { "streamer_profile_id", "date" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_stats_roulette_audit_roulette_id_item_name",
-                table: "stats_roulette_audit",
+                name: "ix_log_roulette_stats_roulette_id_item_name",
+                table: "log_roulette_stats",
                 columns: new[] { "roulette_id", "item_name" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_streamer_knowledges_streamer_profile_id_keyword",
-                table: "streamer_knowledges",
-                columns: new[] { "streamer_profile_id", "keyword" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_sys_broadcast_history_logs_broadcast_session_id_log_date",
-                table: "sys_broadcast_history_logs",
-                columns: new[] { "broadcast_session_id", "log_date" });
+                name: "ix_sys_avatar_settings_streamer_profile_id",
+                table: "sys_avatar_settings",
+                column: "streamer_profile_id",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_sys_broadcast_sessions_streamer_profile_id_is_active",
@@ -1613,63 +1805,39 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 column: "category_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_sys_overlay_presets_streamer_profile_id",
+                table: "sys_overlay_presets",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sys_periodic_messages_streamer_profile_id",
+                table: "sys_periodic_messages",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sys_saga_command_executions_created_at",
+                table: "sys_saga_command_executions",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sys_saga_command_executions_current_state",
+                table: "sys_saga_command_executions",
+                column: "current_state");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sys_shared_components_streamer_profile_id",
+                table: "sys_shared_components",
+                column: "streamer_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sys_streamer_knowledges_streamer_profile_id_keyword",
+                table: "sys_streamer_knowledges",
+                columns: new[] { "streamer_profile_id", "keyword" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_sys_streamer_preferences_streamer_profile_id_preference_key",
                 table: "sys_streamer_preferences",
                 columns: new[] { "streamer_profile_id", "preference_key" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_view_periodic_messages_streamer_profile_id",
-                table: "view_periodic_messages",
-                column: "streamer_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_donations_global_viewer_id",
-                table: "viewer_donations",
-                column: "global_viewer_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_donations_streamer_profile_id_global_viewer_id",
-                table: "viewer_donations",
-                columns: new[] { "streamer_profile_id", "global_viewer_id" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_donations_history_global_viewer_id",
-                table: "viewer_donations_history",
-                column: "global_viewer_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_donations_history_platform_transaction_id",
-                table: "viewer_donations_history",
-                column: "platform_transaction_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_donations_history_streamer_profile_id",
-                table: "viewer_donations_history",
-                column: "streamer_profile_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_points_global_viewer_id",
-                table: "viewer_points",
-                column: "global_viewer_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_points_streamer_profile_id_global_viewer_id",
-                table: "viewer_points",
-                columns: new[] { "streamer_profile_id", "global_viewer_id" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_relations_global_viewer_id",
-                table: "viewer_relations",
-                column: "global_viewer_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_viewer_relations_streamer_profile_id_global_viewer_id",
-                table: "viewer_relations",
-                columns: new[] { "streamer_profile_id", "global_viewer_id" },
                 unique: true);
         }
 
@@ -1680,16 +1848,22 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "core_streamer_managers");
 
             migrationBuilder.DropTable(
-                name: "data_protection_keys");
+                name: "core_viewer_relations");
 
             migrationBuilder.DropTable(
                 name: "func_cmd_unified");
 
             migrationBuilder.DropTable(
-                name: "func_roulette_logs");
+                name: "func_roulette_spins");
 
             migrationBuilder.DropTable(
-                name: "func_roulette_spins");
+                name: "func_song_list_omakases");
+
+            migrationBuilder.DropTable(
+                name: "func_song_list_queues");
+
+            migrationBuilder.DropTable(
+                name: "func_song_list_sessions");
 
             migrationBuilder.DropTable(
                 name: "func_song_master_library");
@@ -1699,6 +1873,18 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "func_song_streamer_library");
+
+            migrationBuilder.DropTable(
+                name: "func_sound_assets");
+
+            migrationBuilder.DropTable(
+                name: "func_viewer_donation_histories");
+
+            migrationBuilder.DropTable(
+                name: "func_viewer_donations");
+
+            migrationBuilder.DropTable(
+                name: "func_viewer_points");
 
             migrationBuilder.DropTable(
                 name: "iamf_genos_registry");
@@ -1713,7 +1899,7 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "iamf_streamer_settings");
 
             migrationBuilder.DropTable(
-                name: "iamf_vibration_logs");
+                name: "log_broadcast_history");
 
             migrationBuilder.DropTable(
                 name: "log_chat_interactions");
@@ -1722,73 +1908,58 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                 name: "log_command_executions");
 
             migrationBuilder.DropTable(
+                name: "log_iamf_vibrations");
+
+            migrationBuilder.DropTable(
+                name: "log_point_daily_summaries");
+
+            migrationBuilder.DropTable(
                 name: "log_point_transactions");
 
             migrationBuilder.DropTable(
-                name: "overlay_avatar_settings");
+                name: "log_roulette_results");
 
             migrationBuilder.DropTable(
-                name: "overlay_components");
+                name: "log_roulette_stats");
 
             migrationBuilder.DropTable(
-                name: "overlay_presets");
-
-            migrationBuilder.DropTable(
-                name: "song_list_omakases");
-
-            migrationBuilder.DropTable(
-                name: "song_list_queues");
-
-            migrationBuilder.DropTable(
-                name: "song_list_sessions");
-
-            migrationBuilder.DropTable(
-                name: "stats_point_daily");
-
-            migrationBuilder.DropTable(
-                name: "stats_roulette_audit");
-
-            migrationBuilder.DropTable(
-                name: "streamer_knowledges");
-
-            migrationBuilder.DropTable(
-                name: "sys_broadcast_history_logs");
+                name: "sys_avatar_settings");
 
             migrationBuilder.DropTable(
                 name: "sys_chzzk_category_aliases");
 
             migrationBuilder.DropTable(
+                name: "sys_overlay_presets");
+
+            migrationBuilder.DropTable(
+                name: "sys_periodic_messages");
+
+            migrationBuilder.DropTable(
+                name: "sys_saga_command_executions");
+
+            migrationBuilder.DropTable(
+                name: "sys_shared_components");
+
+            migrationBuilder.DropTable(
+                name: "sys_streamer_knowledges");
+
+            migrationBuilder.DropTable(
                 name: "sys_streamer_preferences");
 
             migrationBuilder.DropTable(
-                name: "view_periodic_messages");
-
-            migrationBuilder.DropTable(
-                name: "viewer_donations");
-
-            migrationBuilder.DropTable(
-                name: "viewer_donations_history");
-
-            migrationBuilder.DropTable(
-                name: "viewer_points");
-
-            migrationBuilder.DropTable(
-                name: "viewer_relations");
-
-            migrationBuilder.DropTable(
-                name: "func_roulette_items");
-
-            migrationBuilder.DropTable(
-                name: "song_book_main");
+                name: "func_song_books");
 
             migrationBuilder.DropTable(
                 name: "sys_broadcast_sessions");
 
             migrationBuilder.DropTable(
-                name: "sys_chzzk_categories");
+                name: "core_global_viewers");
 
             migrationBuilder.DropTable(
-                name: "core_global_viewers");
+                name: "func_roulette_items");
+
+            migrationBuilder.DropTable(
+                name: "sys_chzzk_categories");
 
             migrationBuilder.DropTable(
                 name: "func_roulette_main");

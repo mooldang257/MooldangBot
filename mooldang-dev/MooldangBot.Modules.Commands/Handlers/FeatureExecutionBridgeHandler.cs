@@ -6,6 +6,7 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Events;
+using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,7 @@ public class FeatureExecutionBridgeHandler(
     IEnumerable<ICommandFeatureStrategy> strategies,
     ICommandDbContext db,
     IMediator mediator,
+    IChzzkBotService botService,
     ILogger<FeatureExecutionBridgeHandler> logger) : INotificationHandler<CommandExecutedEvent>
 {
     public async Task Handle(CommandExecutedEvent notification, CancellationToken ct)
@@ -83,6 +85,13 @@ public class FeatureExecutionBridgeHandler(
                 logger.LogInformation("🚀 [BridgeHandler] 전략 실행 시작: {FeatureType} (Keyword: {Keyword})", strategy.FeatureType, commandEntity.Keyword);
                 
                 var result = await strategy.ExecuteAsync(legacyEvent, commandEntity, ct);
+
+                // [v25.1] 전략 실행 메시지 채팅 전송 (사용자 경험 개선)
+                // 전략이 사용자에게 전달할 메시지(성공 안내 또는 에러 메시지)를 반환했다면 즉시 답장합니다.
+                if (!string.IsNullOrWhiteSpace(result.Message))
+                {
+                    await botService.SendReplyChatAsync(streamerProfile, result.Message, notification.ViewerUid, ct);
+                }
 
                 if (result.IsSuccess)
                 {

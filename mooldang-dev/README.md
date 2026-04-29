@@ -1,4 +1,4 @@
-# <img src="docs/assets/logo.png" width="48" height="48" valign="middle"> MooldangBot & MooldangAPI (v6.2)
+# <img src="docs/assets/logo.png" width="48" height="48" valign="middle"> MooldangBot & MooldangAPI
 
 > [!IMPORTANT]
 > **[AI 개발 파트너 전용 필독 가이드라인]**  
@@ -48,7 +48,7 @@ cd MooldangBot
 cp .env.sample .env # 본인의 시크릿 정보 기입
 ```
 
-### 2. 가변적인 최적화 배포 (v6.2)
+### 2. 가변적인 최적화 배포
 보유한 32GB RAM 인프라를 활용하여 상황에 맞는 배포를 수행합니다.
 ```bash
 chmod +x deploy.sh

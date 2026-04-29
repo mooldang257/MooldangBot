@@ -5,6 +5,7 @@
     import { gsap } from 'gsap';
     import { userState } from '$lib/core/state/user.svelte';
     import ConfirmModal from '$lib/core/ui/ConfirmModal.svelte';
+    import Footer from '$lib/core/ui/Footer.svelte';
     import { apiFetch } from '$lib/api/client';
 
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
@@ -232,6 +233,8 @@
 
     <!-- [Osiris]: 프리미엄 확인 모달 (브라우저 confirm 대체) -->
     <ConfirmModal />
+
+    <Footer />
 </div>
 
 <style>

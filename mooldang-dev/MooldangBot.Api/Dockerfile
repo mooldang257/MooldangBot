@@ -1,9 +1,8 @@
-# [물멍]: 차세대 MooldangBot 엔진 빌드 스테이션 (net9.0 + Alpine)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
-# [v19.5] 리눅스 타임존 데이터베이스 설치
-RUN apk add --no-cache tzdata
+# [v19.5] 리눅스 타임존 데이터베이스 설치 (Alpine)
+RUN apk add --no-cache tzdata wget
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src

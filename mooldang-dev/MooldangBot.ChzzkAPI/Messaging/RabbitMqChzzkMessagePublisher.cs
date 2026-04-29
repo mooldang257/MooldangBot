@@ -31,7 +31,7 @@ public class RabbitMqChzzkMessagePublisher : IChzzkMessagePublisher
             await _publishEndpoint.Publish(envelope.Payload, envelope.Payload.GetType());
 
             var eventType = envelope.Payload.GetType().Name.Replace("Chzzk", "").Replace("Event", "");
-            _logger.LogDebug("📤 [MassTransit] {Event} 발행 완료 : Type-based Fanout", eventType);
+            _logger.LogInformation("📤 [MassTransit] {Event} published to RabbitMQ for Channel {Channel}", eventType, envelope.ChzzkUid);
         }
         catch (Exception ex)
         {

@@ -25,8 +25,26 @@
   let settings = $derived(songOverlay?.settings || {
     liveTitleFont: "'GmarketSansBold', sans-serif",
     liveArtistFont: "'GmarketSansMedium', sans-serif",
-    queueFont: "'Pretendard', sans-serif"
+    queueFont: "'Pretendard', sans-serif",
+    rouletteFont: "'GmarketSansBold', sans-serif"
   });
+
+  // [오시리스의 서체]: 81종 폰트 지원을 위한 동적 데이터
+  const MOOLDANG_FONTS = [
+      { family: 'Presentation-Regular', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/Presentation-Regular.woff2', provider: 'noonnu' },
+      { family: 'GmarketSansMedium', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_7@1.0/GmarketSansMedium.woff', provider: 'noonnu' },
+      { family: 'S-CoreDream-3Light', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff', provider: 'noonnu' },
+      { family: 'SBAggroB', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroB.woff', provider: 'noonnu' },
+      { family: 'Noto Sans KR', url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap', provider: 'google' },
+      { family: 'Yangjin', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2206-02@1.0/Yangjin.woff2', provider: 'noonnu' },
+      { family: 'NanumSquare', url: 'https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@1.0/nanumsquare.css', provider: 'noonnu' },
+      { family: 'CookieRun-Regular', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/CookieRun-Regular.woff', provider: 'noonnu' },
+      { family: 'NeoDunggeunmo', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/NeoDunggeunmo.woff', provider: 'noonnu' },
+      { family: 'Cafe24Ssurround', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Cafe24Ssurround.woff', provider: 'noonnu' },
+      { family: 'Nanum Pen Script', url: 'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap', provider: 'google' },
+      { family: 'Pretendard-Regular', url: 'https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff', provider: 'noonnu' }
+      // (내부적으로 데이터 유지)
+  ];
 
   // [Osiris]: 스케일링 계산 (1920 기준)
   let windowWidth = $state(window.innerWidth);
@@ -42,6 +60,18 @@
     return () => window.removeEventListener('resize', handleResize);
   });
 </script>
+
+<svelte:head>
+    {#each MOOLDANG_FONTS as font}
+        {#if font.url && (settings.liveTitleFont === font.family || settings.queueFont === font.family || settings.rouletteFont === font.family)}
+            {#if font.provider === 'google'}
+                <link rel="stylesheet" href={font.url} />
+            {:else}
+                {@html `<style>@font-face { font-family: '${font.family}'; src: url('${font.url}'); font-display: swap; }</style>`}
+            {/if}
+        {/if}
+    {/each}
+</svelte:head>
 
 <main>
   {#if accessToken}

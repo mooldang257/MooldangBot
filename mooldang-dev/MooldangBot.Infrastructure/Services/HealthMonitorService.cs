@@ -77,4 +77,30 @@ public class HealthMonitorService(
 
         return report;
     }
+
+    /// <summary>
+    /// [망자의 수의]: 신호가 끊긴 인스턴스의 유령 데이터를 Redis에서 삭제합니다.
+    /// </summary>
+    public async Task CleanupInstanceAsync(string machineName, CancellationToken ct = default)
+    {
+        var db = redis.GetDatabase();
+        var allPulses = await db.HashGetAllAsync("pulse:v1:fleet");
+        var keysToDelete = new List<RedisValue>();
+
+        foreach (var entry in allPulses)
+        {
+            var json = entry.Value.ToString();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("MachineName", out var prop) && prop.GetString() == machineName)
+            {
+                keysToDelete.Add(entry.Name);
+            }
+        }
+
+        if (keysToDelete.Count > 0)
+        {
+            await db.HashDeleteAsync("pulse:v1:fleet", [.. keysToDelete]);
+            logger.LogInformation($"[HealthMonitor] 인스턴스 {machineName}의 유령 데이터 {keysToDelete.Count}건을 정리했습니다.");
+        }
+    }
 }

@@ -17,6 +17,11 @@ public class SongBook : ISoftDeletable, IAuditable
     [Key]
     public int Id { get; set; }
 
+    /// <summary>
+    /// [v19.1] 스트리머별 고유 곡 번호 (1부터 시작, 엑셀 관리용)
+    /// </summary>
+    public int SongNo { get; set; }
+
     [Required]
     public int StreamerProfileId { get; set; }
 
@@ -85,8 +90,8 @@ public class SongBook : ISoftDeletable, IAuditable
     [MaxLength(200)]
     public string? TitleChosung { get; set; }
 
-    [Column(TypeName = "VECTOR(768)")]
-    public byte[]? TitleVector { get; set; }
+    [NotMapped]
+    public float[]? TitleVector { get; set; }
 
     // [시스템 거버넌스]
     public bool IsActive { get; set; } = true;

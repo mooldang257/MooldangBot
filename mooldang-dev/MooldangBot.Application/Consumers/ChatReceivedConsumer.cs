@@ -43,8 +43,8 @@ public sealed class ChatReceivedConsumer(
 
             await mediatr.Publish(internalEvent, context.CancellationToken);
 
-            logger.LogDebug("✅ [ChatConsumer] 메시지 처리 위임 완료: {MsgId} (Sender: {Nickname})", 
-                context.CorrelationId, chatEvent.Nickname);
+            logger.LogInformation("🗨️ [ChatConsumer] Received message: {MsgId} (Sender: {Nickname}) content: {Content}", 
+                context.CorrelationId, chatEvent.Nickname, chatEvent.Content);
         }
         catch (Exception ex)
         {

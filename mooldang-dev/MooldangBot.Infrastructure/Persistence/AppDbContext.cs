@@ -5,6 +5,7 @@ using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Infrastructure.Persistence.Extensions;
 using MooldangBot.Domain.Abstractions; 
 using MooldangBot.Domain.Common; // KstClock 참조
+using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
@@ -23,7 +24,10 @@ public partial class AppDbContext : DbContext
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
-        => configurationBuilder.Properties<KstClock>().HaveConversion<KstClockConverter>();
+    {
+        configurationBuilder.Properties<KstClock>().HaveConversion<KstClockConverter>();
+        // configurationBuilder.Properties<float[]>().HaveConversion<MariaDbVectorConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,5 +41,11 @@ public partial class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StreamerProfileConfiguration(converter));
         modelBuilder.ApplyConfiguration(new GlobalViewerConfiguration(converter));
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // [v11.7-Fix] 벡터 필드는 Dapper에서 처리하므로 EF Core에서는 무시합니다.
+        modelBuilder.Entity<Master_SongLibrary>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<Streamer_SongLibrary>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<SongBook>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<Master_SongStaging>().Ignore(x => x.TitleVector);
     }
 }

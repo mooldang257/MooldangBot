@@ -194,11 +194,11 @@
             });
             const result = await response.json();
             
-            if (result.success) {
-                alert(`성공: ${result.data.successCount}곡 / 전체: ${result.data.totalCount}곡 등록 완료!`);
+            if (result.isSuccess) {
+                alert(`성공: ${result.value.successCount}곡 / 전체: ${result.value.totalCount}곡 등록 완료!`);
                 await loadSongs();
             } else {
-                alert("업로드 실패: " + result.message);
+                alert("업로드 실패: " + (result.error || "알 수 없는 오류"));
             }
         } catch (err) {
             alert("서버 통신 중 오류가 발생했습니다.");
@@ -265,72 +265,83 @@
     }
 </script>
 
-<div class="flex flex-col gap-8 pb-20" in:fade>
-    <!-- [헤더]: 페이지 타이틀 및 액션 버튼 -->
-    <header class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-3">
-                <div class="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm">
-                    <BookOpen size={28} strokeWidth={2.5} />
+<div class="bg-white border border-sky-100 rounded-[2.5rem] shadow-xl overflow-hidden min-h-[400px]" in:fade>
+    <!-- [헤더 및 컨트롤 영역] -->
+    <div class="px-8 md:px-12 py-10 md:py-14 border-b border-sky-50 bg-gradient-to-b from-sky-50/30 to-white">
+        <div class="flex flex-col gap-10">
+            <!-- [상단 타이틀 및 주 액션] -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm">
+                            <BookOpen size={32} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none">노래책 관리</h1>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Osiris Song Library Management</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h1 class="text-3xl md:text-4xl font-[1000] text-slate-800 tracking-tighter">노래책 관리</h1>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick={copyViewerUrl} class="flex items-center gap-2 px-5 py-3.5 bg-white text-primary border border-primary/10 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-primary/5 transition-all active:scale-95 group">
+                        <Copy size={18} class="group-hover:rotate-12 transition-transform" />
+                        <span class="text-sm">주소 복사</span>
+                    </button>
+
+                    <button onclick={exportExcel} class="flex items-center gap-2 px-5 py-3.5 bg-white text-slate-600 border border-sky-100 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-sky-50 transition-all active:scale-95">
+                        <Download size={18} />
+                        <span class="hidden sm:inline text-sm">다운로드</span>
+                    </button>
+
+                    <label class="flex items-center gap-2 px-5 py-3.5 bg-white text-primary border border-primary/20 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-primary/5 cursor-pointer transition-all active:scale-95">
+                        {#if isUploading}
+                            <Loader2 size={18} class="animate-spin" />
+                        {:else}
+                            <Upload size={18} />
+                        {/if}
+                        <span class="hidden sm:inline text-sm">일괄 등록</span>
+                        <input type="file" accept=".xlsx" class="hidden" onchange={handleFileUpload} disabled={isUploading} />
+                    </label>
+
+                    <button onclick={() => showAddModal = true} class="flex items-center gap-2 px-8 py-3.5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:-translate-y-1 transition-all group active:scale-95">
+                        <Plus size={20} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
+                        <span class="text-sm">신규 곡 등록</span>
+                    </button>
+                </div>
             </div>
-            <p class="text-slate-500 font-semibold tracking-tight">대량의 곡들도 한눈에. 스트리머님의 라이브 리스트를 효율적으로 관리하세요. 🍭</p>
+
+            <!-- [필터 및 검색 바] -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                <div class="lg:col-span-7 relative group">
+                    <Search class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={24} />
+                    <input 
+                        type="text" 
+                        bind:value={searchQuery} 
+                        placeholder="곡 제목, 가수, 초성으로 검색..." 
+                        class="w-full pl-16 pr-6 py-5 bg-sky-50/50 border border-sky-100/50 rounded-[2rem] shadow-inner focus:shadow-xl focus:border-primary/20 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-400 text-lg" 
+                    />
+                </div>
+
+                <div class="lg:col-span-5 flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+                    {#each categories as category}
+                        <button 
+                            onclick={() => selectedCategory = category} 
+                            class="px-6 py-3 whitespace-nowrap rounded-full text-xs font-black transition-all border-2 {selectedCategory === category ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-500 border-sky-50 hover:border-primary/20 hover:text-primary hover:bg-sky-50/30'}"
+                        >
+                            {category}
+                        </button>
+                    {/each}
+                    <button class="flex items-center gap-2 p-3.5 bg-white text-slate-400 rounded-2xl border border-sky-50 hover:text-primary hover:border-primary/20 transition-all shadow-sm flex-shrink-0">
+                        <SortAsc size={20} />
+                    </button>
+                </div>
+            </div>
         </div>
-
-        <div class="flex items-center gap-3">
-            <button onclick={copyViewerUrl} class="flex items-center gap-2 px-5 py-3 bg-white text-primary border border-primary/10 font-bold rounded-2xl shadow-sm hover:bg-primary/5 transition-all active:scale-95 group">
-                <Copy size={18} class="group-hover:rotate-12 transition-transform" />
-                <span class="hidden sm:inline text-primary/80">시청자용 주소 복사</span>
-            </button>
-
-            <button onclick={exportExcel} class="flex items-center gap-2 px-5 py-3 bg-white text-slate-600 border border-sky-100 font-bold rounded-2xl shadow-sm hover:bg-sky-50 transition-all active:scale-95">
-                <Download size={18} />
-                <span class="hidden sm:inline">엑셀 다운로드</span>
-            </button>
-
-            <label class="flex items-center gap-2 px-5 py-3 bg-white text-primary border border-primary/20 font-bold rounded-2xl shadow-sm hover:bg-primary/5 cursor-pointer transition-all active:scale-95">
-                {#if isUploading}
-                    <Loader2 size={18} class="animate-spin" />
-                    <span>처리 중...</span>
-                {:else}
-                    <Upload size={18} />
-                    <span class="hidden sm:inline">엑셀 일괄 등록</span>
-                {/if}
-                <input type="file" accept=".xlsx" class="hidden" onchange={handleFileUpload} disabled={isUploading} />
-            </label>
-
-            <button onclick={() => showAddModal = true} class="flex items-center gap-2 px-6 py-3 bg-primary text-white font-black rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all group active:scale-95">
-                <Plus size={20} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
-                <span><span class="hidden sm:inline">신규</span> 곡 등록</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- [필터 및 검색]: 유연한 관제 영역 -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-        <div class="lg:col-span-6 relative group">
-            <Search class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={20} />
-            <input type="text" bind:value={searchQuery} placeholder="곡 제목, 가수, 초성으로 검색..." class="w-full pl-14 pr-6 py-4 bg-white/70 backdrop-blur-md border border-sky-100 rounded-[1.5rem] shadow-sm focus:shadow-xl focus:border-primary/30 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-400" />
-        </div>
-
-        <div class="lg:col-span-4 flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            {#each categories as category}
-                <button onclick={() => selectedCategory = category} class="px-5 py-2.5 whitespace-nowrap rounded-full text-xs font-black transition-all border {selectedCategory === category ? 'bg-primary text-white border-primary shadow-md' : 'bg-white/50 text-slate-500 border-sky-50 hover:bg-sky-50 hover:text-primary'}">
-                    {category}
-                </button>
-            {/each}
-        </div>
-
-        <div class="lg:col-span-2 flex justify-end">
-            <button class="flex items-center gap-2 p-3 bg-white text-slate-400 rounded-2xl border border-sky-100 hover:text-primary hover:border-primary/20 transition-all shadow-sm">
-                <SortAsc size={20} />
-            </button>
-        </div>
-    </section>
-
-    <!-- [메인 리스트]: 리스트형(Table) 인터페이스 -->
-    <div class="bg-white/70 backdrop-blur-md border border-sky-100 rounded-[2.5rem] shadow-xl overflow-hidden min-h-[400px]">
+    </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -441,7 +452,6 @@
             </table>
         </div>
     </div>
-</div>
 
 <!-- [신규 등록 모달] -->
 {#if showAddModal}

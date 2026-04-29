@@ -19,8 +19,8 @@ public class GeminiLlmService(
     ILogger<GeminiLlmService> logger) : ILlmService
 {
     private readonly string _apiKey = config["GEMINI_KEY"] ?? config["Gemini:ApiKey"] ?? string.Empty;
-    private const string GenerateUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={0}";
-    private const string EmbeddingUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={0}";
+    private const string GenerateUrlTemplate = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={0}";
+    private const string EmbeddingUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={0}";
 
     public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
     {
@@ -89,7 +89,8 @@ public class GeminiLlmService(
             var requestBody = new
             {
                 model = "models/text-embedding-004",
-                content = new { parts = new[] { new { text = text } } }
+                content = new { parts = new[] { new { text = text } } },
+                outputDimensionality = 768 // [v18.2] 최신 모델의 차원 조절 기능을 사용하여 소스부터 768d로 생성
             };
 
             var apiUrl = string.Format(EmbeddingUrlTemplate, _apiKey);
