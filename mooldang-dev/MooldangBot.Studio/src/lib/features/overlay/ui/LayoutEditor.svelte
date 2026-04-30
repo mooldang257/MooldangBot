@@ -11,8 +11,8 @@
         label: string;
         x: number;
         y: number;
-        w: number;
-        h: number;
+        width: number;
+        height: number;
         visible: boolean;
         color: string;
     }
@@ -27,9 +27,9 @@
 
     // [물멍]: 에디터 내부 상태 관리
     let elements = $state<ElementConfig[]>([
-        { id: 'currentSong', label: '현재 재생 중인 곡', x: 50, y: 50, w: 600, h: 180, visible: true, color: '#3b82f6' },
-        { id: 'songQueue', label: '신청곡 대기열', x: 1400, y: 100, w: 450, h: 800, visible: true, color: '#10b981' },
-        { id: 'roulette', label: '룰렛 결과 알림', x: 710, y: 340, w: 500, h: 400, visible: true, color: '#f59e0b' }
+        { id: 'currentSong', label: '현재 재생 중인 곡', x: 50, y: 50, width: 600, height: 180, visible: true, color: '#3b82f6' },
+        { id: 'songQueue', label: '신청곡 대기열', x: 1400, y: 100, width: 450, height: 800, visible: true, color: '#10b981' },
+        { id: 'roulette', label: '룰렛 결과 알림', x: 710, y: 340, width: 500, height: 400, visible: true, color: '#f59e0b' }
     ]);
 
     let draggingId = $state<string | null>(null);
@@ -83,8 +83,8 @@
         if (el) {
             startX = e.clientX;
             startY = e.clientY;
-            startElemW = el.w;
-            startElemH = el.h;
+            startElemW = el.width;
+            startElemH = el.height;
         }
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
@@ -99,15 +99,15 @@
             if (el.id === draggingId) {
                 return {
                     ...el,
-                    x: Math.round(Math.max(0, Math.min(CANVAS_W - el.w, startElemX + dx))),
-                    y: Math.round(Math.max(0, Math.min(CANVAS_H - el.h, startElemY + dy)))
+                    x: Math.round(Math.max(0, Math.min(CANVAS_W - el.width, startElemX + dx))),
+                    y: Math.round(Math.max(0, Math.min(CANVAS_H - el.height, startElemY + dy)))
                 };
             }
             if (el.id === resizingId) {
                 return {
                     ...el,
-                    w: Math.round(Math.max(50, Math.min(CANVAS_W - el.x, startElemW + dx))),
-                    h: Math.round(Math.max(50, Math.min(CANVAS_H - el.y, startElemH + dy)))
+                    width: Math.round(Math.max(50, Math.min(CANVAS_W - el.x, startElemW + dx))),
+                    height: Math.round(Math.max(50, Math.min(CANVAS_H - el.y, startElemH + dy)))
                 };
             }
             return el;
@@ -128,9 +128,9 @@
     function resetLayout() {
         if (!confirm("레이아웃을 초기화하시겠습니까?")) return;
         elements = [
-            { id: 'currentSong', label: '현재 재생 중인 곡', x: 50, y: 50, w: 600, h: 180, visible: true, color: '#3b82f6' },
-            { id: 'songQueue', label: '신청곡 대기열', x: 1400, y: 100, w: 450, h: 800, visible: true, color: '#10b981' },
-            { id: 'roulette', label: '룰렛 결과 알림', x: 710, y: 340, w: 500, h: 400, visible: true, color: '#f59e0b' }
+            { id: 'currentSong', label: '현재 재생 중인 곡', x: 50, y: 50, width: 600, height: 180, visible: true, color: '#3b82f6' },
+            { id: 'songQueue', label: '신청곡 대기열', x: 1400, y: 100, width: 450, height: 800, visible: true, color: '#10b981' },
+            { id: 'roulette', label: '룰렛 결과 알림', x: 710, y: 340, width: 500, height: 400, visible: true, color: '#f59e0b' }
         ];
     }
 
@@ -140,8 +140,8 @@
             result[el.id] = {
                 x: el.x,
                 y: el.y,
-                width: el.w,
-                height: el.h,
+                width: el.width,
+                height: el.height,
                 visible: el.visible
             };
         });
@@ -229,7 +229,7 @@
                                     <label class="text-[10px] font-black text-slate-400 uppercase">Width</label>
                                     <input 
                                         type="number" 
-                                        bind:value={el.w}
+                                        bind:value={el.width}
                                         class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
@@ -237,7 +237,7 @@
                                     <label class="text-[10px] font-black text-slate-400 uppercase">Height</label>
                                     <input 
                                         type="number" 
-                                        bind:value={el.h}
+                                        bind:value={el.height}
                                         class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
@@ -274,8 +274,8 @@
                         style="
                             left: {el.x * scale}px; 
                             top: {el.y * scale}px; 
-                            width: {el.w * scale}px; 
-                            height: {el.h * scale}px;
+                            width: {el.width * scale}px; 
+                            height: {el.height * scale}px;
                             background-color: {el.color}33;
                             border: 2px solid {el.color};
                             opacity: {el.visible ? 1 : 0.3};

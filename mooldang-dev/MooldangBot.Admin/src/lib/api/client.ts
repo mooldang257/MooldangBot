@@ -31,7 +31,10 @@ export async function apiFetch<T>(
     const fetchOptions: RequestInit = {
         ...options,
         headers: { ...defaultHeaders, ...options?.headers },
-        credentials: 'include' // 쿠키 전달을 위해 명시
+        credentials: 'include', // 쿠키 전달을 위해 명시
+        body: options?.body && typeof options.body === 'object' && !(options.body instanceof FormData) 
+            ? JSON.stringify(options.body) 
+            : options?.body
     };
 
     const response = await customFetch(finalUrl, fetchOptions);

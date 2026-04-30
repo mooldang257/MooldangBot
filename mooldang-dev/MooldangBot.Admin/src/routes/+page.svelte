@@ -12,9 +12,10 @@
     ];
 
     const adminActions = [
+        { title: '함선 목록 관리', desc: '모든 스트리머(함선) 현황 및 개별 제어', url: '/admin/streamers', icon: '🛳️', highlight: true },
         { title: '함대 관제 대시보드', desc: 'Prometheus & Grafana 실시간 지표', url: '/admin/monitoring', icon: '📊' },
-        { label: '중앙 집중 로그 탐색', desc: 'Loki 엔지니어를 통한 전적 항적 추적', url: '/admin/monitoring/explore', icon: '🔍' },
-        { label: '통합 어드민 설정', desc: '함대 전역 정책 및 차단 관리', url: '#', icon: '⚙️' }
+        { title: '중앙 집중 로그 탐색', desc: 'Loki 엔지니어를 통한 전적 항적 추적', url: '/admin/monitoring/explore', icon: '🔍' },
+        { title: '통합 어드민 설정', desc: '함대 전역 정책 및 차단 관리', url: '#', icon: '⚙️' }
     ];
 
     let isLoaded = false;
@@ -79,10 +80,10 @@
       <!-- 주요 관제 링크 -->
       <div class="lg:col-span-1 space-y-6" in:fly={{ x: -30, delay: 800 }}>
         {#each adminActions as action}
-          <a href={action.url} class="group block p-6 bg-slate-900 rounded-[2rem] text-white shadow-xl hover:bg-primary transition-colors">
+          <a href={action.url} class="group block p-6 rounded-[2rem] text-white shadow-xl transition-all {action.highlight ? 'bg-primary hover:bg-primary-focus scale-[1.02]' : 'bg-slate-900 hover:bg-slate-800'}">
             <div class="flex items-center gap-4 mb-2">
               <span class="text-2xl">{action.icon}</span>
-              <h3 class="text-xl font-bold">{action.title || action.label}</h3>
+              <h3 class="text-xl font-bold">{action.title}</h3>
             </div>
             <p class="text-slate-400 group-hover:text-white/80 text-sm leading-relaxed">{action.desc}</p>
           </a>

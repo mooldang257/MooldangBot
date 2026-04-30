@@ -270,74 +270,74 @@
     <div class="px-8 md:px-12 py-10 md:py-14 border-b border-sky-50 bg-gradient-to-b from-sky-50/30 to-white">
         <div class="flex flex-col gap-10">
             <!-- [상단 타이틀 및 주 액션] -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div class="flex flex-col gap-3">
-                    <div class="flex items-center gap-3">
-                        <div class="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="p-4 bg-sky-50 text-primary rounded-2xl shadow-sm border border-sky-100/50">
                             <BookOpen size={32} strokeWidth={2.5} />
                         </div>
                         <div>
-                            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none">노래책 관리</h1>
-                            <div class="flex items-center gap-2 mt-2">
+                            <h1 class="text-4xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none">노래책 관리</h1>
+                            <div class="flex items-center gap-2 mt-2.5">
                                 <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Osiris Song Library Management</p>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Osiris Song Library Management</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <button onclick={copyViewerUrl} class="flex items-center gap-2 px-5 py-3.5 bg-white text-primary border border-primary/10 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-primary/5 transition-all active:scale-95 group">
-                        <Copy size={18} class="group-hover:rotate-12 transition-transform" />
-                        <span class="text-sm">주소 복사</span>
-                    </button>
-
-                    <button onclick={exportExcel} class="flex items-center gap-2 px-5 py-3.5 bg-white text-slate-600 border border-sky-100 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-sky-50 transition-all active:scale-95">
-                        <Download size={18} />
-                        <span class="hidden sm:inline text-sm">다운로드</span>
-                    </button>
-
-                    <label class="flex items-center gap-2 px-5 py-3.5 bg-white text-primary border border-primary/20 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-primary/5 cursor-pointer transition-all active:scale-95">
-                        {#if isUploading}
-                            <Loader2 size={18} class="animate-spin" />
-                        {:else}
-                            <Upload size={18} />
-                        {/if}
-                        <span class="hidden sm:inline text-sm">일괄 등록</span>
-                        <input type="file" accept=".xlsx" class="hidden" onchange={handleFileUpload} disabled={isUploading} />
-                    </label>
-
-                    <button onclick={() => showAddModal = true} class="flex items-center gap-2 px-8 py-3.5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:-translate-y-1 transition-all group active:scale-95">
-                        <Plus size={20} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
-                        <span class="text-sm">신규 곡 등록</span>
-                    </button>
+                <div class="flex flex-col items-end gap-3">
+                    <!-- Top Cluster: Download & Bulk Upload -->
+                    <div class="flex items-center gap-3">
+                        <button onclick={exportExcel} class="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-500 border border-slate-100 font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all active:scale-95 text-[11px]">
+                            <Download size={14} />
+                            <span>다운로드</span>
+                        </button>
+                        <label class="flex items-center gap-2 px-4 py-2.5 bg-white text-sky-500 border border-sky-100 font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-sky-50 cursor-pointer transition-all active:scale-95 text-[11px]">
+                            {#if isUploading}
+                                <Loader2 size={14} class="animate-spin" />
+                            {:else}
+                                <Upload size={14} />
+                            {/if}
+                            <span>일괄 등록</span>
+                            <input type="file" accept=".xlsx" class="hidden" onchange={handleFileUpload} disabled={isUploading} />
+                        </label>
+                    </div>
+                    <!-- Bottom Cluster: Viewer URL Copy & Add New -->
+                    <div class="flex items-center gap-3">
+                        <button onclick={copyViewerUrl} class="flex items-center gap-2 px-5 py-3.5 bg-white text-sky-500 border border-sky-100 font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-sky-50 transition-all active:scale-95 group">
+                            <Copy size={18} class="group-hover:rotate-12 transition-transform" />
+                            <span class="text-sm">주소 복사</span>
+                        </button>
+                        <button onclick={() => showAddModal = true} class="flex items-center gap-3 px-8 py-3.5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:-translate-y-1 transition-all group active:scale-95">
+                            <Plus size={20} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
+                            <span class="text-sm font-bold">신규 곡 등록</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- [필터 및 검색 바] -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-                <div class="lg:col-span-7 relative group">
+            <div class="flex flex-col lg:flex-row items-center gap-4">
+                <div class="flex-1 w-full relative group">
                     <Search class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={24} />
                     <input 
                         type="text" 
                         bind:value={searchQuery} 
                         placeholder="곡 제목, 가수, 초성으로 검색..." 
-                        class="w-full pl-16 pr-6 py-5 bg-sky-50/50 border border-sky-100/50 rounded-[2rem] shadow-inner focus:shadow-xl focus:border-primary/20 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-400 text-lg" 
+                        class="w-full pl-16 pr-6 py-5 bg-sky-50/30 border border-sky-100/50 rounded-[2rem] focus:bg-white focus:shadow-xl focus:border-primary/20 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-400 text-lg" 
                     />
                 </div>
 
-                <div class="lg:col-span-5 flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
                     {#each categories as category}
                         <button 
                             onclick={() => selectedCategory = category} 
-                            class="px-6 py-3 whitespace-nowrap rounded-full text-xs font-black transition-all border-2 {selectedCategory === category ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-500 border-sky-50 hover:border-primary/20 hover:text-primary hover:bg-sky-50/30'}"
+                            class="px-6 py-3 whitespace-nowrap rounded-full text-xs font-black transition-all border-2 {selectedCategory === category ? 'bg-[#1a1c23] text-white border-[#1a1c23] shadow-lg scale-105' : 'bg-white text-slate-500 border-slate-100 hover:border-primary/20 hover:text-primary hover:bg-sky-50/30'}"
                         >
                             {category}
                         </button>
                     {/each}
-                    <button class="flex items-center gap-2 p-3.5 bg-white text-slate-400 rounded-2xl border border-sky-50 hover:text-primary hover:border-primary/20 transition-all shadow-sm flex-shrink-0">
-                        <SortAsc size={20} />
-                    </button>
                 </div>
             </div>
         </div>

@@ -31,31 +31,59 @@ public class SongBookExcelService(
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamerProfileId && !s.IsDeleted)
             .OrderBy(s => s.SongNo)
-            .Select(s => new SongBookExcelRow
-            {
-                Id = s.SongNo,
-                Title = s.Title,
-                Artist = s.Artist,
-                Category = s.Category,
-                Pitch = s.Pitch,
-                Proficiency = s.Proficiency,
-                YoutubeUrl = s.ReferenceUrl ?? s.ThumbnailUrl, 
-                LyricsUrl = s.LyricsUrl,
-                ThumbnailUrl = s.ThumbnailUrl,
-                RequiredPoints = s.RequiredPoints,
-                Alias = s.Alias
-            })
             .ToListAsync();
 
-        // 데이터가 없으면 헤더만 있는 빈 리스트 반환
-        if (songs.Count == 0)
+        // 2. ClosedXML을 사용하여 엑셀 생성 (콤보박스 지원을 위함)
+        using var workbook = new ClosedXML.Excel.XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("노래책");
+
+        // 헤더 설정
+        var headers = new[] { "Id", "Title", "Artist", "Category", "Pitch", "Proficiency", "Youtube", "Lyrics", "Thumbnail", "Points", "Alias" };
+        for (int i = 0; i < headers.Length; i++)
         {
-            songs.Add(new SongBookExcelRow { Title = "예시: 노래 제목", Artist = "가수명" });
+            worksheet.Cell(1, i + 1).Value = headers[i];
         }
 
-        // 2. 메모리 스트림에 엑셀 저장
+        // 데이터 채우기
+        for (int i = 0; i < songs.Count; i++)
+        {
+            var song = songs[i];
+            int row = i + 2;
+            worksheet.Cell(row, 1).Value = song.SongNo;
+            worksheet.Cell(row, 2).Value = song.Title;
+            worksheet.Cell(row, 3).Value = song.Artist;
+            worksheet.Cell(row, 4).Value = song.Category;
+            worksheet.Cell(row, 5).Value = song.Pitch ?? "원키";
+            worksheet.Cell(row, 6).Value = song.Proficiency ?? "완창";
+            worksheet.Cell(row, 7).Value = song.ReferenceUrl;
+            worksheet.Cell(row, 8).Value = song.LyricsUrl;
+            worksheet.Cell(row, 9).Value = song.ThumbnailUrl;
+            worksheet.Cell(row, 10).Value = song.RequiredPoints;
+            worksheet.Cell(row, 11).Value = song.Alias;
+        }
+
+        // 3. [오시리스의 편의]: 콤보박스(데이터 유효성 검사) 설정
+        // Pitch (E열)
+        var pitchList = new[] { "원키", "-6", "-5", "-4", "-3", "-2", "-1", "+1", "+2", "+3", "+4", "+5", "+6" };
+        var pitchRange = worksheet.Range(2, 5, 2000, 5); // 최대 2000행까지 지원
+        pitchRange.CreateDataValidation().List(string.Join(",", pitchList));
+
+        // Proficiency (F열)
+        var profList = new[] { "완창", "1절", "연습중", "구걸가능" };
+        var profRange = worksheet.Range(2, 6, 2000, 6);
+        profRange.CreateDataValidation().List(string.Join(",", profList));
+
+        // 4. 스타일링 및 마무리
+        var headerRow = worksheet.FirstRow();
+        headerRow.Style.Font.Bold = true;
+        headerRow.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E0F2FE"); // Sky 100
+        headerRow.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
+
+        worksheet.Columns().AdjustToContents();
+        worksheet.Column(2).Width = 30; // Title 컬럼은 조금 더 넓게
+
         var memoryStream = new MemoryStream();
-        memoryStream.SaveAs(songs);
+        workbook.SaveAs(memoryStream);
         memoryStream.Seek(0, SeekOrigin.Begin);
 
         return memoryStream;
@@ -77,6 +105,7 @@ public class SongBookExcelService(
                 .ToListAsync();
 
             var maxSongNo = existingSongs.Any() ? existingSongs.Max(s => s.SongNo) : 0;
+            var processedSongNos = new HashSet<int>();
 
             foreach (var row in rows)
             {
@@ -102,11 +131,10 @@ public class SongBookExcelService(
 
                     // 4. [SongNo 기반 업데이트 또는 신규 생성]
                     SongBook? songBook = null;
-                    bool isNew = false;
 
                     if (row.Id.HasValue)
                     {
-                        // 엑셀에 Id(SongNo)가 명시된 경우 기존 곡 찾기
+                        // 엑셀에 Id(SongNo)가 명시된 경우 기존 곡 찾기 (삭제된 곡 포함)
                         songBook = existingSongs.FirstOrDefault(s => s.SongNo == (int)row.Id.Value);
                     }
                     
@@ -125,11 +153,10 @@ public class SongBookExcelService(
                             SongNo = row.Id.HasValue ? (int)row.Id.Value : ++maxSongNo,
                             CreatedAt = KstClock.Now
                         };
-                        isNew = true;
                         _db.FuncSongBooks.Add(songBook);
                     }
 
-                    // 5. 정보 업데이트
+                    // 5. 정보 업데이트 및 활성화
                     songBook.SongLibraryId = capturedId;
                     songBook.Title = row.Title.Trim();
                     songBook.Artist = row.Artist?.Trim();
@@ -143,14 +170,27 @@ public class SongBookExcelService(
                     songBook.Alias = row.Alias?.Trim();
                     songBook.TitleChosung = KoreanUtils.NormalizeForSearch(row.Title);
                     songBook.IsRequestable = true;
+                    songBook.IsDeleted = false; // 엑셀에 있으면 활성화
                     songBook.UpdatedAt = KstClock.Now;
 
+                    processedSongNos.Add(songBook.SongNo);
                     result.SuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     result.Errors.Add($"[{row.Title}] 처리 중 오류: {ex.Message}");
                 }
+            }
+
+            // 6. [오시리스의 정화]: 엑셀에 없는 기존 곡들은 삭제 처리
+            var songsToDelete = existingSongs
+                .Where(s => !s.IsDeleted && !processedSongNos.Contains(s.SongNo))
+                .ToList();
+
+            foreach (var song in songsToDelete)
+            {
+                song.IsDeleted = true;
+                song.UpdatedAt = KstClock.Now;
             }
 
             await _db.SaveChangesAsync();

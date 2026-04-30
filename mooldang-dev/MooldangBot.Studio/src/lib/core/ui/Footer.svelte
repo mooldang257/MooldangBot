@@ -19,7 +19,7 @@
     <div class="absolute bottom-0 right-1/4 w-64 h-64 bg-accent/5 rounded-full blur-[100px] pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto relative z-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
             <!-- [섹션 1]: 브랜드 정보 -->
             <div class="flex flex-col gap-4">
                 <div class="flex items-center gap-3">
@@ -49,16 +49,7 @@
                 </div>
             </div>
 
-            <!-- [섹션 2]: 바로가기 -->
-            <div class="flex flex-col gap-6">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Service</h3>
-                <nav class="flex flex-col gap-3">
-                    <a href="/" class="text-sm font-bold text-slate-600 hover:text-primary transition-colors no-underline">홈으로</a>
-                    <a href="/dashboard" class="text-sm font-bold text-slate-600 hover:text-primary transition-colors no-underline">대시보드</a>
-                </nav>
-            </div>
-
-            <!-- [섹션 3]: 법적 안내 -->
+            <!-- [섹션 2]: 법적 안내 -->
             <div class="flex flex-col gap-6">
                 <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Policy</h3>
                 <nav class="flex flex-col gap-3">
@@ -73,7 +64,7 @@
                 </nav>
             </div>
 
-            <!-- [섹션 4]: 개발자 정보 -->
+            <!-- [섹션 3]: 개발자 정보 -->
             <div class="flex flex-col gap-6">
                 <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Developer</h3>
                 <div class="flex flex-col gap-2">

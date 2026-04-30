@@ -16,7 +16,7 @@ public class AdaptiveAiRateLimiter(ILogger<AdaptiveAiRateLimiter> logger)
 {
     private readonly ConcurrentQueue<DateTime> _requestWindow = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private const int MaxRequestsPerMinute = 15;
+    private const int MaxRequestsPerMinute = 1500; // [v19.0] 임베딩 전용 모델(gemini-embedding-001)의 무료 티어 한도에 맞춰 상향
     private static readonly TimeSpan WindowDuration = TimeSpan.FromMinutes(1);
 
     /// <summary>
@@ -44,7 +44,7 @@ public class AdaptiveAiRateLimiter(ILogger<AdaptiveAiRateLimiter> logger)
                     var waitTime = oldestRequest + WindowDuration - DateTime.UtcNow;
                     if (waitTime > TimeSpan.Zero)
                     {
-                        logger.LogInformation($"⚠️ [AI 리미터] 한도 도달(15 RPM). 해제까지 {waitTime.TotalSeconds:F1}초 대기 중...");
+                        logger.LogInformation($"⚠️ [AI 리미터] 한도 도달({MaxRequestsPerMinute} RPM). 해제까지 {waitTime.TotalSeconds:F1}초 대기 중...");
                         await Task.Delay(waitTime, ct);
                     }
                 }

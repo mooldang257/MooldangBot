@@ -20,7 +20,7 @@ public class GeminiLlmService(
 {
     private readonly string _apiKey = config["GEMINI_KEY"] ?? config["Gemini:ApiKey"] ?? string.Empty;
     private const string GenerateUrlTemplate = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={0}";
-    private const string EmbeddingUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={0}";
+    private const string EmbeddingUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/{0}:embedContent?key={1}";
 
     public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
     {
@@ -86,14 +86,15 @@ public class GeminiLlmService(
 
         try
         {
+            var modelName = "models/gemini-embedding-001"; // [v19.0] 3072차원을 지원하는 텍스트 전용 임베딩 모델
             var requestBody = new
             {
-                model = "models/text-embedding-004",
+                model = modelName,
                 content = new { parts = new[] { new { text = text } } },
-                outputDimensionality = 768 // [v18.2] 최신 모델의 차원 조절 기능을 사용하여 소스부터 768d로 생성
+                outputDimensionality = 3072 // [v19.0] MariaDB 11.8 고도화를 위해 3072차원으로 상향
             };
 
-            var apiUrl = string.Format(EmbeddingUrlTemplate, _apiKey);
+            var apiUrl = string.Format(EmbeddingUrlTemplate, modelName, _apiKey);
             var response = await httpClient.PostAsJsonAsync(apiUrl, requestBody);
 
             if (!response.IsSuccessStatusCode)

@@ -103,15 +103,15 @@
 <div class="app-container min-h-screen flex flex-col font-sans selection:bg-primary/20 relative">
     <!-- [스트리머용 네비게이션]: h-20 (5rem) -->
     {#if !isViewerPage}
-    <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 h-20 bg-amber-50/90 backdrop-blur-xl border-b border-amber-100/40 shadow-sm transition-all">
+    <nav class="navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 h-20 bg-white border-b border-slate-100 shadow-sm transition-all">
         <div class="flex items-center gap-4 md:gap-6">
             <a href="/" class="flex items-center gap-3 no-underline group shrink-0">
-                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-300">
-                    <img src="/images/wman_sd_transparent.png" alt="Logo" class="w-8 h-8 object-contain" />
+                <div class="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-100/50 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    <img src="/images/wman_sd_transparent.png" alt="Logo" class="w-full h-full object-cover scale-[3.2] translate-y-[8%]" />
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-lg font-black text-slate-800 tracking-tighter leading-tight">물댕봇</span>
-                    <span class="text-[10px] font-bold text-primary tracking-widest uppercase opacity-80">STUDIO</span>
+                    <span class="text-xl font-black text-slate-800 tracking-tighter leading-tight">물댕봇</span>
+                    <span class="text-[11px] font-black text-sky-500 tracking-widest uppercase">STUDIO</span>
                 </div>
             </a>
             {#if userState.isAuthenticated}
@@ -140,8 +140,10 @@
                         치지직 로그인
                     </button>
                 {:else}
-                    <div class="flex items-center gap-2 md:gap-3 bg-white/60 p-1 md:p-1.5 pr-4 md:pr-5 rounded-full border border-white shadow-sm hover:shadow-md transition-shadow shrink-0" in:fade>
-                        <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-white object-cover" />
+                    <div class="flex items-center gap-2 md:gap-3 bg-white/60 p-1 md:p-1.5 pr-4 md:pr-5 rounded-full border border-white shadow-sm hover:shadow-md transition-shadow shrink-0 overflow-hidden" in:fade>
+                        <div class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-white overflow-hidden shrink-0">
+                            <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-full h-full object-cover scale-110" />
+                        </div>
                         <div class="flex flex-col -gap-0.5 max-w-[80px] md:max-w-[150px]">
                             <span class="font-bold text-slate-700 text-[10px] md:text-sm truncate">{userState.channelName}</span>
                             <a href="/{userState.slug}/dashboard" class="text-[8px] md:text-[10px] font-black text-primary hover:underline uppercase tracking-tighter">내 대시보드</a>

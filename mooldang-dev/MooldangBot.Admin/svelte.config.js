@@ -6,7 +6,10 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		// [오시리스의 무대]: Node.js 환경에서 최적의 성능을 낼 수 있는 adapter-node 사용
-		adapter: adapter()
+		adapter: adapter(),
+		paths: {
+			base: '/admin'
+		}
 	}
 };
 

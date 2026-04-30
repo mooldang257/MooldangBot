@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
     import { fade, fly, slide } from 'svelte/transition';
-    import { Menu, ChevronLeft, BookOpen, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings } from 'lucide-svelte';
+    import { Menu, ChevronLeft, BookOpen, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings, Terminal, Ship } from 'lucide-svelte';
 
     // [물멍]: 사이드바 축소 상태를 관리하는 룬 (Svelte 5) - 이제 기본은 축소형입니다.
     let isCollapsed = $state(true);
@@ -51,6 +51,7 @@
         { id: 'roulette', icon: FerrisWheel, label: '룰렛 관리', path: `${basePath}/roulette` },
         { id: 'chatpoint', icon: Gem, label: '채팅 포인트 관리', path: `${basePath}/chatpoint` },
         { id: 'overlay', icon: Monitor, label: '마스터 오버레이', path: `${basePath}/overlay` },
+        { id: 'simulator', icon: Terminal, label: '채팅 시뮬레이터', path: `${basePath}/simulator` },
         { id: 'settings', icon: Settings, label: '물댕봇 설정', path: `${basePath}/settings` },
     ]);
 
@@ -120,8 +121,21 @@
             {/each}
         </nav>
         
-        <!-- [하단 시스템 상태] -->
-        <div class="mt-auto p-4 border-t border-sky-100/30">
+        <!-- [하단 시스템 상태 및 목록 바로가기] -->
+        <div class="mt-auto p-3 border-t border-sky-100/30 space-y-2">
+            <a 
+                href="/admin/streamers" 
+                class="flex items-center gap-4 rounded-2xl p-3 text-slate-500 hover:bg-slate-100 transition-all group"
+                title={isCollapsed ? "함선 목록 관리" : ""}
+            >
+                <span class="flex-shrink-0 flex items-center justify-center {isCollapsed ? 'w-full' : ''} group-hover:scale-110 transition-transform">
+                    <Ship size={22} strokeWidth={2.5} />
+                </span>
+                {#if !isCollapsed}
+                    <span class="whitespace-nowrap font-black text-xs tracking-tighter" in:fade>함선 목록 관리</span>
+                {/if}
+            </a>
+
             <div class="flex items-center justify-center p-3 rounded-[1.5rem] bg-sky-50/50 border border-sky-100/50 text-sky-400 overflow-hidden">
                 <span class="text-xl animate-bounce">🐶</span>
                 {#if !isCollapsed}

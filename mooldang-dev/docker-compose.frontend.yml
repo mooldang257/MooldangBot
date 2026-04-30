@@ -63,11 +63,12 @@ services:
     environment:
       - NODE_ENV=development
       - ORIGIN=https://${BASE_DOMAIN}
+      - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/admin`)"
       - "traefik.http.routers.admin-dev.entrypoints=web"
-      - "traefik.http.routers.admin-dev.middlewares=admin-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.routers.admin-dev.middlewares=traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.admin-dev.loadbalancer.server.port=3000"
       - "traefik.env=dev"
     networks:

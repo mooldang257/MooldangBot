@@ -22,11 +22,11 @@ http:
           - 131.0.72.0/22
 
     # 🔒 [Auth]: 대시보드 및 어드민 보호용 (Basic Auth)
-    # 아이디: mooldang / 비번: osiris257 (htpasswd 방식)
+    # 아이디: mooldang / 비번: @enjoy1004 (htpasswd 방식)
     traefik-auth:
       basicAuth:
         users:
-          - "mooldang:$apr1$8u5m5s8n$K9M5D5z5X5T5R5S5V5G5S/" 
+          - "mooldang:$apr1$sVHYe26f$sXNfXTSvQUMZK3EWQq4yi1" 
 
     # 🚧 [Whitelist Cache]: 향후 사령관님 IP 등록을 위한 플레이스홀더
     # 현재는 전체 명시적 허용 상태
