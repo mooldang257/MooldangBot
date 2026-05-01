@@ -1,0 +1,60 @@
+# [오시리스의 함대] - FRONTEND UI LAYER
+# 관리용 스튜디오 및 어드민 웹 서비스를 담당합니다.
+
+services:
+  studio:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Studio/Dockerfile
+    image: mooldang-studio:${VERSION_UI:-latest}
+    container_name: mooldang-bot-studio
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    environment:
+      - NODE_ENV=production
+      - ORIGIN=https://${BASE_DOMAIN}
+      - INTERNAL_API_URL=http://app:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.studio-bot.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`) && !PathPrefix(`/api`) && !PathPrefix(`/admin`) && !PathPrefix(`/overlay`) && !PathPrefix(`/fonts`)"
+      - "traefik.http.routers.studio-bot.entrypoints=web"
+      - "traefik.http.services.studio-bot.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"
+      - "traefik.http.routers.studio-bot.middlewares=cloudflare-real-ip@file,dev-noindex"
+      - "traefik.docker.network=mooldang_prod_net"
+      - "traefik.env=bot"
+    networks:
+      - mooldang_prod_net
+
+  admin:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.Admin/Dockerfile
+    image: mooldang-admin:${VERSION_UI:-latest}
+    container_name: mooldang-bot-admin
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    environment:
+      - NODE_ENV=production
+      - ORIGIN=https://${BASE_DOMAIN}
+      - INTERNAL_API_URL=http://app:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-bot.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin-bot.entrypoints=web"
+      - "traefik.http.routers.admin-bot.middlewares=traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.admin-bot.loadbalancer.server.port=3000"
+      - "traefik.docker.network=mooldang_prod_net"
+      - "traefik.env=bot"
+    networks:
+      - mooldang_prod_net
+
+networks:
+  mooldang_prod_net:
+    external: true

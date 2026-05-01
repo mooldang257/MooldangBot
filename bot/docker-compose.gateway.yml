@@ -4,10 +4,11 @@
 services:
   traefik:
     image: traefik:v3.6.13
-    container_name: mooldang-prod-traefik
+    container_name: mooldang-bot-traefik
     restart: always
     ports:
       - "80:80"
+      - "81:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -15,13 +16,14 @@ services:
       - /var/log/traefik:/var/log/traefik
     networks:
       - mooldang_prod_net
+      - mooldang_dev_net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`bot.mooldang.com`) && PathPrefix(`/traefik`)" # 대시보드 접근 보호 강화 필요 시 수정
-      - "traefik.http.routers.dashboard.entrypoints=web"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-shield@file"
-      - "traefik.env=prod"
+      - "traefik.http.routers.dashboard-bot.rule=Host(`${BASE_DOMAIN}`) && PathPrefix(`/traefik`)"
+      - "traefik.http.routers.dashboard-bot.entrypoints=web"
+      - "traefik.http.routers.dashboard-bot.service=api@internal"
+      - "traefik.http.routers.dashboard-bot.middlewares=dashboard-shield@file"
+      - "traefik.env=bot"
     logging:
       driver: "json-file"
       options:
@@ -30,7 +32,7 @@ services:
 
   tunnel:
     image: cloudflare/cloudflared:latest
-    container_name: mooldang-prod-tunnel
+    container_name: mooldang-bot-tunnel
     restart: always
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
@@ -44,4 +46,6 @@ services:
 
 networks:
   mooldang_prod_net:
+    external: true
+  mooldang_dev_net:
     external: true

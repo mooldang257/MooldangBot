@@ -31,7 +31,7 @@ export const MOOLDANG_FONTS: FontInfo[] = [
     { id: 'suite', name: 'SUITE (스위트)', family: 'SUITE-Bold', url: '/fonts/SUITE-Bold.woff2', provider: 'local' },
     { id: 'surround', name: '카페24 써라운드', family: 'Cafe24Ssurround', url: '/fonts/Cafe24Ssurround.woff', provider: 'local' },
     { id: 'katuri', name: '안동엄마까투리체', family: 'Katuri', url: '/fonts/Katuri.woff', provider: 'local' },
-    { id: 'nanumsquare', name: '나눔스퀘어', family: 'NanumSquare', url: '/fonts/nanumsquare.css', provider: 'local' },
+    { id: 'nanumsquare', name: '나눔스퀘어', family: 'NanumSquare', url: '/fonts/Nanum-Gothic.ttf', provider: 'local' },
     { id: 'notosans', name: '본고딕 (Noto Sans KR)', family: 'Noto Sans KR', url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap', provider: 'google' },
     { id: 'nanum-gothic', name: '나눔고딕', family: 'NanumGothic', url: 'https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap', provider: 'google' },
     { id: 'nanum-myeongjo', name: '나눔명조', family: 'Nanum Myeongjo', url: 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap', provider: 'google' },

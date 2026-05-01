@@ -64,7 +64,7 @@
 <svelte:head>
     {#each MOOLDANG_FONTS as font}
         {#if font.url && (settings.liveTitleFont === font.family || settings.queueFont === font.family || settings.rouletteFont === font.family)}
-            {#if font.provider === 'google'}
+            {#if font.provider === 'google' || font.url.endsWith('.css')}
                 <link rel="stylesheet" href={font.url} />
             {:else}
                 {@html `<style>@font-face { font-family: '${font.family}'; src: url('${font.url}'); font-display: swap; }</style>`}

@@ -1,5 +1,5 @@
-# [오시리스의 함대 v2.6] - FRONTEND LAYER
-# 사용자 인터페이스 및 오버레이 서비스를 담당합니다.
+# [오시리스의 함대] - FRONTEND UI LAYER
+# 관리용 스튜디오 및 어드민 웹 서비스를 담당합니다.
 
 services:
   studio:
@@ -19,32 +19,12 @@ services:
       - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.studio-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`) && !PathPrefix(`/api`) && !PathPrefix(`/admin`) && !PathPrefix(`/overlay`)"
+      - "traefik.http.routers.studio-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`) && !PathPrefix(`/api`) && !PathPrefix(`/admin`) && !PathPrefix(`/overlay`) && !PathPrefix(`/fonts`)"
       - "traefik.http.routers.studio-dev.entrypoints=web"
       - "traefik.http.services.studio-dev.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"
       - "traefik.http.routers.studio-dev.middlewares=cloudflare-real-ip@file,dev-noindex"
-      - "traefik.env=dev"
-    networks:
-      - mooldang_dev_net
-
-  overlay:
-    build:
-      context: .
-      dockerfile: ./MooldangBot.Overlay/Dockerfile
-    image: mooldang-overlay:${VERSION_UI:-latest}
-    container_name: mooldang-dev-overlay
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.overlay-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/overlay`)"
-      - "traefik.http.routers.overlay-dev.entrypoints=web"
-      - "traefik.http.services.overlay-dev.loadbalancer.server.port=80"
-      - "traefik.http.routers.overlay-dev.middlewares=cloudflare-real-ip@file"
+      - "traefik.docker.network=mooldang_dev_net"
       - "traefik.env=dev"
     networks:
       - mooldang_dev_net
@@ -70,6 +50,7 @@ services:
       - "traefik.http.routers.admin-dev.entrypoints=web"
       - "traefik.http.routers.admin-dev.middlewares=traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.admin-dev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=mooldang_dev_net"
       - "traefik.env=dev"
     networks:
       - mooldang_dev_net

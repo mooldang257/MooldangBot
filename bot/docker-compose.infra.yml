@@ -1,20 +1,24 @@
-# [MooldangBot]: Infrastructure Layer
-# DB, Redis, RabbitMQ, Traefik, Monitoring
+# [오시리스의 함대] - INFRA LAYER (Infrastructure & Monitoring)
+# 데이터베이스, 캐시, 메시지 브로커 및 관제 시스템을 담당합니다.
 
 services:
   db:
     image: mariadb:11.8
-    container_name: mooldang-prod-db
+    container_name: mooldang-bot-db
     command:
       - --local-infile=1
       - --innodb-flush-method=O_DIRECT
       - --max-connections=4096
-      - --innodb-buffer-pool-size=16G
-      - --innodb-log-file-size=2G
+      - --innodb-buffer-pool-size=1G
+      - --innodb-log-file-size=512M
       - --innodb-flush-log-at-trx-commit=2
       - --innodb-autoinc-lock-mode=2
-      - --bulk_insert_buffer_size=268435456
+      - --bulk_insert_buffer_size=64M
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
@@ -22,7 +26,7 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
       MARIADB_ROOT_HOST: '%'
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - ${DB_DATA_PATH}:/var/lib/mysql
     networks:
@@ -33,16 +37,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
 
   redis:
     image: redis:7-alpine
-    container_name: mooldang-prod-redis
-    restart: always
+    container_name: mooldang-bot-redis
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data-bot:/data
     networks:
       - mooldang_prod_net
     healthcheck:
@@ -51,16 +52,15 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: mooldang-prod-rabbitmq
+    container_name: mooldang-bot-rabbitmq
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     volumes:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     environment:
@@ -78,16 +78,31 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
+
+  adminer:
+    image: adminer:latest
+    container_name: mooldang-bot-adminer
+    restart: always
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer-bot.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/adminer`)"
+      - "traefik.http.routers.adminer-bot.entrypoints=web"
+      - "traefik.http.routers.adminer-bot.middlewares=traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.adminer-bot.loadbalancer.server.port=8080"
+      - "traefik.env=bot"
+    networks:
+      - mooldang_prod_net
 
   grafana:
     image: grafana/grafana-oss:latest
-    container_name: mooldang-prod-grafana
+    container_name: mooldang-bot-grafana
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -95,74 +110,54 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`bot.mooldang.com`) && PathPrefix(`/admin/monitoring`)"
-      - "traefik.http.routers.grafana.entrypoints=web"
-      - "traefik.http.routers.grafana.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      - "traefik.env=prod"
+      - "traefik.http.routers.grafana-bot.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/admin/monitoring`)"
+      - "traefik.http.routers.grafana-bot.entrypoints=web"
+      - "traefik.http.routers.grafana-bot.middlewares=monitoring-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.services.grafana-bot.loadbalancer.server.port=3000"
+      - "traefik.env=bot"
     networks:
       - mooldang_prod_net
     volumes:
-      - grafana-data:/var/lib/grafana
+      - grafana-data-bot:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
 
   loki:
     image: grafana/loki:latest
-    container_name: mooldang-prod-loki
+    container_name: mooldang-bot-loki
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - mooldang_prod_net
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: mooldang-prod-prometheus
+    container_name: mooldang-bot-prometheus
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - mooldang_prod_net
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
+      - prometheus-data-bot:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
-
-  adminer:
-    image: adminer:latest
-    container_name: mooldang-prod-adminer
-    restart: always
-    environment:
-      - ADMINER_DEFAULT_SERVER=db
-    networks:
-      - mooldang_prod_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 networks:
   mooldang_prod_net:
     external: true
 
 volumes:
-  grafana-data:
-  prometheus-data:
+  grafana-data-bot:
+  prometheus-data-bot:
+  redis-data-bot:

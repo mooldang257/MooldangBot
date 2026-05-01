@@ -1,0 +1,43 @@
+# [오시리스의 함대] - CHZZK BOT LAYER
+# 치지직 연동 및 방송 자동화 봇 서비스를 담당합니다.
+
+services:
+  chzzk-bot:
+    build:
+      context: .
+      dockerfile: ./MooldangBot.ChzzkAPI/Dockerfile
+    image: mooldang-chzzk-bot:${VERSION_BOT:-latest}
+    container_name: mooldang-bot-chzzk-bot
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    env_file:
+      - .env
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - DB_HOST=db
+      - REDIS_URL=redis:6379
+      - RABBITMQ_HOST=rabbitmq
+      - LOKI_URL=http://loki:3100
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
+      - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
+      - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
+      - DISABLE_POINT_WRITEBACK=true
+      - DISABLE_POINT_BATCH=true
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+    networks:
+      - mooldang_prod_net
+    volumes:
+      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  mooldang_prod_net:
+    external: true

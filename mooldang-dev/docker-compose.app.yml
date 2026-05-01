@@ -1,5 +1,5 @@
-# [오시리스의 함대 v2.6] - BACKEND LAYER
-# 메인 API 및 치지직 봇 서비스를 담당합니다.
+# [오시리스의 함대] - BACKEND API LAYER
+# 메인 API 서버 및 데이터베이스 마이그레이션을 담당합니다.
 
 services:
   migration:
@@ -14,9 +14,6 @@ services:
     entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
     networks:
       - mooldang_dev_net
-    # 인프라 레이어의 db 서비스가 준비될 때까지 기다림
-    # (주의: 별도 파일로 분리 시 depends_on의 condition은 같은 파일 내 서비스에만 적용됩니다. 
-    # 따라서 여기서는 외부 서비스 존재 여부만 체크하게 됩니다.)
 
   app:
     build:
@@ -54,6 +51,7 @@ services:
       - "traefik.http.middlewares.app-upgrade.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"
       - "traefik.http.routers.app-dev.middlewares=app-upgrade,cloudflare-real-ip@file,dev-noindex"
+      - "traefik.docker.network=mooldang_dev_net"
       - "traefik.env=dev"
     networks:
       - mooldang_dev_net
@@ -63,42 +61,6 @@ services:
       - ${COMMON_SONG_DATA_PATH}:/app/wwwroot/uploads/library/songs
       - ${APP_DATA_PATH}:/app/data
       - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
-
-  chzzk-bot:
-    build:
-      context: .
-      dockerfile: ./MooldangBot.ChzzkAPI/Dockerfile
-    image: mooldang-chzzk-bot:${VERSION_APP:-latest}
-    container_name: mooldang-dev-chzzk-bot
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    env_file:
-      - .env
-    environment:
-      - DOTNET_ENVIRONMENT=Development
-      - DB_HOST=db
-      - REDIS_URL=redis:6379
-      - RABBITMQ_HOST=rabbitmq
-      - LOKI_URL=http://loki:3100
-      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
-      - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
-      - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
-      - DISABLE_POINT_WRITEBACK=true
-      - DISABLE_POINT_BATCH=true
-      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
-    networks:
-      - mooldang_dev_net
-    volumes:
-      - ${KEYS_DATA_PATH:-./keys}:/root/.aspnet/DataProtection-Keys
-    healthcheck:
-      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
 
 networks:
   mooldang_dev_net:
