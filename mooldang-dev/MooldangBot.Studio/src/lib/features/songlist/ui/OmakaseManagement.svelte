@@ -1,7 +1,7 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
 
-    // [Osiris]: 부모로부터 전달받는 오마카세 데이터 (동기화된 통합 상태)
+    // [물멍]: 부모로부터 전달받는 오마카세 데이터 (동기화된 통합 상태)
     let { 
         omakases = [],
         selectedOmakase = $bindable(null)

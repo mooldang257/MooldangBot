@@ -2,6 +2,7 @@ using MooldangBot.Modules.SongBook.Events;
 using MooldangBot.Modules.SongBook.State;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
@@ -152,19 +153,7 @@ If you can't find it, use the original text as title.";
             if (!added) logger.LogWarning("⚠️ [SongRequest] Failed to add to in-memory state.");
             
             // 4. [알림]: 오버레이 업데이트 통지
-            var current = state.GetCurrentSong(request.StreamerUid);
-            var queue = state.GetQueue(request.StreamerUid)
-                .Select(s => new QueueSongDto(s.Id, s.Title, s.Artist, s.Username, s.VideoId, s.ThumbnailUrl, s.Pitch))
-                .ToList();
-            
-            var overlayData = new SongOverlayDto(
-                current != null ? new CurrentSongDto(current.Id, current.Title, current.Artist, current.VideoId, current.ThumbnailUrl, current.Pitch) : null,
-                queue,
-                new SongOverlaySettings()
-            );
-
-            await overlayNotification.NotifySongOverlayUpdateAsync(request.StreamerUid, overlayData, ct);
-            await overlayNotification.NotifySongQueueChangedAsync(request.StreamerUid, ct);
+            await overlayNotification.BroadcastSongOverlayUpdateAsync(request.StreamerUid, null, ct);
             await overlayNotification.NotifyPointChangedAsync(request.StreamerUid, ct);
             logger.LogInformation("📡 [SongRequest] All notifications (Overlay, Queue, Dashboard) sent.");
 

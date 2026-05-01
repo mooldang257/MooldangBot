@@ -2,8 +2,8 @@ export interface FontInfo {
     id: string;
     name: string;
     family: string;
-    url?: string;
-    provider: 'noonnu' | 'google' | 'system';
+    url: string;
+    provider: 'noonnu' | 'google' | 'system' | 'local';
 }
 
 /**
@@ -14,34 +14,36 @@ const createNoonnu = (id: string, name: string, family: string, path: string): F
 });
 
 export const MOOLDANG_FONTS: FontInfo[] = [
-    { id: 'presentation', name: '프리젠테이션', family: 'Presentation-Regular', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/Presentation-Regular.woff2', provider: 'noonnu' },
-    { id: 'gmarket', name: 'G마켓 산스', family: 'GmarketSansMedium', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_7@1.0/GmarketSansMedium.woff', provider: 'noonnu' },
-    { id: 'score', name: '에스코어드림', family: 'S-CoreDream-3Light', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff', provider: 'noonnu' },
-    { id: 'aggro', name: '어그로체', family: 'SBAggroB', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroB.woff', provider: 'noonnu' },
+    { id: 'pretendard', name: 'Pretendard (기본)', family: 'Pretendard-Regular', url: '/fonts/Pretendard-Regular.woff', provider: 'local' },
+    { id: 'score', name: '에스코어 드림', family: 'S-CoreDream-6Bold', url: '/fonts/S-CoreDream-6Bold.woff', provider: 'local' },
+    { id: 'gmarket', name: 'G마켓 산스', family: 'GmarketSansMedium', url: '/fonts/GmarketSansMedium.woff', provider: 'local' },
+    { id: 'blackhansans', name: '검은고딕', family: 'Black Han Sans', url: 'https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap', provider: 'google' },
+    { id: 'jua', name: '배달의민족 주아', family: 'BMJUA', url: '/fonts/BMJUA.woff', provider: 'local' },
+    { id: 'dohyeon', name: '배달의민족 도현', family: 'BMDOHYEON', url: '/fonts/BMDOHYEON.woff', provider: 'local' },
+    { id: 'aggro', name: '어그로체', family: 'SBAggroB', url: '/fonts/SBAggroB.woff', provider: 'local' },
+    { id: 'monsori', name: '티몬 몬소리체', family: 'TmonMonsori', url: '/fonts/TmonMonsori.woff', provider: 'local' },
+    { id: 'cookierun', name: '쿠키런', family: 'CookieRun-Regular', url: '/fonts/CookieRun-Regular.woff', provider: 'local' },
+    { id: 'yangjin', name: '양진체', family: 'Yangjin', url: '/fonts/Yangjin.woff', provider: 'local' },
+    { id: 'bazzi', name: '배찌체', family: 'Bazzi', url: '/fonts/Bazzi.woff', provider: 'local' },
+    { id: 'binggrae', name: '빙그레체', family: 'Binggrae', url: '/fonts/Binggrae.woff', provider: 'local' },
+    { id: 'hahmlet', name: '함렛', family: 'Hahmlet-Regular', url: '/fonts/Hahmlet-Regular.woff2', provider: 'local' },
+    { id: 'gyeonggi-title', name: '경기천년제목', family: 'GyeonggiTitleM', url: '/fonts/GyeonggiTitleM.woff', provider: 'local' },
+    { id: 'suite', name: 'SUITE (스위트)', family: 'SUITE-Bold', url: '/fonts/SUITE-Bold.woff2', provider: 'local' },
+    { id: 'surround', name: '카페24 써라운드', family: 'Cafe24Ssurround', url: '/fonts/Cafe24Ssurround.woff', provider: 'local' },
+    { id: 'katuri', name: '안동엄마까투리체', family: 'Katuri', url: '/fonts/Katuri.woff', provider: 'local' },
+    { id: 'nanumsquare', name: '나눔스퀘어', family: 'NanumSquare', url: '/fonts/nanumsquare.css', provider: 'local' },
     { id: 'notosans', name: '본고딕 (Noto Sans KR)', family: 'Noto Sans KR', url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap', provider: 'google' },
-    { id: 'yangjin', name: '양진체', family: 'Yangjin', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2206-02@1.0/Yangjin.woff2', provider: 'noonnu' },
-    { id: 'nanumsquare', name: '나눔스퀘어', family: 'NanumSquare', url: 'https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@1.0/nanumsquare.css', provider: 'noonnu' },
-    { id: 'cookierun', name: '쿠키런', family: 'CookieRun-Regular', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/CookieRun-Regular.woff', provider: 'noonnu' },
-    { id: 'pretendard', name: 'Pretendard (기본)', family: 'Pretendard-Regular', url: 'https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff', provider: 'noonnu' },
-    
-    // 추가 폰트 리스트 (대표적인 서체들 우선 매핑)
-    { id: 'kopub', name: 'KoPub돋움', family: 'KoPubDotumMedium', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/KoPubDotumMedium.woff', provider: 'noonnu' },
     { id: 'nanum-gothic', name: '나눔고딕', family: 'NanumGothic', url: 'https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap', provider: 'google' },
     { id: 'nanum-myeongjo', name: '나눔명조', family: 'Nanum Myeongjo', url: 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap', provider: 'google' },
-    { id: 'the-jamsil', name: '더잠실체', family: 'TheJamsil5Bold', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/TheJamsil5Bold.woff2', provider: 'noonnu' },
-    { id: 'neo-dunggeunmo', name: 'Neo둥근모', family: 'NeoDunggeunmo', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/NeoDunggeunmo.woff', provider: 'noonnu' },
-    { id: 'cafe24-surround', name: '카페24 써라운드', family: 'Cafe24Ssurround', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Cafe24Ssurround.woff', provider: 'noonnu' },
-    { id: 'isa-manru', name: '이사만루', family: 'LeeSeoyun', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff2', provider: 'noonnu' },
-    { id: 'kcc-hanbit', name: 'KCC한빛체', family: 'KCC-Hanbit', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/KCC-Hanbit.woff2', provider: 'noonnu' },
-    { id: 'binggrae', name: '빙그레체', family: 'Binggrae', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Binggrae.woff', provider: 'noonnu' },
-    { id: 'yanolja', name: '야놀자야체', family: 'YanoljaYacheR', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/YanoljaYacheR.woff', provider: 'noonnu' },
-    { id: 'hanna', name: '한나체', family: 'BMHANNAAir', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_four@1.0/BMHANNAAir.woff', provider: 'noonnu' },
-    { id: 'laundry', name: '런드리고딕', family: 'LaundryGothic', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/LaundryGothic.woff2', provider: 'noonnu' },
-    { id: 'giants', name: '자이언츠체', family: 'Giants-Bold', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/Giants-Bold.woff2', provider: 'noonnu' },
-    { id: 'pocheon', name: '포천막걸리체', family: 'Pocheon_Makgeolli', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Pocheon_Makgeolli.woff', provider: 'noonnu' },
-    { id: 'misang', name: '미생체', family: 'Misaeng', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Misaeng.woff', provider: 'noonnu' },
-    { id: 'ebs', name: 'EBS훈민정음', family: 'EBSHunminjeongum', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/EBSHunminjeongum.woff', provider: 'noonnu' },
-    { id: 'seoul-hangang', name: '서울한강체', family: 'SeoulHangangM', url: 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulHangangM.woff', provider: 'noonnu' },
+    { id: 'dongle', name: '동글 (Dongle)', family: 'Dongle', url: 'https://fonts.googleapis.com/css2?family=Dongle&display=swap', provider: 'google' },
+    { id: 'sunflower', name: '해바라기체', family: 'Sunflower', url: 'https://fonts.googleapis.com/css2?family=Sunflower&display=swap', provider: 'google' },
+    { id: 'gaegu', name: '개구체', family: 'Gaegu', url: 'https://fonts.googleapis.com/css2?family=Gaegu&display=swap', provider: 'google' },
+    { id: 'yeonsung', name: '연성체', family: 'Yeon Sung', url: 'https://fonts.googleapis.com/css2?family=Yeon+Sung&display=swap', provider: 'google' },
+    { id: 'kirang', name: '기랑해랑', family: 'Kirang Haerang', url: 'https://fonts.googleapis.com/css2?family=Kirang+Haerang&display=swap', provider: 'google' },
+    { id: 'poorstory', name: '푸른밤 (Poor Story)', family: 'Poor Story', url: 'https://fonts.googleapis.com/css2?family=Poor+Story&display=swap', provider: 'google' },
+    { id: 'gamjaflower', name: '감자꽃체', family: 'Gamja Flower', url: 'https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap', provider: 'google' },
+    { id: 'songmyung', name: '송명', family: 'Song Myung', url: 'https://fonts.googleapis.com/css2?family=Song+Myung&display=swap', provider: 'google' },
+    { id: 'eastseadokdo', name: '독도체', family: 'East Sea Dokdo', url: 'https://fonts.googleapis.com/css2?family=East+Sea+Dokdo&display=swap', provider: 'google' },
 ];
 
 export const getFontFamily = (name: string): string => {

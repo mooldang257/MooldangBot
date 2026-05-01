@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { page } from "$app/stores";
     import { fade, fly } from "svelte/transition";
     import { Zap, Clock, AlertTriangle, RefreshCw } from "lucide-svelte"; // 아이콘 추가
     import ConfirmModal from "$lib/core/ui/ConfirmModal.svelte";
@@ -13,24 +14,24 @@
 
     import { apiFetch } from "$lib/api/client";
 
-    let isLoaded = false;
-    let chzzkUid = "";
-    let activeTab: "commands" | "periodic" = "commands";
+    let isLoaded = $state(false);
+    let chzzkUid = $state("");
+    let activeTab = $state<"commands" | "periodic">("commands");
     const tabs = ["commands", "periodic"] as const;
 
-    let skipDeleteConfirm = false;
-    let showDeleteModal = false;
-    let deleteTargetId: number | null = null;
-    let deleteTargetKeyword = "";
+    let skipDeleteConfirm = $state(false);
+    let showDeleteModal = $state(false);
+    let deleteTargetId = $state<number | null>(null);
+    let deleteTargetKeyword = $state("");
 
     // [방어막]: 초기 데이터 구조는 유지하되, 로드 성공 여부를 체크할 변수 추가
-    let masterData = { categories: [], features: [], roles: [], variables: [] };
-    let isMasterDataValid = false;
+    let masterData = $state({ categories: [], features: [], roles: [], variables: [] });
+    let isMasterDataValid = $state(false);
 
-    let allCommands: any[] = [];
-    let periodicMessages: any[] = [];
+    let allCommands = $state<any[]>([]);
+    let periodicMessages = $state<any[]>([]);
 
-    let cmdForm = {
+    let cmdForm = $state({
         id: 0,
         keyword: "",
         category: "General",
@@ -40,11 +41,11 @@
         responseText: "",
         requiredRole: "Viewer",
         isActive: true,
-    };
+    });
 
     async function loadMasterData() {
         try {
-            const res = await apiFetch<any>(`/api/command/${chzzkUid}/master`);
+            const res = await apiFetch<any>(`/api/admin/command/${chzzkUid}/master`);
             const raw = res || {};
 
             // [물멍]: 실제 API 조사 결과(camelCase)를 바탕으로 데이터 규격을 100% 동기화합니다.
@@ -66,7 +67,7 @@
     async function loadCommands() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/command/${chzzkUid}?limit=100`);
+            const data = await apiFetch<any>(`/api/admin/command/${chzzkUid}?limit=100`);
             const items = data.items || data.Items || [];
             
             allCommands = items.map((c: any) => ({
@@ -88,7 +89,7 @@
     async function loadPeriodicMessages() {
         if (!chzzkUid) return;
         try {
-            const data = await apiFetch<any>(`/api/periodic-message/${chzzkUid}`);
+            const data = await apiFetch<any>(`/api/admin/periodic-message/${chzzkUid}`);
             periodicMessages = data || [];
         } catch (e) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
@@ -97,8 +98,7 @@
 
     onMount(async () => {
         try {
-            const profile = await apiFetch<any>("/api/auth/me");
-            const targetUid = profile.chzzkUid || profile.ChzzkUid;
+            const targetUid = $page.params.streamerId;
 
             if (targetUid) {
                 chzzkUid = targetUid;
@@ -108,11 +108,8 @@
                     loadPeriodicMessages()
                 ]);
 
-                await apiFetch<any>("/api/Preference/temporary/skipDeleteConfirm")
-                    .then((data) => {
-                        if (data.value === "true") skipDeleteConfirm = true;
-                    })
-                    .catch(() => {});
+                // [물멍]: 어드민 설정으로 대체하거나 일단 기본값 유지
+                skipDeleteConfirm = false;
             }
         } catch (e: any) {
             console.error("[물멍] 물댕봇 데스크 동기화 실패:", e);
@@ -147,7 +144,7 @@
 
     async function executeDelete(id: number) {
         try {
-            await apiFetch(`/api/command/${chzzkUid}/${id}`, {
+            await apiFetch(`/api/admin/command/${chzzkUid}/${id}`, {
                 method: "DELETE",
             });
             allCommands = allCommands.filter((c) => c.id !== id);

@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* [오시리스의 서체]: 하이브리드(로컬 17종 + 구글 13종) 마스터 리스트 */
+@import url('/fonts/nanumsquare.css');
+@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@100..900&family=Nanum+Gothic&family=Nanum+Myeongjo&family=Dongle&family=Sunflower:wght@300;500;700&family=Gaegu&family=Yeon+Sung&family=Kirang+Haerang&family=Poor+Story&family=Gamja+Flower&family=Song+Myung&family=East+Sea+Dokdo&display=swap');
+
+@font-face { font-family: 'Pretendard-Regular'; src: url('/fonts/Pretendard-Regular.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'S-CoreDream-6Bold'; src: url('/fonts/S-CoreDream-6Bold.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'GmarketSansMedium'; src: url('/fonts/GmarketSansMedium.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'BMJUA'; src: url('/fonts/BMJUA.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'BMDOHYEON'; src: url('/fonts/BMDOHYEON.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'SBAggroB'; src: url('/fonts/SBAggroB.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'TmonMonsori'; src: url('/fonts/TmonMonsori.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'CookieRun-Regular'; src: url('/fonts/CookieRun-Regular.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'Yangjin'; src: url('/fonts/Yangjin.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'Bazzi'; src: url('/fonts/Bazzi.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'Binggrae'; src: url('/fonts/Binggrae.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'Hahmlet-Regular'; src: url('/fonts/Hahmlet-Regular.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'GyeonggiTitleM'; src: url('/fonts/GyeonggiTitleM.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'SUITE-Bold'; src: url('/fonts/SUITE-Bold.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Cafe24Ssurround'; src: url('/fonts/Cafe24Ssurround.woff') format('woff'); font-display: swap; }
+@font-face { font-family: 'Katuri'; src: url('/fonts/Katuri.woff') format('woff'); font-display: swap; }
+
+
 @theme {
   --color-primary: #0093E9;
   --color-secondary: #80D0C7;
@@ -9,7 +31,7 @@
   --color-sky-blue: #87CEEB;
   --color-coral: #FF7F50;
 
-  --font-sans: "Pretendard", "-apple-system", "BlinkMacSystemFont", "system-ui", "Roboto", "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "sans-serif";
+  --font-sans: "Pretendard", "Pretendard-Regular", "-apple-system", "BlinkMacSystemFont", "system-ui", "Roboto", "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "sans-serif";
 }
 
 @layer base {

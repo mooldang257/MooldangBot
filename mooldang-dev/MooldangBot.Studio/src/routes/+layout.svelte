@@ -7,13 +7,14 @@
     import ConfirmModal from '$lib/core/ui/ConfirmModal.svelte';
     import Footer from '$lib/core/ui/Footer.svelte';
     import { apiFetch } from '$lib/api/client';
+    import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
 
     // [물멍]: Svelte 5 표준에 맞춰 props 수신 구조 변경
     let { data, children } = $props();
 
     import { page } from '$app/stores';
 
-    // [Osiris]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
+    // [물멍]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
     $effect(() => {
         if (data && data.userData) {
             userState.set(data.userData);
@@ -98,6 +99,36 @@
 
 <svelte:head>
     <link rel="stylesheet" as="style" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <!-- SEO 기본 설정 -->
+    <meta name="description" content="치지직 스트리머를 위한 가장 똑똑하고 아름다운 도우미, 물댕봇. 노래책, 포인트 시스템, 룰렛 등 방송에 필요한 모든 기능을 제공합니다." />
+    <meta name="keywords" content="물댕봇, 치지직, 스트리머, 노래책, 포인트, 룰렛, 방송 도우미, 치지직 봇" />
+    <link rel="canonical" href="https://bot.mooldang.com" />
+
+    <!-- Open Graph (SNS 공유 시 노출 정보) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="물댕봇 - 치지직 스트리머를 위한 정중한 개인 비서" />
+    <meta property="og:description" content="치지직 스트리머를 위한 똑똑한 도우미. 노래책부터 오버레이까지 한 번에 관리하세요." />
+    <meta property="og:image" content="https://bot.mooldang.com/images/wman_sd_transparent.png" />
+    <meta property="og:url" content="https://bot.mooldang.com" />
+    <meta property="og:site_name" content="물댕봇 (MooldangBot)" />
+
+    {#if data.isDev}
+        <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    {:else}
+        <meta name="robots" content="index, follow" />
+    {/if}
+
+    <!-- [물멍]: 모든 커스텀 폰트 로드 (스튜디오 내 미리보기용) -->
+    {#each MOOLDANG_FONTS as font}
+        {#if font.url}
+            {#if font.provider === 'google'}
+                <link rel="stylesheet" href={font.url} />
+            {:else}
+                {@html `<style>@font-face { font-family: '${font.family}'; src: url('${font.url}'); font-display: swap; }</style>`}
+            {/if}
+        {/if}
+    {/each}
 </svelte:head>
 
 <div class="app-container min-h-screen flex flex-col font-sans selection:bg-primary/20 relative">
@@ -193,7 +224,7 @@
                 transition:scale={{ duration: 500, start: 0.9, opacity: 0 }}
             >
                 <div class="text-center mb-8 md:mb-16">
-                    <h2 class="text-2xl md:text-4xl font-[1000] text-slate-800 tracking-tighter mb-2">어떻게 입장할까요?</h2>
+                    <h2 class="text-2xl md:text-4xl font-[1000] text-slate-800 tracking-tighter mb-2">어떤 분으로 모실까요?</h2>
                     <p class="text-xs md:text-base text-slate-500 font-semibold tracking-tight">로그인할 역할을 선택해 주세요.</p>
                 </div>
 
@@ -233,7 +264,7 @@
         <div class="absolute inset-0 radial-mesh"></div>
     </div>
 
-    <!-- [Osiris]: 프리미엄 확인 모달 (브라우저 confirm 대체) -->
+    <!-- [물멍]: 확인 모달 (브라우저 confirm 대체) -->
     <ConfirmModal />
 
     <Footer />

@@ -1,3 +1,4 @@
+using MooldangBot.Domain.Contracts.Chzzk;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Models;

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Infrastructure.Services;
@@ -7,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 
 using MooldangBot.Domain.Common;
+using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Api.Controllers.Admin;
 
@@ -15,6 +17,7 @@ namespace MooldangBot.Api.Controllers.Admin;
 /// </summary>
 [ApiController]
 [Route("api/admin/system-health")]
+[Authorize(Roles = "master")]
 public class AdminStatusController(
     IChzzkChatClient chatClient,
     ITokenRenewalService renewalService,
@@ -31,7 +34,7 @@ public class AdminStatusController(
         // 가상 데이터: 실제 진동수 수집 로직 연동 가능
         var avgVibration = 10.01; 
         
-        return Ok(new
+        return Ok(Result<object>.Success(new
         {
             TotalActiveBots = chatClient.GetActiveConnectionCount(),
             MemoryUsage = $"{memoryMb} MB",
@@ -39,7 +42,7 @@ public class AdminStatusController(
             Uptime = (KstClock.Now - process.StartTime).ToString(@"dd\.hh\:mm\:ss"),
             AvgVibration = $"{avgVibration:F2} Hz",
             Timestamp = KstClock.Now.ToString("O")
-        });
+        }));
     }
 
     /// <summary>

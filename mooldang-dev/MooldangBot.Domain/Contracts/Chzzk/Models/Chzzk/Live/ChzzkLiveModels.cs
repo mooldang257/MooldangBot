@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;
 
-// [오시리스??以묎퀎]: ?쇱씠釉?諛⑹넚 ?곸꽭 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 중계]: 라이브 방송 상세 정보를 담는 모델입니다.
 public class LiveListDetail
 {
     [JsonPropertyName("liveId")]
@@ -46,14 +46,14 @@ public class LiveListDetail
     public string? ChannelImageUrl { get; set; }
 }
 
-// [오시리스??전송]: ?ㅽ듃由????뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 전송]: 스트림키 정보를 담는 모델입니다.
 public class StreamKeyResponse
 {
     [JsonPropertyName("streamKey")]
     public string StreamKey { get; set; } = string.Empty;
 }
 
-// [오시리스??二쇱젣]: ?쇱씠釉?移댄뀒怨좊━ ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 주제]: 라이브 카테고리 정보를 담는 모델입니다.
 public class LiveCategoryInfo
 {
     [JsonPropertyName("categoryType")]
@@ -69,7 +69,7 @@ public class LiveCategoryInfo
     public string? PosterImageUrl { get; set; }
 }
 
-// [오시리스??설정]: 諛⑹넚 설정 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 설정]: 방송 설정 정보를 담는 모델입니다.
 public class LiveSettingResponse
 {
     [JsonPropertyName("defaultLiveTitle")]
@@ -82,7 +82,7 @@ public class LiveSettingResponse
     public List<string> Tags { get; set; } = new();
 }
 
-// [오시리스??媛깆떊]: 諛⑹넚 설정 ?낅뜲?댄듃 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 갱신]: 방송 설정 업데이트 요청 모델입니다.
 public class UpdateLiveSettingRequest
 {
     [JsonPropertyName("defaultLiveTitle")]

@@ -1,4 +1,5 @@
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using Microsoft.Extensions.Logging;

@@ -28,7 +28,7 @@
             // [오시리스의 맥박]: 백엔드 API로부터 시스템 상태 수집
             // Note: 실제 환경에서는 환경 변수 또는 프록시 설정을 통해 URL 관리
             const response = await fetch(
-                "http://localhost:5161/api/admin/system-health/pulse",
+                "/api/admin/system-health/pulse",
             );
             if (!response.ok) throw new Error("함선 응답 없음");
             report = await response.json();

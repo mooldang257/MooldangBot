@@ -5,7 +5,7 @@
         ToggleLeft, ToggleRight, Coins, Ticket, Image as ImageIcon, UploadCloud, Smile
     } from 'lucide-svelte';
 
-    // [Osiris]: 부모로부터 전달받는 명령어 상태 (Svelte 5)
+    // [물멍]: 부모로부터 전달받는 명령어 상태 (Svelte 5)
     let { 
         commands = $bindable([]),
         onSync // [NEW]: DB 동기화를 위한 콜백 프롭
@@ -113,7 +113,14 @@
     };
 
     const handleAdd = () => {
-        if (!newCommand.trigger || !newCommand.name) return;
+        if (!newCommand.trigger) {
+            alert("명령어(예: !신청)를 입력해주세요.");
+            return;
+        }
+        if (!newCommand.name) {
+            alert("화면에 표시될 이름을 입력해주세요.");
+            return;
+        }
         
         const id = Date.now();
         const iconToSave = newCommand.icon || (newCommand.type === 'omakase' ? '🍣' : '🎵');
@@ -152,8 +159,8 @@
                 <Terminal size={24} />
             </div>
             <div>
-                <h2 class="text-xl font-[1000] text-slate-800 tracking-tighter">신청 명령어 관리</h2>
-                <p class="text-xs font-bold text-amber-600/70">곡 신청 및 오마카세 명령어를 정비합니다. (아이콘 커스텀 가능)</p>
+                <h2 class="text-xl font-[1000] text-slate-800 tracking-tighter">곡 신청 명령어 설정</h2>
+                <p class="text-xs font-bold text-amber-600/70">방송에서 사용할 신청곡 명령어와 아이콘을 설정할 수 있습니다.</p>
             </div>
         </div>
 
@@ -222,7 +229,7 @@
                         </div>
                     </div>
                 </div>
-                <button onclick={handleAdd} class="w-full py-4 bg-amber-500 text-white rounded-2xl font-[1000] text-sm shadow-lg hover:bg-amber-600 transition-all">신규 신청 명령어 무기고에 저장</button>
+                <button onclick={handleAdd} class="w-full py-4 bg-amber-500 text-white rounded-2xl font-[1000] text-sm shadow-lg hover:bg-amber-600 transition-all">새로운 명령어 규칙 추가하기</button>
             </div>
         {/if}
 

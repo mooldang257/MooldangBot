@@ -133,10 +133,14 @@
         initSignalR();
 
         try {
-            const profile: any = await apiFetch('/api/auth/me');
-            if (profile.slug) {
-                currentSlug = profile.slug;
-                newSlug = profile.slug;
+            // [v3.9] 관리자가 타겟 스트리머를 관제할 때, 본인이 아닌 타겟의 정보를 가져오도록 수정
+            const res = await apiFetch<any>(`/api/admin/streamers/${streamerId}`);
+            if (res && res.slug) {
+                currentSlug = res.slug;
+                newSlug = res.slug;
+            } else {
+                currentSlug = streamerId;
+                newSlug = streamerId;
             }
         } catch (e) {}
 
@@ -292,7 +296,7 @@
                         </div>
 
                         <button 
-                            on:click={updateSlug}
+                            onclick={updateSlug}
                             disabled={isSavingSlug || !newSlug}
                             class="w-full py-4 bg-slate-900 text-white rounded-2xl text-xs font-[1000] shadow-lg shadow-slate-900/10 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >

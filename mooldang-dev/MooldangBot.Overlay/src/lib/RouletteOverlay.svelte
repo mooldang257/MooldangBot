@@ -6,6 +6,7 @@
         rouletteQueue: any[];
         connection: any;
         popQueue: () => void;
+        settings?: any;
     }
 
     let props: Props = $props();
@@ -15,6 +16,14 @@
     let gridItems: HTMLDivElement[] = $state([]);
     let particleContainer: HTMLDivElement | null = $state(null);
     let ctx: gsap.Context | null = $state(null);
+
+    // [물멍]: 룰렛 영역 전용 설정 참조
+    let rouletteSettings = $derived(props.settings?.Roulette || {
+        Font: props.settings?.rouletteFont,
+        TitleColor: props.settings?.rouletteTitleColor,
+        CardBgColor: props.settings?.rouletteCardBgColor,
+        CardBgOpacity: props.settings?.rouletteCardBgOpacity
+    });
 
     // [상태 제어]: 지휘관 설계안(아쿠아틱 메이크오버) 반영
     let activeSpin: any = $state(null);
@@ -308,7 +317,7 @@
 </script>
 
 {#if activeSpin}
-<div bind:this={containerRef} class="overlay-container" style="opacity: 0">
+<div bind:this={containerRef} class="overlay-container" style="opacity: 0; --roulette-font: {rouletteSettings.Font || "'Pretendard', sans-serif"}">
     <!-- 심해 필터 효과 -->
     <div class="deep-sea-gradient"></div>
     
@@ -336,7 +345,7 @@
                     class:is-mission={highlightedResult.isMission}
                 >
                     <div class="card-glow" style="background: {highlightedResult.color}aa"></div>
-                    <div class="card-glass-body" style="background: {highlightedResult.color}; color: {contrastColor}">
+                    <div class="card-glass-body" style="background: {rouletteSettings.CardBgColor || highlightedResult.color}; opacity: {rouletteSettings.CardBgOpacity ?? 1}; color: {contrastColor}">
                         <div class="card-header">
                             <div class="studio-badge" style="background: {contrastColor}; color: {highlightedResult.color}">STUDIO EDITION</div>
                             <div class="viewer-tag" style="color: {contrastColor}; opacity: 0.8">@{activeSpin.viewerNickname}</div>
@@ -344,9 +353,9 @@
 
                         <div class="result-box">
                             <span class="roulette-title" style="color: {contrastColor}; opacity: 0.6">{activeSpin.rouletteName}</span>
-                            <h2 class="result-text" style="color: {contrastColor}">{highlightedResult.itemName}</h2>
+                            <h2 class="result-text" style="color: {rouletteSettings.TitleColor || contrastColor}">{highlightedResult.itemName}</h2>
                             {#if highlightedResult.isMission}
-                                <div class="mission-badge" style="border: 2px solid {contrastColor}; color: {contrastColor}">MISSION!!</div>
+                                <div class="mission-badge" style="border: 2px solid {rouletteSettings.TitleColor || contrastColor}; color: {rouletteSettings.TitleColor || contrastColor}">MISSION!!</div>
                             {/if}
                         </div>
 
@@ -394,7 +403,8 @@
     .overlay-container {
         position: absolute; inset: 0; display: flex; flex-direction: column; 
         justify-content: center; align-items: center;
-        z-index: 1000; pointer-events: none; font-family: 'Pretendard', sans-serif;
+        z-index: 1000; pointer-events: none; 
+        font-family: var(--roulette-font, 'Pretendard', sans-serif);
         width: 100%; height: 100%; overflow: hidden;
     }
 

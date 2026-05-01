@@ -3,7 +3,7 @@
     import { fade, fly } from 'svelte/transition';
     import { Music, Radio, Waves, Play, Pause, ListMusic, Languages, RotateCcw, RotateCw, Subtitles, Volume2, VolumeX, ExternalLink } from 'lucide-svelte';
 
-    // [Osiris]: 현재 재생 중인 곡 상태 공유
+    // [물멍]: 현재 재생 중인 곡 상태 공유
     let { 
         currentSong = $bindable(null), 
         onComplete = (song: any) => {} 

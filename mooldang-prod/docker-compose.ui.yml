@@ -51,11 +51,12 @@ services:
     environment:
       - NODE_ENV=production
       - ORIGIN=https://${BASE_DOMAIN}
+      - INTERNAL_API_URL=http://app:8080
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=Host(`bot.mooldang.com`) && PathPrefix(`/admin`)"
       - "traefik.http.routers.admin.entrypoints=web"
-      - "traefik.http.routers.admin.middlewares=admin-strip@file,traefik-auth@file,cloudflare-real-ip@file"
+      - "traefik.http.routers.admin.middlewares=traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.admin.loadbalancer.server.port=3000"
       - "traefik.env=prod"
     networks:

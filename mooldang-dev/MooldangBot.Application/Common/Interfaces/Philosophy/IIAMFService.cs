@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using MooldangBot.Domain.Entities.Philosophy;
-using MooldangBot.Domain.Contracts.AI.Models;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Application.Common.Interfaces.Philosophy;
 

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
-using MooldangBot.Domain.Models.Chzzk;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common.Security;
 
 namespace MooldangBot.Infrastructure.Services.Engines

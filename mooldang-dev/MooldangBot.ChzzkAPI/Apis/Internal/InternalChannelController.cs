@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;

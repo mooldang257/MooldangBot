@@ -1,5 +1,6 @@
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Abstractions;
 
@@ -9,6 +10,7 @@ namespace MooldangBot.Domain.Abstractions;
 /// </summary>
 public interface IUnifiedCommandService
 {
+    Task<CursorPagedResponse<UnifiedCommandDto>> GetPagedCommandsAsync(string chzzkUid, CursorPagedRequest request);
     Task<UnifiedCommand> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req);
     Task DeleteCommandAsync(string chzzkUid, int id);
     Task ToggleCommandAsync(string chzzkUid, int id);

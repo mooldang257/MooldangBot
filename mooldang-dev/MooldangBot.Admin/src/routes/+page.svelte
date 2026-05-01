@@ -2,23 +2,53 @@
     import { onMount } from 'svelte';
     import { fade, fly } from 'svelte/transition';
     import { gsap } from 'gsap';
+    import { page } from '$app/stores';
 
-    // [v2.4] 함대 사령부 관제 지표 데이터
-    const fleetStats = [
-        { label: '활성 함선 (Streamers)', value: '1,248', unit: 'Ch', icon: '🛳️', trend: '+12%' },
-        { label: '통신 엔진 (Active Shards)', value: '16', unit: 'Units', icon: '⚡', trend: 'Stable' },
-        { label: '메시지 관류량 (Throughput)', value: '1.2k', unit: 'msg/s', icon: '📡', trend: '+5.4%' },
-        { label: '시스템 부하 (CPU/RAM)', value: '14/32', unit: 'GB', icon: '🧠', trend: 'Optimal' }
-    ];
+    // [v3.9] 현재 URL에서 /admin 또는 /manager 같은 접두사를 동적으로 추출합니다.
+    const prefix = $derived($page.url.pathname.replace(/\/$/, ''));
 
-    const adminActions = [
-        { title: '함선 목록 관리', desc: '모든 스트리머(함선) 현황 및 개별 제어', url: '/admin/streamers', icon: '🛳️', highlight: true },
-        { title: '함대 관제 대시보드', desc: 'Prometheus & Grafana 실시간 지표', url: '/admin/monitoring', icon: '📊' },
-        { title: '중앙 집중 로그 탐색', desc: 'Loki 엔지니어를 통한 전적 항적 추적', url: '/admin/monitoring/explore', icon: '🔍' },
+    let { data } = $props<{ data: any }>();
+
+    // [v2.4] 함대 사령부 관제 지표 데이터 - 실시간 데이터 연동
+    const fleetStats = $derived([
+        { 
+            label: '활성 함선 (Streamers)', 
+            value: data.stats?.totalActiveBots?.toLocaleString() ?? '0', 
+            unit: 'Ch', 
+            icon: '🛳️', 
+            trend: 'Live' 
+        },
+        { 
+            label: '통신 엔진 (Active Shards)', 
+            value: data.stats?.totalActiveBots?.toString() ?? '0', 
+            unit: 'Units', 
+            icon: '⚡', 
+            trend: 'Stable' 
+        },
+        { 
+            label: '메모리 사용량', 
+            value: data.stats?.memoryUsage?.split(' ')[0] ?? '0', 
+            unit: 'MB', 
+            icon: '🧠', 
+            trend: 'Normal' 
+        },
+        { 
+            label: '업타임', 
+            value: data.stats?.uptime?.split('.')[0] ?? '0', 
+            unit: 'Days', 
+            icon: '⏱️', 
+            trend: data.stats?.isCircuitOpen ? 'Warning' : 'Healthy' 
+        }
+    ]);
+
+    const adminActions = $derived([
+        { title: '함선 목록 관리', desc: '모든 스트리머(함선) 현황 및 개별 제어', url: `${prefix}/streamers`, icon: '🛳️', highlight: true },
+        { title: '함대 관제 대시보드', desc: 'Prometheus & Grafana 실시간 지표', url: `${prefix}/monitoring`, icon: '📊' },
+        { title: '중앙 집중 로그 탐색', desc: 'Loki 엔지니어를 통한 전적 항적 추적', url: `${prefix}/monitoring/explore`, icon: '🔍' },
         { title: '통합 어드민 설정', desc: '함대 전역 정책 및 차단 관리', url: '#', icon: '⚙️' }
-    ];
+    ]);
 
-    let isLoaded = false;
+    let isLoaded = $state(false);
 
     onMount(() => {
         isLoaded = true;
@@ -35,26 +65,26 @@
 </script>
 
 <svelte:head>
-    <title>물댕 함대 사령부 - Admiral Control Center</title>
+    <title>물댕봇 통합 관리 센터</title>
 </svelte:head>
 
 <div class="w-full max-w-7xl mx-auto px-6 py-12 md:py-20">
   
   {#if isLoaded}
-    <!-- [사령부 헤더] -->
+    <!-- [관리 센터 헤더] -->
     <header class="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-white/20 pb-8" in:fade>
       <div class="space-y-2">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase mb-2">
             <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            Fleet Operational
+            System Operational
         </div>
-        <h1 class="text-4xl md:text-6xl font-[1000] tracking-tight text-slate-800">艦隊 司令部</h1>
-        <p class="text-slate-500 font-medium">물멍봇 함대 전체를 관제하고 통제하는 최상위 브릿지입니다.</p>
+        <h1 class="text-4xl md:text-6xl font-[1000] tracking-tight text-slate-800">물댕봇 관리</h1>
+        <p class="text-slate-500 font-medium text-lg md:text-xl">물댕봇 서비스의 전체 현황을 관제하고 제어하는 통합 관리 센터입니다.</p>
       </div>
       
       <div class="hidden md:block text-right">
-        <div class="text-sm font-mono text-slate-400">COMMANDER PERSPECTIVE</div>
-        <div class="text-2xl font-[900] text-primary">ADMIRAL MOOLDANG</div>
+        <div class="text-sm font-mono text-slate-400">ADMINISTRATOR MODE</div>
+        <div class="text-2xl font-[900] text-primary">MOOLDANG CONTROL</div>
       </div>
     </header>
 

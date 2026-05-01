@@ -14,6 +14,7 @@ public static class DependencyInjection
         // 1. Core Services (Multicasting Engine)
         services.AddSingleton<ICommandCache, CommandCacheService>();
         services.AddScoped<IUnifiedCommandService, UnifiedCommandService>();
+        services.AddScoped<IPeriodicMessageService, PeriodicMessageService>();
         services.AddSingleton<CommandArgumentParser>();
         services.AddScoped<ICommandResponseAggregator, CommandResponseAggregator>();
 

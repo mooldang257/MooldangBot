@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Modules.SongBook.Abstractions;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;

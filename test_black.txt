@@ -1,0 +1,92 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host dev.mooldang.com:443 was resolved.
+* IPv6: 2606:4700:3036::ac43:8285, 2606:4700:3037::6815:359
+* IPv4: 172.67.130.133, 104.21.3.89
+*   Trying 172.67.130.133:443...
+* Connected to dev.mooldang.com (172.67.130.133) port 443
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+*  CAfile: /etc/ssl/certs/ca-certificates.crt
+*  CApath: /etc/ssl/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2052 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [80 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=mooldang.com
+*  start date: Apr 25 13:16:54 2026 GMT
+*  expire date: Jul 24 13:16:53 2026 GMT
+*  subjectAltName: host "dev.mooldang.com" matched cert's "*.mooldang.com"
+*  issuer: C=US; O=Let's Encrypt; CN=E8
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+*   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (4096/152 Bits/secBits), signed using sha256WithRSAEncryption
+} [5 bytes data]
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://dev.mooldang.com/fonts/BlackHanSans.ttf
+* [HTTP/2] [1] [:method: HEAD]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: dev.mooldang.com]
+* [HTTP/2] [1] [:path: /fonts/BlackHanSans.ttf]
+* [HTTP/2] [1] [user-agent: curl/8.5.0]
+* [HTTP/2] [1] [accept: */*]
+} [5 bytes data]
+> HEAD /fonts/BlackHanSans.ttf HTTP/2
+> Host: dev.mooldang.com
+> User-Agent: curl/8.5.0
+> Accept: */*
+> 
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* old SSL session ID is stale, removing
+{ [5 bytes data]
+< HTTP/2 404 
+< date: Fri, 01 May 2026 13:48:19 GMT
+< content-type: text/plain; charset=utf-8
+< content-length: 19
+< x-content-type-options: nosniff
+< age: 12
+< cache-control: max-age=14400
+< cf-cache-status: HIT
+< report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=gPTd%2FJ%2BRj9mf7LU6W5oeE66Wj0Ez0o9R20%2B3eki1%2BXiPsMkXmT5FLjsL%2FL2CyG0KvwK556hPdKz2%2FsZQVKWHO1HtrQYFUmPHthe7JzSc9W4be8U3mVoFwMjuBUSR5kw85Fh4"}]}
+< nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+< server: cloudflare
+< cf-ray: 9f4f3e3c7f850856-HKG
+< alt-svc: h3=":443"; ma=86400
+< 
+  0    19    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host dev.mooldang.com left intact
+HTTP/2 404 
+date: Fri, 01 May 2026 13:48:19 GMT
+content-type: text/plain; charset=utf-8
+content-length: 19
+x-content-type-options: nosniff
+age: 12
+cache-control: max-age=14400
+cf-cache-status: HIT
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=gPTd%2FJ%2BRj9mf7LU6W5oeE66Wj0Ez0o9R20%2B3eki1%2BXiPsMkXmT5FLjsL%2FL2CyG0KvwK556hPdKz2%2FsZQVKWHO1HtrQYFUmPHthe7JzSc9W4be8U3mVoFwMjuBUSR5kw85Fh4"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: 9f4f3e3c7f850856-HKG
+alt-svc: h3=":443"; ma=86400
+

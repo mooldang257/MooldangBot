@@ -2,13 +2,16 @@ using MooldangBot.Domain.Abstractions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using MooldangBot.Domain.Contracts.Chzzk;
-using MooldangBot.Domain.Models.Chzzk;
+using MooldangBot.Domain.DTOs;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.Contracts.Hubs;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.Contracts.Chzzk;
+
+using MooldangBot.Domain.DTOs;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -78,16 +81,7 @@ namespace MooldangBot.Application.Services
                 .OrderByDescending(s => s.UpdatedAt)
                 .FirstOrDefaultAsync(token);
 
-            // 3. 대기열 곡 조회 (상위 5개)
-            var queueSongs = await db.FuncSongQueues
-                .AsNoTracking()
-                .Include(s => s.GlobalViewer)
-                .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)
-                .OrderBy(s => s.SortOrder).ThenBy(s => s.Id)
-                .Take(5)
-                .ToListAsync(token);
-
-            // 4. 설정 파싱 (디자인 설정)
+            // 3. 설정 파싱 (디자인 설정) - MaxQueueCount 등을 위해 대기열 조회 전에 수행
             var settings = new SongOverlaySettings();
             if (!string.IsNullOrEmpty(profile.DesignSettingsJson))
             {
@@ -95,6 +89,24 @@ namespace MooldangBot.Application.Services
                     var parsed = JsonSerializer.Deserialize(profile.DesignSettingsJson, ChzzkJsonContext.Default.SongOverlaySettings);
                     if (parsed != null) settings = parsed;
                 } catch { /* 기본값 유지 */ }
+            }
+
+            // 4. 대기열 곡 조회 (인라인 테마는 개수 제한 없음)
+            var query = db.FuncSongQueues
+                .AsNoTracking()
+                .Include(s => s.GlobalViewer)
+                .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)
+                .OrderBy(s => s.SortOrder).ThenBy(s => s.Id);
+
+            List<SongQueue> queueSongs;
+            if (settings.QueueTheme == "inline")
+            {
+                queueSongs = await query.ToListAsync(token);
+            }
+            else
+            {
+                int queueCount = settings.MaxQueueCount > 0 ? settings.MaxQueueCount : 5;
+                queueSongs = await query.Take(queueCount).ToListAsync(token);
             }
 
             // 5. DTO 조립

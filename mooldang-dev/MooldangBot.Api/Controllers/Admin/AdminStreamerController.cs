@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Infrastructure.Persistence;
@@ -12,6 +13,7 @@ namespace MooldangBot.Api.Controllers.Admin;
 /// </summary>
 [ApiController]
 [Route("api/admin/streamers")]
+[Authorize(Roles = "master")]
 public class AdminStreamerController(AppDbContext dbContext) : ControllerBase
 {
     [HttpGet]

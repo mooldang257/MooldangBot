@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Authorization;
 
-// [오시리스???댁뇿]: ?좏겙 諛쒓툒 諛?媛깆떊 ?붿껌???꾪븳 紐⑤뜽?낅땲??
+// [오시리스의 연동]: 토큰 발급 및 갱신 요청을 위한 모델입니다.
 public class TokenRequest
 {
     [JsonPropertyName("grantType")]
@@ -30,7 +30,7 @@ public class TokenRequest
     public string? CodeVerifier { get; set; }
 }
 
-// [오시리스???몄옣]: 諛쒓툒???좏겙 ?뺣낫瑜??대뒗 ?묐떟 紐⑤뜽?낅땲??
+// [오시리스의 인증]: 발급된 토큰 정보를 담는 응답 모델입니다.
 public class TokenResponse
 {
     [JsonPropertyName("accessToken")]
@@ -48,7 +48,7 @@ public class TokenResponse
     public string? Scope { get; set; }
 }
 
-// [오시리스???뚮㈇]: ?좏겙 ?먭린 ?붿껌???꾪븳 紐⑤뜽?낅땲??
+// [오시리스의 파기]: 토큰 폐기 요청을 위한 모델입니다.
 public class RevokeTokenRequest
 {
     [JsonPropertyName("clientId")]
@@ -61,5 +61,5 @@ public class RevokeTokenRequest
     public string Token { get; set; } = string.Empty;
 
     [JsonPropertyName("tokenTypeHint")]
-    public string? TokenTypeHint { get; set; } // access_token (default) ?먮뒗 refresh_token
+    public string? TokenTypeHint { get; set; } // access_token (default) 또는 refresh_token
 }

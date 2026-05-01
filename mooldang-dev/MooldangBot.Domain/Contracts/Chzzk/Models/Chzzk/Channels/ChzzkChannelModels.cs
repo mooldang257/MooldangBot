@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
 
-// [오시리스???곸?]: 梨꾨꼸 ?꾨줈??諛??뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 영지]: 채널 프로필 및 정보를 담는 모델입니다.
 public class ChannelProfile
 {
     [JsonPropertyName("channelId")]
@@ -22,7 +22,7 @@ public class ChannelProfile
     public bool VerifiedMark { get; set; }
 }
 
-// [오시리스??蹂댁쥖]: 梨꾨꼸 愿由ъ옄 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 보좌]: 채널 관리자 정보를 담는 모델입니다.
 public class ChannelManager
 {
     [JsonPropertyName("managerChannelId")]
@@ -38,7 +38,7 @@ public class ChannelManager
     public DateTime CreatedDate { get; set; }
 }
 
-// [오시리스??異붿쥌]: 梨꾨꼸 ?붾줈???뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 추종]: 채널 팔로워 정보를 담는 모델입니다.
 public class ChannelFollower
 {
     [JsonPropertyName("channelId")]
@@ -51,7 +51,7 @@ public class ChannelFollower
     public DateTime CreatedDate { get; set; }
 }
 
-// [오시리스??議곌났]: 梨꾨꼸 援щ룆??諛??곗뼱 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 조공]: 채널 구독자 및 티어 정보를 담는 모델입니다.
 public class ChannelSubscriber
 {
     [JsonPropertyName("channelId")]

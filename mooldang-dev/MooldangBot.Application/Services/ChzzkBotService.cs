@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Models;
-using MooldangBot.Domain.Models.Chzzk;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities;
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Domain.Abstractions;

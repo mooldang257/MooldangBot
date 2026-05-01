@@ -43,40 +43,10 @@ public partial class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GlobalViewerConfiguration(converter));
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-        // [v19.0] 벡터 필드 고도화 (768d -> 3072d) 및 마이그레이션 활성화
-        var vectorConverter = new MariaDbVectorConverter();
-        var vectorComparer = new ValueComparer<float[]?>(
-            (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
-            c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            c => c == null ? null : c.ToArray());
-        
-        modelBuilder.Entity<Master_SongLibrary>(entity => {
-            entity.Property(x => x.TitleVector)
-                .HasConversion(vectorConverter)
-                .HasColumnType("VECTOR(3072)")
-                .Metadata.SetValueComparer(vectorComparer);
-            entity.Property(x => x.TitleVector).IsRequired();
-        });
-
-        modelBuilder.Entity<Streamer_SongLibrary>(entity => {
-            entity.Property(x => x.TitleVector)
-                .HasConversion(vectorConverter)
-                .HasColumnType("VECTOR(3072)")
-                .Metadata.SetValueComparer(vectorComparer);
-        });
-
-        modelBuilder.Entity<SongBook>(entity => {
-            entity.Property(x => x.TitleVector)
-                .HasConversion(vectorConverter)
-                .HasColumnType("VECTOR(3072)")
-                .Metadata.SetValueComparer(vectorComparer);
-        });
-
-        modelBuilder.Entity<Master_SongStaging>(entity => {
-            entity.Property(x => x.TitleVector)
-                .HasConversion(vectorConverter)
-                .HasColumnType("VECTOR(3072)")
-                .Metadata.SetValueComparer(vectorComparer);
-        });
+        // [v21.0-Fix] EF Core에서 벡터 필드를 완전히 격리합니다. (Dapper로만 처리)
+        modelBuilder.Entity<Master_SongLibrary>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<Streamer_SongLibrary>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<SongBook>().Ignore(x => x.TitleVector);
+        modelBuilder.Entity<Master_SongStaging>().Ignore(x => x.TitleVector);
     }
 }

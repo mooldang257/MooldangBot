@@ -6,6 +6,15 @@
         settings: any,
         layout: any
     }>();
+    // [물멍]: 현재 재생 곡 영역 전용 설정 참조
+    let currentSongSettings = $derived(settings.CurrentSong || {
+        TitleFont: settings.liveTitleFont,
+        ArtistFont: settings.liveArtistFont,
+        TitleColor: settings.liveTitleColor,
+        ArtistColor: settings.liveArtistColor,
+        CardBgColor: settings.liveCardBgColor,
+        CardBgOpacity: settings.liveCardBgOpacity
+    });
 </script>
 
 {#if currentSong && layout?.visible !== false && settings.showCurrentSong !== false}
@@ -17,12 +26,12 @@
             width: {layout?.width ?? 600}px; 
             height: {layout?.height ?? 180}px;
             opacity: {layout?.opacity ?? 1};
-            --live-title-font: {settings.liveTitleFont};
-            --live-artist-font: {settings.liveArtistFont};
-            --live-title-color: {settings.liveTitleColor || '#FFFFFF'};
-            --live-artist-color: {settings.liveArtistColor || '#CCCCCC'};
-            --live-card-bg: {settings.liveCardBgColor || '#0f172a'};
-            --live-card-opacity: {settings.liveCardBgOpacity ?? 0.8};
+            --live-title-font: {currentSongSettings.TitleFont || 'Gmarket Sans'};
+            --live-artist-font: {currentSongSettings.ArtistFont || 'Gmarket Sans'};
+            --live-title-color: {currentSongSettings.TitleColor || '#FFFFFF'};
+            --live-artist-color: {currentSongSettings.ArtistColor || '#CCCCCC'};
+            --live-card-bg: {currentSongSettings.CardBgColor || '#0f172a'};
+            --live-card-opacity: {currentSongSettings.CardBgOpacity ?? 0.8};
         "
         in:fly={{ y: -20, duration: 800 }}
     >

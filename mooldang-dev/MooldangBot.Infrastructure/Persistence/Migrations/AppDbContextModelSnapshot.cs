@@ -452,10 +452,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
 
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(3072)")
-                        .HasColumnName("title_vector");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
@@ -557,10 +553,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
-
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(3072)")
-                        .HasColumnName("title_vector");
 
                     b.Property<string>("YoutubeTitle")
                         .HasMaxLength(500)
@@ -1635,10 +1627,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
 
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(3072)")
-                        .HasColumnName("title_vector");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
@@ -2200,10 +2188,6 @@ namespace MooldangBot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title_chosung");
-
-                    b.Property<byte[]>("TitleVector")
-                        .HasColumnType("VECTOR(3072)")
-                        .HasColumnName("title_vector");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)")

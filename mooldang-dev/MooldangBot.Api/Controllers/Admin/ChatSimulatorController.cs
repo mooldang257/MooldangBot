@@ -1,6 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using MooldangBot.Domain.Contracts.Chzzk.Models.Internal;
+using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Chat;
 using MooldangBot.Domain.Models.Chzzk;
+
+using Microsoft.AspNetCore.Mvc;
+
+using MooldangBot.Domain.Contracts.Chzzk.Models.Internal;
+using MooldangBot.Domain.DTOs;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -40,13 +45,17 @@ public class ChatSimulatorController(
             { 
                 Nickname = request.Nickname ?? "Simulator",
                 UserRoleCode = "common_user"
-            })
+            }),
+            // 후원 데이터 추가
+            PayAmount = request.EventType == "DONATION" ? JsonSerializer.SerializeToElement(request.PayAmount ?? 1000) : null,
+            DonationText = request.EventType == "DONATION" ? request.Content : null,
+            DonatorNickname = request.EventType == "DONATION" ? (request.Nickname ?? "Simulator") : null
         };
 
         var injectRequest = new InjectEventRequest
         {
             ChzzkUid = request.ChzzkUid,
-            EventName = "CHAT",
+            EventName = request.EventType, // CHAT 또는 DONATION
             RawJson = JsonSerializer.Serialize(payload)
         };
 
@@ -85,4 +94,10 @@ public class SimulatorRequest
 
     [System.Text.Json.Serialization.JsonPropertyName("content")]
     public string Content { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("eventType")]
+    public string EventType { get; set; } = "CHAT"; // CHAT, DONATION
+
+    [System.Text.Json.Serialization.JsonPropertyName("payAmount")]
+    public int? PayAmount { get; set; }
 }

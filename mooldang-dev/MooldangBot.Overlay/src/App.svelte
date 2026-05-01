@@ -90,6 +90,7 @@
                 rouletteQueue={rouletteQueue} 
                 connection={connection} 
                 popQueue={popQueue} 
+                settings={settings}
             />
         </div>
 

@@ -1,6 +1,8 @@
 <script lang="ts">
+    import { base } from '$app/paths';
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
+    import { goto } from '$app/navigation';
     import { fade, fly, slide } from 'svelte/transition';
     import { Menu, ChevronLeft, BookOpen, Music, Zap, User, FerrisWheel, Gem, Monitor, LayoutDashboard, Settings, Terminal, Ship } from 'lucide-svelte';
 
@@ -8,6 +10,14 @@
     let isCollapsed = $state(true);
 
     onMount(() => {
+        // [이지스 가드]: 관리자 화면 접근 제어
+        if (prefix === '/admin' && $page.data.userData?.role !== 'master') {
+            console.warn('🛡️ [Aegis Guard] 관리자 권한이 없습니다. 리다이렉트 수행.');
+            const targetUid = $page.data.userData?.chzzkUid || streamerId;
+            goto(`/manager/${targetUid}/dashboard`);
+            return;
+        }
+
         const checkWidth = () => {
             // [물멍]: 1024px (lg) 미만일 경우 강제로 사이드바 축소
             if (window.innerWidth < 1024) {
@@ -39,7 +49,10 @@
 
     // [물멍]: 현재 URL 파라미터에서 streamerId 추출 및 베이스 경로 설정
     const streamerId = $derived($page.params.streamerId);
-    const basePath = $derived(`/${streamerId}/dashboard`);
+    
+    // [v3.9] 현재 URL에서 /admin 또는 /manager 같은 접두사를 동적으로 추출하여 경로 이탈을 방지합니다.
+    const prefix = $derived($page.url.pathname.split('/' + streamerId)[0]);
+    const basePath = $derived(`${prefix}/${streamerId}/dashboard`);
 
     // [물멍]: 스트리머 전용 메뉴 데이터 (동적 경로 적용)
     const menuItems = $derived([
@@ -124,7 +137,7 @@
         <!-- [하단 시스템 상태 및 목록 바로가기] -->
         <div class="mt-auto p-3 border-t border-sky-100/30 space-y-2">
             <a 
-                href="/admin/streamers" 
+                href="{prefix}/streamers" 
                 class="flex items-center gap-4 rounded-2xl p-3 text-slate-500 hover:bg-slate-100 transition-all group"
                 title={isCollapsed ? "함선 목록 관리" : ""}
             >

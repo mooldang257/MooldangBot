@@ -27,13 +27,7 @@ public class DbInitializer(
                 await db.Database.EnsureDeletedAsync();
                 logger.LogInformation("✅ [오시리스의 시동] 데이터베이스가 완전히 삭제되었습니다.");
             }
-
-            // 1. 데이터베이스 마이그레이션 적용 (스키마 자동 생성/변경)
-            // [v11.8-Fix]: API 컨테이너에서의 마이그레이션 중복 실행이 SEGFAULT를 유발하므로 
-            // 운영 환경에서는 CLI 컨테이너에게 이 역할을 위임하고 앱에서는 생략합니다.
-            // logger.LogInformation("🛠️ [오시리스의 시동] 데이터베이스 마이그레이션을 적용 중...");
-            // await db.Database.MigrateAsync();
-
+            
             // [오시리스의 도서관]: 공용 썸네일 도서관 DB 초기화
             logger.LogInformation("📚 [오시리스의 시동] 공용 썸네일 도서관 DB를 초기화 중...");
             await commonDb.Database.EnsureCreatedAsync(); 

@@ -6,6 +6,8 @@ using MooldangBot.Modules.SongBook.Features.Strategies;
 using MooldangBot.Modules.SongBook.State;
 
 
+using MooldangBot.Modules.SongBook.Services;
+
 namespace MooldangBot.Modules.SongBook;
 
 public static class SongBookModuleExtensions
@@ -14,6 +16,9 @@ public static class SongBookModuleExtensions
     {
         // Persistence
         services.AddScoped<ISongBookRepository, SongBookRepository>();
+
+        // Services
+        services.AddScoped<ISongQueueService, SongQueueService>();
 
         // State (Singleton for memory queue)
         services.AddSingleton<SongBookState>();

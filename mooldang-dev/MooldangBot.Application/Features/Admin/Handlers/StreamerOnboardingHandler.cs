@@ -14,11 +14,16 @@ namespace MooldangBot.Application.Features.Admin.Handlers;
 public class StreamerOnboardingHandler : INotificationHandler<StreamerRegisteredEvent>
 {
     private readonly IUnifiedCommandService _commandService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<StreamerOnboardingHandler> _logger;
 
-    public StreamerOnboardingHandler(IUnifiedCommandService commandService, ILogger<StreamerOnboardingHandler> logger)
+    public StreamerOnboardingHandler(
+        IUnifiedCommandService commandService, 
+        INotificationService notificationService,
+        ILogger<StreamerOnboardingHandler> logger)
     {
         _commandService = commandService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -31,8 +36,16 @@ public class StreamerOnboardingHandler : INotificationHandler<StreamerRegistered
             // [지휘관님의 지침]: 인증 프로세스에 영향을 주지 않도록 내부에서 예외를 완벽히 격리합니다.
             // 기본 명령어(!공지, !신청, !룰렛 등)와 그에 딸린 룰렛 데이터가 생성됩니다.
             await _commandService.InitializeDefaultCommandsAsync(notification.ChzzkUid);
+
+            // [v29.0-New]: 새 스트리머 함대 합류 알림 전송
+            string welcomeMsg = $"🎊 **[신규 스트리머 합류]** 새로운 분이 물댕 함대에 승선했습니다!\n" +
+                                $"👤 **채널명**: {notification.ChannelName}\n" +
+                                $"🆔 **ID**: {notification.ChzzkUid}\n" +
+                                $"✨ 기본 명령어 및 초기화 작업이 완료되었습니다.";
             
-            _logger.LogInformation("✅ [Onboarding]: 스트리머({ChannelName})에 대한 기본 온보딩 작업이 성공적으로 완료되었습니다.", notification.ChannelName);
+            await _notificationService.SendAlertAsync(welcomeMsg, NotificationChannel.Registration);
+            
+            _logger.LogInformation("✅ [Onboarding]: 스트리머({ChannelName})에 대한 기본 온보딩 작업 및 알림 발송이 완료되었습니다.", notification.ChannelName);
         }
         catch (Exception ex)
         {

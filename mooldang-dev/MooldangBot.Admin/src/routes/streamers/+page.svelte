@@ -4,11 +4,15 @@
     import { Search, Ship, LayoutDashboard, Terminal, ExternalLink, ChevronRight, User } from 'lucide-svelte';
     import { apiFetch } from '$lib/api/client';
     import { base } from '$app/paths';
+    import { page } from '$app/stores';
 
-    let streamers: any[] = [];
-    let searchQuery = '';
-    let isLoading = true;
-    let totalCount = 0;
+    // [v3.9] 현재 URL에서 /admin 또는 /manager 같은 접두사를 동적으로 추출합니다.
+    const prefix = $derived($page.url.pathname.split('/streamers')[0]);
+
+    let streamers = $state<any[]>([]);
+    let searchQuery = $state('');
+    let isLoading = $state(true);
+    let totalCount = $state(0);
 
     async function loadStreamers() {
         isLoading = true;
@@ -55,11 +59,11 @@
                     placeholder="채널명 또는 UID 검색..." 
                     class="bg-transparent border-none outline-none w-full text-sm font-bold text-slate-700 placeholder:text-slate-400"
                     bind:value={searchQuery}
-                    on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+                    onkeydown={(e) => e.key === 'Enter' && handleSearch()}
                 />
                 <button 
                     class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-600 transition-colors"
-                    on:click={handleSearch}
+                    onclick={handleSearch}
                 >
                     SEARCH
                 </button>
@@ -113,14 +117,14 @@
                         
                         <div class="grid grid-cols-2 gap-2">
                             <a 
-                                href="{base}/{streamer.slug || streamer.chzzkUid}/dashboard" 
+                                href="{prefix}/{streamer.slug || streamer.chzzkUid}/dashboard" 
                                 class="flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black hover:bg-blue-50 hover:text-blue-600 transition-colors"
                             >
                                 <LayoutDashboard class="w-4 h-4" />
                                 DASHBOARD
                             </a>
                             <a 
-                                href="{base}/{streamer.slug || streamer.chzzkUid}/dashboard/simulator" 
+                                href="{prefix}/{streamer.slug || streamer.chzzkUid}/dashboard/simulator" 
                                 class="flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black hover:bg-blue-600 transition-colors shadow-lg shadow-slate-900/10"
                             >
                                 <Terminal class="w-4 h-4" />

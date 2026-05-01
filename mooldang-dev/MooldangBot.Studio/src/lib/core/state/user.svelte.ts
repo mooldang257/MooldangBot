@@ -1,6 +1,6 @@
 // src/lib/core/state/user.svelte.ts
 /**
- * 🌊 [Osiris]: 물댕봇 전역 상태 엔진 (Bridge Global State Engine)
+ * 🌊 [물멍]: 물댕봇 전역 상태 엔진 (Bridge Global State Engine)
  * Svelte 5 Runes ($state)를 활용하여 스트리머 정보를 싱글톤으로 관리합니다.
  */
 class UserState {

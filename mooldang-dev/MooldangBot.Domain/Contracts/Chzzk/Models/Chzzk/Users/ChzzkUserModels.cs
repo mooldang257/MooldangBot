@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Users;
 
-// [오시리스??嫄곗슱]: 현재 濡쒓렇?몃맂 ?ъ슜???뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 거울]: 현재 로그인된 사용자 정보를 담는 모델입니다.
 public class UserMeResponse
 {
     [JsonPropertyName("channelId")]

@@ -2,7 +2,7 @@
     import { fade, fly } from "svelte/transition";
     import { Copy, Check, Waves, ToggleLeft, ToggleRight, Terminal } from "lucide-svelte";
 
-    // [Osiris]: Svelte 5 $bindable 룬을 사용한 양방향 상태 동기화
+    // [물멍]: Svelte 5 $bindable 룬을 사용한 양방향 상태 동기화
     let {
         isSonglistActive = $bindable(true),
         isOmakaseActive = $bindable(true),
@@ -15,7 +15,7 @@
 
     const handleCopy = async (e: MouseEvent) => {
         try {
-            // [오시리스의 공명]: 벨리데이션된 JWT가 포함된 오버레이용 URL을 동적으로 생성
+            // [물멍]: 벨리데이션된 JWT가 포함된 오버레이용 URL을 동적으로 생성
             const response = await fetch('/api/overlay/auth/token', {
                 method: 'POST',
                 credentials: 'include' 

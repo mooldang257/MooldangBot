@@ -11,7 +11,7 @@ using MooldangBot.Domain.Abstractions;
 using MooldangBot.Application.Models.Philosophy;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Entities.Philosophy;
-using MooldangBot.Domain.Contracts.AI.Models;
+using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Application.Services.Philosophy;
 

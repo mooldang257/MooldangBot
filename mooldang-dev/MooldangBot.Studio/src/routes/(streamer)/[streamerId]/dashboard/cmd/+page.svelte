@@ -11,7 +11,7 @@
 
     import { apiFetch } from "$lib/api/client";
 
-    // [Osiris]: Svelte 5 Runes ($state) 기반의 현대적 상태 관리
+    // [물멍]: Svelte 5 Runes ($state) 기반의 현대적 상태 관리
     let isLoaded = $state(false);
     let chzzkUid = $state("");
     let activeTab: "commands" | "periodic" = $state("commands");
@@ -181,7 +181,7 @@
 </script>
 
 <svelte:head>
-    <title>명령어 관리소 - 물댕봇 Admin</title>
+    <title>채팅 명령어 설정 - 물댕봇</title>
 </svelte:head>
 
 <ConfirmModal
@@ -196,17 +196,16 @@
             <div class="flex items-center gap-2 mb-2">
                 <span
                     class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest"
-                    >Osiris Command Center</span
+                    >Assistant Desk</span
                 >
             </div>
             <h1
                 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3"
             >
-                🛠️ 명령어 <span class="text-primary">관리소</span>
+                💬 채팅 명령어 <span class="text-primary">설정</span>
             </h1>
             <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">
-                물댕봇의 모든 명령 체계와 정기 방송 메세지를 정교하게 조립하는
-                부품 공장입니다.
+                시청자분들과 소통하기 위한 명령어와 정기 메시지 규칙을 설정하는 공간입니다.
             </p>
         </div>
 
@@ -229,8 +228,8 @@
                         {/if}
                         <span
                             >{tab === "commands"
-                                ? "명령어 관리"
-                                : "정기 메세지 배치"}</span
+                                ? "응답 명령어"
+                                : "정기 알림 설정"}</span
                         >
                     </div>
                     {#if activeTab === tab}
@@ -275,13 +274,13 @@
                     </div>
                     <h3 class="text-xl font-black text-slate-800 mb-2">
                         {chzzkUid
-                            ? "시스템 동기화 오류"
-                            : "물댕봇 인증 기록 유실"}
+                            ? "정보를 불러오지 못했습니다"
+                            : "로그인이 필요한 서비스입니다"}
                     </h3>
                     <p class="text-slate-500 font-bold mb-6 text-center">
                         {chzzkUid
-                            ? "물댕봇 마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
-                            : "선장님의 물댕봇 기록(Profile)을 찾을 수 없습니다. DB 초기화 후에는 재로그인이 필요합니다."}
+                            ? "마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
+                            : "스트리머님의 물댕봇 기록을 찾을 수 없습니다. 다시 로그인이 필요할 것 같아요."}
                     </p>
                     <div class="flex gap-4">
                         <button
@@ -315,7 +314,7 @@
                 class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"
             ></div>
             <p class="text-sm font-bold animate-pulse">
-                물댕봇 통신망 동기화 중...
+                필요한 정보를 정리하고 있습니다...
             </p>
         </div>
     {/if}

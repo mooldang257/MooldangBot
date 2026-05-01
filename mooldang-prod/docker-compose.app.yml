@@ -10,8 +10,8 @@ services:
       - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     entrypoint: [ "dotnet", "cli/MooldangBot.Cli.dll" ]
+    command: [ "migrate" ]
     networks:
       - mooldang_prod_net
     volumes:
@@ -35,7 +35,6 @@ services:
       - REDIS_URL=redis:6379
       - RABBITMQ_HOST=rabbitmq
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
-      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
       interval: 10s
@@ -81,9 +80,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - LOKI_URL=http://loki:3100
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
-      - CHZZKAPI__CLIENTID=${CHZZKAPI__CLIENTID}
-      - CHZZKAPI__CLIENTSECRET=${CHZZKAPI__CLIENTSECRET}
-      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     networks:
       - mooldang_prod_net
     volumes:

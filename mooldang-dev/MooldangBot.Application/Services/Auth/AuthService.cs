@@ -13,7 +13,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Caching.Distributed;
-using MooldangBot.Domain.Models.Chzzk;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Events;
 using MediatR;
 

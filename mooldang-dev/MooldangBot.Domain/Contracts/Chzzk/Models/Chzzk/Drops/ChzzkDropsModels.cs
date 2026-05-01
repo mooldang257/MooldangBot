@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Drops;
 
-// [오시리스???섏궗]: ?쒕∼??蹂댁긽 ?섎졊 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 하사]: 치지직 보상 수령 정보를 담는 모델입니다.
 public class RewardClaim
 {
     [JsonPropertyName("claimId")]
@@ -34,7 +34,7 @@ public class RewardClaim
     public string UpdatedDate { get; set; } = string.Empty;
 }
 
-// [오시리스??吏묓뻾]: ?쒕∼??蹂댁긽 ?곹깭 ?낅뜲?댄듃 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 집행]: 치지직 보상 상태 업데이트 요청 모델입니다.
 public class UpdateRewardClaimRequest
 {
     [JsonPropertyName("claimIds")]
@@ -44,7 +44,7 @@ public class UpdateRewardClaimRequest
     public string FulfillmentState { get; set; } = string.Empty;
 }
 
-// [오시리스??怨듯몴]: ?쒕∼???낅뜲?댄듃 泥섎━ 寃곌낵 紐⑤뜽?낅땲??
+// [오시리스의 공표]: 치지직 업데이트 처리 결과 모델입니다.
 public class UpdateRewardClaimResult
 {
     [JsonPropertyName("status")]

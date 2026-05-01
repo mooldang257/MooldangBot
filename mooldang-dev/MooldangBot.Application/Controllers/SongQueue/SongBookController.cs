@@ -12,6 +12,8 @@ using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
+using MooldangBot.Application.Interfaces;
 
 namespace MooldangBot.Application.Controllers.SongQueue;
 

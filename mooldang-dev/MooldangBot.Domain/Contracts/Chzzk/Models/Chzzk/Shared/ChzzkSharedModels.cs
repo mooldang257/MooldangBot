@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Shared;
 
-// [오시리스??遊됲닾]: 紐⑤뱺 치지직API ?묐떟??怨듯넻 援ъ“?낅땲??
+// [오시리스의 봉투]: 모든 치지직 API 응답의 공통 구조입니다.
 public class ChzzkApiResponse<T>
 {
     [JsonPropertyName("code")]
@@ -19,7 +19,7 @@ public class ChzzkApiResponse<T>
     public bool IsSuccess => Code == 200;
 }
 
-// [오시리스???묒떇]: ?섏씠吏뺤씠 ?ы븿??由ъ뒪???묐떟 援ъ“?낅땲??
+// [오시리스의 서식]: 페이지네이션이 포함된 리스트 응답 구조입니다.
 public class ChzzkPagedResponse<T>
 {
     [JsonPropertyName("data")]
@@ -29,7 +29,7 @@ public class ChzzkPagedResponse<T>
     public ChzzkPagination? Page { get; set; }
 }
 
-// [오시리스??吏??: ?ㅼ뼇???섏씠吏??꾨뱶瑜??섏슜?섎뒗 ?듯빀 ?섏씠吏?紐⑤뜽?낅땲??
+// [오시리스의 지표]: 다양한 페이지 필드를 수용하는 통합 페이지 모델입니다.
 public class ChzzkPagination
 {
     [JsonPropertyName("next")]

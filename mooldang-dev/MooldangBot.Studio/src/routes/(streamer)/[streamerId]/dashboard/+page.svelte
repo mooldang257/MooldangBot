@@ -11,6 +11,7 @@
     } from 'lucide-svelte';
     import { apiFetch } from '$lib/api/client';
     import * as signalR from "@microsoft/signalr";
+    import GuideModal from "$lib/features/songlist/ui/GuideModal.svelte";
 
     // [물멍]: 대시보드 상태 관리
     let isLoaded = $state(false);
@@ -20,6 +21,7 @@
     let isSavingSlug = $state(false);
     let slugFeedback = $state('');
     let hubConnection: signalR.HubConnection | null = $state(null);
+    let isGuideOpen = $state(false);
 
     // [물멍]: 실시간 데이터 상태 관리
     let summary = $state<any>(null);
@@ -39,7 +41,7 @@
         { 
             title: '오늘의 신청곡', 
             value: `${summary?.todaySongs || 0}곡`, 
-            detail: `대기열 ${summary?.pendingSongs || 0}곡`, 
+            detail: `${summary?.pendingSongs || 0}곡이 대기를 기다리고 있습니다`, 
             icon: Music, 
             color: 'text-blue-500', 
             bg: 'bg-blue-50',
@@ -79,14 +81,14 @@
         try {
             const res: any = await apiFetch(`/api/config/bot/${streamerId}/slug`, {
                 method: 'PATCH',
-                body: JSON.stringify({ slug: newSlug.toLowerCase().trim() })
+                body: { slug: newSlug.toLowerCase().trim() }
             });
 
             currentSlug = res.slug;
-            slugFeedback = '✨ 물댕봇의 정문 주소가 변경되었습니다!';
-            // [물멍]: 주소가 변경되면 페이지 전체의 문맥이 바뀔 수 있으므로 새로고침 권장
+            slugFeedback = '✅ 물댕봇의 정문 주소가 새롭게 단장되었습니다!';
         } catch (e: any) {
-            slugFeedback = `❌ 실패: ${e.message}`;
+            // [물멍]: 백엔드에서 보낸 메시지(e.message)를 그대로 사용하되, 가독성을 위해 다듬음
+            slugFeedback = `⚠️ ${e.message}`;
         } finally {
             isSavingSlug = false;
         }
@@ -162,14 +164,14 @@
     <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
             <div class="flex items-center gap-2 mb-2">
-                <span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest">Bridge Console</span>
+                <span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase tracking-widest">Management Desk</span>
                 <div class="flex items-center gap-1.5 ml-2">
                     <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span class="text-xs font-bold text-slate-400">시스템 정상 가동 중</span>
+                    <span class="text-xs font-bold text-slate-400">물댕봇이 대기 중입니다</span>
                 </div>
             </div>
-            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">물댕봇 <span class="text-primary">관제 데스크</span></h1>
-            <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">선장님, 현재 오시리스 함선의 모든 시스템이 최적의 상태로 방송을 보조하고 있습니다.</p>
+            <h1 class="text-3xl md:text-5xl font-[1000] text-slate-800 tracking-tighter leading-none mb-3">물댕봇 <span class="text-primary">관리실</span></h1>
+            <p class="text-sm md:text-lg text-slate-500 font-bold max-w-2xl">스트리머님, 오늘도 원활한 방송을 위해 정성껏 보조하겠습니다.</p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -228,9 +230,9 @@
             <div class="flex items-center justify-between px-4">
                 <h3 class="text-xl font-black text-slate-800 flex items-center gap-3">
                     <Clock size={20} class="text-primary" />
-                    실시간 활동 로그
+                    실시간 활동 내역
                 </h3>
-                <button class="text-xs font-black text-primary hover:underline transition-all">전체 보기</button>
+                <button class="text-xs font-black text-primary hover:underline transition-all">상세 내역 확인</button>
             </div>
 
             <div class="bg-white/85 backdrop-blur-xl rounded-[2.5rem] border border-white p-6 md:p-8 shadow-[0_15px_45px_rgba(0,147,233,0.04)] overflow-hidden">
@@ -269,25 +271,25 @@
                             <div class="p-2.5 bg-sky-100 text-primary rounded-xl">
                                 <Settings2 size={18} />
                             </div>
-                            <h4 class="font-black text-lg text-slate-800 tracking-tight">물댕봇 주소 설정</h4>
+                            <h4 class="font-black text-lg text-slate-800 tracking-tight">방송 주소 설정</h4>
                         </div>
                         
                         <div class="space-y-3">
-                            <label for="bridge-slug" class="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Custom Brand URL</label>
+                            <label for="bridge-slug" class="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">개인 방송 주소</label>
                             <div class="relative group/input">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300 group-focus-within/input:text-primary transition-colors">/</span>
                                 <input 
                                     id="bridge-slug"
                                     type="text" 
                                     bind:value={newSlug}
-                                    placeholder="your-name"
+                                    placeholder="별명을 입력하세요"
                                     class="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none"
                                 />
                             </div>
                             
                             {#if newSlug}
                                 <p class="text-[10px] font-bold text-slate-400 animate-in fade-in slide-in-from-left-2 transition-all">
-                                    미리보기: <span class="text-primary">https://bot.mooldang.com/{newSlug.toLowerCase()}</span>
+                                    설정 시 다음 링크로 연결됩니다: <span class="text-primary">https://bot.mooldang.com/{newSlug.toLowerCase()}</span>
                                 </p>
                             {/if}
 
@@ -303,7 +305,7 @@
                             disabled={isSavingSlug || !newSlug}
                             class="w-full py-4 bg-slate-900 text-white rounded-2xl text-xs font-[1000] shadow-lg shadow-slate-900/10 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
-                            {isSavingSlug ? '항로 변경 중...' : '새 주소로 확정하기'}
+                            {isSavingSlug ? '변경 사항을 적용 중입니다...' : '새로운 주소 적용하기'}
                         </button>
                     </div>
 
@@ -327,9 +329,12 @@
 
                 <div class="p-10 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden group shadow-xl">
                     <div class="relative z-10">
-                        <p class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4">Support OSIRIS</p>
+                        <p class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4">Assistant Help</p>
                         <h4 class="text-xl font-[1000] leading-tight mb-8">물댕봇<br/>가이드 라인 확인</h4>
-                        <button class="px-8 py-3 bg-emerald-500 text-white text-[10px] font-[1000] rounded-full hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
+                        <button 
+                            onclick={() => isGuideOpen = true}
+                            class="px-8 py-3 bg-emerald-500 text-white text-[10px] font-[1000] rounded-full hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+                        >
                             READ DOCUMENT
                         </button>
                     </div>
@@ -339,6 +344,7 @@
             </div>
         </div>
     </div>
+    <GuideModal bind:isOpen={isGuideOpen} />
 </div>
 
 <style>

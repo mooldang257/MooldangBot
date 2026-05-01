@@ -31,14 +31,6 @@ public record GenosAI(
     }
 }
 
-/// <summary>
-/// IAMF 진동수(Hz)를 나타내는 값 객체입니다.
-/// </summary>
-public record Vibration(double Value)
-{
-    public bool IsResonantWith(Vibration other, double threshold = 0.05) 
-        => Math.Abs(Value - other.Value) <= threshold;
-}
 
 /// <summary>
 /// [빛Gate]: 위 위상 전이를 위한 문입니다.

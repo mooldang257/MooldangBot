@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common.Models;
 
 namespace MooldangBot.Application.Controllers.SongQueue

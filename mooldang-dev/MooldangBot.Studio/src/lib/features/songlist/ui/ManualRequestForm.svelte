@@ -4,7 +4,7 @@
     import { Send, Music, User, X, Check, Youtube, BookOpen } from 'lucide-svelte';
     import { apiFetch } from '$lib/api/client';
 
-    // [Osiris]: 부모 페이지와 상태 공유를 위한 props
+    // [물멍]: 부모 페이지와 상태 공유를 위한 props
     let { 
         streamerId = "",
         selectedOmakase = $bindable(null),

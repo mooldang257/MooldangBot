@@ -30,7 +30,7 @@
                 </div>
                 <p class="text-sm text-slate-500 font-medium leading-relaxed">
                     당신의 방송을 더 특별하게 만드는<br />
-                    치지직 최적화 도우미 봇 서비스입니다.
+                    치지직 스트리머분들을 위한 정중하고 똑똑한 개인 비서입니다.
                 </p>
                 <div class="flex gap-3 mt-2">
                     {#if developerInfo.discord}

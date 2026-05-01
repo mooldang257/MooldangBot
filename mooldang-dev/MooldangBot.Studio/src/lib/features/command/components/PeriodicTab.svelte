@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Clock, Bell, Save, Trash2 } from 'lucide-svelte';
     import { fade, slide } from 'svelte/transition';
-    import { apiFetch } from '$lib/api/client'; // [Osiris] 표준 통신 모듈 주입
+    import { apiFetch } from '$lib/api/client'; // [물멍] 표준 통신 모듈 주입
 
     import PeriodicTable from './PeriodicTable.svelte';
 

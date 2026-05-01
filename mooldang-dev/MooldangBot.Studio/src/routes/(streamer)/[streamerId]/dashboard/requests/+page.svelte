@@ -33,10 +33,10 @@
         { id: 102, name: "참치 뱃살 오마카세", count: 3, icon: "🐟" }
     ];
 
-    // [Osiris]: 부모 레이아웃으로부터 전달받은 데이터 수신
+    // [물멍]: 부모 레이아웃으로부터 전달받은 데이터 수신
     let { data } = $props();
 
-    // [Osiris]: 상태 관리 (Svelte 5 Runes)
+    // [물멍]: 상태 관리 (Svelte 5 Runes)
     let isLoaded = $state(false);
     let queue = $state<any[]>([]); // [물멍]: 실제 대기열 데이터
     let completed = $state<any[]>([]); // [물멍]: 최근 완료된 곡 (최대 50개)
@@ -84,9 +84,11 @@
 
                 const newCommandList: any[] = [];
                 if (sData.songRequestCommands) {
-                    sData.songRequestCommands.forEach((c: any) => {
+                    sData.songRequestCommands.forEach((c: any, index: number) => {
                         // [물멍]: 서버에서 받은 'name' 필드 매핑 및 Fallback 처리
+                        // [v29.1-Fix]: each_key_duplicate 에러 방지를 위해 고유 ID(5000번대) 부여
                         newCommandList.push({ 
+                            id: 5000 + index,
                             type: 'songlist', 
                             trigger: c.keyword || "!신청", 
                             name: c.name || "일반 곡 신청", 
@@ -116,7 +118,7 @@
             currentSong = fetchedSong;
 
         } catch (err) {
-            console.error("[Osiris] 데이터 동기화 실패:", err);
+            console.error("[물멍] 데이터 동기화 실패:", err);
         }
     };
 
@@ -131,7 +133,7 @@
             
             console.log("🌊 [국소 갱신] 대기열 리스트 업데이트 완료");
         } catch (err) {
-            console.error("[Osiris] 국소 갱신 실패:", err);
+            console.error("[물멍] 국소 갱신 실패:", err);
         }
     };
 
@@ -190,7 +192,7 @@
                 await hubConnection.start();
                 await hubConnection.invoke("JoinStreamerGroup");
             } catch (hubErr) {
-                console.warn("[Osiris] Hub 연결 지연 - 오프라인 모드 유지", hubErr);
+                console.warn("[물멍] Hub 연결 지연 - 오프라인 모드 유지", hubErr);
             }
         } catch (error: any) {
             errorMessage = error.message;
@@ -379,8 +381,10 @@
                 body: JSON.stringify(payload)
             });
             
+            alert("무기고 설정이 서버에 안전하게 저장되었습니다! ✅");
             console.log("[물멍] 무기고 동기화 성공 ✅");
         } catch (err) {
+            alert("서버 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             console.error("[물멍] 무기고 동기화 실패:", err);
         }
     };

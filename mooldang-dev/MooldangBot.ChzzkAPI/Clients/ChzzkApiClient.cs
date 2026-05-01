@@ -1,10 +1,11 @@
+using MooldangBot.Domain.Contracts.Chzzk;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
-using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Shared;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Authorization;

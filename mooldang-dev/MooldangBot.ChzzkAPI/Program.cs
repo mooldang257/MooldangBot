@@ -1,3 +1,4 @@
+using MooldangBot.Domain.Contracts.Chzzk;
 using MooldangBot.Modules.Commands;
 using MooldangBot.Modules.SongBook;
 using MooldangBot.Modules.Roulette;
@@ -13,7 +14,7 @@ using MooldangBot.ChzzkAPI.Services;
 using RabbitMQ.Client;
 using Serilog;
 using System.Text.Json.Serialization;
-using MooldangBot.Domain.Contracts.Chzzk;
+using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using MooldangBot.ChzzkAPI.Extensions;

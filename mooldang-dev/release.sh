@@ -120,7 +120,7 @@ fi
 echo -e "${GREEN}✅ 운영 이관 준비가 완료되었습니다! (이미지 태깅 및 .env 업데이트 완료)${NC}"
 echo -e "\n${YELLOW}🚢 [다음 단계] 운영 서버에서:${NC}"
 echo -e "1. cd ../mooldang-prod"
-echo -e "2. ./deploy.sh ${TARGET_TYPE:-all}"
+echo -e "2. ./deploy-prod.sh ${TARGET_TYPE:-all}"
 
 echo -e "\n${YELLOW}⏪ 롤백 방법:${NC}"
 echo -e "./rollback.sh 명령어를 사용하여 이전 버전으로 즉시 복구할 수 있습니다."

@@ -75,12 +75,23 @@ try {
     {
         await RunVectorBackfillAsync(db, llm);
     }
+    else if (command == "migrate")
+    {
+        await RunMigrationAsync(db);
+    }
     else
     {
         await RunDuplicateCleanupAsync(db);
     }
 } catch (Exception ex) { 
     Console.WriteLine($"\n❌ [치명적 오류]: {ex.Message}"); 
+}
+
+async Task RunMigrationAsync(AppDbContext db)
+{
+    Console.WriteLine("\n🛠️ [시작] 데이터베이스 마이그레이션을 적용합니다...");
+    await db.Database.MigrateAsync();
+    Console.WriteLine("✅ [완료] 마이그레이션이 성공적으로 적용되었습니다.");
 }
 
 async Task RunVectorBackfillAsync(AppDbContext db, ILlmService llm)

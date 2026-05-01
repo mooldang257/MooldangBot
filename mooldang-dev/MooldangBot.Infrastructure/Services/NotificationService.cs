@@ -19,7 +19,7 @@ public class NotificationService(
     private readonly IDatabase _db = redis.GetDatabase();
     private const string CooldownPrefix = "alert:v1:sent:";
 
-    public async Task SendAlertAsync(string message, bool isCritical, string? alertKey = null, TimeSpan? cooldown = null)
+    public async Task SendAlertAsync(string message, NotificationChannel channel, string? alertKey = null, TimeSpan? cooldown = null)
     {
         // 1. [교차 점검]: 알림 키가 있으면 분산 쿨다운 확인
         if (!string.IsNullOrEmpty(alertKey))
@@ -35,8 +35,13 @@ public class NotificationService(
             await _db.StringSetAsync(fullKey, "SENT", cooldown ?? TimeSpan.FromHours(1));
         }
 
-        // 2. [채널 결정]: 긴급 상황 여부에 따라 웹훅 분기
-        var configKey = isCritical ? "DISCORD_CRITICAL_URL" : "DISCORD_STATUS_URL";
+        // 2. [채널 결정]: 채널 타입에 따라 웹훅 분기
+        var configKey = channel switch
+        {
+            NotificationChannel.Critical => "DISCORD_CRITICAL_URL",
+            NotificationChannel.Registration => "DISCORD_JOIN_URL",
+            _ => "DISCORD_STATUS_URL"
+        };
         var webhookUrl = configuration[configKey];
 
         if (string.IsNullOrWhiteSpace(webhookUrl) || !webhookUrl.StartsWith("http"))

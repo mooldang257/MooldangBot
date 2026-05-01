@@ -1,9 +1,9 @@
 <script lang="ts">
     import { Plus, Edit2, Save, RotateCcw } from 'lucide-svelte';
     import { fade } from 'svelte/transition';
-    import { apiFetch } from '$lib/api/client'; // [Osiris] 표준 통신 모듈 주입
+    import { apiFetch } from '$lib/api/client'; // [물멍] 표준 통신 모듈 주입
 
-    // [Osiris]: 강력 지시 사항 기반의 명령어 폼 컴포넌트
+    // [물멍]: 강력 지시 사항 기반의 명령어 폼 컴포넌트
     export let cmdForm: any;
     export let masterData: any;
     export let chzzkUid: string;

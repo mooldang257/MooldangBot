@@ -14,7 +14,7 @@ public class PulseService(IConnectionMultiplexer redis, ILogger<PulseService> lo
 {
     private readonly IDatabase _db = redis.GetDatabase();
     private const string HashKey = "pulse:v1:fleet";
-    private readonly string _machineName = Environment.MachineName;
+    private readonly string _machineName = (Environment.GetEnvironmentVariable("INSTANCE_ID") ?? "Unknown") + ":" + Environment.MachineName;
 
     public void ReportPulse(string workerName)
     {

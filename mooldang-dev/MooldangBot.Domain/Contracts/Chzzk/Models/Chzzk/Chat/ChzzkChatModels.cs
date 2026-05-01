@@ -2,21 +2,21 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Chat;
 
-// [오시리스??諛쒗솕]: 梨꾪똿 전송 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 발화]: 채팅 전송 요청 모델입니다.
 public class SendChatRequest
 {
     [JsonPropertyName("message")]
     public string Message { get; set; } = string.Empty;
 }
 
-// [오시리스???꾩뼵]: 梨꾪똿 전송 ?깃났 ?묐떟 紐⑤뜽?낅땲??
+// [오시리스의 전언]: 채팅 전송 성공 응답 모델입니다.
 public class SendChatResponse
 {
     [JsonPropertyName("messageId")]
     public string MessageId { get; set; } = string.Empty;
 }
 
-// [오시리스??怨듯몴]: 梨꾪똿 공지 설정 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 공표]: 채팅 공지 설정 요청 모델입니다.
 public class SetChatNoticeRequest
 {
     [JsonPropertyName("message")]
@@ -26,7 +26,7 @@ public class SetChatNoticeRequest
     public string? MessageId { get; set; }
 }
 
-// [오시리스??洹쒖쑉]: 梨꾨꼸 梨꾪똿 설정(?붾줈???꾩슜 ?? 紐⑤뜽?낅땲??
+// [오시리스의 규율]: 채널 채팅 설정(팔로워 전용 등) 모델입니다.
 public class ChatSettings
 {
     [JsonPropertyName("chatAvailableCondition")]
@@ -48,7 +48,7 @@ public class ChatSettings
     public bool ChatEmojiMode { get; set; }
 }
 
-// [오시리스???뺥솕]: 특정 硫붿떆吏瑜?블라인드 泥섎━?섍린 ?꾪븳 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 정화]: 특정 메시지를 블라인드 처리하기 위한 요청 모델입니다.
 public class BlindMessageRequest
 {
     [JsonPropertyName("chatChannelId")]

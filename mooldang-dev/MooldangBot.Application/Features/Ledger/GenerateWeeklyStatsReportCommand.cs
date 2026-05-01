@@ -85,7 +85,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
 💡 *물멍의 조언: 이번 주 포인트 소모가 {(totalSpent > totalEarned ? "공급보다 많습니다! 보상을 조금 줄이거나 이벤트를 늘려보세요." : "공급보다 적습니다. 더 매력적인 룰렛 항목을 추가해보는 건 어럴까요?")}*";
 
         // 4. 발송 및 기록
-        await notificationService.SendAlertAsync(report, false, "weekly:report");
+        await notificationService.SendAlertAsync(report, NotificationChannel.Status, "weekly:report");
         await MarkReportAsSentAsync(now.Date, ct);
         
         logger.LogInformation("📨 [Ledger] 주간 리포트 전송 완료");

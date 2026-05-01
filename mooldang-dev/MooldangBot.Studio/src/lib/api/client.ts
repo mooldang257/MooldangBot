@@ -41,15 +41,30 @@ export async function apiFetch<T>(
 
     const response = await customFetch(finalUrl, fetchOptions);
     
-    // HTTP 상태 코드가 2xx가 아닌 경우에 대한 기본 예외 처리
+    // [물멍]: JSON 파싱 시도 (성공/실패 여부와 관계없이 상세 메시지를 위해 시도)
+    let result: Result<T> | null = null;
+    const text = await response.text();
+    
+    if (text) {
+        try {
+            result = JSON.parse(text);
+        } catch (err) {
+            console.warn("[apiFetch] JSON 파싱 실패:", err);
+        }
+    }
+    
+    // [물멍]: HTTP 상태 코드가 2xx가 아닌 경우 처리
     if (!response.ok) {
+        // 백엔드에서 보낸 상세 에러 메시지가 있다면 사용
+        if (result && result.error) {
+            throw new Error(result.error);
+        }
         throw new Error(`HTTP Error: ${response.status}`);
     }
 
-    const result: Result<T> = await response.json().catch(err => {
-        console.error("[apiFetch] JSON 파싱 실패:", err, "Response:", response);
+    if (!result) {
         throw new Error("물댕봇 데이터 형식 오류");
-    });
+    }
     
     if (!result.isSuccess) {
         console.warn("[apiFetch] 비즈니스 로직 실패:", result.error);

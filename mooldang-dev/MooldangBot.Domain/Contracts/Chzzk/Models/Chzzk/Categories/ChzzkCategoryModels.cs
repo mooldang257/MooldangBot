@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Categories;
 
-// [오시리스???섏깋]: 移댄뀒怨좊━ 寃??寃곌낵 ??ぉ???대뒗 紐⑤뜽?낅땲??
+// [오시리스의 검색]: 카테고리 검색 결과 항목을 담는 모델입니다.
 public class CategorySearchItem
 {
     [JsonPropertyName("categoryType")]

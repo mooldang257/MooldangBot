@@ -33,55 +33,15 @@ namespace MooldangBot.Application.Controllers.Commands
             string chzzkUid, 
             [FromQuery] CursorPagedRequest request)
         {
-            var streamer = await db.CoreStreamerProfiles
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
-
-            if (streamer == null) 
-                return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
-            
-            var streamerId = streamer.Id;
-            int maxLimit = config.GetValue<int>("Pagination:MaxLimit", 100);
-            int effectiveLimit = Math.Min(request.Limit, maxLimit);
-
-            var query = db.SysUnifiedCommands
-                .AsNoTracking()
-                .Where(c => c.StreamerProfileId == streamerId);
-
-            if (request.Cursor.HasValue && request.Cursor.Value > 0)
+            try 
             {
-                query = query.Where(c => c.Id < request.Cursor.Value);
+                var result = await unifiedCommandService.GetPagedCommandsAsync(chzzkUid, request);
+                return Ok(Result<CursorPagedResponse<UnifiedCommandDto>>.Success(result));
             }
-
-            var pagedResult = await query
-                .OrderByDescending(c => c.Id)
-                .Select(c => new {
-                    Entity = c,
-                    Meta = CommandFeatureRegistry.GetByType(c.FeatureType)
-                })
-                .ToPagedListAsync(effectiveLimit, x => x.Entity.Id);
-
-            var items = pagedResult.Items.Select(x => {
-                var c = x.Entity;
-                return new UnifiedCommandDto(
-                    c.Id, 
-                    c.Keyword, 
-                    x.Meta != null ? ((CommandCategory)(x.Meta.CategoryId - 1)).ToString() : "General", 
-                    c.CostType.ToString(), 
-                    c.Cost, 
-                    c.FeatureType.ToString(), 
-                    c.ResponseText, 
-                    c.TargetId, 
-                    c.IsActive,
-                    c.RequiredRole.ToString(),
-                    c.MatchType.ToString(),
-                    c.RequiresSpace,
-                    c.Priority
-                );
-            }).ToList();
-
-            return Ok(Result<CursorPagedResponse<UnifiedCommandDto>>.Success(new CursorPagedResponse<UnifiedCommandDto>(items, pagedResult.NextCursor, pagedResult.HasNext)));
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(Result<string>.Failure(ex.Message));
+            }
         }
 
         /// <summary>

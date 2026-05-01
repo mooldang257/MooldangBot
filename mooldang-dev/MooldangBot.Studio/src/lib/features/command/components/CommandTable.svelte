@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Search, Edit2, Trash2, Shield, ArrowUpDown } from 'lucide-svelte';
     import { fade } from 'svelte/transition';
-    import { apiFetch } from '$lib/api/client'; // [Osiris] 표준 통신 모듈 주입
+    import { apiFetch } from '$lib/api/client'; // [물멍] 표준 통신 모듈 주입
 
     export let allCommands: any[] = [];
     export let masterData: any;

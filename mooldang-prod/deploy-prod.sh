@@ -15,18 +15,20 @@ TARGET=$1
 if [ -z "$TARGET" ]; then
     echo -e "${GREEN}⚓ 운영 환경 배포 지휘부에 접속했습니다.${NC}"
     echo -e "${YELLOW}🎯 배포 대상을 선택해주세요:${NC}"
-    echo "1) 전체 배포 (All: Infra -> Gateway -> Backend -> Frontend)"
+    echo "1) 전체 배포 (All: Infra -> Gateway -> Bot -> Backend -> Frontend)"
     echo "2) 인프라 (Infra: DB, Redis, MQ)"
     echo "3) 게이트웨이 (Gateway: Traefik, Tunnel)"
-    echo "4) 백엔드 (Backend: API, Bot)"
-    echo "5) 프론트엔드 (Frontend: Studio, Admin, Overlay)"
+    echo "4) 치지직 봇 (Bot: chzzk-bot)"
+    echo "5) 백엔드 (Backend: API)"
+    echo "6) 프론트엔드 (Frontend: Studio, Admin, Overlay)"
     read -p "선택 (번호): " choice
     case $choice in
         1) TARGET="all" ;;
         2) TARGET="infra" ;;
         3) TARGET="gateway" ;;
-        4) TARGET="backend" ;;
-        5) TARGET="frontend" ;;
+        4) TARGET="bot" ;;
+        5) TARGET="backend" ;;
+        6) TARGET="frontend" ;;
         *) echo "취소되었습니다."; exit 0 ;;
     esac
 fi
@@ -52,9 +54,14 @@ deploy_gateway() {
     docker compose $GATEWAY up -d
 }
 
+deploy_bot() {
+    echo -e "${YELLOW}🤖 [Prod] 치지직 봇 가동 중...${NC}"
+    docker compose $BACKEND up -d chzzk-bot
+}
+
 deploy_backend() {
     echo -e "${YELLOW}⚙️  [Prod] 백엔드 가동 중...${NC}"
-    docker compose $BACKEND up -d
+    docker compose $BACKEND up -d app migration
 }
 
 deploy_frontend() {
@@ -67,6 +74,7 @@ case $TARGET in
     all)
         deploy_infra
         deploy_gateway
+        deploy_bot
         deploy_backend
         deploy_frontend
         ;;
@@ -75,6 +83,9 @@ case $TARGET in
         ;;
     gateway)
         deploy_gateway
+        ;;
+    bot)
+        deploy_bot
         ;;
     backend)
         deploy_backend

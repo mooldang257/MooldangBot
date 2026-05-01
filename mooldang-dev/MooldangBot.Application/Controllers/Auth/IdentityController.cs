@@ -79,6 +79,7 @@ namespace MooldangBot.Application.Controllers.Auth
                         profileImageUrl = profile.ProfileImageUrl ?? "",
                         chzzkUid = profile.ChzzkUid,
                         slug = profile.Slug,
+                        role = User.FindFirstValue(ClaimTypes.Role),
                         overlayToken = overlayToken,
                         isActive = profile.IsActive
                     }));
@@ -98,7 +99,8 @@ namespace MooldangBot.Application.Controllers.Auth
                             channelName = viewer.Nickname,
                             profileImageUrl = viewer.ProfileImageUrl ?? "",
                             chzzkUid = viewer.ViewerUid,
-                            slug = (string?)null
+                            slug = (string?)null,
+                            role = User.FindFirstValue(ClaimTypes.Role)
                         }));
                     }
                 }

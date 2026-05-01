@@ -62,11 +62,12 @@ public class HealthMonitorService(
                     report.FleetInstances[instanceId] = instance;
                 }
 
-                bool isAlive = (DateTime.UtcNow - lastPulse).TotalMinutes < 1;
+                bool isAlive = (DateTime.UtcNow - lastPulse).TotalMinutes < 2; // [v24.0-Fix] 기동 시 지연을 고려하여 2분으로 완화
                 instance.Workers[workerName] = isAlive;
                 
-                instance.MemoryUsageMb = root.GetProperty("MemoryUsageMb").GetInt64();
-                instance.CpuTimeMs = root.GetProperty("CpuTimeMs").GetDouble();
+                // [v24.0-Fix] 인스턴스 전체 통계는 합산하거나 최신값으로 갱신
+                instance.MemoryUsageMb = Math.Max(instance.MemoryUsageMb, root.GetProperty("MemoryUsageMb").GetInt64());
+                instance.CpuTimeMs = Math.Max(instance.CpuTimeMs, root.GetProperty("CpuTimeMs").GetDouble());
                 instance.LastSeenAt = lastPulse > instance.LastSeenAt ? lastPulse : instance.LastSeenAt;
             }
         }

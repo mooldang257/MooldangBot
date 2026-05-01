@@ -45,23 +45,38 @@ public abstract class BaseHybridWorker : BackgroundService
     {
         _logger.LogInformation("🚀 [오시리스 엔진] {WorkerName} 기동 시작 (지휘관 지침 대기 중)", _workerName);
 
+        // [v28.0-Fix] 하트비트(맥박) 전용 루프를 메인 작업과 분리하여 실행합니다.
+        // 이를 통해 24시간 주기 같은 장기 대기 워커들도 '생존 신호'를 꾸준히 보낼 수 있습니다.
+        _ = Task.Run(async () =>
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var pulse = _serviceProvider.GetService<PulseService>();
+                    pulse?.ReportPulse(_workerName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "💓 [하트비트] {WorkerName} 맥박 보고 중 일시적 오류", _workerName);
+                }
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            }
+        }, stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var settings = _optionsMonitor.Get(_workerName);
-
-            // 1. 활성화 여부 확인
-            if (!settings.IsEnabled)
-            {
-                _logger.LogTrace("💤 [오시리스 엔진] {WorkerName} 일시 정지 상태 (IsEnabled: false)", _workerName);
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                continue;
-            }
-
             try
             {
-                // [오시리스 엔진] 자동 맥박 보고
-                var pulse = _serviceProvider.GetService<PulseService>();
-                pulse?.ReportPulse(_workerName);
+                var settings = _optionsMonitor.Get(_workerName);
+
+                // 1. 활성화 여부 확인
+                if (!settings.IsEnabled)
+                {
+                    _logger.LogTrace("💤 [오시리스 엔진] {WorkerName} 일시 정지 상태 (IsEnabled: false)", _workerName);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    continue;
+                }
 
                 // 2. 비즈니스 로직 수행 (분산 잠금 확인)
                 if (RequiresDistributedLock)
@@ -73,7 +88,6 @@ public abstract class BaseHybridWorker : BackgroundService
                         await using var redLock = await lockFactory.CreateLockAsync(LockResourceName, adjustedExpiry);
                         if (!redLock.IsAcquired)
                         {
-                            // 락 획득 실패 시, 잠시 대기 후 루프 재개
                             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
                             continue;
                         }
@@ -89,25 +103,18 @@ public abstract class BaseHybridWorker : BackgroundService
                 {
                     await ProcessWorkAsync(stoppingToken);
                 }
+
+                // 3. 지연 시간 산정 (지휘관 지침 vs 안전 기본값)
+                int interval = settings.IntervalSeconds ?? DefaultIntervalSeconds;
+                if (interval < 2) interval = 2;
+
+                await Task.Delay(TimeSpan.FromSeconds(interval), stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "🔥 [오시리스 엔진] {WorkerName} 작업 중 충돌 발생", _workerName);
+                _logger.LogError(ex, "🔥 [오시리스 엔진] {WorkerName} 실행 중 치명적 오류 발생 (자동 복구 시도)", _workerName);
+                await Task.Delay(TimeSpan.FromSeconds(Math.Min(DefaultIntervalSeconds, 60)), stoppingToken);
             }
-
-            // 3. 지연 시간 산정 (지휘관 지침 vs 안전 기본값)
-            // [지휘관 지시]: 최소 주기는 반드시 2초 이상이어야 합니다.
-            int interval = settings.IntervalSeconds ?? DefaultIntervalSeconds;
-            if (interval < 2)
-            {
-                if (settings.IntervalSeconds.HasValue)
-                {
-                   _logger.LogWarning("⚠️ [지휘 지침 보정] {WorkerName}의 주기({Interval}s)가 너무 짧아 안전 하한선(2s)으로 상향 조정합니다.", _workerName, interval);
-                }
-                interval = 2;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(interval), stoppingToken);
         }
 
         _logger.LogInformation("🛑 [오시리스 엔진] {WorkerName} 정지 보고", _workerName);

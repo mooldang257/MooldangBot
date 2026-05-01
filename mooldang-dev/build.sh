@@ -22,23 +22,32 @@ CLEAN_BUILD=false
 if [ -z "$TARGET" ]; then
     echo -e "${YELLOW}🛠️  빌드 대상을 선택해주세요:${NC}"
     echo "1) 전체 빌드 (All)"
-    echo "2) 백엔드 (Backend: API, Bot)"
-    echo "3) 프론트엔드 (Frontend: Studio, Admin, Overlay)"
-    echo "4) 인프라 (Infra: Images Pull Only)"
+    echo "2) 인프라 (Infra: DB, Redis, MQ - Images Pull Only)"
+    echo "3) 게이트웨이 (Gateway: Traefik)"
+    echo "4) 치지직 봇 (Bot: chzzk-bot)"
+    echo "5) 백엔드 (Backend: API)"
+    echo "6) 프론트엔드 (Frontend: Studio, Admin, Overlay)"
     read -p "선택 (번호): " choice
     case $choice in
         1) TARGET="all" ;;
-        2) TARGET="backend" ;;
-        3) TARGET="frontend" ;;
-        4) TARGET="infra" ;;
+        2) TARGET="infra" ;;
+        3) TARGET="gateway" ;;
+        4) TARGET="bot" ;;
+        5) TARGET="backend" ;;
+        6) TARGET="frontend" ;;
         *) echo "취소되었습니다."; exit 0 ;;
     esac
 fi
 
 # 버전 자동 생성 (인자가 없을 때: v0.0.x 형태 자동 증가)
-if [ -z "$IMAGE_VERSION" ] && [ "$TARGET" != "infra" ]; then
+if [ -z "$IMAGE_VERSION" ] && [ "$TARGET" != "infra" ] && [ "$TARGET" != "gateway" ]; then
     # .env에서 현재 버전 읽기
-    CURRENT_VERSION=$(grep "^VERSION_APP=" .env | cut -d'=' -f2)
+    VERSION_KEY="VERSION_APP"
+    if [ "$TARGET" == "frontend" ]; then
+        VERSION_KEY="VERSION_UI"
+    fi
+    
+    CURRENT_VERSION=$(grep "^${VERSION_KEY}=" .env | cut -d'=' -f2)
     if [[ $CURRENT_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
         MAJOR=${BASH_REMATCH[1]}
         MINOR=${BASH_REMATCH[2]}
@@ -63,10 +72,15 @@ case $TARGET in
         SERVICES=""
         SERVICES_TO_TAG=("app" "chzzk-bot" "studio" "overlay" "admin")
         ;;
+    bot)
+        FILES="$COMPOSE_BACKEND"
+        SERVICES="chzzk-bot"
+        SERVICES_TO_TAG=("chzzk-bot")
+        ;;
     backend)
         FILES="$COMPOSE_BACKEND"
-        SERVICES="app chzzk-bot"
-        SERVICES_TO_TAG=("app" "chzzk-bot")
+        SERVICES="app"
+        SERVICES_TO_TAG=("app")
         ;;
     frontend)
         FILES="$COMPOSE_FRONTEND"
@@ -77,6 +91,12 @@ case $TARGET in
         echo -e "${YELLOW}📥 인프라 이미지(MariaDB, Redis 등)를 가져오는 중...${NC}"
         docker compose $COMPOSE_INFRA pull
         echo -e "${GREEN}✅ 인프라 이미지 준비 완료!${NC}"
+        exit 0
+        ;;
+    gateway)
+        echo -e "${YELLOW}📥 게이트웨이 이미지(Traefik)를 가져오는 중...${NC}"
+        docker compose $COMPOSE_INFRA pull traefik
+        echo -e "${GREEN}✅ 게이트웨이 이미지 준비 완료!${NC}"
         exit 0
         ;;
     *)

@@ -1,6 +1,6 @@
 // src/lib/core/state/modal.svelte.ts
 /**
- * 🌠 [Osiris]: 프리미엄 확인 모달 엔진 (Premium Confirm Modal Engine)
+ * 🌠 [물멍]: 프리미엄 확인 모달 엔진 (Premium Confirm Modal Engine)
  * 브라우저의 confirm()을 대체하여 서비스 디자인과 일관된 고품질 모달을 제공합니다.
  */
 class ModalState {

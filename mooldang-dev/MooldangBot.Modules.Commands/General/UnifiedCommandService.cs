@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 
+using MooldangBot.Domain.Common.Extensions;
 using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Modules.Commands.General;
@@ -25,6 +26,55 @@ public class UnifiedCommandService : IUnifiedCommandService
         _db = db;
         _cacheService = cacheService;
         _logger = logger;
+    }
+
+    public async Task<CursorPagedResponse<UnifiedCommandDto>> GetPagedCommandsAsync(string chzzkUid, CursorPagedRequest request)
+    {
+        var targetUid = (chzzkUid ?? "").Trim().ToLower();
+        var streamer = await _db.CoreStreamerProfiles
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.ChzzkUid == targetUid);
+
+        if (streamer == null) throw new KeyNotFoundException("스트리머를 찾을 수 없습니다.");
+
+        var query = _db.SysUnifiedCommands
+            .AsNoTracking()
+            .Where(c => c.StreamerProfileId == streamer.Id);
+
+        if (request.Cursor.HasValue && request.Cursor.Value > 0)
+        {
+            query = query.Where(c => c.Id < request.Cursor.Value);
+        }
+
+        var pagedResult = await query
+            .OrderByDescending(c => c.Id)
+            .Select(c => new {
+                Entity = c,
+                Meta = CommandFeatureRegistry.GetByType(c.FeatureType)
+            })
+            .ToPagedListAsync(request.Limit, x => x.Entity.Id);
+
+        var items = pagedResult.Items.Select(x => {
+            var c = x.Entity;
+            return new UnifiedCommandDto(
+                c.Id, 
+                c.Keyword, 
+                x.Meta != null ? ((CommandCategory)(x.Meta.CategoryId - 1)).ToString() : "General", 
+                c.CostType.ToString(), 
+                c.Cost, 
+                c.FeatureType.ToString(), 
+                c.ResponseText, 
+                c.TargetId, 
+                c.IsActive,
+                c.RequiredRole.ToString(),
+                c.MatchType.ToString(),
+                c.RequiresSpace,
+                c.Priority
+            );
+        }).ToList();
+
+        return new CursorPagedResponse<UnifiedCommandDto>(items, pagedResult.NextCursor, pagedResult.HasNext);
     }
 
     public async Task<UnifiedCommand> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req)

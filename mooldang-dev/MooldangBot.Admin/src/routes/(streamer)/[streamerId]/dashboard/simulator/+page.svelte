@@ -8,6 +8,7 @@
     
     let nickname = $state('Simulator');
     let content = $state('');
+    let payAmount = $state(1000); // [v3.9] 기본 후원 금액
     let isProcessing = $state(false);
     let resultMessage = $state({ text: '', type: 'info' });
 
@@ -24,11 +25,11 @@
         content = val;
     };
 
-    const sendSimulation = async () => {
-        if (!content.trim()) return;
+    const sendSimulation = async (type: 'CHAT' | 'DONATION' = 'CHAT') => {
+        if (type === 'CHAT' && !content.trim()) return;
 
         isProcessing = true;
-        resultMessage = { text: '이벤트 주입 중...', type: 'info' };
+        resultMessage = { text: type === 'CHAT' ? '이벤트 주입 중...' : '💰 후원 주입 중...', type: 'info' };
 
         try {
             const res = await apiFetch<string>('/api/admin/simulator/inject', {
@@ -36,13 +37,18 @@
                 body: {
                     chzzkUid: streamerId,
                     nickname: nickname,
-                    content: content
+                    content: content,
+                    eventType: type,
+                    payAmount: type === 'DONATION' ? payAmount : null
                 }
             });
 
             if (res) {
-                resultMessage = { text: '✅ 시뮬레이션 성공! 봇의 반응을 확인하세요.', type: 'success' };
-                content = '';
+                resultMessage = { 
+                    text: type === 'CHAT' ? '✅ 시뮬레이션 성공! 봇의 반응을 확인하세요.' : `✅ ${payAmount.toLocaleString()}원 후원 성공!`, 
+                    type: 'success' 
+                };
+                if (type === 'CHAT') content = '';
             } else {
                 resultMessage = { text: '❌ 실패: 알 수 없는 오류', type: 'error' };
             }
@@ -95,17 +101,58 @@
                                     id="content"
                                     type="text" 
                                     bind:value={content}
-                                    onkeydown={(e) => e.key === 'Enter' && sendSimulation()}
+                                    onkeydown={(e) => e.key === 'Enter' && sendSimulation('CHAT')}
                                     class="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all pr-32"
                                     placeholder="전송할 명령어 또는 채팅을 입력하세요"
                                 />
                                 <button 
-                                    onclick={sendSimulation}
+                                    onclick={() => sendSimulation('CHAT')}
                                     disabled={isProcessing || !content.trim()}
                                     class="absolute right-2 top-2 bottom-2 px-6 bg-primary text-white rounded-xl font-black text-xs shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center gap-2"
                                 >
                                     <Send size={14} />
                                     전송
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- [v3.9] 후원 설정 로우 추가 -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100/50">
+                        <div class="md:col-span-1">
+                            <label for="payAmount" class="block text-xs font-black text-amber-500 uppercase tracking-widest mb-2 ml-1">Donation Amount</label>
+                            <div class="relative">
+                                <input 
+                                    id="payAmount"
+                                    type="number" 
+                                    bind:value={payAmount}
+                                    step="1000"
+                                    min="100"
+                                    class="w-full px-5 py-3.5 bg-amber-50/30 border border-amber-100 rounded-2xl text-sm font-black text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all pl-10"
+                                />
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500">
+                                    <Zap size={16} fill="currentColor" />
+                                </span>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label for="donationContent" class="block text-xs font-black text-amber-500 uppercase tracking-widest mb-2 ml-1">Donation Message</label>
+                            <div class="relative">
+                                <input 
+                                    id="donationContent"
+                                    type="text" 
+                                    bind:value={content}
+                                    onkeydown={(e) => e.key === 'Enter' && sendSimulation('DONATION')}
+                                    class="w-full px-5 py-3.5 bg-amber-50/30 border border-amber-100 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all pr-32"
+                                    placeholder="후원과 함께 보낼 메시지를 입력하세요"
+                                />
+                                <button 
+                                    onclick={() => sendSimulation('DONATION')}
+                                    disabled={isProcessing}
+                                    class="absolute right-2 top-2 bottom-2 px-6 bg-amber-500 text-white rounded-xl font-black text-xs shadow-lg shadow-amber-500/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center gap-2"
+                                >
+                                    <Gift size={14} />
+                                    후원 전송
                                 </button>
                             </div>
                         </div>

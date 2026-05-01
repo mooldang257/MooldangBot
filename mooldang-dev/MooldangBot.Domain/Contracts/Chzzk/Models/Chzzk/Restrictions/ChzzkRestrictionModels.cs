@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Restrictions;
 
-// [오시리스???쒖젣]: 梨꾨꼸 ?쒕룞 ?쒗븳(諛?裕ㅽ듃) ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 제제]: 채널 활동 제한(밴/뮤트) 요청 모델입니다.
 public class ChannelRestrictionRequest
 {
     [JsonPropertyName("targetChannelId")]
     public string TargetChannelId { get; set; } = string.Empty;
 }
 
-// [오시리스???좎삁]: ?꾩떆 ?쒕룞 ?쒗븳 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 유예]: 일시 활동 제한 요청 모델입니다.
 public class TemporaryRestrictionRequest
 {
     [JsonPropertyName("targetChannelId")]
@@ -20,7 +20,7 @@ public class TemporaryRestrictionRequest
     public string ChatChannelId { get; set; } = string.Empty;
 }
 
-// [오시리스??紐낅?]: ?쒗븳??梨꾨꼸 ?뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 명부]: 제한된 채널 정보를 담는 모델입니다.
 public class RestrictedChannel
 {
     [JsonPropertyName("restrictedChannelId")]

@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Session;
 
-// [오시리스???묒냽]: WebSocket ?곌껐???꾪븳 URL ?묐떟 紐⑤뜽?낅땲??
+// [오시리스의 접속]: WebSocket 연결을 위한 URL 응답 모델입니다.
 public class SessionUrlResponse
 {
     [JsonPropertyName("url")]
     public string Url { get; set; } = string.Empty;
 }
 
-// [오시리스??泥?랬]: 援щ룆 以묒씤 ?대깽???뺣낫瑜??대뒗 紐⑤뜽?낅땲??
+// [오시리스의 청취]: 구독 중인 이벤트 정보를 담는 모델입니다.
 public class SubscribedEventInfo
 {
     [JsonPropertyName("eventType")]
@@ -20,7 +20,7 @@ public class SubscribedEventInfo
     public string ChannelId { get; set; } = string.Empty;
 }
 
-// [오시리스??紐⑸줉]: 특정 梨꾨꼸???쒖꽦 ?몄뀡 ?뺣낫 紐⑤뜽?낅땲??
+// [오시리스의 목록]: 특정 채널의 활성 세션 정보 모델입니다.
 public class SessionListItem
 {
     [JsonPropertyName("sessionKey")]
@@ -36,7 +36,7 @@ public class SessionListItem
     public List<SubscribedEventInfo> SubscribedEvents { get; set; } = new();
 }
 
-// [오시리스??梨꾪깮]: ?몄뀡???대깽?몃? 援щ룆?섍린 ?꾪븳 ?붿껌 紐⑤뜽?낅땲??
+// [오시리스의 채택]: 세션에 이벤트를 구독하기 위한 요청 모델입니다.
 public class SubscribeEventRequest
 {
     [JsonPropertyName("sessionKey")]

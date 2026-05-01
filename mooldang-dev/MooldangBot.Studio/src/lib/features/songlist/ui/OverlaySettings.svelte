@@ -2,15 +2,24 @@
     import { untrack } from 'svelte';
     import { fade, fly } from 'svelte/transition';
     import { 
-        Music, ListOrdered, Save, Eye, EyeOff, Type, Hash, 
-        Palette, Layout, RefreshCw, Info, Settings2, ExternalLink
+        Save, Layout, RefreshCw, Settings2
     } from 'lucide-svelte';
     import LayoutEditor from '$lib/features/overlay/ui/LayoutEditor.svelte';
+    import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
 
     let { designSettings = $bindable(), onSave } = $props<{ 
         designSettings: string, 
         onSave: () => void 
     }>();
+
+    // [물멍]: 구버전 폰트 값 마이그레이션
+    const mapOldFont = (f: string) => {
+        if (!f) return "Pretendard-Regular";
+        if (f === "Gmarket Sans" || f === "GmarketSansBold") return "GmarketSansMedium";
+        if (f === "Pretendard") return "Pretendard-Regular";
+        if (f === "Roboto") return "Noto Sans KR";
+        return f;
+    };
 
     // [물멍]: 내부 상태 관리
     let settings = $state<any>({});
@@ -24,39 +33,51 @@
         untrack(() => {
             try {
                 const parsed = JSON.parse(raw || "{}");
+                
+                // [물멍]: 새로운 객체 기반 구조로의 마이그레이션 로직
+                const currentSong = parsed.CurrentSong || {
+                    TitleFont: mapOldFont(parsed.liveTitleFont),
+                    ArtistFont: mapOldFont(parsed.liveArtistFont),
+                    TitleColor: parsed.liveTitleColor || "#FFFFFF",
+                    ArtistColor: parsed.liveArtistColor || "#CCCCCC",
+                    CardBgColor: parsed.liveCardBgColor || "#0f172a",
+                    CardBgOpacity: parsed.liveCardBgOpacity ?? 0.8
+                };
+
+                const roulette = parsed.Roulette || {
+                    Font: mapOldFont(parsed.rouletteFont),
+                    TitleColor: parsed.rouletteTitleColor || "#FFFFFF",
+                    CardBgColor: parsed.rouletteCardBgColor || "#0f172a",
+                    CardBgOpacity: parsed.rouletteCardBgOpacity ?? 0.8
+                };
+
                 settings = {
-                    liveTitleFont: parsed.liveTitleFont || "Gmarket Sans",
-                    liveArtistFont: parsed.liveArtistFont || "Pretendard",
-                    liveTitleColor: parsed.liveTitleColor || "#FFFFFF",
-                    liveArtistColor: parsed.liveArtistColor || "#CCCCCC",
-                    queueFont: parsed.queueFont || "Pretendard",
-                    queueTitleColor: parsed.queueTitleColor || "#FFFFFF",
-                    queueArtistColor: parsed.queueArtistColor || "#AAAAAA",
-                    queueItemBgColor: parsed.queueItemBgColor || "#0f172a",
-                    liveCardBgColor: parsed.liveCardBgColor || "#0f172a",
-                    liveCardBgOpacity: parsed.liveCardBgOpacity ?? 0.8,
-                    queueItemBgOpacity: parsed.queueItemBgOpacity ?? 0.8,
+                    ...parsed,
+                    CurrentSong: currentSong,
+                    Roulette: roulette,
+                    // [물멍]: 구버전 필드들도 하위 호환성을 위해 우선 유지 (LayoutEditor에서 최종 변환됨)
+                    queueTheme: parsed.queueTheme || "card",
                     maxQueueCount: parsed.maxQueueCount ?? 5,
-                    showCurrentSong: parsed.showCurrentSong ?? true,
-                    showQueue: parsed.showQueue ?? true,
                     layout: parsed.layout || {}
                 };
             } catch (e) {
                 settings = {
-                    liveTitleFont: "Gmarket Sans",
-                    liveArtistFont: "Pretendard",
-                    liveTitleColor: "#FFFFFF",
-                    liveArtistColor: "#CCCCCC",
-                    queueFont: "Pretendard",
-                    queueTitleColor: "#FFFFFF",
-                    queueArtistColor: "#AAAAAA",
-                    queueItemBgColor: "#0f172a",
-                    liveCardBgColor: "#0f172a",
-                    liveCardBgOpacity: 0.8,
-                    queueItemBgOpacity: 0.8,
+                    queueTheme: "card",
                     maxQueueCount: 5,
-                    showCurrentSong: true,
-                    showQueue: true,
+                    CurrentSong: {
+                        TitleFont: "GmarketSansMedium",
+                        ArtistFont: "Pretendard-Regular",
+                        TitleColor: "#FFFFFF",
+                        ArtistColor: "#CCCCCC",
+                        CardBgColor: "#0f172a",
+                        CardBgOpacity: 0.8
+                    },
+                    Roulette: {
+                        Font: "GmarketSansMedium",
+                        TitleColor: "#FFFFFF",
+                        CardBgColor: "#0f172a",
+                        CardBgOpacity: 0.8
+                    },
                     layout: {}
                 };
             }
@@ -73,206 +94,41 @@
         }
     };
 
-    const handleSaveLayout = (newLayout: any) => {
-        settings.layout = newLayout;
-        handleSave();
+    const handleSaveLayout = async (updatedSettings: any) => {
+        settings = { ...updatedSettings };
+        await handleSave();
         showLayoutModal = false;
     };
-
-    const fonts = [
-        { name: "Gmarket Sans", value: "GmarketSansBold" },
-        { name: "Pretendard", value: "Pretendard" },
-        { name: "나눔고딕", value: "NanumGothic" },
-        { name: "Roboto", value: "Roboto" }
-    ];
 </script>
 
 <div class="flex flex-col gap-6 p-1 h-full overflow-y-auto no-scrollbar pb-10" in:fade>
-    <!-- [물멍]: 카드형 오버레이 설정 섹션 -->
-    <div class="premium-card">
-        <div class="card-header">
-            <div class="flex items-center gap-3">
-                <div class="icon-box bg-primary/10 text-primary">
-                    <Music size={18} />
-                </div>
-                <div>
-                    <h3 class="text-sm font-black text-slate-800">재생 중인 노래</h3>
-                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Current Song Widget</p>
-                </div>
+    <!-- [물멍]: 레이아웃 에디터 카드 -->
+    <div class="premium-card bg-gradient-to-br from-indigo-50 to-white border-indigo-100 shadow-indigo-100/50">
+        <div class="flex items-center gap-4 mb-2">
+            <div class="p-4 bg-indigo-500 text-white rounded-3xl shadow-lg shadow-indigo-200">
+                <Layout size={28} />
             </div>
-            <button 
-                class="toggle-btn {settings.showCurrentSong ? 'active' : ''}" 
-                onclick={() => settings.showCurrentSong = !settings.showCurrentSong}
-            >
-                {#if settings.showCurrentSong}
-                    <Eye size={12} /> <span>표시 중</span>
-                {:else}
-                    <EyeOff size={12} /> <span>숨김</span>
-                {/if}
-            </button>
-        </div>
-
-        <div class="card-content {settings.showCurrentSong ? '' : 'opacity-30 pointer-events-none'}">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="field">
-                    <label class="field-label">제목 폰트</label>
-                    <div class="input-wrapper">
-                        <Type size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <select bind:value={settings.liveTitleFont} class="input-select">
-                            {#each fonts as font}
-                                <option value={font.value}>{font.name}</option>
-                            {/each}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">제목 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.liveTitleColor} class="input-color" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="field">
-                    <label class="field-label">가수명 폰트</label>
-                    <div class="input-wrapper">
-                        <Type size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <select bind:value={settings.liveArtistFont} class="input-select">
-                            {#each fonts as font}
-                                <option value={font.value}>{font.name}</option>
-                            {/each}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">가수명 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.liveArtistColor} class="input-color" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="field">
-                    <label class="field-label">배경 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.liveCardBgColor} class="input-color" />
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">배경 투명도 ({Math.round(settings.liveCardBgOpacity * 100)}%)</label>
-                    <div class="range-box">
-                        <input type="range" min="0" max="1" step="0.01" bind:value={settings.liveCardBgOpacity} class="range-input" />
-                        <span class="range-val">{Math.round(settings.liveCardBgOpacity * 100)}%</span>
-                    </div>
-                </div>
+            <div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tight">오버레이 통합 에디터</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Master Layout & Styles</p>
             </div>
         </div>
+        
+        <p class="text-sm font-medium text-slate-600 leading-relaxed mb-4">
+            이제 한 곳에서 오버레이 요소의 위치, 크기, 폰트, 색상을 모두 관리할 수 있습니다. 
+            아래 버튼을 눌러 정밀 편집기를 열어주세요.
+        </p>
+
+        <button 
+            class="w-full flex items-center justify-center gap-3 py-4 bg-white border-2 border-indigo-100 rounded-2xl text-indigo-600 font-black hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
+            onclick={() => showLayoutModal = true}
+        >
+            <Settings2 size={20} class="group-hover:rotate-90 transition-transform duration-500" />
+            <span>정밀 에디터 열기</span>
+        </button>
     </div>
 
-    <div class="premium-card">
-        <div class="card-header">
-            <div class="flex items-center gap-3">
-                <div class="icon-box bg-emerald-500/10 text-emerald-600">
-                    <ListOrdered size={18} />
-                </div>
-                <div>
-                    <h3 class="text-sm font-black text-slate-800">대기열 목록</h3>
-                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Queue List Widget</p>
-                </div>
-            </div>
-            <button 
-                class="toggle-btn emerald {settings.showQueue ? 'active' : ''}" 
-                onclick={() => settings.showQueue = !settings.showQueue}
-            >
-                {#if settings.showQueue}
-                    <Eye size={12} /> <span>표시 중</span>
-                {:else}
-                    <EyeOff size={12} /> <span>숨김</span>
-                {/if}
-            </button>
-        </div>
-
-        <div class="card-content {settings.showQueue ? '' : 'opacity-30 pointer-events-none'}">
-            <div class="field">
-                <label class="field-label">최대 표시 개수 ({settings.maxQueueCount}곡)</label>
-                <div class="range-box">
-                    <input type="range" min="1" max="10" bind:value={settings.maxQueueCount} class="range-input" />
-                    <span class="range-val">{settings.maxQueueCount}</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="field">
-                    <label class="field-label">목록 폰트</label>
-                    <div class="input-wrapper">
-                        <Type size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <select bind:value={settings.queueFont} class="input-select">
-                            {#each fonts as font}
-                                <option value={font.value}>{font.name}</option>
-                            {/each}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">배경/목록 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.queueItemBgColor} class="input-color" />
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">배경 투명도 ({Math.round(settings.queueItemBgOpacity * 100)}%)</label>
-                    <div class="range-box">
-                        <input type="range" min="0" max="1" step="0.01" bind:value={settings.queueItemBgOpacity} class="range-input" />
-                        <span class="range-val">{Math.round(settings.queueItemBgOpacity * 100)}%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="field">
-                    <label class="field-label">곡 제목 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.queueTitleColor} class="input-color" />
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="field-label">가수명 색상</label>
-                    <div class="input-wrapper">
-                        <Palette size={12} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="color" bind:value={settings.queueArtistColor} class="input-color" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- [물멍]: 레이아웃 에디터 바로가기 -->
-    <button 
-        class="layout-entry-btn"
-        onclick={() => showLayoutModal = true}
-    >
-        <Layout size={16} />
-        <div class="flex flex-col items-start">
-            <span class="text-xs font-black">레이아웃 에디터 열기</span>
-            <span class="text-[9px] font-bold opacity-60">위젯 위치 및 크기 정밀 조정</span>
-        </div>
-        <ExternalLink size={14} class="ml-auto opacity-40" />
-    </button>
-
-    <!-- [물멍]: 포인트 설정 스타일의 저장 버튼 -->
+    <!-- [물멍]: 저장 버튼 -->
     <button 
         class="save-action-btn" 
         onclick={handleSave}
@@ -298,7 +154,7 @@
                 </div>
                 <div>
                     <h2 class="text-2xl font-black text-slate-800 tracking-tight">레이아웃 정밀 에디터</h2>
-                    <p class="text-sm font-bold text-slate-500">1920x1080 캔버스에서 위젯의 위치와 크기를 최적화합니다.</p>
+                    <p class="text-sm font-bold text-slate-500">1920x1080 캔버스에서 위젯의 위치와 크기, 스타일을 최적화합니다.</p>
                 </div>
             </div>
             <button 
@@ -310,7 +166,7 @@
         </header>
         <div class="flex-1 overflow-y-auto p-8">
             <LayoutEditor 
-                layout={settings.layout} 
+                bind:settings={settings} 
                 onSave={handleSaveLayout} 
             />
         </div>
@@ -341,151 +197,6 @@
     .premium-card:hover {
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
         border-color: #e2e8f0;
-    }
-
-    .card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .icon-box {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .toggle-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.75rem;
-        font-size: 10px;
-        font-weight: 800;
-        background: #f1f5f9;
-        color: #94a3b8;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .toggle-btn.active {
-        background: #e0f2fe;
-        color: #0369a1;
-    }
-
-    .toggle-btn.emerald.active {
-        background: #ecfdf5;
-        color: #059669;
-    }
-
-    .card-content {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        transition: opacity 0.3s;
-    }
-
-    .field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .field-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-left: 0.25rem;
-    }
-
-    .input-wrapper {
-        position: relative;
-    }
-
-    .input-select {
-        width: 100%;
-        padding: 0.65rem 1rem 0.65rem 2.5rem;
-        border-radius: 0.75rem;
-        background: #f8fafc;
-        border: 1px solid #f1f5f9;
-        font-size: 13px;
-        font-weight: 700;
-        color: #475569;
-        outline: none;
-        appearance: none;
-    }
-
-    .input-select:focus {
-        border-color: #3b82f6;
-        background: white;
-    }
-
-    .input-color {
-        width: 100%;
-        height: 38px;
-        padding: 0.25rem 0.5rem 0.25rem 2.5rem;
-        border-radius: 0.75rem;
-        background: #f8fafc;
-        border: 1px solid #f1f5f9;
-        cursor: pointer;
-        outline: none;
-    }
-
-    .input-color::-webkit-color-swatch-wrapper {
-        padding: 0;
-    }
-    .input-color::-webkit-color-swatch {
-        border: none;
-        border-radius: 0.4rem;
-    }
-
-    .range-box {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        background: #f8fafc;
-        padding: 0.5rem 1rem;
-        border-radius: 0.75rem;
-    }
-
-    .range-input {
-        flex: 1;
-        accent-color: #10b981;
-    }
-
-    .range-val {
-        font-size: 12px;
-        font-weight: 900;
-        color: #10b981;
-        min-width: 1.5rem;
-        text-align: center;
-    }
-
-    .layout-entry-btn {
-        width: 100%;
-        padding: 1rem;
-        background: #fffbeb;
-        border: 1px dashed #fcd34d;
-        border-radius: 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: #d97706;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .layout-entry-btn:hover {
-        background: #fef3c7;
-        border-color: #fbbf24;
-        transform: scale(1.02);
     }
 
     .save-action-btn {

@@ -15,7 +15,7 @@
     } from 'lucide-svelte';
     import Sortable from 'sortablejs';
 
-    // [Osiris]: 부모로부터 전달받는 props
+    // [물멍]: 부모로부터 전달받는 props
     let { 
         queue = $bindable([]), 
         completed = $bindable([]),
