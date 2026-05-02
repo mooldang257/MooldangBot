@@ -36,6 +36,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-mooldang_osiris_secret_2026}
       - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=${MARIADB_DATABASE};Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
+      - CONNECTIONSTRINGS__COMMONCONNECTION=Server=db;Database=MooldangCommon;Uid=${MARIADB_USER};Pwd=${MARIADB_PASSWORD};SslMode=None;
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/health || exit 1"]
       interval: 10s
@@ -44,8 +45,8 @@ services:
       start_period: 20s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/api`)"
-      - "traefik.http.routers.app-dev.entrypoints=web"
+      - "traefik.http.routers.app-dev.rule=Host(`dev.mooldang.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.app-dev.entrypoints=web-dev"
       - "traefik.http.services.app-dev.loadbalancer.server.port=8080"
       - "traefik.http.services.app-dev.loadbalancer.sticky.cookie=true"
       - "traefik.http.middlewares.app-upgrade.headers.customrequestheaders.X-Forwarded-Proto=https"

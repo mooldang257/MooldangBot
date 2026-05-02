@@ -17,7 +17,7 @@ services:
       - "traefik.enable=true"
       # 개발(dev)과 운영(bot) 도메인 모두에서 /fonts 경로를 수용합니다.
       - "traefik.http.routers.fonts-shared.rule=(Host(`bot.mooldang.com`) || Host(`${BASE_DOMAIN}`)) && PathPrefix(`/fonts`)"
-      - "traefik.http.routers.fonts-shared.entrypoints=web"
+      - "traefik.http.routers.fonts-shared.entrypoints=web,web-dev"
       - "traefik.http.services.fonts-shared.loadbalancer.server.port=80"
       - "traefik.http.routers.fonts-shared.middlewares=cloudflare-real-ip@file"
       - "traefik.docker.network=mooldang_dev_net"

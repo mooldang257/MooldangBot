@@ -20,7 +20,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.studio-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/`) && !PathPrefix(`/api`) && !PathPrefix(`/admin`) && !PathPrefix(`/overlay`) && !PathPrefix(`/fonts`)"
-      - "traefik.http.routers.studio-dev.entrypoints=web"
+      - "traefik.http.routers.studio-dev.entrypoints=web-dev"
       - "traefik.http.services.studio-dev.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.dev-noindex.headers.customresponseheaders.X-Robots-Tag=noindex, nofollow, noarchive, nosnippet"
       - "traefik.http.routers.studio-dev.middlewares=cloudflare-real-ip@file,dev-noindex"
@@ -47,7 +47,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.admin-dev.entrypoints=web"
+      - "traefik.http.routers.admin-dev.entrypoints=web-dev"
       - "traefik.http.routers.admin-dev.middlewares=traefik-auth@file,cloudflare-real-ip@file"
       - "traefik.http.services.admin-dev.loadbalancer.server.port=3000"
       - "traefik.docker.network=mooldang_dev_net"

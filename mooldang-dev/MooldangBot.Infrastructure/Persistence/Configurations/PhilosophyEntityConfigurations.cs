@@ -11,7 +11,7 @@ public class IamfScenarioConfiguration : IEntityTypeConfiguration<IamfScenario>
 {
     public void Configure(EntityTypeBuilder<IamfScenario> builder)
     {
-        builder.ToTable("iamf_scenarios");
+        builder.ToTable("IamfScenarios");
         
         builder.HasOne(s => s.StreamerProfile)
                .WithMany()
@@ -24,7 +24,7 @@ public class IamfGenosRegistryConfiguration : IEntityTypeConfiguration<IamfGenos
 {
     public void Configure(EntityTypeBuilder<IamfGenosRegistry> builder)
     {
-        builder.ToTable("iamf_genos_registry");
+        builder.ToTable("IamfGenosRegistry");
         
         builder.HasOne(g => g.StreamerProfile)
                .WithMany()
@@ -37,7 +37,7 @@ public class IamfParhosCycleConfiguration : IEntityTypeConfiguration<IamfParhosC
 {
     public void Configure(EntityTypeBuilder<IamfParhosCycle> builder)
     {
-        builder.ToTable("iamf_parhos_cycles");
+        builder.ToTable("IamfParhosCycles");
         
         // [v4.9] 복합 고유 인덱스 설정 (동시성 및 무결성 보장)
         builder.HasIndex(p => new { p.StreamerProfileId, p.CycleId }).IsUnique();
@@ -53,7 +53,7 @@ public class IamfVibrationLogConfiguration : IEntityTypeConfiguration<IamfVibrat
 {
     public void Configure(EntityTypeBuilder<IamfVibrationLog> builder)
     {
-        builder.ToTable("log_iamf_vibrations");
+        builder.ToTable("LogIamfVibrations");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()
@@ -66,7 +66,7 @@ public class IamfStreamerSettingConfiguration : IEntityTypeConfiguration<IamfStr
 {
     public void Configure(EntityTypeBuilder<IamfStreamerSetting> builder)
     {
-        builder.ToTable("iamf_streamer_settings");
+        builder.ToTable("IamfStreamerSettings");
         
         builder.HasOne(s => s.StreamerProfile)
                .WithOne()
@@ -79,7 +79,7 @@ public class StreamerKnowledgeConfiguration : IEntityTypeConfiguration<StreamerK
 {
     public void Configure(EntityTypeBuilder<StreamerKnowledge> builder)
     {
-        builder.ToTable("sys_streamer_knowledges");
+        builder.ToTable("SysStreamerKnowledges");
         
         builder.HasOne(k => k.StreamerProfile)
                .WithMany()
@@ -92,7 +92,7 @@ public class BroadcastSessionConfiguration : IEntityTypeConfiguration<BroadcastS
 {
     public void Configure(EntityTypeBuilder<BroadcastSession> builder)
     {
-        builder.ToTable("sys_broadcast_sessions");
+        builder.ToTable("SysBroadcastSessions");
         
         builder.HasOne(b => b.StreamerProfile)
                .WithMany()
@@ -106,7 +106,7 @@ public class BroadcastHistoryLogConfiguration : IEntityTypeConfiguration<Broadca
 {
     public void Configure(EntityTypeBuilder<BroadcastHistoryLog> builder)
     {
-        builder.ToTable("log_broadcast_history");
+        builder.ToTable("LogBroadcastHistory");
         
         builder.HasOne(h => h.BroadcastSession)
                .WithMany()

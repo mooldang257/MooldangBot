@@ -9,7 +9,7 @@ public class PointTransactionHistoryConfiguration : IEntityTypeConfiguration<Poi
 {
     public void Configure(EntityTypeBuilder<PointTransactionHistory> builder)
     {
-        builder.ToTable("log_point_transactions");
+        builder.ToTable("LogPointTransactions");
         
         builder.HasOne(p => p.StreamerProfile)
                .WithMany()
@@ -24,7 +24,7 @@ public class PointDailySummaryConfiguration : IEntityTypeConfiguration<PointDail
 {
     public void Configure(EntityTypeBuilder<PointDailySummary> builder)
     {
-        builder.ToTable("log_point_daily_summaries");
+        builder.ToTable("LogPointDailySummaries");
     }
 }
 
@@ -33,7 +33,7 @@ public class RouletteStatsAggregatedConfiguration : IEntityTypeConfiguration<Log
 {
     public void Configure(EntityTypeBuilder<LogRouletteStats> builder)
     {
-        builder.ToTable("log_roulette_stats");
+        builder.ToTable("LogRouletteStats");
     }
 }
 
@@ -42,7 +42,7 @@ public class ChatInteractionLogConfiguration : IEntityTypeConfiguration<ChatInte
 {
     public void Configure(EntityTypeBuilder<ChatInteractionLog> builder)
     {
-        builder.ToTable("log_chat_interactions");
+        builder.ToTable("LogChatInteractions");
         
         builder.HasOne(c => c.StreamerProfile)
                .WithMany()
@@ -56,7 +56,7 @@ public class ViewerDonationHistoryConfiguration : IEntityTypeConfiguration<Viewe
 {
     public void Configure(EntityTypeBuilder<ViewerDonationHistory> builder)
     {
-        builder.ToTable("func_viewer_donation_histories");
+        builder.ToTable("FuncViewerDonationHistories");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()

@@ -121,7 +121,6 @@ namespace MooldangBot.Infrastructure
                         errorNumbersToAdd: null);
                     mysqlOptions.CommandTimeout(10);
                 })
-                .UseSnakeCaseNamingConvention()
                 .EnableDetailedErrors()
                 .EnableSensitiveDataLogging(), poolSize: 1024);
 

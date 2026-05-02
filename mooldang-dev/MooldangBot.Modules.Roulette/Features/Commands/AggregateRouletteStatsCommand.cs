@@ -21,23 +21,23 @@ public class AggregateRouletteStatsCommandHandler(
         var connection = db.Database.GetDbConnection();
 
         const string sql = @"
-            INSERT INTO log_roulette_stats (roulette_id, item_name, theoretical_probability, total_spins, win_count, last_updated_at)
+            INSERT INTO LogRouletteStats (RouletteId, ItemName, TheoreticalProbability, TotalSpins, WinCount, LastUpdatedAt)
             SELECT 
-                L.roulette_id,
-                L.item_name,
-                IFNULL(I.probability, 0) as theoretical_probability,
-                COUNT(*) as total_spins,
-                COUNT(*) as win_count,
+                L.RouletteId,
+                L.ItemName,
+                IFNULL(I.Probability, 0) as TheoreticalProbability,
+                COUNT(*) as TotalSpins,
+                COUNT(*) as WinCount,
                 NOW()
-            FROM log_roulette_results L
-            LEFT JOIN func_roulette_items I ON L.roulette_item_id = I.id
-            WHERE L.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
-            GROUP BY L.roulette_id, L.item_name
+            FROM LogRouletteResults L
+            LEFT JOIN FuncRouletteItems I ON L.RouletteItemId = I.Id
+            WHERE L.CreatedAt >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+            GROUP BY L.RouletteId, L.ItemName
             ON DUPLICATE KEY UPDATE 
-                theoretical_probability = VALUES(theoretical_probability),
-                total_spins = VALUES(total_spins),
-                win_count = VALUES(win_count),
-                last_updated_at = NOW();";
+                TheoreticalProbability = VALUES(TheoreticalProbability),
+                TotalSpins = VALUES(TotalSpins),
+                WinCount = VALUES(WinCount),
+                LastUpdatedAt = NOW();";;
 
         int affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, cancellationToken: ct));
         logger.LogInformation("✅ [룰렛 모듈] 룰렛 감사 집계 완료 ({Count}항목 갱신)", affectedRows);

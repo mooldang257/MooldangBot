@@ -8,7 +8,7 @@ public class RouletteConfiguration : IEntityTypeConfiguration<Roulette>
 {
     public void Configure(EntityTypeBuilder<Roulette> builder)
     {
-        builder.ToTable("func_roulette_main");
+        builder.ToTable("FuncRouletteMain");
         
         builder.HasOne(r => r.StreamerProfile)
                .WithMany()
@@ -25,7 +25,7 @@ public class RouletteItemConfiguration : IEntityTypeConfiguration<RouletteItem>
 {
     public void Configure(EntityTypeBuilder<RouletteItem> builder)
     {
-        builder.ToTable("func_roulette_items");
+        builder.ToTable("FuncRouletteItems");
         
         builder.HasOne(i => i.Roulette)
                .WithMany(r => r.Items)
@@ -38,7 +38,7 @@ public class RouletteLogConfiguration : IEntityTypeConfiguration<RouletteLog>
 {
     public void Configure(EntityTypeBuilder<RouletteLog> builder)
     {
-        builder.ToTable("log_roulette_results");
+        builder.ToTable("LogRouletteResults");
         // [v6.2] ViewerNickname 필드 제거됨
 
         builder.HasOne(l => l.StreamerProfile)
@@ -71,7 +71,7 @@ public class RouletteSpinConfiguration : IEntityTypeConfiguration<RouletteSpin>
 {
     public void Configure(EntityTypeBuilder<RouletteSpin> builder)
     {
-        builder.ToTable("func_roulette_spins");
+        builder.ToTable("FuncRouletteSpins");
         
         builder.HasOne(s => s.StreamerProfile)
                .WithMany()

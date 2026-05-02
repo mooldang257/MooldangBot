@@ -60,7 +60,7 @@ services.AddSingleton<IUserSession, SystemUserSession>();
 services.AddSingleton<ILlmService, GeminiLlmService>();
 
 services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb")).UseSnakeCaseNamingConvention());
+    options.UseMySql(connectionString, ServerVersion.Parse("10.11-mariadb")));
 services.AddDataProtection().SetApplicationName("MooldangBot").PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "dp-keys")));
 
 var serviceProvider = services.BuildServiceProvider();
@@ -100,7 +100,7 @@ async Task RunVectorBackfillAsync(AppDbContext db, ILlmService llm)
     
     // 1. 스트리머 노래책 (func_song_books) 백필
     var targetSongs = (await db.Database.GetDbConnection().QueryAsync<SongBook>(
-        "SELECT id, title FROM func_song_books WHERE title_vector IS NULL AND is_deleted = 0")).ToList();
+        "SELECT Id, Title FROM FuncSongBooks WHERE TitleVector IS NULL AND IsDeleted = 0")).ToList();
 
     Console.WriteLine($"📊 [1/2] 개인 노래책 대상 선정: {targetSongs.Count}곡");
     int successCount = 0;
@@ -119,7 +119,7 @@ async Task RunVectorBackfillAsync(AppDbContext db, ILlmService llm)
                 Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
                 
                 await db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE func_song_books SET title_vector = @vector WHERE id = @id", 
+                    "UPDATE FuncSongBooks SET TitleVector = @vector WHERE Id = @id", 
                     new { vector = binaryVector, id = song.Id });
                 
                 successCount++;
@@ -139,7 +139,7 @@ async Task RunVectorBackfillAsync(AppDbContext db, ILlmService llm)
 
     // 2. 스트리머 라이브러리 (func_song_streamer_library) 백필
     var targetLib = (await db.Database.GetDbConnection().QueryAsync<Streamer_SongLibrary>(
-        "SELECT id, title FROM func_song_streamer_library WHERE title_vector IS NULL")).ToList();
+        "SELECT Id, Title FROM FuncSongStreamerLibrary WHERE TitleVector IS NULL")).ToList();
 
     Console.WriteLine($"\n📚 [2/2] 스트리머 라이브러리 대상 선정: {targetLib.Count}곡");
     int libSuccessCount = 0;
@@ -158,7 +158,7 @@ async Task RunVectorBackfillAsync(AppDbContext db, ILlmService llm)
                 Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
 
                 await db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE func_song_streamer_library SET title_vector = @vector WHERE id = @id",
+                    "UPDATE FuncSongStreamerLibrary SET TitleVector = @vector WHERE Id = @id",
                     new { vector = binaryVector, id = song.Id });
                 
                 libSuccessCount++;
@@ -186,70 +186,70 @@ async Task RunDuplicateCleanupAsync(AppDbContext db)
     // 1. 포인트 테이블
     Console.WriteLine("📊 [1/3] 포인트 테이블 정리 중...");
     await db.Database.ExecuteSqlRawAsync(@"
-        UPDATE func_viewer_points target
+        UPDATE FuncViewerPoints target
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id, SUM(points) as total_points
-            FROM func_viewer_points
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(Points) as total_points
+            FROM FuncViewerPoints
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON target.id = source.target_id
-        SET target.points = source.total_points, target.updated_at = NOW()");
+        ) source ON target.Id = source.target_id
+        SET target.Points = source.total_points, target.UpdatedAt = NOW()");
 
     int deletedPoints = await db.Database.ExecuteSqlRawAsync(@"
-        DELETE p FROM func_viewer_points p
+        DELETE p FROM FuncViewerPoints p
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id
-            FROM func_viewer_points
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+            FROM FuncViewerPoints
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON p.streamer_profile_id = source.streamer_profile_id AND p.global_viewer_id = source.global_viewer_id
-        WHERE p.id > source.target_id");
+        ) source ON p.StreamerProfileId = source.StreamerProfileId AND p.GlobalViewerId = source.GlobalViewerId
+        WHERE p.Id > source.target_id");
     Console.WriteLine($"   ✅ {deletedPoints}개의 중복 포인트 레코드가 제거되었습니다.");
 
     // 2. 후원 테이블
     Console.WriteLine("\n💰 [2/3] 후원 테이블 정리 중...");
     await db.Database.ExecuteSqlRawAsync(@"
-        UPDATE func_viewer_donations target
+        UPDATE FuncViewerDonations target
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id, SUM(balance) as total_bal, SUM(total_donated) as total_don
-            FROM func_viewer_donations
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(Balance) as total_bal, SUM(TotalDonated) as total_don
+            FROM FuncViewerDonations
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON target.id = source.target_id
-        SET target.balance = source.total_bal, target.total_donated = source.total_don, target.updated_at = NOW()");
+        ) source ON target.Id = source.target_id
+        SET target.Balance = source.total_bal, target.TotalDonated = source.total_don, target.UpdatedAt = NOW()");
 
     int deletedDonations = await db.Database.ExecuteSqlRawAsync(@"
-        DELETE d FROM func_viewer_donations d
+        DELETE d FROM FuncViewerDonations d
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id
-            FROM func_viewer_donations
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+            FROM FuncViewerDonations
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON d.streamer_profile_id = source.streamer_profile_id AND d.global_viewer_id = source.global_viewer_id
-        WHERE d.id > source.target_id");
+        ) source ON d.StreamerProfileId = source.StreamerProfileId AND d.GlobalViewerId = source.GlobalViewerId
+        WHERE d.Id > source.target_id");
     Console.WriteLine($"   ✅ {deletedDonations}개의 중복 후원 레코드가 제거되었습니다.");
 
     // 3. 관계 테이블
     Console.WriteLine("\n🤝 [3/3] 관계 테이블 정리 중...");
     await db.Database.ExecuteSqlRawAsync(@"
-        UPDATE core_viewer_relations target
+        UPDATE CoreViewerRelations target
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id, SUM(attendance_count) as att
-            FROM core_viewer_relations
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(AttendanceCount) as att
+            FROM CoreViewerRelations
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON target.id = source.target_id
-        SET target.attendance_count = source.att");
+        ) source ON target.Id = source.target_id
+        SET target.AttendanceCount = source.att");
 
     int deletedRelations = await db.Database.ExecuteSqlRawAsync(@"
-        DELETE r FROM core_viewer_relations r
+        DELETE r FROM CoreViewerRelations r
         JOIN (
-            SELECT MIN(id) as target_id, streamer_profile_id, global_viewer_id
-            FROM core_viewer_relations
-            GROUP BY streamer_profile_id, global_viewer_id
+            SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+            FROM CoreViewerRelations
+            GROUP BY StreamerProfileId, GlobalViewerId
             HAVING COUNT(*) > 1
-        ) source ON r.streamer_profile_id = source.streamer_profile_id AND r.global_viewer_id = source.global_viewer_id
-        WHERE r.id > source.target_id");
+        ) source ON r.StreamerProfileId = source.StreamerProfileId AND r.GlobalViewerId = source.GlobalViewerId
+        WHERE r.Id > source.target_id");
     Console.WriteLine($"   ✅ {deletedRelations}개의 중복 관계 레코드가 제거되었습니다.");
 
     Console.WriteLine("\n🎉 [완료] 모든 데이터베이스 중복 레코드가 성공적으로 통합되었습니다.");

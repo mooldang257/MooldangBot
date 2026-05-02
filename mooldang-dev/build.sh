@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ---------------------------------------------------------
-# 🌊 [MooldangBot] 통합 빌드 지휘부 v6.0 (Ultimate Edition)
-# 설계 v5.2 기반: 모듈별 독립 빌드 및 지능형 버전 관리
+# 🌊 [MooldangBot] 개발 환경 전용 빌드 스크립트 v2.1
+# 설계 v5.2 준수: 모듈화된 레이어별 빌드 및 버전 관리
 # ---------------------------------------------------------
 
 GREEN='\033[0;32m'
@@ -13,16 +13,12 @@ NC='\033[0m'
 # 환경 변수 로드
 [ -f .env ] && source .env
 
-# 1. 인자 분석
+# 1. 대상 선택
 TARGET_IDX=$1
-IMAGE_VERSION=$2
-IS_BOT_ENV=false # 기본은 dev 버전업
-
-# 인자가 없을 경우 메뉴 표시
 if [ -z "$TARGET_IDX" ]; then
-    echo -e "${YELLOW}🛠️  빌드 대상을 선택해주세요 (설계 v5.2 준수):${NC}"
+    echo -e "${YELLOW}🚀 빌드 대상을 선택해주세요 (개발 전용):${NC}"
     echo "1) 프론트엔드(UI) & API (Web App 통합)"
-    echo "2) 프론트엔드(UI: Studio, Admin)"
+    echo "2) 프론트엔드(UI Only)"
     echo "3) 오버레이 (Overlay: 방송 송출)"
     echo "4) 백엔드 (API: API Server)"
     echo "5) 봇 (Bot: Chzzk-Bot)"
@@ -34,16 +30,9 @@ if [ -z "$TARGET_IDX" ]; then
     TARGET_IDX=$choice
 fi
 
-# 운영(bot) 버전 여부 확인 (인프라/게이트웨이 제외)
-if [[ "$TARGET_IDX" =~ ^[1-6,9]$ ]]; then
-    read -p "📢 운영(bot)용 버전으로 빌드하시겠습니까? (y/N): " is_prod
-    if [[ "$is_prod" == "y" || "$is_prod" == "Y" ]]; then
-        IS_BOT_ENV=true
-        echo -e "${RED}⚠️  운영(bot) 버전 규칙(Minor Up)을 적용합니다.${NC}"
-    else
-        echo -e "${GREEN}🍃 개발(dev) 버전 규칙(Patch Up)을 적용합니다.${NC}"
-    fi
-fi
+# 개발(dev) 버전 규칙(Patch Up) 상시 적용
+echo -e "${GREEN}🍃 개발(dev) 버전 규칙(Patch Up)을 적용합니다.${NC}"
+IS_BOT_ENV=false
 
 # 2. 빌드 대상 및 컴포즈 파일 매핑
 COMPOSE_INFRA="-f docker-compose.infra.yml"
@@ -72,7 +61,7 @@ case $TARGET_IDX in
         SERVICES_TO_TAG=("overlay")
         VERSION_KEYS=("VERSION_OVERLAY")
         ;;
-    4) # API Only
+    4) # Backend API
         FILES="$COMPOSE_APP"
         SERVICES="app migration"
         SERVICES_TO_TAG=("app")
@@ -85,45 +74,51 @@ case $TARGET_IDX in
         VERSION_KEYS=("VERSION_BOT")
         ;;
     6) # All
-        FILES="$COMPOSE_INFRA $COMPOSE_APP $COMPOSE_BOT $COMPOSE_UI $COMPOSE_OVERLAY $COMPOSE_SHARED"
-        SERVICES="db redis rabbitmq adminer grafana loki prometheus app migration chzzk-bot studio admin overlay fonts"
-        SERVICES_TO_TAG=("app" "chzzk-bot" "studio" "admin" "overlay" "fonts")
+        FILES="$COMPOSE_UI $COMPOSE_APP $COMPOSE_BOT $COMPOSE_OVERLAY $COMPOSE_SHARED"
+        SERVICES="studio admin app chzzk-bot overlay fonts"
+        SERVICES_TO_TAG=("studio" "admin" "app" "chzzk-bot" "overlay" "fonts")
         VERSION_KEYS=("VERSION_APP" "VERSION_BOT" "VERSION_UI" "VERSION_OVERLAY" "VERSION_FONTS")
         ;;
-    7) # Infra Pull
-        echo -e "${YELLOW}📥 인프라 이미지를 가져오는 중...${NC}"
+    7) # Infra
+        echo -e "${YELLOW}📦 인프라 이미지를 가져오는 중...${NC}"
         docker compose $COMPOSE_INFRA pull
-        exit 0 ;;
-    8) # Gateway Pull
-        echo -e "${YELLOW}📥 게이트웨이 이미지를 가져오는 중...${NC}"
-        docker compose $COMPOSE_INFRA pull traefik
-        exit 0 ;;
+        echo -e "${GREEN}✅ 인프라 이미지 준비 완료!${NC}"
+        exit 0
+        ;;
+    8) # Gateway
+        FILES="-f ../bot/docker-compose.gateway.yml"
+        SERVICES="traefik"
+        SERVICES_TO_TAG=()
+        VERSION_KEYS=()
+        ;;
     9) # Fonts
         FILES="$COMPOSE_SHARED"
         SERVICES="fonts"
         SERVICES_TO_TAG=("fonts")
         VERSION_KEYS=("VERSION_FONTS")
         ;;
-    *) echo -e "${RED}❌ 잘못된 선택입니다.${NC}"; exit 1 ;;
+    *)
+        echo -e "${RED}❌ 올바르지 않은 번호입니다.${NC}"
+        exit 1
+        ;;
 esac
 
-# 3. 버전 자동 생성 (설계 v5.2 준수)
-if [ -z "$IMAGE_VERSION" ]; then
-    # 첫 번째 대표 키를 기준으로 버전 계산
-    V_KEY=${VERSION_KEYS[0]}
-    CURRENT_VERSION=$(grep "^${V_KEY}=" .env | cut -d'=' -f2)
+# 3. 버전 결정 (v0.x.x 형태)
+IMAGE_VERSION="latest"
+if [ ${#VERSION_KEYS[@]} -gt 0 ]; then
+    # 첫 번째 키를 기준으로 버전 추출
+    KEY=${VERSION_KEYS[0]}
+    CURRENT_VERSION=$(grep "^$KEY=" .env | cut -d'=' -f2)
     
     if [[ $CURRENT_VERSION =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-        MAJOR=${BASH_REMATCH[1]}
-        MINOR=${BASH_REMATCH[2]}
-        PATCH=${BASH_REMATCH[3]}
+        major=${BASH_REMATCH[1]}
+        minor=${BASH_REMATCH[2]}
+        patch=${BASH_REMATCH[3]}
         
-        if [ "$IS_BOT_ENV" == "true" ]; then
-            NEXT_MINOR=$((MINOR + 1))
-            IMAGE_VERSION="v$MAJOR.$NEXT_MINOR.0"
+        if [ "$IS_BOT_ENV" = true ]; then
+            IMAGE_VERSION="v$major.$((minor + 1)).0"
         else
-            NEXT_PATCH=$((PATCH + 1))
-            IMAGE_VERSION="v$MAJOR.$MINOR.$NEXT_PATCH"
+            IMAGE_VERSION="v$major.$minor.$((patch + 1))"
         fi
     else
         IMAGE_VERSION="v0.0.1"

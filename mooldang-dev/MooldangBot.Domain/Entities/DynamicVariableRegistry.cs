@@ -24,26 +24,26 @@ public static class DynamicVariableRegistry
     private static readonly ImmutableList<DynamicVariableMetadata> _variables = ImmutableList.Create(
         new DynamicVariableMetadata(
             1, "$(포인트)", "보유 포인트", "primary",
-            "SELECT CAST(vp.points AS CHAR) FROM func_viewer_points vp JOIN core_streamer_profiles sp ON vp.streamer_profile_id = sp.id JOIN core_global_viewers gv ON vp.global_viewer_id = gv.id WHERE sp.chzzk_uid = @streamerUid AND gv.viewer_uid_hash = @viewerHash"
+            "SELECT CAST(vp.Points AS CHAR) FROM FuncViewerPoints vp JOIN CoreStreamerProfiles sp ON vp.StreamerProfileId = sp.Id JOIN CoreGlobalViewers gv ON vp.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
         ),
         new DynamicVariableMetadata(
             2, "$(닉네임)", "시청자 닉네임", "success",
-            "SELECT gv.nickname FROM core_viewer_relations vr JOIN core_streamer_profiles sp ON vr.streamer_profile_id = sp.id JOIN core_global_viewers gv ON vr.global_viewer_id = gv.id WHERE sp.chzzk_uid = @streamerUid AND gv.viewer_uid_hash = @viewerHash"
+            "SELECT gv.Nickname FROM CoreViewerRelations vr JOIN CoreStreamerProfiles sp ON vr.StreamerProfileId = sp.Id JOIN CoreGlobalViewers gv ON vr.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
         ),
         new DynamicVariableMetadata(3, "$(방제)", "현재 방송 제목", "secondary", "METHOD:GetLiveTitle"),
         new DynamicVariableMetadata(4, "$(카테고리)", "현재 방송 카테고리", "info", "METHOD:GetLiveCategory"),
         new DynamicVariableMetadata(5, "$(공지)", "현재 방송 공지", "warning", "METHOD:GetLiveNotice"),
         new DynamicVariableMetadata(
             6, "$(연속출석일수)", "연속 출석한 일수", "success",
-            "SELECT CAST(vr.consecutive_attendance_count AS CHAR) FROM core_viewer_relations vr JOIN core_streamer_profiles sp ON vr.streamer_profile_id = sp.id JOIN core_global_viewers gv ON vr.global_viewer_id = gv.id WHERE sp.chzzk_uid = @streamerUid AND gv.viewer_uid_hash = @viewerHash"
+            "SELECT CAST(vr.ConsecutiveAttendanceCount AS CHAR) FROM CoreViewerRelations vr JOIN CoreStreamerProfiles sp ON vr.StreamerProfileId = sp.Id JOIN CoreGlobalViewers gv ON vr.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
         ),
         new DynamicVariableMetadata(
             7, "$(누적출석일수)", "누적 출석한 횟수", "info",
-            "SELECT CAST(vr.attendance_count AS CHAR) FROM core_viewer_relations vr JOIN core_streamer_profiles sp ON vr.streamer_profile_id = sp.id JOIN core_global_viewers gv ON vr.global_viewer_id = gv.id WHERE sp.chzzk_uid = @streamerUid AND gv.viewer_uid_hash = @viewerHash"
+            "SELECT CAST(vr.AttendanceCount AS CHAR) FROM CoreViewerRelations vr JOIN CoreStreamerProfiles sp ON vr.StreamerProfileId = sp.Id JOIN CoreGlobalViewers gv ON vr.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
         ),
         new DynamicVariableMetadata(
             8, "$(마지막출석일)", "최근 출석 날짜", "secondary",
-            "SELECT DATE_FORMAT(vr.last_attendance_at, '%Y-%m-%d %H:%i') FROM core_viewer_relations vr JOIN core_streamer_profiles sp ON vr.streamer_profile_id = sp.id JOIN core_global_viewers gv ON vr.global_viewer_id = gv.id WHERE sp.chzzk_uid = @streamerUid AND gv.viewer_uid_hash = @viewerHash"
+            "SELECT DATE_FORMAT(vr.LastAttendanceAt, '%Y-%m-%d %H:%i') FROM CoreViewerRelations vr JOIN CoreStreamerProfiles sp ON vr.StreamerProfileId = sp.Id JOIN CoreGlobalViewers gv ON vr.GlobalViewerId = gv.Id WHERE sp.ChzzkUid = @streamerUid AND gv.ViewerUidHash = @viewerHash"
         ),
         new DynamicVariableMetadata(10, "$(송리스트)", "현재 송리스트 활성화 여부", "warning", "METHOD:GetSonglistStatus")
     );

@@ -16,7 +16,7 @@ public class StreamerProfileConfiguration : IEntityTypeConfiguration<StreamerPro
 
     public void Configure(EntityTypeBuilder<StreamerProfile> builder)
     {
-        builder.ToTable("core_streamer_profiles");
+        builder.ToTable("CoreStreamerProfiles");
 
         // ⭐ 검색 성능 최적화를 위한 인덱스 추가
         builder.HasIndex(p => p.ChzzkUid).IsUnique();
@@ -47,7 +47,7 @@ public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
 
     public void Configure(EntityTypeBuilder<GlobalViewer> builder)
     {
-        builder.ToTable("core_global_viewers");
+        builder.ToTable("CoreGlobalViewers");
 
         var ciCollation = "utf8mb4_unicode_ci";
 
@@ -72,7 +72,7 @@ public class StreamerManagerConfiguration : IEntityTypeConfiguration<StreamerMan
 {
     public void Configure(EntityTypeBuilder<StreamerManager> builder)
     {
-        builder.ToTable("core_streamer_managers");
+        builder.ToTable("CoreStreamerManagers");
         
         builder.HasOne(m => m.StreamerProfile)
                .WithMany()
@@ -91,7 +91,7 @@ public class ChzzkCategoryConfiguration : IEntityTypeConfiguration<ChzzkCategory
 {
     public void Configure(EntityTypeBuilder<ChzzkCategory> builder)
     {
-        builder.ToTable("sys_chzzk_categories");
+        builder.ToTable("SysChzzkCategories");
 
         builder.HasMany(c => c.Aliases)
                .WithOne(a => a.Category)
@@ -103,7 +103,7 @@ public class ChzzkCategoryAliasConfiguration : IEntityTypeConfiguration<ChzzkCat
 {
     public void Configure(EntityTypeBuilder<ChzzkCategoryAlias> builder)
     {
-        builder.ToTable("sys_chzzk_category_aliases");
+        builder.ToTable("SysChzzkCategoryAliases");
         
         builder.HasIndex(a => a.Alias);
     }
@@ -114,7 +114,7 @@ public class StreamerPreferenceConfiguration : IEntityTypeConfiguration<Streamer
 {
     public void Configure(EntityTypeBuilder<StreamerPreference> builder)
     {
-        builder.ToTable("sys_streamer_preferences");
+        builder.ToTable("SysStreamerPreferences");
         
         builder.HasOne(p => p.StreamerProfile)
                .WithMany()
@@ -131,7 +131,7 @@ public class ViewerRelationConfiguration : IEntityTypeConfiguration<ViewerRelati
 {
     public void Configure(EntityTypeBuilder<ViewerRelation> builder)
     {
-        builder.ToTable("core_viewer_relations");
+        builder.ToTable("CoreViewerRelations");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()

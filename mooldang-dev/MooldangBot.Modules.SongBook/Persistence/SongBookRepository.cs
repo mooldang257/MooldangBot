@@ -17,9 +17,9 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
     {
         var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
         const string sql = @"
-            SELECT id, song_library_id, title, artist, thumbnail_url,
+            SELECT Id, SongLibraryId, Title, Artist, ThumbnailUrl,
                    VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance
-            FROM func_song_master_library
+            FROM FuncSongMasterLibrary
             WHERE VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25
             ORDER BY Distance
             LIMIT @limit";
@@ -27,11 +27,11 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         var conn = GetConnection();
         var results = await conn.QueryAsync<dynamic>(sql, new { vector = vectorString, limit });
         return results.Select(r => new Master_SongLibrary {
-            Id = (int)r.id,
-            SongLibraryId = (long)r.song_library_id,
-            Title = (string)r.title,
-            Artist = (string?)r.artist,
-            ThumbnailUrl = (string?)r.thumbnail_url
+            Id = (int)r.Id,
+            SongLibraryId = (long)r.SongLibraryId,
+            Title = (string)r.Title,
+            Artist = (string?)r.Artist,
+            ThumbnailUrl = (string?)r.ThumbnailUrl
         }).ToList();
     }
 
@@ -46,13 +46,13 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
             if (int.TryParse(query, out int songNo))
             {
                 const string idSql = @"
-                    SELECT id, song_no, streamer_profile_id, title, artist, album, alias, category, 
-                           is_requestable, sing_count, required_points, last_sung_at, 
-                           lyrics_url, mr_url, pitch, proficiency, reference_url, 
-                           song_library_id, thumbnail_path, thumbnail_url, title_chosung, 
-                           is_active, is_deleted, created_at, updated_at
-                    FROM func_song_books
-                    WHERE streamer_profile_id = @streamerProfileId AND is_active = 1 AND is_deleted = 0 AND song_no = @songNo
+                    SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
+                           IsRequestable, SingCount, RequiredPoints, LastSungAt, 
+                           LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
+                           SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
+                           IsActive, IsDeleted, CreatedAt, UpdatedAt
+                    FROM FuncSongBooks
+                    WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND SongNo = @songNo
                     LIMIT 1";
                 var idResult = await conn.QueryFirstOrDefaultAsync<dynamic>(idSql, new { streamerProfileId, songNo });
                 if (idResult != null) {
@@ -63,13 +63,13 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
             }
 
             const string exactSql = @"
-                SELECT id, song_no, streamer_profile_id, title, artist, album, alias, category, 
-                       is_requestable, sing_count, required_points, last_sung_at, 
-                       lyrics_url, mr_url, pitch, proficiency, reference_url, 
-                       song_library_id, thumbnail_path, thumbnail_url, title_chosung, 
-                       is_active, is_deleted, created_at, updated_at
-                FROM func_song_books
-                WHERE streamer_profile_id = @streamerProfileId AND is_active = 1 AND is_deleted = 0 AND title = @query
+                SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
+                       IsRequestable, SingCount, RequiredPoints, LastSungAt, 
+                       LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
+                       SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
+                       IsActive, IsDeleted, CreatedAt, UpdatedAt
+                FROM FuncSongBooks
+                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND Title = @query
                 LIMIT 1";
             var exactResult = await conn.QueryFirstOrDefaultAsync<dynamic>(exactSql, new { streamerProfileId, query });
             if (exactResult != null) {
@@ -84,21 +84,21 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         {
             var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
             const string vectorSql = @"
-                SELECT id, song_no, streamer_profile_id, title, artist, album, alias, category, 
-                       is_requestable, sing_count, required_points, last_sung_at, 
-                       lyrics_url, mr_url, pitch, proficiency, reference_url, 
-                       song_library_id, thumbnail_path, thumbnail_url, title_chosung, 
-                       is_active, is_deleted, created_at, updated_at,
-                       VEC_DISTANCE_COSINE(title_vector, VEC_FromText(@vector)) as Distance
-                FROM func_song_books
-                WHERE streamer_profile_id = @streamerProfileId AND is_active = 1 AND is_deleted = 0
-                  AND VEC_DISTANCE_COSINE(title_vector, VEC_FromText(@vector)) < 0.25
+                SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
+                       IsRequestable, SingCount, RequiredPoints, LastSungAt, 
+                       LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
+                       SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
+                       IsActive, IsDeleted, CreatedAt, UpdatedAt,
+                       VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance
+                FROM FuncSongBooks
+                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0
+                  AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25
                 ORDER BY Distance LIMIT @limit";
 
             var vectorResults = (await conn.QueryAsync<dynamic>(vectorSql, new { streamerProfileId, vector = vectorString, limit })).ToList();
             if (vectorResults.Any()) {
                 List<MooldangBot.Domain.Entities.SongBook> mappedResults = vectorResults.Select(r => (MooldangBot.Domain.Entities.SongBook)MapToSongBook(r)).ToList();
-                foreach(var m in mappedResults) logger.LogInformation("🔍 [SongBookRepo] Vector Match: {Title}, Distance: {Distance}, Cost: {Cost}", (object)m.Title, (object)vectorResults.First(v => v.id == m.Id).Distance, (object)m.RequiredPoints);
+                foreach(var m in mappedResults) logger.LogInformation("🔍 [SongBookRepo] Vector Match: {Title}, Distance: {Distance}, Cost: {Cost}", (object)m.Title, (object)vectorResults.First(v => v.Id == m.Id).Distance, (object)m.RequiredPoints);
                 return mappedResults;
             }
             logger.LogInformation("🔍 [SongBookRepo] No Vector Match under 0.25");
@@ -108,15 +108,15 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         if (!string.IsNullOrEmpty(query))
         {
             const string likeSql = @"
-                SELECT id, song_no, streamer_profile_id, title, artist, album, alias, category, 
-                       is_requestable, sing_count, required_points, last_sung_at, 
-                       lyrics_url, mr_url, pitch, proficiency, reference_url, 
-                       song_library_id, thumbnail_path, thumbnail_url, title_chosung, 
-                       is_active, is_deleted, created_at, updated_at
-                FROM func_song_books
-                WHERE streamer_profile_id = @streamerProfileId AND is_active = 1 AND is_deleted = 0 
-                  AND (title LIKE CONCAT('%', @query, '%') OR artist LIKE CONCAT('%', @query, '%') OR (alias IS NOT NULL AND alias LIKE CONCAT('%', @query, '%')))
-                ORDER BY (title = @query) DESC LIMIT @limit";
+                SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
+                       IsRequestable, SingCount, RequiredPoints, LastSungAt, 
+                       LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
+                       SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
+                       IsActive, IsDeleted, CreatedAt, UpdatedAt
+                FROM FuncSongBooks
+                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 
+                  AND (Title LIKE CONCAT('%', @query, '%') OR Artist LIKE CONCAT('%', @query, '%') OR (Alias IS NOT NULL AND Alias LIKE CONCAT('%', @query, '%')))
+                ORDER BY (Title = @query) DESC LIMIT @limit";
 
             var likeResults = (await conn.QueryAsync<dynamic>(likeSql, new { streamerProfileId, query, limit })).ToList();
             if (likeResults.Any()) {
@@ -132,31 +132,31 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
 
     private MooldangBot.Domain.Entities.SongBook MapToSongBook(dynamic r) {
         return new MooldangBot.Domain.Entities.SongBook {
-            Id = (int)r.id,
-            SongNo = (int)r.song_no,
-            StreamerProfileId = (int)r.streamer_profile_id,
-            Title = (string)r.title,
-            Artist = (string?)r.artist,
-            Album = (string?)r.album,
-            Alias = (string?)r.alias,
-            Category = (string?)r.category,
-            IsRequestable = (r.is_requestable is bool b1 ? b1 : (int)r.is_requestable == 1),
-            SingCount = (int)r.sing_count,
-            RequiredPoints = (int)r.required_points,
-            LastSungAt = r.last_sung_at != null ? (DateTime)r.last_sung_at : null,
-            LyricsUrl = (string?)r.lyrics_url,
-            MrUrl = (string?)r.mr_url,
-            Pitch = (string?)r.pitch,
-            Proficiency = (string?)r.proficiency,
-            ReferenceUrl = (string?)r.reference_url,
-            SongLibraryId = r.song_library_id != null ? (long)r.song_library_id : null,
-            ThumbnailPath = (string?)r.thumbnail_path,
-            ThumbnailUrl = (string?)r.thumbnail_url,
-            TitleChosung = (string?)r.title_chosung,
-            IsActive = (r.is_active is bool b2 ? b2 : (int)r.is_active == 1),
-            IsDeleted = (r.is_deleted is bool b3 ? b3 : (int)r.is_deleted == 1),
-            CreatedAt = KstClock.FromDateTime((DateTime)r.created_at),
-            UpdatedAt = r.updated_at != null ? KstClock.FromDateTime((DateTime)r.updated_at) : null
+            Id = (int)r.Id,
+            SongNo = (int)r.SongNo,
+            StreamerProfileId = (int)r.StreamerProfileId,
+            Title = (string)r.Title,
+            Artist = (string?)r.Artist,
+            Album = (string?)r.Album,
+            Alias = (string?)r.Alias,
+            Category = (string?)r.Category,
+            IsRequestable = (r.IsRequestable is bool b1 ? b1 : (int)r.IsRequestable == 1),
+            SingCount = (int)r.SingCount,
+            RequiredPoints = (int)r.RequiredPoints,
+            LastSungAt = r.LastSungAt != null ? (DateTime)r.LastSungAt : null,
+            LyricsUrl = (string?)r.LyricsUrl,
+            MrUrl = (string?)r.MrUrl,
+            Pitch = (string?)r.Pitch,
+            Proficiency = (string?)r.Proficiency,
+            ReferenceUrl = (string?)r.ReferenceUrl,
+            SongLibraryId = r.SongLibraryId != null ? (long)r.SongLibraryId : null,
+            ThumbnailPath = (string?)r.ThumbnailPath,
+            ThumbnailUrl = (string?)r.ThumbnailUrl,
+            TitleChosung = (string?)r.TitleChosung,
+            IsActive = (r.IsActive is bool b2 ? b2 : (int)r.IsActive == 1),
+            IsDeleted = (r.IsDeleted is bool b3 ? b3 : (int)r.IsDeleted == 1),
+            CreatedAt = KstClock.FromDateTime((DateTime)r.CreatedAt),
+            UpdatedAt = r.UpdatedAt != null ? KstClock.FromDateTime((DateTime)r.UpdatedAt) : null
         };
     }
 
@@ -165,19 +165,19 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         var conn = GetConnection();
         if (!string.IsNullOrEmpty(query))
         {
-            const string textSql = @"SELECT id, title, artist, thumbnail_url FROM func_song_streamer_library WHERE streamer_profile_id = @streamerProfileId AND (title LIKE CONCAT('%', @query, '%') OR artist LIKE CONCAT('%', @query, '%')) LIMIT @limit";
+            const string textSql = @"SELECT Id, Title, Artist, ThumbnailUrl FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @streamerProfileId AND (Title LIKE CONCAT('%', @query, '%') OR Artist LIKE CONCAT('%', @query, '%')) LIMIT @limit";
             var textResults = (await conn.QueryAsync<dynamic>(textSql, new { streamerProfileId, query, limit })).ToList();
-            if (textResults.Any()) return textResults.Select(r => new Streamer_SongLibrary { Id = (int)r.id, Title = (string)r.title, Artist = (string?)r.artist }).ToList();
+            if (textResults.Any()) return textResults.Select(r => new Streamer_SongLibrary { Id = (int)r.Id, Title = (string)r.Title, Artist = (string?)r.Artist }).ToList();
         }
         if (vector != null && vector.Length > 0)
         {
             var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
-            const string vectorSql = @"SELECT id, title, artist, thumbnail_url, VEC_DISTANCE_COSINE(title_vector, VEC_FromText(@vector)) as Distance FROM func_song_streamer_library WHERE streamer_profile_id = @streamerProfileId AND VEC_DISTANCE_COSINE(title_vector, VEC_FromText(@vector)) < 0.25 ORDER BY Distance LIMIT @limit";
+            const string vectorSql = @"SELECT Id, Title, Artist, ThumbnailUrl, VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @streamerProfileId AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25 ORDER BY Distance LIMIT @limit";
             var vectorResults = (await conn.QueryAsync<dynamic>(vectorSql, new { streamerProfileId, vector = vectorString, limit })).ToList();
             return vectorResults.Select(r => new Streamer_SongLibrary { 
-                Id = (int)r.id, 
-                Title = (string)r.title, 
-                Artist = (string?)r.artist 
+                Id = (int)r.Id, 
+                Title = (string)r.Title, 
+                Artist = (string?)r.Artist 
             }).ToList();
         }
         return new List<Streamer_SongLibrary>();
@@ -185,15 +185,15 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
 
     public async Task<Master_SongLibrary?> GetMasterSongByLibraryIdAsync(long songLibraryId)
     {
-        const string sql = @"SELECT id, song_library_id, title, artist, thumbnail_url FROM func_song_master_library WHERE song_library_id = @songLibraryId LIMIT 1";
+        const string sql = @"SELECT Id, SongLibraryId, Title, Artist, ThumbnailUrl FROM FuncSongMasterLibrary WHERE SongLibraryId = @songLibraryId LIMIT 1";
         var r = await GetConnection().QueryFirstOrDefaultAsync<dynamic>(sql, new { songLibraryId });
         if (r == null) return null;
         return new Master_SongLibrary {
-            Id = (int)r.id,
-            SongLibraryId = (long)r.song_library_id,
-            Title = (string)r.title,
-            Artist = (string?)r.artist,
-            ThumbnailUrl = (string?)r.thumbnail_url
+            Id = (int)r.Id,
+            SongLibraryId = (long)r.SongLibraryId,
+            Title = (string)r.Title,
+            Artist = (string?)r.Artist,
+            ThumbnailUrl = (string?)r.ThumbnailUrl
         };
     }
 

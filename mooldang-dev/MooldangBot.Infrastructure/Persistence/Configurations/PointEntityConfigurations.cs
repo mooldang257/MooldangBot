@@ -9,7 +9,7 @@ public class ViewerPointConfiguration : IEntityTypeConfiguration<ViewerPoint>
 {
     public void Configure(EntityTypeBuilder<ViewerPoint> builder)
     {
-        builder.ToTable("func_viewer_points");
+        builder.ToTable("FuncViewerPoints");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()
@@ -31,7 +31,7 @@ public class ViewerDonationConfiguration : IEntityTypeConfiguration<ViewerDonati
 {
     public void Configure(EntityTypeBuilder<ViewerDonation> builder)
     {
-        builder.ToTable("func_viewer_donations");
+        builder.ToTable("FuncViewerDonations");
         
         builder.HasOne(v => v.StreamerProfile)
                .WithMany()

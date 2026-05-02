@@ -231,7 +231,7 @@ public class SongLibraryService(
                 Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
                 
                 await db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE func_song_master_staging SET title_vector = @vector WHERE id = @id",
+                    "UPDATE FuncSongMasterStaging SET title_vector = @vector WHERE Id = @id",
                     new { vector = binaryVector, id = staging.Id });
             }
 

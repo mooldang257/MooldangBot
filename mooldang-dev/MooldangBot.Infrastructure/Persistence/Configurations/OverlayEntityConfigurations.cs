@@ -8,7 +8,7 @@ public class AvatarSettingConfiguration : IEntityTypeConfiguration<AvatarSetting
 {
     public void Configure(EntityTypeBuilder<AvatarSetting> builder)
     {
-        builder.ToTable("sys_avatar_settings");
+        builder.ToTable("SysAvatarSettings");
         
         builder.HasOne(a => a.StreamerProfile)
                .WithOne()
@@ -24,7 +24,7 @@ public class OverlayPresetConfiguration : IEntityTypeConfiguration<OverlayPreset
 {
     public void Configure(EntityTypeBuilder<OverlayPreset> builder)
     {
-        builder.ToTable("sys_overlay_presets");
+        builder.ToTable("SysOverlayPresets");
         
         builder.HasOne(o => o.StreamerProfile)
                .WithMany()
@@ -39,7 +39,7 @@ public class SharedComponentConfiguration : IEntityTypeConfiguration<SharedCompo
 {
     public void Configure(EntityTypeBuilder<SharedComponent> builder)
     {
-        builder.ToTable("sys_shared_components");
+        builder.ToTable("SysSharedComponents");
         
         builder.HasOne(s => s.StreamerProfile)
                .WithMany()
@@ -54,7 +54,7 @@ public class PeriodicMessageConfiguration : IEntityTypeConfiguration<PeriodicMes
 {
     public void Configure(EntityTypeBuilder<PeriodicMessage> builder)
     {
-        builder.ToTable("sys_periodic_messages");
+        builder.ToTable("SysPeriodicMessages");
 
         builder.HasOne(m => m.StreamerProfile)
                .WithMany()

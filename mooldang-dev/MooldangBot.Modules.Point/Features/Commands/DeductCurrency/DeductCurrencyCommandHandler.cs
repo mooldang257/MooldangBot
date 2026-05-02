@@ -121,11 +121,11 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         // [수정]: 위 AddPointsCommand에서 이미 후원금이 가산되어 DB에 반영되었으므로, 
         // 여기서는 순수하게 현재 DB의 balance 기준으로 차감을 진행합니다.
         const string updateSql = @"
-            UPDATE func_viewer_donations 
-            SET balance = balance - @DeductAmount, updated_at = NOW()
-            WHERE streamer_profile_id = @StreamerId 
-              AND global_viewer_id = @GlobalId 
-              AND balance >= @DeductAmount";
+            UPDATE FuncViewerDonations 
+            SET Balance = Balance - @DeductAmount, UpdatedAt = NOW()
+            WHERE StreamerProfileId = @StreamerId 
+              AND GlobalViewerId = @GlobalId 
+              AND Balance >= @DeductAmount";
 
         var affectedRows = await conn.ExecuteAsync(updateSql, new 
         { 
@@ -137,14 +137,14 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         if (affectedRows == 0)
         {
             var currentBalance = await conn.QueryFirstOrDefaultAsync<int>(
-                "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+                "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
                 new { StreamerId = streamer.Id, GlobalId = globalViewerId });
 
             return new DeductResult(false, currentBalance, "치즈 잔액이 부족합니다.");
         }
 
         var finalBalance = await conn.QueryFirstOrDefaultAsync<int>(
-            "SELECT balance FROM func_viewer_donations WHERE streamer_profile_id = @StreamerId AND global_viewer_id = @GlobalId",
+            "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
             new { StreamerId = streamer.Id, GlobalId = globalViewerId });
 
         return new DeductResult(true, finalBalance);

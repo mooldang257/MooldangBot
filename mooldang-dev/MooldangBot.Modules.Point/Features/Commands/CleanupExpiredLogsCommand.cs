@@ -21,7 +21,7 @@ public class CleanupExpiredLogsCommandHandler(
         logger.LogInformation("🧹 [포인트 모듈] {RetentionDays}일이 지난 상세 로그를 숙청합니다...", request.RetentionDays);
         var connection = db.Database.GetDbConnection();
 
-        const string sql = "DELETE FROM log_point_transactions WHERE created_at < DATE_SUB(NOW(), INTERVAL @Days DAY) LIMIT 10000;";
+        const string sql = "DELETE FROM LogPointTransactions WHERE CreatedAt < DATE_SUB(NOW(), INTERVAL @Days DAY) LIMIT 10000;";
         
         int totalDeleted = 0;
         int deleted;

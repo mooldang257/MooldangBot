@@ -10,10 +10,9 @@ public class UnifiedCommandConfiguration : IEntityTypeConfiguration<UnifiedComma
 {
     public void Configure(EntityTypeBuilder<UnifiedCommand> builder)
     {
-        builder.ToTable("func_cmd_unified");
+        builder.ToTable("FuncCmdUnified");
 
         builder.Property(e => e.Keyword)
-               .HasColumnName("keyword")
                // 🔍 대소문자 무관 검색을 위한 명시적 Collation 설정 (Osiris)
                .UseCollation("utf8mb4_unicode_ci"); 
 
@@ -23,8 +22,7 @@ public class UnifiedCommandConfiguration : IEntityTypeConfiguration<UnifiedComma
 
         // 마스터 데이터 연동 제거 (Enum 기반으로 관리됨)
         builder.Property(e => e.FeatureType)
-               .HasConversion<string>()
-               .HasColumnName("feature_type");
+               .HasConversion<string>();
 
         builder.Property(e => e.Priority).HasDefaultValue(0);
 
@@ -52,7 +50,7 @@ public class CommandExecutionLogConfiguration : IEntityTypeConfiguration<Command
 {
     public void Configure(EntityTypeBuilder<CommandExecutionLog> builder)
     {
-        builder.ToTable("log_command_executions");
+        builder.ToTable("LogCommandExecutions");
 
         builder.HasOne(c => c.StreamerProfile)
                .WithMany()
@@ -67,7 +65,7 @@ public class CommandExecutionSagaStateConfiguration : IEntityTypeConfiguration<C
 {
     public void Configure(EntityTypeBuilder<CommandExecutionSagaState> builder)
     {
-        builder.ToTable("sys_saga_command_executions");
+        builder.ToTable("SysSagaCommandExecutions");
         
         // 추적 유전자를 PK로 사용
         builder.HasKey(e => e.CorrelationId); 
