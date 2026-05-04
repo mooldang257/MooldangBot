@@ -17,12 +17,26 @@ public interface IVectorSearchRepository
     /// <param name="denseVector">임베딩 벡터 (Dense)</param>
     /// <param name="limit">최대 결과 수</param>
     /// <param name="threshold">의미론적 유사도 임계치</param>
+    /// <param name="filterSql">추가 필터링 조건</param>
+    /// <param name="parameters">필터링 파라미터</param>
     /// <returns>검색 결과 목록</returns>
     Task<IEnumerable<T>> SearchHybridAsync<T>(
         string tableName, 
         string keyword, 
         float[] denseVector, 
         int limit = 10, 
+        double threshold = 0.3,
+        string? filterSql = null,
+        object? parameters = null);
+
+    /// <summary>
+    /// 특정 스트리머의 곡 데이터를 대상으로 하이브리드 검색을 수행합니다.
+    /// </summary>
+    Task<IEnumerable<T>> SearchHybridForStreamerAsync<T>(
+        string streamerId,
+        string keyword,
+        float[] denseVector,
+        int limit = 10,
         double threshold = 0.3);
 
     /// <summary>
@@ -54,4 +68,9 @@ public interface IVectorSearchRepository
         string thumbnailUrl, 
         float[] denseVector, 
         string? lyricsUrl = null);
+
+    /// <summary>
+    /// 특정 노래책 항목의 벡터 데이터를 업데이트합니다.
+    /// </summary>
+    Task UpdateSongVectorAsync(int songId, float[] denseVector);
 }

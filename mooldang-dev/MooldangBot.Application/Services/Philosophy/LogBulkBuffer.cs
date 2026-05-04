@@ -1,6 +1,7 @@
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities.Philosophy;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace MooldangBot.Application.Services.Philosophy;
 
@@ -9,23 +10,48 @@ namespace MooldangBot.Application.Services.Philosophy;
 /// </summary>
 public class LogBulkBuffer
 {
-    private ConcurrentBag<LogIamfVibrations> _vibrationLogs = new();
-    private ConcurrentBag<IamfScenarios> _scenarios = new();
+    private ConcurrentQueue<LogIamfVibrations> _vibrationLogs = new();
+    private ConcurrentQueue<IamfScenarios> _scenarios = new();
+    
+    // [오시리스의 저울]: 최대 버퍼 크기 제한 (메모리 보호)
+    private const int MaxBufferSize = 100_000;
+    private readonly ILogger<LogBulkBuffer> _logger;
 
-    public void AddVibrationLog(LogIamfVibrations log) => _vibrationLogs.Add(log);
-    public void AddScenario(IamfScenarios scenario) => _scenarios.Add(scenario);
+    public LogBulkBuffer(ILogger<LogBulkBuffer> logger)
+    {
+        _logger = logger;
+    }
+
+    public void AddVibrationLog(LogIamfVibrations log)
+    {
+        if (_vibrationLogs.Count > MaxBufferSize)
+        {
+            _logger.LogWarning("⚠️ [LogBulkBuffer] 진동 로그 버퍼 초과. 로그를 드롭합니다.");
+            return;
+        }
+        _vibrationLogs.Enqueue(log);
+    }
+
+    public void AddScenario(IamfScenarios scenario)
+    {
+        if (_scenarios.Count > MaxBufferSize)
+        {
+            _logger.LogWarning("⚠️ [LogBulkBuffer] 시나리오 로그 버퍼 초과. 로그를 드롭합니다.");
+            return;
+        }
+        _scenarios.Enqueue(scenario);
+    }
 
     public List<LogIamfVibrations> DrainVibrationLogs()
     {
-        var logs = _vibrationLogs.ToList();
-        _vibrationLogs = new ConcurrentBag<LogIamfVibrations>();
-        return logs;
+        // [원자적 교체]: 데이터 유실 방지
+        var oldQueue = Interlocked.Exchange(ref _vibrationLogs, new ConcurrentQueue<LogIamfVibrations>());
+        return oldQueue.ToList();
     }
 
     public List<IamfScenarios> DrainScenarios()
     {
-        var scenarios = _scenarios.ToList();
-        _scenarios = new ConcurrentBag<IamfScenarios>();
-        return scenarios;
+        var oldQueue = Interlocked.Exchange(ref _scenarios, new ConcurrentQueue<IamfScenarios>());
+        return oldQueue.ToList();
     }
 }

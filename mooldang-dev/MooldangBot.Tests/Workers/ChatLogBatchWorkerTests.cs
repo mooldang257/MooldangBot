@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 using MooldangBot.Infrastructure.Workers.Chat;
-using MooldangBot.Infrastructure.Workers;
+using MooldangBot.Foundation.Workers;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;

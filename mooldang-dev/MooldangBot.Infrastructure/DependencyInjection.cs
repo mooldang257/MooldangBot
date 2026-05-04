@@ -47,12 +47,10 @@ namespace MooldangBot.Infrastructure
             services.AddDistributedMemoryCache();
 
             services.AddSingleton<IIdentityCacheService, IdentityCacheService>();
-            services.AddSingleton<INotificationService, NotificationService>();
             
             // [v4.1] 과잉 추상화 정리: 구체 클래스 전면 등록
             services.AddSingleton<ChaosManager>();
             services.AddSingleton<IdempotencyService>();
-            services.AddSingleton<PulseService>();
 
             // [v2.4.6] 오시리스의 세션: 봇 엔진 등 백그라운드 환경용 기본 세션 등록
             // API 환경에서는 HttpContextAccessor를 사용하는 UserSession이 우선됩니다.
@@ -73,30 +71,7 @@ namespace MooldangBot.Infrastructure
             // [v13.1] 파로스의 등대: Snowflake 전역 ID 생성기 등록 (Singleton)
             services.AddSingleton<ISongLibraryIdGenerator, SnowflakeIdGenerator>();
             
-            // [Phase 9] 심연의 맥박: 건강 모니터링 및 알림용 서비스
-            services.AddHttpClient();
-            services.AddSingleton<HealthMonitorService>();
-
-            // [오시리스의 영속]: Redis 인프라 구성 (N3/M3: 동기 블로킹 방지 및 지연 연결 보장)
-            var redisUrl = configuration["REDIS_URL"]!; // [v22.0] ValidateMandatorySecrets에 의해 존재 보장됨
-            
-            services.AddSingleton<IConnectionMultiplexer>(sp => 
-            {
-                var options = ConfigurationOptions.Parse(redisUrl);
-                options.AbortOnConnectFail = false; // [핵심] 연결 실패 시에도 즉시 객체를 반환하여 앱 기동 블로킹 방지
-                options.ConnectRetry = 5;
-                options.ConnectTimeout = 5000;      
-                
-                // [시니어 팁]: 기동 시점에 동기로 기다리지 않고 백그라운드 연결을 시작함
-                return ConnectionMultiplexer.Connect(options);
-            });
-            
-            // [RedLock]: 분산 락 팩토리 및 제공자 통합 관리
-            services.AddSingleton<IDistributedLockFactory>(sp => 
-            {
-                var redis = sp.GetRequiredService<IConnectionMultiplexer>();
-                return RedLockFactory.Create(new List<RedLockMultiplexer> { new RedLockMultiplexer(redis) });
-            });
+            // [RedLock]: 룰렛 전용 잠금 제공자 등록
             services.AddSingleton<IRouletteLockProvider, MooldangBot.Infrastructure.Security.RouletteLockProvider>();
 
             // [v13.0] 파수꾼의 통합: 분산 상태 관리 및 오버레이 상태 등록
@@ -228,8 +203,12 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<IChzzkAccessCredentialStore, RedisTokenStore>();
 
             // [v23.0] 오시리스의 예지: 지능형 하이브리드 검색 코어 등록
-            // BGE-M3 로컬 추론 서버 연동을 위한 싱글톤 서비스
-            services.AddSingleton<IVectorEmbeddingService, BgeM3EmbeddingService>();
+            // BGE-M3 로컬 추론 서버 연동을 위한 서비스 (캐싱 데코레이터 적용)
+            services.AddHttpClient<BgeM3EmbeddingService>();
+            services.AddSingleton<IVectorEmbeddingService>(sp => 
+                new CachedVectorEmbeddingService(
+                    sp.GetRequiredService<BgeM3EmbeddingService>(), 
+                    sp.GetRequiredService<IConnectionMultiplexer>()));
             // Dapper 기반의 고속 벡터 검색 저장소
             services.AddScoped<IVectorSearchRepository, VectorSearchRepository>();
 

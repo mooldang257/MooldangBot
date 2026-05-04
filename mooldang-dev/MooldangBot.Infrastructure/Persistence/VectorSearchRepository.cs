@@ -7,6 +7,7 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using MooldangBot.Domain.Contracts.AI.Interfaces;
 using MySqlConnector;
+using System.Linq;
 
 namespace MooldangBot.Infrastructure.Persistence;
 
@@ -31,31 +32,35 @@ public class VectorSearchRepository : IVectorSearchRepository
         string keyword, 
         float[] denseVector, 
         int limit = 10, 
-        double threshold = 0.3)
+        double threshold = 0.3,
+        string? filterSql = null,
+        object? parameters = null)
     {
         using var connection = CreateConnection();
-        var vectorText = JsonSerializer.Serialize(denseVector);
+        var vectorText = "[" + string.Join(",", denseVector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
 
-        // [오시리스의 궁극기]: Dense(의미)와 Sparse(키워드) 점수를 결합한 하이브리드 검색 SQL
-        // 1. VEC_DISTANCE를 이용한 의미론적 거리 계산 (작을수록 가까움 -> 역수로 점수화)
-        // 2. MATCH...AGAINST를 이용한 키워드 매칭 점수 계산
+        // [오시리스의 궁극기]: 동적 필터링이 포함된 하이브리드 검색 SQL
+        var vectorColumn = (tableName == "FuncSongBooks" || tableName == "FuncSongStreamerLibrary") ? "TitleVector" : "MetadataVector";
+        
         var sql = $@"
             SELECT *, 
-                   (1.0 / (1.0 + VEC_DISTANCE(MetadataVector, VEC_FROMTEXT(@VectorText)))) AS DenseScore,
-                   MATCH(NormalizedArtist, NormalizedTitle) AGAINST(@Keyword IN BOOLEAN MODE) AS SparseScore
+                   (1.0 / (1.0 + VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)))) AS DenseScore,
+                   MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE) AS SparseScore
             FROM {tableName}
-            WHERE VEC_DISTANCE(MetadataVector, VEC_FROMTEXT(@VectorText)) < @Threshold
-               OR MATCH(NormalizedArtist, NormalizedTitle) AGAINST(@Keyword IN BOOLEAN MODE)
-            ORDER BY ( (1.0 / (1.0 + VEC_DISTANCE(MetadataVector, VEC_FROMTEXT(@VectorText)))) * 0.7) 
-                   + (MATCH(NormalizedArtist, NormalizedTitle) AGAINST(@Keyword IN BOOLEAN MODE) * 0.3) DESC
+            WHERE (VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)) < @Threshold
+               OR MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE))
+               {(string.IsNullOrEmpty(filterSql) ? "" : $" AND {filterSql}")}
+            ORDER BY ( (1.0 / (1.0 + VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)))) * 0.7) 
+                   + (MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE) * 0.3) DESC
             LIMIT @Limit";
 
-        return await connection.QueryAsync<T>(sql, new { 
-            VectorText = vectorText, 
-            Keyword = keyword, 
-            Threshold = threshold, 
-            Limit = limit 
-        });
+        var dynamicParams = new DynamicParameters(parameters);
+        dynamicParams.Add("Keyword", keyword);
+        dynamicParams.Add("VectorText", vectorText);
+        dynamicParams.Add("Threshold", threshold);
+        dynamicParams.Add("Limit", limit);
+
+        return await connection.QueryAsync<T>(sql, dynamicParams);
     }
 
     public async Task<IEnumerable<T>> SearchSimilarAsync<T>(
@@ -65,41 +70,67 @@ public class VectorSearchRepository : IVectorSearchRepository
         int limit = 5)
     {
         using var connection = CreateConnection();
-        var vectorText = JsonSerializer.Serialize(denseVector);
+        var vectorText = "[" + string.Join(",", denseVector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
 
-        // [오시리스의 정찰]: 순수 벡터 유사도만으로 검색하는 SQL
         var sql = $@"
-            SELECT *, VEC_DISTANCE({vectorColumn}, VEC_FROMTEXT(@VectorText)) as Distance
+            SELECT *, VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)) as Distance
             FROM {tableName}
             ORDER BY Distance ASC
             LIMIT @Limit";
 
-        return await connection.QueryAsync<T>(sql, new { 
-            VectorText = vectorText, 
-            Limit = limit 
+        return await connection.QueryAsync<T>(sql, new { VectorText = vectorText, Limit = limit });
+    }
+
+    public async Task SaveMetadataAsync(
+        string artist, 
+        string title, 
+        string thumbnailUrl, 
+        float[] denseVector, 
+        string? lyricsUrl = null)
+    {
+        using var connection = CreateConnection();
+        var vectorText = "[" + string.Join(",", denseVector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+
+        var sql = @"
+            INSERT INTO GlobalMusicMetadata (Artist, Title, NormalizedArtist, NormalizedTitle, MetadataVector, ThumbnailUrl, LyricsUrl, CreatedAt)
+            VALUES (@Artist, @Title, @Artist, @Title, VEC_FROMTEXT(@VectorText), @ThumbnailUrl, @LyricsUrl, NOW())
+            ON DUPLICATE KEY UPDATE 
+                MetadataVector = VEC_FROMTEXT(@VectorText),
+                ThumbnailUrl = @ThumbnailUrl,
+                LyricsUrl = COALESCE(@LyricsUrl, LyricsUrl),
+                UpdatedAt = NOW()";
+
+        await connection.ExecuteAsync(sql, new { 
+            Artist = artist, 
+            Title = title, 
+            ThumbnailUrl = thumbnailUrl, 
+            VectorText = vectorText,
+            LyricsUrl = lyricsUrl
         });
     }
 
-    public async Task SaveMetadataAsync(string artist, string title, string normalizedArtist, float[] vector, string? thumbnailUrl)
+    public async Task<IEnumerable<T>> SearchHybridForStreamerAsync<T>(
+        string streamerId,
+        string keyword,
+        float[] denseVector,
+        int limit = 10,
+        double threshold = 0.3)
+    {
+        return await SearchHybridAsync<T>(
+            "FuncSongBooks",
+            keyword,
+            denseVector,
+            limit,
+            threshold,
+            "StreamerProfileId = (SELECT Id FROM CoreStreamerProfiles WHERE ChzzkUid = @StreamerUid OR Slug = @StreamerUid LIMIT 1)",
+            new { StreamerUid = streamerId });
+    }
+
+    public async Task UpdateSongVectorAsync(int songId, float[] denseVector)
     {
         using var connection = CreateConnection();
-        var vectorText = JsonSerializer.Serialize(vector);
-
-        var sql = @"
-            INSERT INTO GlobalMusicMetadata (Artist, Title, NormalizedArtist, NormalizedTitle, MetadataVector, ThumbnailUrl, CreatedAt)
-            VALUES (@Artist, @Title, @NormalizedArtist, @NormalizedTitle, VEC_FROMTEXT(@VectorText), @ThumbnailUrl, NOW())
-            ON DUPLICATE KEY UPDATE 
-                MetadataVector = VEC_FROMTEXT(@VectorText),
-                ThumbnailUrl = IFNULL(@ThumbnailUrl, ThumbnailUrl),
-                UpdatedAt = NOW()";
-
-        await connection.ExecuteAsync(sql, new {
-            Artist = artist,
-            Title = title,
-            NormalizedArtist = normalizedArtist,
-            NormalizedTitle = title.ToLower().Replace(" ", ""), // 단순 정규화
-            VectorText = vectorText,
-            ThumbnailUrl = thumbnailUrl
-        });
+        var vectorText = "[" + string.Join(",", denseVector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+        var sql = "UPDATE FuncSongBooks SET TitleVector = VEC_FROMTEXT(@VectorText) WHERE Id = @Id";
+        await connection.ExecuteAsync(sql, new { Id = songId, VectorText = vectorText });
     }
 }

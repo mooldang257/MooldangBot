@@ -87,7 +87,8 @@ print_environment() {
         echo -e "  Shared with Bot Environment"
     fi
 
-    echo -e "\n${CYAN}[9] Shared Assets (공용 자산)${NC}"
+    echo -e "\n${CYAN}[9] Global Assets (공용 자산: Shared)${NC}"
+    print_container "Embedding" "embeddings"
     print_container "Fonts" "fonts"
 }
 

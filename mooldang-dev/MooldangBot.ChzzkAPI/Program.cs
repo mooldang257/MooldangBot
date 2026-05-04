@@ -1,11 +1,8 @@
 using MooldangBot.Domain.Contracts.Chzzk;
-using MooldangBot.Modules.Commands;
-using MooldangBot.Modules.SongBook;
-using MooldangBot.Modules.Roulette;
 using MooldangBot.ChzzkAPI.Apis.Internal;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
 using MooldangBot.ChzzkAPI.Core.Filters;
-using MooldangBot.ChzzkAPI.Clients;
+
 using MooldangBot.ChzzkAPI.Messaging;
 using MooldangBot.ChzzkAPI.Messaging.Consumers;
 using MooldangBot.ChzzkAPI.Sharding;
@@ -17,40 +14,40 @@ using System.Text.Json.Serialization;
 using MooldangBot.Domain.DTOs;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
+using MooldangBot.Foundation;
+using MooldangBot.Domain.Abstractions;
+using MooldangBot.Foundation.Services;
+using MooldangBot.Foundation.Workers;
 using MooldangBot.ChzzkAPI.Extensions;
 using MooldangBot.ChzzkAPI.Configuration;
-using MooldangBot.Application;
-using MooldangBot.Domain.Abstractions;
-using MooldangBot.Infrastructure;
-using MooldangBot.Infrastructure.Services;
-using MooldangBot.Infrastructure.Workers;
-using MooldangBot.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddCustomDotEnv(args);
 
-// 1. 공통 인프라 주입 (MariaDB, Redis, RabbitMQ)
-builder.Services.AddInfrastructureServices(builder.Configuration);
+// [파운데이션]: 순수 기술 기반 주입 (DB, Redis, Logging)
+builder.Services.AddFoundation(builder.Configuration);
 
-// [v4.1.0] 실시간 통신 및 도메인 이벤트 인프라 주입 (OverlayNotificationService 및 MediatR 의존성 해결)
-builder.Services.AddMooldangSignalR(builder.Configuration);
-builder.Services.AddMooldangMediatR();
+// [v4.1.0] 실시간 통신 및 도메인 이벤트 인프라 주입 (게이트웨이 전용 최소 범위 스캔)
+builder.Services.AddGatewaySignalR(builder.Configuration);
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly);
+});
 
 // [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 전용)
-builder.Services.AddMessagingInfrastructure(builder.Configuration, 
-    typeof(SendMessageCommandConsumer).Assembly);
+builder.Services.AddFoundationMessaging(builder.Configuration, typeof(MooldangBot.ChzzkAPI.Messaging.Consumers.SendMessageCommandConsumer).Assembly);
 
 builder.Services.AddHealthChecks();
 
-// [v2.4.5] 치지직 전문가(Implementation) 수동 등록 (인프라의 프록시 설정을 덮어씁니다)
-// [v2.4.5] 치지직 전문가(Implementation) 수동 등록
-builder.Services.AddHttpClient<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>(client => 
+// [v21.0-Fix] 게이트웨이 전용 Naver API 클라이언트 설정 (Foundation에서 등록됨)
+// 필요한 경우 HttpClient 기본 User-Agent 등을 여기서 전역 설정할 수 있습니다.
+builder.Services.ConfigureHttpClientDefaults(h =>
+{
+    h.ConfigureHttpClient(client =>
     {
-        // [오시리스의 위장]: 봇 탐지 회피를 위해 브라우저 기반 User-Agent 주입
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
     })
     .AddStandardResilienceHandler();
+});
 
 // 🤖 게이트웨이 핵심 서비스 등록 (Shards, TokenStore, CommandConsumer)
 builder.Services.AddSingleton<IChzzkGatewayTokenStore, MooldangBot.ChzzkAPI.Services.HybridChzzkTokenStore>();
@@ -62,18 +59,14 @@ builder.Services.AddSingleton<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketMana
 builder.Services.AddSingleton<MooldangBot.Domain.Contracts.Chzzk.Interfaces.IShardedWebSocketManager>(sp => 
     sp.GetRequiredService<MooldangBot.ChzzkAPI.Sharding.ShardedWebSocketManager>());
 
-builder.Services.AddTransient<MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChzzkApiClient>(sp => 
-    sp.GetRequiredService<MooldangBot.ChzzkAPI.Clients.ChzzkApiClient>());
 
-// 2. 비즈니스 로직 및 봇 엔진 주입
-builder.Services.AddHttpContextAccessor(); // [v4.1.1] LocalFileStorageService 의존성 해결
-builder.Services.AddApplicationServices();
-builder.Services.AddCommandsModule();
-builder.Services.AddCoreBotWorker(builder.Configuration);
-builder.Services.AddBotEngineServices();
+
+// 2. 게이트웨이 전용 워커 등록 (명령어 판단 로직 제외)
+builder.Services.AddHttpContextAccessor(); // [v4.1.1] 인프라 호환성용
+// [v21.0-Fix] 핵심 엔진 워커 등록 (Foundation 버전)
+builder.Services.AddFoundationWorkers();
 
 // 4. 아웃바운드 제어 컨슈머 및 게이트웨이 워커 등록
-
 builder.Services.AddHostedService<MooldangBot.ChzzkAPI.Workers.GatewayWorker>();
 
 // 4. API 컨트롤러 및 Swagger 설정
@@ -87,7 +80,7 @@ builder.Services.AddControllers(options =>
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
-builder.Services.AddMooldangVersioning();
+builder.Services.AddGatewayVersioning();
 
 builder.Services.AddEndpointsApiExplorer();
 

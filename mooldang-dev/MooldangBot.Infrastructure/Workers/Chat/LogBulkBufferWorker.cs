@@ -1,3 +1,5 @@
+using MooldangBot.Foundation.Services;
+using MooldangBot.Foundation.Workers;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

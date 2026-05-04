@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using MooldangBot.Application.Services;
+using MooldangBot.Foundation.Services;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Hubs;
 using Microsoft.AspNetCore.Authorization;
@@ -83,6 +83,8 @@ public class OverlayHub(
         if (!string.IsNullOrWhiteSpace(chzzkUid))
         {
             var normalizedUid = chzzkUid.ToLower();
+            Context.Items["ChzzkUid"] = normalizedUid; // [원천 봉쇄]: 연결 정보를 아이템에 저장
+
             await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
             await overlayState.IncrementAsync(normalizedUid); // Redis 카운터 증가
             
@@ -103,13 +105,22 @@ public class OverlayHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var chzzkUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (!string.IsNullOrWhiteSpace(chzzkUid))
+        // [이지스의 회수]: Context.Items에서 우선적으로 식별자 추출
+        if (Context.Items.TryGetValue("ChzzkUid", out var uidObj) && uidObj is string chzzkUid)
         {
-            await overlayState.DecrementAsync(chzzkUid.ToLower()); // Redis 카운터 감소
+            await overlayState.DecrementAsync(chzzkUid); // Redis 카운터 감소
+            logger.LogTrace("[오시리스의 회상] 오버레이 연결 종료. Identity: {ChzzkUid}", chzzkUid);
+        }
+        else
+        {
+            // 백업 로직: Claims에서 추출 시도
+            var claimUid = Context.User?.FindFirst("StreamerId")?.Value;
+            if (!string.IsNullOrWhiteSpace(claimUid))
+            {
+                await overlayState.DecrementAsync(claimUid.ToLower());
+            }
         }
 
-        logger.LogTrace("[오시리스의 회상] 오버레이 연결 종료. Group: {ChzzkUid}, ConnectionId: {ConnectionId}", chzzkUid ?? "Unknown", Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
 

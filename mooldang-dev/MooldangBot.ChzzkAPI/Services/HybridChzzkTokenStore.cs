@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Contracts.Chzzk.Interfaces;
-using MooldangBot.Infrastructure.Persistence;
+using MooldangBot.Foundation.Persistence;
 using StackExchange.Redis;
 
 namespace MooldangBot.ChzzkAPI.Services;
@@ -63,7 +63,7 @@ public class HybridChzzkTokenStore : IChzzkGatewayTokenStore
         _logger.LogInformation("🔄 [HybridTokenStore] Redis에 {ChzzkUid} 정보 없음. DB에서 복구를 시도합니다...", chzzkUid);
         
         using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
         var streamer = await dbContext.TableCoreStreamerProfiles
             .AsNoTracking()
@@ -106,7 +106,7 @@ public class HybridChzzkTokenStore : IChzzkGatewayTokenStore
     {
         // 모니터링용 전체 조회 (DB 기준)
         using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
         var streamers = await dbContext.TableCoreStreamerProfiles
             .AsNoTracking()

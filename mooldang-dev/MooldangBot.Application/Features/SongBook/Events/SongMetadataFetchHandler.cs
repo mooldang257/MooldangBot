@@ -76,7 +76,11 @@ public class SongMetadataFetchHandler : INotificationHandler<SongMetadataFetchEv
                     song.UpdatedAt = KstClock.Now;
 
                     await _db.SaveChangesAsync(cancellationToken);
-                    Console.WriteLine($"[MetadataFetch] 노래책 업데이트 완료: ID {song.Id}");
+                    
+                    // [오시리스의 영속]: [NotMapped] 컬럼이므로 Raw SQL을 통해 벡터 데이터 직접 저장
+                    await _vectorRepository.UpdateSongVectorAsync(song.Id, embedding);
+                    
+                    Console.WriteLine($"[MetadataFetch] 노래책 업데이트 및 벡터화 완료: ID {song.Id}");
 
                     // 5. SignalR 알림 (대시보드 썸네일 갱신용)
                     await _notificationService.SendThumbnailUpdatedAsync(song.Id, thumbnailUrl);

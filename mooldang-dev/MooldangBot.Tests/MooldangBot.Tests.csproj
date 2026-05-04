@@ -30,6 +30,7 @@
     <ProjectReference Include="..\MooldangBot.Application\MooldangBot.Application.csproj" />
     <ProjectReference Include="..\MooldangBot.Domain\MooldangBot.Domain.csproj" />
     <ProjectReference Include="..\MooldangBot.Infrastructure\MooldangBot.Infrastructure.csproj" />
+    <ProjectReference Include="..\MooldangBot.Foundation\MooldangBot.Foundation.csproj" />
   </ItemGroup>
 
 </Project>

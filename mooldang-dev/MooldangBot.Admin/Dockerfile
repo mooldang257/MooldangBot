@@ -12,7 +12,8 @@ RUN npm config set fetch-retry-mintimeout 20000 && \
 
 WORKDIR /app/MooldangBot.Admin
 COPY MooldangBot.Admin/package.json ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,id=npm,target=/root/.npm \
+    npm install --legacy-peer-deps
 
 # 소스 복사 및 빌드
 COPY MooldangBot.Admin/ ./
@@ -24,7 +25,8 @@ FROM node:22-alpine
 WORKDIR /app
 COPY --from=builder /app/MooldangBot.Admin/build ./build
 COPY --from=builder /app/MooldangBot.Admin/package.json ./
-RUN npm install --production --legacy-peer-deps
+RUN --mount=type=cache,id=npm,target=/root/.npm \
+    npm install --production --legacy-peer-deps
 
 EXPOSE 3000
 ENV NODE_ENV=production

@@ -163,7 +163,7 @@ public class ChatInteractionHandlerTests
         {
             Id = 1,
             Keyword = "!룰렛",
-            FeatureType = MooldangBot.Domain.Entities.CommandFeatureType.FuncRouletteMain,
+            FeatureType = MooldangBot.Domain.Entities.CommandFeatureType.Roulette,
             StreamerProfileId = 1
         };
         _commandCache.GetMatchesAsync("streamer1", "!룰렛")

@@ -14,7 +14,8 @@ RUN npm config set fetch-retry-mintimeout 20000 && \
 
 WORKDIR /app/MooldangBot.Studio
 COPY MooldangBot.Studio/package.json ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,id=npm,target=/root/.npm \
+    npm install --legacy-peer-deps
 
 # 소스 복사 및 빌드
 COPY MooldangBot.Studio/ ./

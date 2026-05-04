@@ -18,7 +18,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 8G
+        reservations:
+          memory: 4G
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
@@ -137,15 +139,19 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
 
-  embedding-server:
+  embeddings:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
     container_name: mooldang-dev-embeddings
-    command: --model-id BAAI/bge-m3
+    hostname: embeddings
+    command: --model-id BAAI/bge-m3 --max-batch-tokens 1024 --max-client-batch-size 16
     restart: always
     ports:
       - "7997:80"
+    volumes:
+      - embedding-cache-dev:/data
     networks:
       - mooldang_dev_net
+      - mooldang_prod_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
       interval: 30s
@@ -154,13 +160,18 @@ services:
     deploy:
       resources:
         limits:
+          memory: 4G
+        reservations:
           memory: 2G
 
 networks:
   mooldang_dev_net:
+    external: true
+  mooldang_prod_net:
     external: true
 
 volumes:
   grafana-data-dev:
   prometheus-data-dev:
   redis-data-dev:
+  embedding-cache-dev:

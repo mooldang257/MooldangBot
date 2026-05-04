@@ -13,6 +13,7 @@ using MooldangBot.Infrastructure.Workers;
 using MooldangBot.Modules.Commands;
 using MooldangBot.Modules.Roulette;
 using MooldangBot.Modules.SongBook;
+using MooldangBot.Foundation;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Infrastructure.Security;
 using Prometheus;
@@ -35,9 +36,12 @@ try
     // 🪵 [로깅 설정]: Serilog 확장 메서드 호출
     builder.Host.AddMooldangLogging();
 
-    // [오시리스의 시동]: 봇 전용 서비스 및 핵심 통신 워커만 등록합니다.
+    // [파운데이션]: 순수 기술 기반 주입 (DB, Redis, Logging, Core Workers)
+    builder.Services.AddFoundation(builder.Configuration);
+    builder.Services.AddFoundationWorkers();
+
+    // [오시리스의 시동]: 봇 전용 서비스 및 비즈니스 인프라 등록
     builder.Services.AddInfrastructureServices(builder.Configuration);
-    builder.Services.AddCoreBotWorker(builder.Configuration); // [오시리스의 지침]: 봇 서버는 오직 치지직 통신과 중계만 전담합니다.
     builder.Services
         .AddSongBookModule()
         .AddRouletteModule()

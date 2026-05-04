@@ -121,7 +121,7 @@ public class SongBookController : ControllerBase
     }
 
     /// <summary>
-    /// [v19.1] 노래책 목록을 조회합니다.
+    /// [v23.0] 노래책 목록을 조회합니다. (하이브리드 검색 지원)
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetSongs(string chzzkUid, [FromQuery] string? query, [FromQuery] string? category)
@@ -130,6 +130,46 @@ public class SongBookController : ControllerBase
         if (streamer == null) 
             return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
+        // [오시리스의 지혜]: 검색어가 있는 경우 하이브리드 검색 수행, 없으면 일반 필터링 조회
+        if (!string.IsNullOrEmpty(query) && query.Length >= 2)
+        {
+            try
+            {
+                var queryVector = await _embeddingService.GetEmbeddingAsync(query);
+                var searchResults = await _vectorRepository.SearchHybridForStreamerAsync<FuncSongBooks>(
+                    chzzkUid, query, queryVector, 100);
+
+                // 카테고리 필터링이 필요한 경우 메모리 내에서 수행 (데이터가 수천 건 이내이므로 안전)
+                if (!string.IsNullOrEmpty(category) && category != "전체")
+                {
+                    searchResults = searchResults.Where(s => s.Category != null && s.Category.Contains(category));
+                }
+
+                var resultDtos = searchResults.Select(s => new SongBookDto
+                {
+                    Id = s.SongNo,
+                    Title = s.Title,
+                    Artist = s.Artist,
+                    Category = s.Category,
+                    Pitch = s.Pitch,
+                    Proficiency = s.Proficiency,
+                    LyricsUrl = s.LyricsUrl,
+                    ReferenceUrl = s.ReferenceUrl,
+                    ThumbnailUrl = s.ThumbnailUrl,
+                    RequiredPoints = s.RequiredPoints,
+                    UpdatedAt = s.UpdatedAt
+                }).ToList();
+
+                return Ok(Result<List<SongBookDto>>.Success(resultDtos));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[HybridSearch] 검색 실패 (Fallback): {ex.Message}");
+                // 검색 실패 시 일반 검색으로 Fallback
+            }
+        }
+
+        // 일반 조회 및 키워드 필터링 (Fallback)
         var dbQuery = _db.TableFuncSongBooks
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamer.Id && !s.IsDeleted);

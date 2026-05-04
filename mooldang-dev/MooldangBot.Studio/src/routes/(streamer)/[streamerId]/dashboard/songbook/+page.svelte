@@ -11,6 +11,7 @@
     } from 'lucide-svelte';
     import { toast } from 'svelte-sonner';
     import { modal } from '$lib/core/state/modal.svelte';
+    import * as signalR from "@microsoft/signalr";
 
     // [물멍]: Studio 전용 고도화된 노래책 관리 페이지 (Svelte 5)
     let StreamerId = $derived($page.params.streamerId);
@@ -19,6 +20,7 @@
     let IsUploading = $state(false);
     let IsLoading = $state(true);
     let Songs = $state<any[]>([]);
+    let hubConnection = $state<signalR.HubConnection | null>(null);
 
     // 모달 상태
     let ShowSongModal = $state(false);
@@ -72,6 +74,37 @@
 
     onMount(() => {
         LoadSongs();
+
+        // [오시리스의 전령]: 실시간 데이터 동기화를 위한 SignalR 연결
+        const hubUrl = `${window.location.origin}/api/hubs/overlay?chzzkUid=${StreamerId}`;
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ThumbnailUpdated", (songBookId: number, thumbnailUrl: string) => {
+            console.log(`[SignalR] 썸네일 업데이트 수신: ${songBookId} -> ${thumbnailUrl}`);
+            const song = Songs.find(s => s.Id === songBookId);
+            if (song) {
+                song.ThumbnailUrl = thumbnailUrl;
+                toast.success(`"${song.Title}"의 썸네일이 업데이트되었습니다.`, {
+                    icon: ImageIcon,
+                    duration: 2000
+                });
+            }
+        });
+
+        // 노래책 전체 갱신 요청 수신 시
+        connection.on("RefreshSongAndDashboard", () => {
+            LoadSongs();
+        });
+
+        connection.start().catch(err => console.error("SignalR 연결 실패:", err));
+        hubConnection = connection;
+
+        return () => {
+            connection.stop();
+        };
     });
 
     // 썸네일 검색 함수 (수동 검색어 지원)
@@ -416,9 +449,12 @@
                                     <div class="flex items-center gap-4">
                                         <div class="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all flex-shrink-0 bg-sky-50 flex items-center justify-center">
                                             {#if song.ThumbnailUrl}
-                                                <img src={song.ThumbnailUrl} alt={song.Title} class="w-full h-full object-cover" />
+                                                <img src={song.ThumbnailUrl} alt={song.Title} class="w-full h-full object-cover animate-in fade-in duration-700" />
                                             {:else}
-                                                <Music size={18} class="text-primary/40" />
+                                                <div class="flex flex-col items-center gap-1 opacity-20">
+                                                    <Music size={18} />
+                                                    <span class="text-[8px] font-black uppercase">Finding...</span>
+                                                </div>
                                             {/if}
                                         </div>
                                         <div>

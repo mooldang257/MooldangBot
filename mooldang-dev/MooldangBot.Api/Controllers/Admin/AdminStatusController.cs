@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MooldangBot.Domain.Abstractions;
 using MooldangBot.Infrastructure.Services;
 using MooldangBot.Domain.Common.Services;
+using MooldangBot.Foundation.Services;
 using System;
 using System.Diagnostics;
 using System.Linq;

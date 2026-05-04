@@ -227,12 +227,12 @@ public class SongLibraryService(
                 staging.TitleVector = vector; // 메모리 상에만 유지
                 
                 // [v11.7-Fix] EF Core에서 매핑을 제거했으므로 수동으로(Dapper) 업데이트합니다.
-                var binaryVector = new byte[vector.Length * 4];
-                Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
+                // MariaDB VEC_FROMTEXT 호환을 위한 JSON 문자열 변환
+                var vectorText = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
                 
                 await db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE FuncSongMasterStaging SET TitleVector = @vector WHERE Id = @id",
-                    new { vector = binaryVector, id = staging.Id });
+                    "UPDATE FuncSongMasterStaging SET TitleVector = VEC_FROMTEXT(@vectorText) WHERE Id = @id",
+                    new { vectorText, id = staging.Id });
             }
 
             // 3. AI 기반 별칭 생성

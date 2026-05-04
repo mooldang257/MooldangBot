@@ -2,15 +2,14 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Common.Models;
-using MooldangBot.Infrastructure.Persistence;
-using MooldangBot.Application.Services;
+using MooldangBot.Foundation.Persistence;
 using StackExchange.Redis;
 using MassTransit;
 
-namespace MooldangBot.Infrastructure.Services;
+namespace MooldangBot.Foundation.Services;
 
 /// <summary>
-/// [심연의 눈 실구현체]: DB, Redis, RabbitMQ 그리고 내부 워커의 상태를 종합 점검합니다.
+/// [파운데이션]: DB, Redis, RabbitMQ 그리고 내부 워커의 상태를 종합 점검합니다.
 /// </summary>
 public class HealthMonitorService(
     IServiceScopeFactory scopeFactory,
@@ -31,7 +30,7 @@ public class HealthMonitorService(
         try
         {
             using var scope = scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
             report.Database = await dbContext.Database.CanConnectAsync(ct);
         }
         catch { report.Database = false; }
@@ -62,10 +61,8 @@ public class HealthMonitorService(
                     report.FleetInstances[instanceId] = instance;
                 }
 
-                bool isAlive = (DateTime.UtcNow - lastPulse).TotalMinutes < 2; // [v24.0-Fix] 기동 시 지연을 고려하여 2분으로 완화
+                bool isAlive = (DateTime.UtcNow - lastPulse).TotalMinutes < 2;
                 instance.Workers[workerName] = isAlive;
-                
-                // [v24.0-Fix] 인스턴스 전체 통계는 합산하거나 최신값으로 갱신
                 instance.MemoryUsageMb = Math.Max(instance.MemoryUsageMb, root.GetProperty("MemoryUsageMb").GetInt64());
                 instance.CpuTimeMs = Math.Max(instance.CpuTimeMs, root.GetProperty("CpuTimeMs").GetDouble());
                 instance.LastSeenAt = lastPulse > instance.LastSeenAt ? lastPulse : instance.LastSeenAt;
@@ -79,9 +76,6 @@ public class HealthMonitorService(
         return report;
     }
 
-    /// <summary>
-    /// [망자의 수의]: 신호가 끊긴 인스턴스의 유령 데이터를 Redis에서 삭제합니다.
-    /// </summary>
     public async Task CleanupInstanceAsync(string machineName, CancellationToken ct = default)
     {
         var db = redis.GetDatabase();

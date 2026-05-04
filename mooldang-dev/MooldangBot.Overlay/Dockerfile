@@ -3,7 +3,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app/MooldangBot.Overlay
 COPY MooldangBot.Overlay/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,id=npm,target=/root/.npm \
+    npm install --legacy-peer-deps
 COPY MooldangBot.Overlay/ .
 RUN npm run build
 

@@ -115,12 +115,12 @@ async Task RunVectorBackfillAsync(AppDbContext Db, ILlmService Llm)
             {
                 if (SuccessCount == 0) Console.Write($"[{Vector.Length}d] ");
                 
-                var BinaryVector = new byte[Vector.Length * 4];
-                Buffer.BlockCopy(Vector, 0, BinaryVector, 0, BinaryVector.Length);
+                // MariaDB VEC_FROMTEXT 호환을 위한 JSON 문자열 변환
+                var VectorText = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
                 
                 await Db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE FuncSongBooks SET TitleVector = @vector WHERE Id = @id", 
-                    new { vector = BinaryVector, id = Song.Id });
+                    "UPDATE FuncSongBooks SET TitleVector = VEC_FROMTEXT(@VectorText) WHERE Id = @Id", 
+                    new { VectorText, Id = Song.Id });
                 
                 SuccessCount++;
                 Console.WriteLine("✅ 완료");
@@ -129,7 +129,7 @@ async Task RunVectorBackfillAsync(AppDbContext Db, ILlmService Llm)
             {
                 Console.WriteLine("⚠️ 실패 (결과 없음)");
             }
-            await Task.Delay(1500);
+            await Task.Delay(100); // 딜레이 단축 (로컬 인스턴스 기준)
         }
         catch (Exception Ex)
         {
@@ -154,12 +154,11 @@ async Task RunVectorBackfillAsync(AppDbContext Db, ILlmService Llm)
             {
                 if (LibSuccessCount == 0) Console.Write($"[{Vector.Length}d] ");
 
-                var BinaryVector = new byte[Vector.Length * 4];
-                Buffer.BlockCopy(Vector, 0, BinaryVector, 0, BinaryVector.Length);
+                var VectorText = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
 
                 await Db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE FuncSongStreamerLibrary SET TitleVector = @vector WHERE Id = @id",
-                    new { vector = BinaryVector, id = Song.Id });
+                    "UPDATE FuncSongStreamerLibrary SET TitleVector = VEC_FROMTEXT(@VectorText) WHERE Id = @Id",
+                    new { VectorText, Id = Song.Id });
                 
                 LibSuccessCount++;
                 Console.WriteLine("✅ 완료");
@@ -168,7 +167,7 @@ async Task RunVectorBackfillAsync(AppDbContext Db, ILlmService Llm)
             {
                 Console.WriteLine("⚠️ 실패 (결과 없음)");
             }
-            await Task.Delay(1500);
+            await Task.Delay(100);
         }
         catch (Exception Ex)
         {
@@ -176,7 +175,36 @@ async Task RunVectorBackfillAsync(AppDbContext Db, ILlmService Llm)
         }
     }
 
-    Console.WriteLine($"\n🎉 [완료] 벡터 주입 완료! (개인: {SuccessCount}, 라이브러리: {LibSuccessCount})");
+    // 3. 마스터 라이브러리 (FuncSongMasterLibrary) 백필
+    var TargetMaster = (await Db.Database.GetDbConnection().QueryAsync<FuncSongMasterLibrary>(
+        "SELECT Id, Title FROM FuncSongMasterLibrary WHERE TitleVector IS NULL")).ToList();
+
+    Console.WriteLine($"\n🏛️ [3/3] 마스터 라이브러리 대상 선정: {TargetMaster.Count}곡");
+    int MasterSuccessCount = 0;
+
+    foreach (var Song in TargetMaster)
+    {
+        try 
+        {
+            Console.Write($"   > '{Song.Title}' 임베딩 생성 중... ");
+            var Vector = await Llm.GetEmbeddingAsync(Song.Title);
+            if (Vector.Length > 0)
+            {
+                var VectorText = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+
+                await Db.Database.GetDbConnection().ExecuteAsync(
+                    "UPDATE FuncSongMasterLibrary SET TitleVector = VEC_FROMTEXT(@VectorText) WHERE Id = @Id",
+                    new { VectorText, Id = Song.Id });
+                
+                MasterSuccessCount++;
+                Console.WriteLine("✅ 완료");
+            }
+            await Task.Delay(100);
+        }
+        catch (Exception Ex) { Console.WriteLine($"❌ 오류: {Ex.Message}"); }
+    }
+
+    Console.WriteLine($"\n🎉 [완료] 벡터 주입 완료! (개인: {SuccessCount}, 스트리머: {LibSuccessCount}, 마스터: {MasterSuccessCount})");
 }
 
 async Task RunDuplicateCleanupAsync(AppDbContext db)

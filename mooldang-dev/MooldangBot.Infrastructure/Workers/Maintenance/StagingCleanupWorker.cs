@@ -1,3 +1,5 @@
+using MooldangBot.Foundation.Services;
+using MooldangBot.Foundation.Workers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

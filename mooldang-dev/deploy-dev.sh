@@ -26,7 +26,6 @@ if [ -z "$TARGET_IDX" ]; then
     echo "6) 전체 배포 (All Services)"
     echo "7) 인프라 (Infra: DB, Redis, MQ)"
     echo "8) 게이트웨이 (Gateway: 운영 Traefik 연동 확인)"
-    echo "9) 폰트 (Fonts: Shared Assets)"
     read -p "선택 (번호): " choice
     TARGET_IDX=$choice
 fi
@@ -79,8 +78,6 @@ case $TARGET_IDX in
         echo -e "${GREEN}ℹ️  개발 환경은 운영 게이트웨이(bot.mooldang.com)를 공유합니다.${NC}"
         echo -e "   - dev.mooldang.com 트래픽이 정상적으로 유입되는지 확인하십시오."
         ;;
-    9) # Fonts
-        deploy_target "Shared Fonts" "$SHARED" "" ;;
     *)
         echo -e "${RED}❌ 잘못된 선택입니다.${NC}"
         exit 1

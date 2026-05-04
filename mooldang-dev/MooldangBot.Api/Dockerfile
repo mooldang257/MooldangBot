@@ -17,6 +17,7 @@ COPY ["MooldangBot.Modules.SongBook/MooldangBot.Modules.SongBook.csproj", "Moold
 COPY ["MooldangBot.Modules.Roulette/MooldangBot.Modules.Roulette.csproj", "MooldangBot.Modules.Roulette/"]
 COPY ["MooldangBot.Modules.Point/MooldangBot.Modules.Point.csproj", "MooldangBot.Modules.Point/"]
 COPY ["MooldangBot.Modules.Commands/MooldangBot.Modules.Commands.csproj", "MooldangBot.Modules.Commands/"]
+COPY ["MooldangBot.Foundation/MooldangBot.Foundation.csproj", "MooldangBot.Foundation/"]
 COPY ["MooldangBot.Cli/MooldangBot.Cli.csproj", "MooldangBot.Cli/"]
 
 RUN dotnet restore "MooldangBot.Api/MooldangBot.Api.csproj"

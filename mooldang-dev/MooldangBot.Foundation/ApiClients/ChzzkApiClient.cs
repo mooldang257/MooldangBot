@@ -15,14 +15,11 @@ using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Channels;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Live;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Chat;
 using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Session;
-using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Restrictions;
-using MooldangBot.Domain.Contracts.Chzzk.Models.Chzzk.Drops;
 
-namespace MooldangBot.ChzzkAPI.Clients;
+namespace MooldangBot.Foundation.ApiClients;
 
 /// <summary>
-/// [오시리스의 전령]: 치지직 공식 Open API와 통신하는 핵심 클라이언트 클래스입니다.
-/// Gateway 내부용 인터페이스와 Application 레이어용 인터페이스를 모두 구현하여 호환성을 보장합니다.
+/// [파운데이션]: 치지직 공식 Open API와 통신하는 핵심 클라이언트입니다.
 /// </summary>
 public class ChzzkApiClient : IChzzkApiClient
 {
@@ -30,7 +27,7 @@ public class ChzzkApiClient : IChzzkApiClient
     private readonly ILogger<ChzzkApiClient> _logger;
     private readonly string _clientId;
     private readonly string _clientSecret;
-    private readonly string? _redirectUri; // [오시리스의 항로]: 기본 리다이렉트 URL
+    private readonly string? _redirectUri;
 
     public ChzzkApiClient(HttpClient httpClient, IConfiguration configuration, ILogger<ChzzkApiClient> logger)
     {
@@ -38,19 +35,12 @@ public class ChzzkApiClient : IChzzkApiClient
         _httpClient.BaseAddress = new Uri("https://openapi.chzzk.naver.com/");
         _logger = logger;
         
-        _clientId = configuration["ChzzkApi:ClientId"] ?? configuration["CHZZK_CLIENT_ID"] ?? string.Empty;
-        _clientSecret = configuration["ChzzkApi:ClientSecret"] ?? configuration["CHZZK_CLIENT_SECRET"] ?? string.Empty;
-        
-        // [오시리스의 항로]: 전역 리다이렉트 URL 로드 (환경 변수 우선)
+        _clientId = configuration["CHZZK_CLIENT_ID"] ?? configuration["ChzzkApi:ClientId"] ?? string.Empty;
+        _clientSecret = configuration["CHZZK_CLIENT_SECRET"] ?? configuration["ChzzkApi:ClientSecret"] ?? string.Empty;
         _redirectUri = configuration["CHZZK_REDIRECT_URI"] ?? configuration["ChzzkApi:RedirectUri"];
     }
 
-    #region 1. Authorization
-
-    public async Task<TokenResponse?> GetTokenAsync(string code, string state)
-    {
-        return await ExchangeTokenAsync(code, state: state);
-    }
+    public async Task<TokenResponse?> GetTokenAsync(string code, string state) => await ExchangeTokenAsync(code, state: state);
 
     public async Task<TokenResponse?> ExchangeTokenAsync(string code, string? clientId = null, string? clientSecret = null, string? state = null, string? redirectUri = null, string? codeVerifier = null)
     {
@@ -61,7 +51,7 @@ public class ChzzkApiClient : IChzzkApiClient
             ClientSecret = clientSecret ?? _clientSecret,
             Code = code,
             State = state ?? "",
-            RedirectUri = redirectUri ?? _redirectUri, // [오시리스의 폴백]: 주입된 값이 없으면 환경 변수 기본값 사용
+            RedirectUri = redirectUri ?? _redirectUri,
             CodeVerifier = codeVerifier
         };
         return await PostRawAsync("auth/v1/token", request, ChzzkJsonContext.Default.TokenRequest, ChzzkJsonContext.Default.TokenResponse);
@@ -81,29 +71,12 @@ public class ChzzkApiClient : IChzzkApiClient
 
     public async Task<bool> RevokeTokenAsync(string token, string? typeHint = "access_token")
     {
-        var request = new RevokeTokenRequest
-        {
-            ClientId = _clientId,
-            ClientSecret = _clientSecret,
-            Token = token,
-            TokenTypeHint = typeHint
-        };
+        var request = new RevokeTokenRequest { ClientId = _clientId, ClientSecret = _clientSecret, Token = token, TokenTypeHint = typeHint };
         var response = await _httpClient.PostAsJsonAsync("auth/v1/revoke", request, ChzzkJsonContext.Default.RevokeTokenRequest);
         return response.IsSuccessStatusCode;
     }
 
-    #endregion
-
-    #region 2. User
-
-    public async Task<UserMeResponse?> GetUserMeAsync(string accessToken)
-    {
-        return await GetAsync("open/v1/users/me", accessToken, ChzzkJsonContext.Default.UserMeResponse);
-    }
-
-    #endregion
-
-    #region 3. Chat
+    public async Task<UserMeResponse?> GetUserMeAsync(string accessToken) => await GetAsync("open/v1/users/me", accessToken, ChzzkJsonContext.Default.UserMeResponse);
 
     public async Task<SendChatResponse?> SendChatMessageAsync(string chzzkUid, string message, string accessToken)
     {
@@ -117,10 +90,7 @@ public class ChzzkApiClient : IChzzkApiClient
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<ChatSettings?> GetChatSettingsAsync(string chzzkUid, string accessToken)
-    {
-        return await GetAsync("open/v1/chats/settings", accessToken, ChzzkJsonContext.Default.ChatSettings);
-    }
+    public async Task<ChatSettings?> GetChatSettingsAsync(string chzzkUid, string accessToken) => await GetAsync("open/v1/chats/settings", accessToken, ChzzkJsonContext.Default.ChatSettings);
 
     public async Task<bool> BlindMessageAsync(string chzzkUid, BlindMessageRequest request, string accessToken)
     {
@@ -128,44 +98,19 @@ public class ChzzkApiClient : IChzzkApiClient
         return response.IsSuccessStatusCode;
     }
 
-    #endregion
-
-    #region 4. Live
-
-    public async Task<LiveSettingResponse?> GetLiveSettingAsync(string chzzkUid, string accessToken)
-    {
-        // [v3.1.6] 공식 OpenAPI 규격: open/v1/lives/setting (문서 근거)
-        return await GetAsync("open/v1/lives/setting", accessToken, ChzzkJsonContext.Default.LiveSettingResponse);
-    }
+    public async Task<LiveSettingResponse?> GetLiveSettingAsync(string chzzkUid, string accessToken) => await GetAsync("open/v1/lives/setting", accessToken, ChzzkJsonContext.Default.LiveSettingResponse);
 
     public async Task<bool> UpdateLiveSettingAsync(string chzzkUid, UpdateLiveSettingRequest request, string accessToken)
     {
-        // [v3.1.6] 공식 OpenAPI 규격: open/v1/lives/setting (PATCH)
         var response = await PatchRawWithAuthAsync("open/v1/lives/setting", request, accessToken, ChzzkJsonContext.Default.UpdateLiveSettingRequest);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<StreamKeyResponse?> GetStreamKeyAsync(string chzzkUid, string accessToken)
-    {
-        // [v3.1.6] 공식 OpenAPI 규격: open/v1/streams/key
-        return await GetAsync("open/v1/streams/key", accessToken, ChzzkJsonContext.Default.StreamKeyResponse);
-    }
+    public async Task<StreamKeyResponse?> GetStreamKeyAsync(string chzzkUid, string accessToken) => await GetAsync("open/v1/streams/key", accessToken, ChzzkJsonContext.Default.StreamKeyResponse);
 
-    public async Task<LiveDetailResponse?> GetLiveDetailAsync(string chzzkUid)
-    {
-        // [v3.1.6] 공식 OpenAPI 규격: open/v1/lives
-        return await GetAsync($"open/v1/lives", null, ChzzkJsonContext.Default.LiveDetailResponse);
-    }
+    public async Task<LiveDetailResponse?> GetLiveDetailAsync(string chzzkUid) => await GetAsync($"open/v1/lives", null, ChzzkJsonContext.Default.LiveDetailResponse);
 
-    #endregion
-
-    #region 5. Channel & Category
-
-    public async Task<ChannelProfile?> GetChannelProfileAsync(string chzzkUid)
-    {
-        var results = await GetChannelsAsync(new[] { chzzkUid });
-        return results?.FirstOrDefault();
-    }
+    public async Task<ChannelProfile?> GetChannelProfileAsync(string chzzkUid) => (await GetChannelsAsync(new[] { chzzkUid }))?.FirstOrDefault();
 
     public async Task<List<ChannelProfile>> GetChannelsAsync(IEnumerable<string> uids)
     {
@@ -175,70 +120,66 @@ public class ChzzkApiClient : IChzzkApiClient
             var idsParam = string.Join(",", chunk);
             var url = $"open/v1/channels?channelIds={idsParam}";
             var response = await GetAsync(url, null, ChzzkJsonContext.Default.ChzzkPagedResponseChannelProfile);
-            if (response?.Data != null)
-            {
-                results.AddRange(response.Data);
-            }
+            if (response?.Data != null) results.AddRange(response.Data);
         }
         return results;
     }
 
-    public async Task<ChzzkPagedResponse<CategorySearchItem>?> SearchCategoryAsync(string categoryName)
+    public async Task<ChzzkPagedResponse<CategorySearchItem>?> SearchCategoryAsync(string categoryName) 
+        => await GetAsync($"open/v1/categories/search?query={Uri.EscapeDataString(categoryName)}", null, ChzzkJsonContext.Default.ChzzkPagedResponseCategorySearchItem);
+
+    public async Task<ChzzkPagedResponse<ChannelManager>?> GetManagersAsync(string chzzkUid, string accessToken) 
+        => await GetAsync("open/v1/channels/streaming-roles", accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelManager);
+
+    public async Task<ChzzkPagedResponse<ChannelFollower>?> GetFollowersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0) 
+        => await GetAsync($"open/v1/channels/followers?size={size}&page={page}", accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelFollower);
+
+    public async Task<ChzzkPagedResponse<ChannelSubscriber>?> GetSubscribersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0) 
+        => await GetAsync($"open/v1/channels/subscribers?size={size}&page={page}", accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelSubscriber);
+
+    public async Task<SessionUrlResponse?> GetSessionUrlAsync(string chzzkUid, string accessToken) 
+        => await GetAsync("open/v1/sessions/auth", accessToken, ChzzkJsonContext.Default.SessionUrlResponse);
+
+    public async Task<bool> SubscribeSessionEventAsync(string chzzkUid, string sessionKey, string eventType, string accessToken)
     {
-        // [v3.1.7] 공식 명세에 맞춰 categoryName을 query 파라미터로 정정하여 400 에러를 소탕합니다.
-        return await GetAsync($"open/v1/categories/search?query={Uri.EscapeDataString(categoryName)}", null, ChzzkJsonContext.Default.ChzzkPagedResponseCategorySearchItem);
+        var url = $"open/v1/sessions/events/subscribe/{eventType}?sessionKey={Uri.EscapeDataString(sessionKey)}";
+        var response = await PostRawWithAuthAsync(url, new object(), accessToken, ChzzkJsonContext.Default.Object);
+        return response.IsSuccessStatusCode;
     }
 
-    #endregion
-
-    #region Helper Methods (Generic HTTP Handlers)
-
+    #region Helpers
     private async Task<T?> GetAsync<T>(string url, string? accessToken, JsonTypeInfo<T> typeInfo)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Add("Client-Secret", _clientSecret);
-
-        if (!string.IsNullOrEmpty(accessToken))
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
+        if (!string.IsNullOrEmpty(accessToken)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await _httpClient.SendAsync(request);
         return await HandleResponseAsync(response, typeInfo);
     }
 
     private async Task<TRes?> PostRawAsync<TReq, TRes>(string url, TReq body, JsonTypeInfo<TReq> reqInfo, JsonTypeInfo<TRes> resInfo)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = JsonContent.Create(body, reqInfo)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body, reqInfo) };
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Add("Client-Secret", _clientSecret);
-
         var response = await _httpClient.SendAsync(request);
         return await HandleResponseAsync(response, resInfo);
     }
 
     private async Task<TRes?> PostWithAuthAsync<TReq, TRes>(string url, TReq body, string accessToken, JsonTypeInfo<TReq> reqInfo, JsonTypeInfo<TRes> resInfo)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = JsonContent.Create(body, reqInfo)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body, reqInfo) };
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Add("Client-Secret", _clientSecret);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        
         var response = await _httpClient.SendAsync(request);
         return await HandleResponseAsync(response, resInfo);
     }
 
     private async Task<HttpResponseMessage> PostRawWithAuthAsync<TReq>(string url, TReq body, string accessToken, JsonTypeInfo<TReq> typeInfo)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = JsonContent.Create(body, typeInfo)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body, typeInfo) };
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Add("Client-Secret", _clientSecret);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -247,10 +188,7 @@ public class ChzzkApiClient : IChzzkApiClient
 
     private async Task<HttpResponseMessage> PatchRawWithAuthAsync<TReq>(string url, TReq body, string accessToken, JsonTypeInfo<TReq> typeInfo)
     {
-        var request = new HttpRequestMessage(HttpMethod.Patch, url)
-        {
-            Content = JsonContent.Create(body, typeInfo)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = JsonContent.Create(body, typeInfo) };
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Add("Client-Secret", _clientSecret);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -259,69 +197,20 @@ public class ChzzkApiClient : IChzzkApiClient
 
     private async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> typeInfo)
     {
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogError("❌ [ChzzkAPI Error] URL: {Url}, Status: {Status}", response.RequestMessage?.RequestUri, response.StatusCode);
-            return default;
-        }
-
-        // [오시리스의 유연함]: 봉투 구조(ChzzkApiResponse)와 평면 구조(Flat)를 모두 수용하도록 지휘관님의 지침에 따라 통합합니다.
+        if (!response.IsSuccessStatusCode) return default;
         var rawJson = await response.Content.ReadAsStringAsync();
-        
         try
         {
             using var doc = JsonDocument.Parse(rawJson);
-            
-            // 공용 응답 봉투 규정(code, content 존재 여부) 확인
             if (doc.RootElement.TryGetProperty("code", out _) && doc.RootElement.TryGetProperty("content", out _))
             {
                 var envelopeInfo = ChzzkJsonContext.CreateEnvelopeInfo(typeInfo);
                 var envelope = JsonSerializer.Deserialize(rawJson, envelopeInfo);
                 return envelope != null && envelope.IsSuccess ? envelope.Content : default;
             }
-
-            // 봉투가 없는 경우 (예: 토큰 API 등 표준 OAuth2 응답)
             return JsonSerializer.Deserialize(rawJson, typeInfo);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ [ChzzkAPI Serialization Error] 응답 파싱 중 예외 발생. JSON: {Raw}", rawJson);
-            return default;
-        }
+        catch { return default; }
     }
-
     #endregion
-
-    public async Task<ChzzkPagedResponse<ChannelManager>?> GetManagersAsync(string chzzkUid, string accessToken)
-    {
-        return await GetAsync("open/v1/channels/streaming-roles", accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelManager);
-    }
-
-    public async Task<ChzzkPagedResponse<ChannelFollower>?> GetFollowersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0)
-    {
-        // [v3.1.8] 공식 OpenAPI 규격: cursor 방식이 아닌 page(Integer) 상호작용
-        var url = $"open/v1/channels/followers?size={size}&page={page}";
-        return await GetAsync(url, accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelFollower);
-    }
-
-    public async Task<ChzzkPagedResponse<ChannelSubscriber>?> GetSubscribersAsync(string chzzkUid, string accessToken, int size = 20, int page = 0)
-    {
-        // [v3.1.8] 공식 OpenAPI 규격: cursor 방식이 아닌 page(Integer) 상호작용
-        var url = $"open/v1/channels/subscribers?size={size}&page={page}";
-        return await GetAsync(url, accessToken, ChzzkJsonContext.Default.ChzzkPagedResponseChannelSubscriber);
-    }
-
-    public async Task<SessionUrlResponse?> GetSessionUrlAsync(string chzzkUid, string accessToken)
-    {
-        return await GetAsync("open/v1/sessions/auth", accessToken, ChzzkJsonContext.Default.SessionUrlResponse);
-    }
-
-    public async Task<bool> SubscribeSessionEventAsync(string chzzkUid, string sessionKey, string eventType, string accessToken)
-    {
-        // [v3.1.9] 지휘관님의 지적으로 발견된 하드코딩 버그 수정: eventType(chat, donation, subscription)을 URL에 반영합니다.
-        var url = $"open/v1/sessions/events/subscribe/{eventType}?sessionKey={Uri.EscapeDataString(sessionKey)}";
-        var response = await PostRawWithAuthAsync(url, new object(), accessToken, ChzzkJsonContext.Default.Object);
-        return response.IsSuccessStatusCode;
-    }
-
 }
