@@ -18,11 +18,11 @@
     let ctx: gsap.Context | null = $state(null);
 
     // [물멍]: 룰렛 영역 전용 설정 참조
-    let rouletteSettings = $derived(props.settings?.Roulette || {
-        Font: props.settings?.rouletteFont,
-        TitleColor: props.settings?.rouletteTitleColor,
-        CardBgColor: props.settings?.rouletteCardBgColor,
-        CardBgOpacity: props.settings?.rouletteCardBgOpacity
+    let rouletteSettings = $derived((props.settings?.Roulette ?? props.settings?.roulette) || {
+        Font: props.settings?.RouletteFont ?? props.settings?.rouletteFont,
+        TitleColor: props.settings?.RouletteTitleColor ?? props.settings?.rouletteTitleColor,
+        CardBgColor: props.settings?.RouletteCardBgColor ?? props.settings?.rouletteCardBgColor,
+        CardBgOpacity: props.settings?.RouletteCardBgOpacity ?? props.settings?.rouletteCardBgOpacity
     });
 
     // [상태 제어]: 지휘관 설계안(아쿠아틱 메이크오버) 반영
@@ -48,7 +48,7 @@
     function preloadSounds(results: any[]) {
         const urls = new Set([
             ...Object.values(DEFAULT_SOUNDS),
-            ...results.map(r => r.soundUrl).filter(url => url)
+            ...results.map(r => r.SoundUrl ?? r.soundUrl).filter(url => url)
         ]);
         urls.forEach(url => {
             if (!audioCache.has(url)) {
@@ -61,13 +61,13 @@
 
     function playResultSound(result: any) {
         // [오시리스의 침묵]: 기본 사운드 미사용 및 연동 사운드 없을 시 음소거
-        if (!result.useDefaultSound && !result.soundUrl) {
+        if (!(result.UseDefaultSound ?? result.useDefaultSound) && !(result.SoundUrl ?? result.soundUrl)) {
             return;
         }
 
-        const url = (result.soundUrl) 
-            ? result.soundUrl 
-            : DEFAULT_SOUNDS[result.template] || DEFAULT_SOUNDS['Standard'];
+        const url = (result.SoundUrl ?? result.soundUrl) 
+            ? (result.SoundUrl ?? result.soundUrl) 
+            : (DEFAULT_SOUNDS[result.Template ?? result.template] || DEFAULT_SOUNDS['Standard']);
             
         const audio = audioCache.get(url) || new Audio(url);
         audio.currentTime = 0;
@@ -109,7 +109,7 @@
     async function startStudioAquaticSequence(data: any) {
         if (ctx) ctx.revert();
         
-        const results = data.results || [];
+        const results = (data.Results ?? data.results) || [];
         preloadSounds(results);
         
         ctx = gsap.context(async () => {
@@ -193,7 +193,7 @@
                 const cardTl = gsap.timeline();
                 
                 // [v6.3] 등급별 특수 연출 (전설 등급 화면 흔들림 등)
-                const template = (result.template || 'Standard').toLowerCase();
+                const template = ((result.Template ?? result.template) || 'Standard').toLowerCase();
                 
                 if (template === 'legendary') {
                     // [전설]: 강력한 충격파 및 화면 흔들림
@@ -230,7 +230,7 @@
                     );
                 }
 
-                if (result.isMission) {
+                if (result.IsMission ?? result.isMission) {
                     gsap.to(".mission-badge", { scale: 1.1, repeat: -1, yoyo: true, duration: 0.3 });
                 }
 
@@ -265,7 +265,7 @@
         if (!particleContainer) return;
 
         // 등급에 따른 파티클 개수 조절
-        const template = (highlightedResult?.template || 'Standard').toLowerCase();
+        const template = ((highlightedResult?.Template ?? highlightedResult?.template) || 'Standard').toLowerCase();
         const count = template === 'legendary' ? 100 : template === 'epic' ? 60 : template === 'rare' ? 40 : 25;
 
         for (let i = 0; i < count; i++) {
@@ -276,7 +276,7 @@
             p.style.height = `${size}px`;
             
             // 등급별 테마 색상 및 아이템 색상 혼합
-            const themeColor = template === 'legendary' ? '#FFD700' : template === 'epic' ? '#A07CFE' : highlightedResult?.color || '#54BCD1';
+            const themeColor = template === 'legendary' ? '#FFD700' : template === 'epic' ? '#A07CFE' : (highlightedResult?.Color ?? highlightedResult?.color) || '#54BCD1';
             p.style.background = `linear-gradient(135deg, ${themeColor}, #ffffff)`;
             
             particleContainer.appendChild(p);
@@ -297,7 +297,7 @@
 
     async function finishAndNext(data: any) {
         if (props.connection) {
-            try { await props.connection.invoke("CompleteRouletteAsync", data.spinId); } catch {}
+            try { await props.connection.invoke("CompleteRouletteAsync", data.SpinId ?? data.spinId); } catch {}
         }
         isPlaying = false;
         if (props.popQueue) props.popQueue(); 
@@ -339,29 +339,29 @@
 
             <!-- Phase C: 스튜디오 스타일 결과 카드 -->
             {#if showCard && highlightedResult}
-                {@const contrastColor = getContrastColor(highlightedResult.color)}
+                {@const contrastColor = getContrastColor(highlightedResult.Color ?? highlightedResult.color)}
                 <div bind:this={mainCardRef} 
-                    class="studio-card template-{highlightedResult.template?.toLowerCase() || 'standard'}" 
-                    class:is-mission={highlightedResult.isMission}
+                    class="studio-card template-{((highlightedResult.Template ?? highlightedResult.template)?.toLowerCase() || 'standard')}" 
+                    class:is-mission={highlightedResult.IsMission ?? highlightedResult.isMission}
                 >
-                    <div class="card-glow" style="background: {highlightedResult.color}aa"></div>
-                    <div class="card-glass-body" style="background: {rouletteSettings.CardBgColor || highlightedResult.color}; opacity: {rouletteSettings.CardBgOpacity ?? 1}; color: {contrastColor}">
+                    <div class="card-glow" style="background: {highlightedResult.Color ?? highlightedResult.color}aa"></div>
+                    <div class="card-glass-body" style="background: {rouletteSettings.CardBgColor || (highlightedResult.Color ?? highlightedResult.color)}; opacity: {rouletteSettings.CardBgOpacity ?? 1}; color: {contrastColor}">
                         <div class="card-header">
-                            <div class="studio-badge" style="background: {contrastColor}; color: {highlightedResult.color}">STUDIO EDITION</div>
-                            <div class="viewer-tag" style="color: {contrastColor}; opacity: 0.8">@{activeSpin.viewerNickname}</div>
+                            <div class="studio-badge" style="background: {contrastColor}; color: {highlightedResult.Color ?? highlightedResult.color}">STUDIO EDITION</div>
+                            <div class="viewer-tag" style="color: {contrastColor}; opacity: 0.8">@{activeSpin.ViewerNickname ?? activeSpin.viewerNickname}</div>
                         </div>
 
                         <div class="result-box">
-                            <span class="roulette-title" style="color: {contrastColor}; opacity: 0.6">{activeSpin.rouletteName}</span>
-                            <h2 class="result-text" style="color: {rouletteSettings.TitleColor || contrastColor}">{highlightedResult.itemName}</h2>
-                            {#if highlightedResult.isMission}
+                            <span class="roulette-title" style="color: {contrastColor}; opacity: 0.6">{activeSpin.RouletteName ?? activeSpin.rouletteName}</span>
+                            <h2 class="result-text" style="color: {rouletteSettings.TitleColor || contrastColor}">{highlightedResult.ItemName ?? highlightedResult.itemName}</h2>
+                            {#if (highlightedResult.IsMission ?? highlightedResult.isMission)}
                                 <div class="mission-badge" style="border: 2px solid {rouletteSettings.TitleColor || contrastColor}; color: {rouletteSettings.TitleColor || contrastColor}">MISSION!!</div>
                             {/if}
                         </div>
 
                         <div class="card-status" style="color: {contrastColor}; opacity: 0.5">
-                            <span class="progress-info">{historyResults.length} / {activeSpin.results.length}</span>
-                            <span class="spin-id-tag">REF: {activeSpin.spinId.substring(0,8)}</span>
+                            <span class="progress-info">{historyResults.length} / {(activeSpin.Results ?? activeSpin.results).length}</span>
+                            <span class="spin-id-tag">REF: {(activeSpin.SpinId ?? activeSpin.spinId).substring(0,8)}</span>
                         </div>
                     </div>
                 </div>
@@ -372,14 +372,14 @@
         <div class="history-tray">
             <div class="history-grid-v2">
                 {#each historyResults as res, i}
-                    {@const chipContrast = getContrastColor(res.color)}
+                    {@const chipContrast = getContrastColor(res.Color ?? res.color)}
                     <div 
                         bind:this={gridItems[i]} 
                         class="history-chip" 
-                        class:chip-mission={res.isMission}
-                        style="background: {res.color}; color: {chipContrast}; border: 1px solid rgba(255,255,255,0.2)"
+                        class:chip-mission={res.IsMission ?? res.isMission}
+                        style="background: {res.Color ?? res.color}; color: {chipContrast}; border: 1px solid rgba(255,255,255,0.2)"
                     >
-                        <span class="chip-text" style="color: {chipContrast}">{res.itemName}</span>
+                        <span class="chip-text" style="color: {chipContrast}">{res.ItemName ?? res.itemName}</span>
                     </div>
                 {/each}
             </div>

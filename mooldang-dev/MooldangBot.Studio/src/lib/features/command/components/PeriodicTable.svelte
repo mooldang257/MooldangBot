@@ -2,14 +2,13 @@
     import { Search, Edit2, Trash2, Clock, ArrowUpDown } from 'lucide-svelte';
     import { fade } from 'svelte/transition';
 
-    // [물멍]: Svelte 5 Props 및 상태 관리
     let { 
         messages = [], 
         onEdit, 
         onDelete, 
         onToggle 
     } = $props<{
-        messages: { id: number; intervalMinutes: number; message: string; isEnabled: boolean }[];
+        messages: any[];
         onEdit: (msg: any) => void;
         onDelete: (id: number) => Promise<void>;
         onToggle: (msg: any) => Promise<void>;
@@ -18,14 +17,13 @@
     let searchQuery = $state('');
     let sortOrder: 'asc' | 'desc' = $state('asc');
 
-    // [오시리스의 눈]: 실시간 필터링 및 정렬 로직 (배열 안전 체크 포함)
     let filteredMessages = $derived(
         (Array.isArray(messages) ? messages : [])
-            .filter(m => (m.message || '').toLowerCase().includes(searchQuery.toLowerCase()))
+            .filter(m => (m.Message || '').toLowerCase().includes(searchQuery.toLowerCase()))
             .sort((a, b) => {
                 return sortOrder === 'asc' 
-                    ? a.intervalMinutes - b.intervalMinutes 
-                    : b.intervalMinutes - a.intervalMinutes;
+                    ? a.IntervalMinutes - b.IntervalMinutes 
+                    : b.IntervalMinutes - a.IntervalMinutes;
             })
     );
 
@@ -35,7 +33,6 @@
 </script>
 
 <section class="bg-white/85 backdrop-blur-xl rounded-[3rem] border border-white shadow-xl overflow-hidden mb-20 text-left">
-    <!-- 헤더 영역 -->
     <div class="p-8 md:p-10 border-b border-slate-100 bg-amber-50/30">
         <div class="flex flex-col md:flex-row justify-between items-center gap-6">
             <h2 class="text-2xl font-black text-slate-800 flex items-center gap-3">
@@ -43,7 +40,6 @@
                 <span class="text-sm font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">{filteredMessages.length}건</span>
             </h2>
             
-            <!-- 검색 바 -->
             <div class="relative w-full md:w-96 group">
                 <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors">
                     <Search size={22} />
@@ -58,13 +54,12 @@
         </div>
     </div>
 
-    <!-- 테이블 영역 -->
     <div class="overflow-x-auto">
         <table class="w-full border-collapse text-left">
             <thead>
                 <tr class="bg-slate-50/50">
                     <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center w-24">활성</th>
-                    <th on:click={toggleSort} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap w-32">
+                    <th onclick={toggleSort} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap w-32">
                         <div class="flex items-center gap-2">
                             출력 주기 <ArrowUpDown size={12} class="group-hover:text-amber-500 transition-colors" />
                         </div>
@@ -74,41 +69,37 @@
                 </tr>
             </thead>
             <tbody>
-                {#each filteredMessages as msg (msg.id)}
+                {#each filteredMessages as msg (msg.Id)}
                     <tr class="border-t border-slate-50 hover:bg-amber-50/20 transition-all group/row" in:fade>
-                        <!-- 상태 토글 -->
                         <td class="p-6 text-center">
-                            <button on:click={() => onToggle(msg)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {msg.isEnabled ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-slate-300'}">
-                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {msg.isEnabled ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
+                            <button onclick={() => onToggle(msg)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {msg.IsEnabled ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-slate-300'}">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {msg.IsEnabled ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
                             </button>
                         </td>
 
-                        <!-- 출력 주기 -->
                         <td class="p-6 whitespace-nowrap">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
                                     <Clock size={16} />
                                 </div>
-                                <span class="text-sm font-black text-slate-700 font-mono">{msg.intervalMinutes}분</span>
+                                <span class="text-sm font-black text-slate-700 font-mono">{msg.IntervalMinutes}분</span>
                             </div>
                         </td>
 
-                        <!-- 메시지 본문 -->
                         <td class="p-6">
                             <div class="relative group/content">
                                 <p class="text-sm font-bold text-slate-600 line-clamp-1 max-w-xl group-hover/row:line-clamp-none transition-all leading-relaxed">
-                                    {msg.message}
+                                    {msg.Message}
                                 </p>
                             </div>
                         </td>
 
-                        <!-- 관리 버튼 -->
                         <td class="p-6">
                             <div class="flex items-center justify-center gap-2">
-                                <button on:click={() => onEdit(msg)} class="p-2.5 rounded-xl bg-white border border-amber-100 text-amber-500 hover:bg-amber-400 hover:text-white hover:shadow-lg transition-all shadow-sm" title="수정">
+                                <button onclick={() => onEdit(msg)} class="p-2.5 rounded-xl bg-white border border-amber-100 text-amber-500 hover:bg-amber-400 hover:text-white hover:shadow-lg transition-all shadow-sm" title="수정">
                                     <Edit2 size={18} />
                                 </button>
-                                <button on:click={() => onDelete(msg.id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm" title="삭제">
+                                <button onclick={() => onDelete(msg.Id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm" title="삭제">
                                     <Trash2 size={18} />
                                 </button>
                             </div>
@@ -129,7 +120,6 @@
 </section>
 
 <style>
-    /* [물멍]: 호버 시 메시지 전체 노출 애니메이션 보조 */
     .line-clamp-1 {
         display: -webkit-box;
         -webkit-line-clamp: 1;

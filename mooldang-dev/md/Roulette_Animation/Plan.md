@@ -1,4 +1,4 @@
-# Roulette Vertical Animation & Mission Management Plan v5 (Final) [COMPLETED]
+# FuncRouletteMain Vertical Animation & Mission Management Plan v5 (Final) [COMPLETED]
 
 룰렛 오버레이의 "수직 슬롯 머신" 애니메이션 개편과 더불어, 스트리머가 실시간으로 당첨 내역(미션)을 관리하고 완료 상태를 추적할 수 있는 **'룰렛 미션 관리 시스템'** 최종 설계안입니다.
 
@@ -14,13 +14,13 @@
 
 ### [Backend] Data & Service Layer
 
-#### [MODIFY] [RouletteItem.cs](file:///c:/webapi/MooldangAPI/Models/RouletteItem.cs)
+#### [MODIFY] [FuncRouletteItems.cs](file:///c:/webapi/MooldangAPI/Models/FuncRouletteItems.cs)
 - **`IsMission`**: 해당 항목이 스트리머의 미션 수행이 필요한 항목인지 구분하는 플래그 추가.
 
 #### [NEW] [Models/Enums.cs](file:///c:/webapi/MooldangAPI/Models/Enums.cs)
 - **`RouletteLogStatus`**: `Pending(0)`, `Completed(1)`, `Cancelled(2)` Enum 마스터 정의.
 
-#### [NEW] [RouletteLog.cs](file:///c:/webapi/MooldangAPI/Models/RouletteLog.cs)
+#### [NEW] [LogRouletteResults.cs](file:///c:/webapi/MooldangAPI/Models/LogRouletteResults.cs)
 - **Status 필드**: Enum 타입을 적용하여 가독성 향상.
 - **복합 인덱스**: `(ChzzkUid, Status, Id DESC)` 명시적 선언으로 미완료 미션 조회 성능 극대화.
 - **Collation**: `utf8mb4_unicode_ci` 적용 (이모지 지원).

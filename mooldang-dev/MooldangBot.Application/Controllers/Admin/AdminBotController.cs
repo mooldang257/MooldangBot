@@ -90,7 +90,7 @@ namespace MooldangBot.Application.Controllers.Admin
             using var scope = scopeFactory.CreateScope();
             var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var query = scopedDb.SysChzzkCategories.Include(c => c.Aliases).AsQueryable();
+            var query = scopedDb.TableSysChzzkCategories.Include(c => c.Aliases).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -101,7 +101,7 @@ namespace MooldangBot.Application.Controllers.Admin
             // 검?�어가 ?�을 ?�는 최신 ?�데?�트 ?�서?��?최�? 100개만
             var results = await query.OrderByDescending(c => c.UpdatedAt).Take(100).ToListAsync();
 
-            return Ok(Result<ListResponse<ChzzkCategory>>.Success(new ListResponse<ChzzkCategory>(results, results.Count)));
+            return Ok(Result<ListResponse<SysChzzkCategories>>.Success(new ListResponse<SysChzzkCategories>(results, results.Count)));
         }
 
         [HttpPost("categories/{categoryId}/aliases")]
@@ -113,28 +113,28 @@ namespace MooldangBot.Application.Controllers.Admin
             using var scope = scopeFactory.CreateScope();
             var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var category = await scopedDb.SysChzzkCategories.FindAsync(categoryId);
+            var category = await scopedDb.TableSysChzzkCategories.FindAsync(categoryId);
             if (category == null)
                 return NotFound(Result<string>.Failure("존재?��? ?�는 카테고리?�니??"));
 
             var aliasName = request.Alias.Trim();
 
             // 중복 검??
-            if (await scopedDb.SysChzzkCategoryAliases.AnyAsync(a => a.CategoryId == categoryId && a.Alias == aliasName))
+            if (await scopedDb.TableSysChzzkCategoryAliases.AnyAsync(a => a.CategoryId == categoryId && a.Alias == aliasName))
             {
                 return BadRequest(Result<string>.Failure("?�당 ?�어가 ??카테고리???��? 존재?�니??"));
             }
 
-            var newAlias = new ChzzkCategoryAlias
+            var newAlias = new SysChzzkCategoryAliases
             {
                 CategoryId = categoryId,
                 Alias = aliasName
             };
 
-            scopedDb.SysChzzkCategoryAliases.Add(newAlias);
+            scopedDb.TableSysChzzkCategoryAliases.Add(newAlias);
             await scopedDb.SaveChangesAsync();
 
-            return Ok(Result<ChzzkCategoryAlias>.Success(newAlias));
+            return Ok(Result<SysChzzkCategoryAliases>.Success(newAlias));
         }
 
         [HttpDelete("categories/{categoryId}/aliases/{aliasId}")]
@@ -143,13 +143,13 @@ namespace MooldangBot.Application.Controllers.Admin
             using var scope = scopeFactory.CreateScope();
             var scopedDb = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-            var alias = await scopedDb.SysChzzkCategoryAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.CategoryId == categoryId);
+            var alias = await scopedDb.TableSysChzzkCategoryAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.CategoryId == categoryId);
             if (alias == null)
             {
                 return NotFound(Result<string>.Failure("?�당 카테고리???�어 ?�이?��? 찾을 ???�습?�다."));
             }
 
-            scopedDb.SysChzzkCategoryAliases.Remove(alias);
+            scopedDb.TableSysChzzkCategoryAliases.Remove(alias);
             await scopedDb.SaveChangesAsync();
 
             return Ok(Result<object>.Success(new { success = true, message = "?�어가 ?�상?�으�???��?�었?�니??" }));

@@ -40,7 +40,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
         {
             logger.LogInformation("SaveSettings attempt for Uid: {Uid} by User: {User}", chzzkUid, User.Identity?.Name);
             
-            var profile = await context.CoreStreamerProfiles
+            var profile = await context.TableCoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             
@@ -60,7 +60,7 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             // [물멍]: 설정이 변경되었으므로 즉시 봇에 반영되도록 캐시 무효화
             identityCache.InvalidateStreamer(chzzkUid);
 
-            return Ok(Result<object>.Success(new { success = true, message = "포인트 설정이 저장되었습니다." }));
+            return Ok(Result<object>.Success(new { IsSuccess = true, Message = "포인트 설정이 저장되었습니다." }));
         }
 
         [HttpGet("{chzzkUid}/viewers")]
@@ -69,48 +69,48 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
-            var query = from r in context.CoreViewerRelations.AsNoTracking().IgnoreQueryFilters()
-                        join g in context.CoreGlobalViewers.AsNoTracking().IgnoreQueryFilters() on r.GlobalViewerId equals g.Id
-                        join p in context.FuncViewerPoints.AsNoTracking().IgnoreQueryFilters() 
+            var query = from r in context.TableCoreViewerRelations.AsNoTracking().IgnoreQueryFilters()
+                        join g in context.TableCoreGlobalViewers.AsNoTracking().IgnoreQueryFilters() on r.GlobalViewerId equals g.Id
+                        join p in context.TableFuncViewerPoints.AsNoTracking().IgnoreQueryFilters() 
                            on new { r.StreamerProfileId, r.GlobalViewerId } equals new { p.StreamerProfileId, p.GlobalViewerId } into pts
                         from p in pts.DefaultIfEmpty()
-                        where r.StreamerProfile!.ChzzkUid == chzzkUid
+                        where r.CoreStreamerProfiles!.ChzzkUid == chzzkUid
                         group new { r, g, p } by r.Id into grouped
                         select new {
-                            id = grouped.Key,
-                            nickname = grouped.Max(x => x.g.Nickname),
-                            points = grouped.Sum(x => x.p != null ? x.p.Points : 0),
-                            attendanceCount = grouped.Max(x => x.r.AttendanceCount),
-                            consecutiveAttendanceCount = grouped.Max(x => x.r.ConsecutiveAttendanceCount),
-                            lastAttendanceAt = grouped.Max(x => x.r.LastAttendanceAt)
+                            Id = grouped.Key,
+                            Nickname = grouped.Max(x => x.g.Nickname),
+                            Points = grouped.Sum(x => x.p != null ? x.p.Points : 0),
+                            AttendanceCount = grouped.Max(x => x.r.AttendanceCount),
+                            ConsecutiveAttendanceCount = grouped.Max(x => x.r.ConsecutiveAttendanceCount),
+                            LastAttendanceAt = grouped.Max(x => x.r.LastAttendanceAt)
                         };
 
             if (!string.IsNullOrWhiteSpace(request.Search))
             {
-                query = query.Where(v => v.nickname.Contains(request.Search));
+                query = query.Where(v => v.Nickname.Contains(request.Search));
             }
 
             // [물멍]: 커서 조건 적용 (Id 기반으로 안정성 확보)
             if (request.Cursor.HasValue && request.Cursor.Value > 0)
             {
-                query = query.Where(v => v.id < request.Cursor.Value);
+                query = query.Where(v => v.Id < request.Cursor.Value);
             }
 
             query = request.Sort switch
             {
-                "attendance" => query.OrderByDescending(v => v.attendanceCount).ThenByDescending(v => v.id),
-                "consecutive" => query.OrderByDescending(v => v.consecutiveAttendanceCount).ThenByDescending(v => v.id),
-                "recent" => query.OrderByDescending(v => v.lastAttendanceAt).ThenByDescending(v => v.id),
-                _ => query.OrderByDescending(v => v.points).ThenByDescending(v => v.id)
+                "attendance" => query.OrderByDescending(v => v.AttendanceCount).ThenByDescending(v => v.Id),
+                "consecutive" => query.OrderByDescending(v => v.ConsecutiveAttendanceCount).ThenByDescending(v => v.Id),
+                "recent" => query.OrderByDescending(v => v.LastAttendanceAt).ThenByDescending(v => v.Id),
+                _ => query.OrderByDescending(v => v.Points).ThenByDescending(v => v.Id)
             };
 
             var items = await query.Select(v => new ViewerPointResponseDto(
-                v.id,
-                v.nickname,
-                v.points,
-                v.attendanceCount,
-                v.consecutiveAttendanceCount,
-                v.lastAttendanceAt
+                v.Id,
+                v.Nickname,
+                v.Points,
+                v.AttendanceCount,
+                v.ConsecutiveAttendanceCount,
+                v.LastAttendanceAt
             )).ToPagedListAsync(request.Limit, v => v.Id);
 
             return Ok(Result<CursorPagedResponse<ViewerPointResponseDto>>.Success(items));
@@ -122,52 +122,52 @@ namespace MooldangBot.Application.Controllers.ChatPoints
             [FromQuery] CursorPagedRequest request)
         {
             // [v10.8] 안정성을 위해 서브쿼리 대신 명시적 조인 방식으로 복구하되 AsNoTracking으로 성능 최적화
-            var query = context.FuncViewerDonations
+            var query = context.TableFuncViewerDonations
                         .AsNoTracking()
                         .IgnoreQueryFilters()
-                        .Where(d => d.StreamerProfile!.ChzzkUid == chzzkUid)
+                        .Where(d => d.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
                         .Select(d => new {
-                            id = d.Id,
-                            nickname = d.GlobalViewer!.Nickname,
-                            balance = d.Balance,
-                            totalDonated = d.TotalDonated,
-                            updatedAt = d.UpdatedAt ?? d.CreatedAt
+                            Id = d.Id,
+                            Nickname = d.CoreGlobalViewers!.Nickname,
+                            Balance = d.Balance,
+                            TotalDonated = d.TotalDonated,
+                            UpdatedAt = d.UpdatedAt ?? d.CreatedAt
                         });
 
             if (!string.IsNullOrWhiteSpace(request.Search))
             {
-                query = query.Where(v => v.nickname.Contains(request.Search));
+                query = query.Where(v => v.Nickname.Contains(request.Search));
             }
 
             if (request.Cursor.HasValue && request.Cursor.Value > 0)
             {
-                query = query.Where(v => v.id < request.Cursor.Value);
+                query = query.Where(v => v.Id < request.Cursor.Value);
             }
 
             query = request.Sort switch
             {
-                "balance" => query.OrderByDescending(v => v.balance).ThenByDescending(v => v.id),
-                "recent" => query.OrderByDescending(v => v.updatedAt).ThenByDescending(v => v.id),
-                _ => query.OrderByDescending(v => v.totalDonated).ThenByDescending(v => v.id)
+                "balance" => query.OrderByDescending(v => v.Balance).ThenByDescending(v => v.Id),
+                "recent" => query.OrderByDescending(v => v.UpdatedAt).ThenByDescending(v => v.Id),
+                _ => query.OrderByDescending(v => v.TotalDonated).ThenByDescending(v => v.Id)
             };
 
             var items = await query.Select(d => new ViewerDonationResponseDto(
-                d.id,
-                d.nickname,
-                d.balance,
-                d.totalDonated,
-                d.updatedAt
+                d.Id,
+                d.Nickname,
+                d.Balance,
+                d.TotalDonated,
+                d.UpdatedAt
             )).ToPagedListAsync(request.Limit, d => d.Id);
 
             return Ok(Result<CursorPagedResponse<ViewerDonationResponseDto>>.Success(items));
         }
 
-        private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
+        private async Task<CoreStreamerProfiles?> GetCachedProfileAsync(string uid)
         {
             var profile = await identityCache.GetStreamerProfileAsync(uid);
             if (profile != null) return profile;
 
-            return await context.CoreStreamerProfiles
+            return await context.TableCoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == uid);
         }
@@ -178,16 +178,12 @@ namespace MooldangBot.Application.Controllers.ChatPoints
 
     public class ChatPointSettingsDto
     {
-        [JsonPropertyName("pointPerChat")]
         public int PointPerChat { get; set; }
         
-        [JsonPropertyName("pointPerDonation1000")]
         public int PointPerDonation1000 { get; set; }
 
-        [JsonPropertyName("pointPerAttendance")]
         public int PointPerAttendance { get; set; }
 
-        [JsonPropertyName("isAutoAccumulateDonation")]
         public bool IsAutoAccumulateDonation { get; set; }
     }
 }

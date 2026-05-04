@@ -11,7 +11,7 @@ public interface IIdentityCacheService
     /// <summary>
     /// 스트리머 프로필을 캐시에서 조회합니다. (10분 TTL)
     /// </summary>
-    Task<StreamerProfile?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct = default);
+    Task<CoreStreamerProfiles?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct = default);
 
     /// <summary>
     /// 시청자의 정보를 동기화(조회/생성/업데이트)하고 GlobalViewerId를 반환합니다. (30분 TTL)
@@ -32,4 +32,14 @@ public interface IIdentityCacheService
     /// [물멍]: 특정 물댕봇 주소(Slug) 캐시를 강제로 무효화합니다.
     /// </summary>
     void InvalidateSlug(string slug);
+    
+    /// <summary>
+    /// [v2.4.2] 해당 토큰이 부정 접속(가짜 토큰)으로 판명되었는지 확인합니다.
+    /// </summary>
+    Task<bool> IsInvalidTokenAsync(string token, CancellationToken ct = default);
+
+    /// <summary>
+    /// [v2.4.2] 특정 토큰을 부정 접속 토큰으로 마킹합니다. (5분 TTL)
+    /// </summary>
+    Task MarkTokenAsInvalidAsync(string token, CancellationToken ct = default);
 }

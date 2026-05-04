@@ -15,7 +15,7 @@ public class ReplyStrategy(
 {
     public string FeatureType => CommandFeatureTypes.Reply;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.ResponseText, ct);
     }

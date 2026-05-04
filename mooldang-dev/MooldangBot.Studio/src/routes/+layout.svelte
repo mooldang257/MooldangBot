@@ -5,6 +5,7 @@
     import { gsap } from 'gsap';
     import { userState } from '$lib/core/state/user.svelte';
     import ConfirmModal from '$lib/core/ui/ConfirmModal.svelte';
+    import MooldangModal from '$lib/core/ui/MooldangModal.svelte';
     import Footer from '$lib/core/ui/Footer.svelte';
     import { apiFetch } from '$lib/api/client';
     import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
@@ -13,11 +14,15 @@
     let { data, children } = $props();
 
     import { page } from '$app/stores';
+    import { invalidateAll } from '$app/navigation';
 
     // [물멍]: 서버 사이드에서 받은 유저 정보를 즉시 전역 상태로 주입 (SSR 하이드레이션)
     $effect(() => {
         if (data && data.userData) {
-            userState.set(data.userData);
+            // [물멍]: Uid가 다르거나 활성화 상태가 다른 경우 최신화
+            if (userState.Uid !== data.userData.ChzzkUid || userState.IsActive !== data.userData.IsActive) {
+                userState.set(data.userData);
+            }
         }
     });
 
@@ -25,9 +30,10 @@
     const isViewerPage = $derived($page.url.pathname.includes('/songbook') && !$page.url.pathname.includes('/dashboard'));
     const isLoaded = $derived(!!data);
 
-    // [물멍]: 모달 상태 관리 (Svelte 5 $state)
+    // [물멍]: 상태 관리 (Svelte 5 $state)
     let isLoginModalOpen = $state(false);
     let isLoginProcessing = $state(false);
+    let isToggleLoading = $state(false); // 토글 로딩 상태 추가
 
     onMount(() => {
         gsap.from(".main-layout", { opacity: 0, duration: 1, ease: "power1.out" });
@@ -42,20 +48,34 @@
     };
 
     const toggleBotActive = async () => {
-        if (!userState.uid) return;
+        if (!userState.Uid || isToggleLoading) return;
+        
+        const originalStatus = userState.IsActive;
+        const nextStatus = !originalStatus;
         
         try {
-            const nextStatus = !userState.isActive;
-            const res = await apiFetch<any>(`/api/config/bot/${userState.uid}/status`, {
+            isToggleLoading = true;
+            // [물멍]: 사용자 경험을 위해 UI를 즉시 변경 (Optimistic UI)
+            userState.IsActive = nextStatus;
+            
+            const res = await apiFetch<any>(`/api/config/bot/${userState.Uid}/status`, {
                 method: 'PATCH',
-                body: { isEnabled: nextStatus }
+                body: { IsEnabled: nextStatus }
             });
             
-            if (res.success) {
-                userState.isActive = nextStatus;
+            // [물멍]: apiFetch가 에러를 던지지 않았다면 성공으로 간주
+            if (res) {
+                await invalidateAll();
+            } else {
+                userState.IsActive = originalStatus;
+                alert('상태 변경에 실패했습니다.');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to toggle bot status:', error);
+            userState.IsActive = originalStatus;
+            alert(error.message || '통신 중 오류가 발생했습니다.');
+        } finally {
+            isToggleLoading = false;
         }
     };
 
@@ -98,7 +118,7 @@
 </script>
 
 <svelte:head>
-    <link rel="stylesheet" as="style" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <!-- 내부 폰트 서버 사용 (Pretendard) -->
     
     <!-- SEO 기본 설정 -->
     <meta name="description" content="치지직 스트리머를 위한 가장 똑똑하고 아름다운 도우미, 물댕봇. 노래책, 포인트 시스템, 룰렛 등 방송에 필요한 모든 기능을 제공합니다." />
@@ -145,17 +165,22 @@
                     <span class="text-[11px] font-black text-sky-500 tracking-widest uppercase">STUDIO</span>
                 </div>
             </a>
-            {#if userState.isAuthenticated}
+            {#if userState.IsAuthenticated}
                 <div class="flex items-center gap-2 bg-white/80 p-1.5 md:p-2 px-3 md:px-4 rounded-2xl border border-primary/10 shadow-sm transition-all hover:shadow-md">
-                    <span class="text-[10px] md:text-xs font-black {userState.isActive ? 'text-emerald-500' : 'text-slate-400'} tracking-tight">
-                        {userState.isActive ? '사용중' : '미사용'}
+                    <span class="text-[10px] md:text-xs font-black {userState.IsActive ? 'text-emerald-500' : 'text-slate-400'} tracking-tight">
+                        {userState.IsActive ? '사용중' : '미사용'}
                     </span>
                     <button 
                         onclick={toggleBotActive}
-                        class="relative inline-flex h-4 w-8 md:h-5 md:w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {userState.isActive ? 'bg-emerald-500' : 'bg-slate-300'}"
+                        disabled={isToggleLoading}
+                        class="relative inline-flex h-4 w-8 md:h-5 md:w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-200 ease-in-out focus:outline-none {userState.IsActive ? 'bg-emerald-500' : 'bg-slate-300'} {isToggleLoading ? 'opacity-70 cursor-wait' : ''}"
                         aria-label="Toggle Bot Status"
                     >
-                        <span class="pointer-events-none inline-block h-3 w-3 md:h-4 md:w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {userState.isActive ? 'translate-x-4 md:translate-x-5' : 'translate-x-0'}"></span>
+                        <span class="pointer-events-none flex items-center justify-center h-3 w-3 md:h-4 md:w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {userState.IsActive ? 'translate-x-4 md:translate-x-5' : 'translate-x-0'}">
+                            {#if isToggleLoading}
+                                <div class="w-2 h-2 md:w-3 md:h-3 border-2 border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
+                            {/if}
+                        </span>
                     </button>
                 </div>
             {/if}
@@ -163,7 +188,7 @@
 
         <div class="flex items-center gap-4 shrink-0">
             {#if isLoaded}
-                {#if !userState.isAuthenticated}
+                {#if !userState.IsAuthenticated}
                     <button 
                         onclick={toggleLoginModal}
                         class="px-6 md:px-8 py-2 md:py-2.5 bg-chzzk text-white text-xs md:text-sm font-black rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all outline-none"
@@ -173,11 +198,11 @@
                 {:else}
                     <div class="flex items-center gap-2 md:gap-3 bg-white/60 p-1 md:p-1.5 pr-4 md:pr-5 rounded-full border border-white shadow-sm hover:shadow-md transition-shadow shrink-0 overflow-hidden" in:fade>
                         <div class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-white overflow-hidden shrink-0">
-                            <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-full h-full object-cover scale-110" />
+                            <img src={userState.ProfileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-full h-full object-cover scale-110" />
                         </div>
                         <div class="flex flex-col -gap-0.5 max-w-[80px] md:max-w-[150px]">
-                            <span class="font-bold text-slate-700 text-[10px] md:text-sm truncate">{userState.channelName}</span>
-                            <a href="/{userState.slug}/dashboard" class="text-[8px] md:text-[10px] font-black text-primary hover:underline uppercase tracking-tighter">내 대시보드</a>
+                            <span class="font-bold text-slate-700 text-[10px] md:text-sm truncate">{userState.ChannelName}</span>
+                            <a href="/{userState.Slug}/dashboard" class="text-[8px] md:text-[10px] font-black text-primary hover:underline uppercase tracking-tighter">내 대시보드</a>
                         </div>
                         <div class="hidden md:block w-px h-6 bg-slate-300 mx-1"></div>
                         <button onclick={logout} class="text-[10px] md:text-xs font-black text-rose-500 hover:underline border-none bg-transparent cursor-pointer">로그아웃</button>
@@ -195,7 +220,7 @@
         </a>
 
         <div class="flex items-center gap-3">
-            {#if !userState.isAuthenticated}
+            {#if !userState.IsAuthenticated}
                 <a 
                     href="/api/auth/chzzk-login?type=viewer&redirect={$page.url.pathname}"
                     class="px-3 py-1 bg-chzzk text-white text-[10px] font-black rounded-full shadow-sm hover:shadow-md transition-all no-underline"
@@ -204,8 +229,8 @@
                 </a>
             {:else}
                 <div class="flex items-center gap-2 bg-slate-50 py-0.5 px-2 rounded-full border border-slate-100">
-                    <img src={userState.profileImageUrl || "/images/wman_sd_transparent.png"} alt="P" class="w-5 h-5 rounded-full border border-white" />
-                    <span class="text-[10px] font-extrabold text-slate-600 truncate max-w-[80px]">{userState.channelName}</span>
+                    <img src={userState.ProfileImageUrl || "/images/wman_sd_transparent.png"} alt="P" class="w-5 h-5 rounded-full border border-white" />
+                    <span class="text-[10px] font-extrabold text-slate-600 truncate max-w-[80px]">{userState.ChannelName}</span>
                 </div>
             {/if}
         </div>
@@ -266,6 +291,7 @@
 
     <!-- [물멍]: 확인 모달 (브라우저 confirm 대체) -->
     <ConfirmModal />
+    <MooldangModal />
 
     <Footer />
 </div>

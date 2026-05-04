@@ -17,12 +17,12 @@
 - **데이터 비연결성**: 현재 `song_list_queues` 테이블은 `song_book_main` 테이블과 직접적인 관계가 없습니다. 제목(Title)과 가수(Artist) 정보가 중복으로 기록되고 있으며, 노래책에 있는 곡을 신청했는지 추적하기 어렵습니다.
 
 ### 🛠️ 해결 방안 (Solution)
-- **하이브리드 모델**: `SongQueue` 엔티티에 `SongBookId` (Nullable) 필드를 추가하여, 공식 노래책 기반 신청과 자유 신청을 동시에 수용하면서도 통계적 정확성을 높여야 합니다.
+- **하이브리드 모델**: `FuncSongListQueues` 엔티티에 `SongBookId` (Nullable) 필드를 추가하여, 공식 노래책 기반 신청과 자유 신청을 동시에 수용하면서도 통계적 정확성을 높여야 합니다.
 
 ## 3. 🛡️ 상태 관리의 형식화 (State Formalization)
 
 ### ⚠️ 발견된 이슈 (Observed Issue)
-- **문자열 기반 상태**: `SongQueue`의 `Status` 필드가 "Pending", "Playing" 등 문자열로 관리되고 있어 런타임 오타에 취약하고 정렬 성능이 낮습니다.
+- **문자열 기반 상태**: `FuncSongListQueues`의 `Status` 필드가 "Pending", "Playing" 등 문자열로 관리되고 있어 런타임 오타에 취약하고 정렬 성능이 낮습니다.
 
 ### 🛠️ 해결 방안 (Solution)
 - **Enum 전환**: `SongStatus` 열거형을 정의하여 데이터 무결성을 강제하고, DB에서는 이를 정수형(Int)으로 관리하여 색인 성능을 개선해야 합니다.
@@ -33,7 +33,7 @@
 - **자동화 로직**: `AppDbContext` 내에 `IAuditable`과 `ISoftDeletable`을 처리하는 강력한 공통 로직이 구현되어 있습니다.
 
 ### 💡 개선 제안 (Refinements)
-- **누락된 인터페이스**: `SystemSetting`, `GlobalViewer` 등 일부 핵심 테이블에도 물리 삭제 대신 논리 삭제(`ISoftDeletable`)를 적용하여 데이터 보존성을 높여야 합니다.
+- **누락된 인터페이스**: `SystemSetting`, `CoreGlobalViewers` 등 일부 핵심 테이블에도 물리 삭제 대신 논리 삭제(`ISoftDeletable`)를 적용하여 데이터 보존성을 높여야 합니다.
 
 ---
 

@@ -43,13 +43,13 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
     {
         try
         {
-            var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
+            var Streamer = await _db.TableCoreStreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
-            if (streamer == null) return (false, 0);
-
+            if (Streamer == null) return (false, 0);
+ 
             // 1. 글로벌 시청자 확보 (이지스 통합 캐시 활용)
-            var globalViewerId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.Nickname ?? "Unknown", null, ct);
+            var GlobalViewerId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.Nickname ?? "Unknown", null, ct);
 
             if (request.CurrencyType == PointCurrencyType.ChatPoint)
             {
@@ -57,23 +57,23 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                 await _pointCache.AddPointAsync(request.StreamerUid, request.ViewerUid, request.Nickname ?? "Unknown", request.Amount);
                 
                 // 현재 잔액은 DB값 + Redis 증분값
-                var dbBalance = await _db.FuncViewerPoints.AsNoTracking()
-                    .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId)
+                var DbBalance = await _db.TableFuncViewerPoints.AsNoTracking()
+                    .Where(v => v.StreamerProfileId == Streamer.Id && v.GlobalViewerId == GlobalViewerId)
                     .Select(v => v.Points)
                     .FirstOrDefaultAsync(ct);
                 
-                var redisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, request.ViewerUid);
+                var RedisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, request.ViewerUid);
                 
                 _ = _notificationService.NotifyPointChangedAsync(request.StreamerUid);
-                return (true, dbBalance + redisIncrement);
+                return (true, DbBalance + RedisIncrement);
             }
             else
             {
                 // [유료/수동 재화]: MariaDB 동기 업데이트
-                var connection = _db.Database.GetDbConnection();
-                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
-
-                using var transaction = await connection.BeginTransactionAsync(ct);
+                var Connection = _db.Database.GetDbConnection();
+                if (Connection.State != System.Data.ConnectionState.Open) await Connection.OpenAsync(ct);
+ 
+                using var Transaction = await Connection.BeginTransactionAsync(ct);
                 try
                 {
                     // [1순위: Identity First] 시청자 관계 및 닉네임, 마지막 활동 시간 등록
@@ -84,67 +84,67 @@ public class AddPointsHandler : IRequestHandler<AddPointsCommand, (bool Success,
                             LastChatAt = NOW(),
                             UpdatedAt = NOW();";
 
-                    await connection.ExecuteAsync(relationUpsertSql, new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
-
+                    await Connection.ExecuteAsync(relationUpsertSql, new { StreamerId = Streamer.Id, GlobalId = GlobalViewerId }, Transaction);
+ 
                     // [2순위: 포인트/재화 정산]
-                    int totalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
-
-                    const string upsertSql = @"
+                    int TotalIncrement = request.AccumulateTotal && request.Amount > 0 ? request.Amount : 0;
+ 
+                    const string UpsertSql = @"
                         INSERT INTO FuncViewerDonations (StreamerProfileId, GlobalViewerId, Balance, TotalDonated, CreatedAt, UpdatedAt)
                         VALUES (@StreamerId, @GlobalId, @Amount, @TotalIncrement, NOW(), NOW())
                         ON DUPLICATE KEY UPDATE 
                             Balance = Balance + @Amount,
                             TotalDonated = TotalDonated + @TotalIncrement,
                             UpdatedAt = NOW();";
-
-                    await connection.ExecuteAsync(upsertSql, new 
+ 
+                    await Connection.ExecuteAsync(UpsertSql, new 
                     { 
-                        StreamerId = streamer.Id, 
-                        GlobalId = globalViewerId, 
+                        StreamerId = Streamer.Id, 
+                        GlobalId = GlobalViewerId, 
                         Amount = request.Amount,
-                        TotalIncrement = totalIncrement
-                    }, transaction);
-
+                        TotalIncrement = TotalIncrement
+                    }, Transaction);
+ 
                     // 2. 최종 잔액 조회 (스냅샷 생성용)
-                    var currentBalance = await connection.QueryFirstOrDefaultAsync<int>(
+                    var CurrentBalance = await Connection.QueryFirstOrDefaultAsync<int>(
                         "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
-                        new { StreamerId = streamer.Id, GlobalId = globalViewerId }, transaction);
+                        new { StreamerId = Streamer.Id, GlobalId = GlobalViewerId }, Transaction);
 
-                    // 3. 감사 로그(ViewerDonationHistory) 기록
-                    const string logSql = @"
+                    // 3. 감사 로그(FuncViewerDonationHistories) 기록
+                    const string LogSql = @"
                         INSERT INTO FuncViewerDonationHistories (StreamerProfileId, GlobalViewerId, PlatformTransactionId, Amount, BalanceAfter, TransactionType, Metadata, CreatedAt, UpdatedAt)
                         VALUES (@StreamerId, @GlobalId, @TxId, @Amount, @BalanceAfter, @Type, @Metadata, NOW(), NOW());";;
-
-                    await connection.ExecuteAsync(logSql, new
+ 
+                    await Connection.ExecuteAsync(LogSql, new
                     {
-                        StreamerId = streamer.Id,
-                        GlobalId = globalViewerId,
+                        StreamerId = Streamer.Id,
+                        GlobalId = GlobalViewerId,
                         TxId = request.PlatformTransactionId ?? $"ADJ-{Guid.NewGuid():N}", // [v7.1] 전송된 SafeEventId 사용
                         Amount = request.Amount,
-                        BalanceAfter = currentBalance,
+                        BalanceAfter = CurrentBalance,
                         Type = request.Amount >= 0 ? "DONATION" : "DEDUCTION",
                         Metadata = JsonSerializer.Serialize(new { 
-                            source = request.PlatformTransactionId != null ? "chzzk_gateway" : "manual",
-                            request_amount = request.Amount 
+                            Source = request.PlatformTransactionId != null ? "chzzk_gateway" : "manual",
+                            RequestAmount = request.Amount 
                         }),
                         CreatedAt = KstClock.Now
-                    }, transaction);
-
-                    await transaction.CommitAsync(ct);
+                    }, Transaction);
+ 
+                    await Transaction.CommitAsync(ct);
                     
                     _ = _notificationService.NotifyPointChangedAsync(request.StreamerUid);
-                    return (true, currentBalance);
+                    return (true, CurrentBalance);
                 }
                 catch
                 {
-                    await transaction.RollbackAsync(ct);
+                    await Transaction.RollbackAsync(ct);
                     throw;
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, $"❌ [AddPointsHandler] {request.ViewerUid} 정산 중 오작동: {ex.Message}");
+            _logger.LogError(Ex, $"❌ [AddPointsHandler] {request.ViewerUid} 정산 중 오작동: {Ex.Message}");
             return (false, 0);
         }
     }

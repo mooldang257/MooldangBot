@@ -7,7 +7,7 @@
     const menuItems = [
         { icon: '🎵', title: '신청곡 관리', desc: '새로운 <b>오시리스 통신 규약</b>을 체험하는 쇼케이스 화면입니다.', url: '/dashboard' },
         { icon: '⚡', title: '명령어 관리', desc: '채팅창에서 활용할 수 있는 내 방송만의 맞춤형 명령어를 설정합니다.', url: '/dashboard' },
-        { icon: '🎭', title: '팬 캐릭터 설정', desc: '화면 하단에 표시되는 팬 캐릭터(아바타) 이미지 및 애니메이션을 설정합니다.', url: '/dashboard' },
+        // { icon: '🎭', title: '팬 캐릭터 설정', desc: '화면 하단에 표시되는 팬 캐릭터(아바타) 이미지 및 애니메이션을 설정합니다.', url: '/dashboard' },
         { icon: '🎡', title: '룰렛 관리', desc: '치즈 후원 및 채팅 포인트로 돌릴 수 있는 오버레이용 룰렛 항목과 확률을 관리합니다.', url: '/dashboard' },
         { icon: '💎', title: '채팅 포인트 관리', desc: '시청자들의 채팅과 후원에 따른 포인트 지급 규칙 등을 설정합니다.', url: '/dashboard' },
         { icon: '🖥️', title: '마스터 오버레이 설정', desc: '방송 화면의 모든 요소들을 자유롭게 배치하고 실시간으로 관리합니다.', url: '/dashboard' }

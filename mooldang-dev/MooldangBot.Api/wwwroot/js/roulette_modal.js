@@ -1,5 +1,5 @@
 /**
- * 🎡 MooldangBot Roulette Modal Component (v1.9)
+ * 🎡 MooldangBot FuncRouletteMain Modal Component (v1.9)
  * 룰렛 설정을 위한 공통 모달 시스템입니다.
  */
 const RouletteModal = {

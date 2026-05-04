@@ -17,51 +17,51 @@ public class UpdateOmakaseCountHandler(
 {
     public async Task<Result<object>> Handle(UpdateOmakaseCountCommand request, CancellationToken ct)
     {
-        var profile = await db.CoreStreamerProfiles.AsNoTracking()
+        var Profile = await db.TableCoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
-        if (profile == null) 
-            return Result<object>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
-
-        var item = await db.FuncStreamerOmakases
-            .FirstOrDefaultAsync(o => o.Id == request.Id && o.StreamerProfileId == profile.Id, ct);
+        if (Profile == null) 
+            return Result<object>.Failure("?ㅽ由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
+ 
+        var Item = await db.TableFuncSongListOmakases
+            .FirstOrDefaultAsync(o => o.Id == request.Id && o.StreamerProfileId == Profile.Id, ct);
         
-        if (item == null)
+        if (Item == null)
             return Result<object>.Failure("?대떦 ??ぉ??李얠쓣 ???놁뒿?덈떎.");
 
         // [v15.1]: ?숈떆???쒖뼱 諛??ъ떆??濡쒖쭅 ?ы븿
-        int retryCount = 0;
-        const int maxRetries = 3;
-        bool saved = false;
-
-        while (!saved && retryCount < maxRetries)
+        int RetryCount = 0;
+        const int MaxRetries = 3;
+        bool Saved = false;
+ 
+        while (!Saved && RetryCount < MaxRetries)
         {
             try
             {
-                item.Count += request.Delta;
-                if (item.Count < 0) item.Count = 0;
+                Item.Count += request.Delta;
+                if (Item.Count < 0) Item.Count = 0;
                 
                 await db.SaveChangesAsync(ct);
-                saved = true;
+                Saved = true;
                 
                 // ?뱻 [?대깽??諛쒗뻾]: ?ㅻ쾭?덉씠 媛깆떊 ?붿껌
                 await mediator.Publish(new SongBookRefreshEvent(request.ChzzkUid), ct);
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (DbUpdateConcurrencyException Ex)
             {
-                retryCount++;
-                foreach (var entry in ex.Entries)
+                RetryCount++;
+                foreach (var Entry in Ex.Entries)
                 {
-                    var dbValues = await entry.GetDatabaseValuesAsync(ct);
-                    if (dbValues != null) entry.OriginalValues.SetValues(dbValues);
+                    var DbValues = await Entry.GetDatabaseValuesAsync(ct);
+                    if (DbValues != null) Entry.OriginalValues.SetValues(DbValues);
                     else throw;
                 }
-
-                if (retryCount >= maxRetries) 
+ 
+                if (RetryCount >= MaxRetries) 
                     return Result<object>.Failure("?숈떆???쒖뼱 ?ㅻ쪟濡??낅뜲?댄듃???ㅽ뙣?덉뒿?덈떎.");
             }
         }
-
-        return Result<object>.Success(new { id = item.Id, count = item.Count });
+ 
+        return Result<object>.Success(new { Id = Item.Id, Count = Item.Count });
     }
 }

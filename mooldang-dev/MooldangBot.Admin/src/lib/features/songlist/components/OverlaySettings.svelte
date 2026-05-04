@@ -18,17 +18,17 @@
             
             const data = await response.json();
             
-            if (data.success) {
+            if (data.Success) {
                 // 현재 도메인 기반으로 OBS에 넣을 전체 URL 조립 (Nginx 리버스 프록시 구조 반영)
                 const baseUrl = window.location.origin;
-                const overlayUrl = `${baseUrl}/overlay/?access_token=${data.token}`;
+                const overlayUrl = `${baseUrl}/overlay/?access_token=${data.Token}`;
                 
                 await navigator.clipboard.writeText(overlayUrl);
                 
                 isCopied = true;
                 setTimeout(() => isCopied = false, 2000);
             } else {
-                feedbackMessage = `❌ 오류: ${data.message}`;
+                feedbackMessage = `❌ 오류: ${data.Message || data.Error}`;
             }
         } catch (error) {
             console.error("[오시리스의 불협화음] 오버레이 URL 복사 중 오류 발생:", error);
@@ -53,10 +53,10 @@
             
             const data = await response.json();
             
-            if (data.success) {
+            if (data.Success) {
                 alert("✅ 성공적으로 재발급되었습니다. 다시 'URL 복사'를 눌러 OBS에 새로운 주소를 적용하세요.");
             } else {
-                feedbackMessage = `❌ 실패: ${data.message}`;
+                feedbackMessage = `❌ 실패: ${data.Message || data.Error}`;
             }
         } catch (error) {
             console.error("[오시리스의 철퇴] 토큰 재발급 중 오류:", error);

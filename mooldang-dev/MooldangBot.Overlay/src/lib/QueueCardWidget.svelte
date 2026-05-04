@@ -10,31 +10,33 @@
     }>();
     
     // [물멍]: 설정에서 표시 개수를 가져옴 (기본값 5)
-    let maxQueueCount = $derived(settings.maxQueueCount ?? 5);
+    let maxQueueCount = $derived(settings.MaxQueueCount ?? settings.maxQueueCount ?? 5);
 
     // [물멍]: 상위 N개 곡을 하나의 리스트로 관리
     let displayQueue = $derived(queue.slice(0, maxQueueCount) || []);
 
-    // [물멍]: 카드 테마 전용 설정 참조
-    let cardSettings = $derived(settings.Card || {
-        TitleFont: settings.queueTitleFont,
-        ArtistFont: settings.queueArtistFont,
-        TitleColor: settings.queueTitleColor,
-        ArtistColor: settings.queueArtistColor,
-        ItemBgColor: settings.queueItemBgColor,
-        ItemBgOpacity: settings.queueItemBgOpacity
-    });
+    // [물멍]: 개편된 중첩 모델(Queue.Card)을 우선 참조하고, 없으면 구버전 필드들로 폴백
+    let cardSettings = $derived(
+        settings.Queue?.Card ?? settings.Queue?.card ?? settings.Card ?? settings.card ?? {
+            TitleFont: settings.QueueTitleFont ?? settings.queueTitleFont,
+            ArtistFont: settings.QueueArtistFont ?? settings.queueArtistFont,
+            TitleColor: settings.QueueTitleColor ?? settings.queueTitleColor,
+            ArtistColor: settings.QueueArtistColor ?? settings.queueArtistColor,
+            ItemBgColor: settings.QueueItemBgColor ?? settings.queueItemBgColor,
+            ItemBgOpacity: settings.QueueItemBgOpacity ?? settings.queueItemBgOpacity
+        }
+    );
 </script>
 
-{#if layout?.visible !== false && settings.showQueue !== false}
+{#if layout?.visible !== false && (settings.ShowQueue ?? settings.showQueue) !== false}
     <div 
         class="queue-container" 
         style="
-            left: {layout?.x ?? 1400}px; 
-            top: {layout?.y ?? 100}px; 
-            width: {layout?.width ?? 450}px; 
-            height: {layout?.height ?? 800}px;
-            opacity: {layout?.opacity ?? 1};
+            left: {layout?.X ?? layout?.x ?? 1400}px; 
+            top: {layout?.Y ?? layout?.y ?? 100}px; 
+            width: {layout?.Width ?? layout?.width ?? 450}px; 
+            height: {layout?.Height ?? layout?.height ?? 800}px;
+            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
             --queue-title-font: {cardSettings.TitleFont || 'Pretendard'};
             --queue-artist-font: {cardSettings.ArtistFont || 'Pretendard'};
             --queue-title-color: {cardSettings.TitleColor || '#FFFFFF'};
@@ -44,7 +46,7 @@
         "
     >
         <div class="fixed-section">
-            {#each displayQueue as song, i (song.id)}
+            {#each displayQueue as song, i (song.Id ?? song.id)}
                 <div 
                     animate:flip={{ duration: 600 }}
                     in:fly={{ x: 50, duration: 800, delay: i * 100 }}
@@ -53,12 +55,12 @@
                     class:next-1={i === 0}
                 >
                     <!-- 썸네일 영역 (없으면 음표 아이콘) -->
-                    {#if settings.showQueueThumbnail !== false}
+                    {#if (settings.ShowQueueThumbnail ?? settings.showQueueThumbnail) !== false}
                         <div class="thumbnail-wrapper">
-                            {#if song.thumbnailUrl}
+                            {#if (song.ThumbnailUrl ?? song.thumbnailUrl)}
                                 <img 
-                                    src={song.thumbnailUrl} 
-                                    alt={song.title} 
+                                    src={song.ThumbnailUrl ?? song.thumbnailUrl} 
+                                    alt={song.Title ?? song.title} 
                                     class="thumbnail-img"
                                 />
                                 <div class="thumbnail-overlay"></div>
@@ -73,10 +75,10 @@
                     <div class="card-body">
                         <div class="song-content">
                             <div class="song-title-wrapper">
-                                <span class="song-title">{song.title}</span>
+                                <span class="song-title">{song.Title ?? song.title}</span>
                             </div>
-                            {#if song.artist}
-                                <span class="song-artist">{song.artist}</span>
+                            {#if (song.Artist ?? song.artist)}
+                                <span class="song-artist">{song.Artist ?? song.artist}</span>
                             {/if}
                         </div>
                     </div>

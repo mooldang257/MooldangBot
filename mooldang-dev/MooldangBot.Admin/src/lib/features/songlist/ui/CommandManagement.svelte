@@ -21,13 +21,13 @@
 
     // [물멍]: 신규 명령어 초기값 (재화 및 아이콘 필드 포함)
     let newCommand = $state({
-        type: "songlist",
-        trigger: "",
-        name: "",
-        cost: 0,
-        currency: "point",
-        icon: "", // 비어있으면 기본값 사용
-        isActive: true
+        Type: "songlist",
+        Trigger: "",
+        Name: "",
+        Cost: 0,
+        Currency: "point",
+        Icon: "", // 비어있으면 기본값 사용
+        IsActive: true
     });
 
     const toggleExpand = (id: number) => {
@@ -38,7 +38,7 @@
             expandedId = id;
             isAdding = false;
             // 편집을 위해 원본 복사본 생성
-            const origin = commands.find(c => c.id === id);
+            const origin = commands.find(c => (c.Id ?? c.id) === id);
             if (origin) {
                 editingCommand = JSON.parse(JSON.stringify(origin));
             }
@@ -66,8 +66,10 @@
 
             const data = await response.json();
             if (isEdit && editingCommand) {
+                editingCommand.Icon = data.url;
                 editingCommand.icon = data.url;
             } else {
+                newCommand.Icon = data.url;
                 newCommand.icon = data.url;
             }
             alert('아이콘 업로드 완료! ✅');
@@ -83,7 +85,7 @@
         if (!editingCommand) return;
         
         // [물멍]: 편집된 내용을 원본 배열에 반영하여 부모와 동기화
-        const index = commands.findIndex(c => c.id === id);
+        const index = commands.findIndex(c => (c.Id ?? c.id) === id);
         if (index !== -1) {
             commands[index] = { ...editingCommand };
             commands = [...commands]; // 반응성 트리거
@@ -100,7 +102,7 @@
 
     const handleDelete = (id: number) => {
         if (confirm("정말 이 명령어를 삭제할까요?")) {
-            commands = commands.filter(c => c.id !== id);
+            commands = commands.filter(c => (c.Id ?? c.id) !== id);
             
             // [물멍]: DB와 동기화 시도 (삭제 반영)
             if (onSync) onSync();
@@ -113,16 +115,16 @@
     };
 
     const handleAdd = () => {
-        if (!newCommand.trigger || !newCommand.name) return;
+        if (!(newCommand.Trigger ?? newCommand.trigger) || !(newCommand.Name ?? newCommand.name)) return;
         
         const id = Date.now();
-        const iconToSave = newCommand.icon || (newCommand.type === 'omakase' ? '🍣' : '🎵');
-        commands = [...commands, { ...newCommand, icon: iconToSave, id, lastUsed: "방금 전" }];
+        const iconToSave = (newCommand.Icon ?? newCommand.icon) || ((newCommand.Type ?? newCommand.type) === 'omakase' ? '🍣' : '🎵');
+        commands = [...commands, { ...newCommand, Icon: iconToSave, icon: iconToSave, Id: id, id, lastUsed: "방금 전" }];
         
         // [물멍]: DB와 동기화 시도 (신규 저장)
         if (onSync) onSync();
 
-        newCommand = { type: "songlist", trigger: "", name: "", cost: 0, currency: "point", icon: "", isActive: true };
+        newCommand = { Type: "songlist", Trigger: "", Name: "", Cost: 0, Currency: "point", Icon: "", IsActive: true };
         isAdding = false;
         alert(`새 명령어가 무기고에 추가되었습니다!`);
     };
@@ -177,24 +179,24 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                     <div class="space-y-1.5">
                         <label for="new-type" class="text-[10px] font-black text-amber-600 px-2 uppercase tracking-widest">신청 종류</label>
-                        <select id="new-type" bind:value={newCommand.type} class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400 appearance-none">
+                        <select id="new-type" bind:value={newCommand.Type} class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400 appearance-none">
                             <option value="songlist">송리스트 신청</option>
                             <option value="omakase">오마카세 신청</option>
                         </select>
                     </div>
                     <div class="space-y-1.5">
                         <label for="new-trigger" class="text-[10px] font-black text-amber-600 px-2 uppercase tracking-widest">명령어</label>
-                        <input id="new-trigger" bind:value={newCommand.trigger} placeholder="예: !신청" class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
+                        <input id="new-trigger" bind:value={newCommand.Trigger} placeholder="예: !신청" class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
                     </div>
                     <div class="space-y-1.5">
                         <label for="new-name" class="text-[10px] font-black text-amber-600 px-2 uppercase tracking-widest">표시 이름</label>
-                        <input id="new-name" bind:value={newCommand.name} placeholder="예: 일반 곡 신청" class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
+                        <input id="new-name" bind:value={newCommand.Name} placeholder="예: 일반 곡 신청" class="w-full px-5 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
                     </div>
                     <div class="space-y-1.5">
                         <label for="currency-group" class="text-[10px] font-black text-amber-600 px-2 uppercase tracking-widest">비용 및 재화</label>
                         <div id="currency-group" class="flex gap-1.5">
-                            <input type="number" bind:value={newCommand.cost} class="w-full px-4 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
-                            <select bind:value={newCommand.currency} class="px-3 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400 appearance-none">
+                            <input type="number" bind:value={newCommand.Cost} class="w-full px-4 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400" />
+                            <select bind:value={newCommand.Currency} class="px-3 py-3 rounded-2xl bg-amber-50/50 border border-amber-100 outline-none font-bold text-sm focus:border-amber-400 appearance-none">
                                 <option value="point">포인트</option>
                                 <option value="cheese">치즈</option>
                             </select>
@@ -205,10 +207,10 @@
                         <span class="text-[10px] font-black text-amber-600 px-2 uppercase tracking-widest block">아이콘</span>
                         <div class="flex items-center gap-2">
                              <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-2xl overflow-hidden shrink-0">
-                                {#if isUrl(newCommand.icon)}
-                                    <img src={newCommand.icon} alt="Icon" class="w-full h-full object-cover" />
+                                {#if isUrl(newCommand.Icon ?? newCommand.icon)}
+                                    <img src={newCommand.Icon ?? newCommand.icon} alt="Icon" class="w-full h-full object-cover" />
                                 {:else}
-                                    {newCommand.icon || (newCommand.type === 'omakase' ? '🍣' : '🎵')}
+                                    {(newCommand.Icon ?? newCommand.icon) || (newCommand.Type === 'omakase' ? '🍣' : '🎵')}
                                 {/if}
                              </div>
                              <button 
@@ -228,52 +230,52 @@
 
         <!-- 🌊 [물멍]: 목록 -->
         <div class="space-y-2">
-            {#each commands as cmd (cmd.id)}
+            {#each commands as cmd (cmd.Id ?? cmd.id)}
                 <div class="group/item relative">
-                    <div class="flex flex-col bg-white/60 backdrop-blur-md border border-slate-200/50 rounded-3xl overflow-hidden transition-all duration-300 {expandedId === cmd.id ? 'ring-2 ring-amber-400 shadow-xl' : 'hover:bg-white'}">
+                    <div class="flex flex-col bg-white/60 backdrop-blur-md border border-slate-200/50 rounded-3xl overflow-hidden transition-all duration-300 {(expandedId === (cmd.Id ?? cmd.id)) ? 'ring-2 ring-amber-400 shadow-xl' : 'hover:bg-white'}">
                         <!-- 리스트 아이템 메인 영역 -->
                         <div class="w-full h-full flex items-center justify-between">
                             <button 
-                                onclick={() => toggleExpand(cmd.id)}
+                                onclick={() => toggleExpand(cmd.Id ?? cmd.id)}
                                 class="flex-1 px-6 py-5 flex items-center gap-4 text-left group-hover/item:translate-x-1 transition-transform"
                             >
                                 <!-- 🖼️ [물멍]: 리스트 아이콘 크기 확장 (w-12 -> w-14) -->
                                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 shadow-sm
-                                    {cmd.type === 'omakase' ? 'bg-indigo-50 text-indigo-500' : 'bg-sky-50 text-sky-500'}">
-                                    {#if isUrl(cmd.icon)}
-                                        <img src={cmd.icon} alt={cmd.name} class="w-full h-full object-cover" />
+                                    {(cmd.Type ?? cmd.type) === 'omakase' ? 'bg-indigo-50 text-indigo-500' : 'bg-sky-50 text-sky-500'}">
+                                    {#if isUrl(cmd.Icon ?? cmd.icon)}
+                                        <img src={cmd.Icon ?? cmd.icon} alt={cmd.Name ?? cmd.name} class="w-full h-full object-cover" />
                                     {:else}
-                                        <span class="text-3xl">{cmd.icon || (cmd.type === 'omakase' ? '🍣' : '🎵')}</span>
+                                        <span class="text-3xl">{(cmd.Icon ?? cmd.icon) || ((cmd.Type ?? cmd.type) === 'omakase' ? '🍣' : '🎵')}</span>
                                     {/if}
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <h3 class="text-sm font-[1000] text-slate-800">{cmd.name}</h3>
-                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 uppercase">{cmd.type}</span>
+                                        <h3 class="text-sm font-[1000] text-slate-800">{cmd.Name ?? cmd.name}</h3>
+                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 uppercase">{cmd.Type ?? cmd.type}</span>
                                     </div>
                                     <p class="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
-                                        {cmd.trigger} • 
-                                        {#if cmd.currency === 'cheese'}
-                                            <span class="flex items-center gap-0.5 text-rose-500"><Ticket size={10} /> {cmd.cost.toLocaleString()} 치즈</span>
+                                        {cmd.Trigger ?? cmd.trigger} • 
+                                        {#if (cmd.Currency ?? cmd.currency) === 'cheese'}
+                                            <span class="flex items-center gap-0.5 text-rose-500"><Ticket size={10} /> {(cmd.Cost ?? cmd.cost).toLocaleString()} 치즈</span>
                                         {:else}
-                                            <span class="flex items-center gap-0.5 text-amber-600"><Coins size={10} /> {cmd.cost.toLocaleString()} 포인트</span>
+                                            <span class="flex items-center gap-0.5 text-amber-600"><Coins size={10} /> {(cmd.Cost ?? cmd.cost).toLocaleString()} 포인트</span>
                                         {/if}
                                     </p>
                                 </div>
                             </button>
                             
                             <div class="flex items-center gap-4 px-6 shrink-0">
-                                {#if cmd.isActive}
+                                {#if (cmd.IsActive ?? cmd.isActive)}
                                     <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="활성화됨"></div>
                                 {:else}
                                     <div class="w-2.5 h-2.5 rounded-full bg-slate-300" title="비활성화됨"></div>
                                 {/if}
 
                                 <button 
-                                    onclick={() => toggleExpand(cmd.id)}
+                                    onclick={() => toggleExpand(cmd.Id ?? cmd.id)}
                                     class="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                                 >
-                                    {#if expandedId === cmd.id}
+                                    {#if expandedId === (cmd.Id ?? cmd.id)}
                                         <ChevronUp size={16} class="text-amber-500" />
                                     {:else}
                                         <ChevronDown size={16} class="text-slate-300" />
@@ -282,22 +284,22 @@
                             </div>
                         </div>
 
-                        {#if expandedId === cmd.id && editingCommand}
+                        {#if expandedId === (cmd.Id ?? cmd.id) && editingCommand}
                             <div class="p-6 pt-0 border-t border-slate-100 bg-amber-50/30" transition:fly={{ y: -10, duration: 300 }}>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 my-4">
                                     <div class="space-y-1.5">
-                                        <label for="edit-trigger-{cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">명령어 수정</label>
-                                        <input id="edit-trigger-{cmd.id}" bind:value={editingCommand.trigger} class="w-full px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
+                                        <label for="edit-trigger-{cmd.Id ?? cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">명령어 수정</label>
+                                        <input id="edit-trigger-{cmd.Id ?? cmd.id}" bind:value={editingCommand.Trigger} class="w-full px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
                                     </div>
                                     <div class="space-y-1.5">
-                                        <label for="edit-name-{cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">표시 이름 수정</label>
-                                        <input id="edit-name-{cmd.id}" bind:value={editingCommand.name} class="w-full px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
+                                        <label for="edit-name-{cmd.Id ?? cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">표시 이름 수정</label>
+                                        <input id="edit-name-{cmd.Id ?? cmd.id}" bind:value={editingCommand.Name} class="w-full px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
                                     </div>
                                     <div class="space-y-1.5">
-                                        <label for="edit-cost-group-{cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">비용 및 재화 수정</label>
-                                        <div id="edit-cost-group-{cmd.id}" class="flex gap-2">
-                                            <input type="number" bind:value={editingCommand.cost} class="flex-1 px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
-                                            <select bind:value={editingCommand.currency} class="px-3 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400 appearance-none text-center">
+                                        <label for="edit-cost-group-{cmd.Id ?? cmd.id}" class="text-[9px] font-black text-slate-400 px-2 uppercase">비용 및 재화 수정</label>
+                                        <div id="edit-cost-group-{cmd.Id ?? cmd.id}" class="flex gap-2">
+                                            <input type="number" bind:value={editingCommand.Cost} class="flex-1 px-4 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400" />
+                                            <select bind:value={editingCommand.Currency} class="px-3 py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none font-bold text-xs focus:border-amber-400 appearance-none text-center">
                                                 <option value="point">포인트</option>
                                                 <option value="cheese">치즈</option>
                                             </select>
@@ -308,10 +310,10 @@
                                         <span class="text-[9px] font-black text-slate-400 px-2 uppercase block">아이콘 관리</span>
                                         <div class="flex items-center gap-2 h-[42px]">
                                              <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl overflow-hidden shadow-sm">
-                                                {#if isUrl(editingCommand.icon)}
-                                                    <img src={editingCommand.icon} alt="Icon" class="w-full h-full object-cover" />
+                                                {#if isUrl(editingCommand.Icon ?? editingCommand.icon)}
+                                                    <img src={editingCommand.Icon ?? editingCommand.icon} alt="Icon" class="w-full h-full object-cover" />
                                                 {:else}
-                                                    {editingCommand.icon || (editingCommand.type === 'omakase' ? '🍣' : '🎵')}
+                                                    {(editingCommand.Icon ?? editingCommand.icon) || ((editingCommand.Type ?? editingCommand.type) === 'omakase' ? '🍣' : '🎵')}
                                                 {/if}
                                              </div>
                                              <div class="flex-1 flex gap-1 h-full">
@@ -324,7 +326,7 @@
                                                     <UploadCloud size={16} />
                                                 </button>
                                                 <button 
-                                                    onclick={() => editingCommand.icon = (editingCommand.type === 'omakase' ? '🍣' : '🎵')}
+                                                    onclick={() => { editingCommand.Icon = (editingCommand.Type === 'omakase' ? '🍣' : '🎵'); editingCommand.icon = editingCommand.Icon; }}
                                                     class="flex-1 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all border border-slate-200"
                                                     title="기본값 복원"
                                                 >
@@ -339,10 +341,10 @@
                                     <div class="flex items-center gap-3">
                                         <span class="text-[10px] font-black text-slate-500 uppercase">명령어 활성화 여부</span>
                                         <button 
-                                            onclick={() => editingCommand.isActive = !editingCommand.isActive} 
+                                            onclick={() => editingCommand.IsActive = !editingCommand.IsActive} 
                                             class="transition-all duration-300 transform active:scale-90"
                                         >
-                                            {#if editingCommand.isActive}
+                                            {#if editingCommand.IsActive}
                                                 <ToggleRight size={32} class="text-emerald-500 fill-emerald-500/10" />
                                             {:else}
                                                 <ToggleLeft size={32} class="text-slate-300" />
@@ -353,8 +355,8 @@
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    <button onclick={() => handleSave(cmd.id)} class="flex-1 py-3 bg-amber-500 text-white rounded-xl font-[1000] text-xs flex items-center justify-center gap-2 hover:bg-amber-600 shadow-lg shadow-amber-200"><Save size={14} /> 설정 저장 및 연동</button>
-                                    <button onclick={() => handleDelete(cmd.id)} class="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"><Trash2 size={16} /></button>
+                                    <button onclick={() => handleSave(cmd.Id ?? cmd.id)} class="flex-1 py-3 bg-amber-500 text-white rounded-xl font-[1000] text-xs flex items-center justify-center gap-2 hover:bg-amber-600 shadow-lg shadow-amber-200"><Save size={14} /> 설정 저장 및 연동</button>
+                                    <button onclick={() => handleDelete(cmd.Id ?? cmd.id)} class="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"><Trash2 size={16} /></button>
                                 </div>
                             </div>
                         {/if}

@@ -9,22 +9,22 @@
 
     // [물멍]: 수량 조절 함수 (0 도달 시 자동 해제 로직 포함)
     const adjustCount = (id: number, offset: number) => {
-        const index = omakases.findIndex(o => o.id === id);
+        const index = omakases.findIndex(o => o.Id === id);
         if (index !== -1) {
-            const newCount = Math.max(0, (omakases[index].count || 0) + offset);
+            const newCount = Math.max(0, (omakases[index].Count || 0) + offset);
             updateCount(id, newCount);
         }
     };
 
     // [물멍]: 수량 직접 업데이트 함수
     const updateCount = (id: number, newCount: number) => {
-        const index = omakases.findIndex(o => o.id === id);
+        const index = omakases.findIndex(o => o.Id === id);
         if (index !== -1) {
             const val = Math.max(0, newCount);
-            omakases[index].count = val;
+            omakases[index].Count = val;
             
             // 수량이 0이 되었는데 현재 선택된 오마카세라면 즉시 해제
-            if (val === 0 && selectedOmakase?.id === id) {
+            if (val === 0 && selectedOmakase?.Id === id) {
                 selectedOmakase = null;
             }
         }
@@ -34,9 +34,9 @@
 <div class="glass-card rounded-[2rem] p-4 border-l-8 border-l-coral-blue/40 relative overflow-hidden bg-white/40">
     <div class="w-full">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each omakases as item (item.id)}
-                {@const isSelected = selectedOmakase?.id === item.id}
-                {@const isDisabled = (item.count || 0) === 0}
+            {#each omakases as item (item.Id)}
+                {@const isSelected = selectedOmakase?.Id === item.Id}
+                {@const isDisabled = (item.Count || 0) === 0}
                 {@const isUrl = (str: string) => str?.startsWith('http')}
                 
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -50,16 +50,16 @@
                 >
                     <!-- 🖼️ [물멍]: 이미지가 뭉개지지 않도록 크기 확장 (w-16 -> w-20) 및 그림자 효과 강화 -->
                     <div class="w-20 h-20 rounded-[1.25rem] flex items-center justify-center shrink-0 overflow-hidden shadow-md group-hover:scale-105 transition-transform bg-white">
-                        {#if isUrl(item.icon)}
-                            <img src={item.icon} alt={item.name} class="w-full h-full object-cover" style="image-rendering: auto;" />
+                        {#if isUrl(item.Icon)}
+                            <img src={item.Icon} alt={item.Name} class="w-full h-full object-cover" style="image-rendering: auto;" />
                         {:else}
-                            <span class="text-4xl drop-shadow-sm">{item.icon || '🍣'}</span>
+                            <span class="text-4xl drop-shadow-sm">{item.Icon || '🍣'}</span>
                         {/if}
                     </div>
                     
                     <div class="flex-1 min-w-0">
                         <!-- 타이틀 영역 (클릭 가능) -->
-                        <p class="text-lg font-[1000] text-slate-700 truncate leading-tight mb-2.5 tracking-tighter">{item.name}</p>
+                        <p class="text-lg font-[1000] text-slate-700 truncate leading-tight mb-2.5 tracking-tighter">{item.Name}</p>
                         
                         <!-- [물멍]: 조작 영역 (직접 입력이 가능하므로 +/- 10 버튼 제거) -->
                         <div 
@@ -69,22 +69,22 @@
                         >
                             <button 
                                 class="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-xl text-lg font-black hover:bg-slate-200 transition-colors disabled:opacity-20 pointer-events-auto shrink-0"
-                                onclick={(e) => { e.stopPropagation(); adjustCount(item.id, -1); }}
-                                disabled={item.count === 0}
+                                onclick={(e) => { e.stopPropagation(); adjustCount(item.Id, -1); }}
+                                disabled={item.Count === 0}
                             >-</button>
                             
                             <input 
                                 type="number"
                                 min="0"
                                 class="w-12 bg-transparent text-center text-xl font-[1000] text-coral-blue focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pointer-events-auto"
-                                value={item.count || 0}
-                                oninput={(e) => updateCount(item.id, parseInt(e.currentTarget.value) || 0)}
+                                value={item.Count || 0}
+                                oninput={(e) => updateCount(item.Id, parseInt(e.currentTarget.value) || 0)}
                                 onclick={(e) => e.stopPropagation()}
                             />
 
                             <button 
                                 class="w-10 h-10 flex items-center justify-center bg-coral-blue/10 text-coral-blue rounded-xl text-lg font-black hover:bg-coral-blue/20 transition-colors pointer-events-auto shrink-0"
-                                onclick={(e) => { e.stopPropagation(); adjustCount(item.id, 1); }}
+                                onclick={(e) => { e.stopPropagation(); adjustCount(item.Id, 1); }}
                             >+</button>
                         </div>
                     </div>

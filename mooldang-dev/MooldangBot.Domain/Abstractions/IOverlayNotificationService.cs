@@ -20,4 +20,9 @@ public interface IOverlayNotificationService
     /// [물멍]: 현재 상태(Playing, Pending, Settings)를 DB에서 직접 조회하여 오버레이에 브로드캐스트합니다.
     /// </summary>
     Task BroadcastSongOverlayUpdateAsync(string chzzkUid, string? connectionId = null, CancellationToken token = default);
+
+    /// <summary>
+    /// [물멍]: 특정 노래책 항목의 썸네일이 업데이트되었음을 대시보드에 알립니다.
+    /// </summary>
+    Task SendThumbnailUpdatedAsync(int songBookId, string thumbnailUrl, CancellationToken token = default);
 }

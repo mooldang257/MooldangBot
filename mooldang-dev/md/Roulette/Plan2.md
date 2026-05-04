@@ -23,7 +23,7 @@
     -   `PATCH /api/admin/roulette/{Id}/status`: 룰렛 전체 활성 상태 토글 API 추가.
 
 ### 2.2. 프론트엔드 (JavaScript)
--   **PascalCase 접근**: 모든 객체 프로퍼티 접근을 `Roulette.IsActive`, `Item.IsActive` 등 PascalCase로 수정.
+-   **PascalCase 접근**: 모든 객체 프로퍼티 접근을 `FuncRouletteMain.IsActive`, `Item.IsActive` 등 PascalCase로 수정.
 -   **목록 UI 개선**: 룰렛별 '전체 활성' 스위치를 사용자 요청 위치(빨간 박스 영역)에 추가.
 
 ---

@@ -8,7 +8,7 @@
 > **최우선 순위**: 현재 발생 중인 잠재적 장애 요인을 제거하고 최소한의 형식을 맞춥니다.
 
 ### 1. 엔티티 직접 반환 제거 (DTO 전환)
-- **정의**: API 응답에서 `Roulette`, `SongQueue` 같은 DB 엔티티 대신 별도로 정의된 `ResponseDto`를 반환합니다.
+- **정의**: API 응답에서 `FuncRouletteMain`, `FuncSongListQueues` 같은 DB 엔티티 대신 별도로 정의된 `ResponseDto`를 반환합니다.
 - **필요성**: EF Core 엔티티는 순환 참조(Circular Reference) 구조가 많아 JSON 직렬화 시 500 에러를 유발합니다. 현재의 수동 `null` 처리 방식은 누락 시 장애로 이어집니다.
 - **기대 효과**: 직렬화 에러 완전 차단 및 민감한 DB 필드(비밀번호, 내부 토큰 등)의 노출 방지.
 

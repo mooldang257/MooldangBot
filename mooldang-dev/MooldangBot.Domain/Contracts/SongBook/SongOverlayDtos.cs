@@ -13,40 +13,63 @@ public record SongOverlayDto(
 );
 
 public record CurrentSongDto(
-    [property: JsonPropertyName("id")] int Id,
-    [property: JsonPropertyName("title")] string Title, 
-    [property: JsonPropertyName("artist")] string? Artist, 
-    [property: JsonPropertyName("videoId")] string? VideoId = null, 
-    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null,
-    [property: JsonPropertyName("pitch")] string? Pitch = null);
+    int Id,
+    string Title, 
+    string? Artist, 
+    string? VideoId = null, 
+    string? ThumbnailUrl = null,
+    string? Pitch = null);
 
 public record QueueSongDto(
-    [property: JsonPropertyName("id")] int Id,
-    [property: JsonPropertyName("title")] string Title, 
-    [property: JsonPropertyName("artist")] string? Artist, 
-    [property: JsonPropertyName("requester")] string? Requester, 
-    [property: JsonPropertyName("videoId")] string? VideoId = null, 
-    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null,
-    [property: JsonPropertyName("pitch")] string? Pitch = null);
+    int Id,
+    string Title, 
+    string? Artist, 
+    string? Requester, 
+    string? VideoId = null, 
+    string? ThumbnailUrl = null,
+    string? Pitch = null);
 
 public record SongOverlaySettings(
-    [property: JsonPropertyName("queueTheme")] string QueueTheme = "card",
-    [property: JsonPropertyName("maxQueueCount")] int MaxQueueCount = 5,
-    [property: JsonPropertyName("CurrentSong")] CurrentSongSettings? CurrentSong = null,
-    [property: JsonPropertyName("Roulette")] RouletteSettings? Roulette = null,
-    [property: JsonPropertyName("layout")] Dictionary<string, OverlayElementDto>? Layout = null,
-    // 하위 호환성을 위한 구버전 필드들 (필요시)
-    string LiveTitleFont = "Gmarket Sans",
-    string LiveArtistFont = "Gmarket Sans",
-    string QueueFont = "Pretendard",
-    string LiveTitleColor = "#FFFFFF",
-    string LiveArtistColor = "#CCCCCC",
-    string QueueTitleColor = "#FFFFFF",
-    string QueueArtistColor = "#AAAAAA",
-    string QueueItemBgColor = "#0f172a",
-    string LiveCardBgColor = "#0f172a",
-    double LiveCardBgOpacity = 0.8,
-    double QueueItemBgOpacity = 0.8
+    string QueueTheme = "card",
+    int MaxQueueCount = 5,
+    CurrentSongSettings? CurrentSong = null,
+    RouletteSettings? FuncRouletteMain = null,
+    QueueThemeSettings? Queue = null, // [개편]: 대기열 전용 세부 모델
+    Dictionary<string, OverlayElementDto>? Layout = null
+);
+
+/// <summary>
+/// [대기열 테마 통합 모델]: 인라인과 카드형을 명확히 분리하여 관리
+/// </summary>
+public record QueueThemeSettings(
+    InlineThemeSettings? Inline = null,
+    CardThemeSettings? Card = null,
+    bool ShowThumbnail = false,
+    string GlobalFont = "Pretendard"
+);
+
+/// <summary>
+/// [인라인 테마]: 심플하고 텍스트 위주의 리스트 스타일
+/// </summary>
+public record InlineThemeSettings(
+    string TitleColor = "#FFFFFF",
+    string ArtistColor = "#AAAAAA",
+    string BgColor = "#000000",
+    double BgOpacity = 0.0,
+    int Spacing = 8
+);
+
+/// <summary>
+/// [카드 테마]: 개별 항목이 박스 형태로 구분되는 스타일
+/// </summary>
+public record CardThemeSettings(
+    string TitleColor = "#FFFFFF",
+    string ArtistColor = "#CCCCCC",
+    string BgColor = "#0f172a",
+    double BgOpacity = 0.8,
+    string BorderColor = "#1e293b",
+    int BorderWidth = 0,
+    int BorderRadius = 8
 );
 
 public record CurrentSongSettings(

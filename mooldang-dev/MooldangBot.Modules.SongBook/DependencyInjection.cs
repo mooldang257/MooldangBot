@@ -25,6 +25,7 @@ public static class SongBookModuleExtensions
 
         // Strategies
         services.AddScoped<ICommandFeatureStrategy, SongRequestStrategy>();
+        services.AddScoped<ICommandFeatureStrategy, OmakaseStrategy>();
 
         return services;
     }

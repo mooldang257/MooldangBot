@@ -22,10 +22,13 @@
             });
             
             const data = await response.json();
+            const isSuccess = data.Success;
+            const token = data.Token;
+            const message = data.Message || data.Error;
             
-            if (data.success) {
+            if (isSuccess) {
                 const baseUrl = window.location.origin;
-                const overlayUrl = `${baseUrl}/overlay/?access_token=${data.token}`;
+                const overlayUrl = `${baseUrl}/overlay/?access_token=${token}`;
                 
                 await navigator.clipboard.writeText(overlayUrl);
                 copied = true;
@@ -44,7 +47,7 @@
                     bubbles = [];
                 }, 2000);
             } else {
-                alert(`❌ 오류: ${data.message}`);
+                alert(`❌ 오류: ${message}`);
             }
         } catch (err) {
             console.error("Failed to copy URL:", err);

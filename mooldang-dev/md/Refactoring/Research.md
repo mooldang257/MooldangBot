@@ -20,7 +20,7 @@
 ### 2-1. MooldangBot.Domain
 - **역할**: 핵심 비즈니스 모델 및 엔티티 정의.
 - **주요 구성**:
-    - `Entities/`: `StreamerProfile`, `ViewerProfile`, `SongQueue` 등 DB 테이블과 매핑되는 핵심 클래스.
+    - `Entities/`: `CoreStreamerProfiles`, `ViewerProfile`, `FuncSongListQueues` 등 DB 테이블과 매핑되는 핵심 클래스.
     - `DTOs/`: 계층 간 데이터 전송을 위한 객체.
     - `Events/`: `ChatMessageReceivedEvent` 등 도메인 이벤트 정의 (MediatR 기반).
 
@@ -95,7 +95,7 @@
 
 ## 6. 특징적인 기능 모듈
 
-1.  **곡 신청 시스템 (SongQueue)**: 실시간 신청곡 큐 관리 및 SignalR 오버레이 연동.
+1.  **곡 신청 시스템 (FuncSongListQueues)**: 실시간 신청곡 큐 관리 및 SignalR 오버레이 연동.
 2.  **포인트 시스템**: 채팅 점수 적립, 연속 출석 시스템 및 랭킹 기능.
 3.  **룰렛/미션**: 후원 금액 기반 멀티 스핀 지원 및 로그 추적 기능.
 4.  **오버레이 허브**: 다양한 OBS 브라우저 소스를 통합 관리하는 실시간 웹 서버.

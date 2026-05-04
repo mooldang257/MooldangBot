@@ -9,75 +9,77 @@
     import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
 
     // [물멍]: 데이터 상태 관리
-    let isLoaded = $state(false);
-    let errorMessage = $state("");
-    let designSettings = $state<any>({});
-    let layoutData = $state<any>({});
+    let IsLoaded = $state(false);
+    let ErrorMessage = $state("");
+    let DesignSettings = $state<any>({});
+    let LayoutData = $state<any>({});
     
-    let isCopied = $state(false);
+    let IsCopied = $state(false);
 
     // [v6.3.0]: 유저 식별자 반응성 확보
-    const streamerId = $derived(userState.uid || $page.params.streamerId || "");
-    const overlayUrl = $derived(`${window.location.origin}/overlay#access_token=${userState.overlayToken || ''}`);
+    const StreamerId = $derived(userState.Uid || $page.params.streamerId || "");
+    const OverlayUrl = $derived(`${window.location.origin}/overlay#access_token=${userState.OverlayToken || ''}`);
 
     onMount(async () => {
-        await loadSettings();
+        await LoadSettings();
     });
 
-    async function loadSettings() {
+    async function LoadSettings() {
         try {
-            if (!streamerId) return;
-            const data = await apiFetch<any>(`/api/config/songlist/${streamerId}`);
-            if (data) {
-                const rawJson = data.designSettingsJson || "{}";
-                designSettings = JSON.parse(rawJson);
-                layoutData = designSettings.layout || {};
+            if (!StreamerId) return;
+            const response = await apiFetch<any>(`/api/config/songlist/${StreamerId}`);
+            if (response.Value) {
+                const data = response.Value;
+                const rawJson = data.DesignSettingsJson || "{}";
+                DesignSettings = JSON.parse(rawJson);
+                LayoutData = DesignSettings.Layout || {};
                 
                 // [물멍]: 불러온 설정에 토큰이 있다면 전역 상태와 강제 동기화 (주소 복사 시 누락 방지)
-                if (data.overlayToken) {
-                    userState.overlayToken = data.overlayToken;
+                if (data.OverlayToken) {
+                    userState.OverlayToken = data.OverlayToken;
                 }
             }
         } catch (err: any) {
             console.error("[물멍] 설정 로드 실패:", err);
-            errorMessage = "설정을 불러오는데 실패했습니다.";
+            ErrorMessage = "설정을 불러오는데 실패했습니다.";
         } finally {
-            isLoaded = true;
+            IsLoaded = true;
         }
     }
 
-    async function handleSaveLayout(newLayout: any) {
+    async function HandleSaveLayout(newLayout: any) {
         try {
             // [물멍]: 기존 디자인 설정에 레이아웃 덮어쓰기
             const updatedSettings = {
-                ...designSettings,
-                layout: newLayout
+                ...DesignSettings,
+                Layout: newLayout
             };
 
             // [물멍]: DB 동기화를 위해 컨트롤러 형식에 맞게 페이로드 구성
             // SonglistSettingsController는 SonglistSettingsUpdateRequest를 받음
-            const payload = {
-                designSettingsJson: JSON.stringify(updatedSettings),
+            const payload: any = {
+                DesignSettingsJson: JSON.stringify(updatedSettings),
                 // 기존 데이터 유지 (GET에서 받아온 값 그대로 사용)
-                songRequestCommands: [], // 컨트롤러에서 빈 배열이면 기존꺼 삭제되므로 주의 필요
-                omakases: [] 
+                SongRequestCommands: [], // 컨트롤러에서 빈 배열이면 기존꺼 삭제되므로 주의 필요
+                Omakases: [] 
             };
 
             // [물멍]: SonglistSettingsController의 동기화 로직이 덮어쓰기 방식이므로, 
             // 현재 활성화된 명령어 데이터도 함께 보내야 함
-            const currentData = await apiFetch<any>(`/api/config/songlist/${streamerId}`);
-            if (currentData) {
-                payload.songRequestCommands = currentData.songRequestCommands || [];
-                payload.omakases = currentData.omakases || [];
+            const currentResponse = await apiFetch<any>(`/api/config/songlist/${StreamerId}`);
+            if (currentResponse.Value) {
+                const currentData = currentResponse.Value;
+                payload.SongRequestCommands = currentData.SongRequestCommands || [];
+                payload.Omakases = currentData.Omakases || [];
             }
 
-            await apiFetch(`/api/config/songlist/${streamerId}`, {
+            await apiFetch(`/api/config/songlist/${StreamerId}`, {
                 method: "POST",
-                body: JSON.stringify(payload)
+                body: payload
             });
 
-            designSettings = updatedSettings;
-            layoutData = newLayout;
+            DesignSettings = updatedSettings;
+            LayoutData = newLayout;
             alert("레이아웃 설정이 물댕봇에 저장되었습니다! ✅");
         } catch (err) {
             console.error("[물멍] 레이아웃 저장 실패:", err);
@@ -85,10 +87,10 @@
         }
     }
 
-    function copyOverlayUrl() {
-        navigator.clipboard.writeText(overlayUrl);
-        isCopied = true;
-        setTimeout(() => isCopied = false, 2000);
+    function CopyOverlayUrl() {
+        navigator.clipboard.writeText(OverlayUrl);
+        IsCopied = true;
+        setTimeout(() => IsCopied = false, 2000);
     }
 </script>
 
@@ -96,11 +98,11 @@
 <svelte:head>
     {#each MOOLDANG_FONTS as font}
         {#if font.url && (
-            designSettings?.CurrentSong?.TitleFont === font.family || 
-            designSettings?.CurrentSong?.ArtistFont === font.family || 
-            designSettings?.Inline?.TitleFont === font.family || 
-            designSettings?.Card?.TitleFont === font.family || 
-            designSettings?.Roulette?.Font === font.family
+            DesignSettings?.CurrentSong?.TitleFont === font.family || 
+            DesignSettings?.CurrentSong?.ArtistFont === font.family || 
+            DesignSettings?.Inline?.TitleFont === font.family || 
+            DesignSettings?.Card?.TitleFont === font.family || 
+            DesignSettings?.Roulette?.Font === font.family
         )}
             {#if font.provider === 'google'}
                 <link rel="stylesheet" href={font.url} />
@@ -130,18 +132,18 @@
                 </div>
                 <div class="flex items-center gap-1 pl-2">
                     <button 
-                        onclick={copyOverlayUrl}
+                        onclick={CopyOverlayUrl}
                         class="p-2 hover:bg-sky-50 rounded-lg text-sky-500 transition-colors"
                         title="주소 복사"
                     >
-                        {#if isCopied}
+                        {#if IsCopied}
                             <Check size={18} />
                         {:else}
                             <Copy size={18} />
                         {/if}
                     </button>
                     <a 
-                        href={overlayUrl} 
+                        href={OverlayUrl} 
                         target="_blank"
                         class="p-2 hover:bg-sky-50 rounded-lg text-sky-500 transition-colors"
                         title="새 창에서 열기"
@@ -153,26 +155,23 @@
         </div>
     </div>
 
-    {#if !isLoaded}
+    {#if !IsLoaded}
         <div class="flex items-center justify-center py-20">
             <div class="animate-spin text-primary">🌊</div>
         </div>
-    {:else if errorMessage}
+    {:else if ErrorMessage}
         <div class="p-8 bg-rose-50 text-rose-500 rounded-[2.5rem] border border-rose-100 flex items-center gap-4" in:fade>
             <AlertCircle size={24} />
-            <span class="font-black text-lg">{errorMessage}</span>
+            <span class="font-black text-lg">{ErrorMessage}</span>
         </div>
     {:else}
         <!-- [레이아웃 에디터 섹션] -->
         <LayoutEditor 
-            bind:settings={designSettings} 
+            bind:settings={DesignSettings} 
             onSave={(updatedSettings) => {
-                handleSaveLayout(updatedSettings.layout);
+                HandleSaveLayout(updatedSettings.layout);
             }} 
         />
-
-
-
     {/if}
 </div>
 

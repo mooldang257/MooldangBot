@@ -30,7 +30,7 @@
     let config = $derived(variantConfig[modal.variant]);
 </script>
 
-{#if modal.isOpen}
+{#if modal.isOpen && modal.style === "classic"}
     <div 
         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 min-h-screen"
         in:fade={{ duration: 300 }}
@@ -72,12 +72,14 @@
                     >
                         {modal.confirmText}
                     </button>
-                    <button 
-                        onclick={() => modal.handleCancel()}
-                        class="w-full h-14 bg-white/5 text-slate-400 font-black rounded-2xl hover:bg-white/10 hover:text-white transition-all text-sm border border-white/5"
-                    >
-                        {modal.cancelText}
-                    </button>
+                    {#if !modal.isAlert}
+                        <button 
+                            onclick={() => modal.handleCancel()}
+                            class="w-full h-14 bg-white/5 text-slate-400 font-black rounded-2xl hover:bg-white/10 hover:text-white transition-all text-sm border border-white/5"
+                        >
+                            {modal.cancelText}
+                        </button>
+                    {/if}
                 </div>
             </div>
 

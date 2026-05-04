@@ -7,7 +7,7 @@
 ## 1. 문제 원인 분석 (Root Cause Analysis)
 
 1.  **모델 유효성 검사 실패 (ModelState Invalid)**:
-    -   `Roulette` 및 `RouletteItem` 모델에 `[Required]` 속성이 붙은 `ChzzkUid`, `RouletteId` 필드가 존재함.
+    -   `FuncRouletteMain` 및 `FuncRouletteItems` 모델에 `[Required]` 속성이 붙은 `ChzzkUid`, `RouletteId` 필드가 존재함.
     -   클라이언트(JS)는 이 필드들을 전송하지 않거나(서버에서 할당하므로), 대소문자가 일치하지 않는 경우 서버의 모델 바인더가 컨트롤러 진입 전 유효성 검사 단계에서 `400 Bad Request`를 반환함.
 2.  **인자 명명 규칙 불일치**:
     -   일부 API 엔드포인트의 템플릿 변수명(`{id}`)과 C# 인자명(`int Id`) 간의 미세한 불일치 가능성.
@@ -30,7 +30,7 @@
 
 ## 3. 상세 수정 계획
 
-### [FIX] Roulette.cs & RouletteItem.cs
+### [FIX] FuncRouletteMain.cs & FuncRouletteItems.cs
 -   `ChzzkUid`와 `RouletteId`의 `[Required]` 속성을 제거하여 모델 바인더의 차단을 피함.
 
 ### [FIX] RouletteController.cs

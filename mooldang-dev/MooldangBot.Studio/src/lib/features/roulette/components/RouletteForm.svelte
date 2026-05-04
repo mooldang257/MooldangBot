@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Save, Plus, X, AlertCircle, PieChart, Percent, Palette, Target, Copy, Check, Volume2, VolumeX, Mic, Music, Trash2, Play, StopCircle } from "lucide-svelte";
     import { slide, fade, fly } from "svelte/transition";
+    import { apiFetch } from "$lib/api/client";
 
     let { 
         rouletteForm = $bindable(), 
@@ -14,36 +15,38 @@
 
     // [오시리스의 연성]: 확률 합계 자동 계산
     let totalProbability = $derived(
-        rouletteForm.items.reduce((acc: number, item: any) => acc + (Number(item.probability) || 0), 0)
+        (rouletteForm.Items || []).reduce((acc: number, item: any) => acc + (Number(item.Probability) || 0), 0)
     );
 
     function addItem() {
-        rouletteForm.items = [
-            ...rouletteForm.items,
+        rouletteForm.Items = [
+            ...(rouletteForm.Items || []),
             {
-                id: 0,
-                itemName: "",
-                probability: 10,
-                probability10x: 10,
-                color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
-                isMission: false,
-                isActive: true
+                Id: 0,
+                ItemName: "",
+                Probability: 10,
+                Probability10x: 10,
+                Color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
+                IsMission: false,
+                IsActive: true,
+                Template: "Standard",
+                UseDefaultSound: true
             }
         ];
     }
 
     function removeItem(index: number) {
-        rouletteForm.items = rouletteForm.items.filter((_: any, i: number) => i !== index);
+        rouletteForm.Items = rouletteForm.Items.filter((_: any, i: number) => i !== index);
     }
 
     function resetForm() {
-        rouletteForm.id = 0;
-        rouletteForm.name = "";
-        rouletteForm.type = "ChatPoint";
-        rouletteForm.command = "";
-        rouletteForm.costPerSpin = 1000;
-        rouletteForm.isActive = true;
-        rouletteForm.items = [];
+        rouletteForm.Id = 0;
+        rouletteForm.Name = "";
+        rouletteForm.Type = "ChatPoint";
+        rouletteForm.Command = "";
+        rouletteForm.CostPerSpin = 1000;
+        rouletteForm.IsActive = true;
+        rouletteForm.Items = [];
     }
 
     // [물멍]: URL 복사 상태 관리 (Osiris UI 계승)
@@ -53,18 +56,11 @@
     const handleCopy = async (e: MouseEvent) => {
         try {
             // [물멍]: 백엔드로부터 오버레이 전용 토큰 발급 (Aegis of Resonance)
-            const response = await fetch('/api/overlay/auth/token', {
-                method: 'POST',
-                credentials: 'include' 
+            const data = await apiFetch<any>('/api/overlay/auth/token', {
+                method: 'POST'
             });
-            const data = await response.json();
             
-            if (!data.success) {
-                console.error("Token fetch failed:", data.message);
-                return;
-            }
-
-            const obsUrl = `${window.location.origin}/overlay/?access_token=${data.token}`;
+            const obsUrl = `${window.location.origin}/overlay/?access_token=${data.Token}`;
             
             await navigator.clipboard.writeText(obsUrl);
             copied = true;
@@ -98,9 +94,8 @@
     async function fetchSoundLibrary() {
         isLibraryLoading = true;
         try {
-            const res = await fetch('/api/admin/roulette/library');
-            const data = await res.json();
-            if (data.success) soundLibrary = data.data;
+            const data = await apiFetch<any>('/api/admin/roulette/library');
+            soundLibrary = data.Items || [];
         } catch (err) {
             console.error("Library fetch failed:", err);
         } finally {
@@ -136,14 +131,13 @@
         formData.append("file", blob, name.endsWith(".webm") || name.endsWith(".mp3") ? name : `${name}.webm`);
         
         try {
-            const res = await fetch(`/api/upload/audio?name=${encodeURIComponent(name)}&type=${type}`, {
+            const data = await apiFetch<any>(`/api/upload/audio?name=${encodeURIComponent(name)}&type=${type}`, {
                 method: 'POST',
                 body: formData
             });
-            const data = await res.json();
-            if (data.url && activeSoundItemIndex !== null) {
-                rouletteForm.items[activeSoundItemIndex].soundUrl = data.url;
-                rouletteForm.items[activeSoundItemIndex].useDefaultSound = false;
+            if (data.Url && activeSoundItemIndex !== null) {
+                rouletteForm.Items[activeSoundItemIndex].SoundUrl = data.Url;
+                rouletteForm.Items[activeSoundItemIndex].UseDefaultSound = false;
                 await fetchSoundLibrary(); // 라이브러리 갱신
             }
         } catch (err) {
@@ -153,20 +147,20 @@
 
     function selectFromLibrary(url: string) {
         if (activeSoundItemIndex !== null) {
-            rouletteForm.items[activeSoundItemIndex].soundUrl = url;
-            rouletteForm.items[activeSoundItemIndex].useDefaultSound = false;
+            rouletteForm.Items[activeSoundItemIndex].SoundUrl = url;
+            rouletteForm.Items[activeSoundItemIndex].UseDefaultSound = false;
             activeSoundItemIndex = null;
         }
     }
 
     function removeCustomSound(index: number) {
-        rouletteForm.items[index].soundUrl = null;
-        rouletteForm.items[index].useDefaultSound = true;
+        rouletteForm.Items[index].SoundUrl = null;
+        rouletteForm.Items[index].UseDefaultSound = true;
     }
 
     function setSilentMode(index: number) {
-        rouletteForm.items[index].soundUrl = null;
-        rouletteForm.items[index].useDefaultSound = false;
+        rouletteForm.Items[index].SoundUrl = null;
+        rouletteForm.Items[index].UseDefaultSound = false;
         activeSoundItemIndex = null;
     }
 
@@ -184,15 +178,15 @@
             </div>
             <div>
                 <h3 class="text-xl font-[1000] text-slate-800 tracking-tight">
-                    {rouletteForm.id === 0 ? "새 룰렛 생성" : "룰렛 정보 수정"}
+                    {rouletteForm.Id === 0 ? "새 룰렛 생성" : "룰렛 정보 수정"}
                 </h3>
                 <p class="text-sm text-slate-500 font-bold">도전의 가치와 확률의 재미를 설계해 보세요.</p>
             </div>
         </div>
         <div class="flex items-center gap-4">
-            {#if rouletteForm.id !== 0}
+            {#if rouletteForm.Id !== 0}
                 <button 
-                    on:click={resetForm}
+                    onclick={resetForm}
                     class="px-4 py-2 text-slate-400 hover:text-slate-600 font-bold text-sm transition-all"
                 >
                     새로 만들기 모드로 전환
@@ -201,7 +195,7 @@
 
             <!-- [물멍]: 오버레이 URL 복사 버튼 (프리미엄 조약돌 디자인) -->
             <button
-                on:click={handleCopy}
+                onclick={handleCopy}
                 class="group relative flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-sky-400 to-primary text-white rounded-full font-black shadow-lg shadow-sky-200/50 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all text-xs"
             >
                 {#if copied}
@@ -233,7 +227,7 @@
                 <input 
                     id="r-name"
                     type="text" 
-                    bind:value={rouletteForm.name}
+                    bind:value={rouletteForm.Name}
                     placeholder="예: 꽝 없는 간식 룰렛"
                     class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary focus:bg-white outline-none transition-all font-bold text-slate-700"
                 />
@@ -244,7 +238,7 @@
                     <input 
                         id="r-cmd"
                         type="text" 
-                        bind:value={rouletteForm.command}
+                        bind:value={rouletteForm.Command}
                         placeholder="예: !간식 또는 간식"
                         class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary focus:bg-white outline-none transition-all font-black text-primary"
                     />
@@ -254,14 +248,14 @@
                 <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">비용 타입</label>
                 <div class="flex p-1.5 bg-slate-50 border-2 border-slate-100 rounded-2xl">
                     <button 
-                        on:click={() => rouletteForm.type = "ChatPoint"}
-                        class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all {rouletteForm.type === 'ChatPoint' ? 'bg-white text-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}"
+                        onclick={() => rouletteForm.Type = "ChatPoint"}
+                        class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all {rouletteForm.Type === 'ChatPoint' ? 'bg-white text-primary shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}"
                     >
                         ✨ 포인트
                     </button>
                     <button 
-                        on:click={() => rouletteForm.type = "Cheese"}
-                        class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all {rouletteForm.type === 'Cheese' ? 'bg-white text-orange-500 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}"
+                        onclick={() => rouletteForm.Type = "Cheese"}
+                        class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all {rouletteForm.Type === 'Cheese' ? 'bg-white text-orange-500 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}"
                     >
                         🧀 치즈
                     </button>
@@ -272,7 +266,7 @@
                 <input 
                     id="r-cost"
                     type="number" 
-                    bind:value={rouletteForm.costPerSpin}
+                    bind:value={rouletteForm.CostPerSpin}
                     class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary focus:bg-white outline-none transition-all font-black text-slate-700"
                 />
             </div>
@@ -284,7 +278,7 @@
                 <div class="flex items-center gap-2">
                     <Target size={18} class="text-primary" />
                     <h4 class="font-black text-slate-700 uppercase tracking-tight">룰렛 아이템 리스트</h4>
-                    <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg border border-slate-200 uppercase">{rouletteForm.items.length} Items</span>
+                    <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg border border-slate-200 uppercase">{(rouletteForm.Items || []).length} Items</span>
                 </div>
                 <!-- 확률 인디케이터 -->
                 <div class="flex items-center gap-3">
@@ -296,7 +290,7 @@
             </div>
 
             <div class="space-y-3">
-                {#each rouletteForm.items as item, index (index)}
+                {#each rouletteForm.Items || [] as item, index (index)}
                     <div 
                         class="grid grid-cols-12 gap-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-sky-200 transition-all group"
                         transition:slide|local
@@ -305,7 +299,7 @@
                             <label class="text-[10px] font-black text-slate-400 uppercase">아이템 이름</label>
                             <input 
                                 type="text" 
-                                bind:value={item.itemName}
+                                bind:value={item.ItemName}
                                 placeholder="당첨 항목"
                                 class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-sm text-slate-700"
                             />
@@ -315,7 +309,7 @@
                             <input 
                                 type="number" 
                                 step="0.1"
-                                bind:value={item.probability}
+                                bind:value={item.Probability}
                                 class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-black text-sm text-slate-700"
                             />
                         </div>
@@ -324,14 +318,14 @@
                             <input 
                                 type="number" 
                                 step="0.1"
-                                bind:value={item.probability10x}
+                                bind:value={item.Probability10x}
                                 class="w-full px-4 py-2 bg-white ring-2 ring-sky-50 border border-sky-100 rounded-xl focus:ring-primary focus:border-primary outline-none font-black text-sm text-primary"
                             />
                         </div>
                         <div class="col-span-2 space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">템플릿</label>
                             <select 
-                                bind:value={item.template}
+                                bind:value={item.Template}
                                 class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-primary outline-none font-bold text-xs text-slate-700 appearance-none cursor-pointer"
                             >
                                 <option value="Standard">🫧 일반</option>
@@ -344,12 +338,12 @@
                             <label class="text-[10px] font-black text-slate-400 uppercase">사운드</label>
                             <div class="flex items-center justify-center">
                                 <button 
-                                    on:click={() => { 
+                                    onclick={() => { 
                                         activeSoundItemIndex = index;
                                         fetchSoundLibrary();
                                     }}
-                                    class="p-2 rounded-xl border border-slate-200 transition-all {item.useDefaultSound ? 'text-slate-300 hover:bg-slate-100' : 'text-primary bg-primary/5 border-primary/30 hover:bg-primary/10'}"
-                                    title={item.useDefaultSound ? "기본 사운드 사용 중" : "커스텀 사운드:" + item.soundUrl}
+                                    class="p-2 rounded-xl border border-slate-200 transition-all {item.UseDefaultSound ? 'text-slate-300 hover:bg-slate-100' : 'text-primary bg-primary/5 border-primary/30 hover:bg-primary/10'}"
+                                    title={item.UseDefaultSound ? "기본 사운드 사용 중" : "커스텀 사운드:" + item.SoundUrl}
                                 >
                                     <Volume2 size={18} />
                                 </button>
@@ -360,7 +354,7 @@
                             <div class="flex items-center justify-center">
                                 <input 
                                     type="color" 
-                                    bind:value={item.color}
+                                    bind:value={item.Color}
                                     class="w-9 h-9 p-0.5 bg-white border border-slate-200 rounded-xl cursor-pointer"
                                 />
                             </div>
@@ -368,12 +362,12 @@
                         <div class="col-span-1 flex items-end justify-center pb-2">
                             <label class="flex flex-col items-center gap-1 cursor-pointer select-none">
                                 <span class="text-[9px] font-black text-slate-400 uppercase">미션</span>
-                                <input type="checkbox" bind:checked={item.isMission} class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                                <input type="checkbox" bind:checked={item.IsMission} class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
                             </label>
                         </div>
                         <div class="col-span-1 flex items-end justify-end pb-2">
                             <button 
-                                on:click={() => removeItem(index)}
+                                onclick={() => removeItem(index)}
                                 class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                             >
                                 <X size={18} />
@@ -383,7 +377,7 @@
                 {/each}
 
                 <button 
-                    on:click={addItem}
+                    onclick={addItem}
                     class="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary hover:border-primary/50 hover:bg-sky-50 transition-all font-black text-sm"
                 >
                     <Plus size={18} />
@@ -408,19 +402,19 @@
         <div class="pt-4 flex items-center justify-between gap-4">
             <label class="flex items-center gap-3 cursor-pointer group">
                 <div 
-                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {rouletteForm.isActive ? 'bg-primary' : 'bg-slate-200'}"
+                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {rouletteForm.IsActive ? 'bg-primary' : 'bg-slate-200'}"
                 >
-                    <input type="checkbox" bind:checked={rouletteForm.isActive} class="sr-only" />
+                    <input type="checkbox" bind:checked={rouletteForm.IsActive} class="sr-only" />
                     <span
-                        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {rouletteForm.isActive ? 'translate-x-6' : 'translate-x-1'}"
+                        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {rouletteForm.IsActive ? 'translate-x-6' : 'translate-x-1'}"
                     />
                 </div>
                 <span class="text-sm font-black text-slate-600 group-hover:text-slate-800">명령어 활성화 상시 유지</span>
             </label>
 
             <button 
-                on:click={onSave}
-                disabled={isSubmitting || !rouletteForm.name || !rouletteForm.command || rouletteForm.items.length === 0}
+                onclick={onSave}
+                disabled={isSubmitting || !rouletteForm.Name || !rouletteForm.Command || (rouletteForm.Items || []).length === 0}
                 class="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:grayscale disabled:opacity-50 disabled:scale-100 transition-all"
             >
                 {#if isSubmitting}
@@ -428,7 +422,7 @@
                     정련 중...
                 {:else}
                     <Save size={20} />
-                    {rouletteForm.id === 0 ? "룰렛 생성하기" : "변경사항 저장"}
+                    {rouletteForm.Id === 0 ? "룰렛 생성하기" : "변경사항 저장"}
                 {/if}
             </button>
         </div>
@@ -438,7 +432,7 @@
 <!-- 🔊 사운드 설정 모달 (Glassmorphism Overlay) -->
 {#if activeSoundItemIndex !== null}
 <div class="fixed inset-0 z-[200] flex items-center justify-center p-4" transition:fade>
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" on:click={() => activeSoundItemIndex = null}></div>
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick={() => activeSoundItemIndex = null}></div>
     <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100" in:fly={{ y: 20 }}>
         <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
             <div class="flex items-center gap-3">
@@ -447,7 +441,7 @@
                 </div>
                 <h4 class="font-black text-slate-800 tracking-tight">당첨 사운드 설정</h4>
             </div>
-            <button on:click={() => activeSoundItemIndex = null} class="p-2 text-slate-400 hover:text-slate-600 transition-all">
+            <button onclick={() => activeSoundItemIndex = null} class="p-2 text-slate-400 hover:text-slate-600 transition-all">
                 <X size={20} />
             </button>
         </div>
@@ -458,25 +452,25 @@
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-black text-slate-400 uppercase tracking-widest">현재 사운드</span>
                     <div class="flex gap-2">
-                        {#if rouletteForm.items[activeSoundItemIndex].useDefaultSound || rouletteForm.items[activeSoundItemIndex].soundUrl}
-                            <button on:click={() => setSilentMode(activeSoundItemIndex!)} class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors">무음으로 전환</button>
+                        {#if rouletteForm.Items[activeSoundItemIndex].UseDefaultSound || rouletteForm.Items[activeSoundItemIndex].SoundUrl}
+                            <button onclick={() => setSilentMode(activeSoundItemIndex!)} class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors">무음으로 전환</button>
                         {/if}
-                        {#if !rouletteForm.items[activeSoundItemIndex].useDefaultSound}
-                            <button on:click={() => removeCustomSound(activeSoundItemIndex!)} class="text-[10px] font-black text-primary hover:underline">기본으로 변경</button>
+                        {#if !rouletteForm.Items[activeSoundItemIndex].UseDefaultSound}
+                            <button onclick={() => removeCustomSound(activeSoundItemIndex!)} class="text-[10px] font-black text-primary hover:underline">기본으로 변경</button>
                         {/if}
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    {#if rouletteForm.items[activeSoundItemIndex].useDefaultSound}
+                    {#if rouletteForm.Items[activeSoundItemIndex].UseDefaultSound}
                         <div class="p-2 bg-primary/10 text-primary rounded-lg"><Music size={16} /></div>
                         <span class="text-sm font-bold text-slate-700">등급별 기본 사운드</span>
-                    {:else if !rouletteForm.items[activeSoundItemIndex].soundUrl}
+                    {:else if !rouletteForm.Items[activeSoundItemIndex].SoundUrl}
                         <div class="p-2 bg-slate-100 text-slate-400 rounded-lg"><VolumeX size={16} /></div>
                         <span class="text-sm font-bold text-slate-400 italic">사운드 없음 (무음)</span>
                     {:else}
                         <div class="p-2 bg-sky-100 text-sky-600 rounded-lg"><Volume2 size={16} /></div>
-                        <span class="text-sm font-bold text-sky-700 truncate flex-1">{rouletteForm.items[activeSoundItemIndex].soundUrl?.split('/').pop()}</span>
-                        <button on:click={() => previewSound(rouletteForm.items[activeSoundItemIndex].soundUrl!)} class="p-2 bg-white text-sky-600 rounded-lg shadow-sm border border-slate-100 hover:bg-sky-50 transition-colors"><Play size={14}/></button>
+                        <span class="text-sm font-bold text-sky-700 truncate flex-1">{rouletteForm.Items[activeSoundItemIndex].SoundUrl?.split('/').pop()}</span>
+                        <button onclick={() => previewSound(rouletteForm.Items[activeSoundItemIndex].SoundUrl!)} class="p-2 bg-white text-sky-600 rounded-lg shadow-sm border border-slate-100 hover:bg-sky-50 transition-colors"><Play size={14}/></button>
                     {/if}
                 </div>
             </div>
@@ -484,9 +478,9 @@
             <!-- 액션 섹션 -->
             <div class="grid grid-cols-2 gap-3">
                 <button 
-                    on:mousedown={startRecording}
-                    on:mouseup={stopRecording}
-                    on:mouseleave={isRecording ? stopRecording : null}
+                    onmousedown={startRecording}
+                    onmouseup={stopRecording}
+                    onmouseleave={isRecording ? stopRecording : null}
                     class="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-dashed {isRecording ? 'bg-red-50 border-red-300 text-red-500' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-primary/50 hover:text-primary'} transition-all group"
                 >
                     {#if isRecording}
@@ -503,7 +497,7 @@
                 <label class="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-dashed bg-slate-50 border-slate-200 text-slate-400 hover:border-primary/50 hover:text-primary cursor-pointer transition-all group">
                     <Music size={24} class="group-hover:scale-110 transition-transform" />
                     <span class="text-xs font-black">파일 업로드</span>
-                    <input type="file" accept="audio/*" class="hidden" on:change={handleFileUpload} />
+                    <input type="file" accept="audio/*" class="hidden" onchange={handleFileUpload} />
                 </label>
             </div>
 
@@ -529,14 +523,14 @@
                                 <div class="flex items-center gap-3 overflow-hidden">
                                     <div class="p-1.5 bg-white rounded-lg text-slate-400 group-hover:text-primary shadow-sm"><Music size={14} /></div>
                                     <button 
-                                        on:click={() => selectFromLibrary(asset.soundUrl)}
+                                        onclick={() => selectFromLibrary(asset.Url)}
                                         class="text-xs font-bold text-slate-600 group-hover:text-primary truncate"
                                     >
-                                        {asset.name}
+                                        {asset.Name}
                                     </button>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <button on:click={() => previewSound(asset.soundUrl)} class="p-1.5 text-slate-400 hover:text-primary transition-all"><Play size={14}/></button>
+                                    <button onclick={() => previewSound(asset.Url)} class="p-1.5 text-slate-400 hover:text-primary transition-all"><Play size={14}/></button>
                                 </div>
                             </div>
                         {/each}

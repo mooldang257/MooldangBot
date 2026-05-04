@@ -55,7 +55,7 @@ public interface ISoftDeletable
 }
 
 // AppDbContext 전역 필터 (Osiris standard)
-modelBuilder.Entity<StreamerProfile>().HasQueryFilter(e => !e.IsDeleted);
+modelBuilder.Entity<CoreStreamerProfiles>().HasQueryFilter(e => !e.IsDeleted);
 ```
 
 ---

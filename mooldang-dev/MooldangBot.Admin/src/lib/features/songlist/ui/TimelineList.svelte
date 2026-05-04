@@ -82,7 +82,7 @@
         if (selectedIds.length === queue.length) {
             selectedIds = [];
         } else {
-            selectedIds = queue.map(s => s.id);
+            selectedIds = queue.map(s => s.Id);
         }
     };
 
@@ -128,14 +128,14 @@
         </div>
 
         <div bind:this={queueEl} class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar list-container">
-            {#each queue as song (song.id)}
+            {#each queue as song (song.Id)}
                     <!-- [물멍]: 캡처와 동일한 수정 중 하이라이트 (노란색 글로우 테두리) -->
                     <div 
                         role="button"
                         tabindex="0"
-                        class="group/item flex items-center gap-3 p-4 bg-white/60 rounded-2xl border transition-all duration-300 w-full text-left {editingSong?.id === song.id ? 'border-amber-400 bg-amber-50/50 shadow-[0_0_20px_rgba(251,191,36,0.3)] ring-1 ring-amber-400' : selectedIds.includes(song.id) ? 'ring-2 ring-primary border-primary/20 bg-primary/5' : 'border-white/50 hover:border-primary/20 hover:bg-white/80'}"
-                        onclick={() => toggleSelect(song.id)}
-                        onkeydown={(e) => e.key === 'Enter' && toggleSelect(song.id)}
+                        class="group/item flex items-center gap-3 p-4 bg-white/60 rounded-2xl border transition-all duration-300 w-full text-left {editingSong?.Id === song.Id ? 'border-amber-400 bg-amber-50/50 shadow-[0_0_20px_rgba(251,191,36,0.3)] ring-1 ring-amber-400' : selectedIds.includes(song.Id) ? 'ring-2 ring-primary border-primary/20 bg-primary/5' : 'border-white/50 hover:border-primary/20 hover:bg-white/80'}"
+                        onclick={() => toggleSelect(song.Id)}
+                        onkeydown={(e) => e.key === 'Enter' && toggleSelect(song.Id)}
                     >
                         <!-- 드래그 핸들 -->
                         <div 
@@ -151,29 +151,29 @@
                         <!-- 곡 정보 -->
                         <div class="flex-1 min-w-0 pointer-events-none">
                             <div class="flex items-center gap-2 mb-0.5">
-                                {#if selectedIds.includes(song.id)}
+                                {#if selectedIds.includes(song.Id)}
                                     <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                                {:else if editingSong?.id === song.id}
+                                {:else if editingSong?.Id === song.Id}
                                     <div class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"></div>
                                 {/if}
-                                <h5 class="font-black text-slate-800 truncate text-sm">{song.title}</h5>
+                                <h5 class="font-black text-slate-800 truncate text-sm">{song.Title}</h5>
                                 
                                 <div class="flex items-center gap-1">
-                                    {#if song.url}
+                                    {#if song.Url}
                                         <div class="px-1.5 py-0.5 bg-rose-500/10 text-rose-600 rounded-md text-[8px] font-black uppercase tracking-tighter border border-rose-200 shadow-sm" title="유튜브 MR 포함">YT</div>
                                     {/if}
-                                    {#if song.lyrics}
+                                    {#if song.Lyrics}
                                         <div class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md text-[8px] font-black uppercase tracking-tighter border border-emerald-200 shadow-sm" title="싱크 가사 포함">LRC</div>
                                     {/if}
                                 </div>
                             </div>
-                            <p class="text-[10px] font-black text-slate-500 truncate">{song.artist} • <span class="text-primary/70">{song.globalViewer?.nickname || '시청자'}</span></p>
+                            <p class="text-[10px] font-black text-slate-500 truncate">{song.Artist} • <span class="text-primary/70">{song.CoreGlobalViewers?.Nickname || '시청자'}</span></p>
                         </div>
     
                         <!-- 액션 버튼들 -->
                         <div class="flex items-center gap-1 flex-shrink-0" onclick={(e) => e.stopPropagation()} role="presentation">
                             <button 
-                                class="p-2.5 rounded-xl transition-all {editingSong?.id === song.id ? 'text-amber-600 bg-amber-200/50 scale-110' : 'text-slate-400 hover:text-amber-500 hover:bg-amber-100 opacity-0 group-hover/item:opacity-100'}"
+                                class="p-2.5 rounded-xl transition-all {editingSong?.Id === song.Id ? 'text-amber-600 bg-amber-200/50 scale-110' : 'text-slate-400 hover:text-amber-500 hover:bg-amber-100 opacity-0 group-hover/item:opacity-100'}"
                                 onclick={() => onEdit(song)}
                                 title="정보 수정"
                             >
@@ -181,7 +181,7 @@
                             </button>
     
                             <button 
-                                class="p-2.5 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all {selectedIds.includes(song.id) || editingSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}"
+                                class="p-2.5 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all {selectedIds.includes(song.Id) || editingSong?.Id === song.Id ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}"
                                 onclick={() => onPlay(song)}
                                 title="재생하기"
                             >
@@ -209,7 +209,7 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            {#each completed as song (song.id)}
+            {#each completed as song (song.Id)}
                 <div 
                     class="flex items-center gap-3 p-4 bg-slate-800/10 rounded-2xl border border-white/20 hover:border-coral-blue/30 transition-all shadow-sm"
                 >
@@ -218,18 +218,18 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline gap-2">
-                            <h5 class="font-black text-slate-700 truncate text-sm">{song.title}</h5>
+                            <h5 class="font-black text-slate-700 truncate text-sm">{song.Title}</h5>
                             <div class="flex items-center gap-1 shrink-0">
-                                {#if song.url}
+                                {#if song.Url}
                                     <div class="px-1 py-0.5 bg-rose-500/10 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-tighter border border-rose-100">YT</div>
                                 {/if}
-                                {#if song.lyrics}
+                                {#if song.Lyrics}
                                     <div class="px-1 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md text-[7px] font-black uppercase tracking-tighter border border-emerald-100">LRC</div>
                                 {/if}
                             </div>
                         </div>
                         <p class="text-[10px] font-bold text-slate-400 truncate tracking-tight mt-0.5">
-                            {song.artist} • <span class="text-coral-blue/60 font-black italic">{new Date(song.updatedAt || song.createdAt || Date.now()).toLocaleTimeString()}</span>
+                            {song.Artist} • <span class="text-coral-blue/60 font-black italic">{new Date(song.UpdatedAt || song.CreatedAt || Date.now()).toLocaleTimeString()}</span>
                         </p>
                     </div>
                     <div class="flex items-center gap-1">
@@ -241,7 +241,7 @@
                             <RotateCcw size={16} />
                         </button>
                         <button 
-                            onclick={() => removeFromHistory(song.id)}
+                            onclick={() => removeFromHistory(song.Id)}
                             class="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
                             title="기록에서 삭제"
                         >

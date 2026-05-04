@@ -50,7 +50,7 @@ namespace MooldangBot.Application.Controllers.Auth
 
             try 
             {
-                var profile = await db.CoreStreamerProfiles
+                var profile = await db.TableCoreStreamerProfiles
                                  .IgnoreQueryFilters() 
                                  .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid || p.Slug == chzzkUid);
 
@@ -73,15 +73,15 @@ namespace MooldangBot.Application.Controllers.Auth
                     }
 
                     return Ok(Result<object>.Success(new {
-                        isAuthenticated = true,
-                        isChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
-                        channelName = profile.ChannelName ?? "스트리머",
-                        profileImageUrl = profile.ProfileImageUrl ?? "",
-                        chzzkUid = profile.ChzzkUid,
-                        slug = profile.Slug,
-                        role = User.FindFirstValue(ClaimTypes.Role),
-                        overlayToken = overlayToken,
-                        isActive = profile.IsActive
+                        IsAuthenticated = true,
+                        IsChzzkLinked = !string.IsNullOrEmpty(profile.ChzzkAccessToken),
+                        ChannelName = profile.ChannelName ?? "스트리머",
+                        ProfileImageUrl = profile.ProfileImageUrl ?? "",
+                        ChzzkUid = profile.ChzzkUid,
+                        Slug = profile.Slug,
+                        Role = User.FindFirstValue(ClaimTypes.Role),
+                        OverlayToken = overlayToken,
+                        IsActive = profile.IsActive
                     }));
                 }
                 else
@@ -89,18 +89,18 @@ namespace MooldangBot.Application.Controllers.Auth
                     // [이지스 통합]: 시청자 정보 조회 시 캐시를 우선 활용합니다.
                     // (조회 시점에는 닉네임을 모르므로 기존 데이터를 유지하기 위해 null 전달 가능하도록 설계됨)
                     var viewerId = await identityCache.SyncGlobalViewerIdAsync(chzzkUid, "viewer"); 
-                    var viewer = await db.CoreGlobalViewers.AsNoTracking().FirstOrDefaultAsync(v => v.Id == viewerId);
+                    var viewer = await db.TableCoreGlobalViewers.AsNoTracking().FirstOrDefaultAsync(v => v.Id == viewerId);
 
                     if (viewer != null)
                     {
                         return Ok(Result<object>.Success(new {
-                            isAuthenticated = true,
-                            isChzzkLinked = false,
-                            channelName = viewer.Nickname,
-                            profileImageUrl = viewer.ProfileImageUrl ?? "",
-                            chzzkUid = viewer.ViewerUid,
-                            slug = (string?)null,
-                            role = User.FindFirstValue(ClaimTypes.Role)
+                            IsAuthenticated = true,
+                            IsChzzkLinked = false,
+                            ChannelName = viewer.Nickname,
+                            ProfileImageUrl = viewer.ProfileImageUrl ?? "",
+                            ChzzkUid = viewer.ViewerUid,
+                            Slug = (string?)null,
+                            Role = User.FindFirstValue(ClaimTypes.Role)
                         }));
                     }
                 }
@@ -136,6 +136,18 @@ namespace MooldangBot.Application.Controllers.Auth
             if (string.IsNullOrEmpty(slug)) return Ok(Result<object>.Failure("[오시리스의 거절] 유효하지 않은 주소입니다."));
 
             var chzzkUid = await identityCache.GetChzzkUidBySlugAsync(slug);
+            
+            // [물멍]: 슬러그 매칭이 안 된다면 입력값 자체가 UID일 수 있으므로 DB 직접 확인 (하이브리드 대응)
+            if (string.IsNullOrEmpty(chzzkUid))
+            {
+                var profile = await db.TableCoreStreamerProfiles
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.ChzzkUid == slug);
+                
+                if (profile != null) chzzkUid = profile.ChzzkUid;
+            }
+
             if (string.IsNullOrEmpty(chzzkUid))
             {
                 return Ok(Result<object>.Failure("[오시리스의 거절] 존재하지 않는 주소입니다."));
@@ -143,6 +155,9 @@ namespace MooldangBot.Application.Controllers.Auth
 
             var userRole = User.FindFirstValue(ClaimTypes.Role);
             var currentUserId = User.FindFirstValue("StreamerId");
+
+            // [물멍]: 디버그 로그 추가
+            Console.WriteLine($"🛡️ [AccessGuard] Slug: {slug}, ResolvedUid: {chzzkUid}, User: {currentUserId}, Role: {userRole}");
 
             if (userRole == "master")
             {
@@ -159,6 +174,8 @@ namespace MooldangBot.Application.Controllers.Auth
             {
                 return Ok(Result<object>.Success(new { chzzkUid }));
             }
+
+            Console.WriteLine($"🚫 [AccessGuard] Access DENIED for {currentUserId} on {chzzkUid}");
 
             return Ok(Result<object>.Failure("[오시리스의 거절] 해당 채널의 관리 권한이 없습니다."));
         }

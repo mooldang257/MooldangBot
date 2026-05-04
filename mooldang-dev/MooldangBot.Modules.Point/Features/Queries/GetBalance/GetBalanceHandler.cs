@@ -29,27 +29,27 @@ public class GetBalanceHandler : IRequestHandler<GetBalanceQuery, int>
     public async Task<int> Handle(GetBalanceQuery request, CancellationToken ct)
     {
         // [이지스 통합]: 시청자 식별을 캐시 서비스로 일원화 (조회 시점에는 닉네임을 모르므로 기본값 사용)
-        var globalViewerId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, "viewer", null, ct);
-
+        var GlobalViewerId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, "viewer", null, ct);
+ 
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
         {
             // [무료 포인트]: DB 확정치 + Redis 증분치 합산
-            var dbBalance = await _db.FuncViewerPoints
+            var DbBalance = await _db.TableFuncViewerPoints
                 .AsNoTracking()
-                .Where(v => v.StreamerProfile!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == globalViewerId)
+                .Where(v => v.CoreStreamerProfiles!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == GlobalViewerId)
                 .Select(v => v.Points)
                 .FirstOrDefaultAsync(ct);
-
-            var redisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, request.ViewerUid);
-
-            return dbBalance + redisIncrement;
+ 
+            var RedisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, request.ViewerUid);
+ 
+            return DbBalance + RedisIncrement;
         }
         else
         {
             // [유료 재화]: MariaDB 실시간 잔액 반환
-            return await _db.FuncViewerDonations
+            return await _db.TableFuncViewerDonations
                 .AsNoTracking()
-                .Where(v => v.StreamerProfile!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == globalViewerId)
+                .Where(v => v.CoreStreamerProfiles!.ChzzkUid == request.StreamerUid && v.GlobalViewerId == GlobalViewerId)
                 .Select(v => v.Balance)
                 .FirstOrDefaultAsync(ct);
         }

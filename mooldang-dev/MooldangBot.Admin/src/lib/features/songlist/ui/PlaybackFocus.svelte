@@ -26,8 +26,9 @@
 
     // [물멍]: LRC 가사 파싱 엔진
     const parsedLyrics = $derived.by(() => {
-        if (!currentSong?.lyrics) return [];
-        const lines = currentSong.lyrics.split('\n');
+        const lyricsStr = currentSong?.Lyrics ?? currentSong?.lyrics;
+        if (!lyricsStr) return [];
+        const lines = lyricsStr.split('\n');
         const lyricsArr: { time: number, text: string }[] = [];
         // [물멍]: 시간 태그 앞뒤의 미세한 공백을 허용하도록 개선
         const lrcRegex = /^\s*\[(\d{2}):(\d{2}(?:\.\d{1,3})?)\](.*)/;
@@ -50,9 +51,10 @@
     );
 
     const youtubeId = $derived.by(() => {
-        if (!currentSong?.url) return null;
+        const urlStr = currentSong?.Url ?? currentSong?.url;
+        if (!urlStr) return null;
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = currentSong.url.match(regExp);
+        const match = urlStr.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     });
 
@@ -231,9 +233,10 @@
 
     // [물멍]: 임베드 차단 우회용 팝업 윈도우
     const openPopup = () => {
-        if (!currentSong?.url) return;
+        const urlStr = currentSong?.Url ?? currentSong?.url;
+        if (!urlStr) return;
         window.open(
-            currentSong.url,
+            urlStr,
             'MR_Player',
             'width=720,height=480,top=100,left=100,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
         );
@@ -268,7 +271,7 @@
                 </div>
 
                 <!-- 가사 모드 -->
-                {#if currentSong.lyrics}
+                {#if (currentSong.Lyrics ?? currentSong.lyrics)}
                     <div class="absolute inset-0 z-20 flex flex-col items-center justify-center transition-all duration-700 {activeMode === 'lyrics' ? 'bg-indigo-950/80 backdrop-blur-lg translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}">
                         <div class="w-full max-w-xl flex flex-col gap-4 overflow-hidden pt-12 pb-12 px-6">
                             <div class="space-y-8 transition-all duration-500 ease-out text-center" style="transform: translateY(-{currentLyricIndex * 48}px)">
@@ -296,10 +299,10 @@
                         </div>
                         <div class="space-y-2">
                             <h2 class="text-3xl lg:text-4xl font-[1000] text-white tracking-tighter leading-tight px-6 drop-shadow-2xl">
-                                {currentSong.title}
+                                {currentSong.Title ?? currentSong.title}
                             </h2>
                             <p class="text-xl font-bold text-coral-blue/90 px-6">
-                                {currentSong.artist}
+                                {currentSong.Artist ?? currentSong.artist}
                             </p>
                         </div>
                     </div>
@@ -309,7 +312,7 @@
             <!-- 스위처 버튼 -->
             <div class="absolute top-6 right-6 z-40 flex flex-col gap-2 transition-opacity {isEmbedBlocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}">
                 <!-- 자막(오버레이) 토글 버튼 -->
-                {#if currentSong.lyrics}
+                {#if (currentSong.Lyrics ?? currentSong.lyrics)}
                     <button 
                         onclick={() => showLyricsOverlay = !showLyricsOverlay} 
                         class="p-2.5 rounded-xl transition-all backdrop-blur-md border border-white/20 {showLyricsOverlay ? 'bg-emerald-500 text-white shadow-lg' : 'bg-white/20 text-white/40 hover:bg-white/40'}"
@@ -327,14 +330,14 @@
                         <Radio size={18} />
                     </button>
                 {/if}
-                {#if currentSong.lyrics}
+                {#if (currentSong.Lyrics ?? currentSong.lyrics)}
                     <button onclick={() => viewMode = 'lyrics'} class="p-2.5 rounded-xl {viewMode === 'lyrics' ? 'bg-emerald-500 text-white' : 'bg-white/40 text-white'} backdrop-blur-md transition-all">
                         <Languages size={18} />
                     </button>
                 {/if}
 
                 <!-- [물멍]: 팝업으로 열기 (임베드 차단 시 강조) -->
-                {#if currentSong?.url}
+                {#if (currentSong?.Url ?? currentSong?.url)}
                     <button onclick={openPopup} class="p-2.5 rounded-xl backdrop-blur-md transition-all border {isEmbedBlocked ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/50 animate-pulse' : 'bg-white/20 text-white hover:bg-rose-500 hover:text-white border-white/20'}" title={isEmbedBlocked ? '⚠️ 임베드 차단됨 — 클릭하여 팝업으로 재생' : '팝업으로 열기'}>
                         <ExternalLink size={18} />
                     </button>
@@ -342,7 +345,7 @@
             </div>
 
             <!-- 하단 간이 가사 (모드와 관계없이 가사와 토글이 켜져있으면 노출) -->
-            {#if activeMode !== 'lyrics' && currentSong.lyrics && showLyricsOverlay}
+            {#if activeMode !== 'lyrics' && (currentSong.Lyrics ?? currentSong.lyrics) && showLyricsOverlay}
                 <div class="absolute bottom-6 left-0 right-0 z-30 px-6 pointer-events-none text-center" in:fade>
                     <div class="inline-block px-4 py-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
                         <p class="text-sm font-black text-emerald-400">
@@ -409,7 +412,7 @@
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex flex-col items-end mr-2">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Requester</span>
-                            <span class="text-xs font-bold text-slate-700">{currentSong.requester || "System"}</span>
+                            <span class="text-xs font-bold text-slate-700">{currentSong.Requester ?? currentSong.requester ?? "System"}</span>
                         </div>
                         <button onclick={handleComplete} class="px-8 py-4 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white rounded-2xl font-black flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
                             <CheckCircle2 size={24} />

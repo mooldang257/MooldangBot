@@ -3,15 +3,11 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Domain.DTOs;
 using MooldangBot.Application.Hubs;
 using MooldangBot.Domain.Contracts.Hubs;
-using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.Contracts.Chzzk;
-
-using MooldangBot.Domain.DTOs;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +19,13 @@ namespace MooldangBot.Application.Services
         IAppDbContext db,
         ILogger<OverlayNotificationService> logger) : IOverlayNotificationService
     {
+        public async Task SendThumbnailUpdatedAsync(int songBookId, string thumbnailUrl, CancellationToken token = default)
+        {
+            // [물멍]: 대시보드 및 오버레이의 특정 곡 썸네일 갱신을 위해 신호를 보냅니다.
+            await hubContext.Clients.All.ThumbnailUpdated(songBookId, thumbnailUrl);
+            logger.LogInformation("📢 [SignalR] Thumbnail updated: ID {Id} -> {Url}", songBookId, thumbnailUrl);
+        }
+
         public async Task NotifyRefreshAsync(string? chzzkUid, CancellationToken token = default)
         {
             if (string.IsNullOrEmpty(chzzkUid)) return; 
@@ -68,14 +71,14 @@ namespace MooldangBot.Application.Services
             var normalizedUid = chzzkUid.ToLower();
             
             // 1. 스트리머 프로필 및 설정 조회
-            var profile = await db.CoreStreamerProfiles
+            var profile = await db.TableCoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == normalizedUid, token);
 
             if (profile == null) return;
 
             // 2. 현재 재생 중인 곡 조회
-            var currentSong = await db.FuncSongQueues
+            var currentSong = await db.TableFuncSongListQueues
                 .AsNoTracking()
                 .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Playing && !s.IsDeleted)
                 .OrderByDescending(s => s.UpdatedAt)
@@ -92,13 +95,13 @@ namespace MooldangBot.Application.Services
             }
 
             // 4. 대기열 곡 조회 (인라인 테마는 개수 제한 없음)
-            var query = db.FuncSongQueues
+            var query = db.TableFuncSongListQueues
                 .AsNoTracking()
-                .Include(s => s.GlobalViewer)
+                .Include(s => s.CoreGlobalViewers)
                 .Where(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending && !s.IsDeleted)
                 .OrderBy(s => s.SortOrder).ThenBy(s => s.Id);
 
-            List<SongQueue> queueSongs;
+            List<FuncSongListQueues> queueSongs;
             if (settings.QueueTheme == "inline")
             {
                 queueSongs = await query.ToListAsync(token);
@@ -116,7 +119,7 @@ namespace MooldangBot.Application.Services
                     s.Id,
                     s.Title, 
                     s.Artist, 
-                    s.RequesterNickname ?? s.GlobalViewer?.Nickname ?? "익명",
+                    s.RequesterNickname ?? s.CoreGlobalViewers?.Nickname ?? "익명",
                     s.VideoId,
                     s.ThumbnailUrl)).ToList(),
                 settings

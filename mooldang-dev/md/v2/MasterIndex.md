@@ -17,7 +17,7 @@
 ## 2. 핵심 디렉토리 및 계층 구조
 * **`Controllers/`:** 도메인별 분리된 REST API 엔드포인트 (`ChatPointController` 등)
 * **`Data/`:** `AppDbContext` (DB 컨텍스트), `IUserSession` (현재 로그인 스트리머 세션)
-* **`Models/`:** EF Core 엔터티 (`StreamerProfile`, `ViewerProfile` 등)
+* **`Models/`:** EF Core 엔터티 (`CoreStreamerProfiles`, `ViewerProfile` 등)
 * **`Features/`:** MediatR 핸들러 모음. 비즈니스 로직의 핵심 계층. (예: `ViewerPointEventHandler`)
 * **`Services/`:** 백그라운드 워커 (`ChzzkBackgroundService`) 및 공유 유틸리티.
 * **`Hubs/`:** SignalR 실시간 통신 (`OverlayHub`).
@@ -28,4 +28,4 @@
 1. **치지직 WebSocket 프로토콜 수동 파싱:** `SocketIOClient` 라이브러리를 사용하지 않습니다. `ClientWebSocket`을 사용하여 텍스트를 `Substring(2)`로 자른 뒤 이중 `JsonDocument.Parse`를 수행하여 이벤트를 파싱해야 합니다.
 2. **멀티테넌트 API 보안:** 모든 Controller 엔드포인트는 `[Authorize]` 속성을 통해 보호되어야 하며, `IUserSession.ChzzkUid`와 URL의 식별자가 일치하는지 검증하여 타 스트리머의 데이터 접근을 차단해야 합니다.
 3. **HTTP Client 인스턴스 과부하 방지:** `new HttpClient()`를 직접 생성하지 마십시오. 반드시 DI 컨테이너에 등록된 `IHttpClientFactory`를 통해 클라이언트를 주입받아야 합니다.
-4. **봇 토큰 폴백(Fallback) 우선순위:** 치지직 API 호출 시 1순위 `StreamerProfile.BotAccessToken`, 2순위 `SystemSettings` 전역 봇 토큰, 3순위 스트리머 본인 `ChzzkAccessToken` 순으로 사용합니다.
+4. **봇 토큰 폴백(Fallback) 우선순위:** 치지직 API 호출 시 1순위 `CoreStreamerProfiles.BotAccessToken`, 2순위 `SystemSettings` 전역 봇 토큰, 3순위 스트리머 본인 `ChzzkAccessToken` 순으로 사용합니다.

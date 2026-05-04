@@ -9,124 +9,128 @@
     import ViewerPointList from '$lib/features/chatpoint/components/ViewerPointList.svelte';
     import DonationRecordList from '$lib/features/chatpoint/components/DonationRecordList.svelte';
 
-    let chzzkUid = $state("");
-    let isLoaded = $state(false);
-    let activeTab: 'settings' | 'viewers' | 'donations' = $state('settings');
-    let isSubmitting = $state(false);
+    let ChzzkUid = $state("");
+    let IsLoaded = $state(false);
+    let ActiveTab: 'settings' | 'viewers' | 'donations' = $state('settings');
+    let IsSubmitting = $state(false);
 
     // 데이터 상태
-    let settings = $state({
-        pointPerChat: 1,
-        pointPerDonation1000: 1000,
-        pointPerAttendance: 10,
-        isAutoAccumulateDonation: false
+    let SettingsState = $state({
+        PointPerChat: 1,
+        PointPerDonation1000: 1000,
+        PointPerAttendance: 10,
+        IsAutoAccumulateDonation: false
     });
 
-    let viewerPoints = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "points" });
-    let donationRecords = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "total" });
+    let ViewerPoints = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "points" });
+    let DonationRecords = $state({ items: [] as any[], nextCursor: null as number | null, hasNext: true, isLoading: false, isInitialized: false, search: "", sort: "total" });
 
-    async function loadSettings() {
-        if (!chzzkUid) return;
+    async function LoadSettings() {
+        if (!ChzzkUid) return;
         try {
-            const res = await apiFetch<any>(`/api/chat-point/${chzzkUid}`);
-            settings = res;
+            SettingsState = await apiFetch<any>(`/api/chat-point/${ChzzkUid}`);
         } catch (e) {
             console.error("[물멍] 설정 로드 실패:", e);
         }
     }
 
-    async function saveSettings(newSettings: any) {
-        if (!chzzkUid) return;
-        isSubmitting = true;
+    async function SaveSettings(newSettings: any) {
+        if (!ChzzkUid) return;
+        IsSubmitting = true;
         try {
-            await apiFetch(`/api/chat-point/${chzzkUid}`, {
+            await apiFetch(`/api/chat-point/${ChzzkUid}`, {
                 method: 'POST',
-                body: JSON.stringify(newSettings)
+                body: {
+                    PointPerChat: newSettings.PointPerChat,
+                    PointPerDonation1000: newSettings.PointPerDonation1000,
+                    PointPerAttendance: newSettings.PointPerAttendance,
+                    IsAutoAccumulateDonation: newSettings.IsAutoAccumulateDonation
+                }
             });
-            settings = { ...newSettings };
+            SettingsState = { ...newSettings };
             alert("포인트 설정이 성공적으로 저장되었습니다.");
         } catch (e: any) {
             alert(e.message || "설정 저장에 실패했습니다.");
         } finally {
-            isSubmitting = false;
+            IsSubmitting = false;
         }
     }
 
     // --- 시청자 포인트 로직 ---
-    async function loadViewerPoints(reset = false) {
-        if (!chzzkUid || (viewerPoints.isLoading && !reset)) return;
+    async function LoadViewerPoints(reset = false) {
+        if (!ChzzkUid || (ViewerPoints.isLoading && !reset)) return;
         if (reset) {
-            viewerPoints.nextCursor = null;
-            viewerPoints.items = [];
-            viewerPoints.hasNext = true;
-            viewerPoints.isInitialized = true;
+            ViewerPoints.nextCursor = null;
+            ViewerPoints.items = [];
+            ViewerPoints.hasNext = true;
+            ViewerPoints.isInitialized = true;
         }
-        if (!viewerPoints.hasNext) return;
+        if (!ViewerPoints.hasNext) return;
 
-        viewerPoints.isLoading = true;
+        ViewerPoints.isLoading = true;
         try {
-            const cursorParam = viewerPoints.nextCursor ? `&cursor=${viewerPoints.nextCursor}` : "";
-            const url = `/api/chat-point/${chzzkUid}/viewers?search=${viewerPoints.search}&sort=${viewerPoints.sort}${cursorParam}&limit=20`;
+            const cursorParam = ViewerPoints.nextCursor ? `&cursor=${ViewerPoints.nextCursor}` : "";
+            const url = `/api/chat-point/${ChzzkUid}/viewers?search=${ViewerPoints.search}&sort=${ViewerPoints.sort}${cursorParam}&limit=20`;
             const res = await apiFetch<any>(url);
             
-            viewerPoints.items = [...viewerPoints.items, ...res.items];
-            viewerPoints.nextCursor = res.nextCursor;
-            viewerPoints.hasNext = res.hasNext;
+            ViewerPoints.items = [...ViewerPoints.items, ...res.Items];
+            ViewerPoints.nextCursor = res.NextCursor;
+            ViewerPoints.hasNext = res.HasNext;
         } catch (e) {
             console.error("[물멍] 포인트 리스트 로드 실패:", e);
-            viewerPoints.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
+            ViewerPoints.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
         } finally {
-            viewerPoints.isLoading = false;
+            ViewerPoints.isLoading = false;
         }
     }
 
     // --- 후원 기록 로직 ---
-    async function loadDonationRecords(reset = false) {
-        if (!chzzkUid || (donationRecords.isLoading && !reset)) return;
+    async function LoadDonationRecords(reset = false) {
+        if (!ChzzkUid || (DonationRecords.isLoading && !reset)) return;
         if (reset) {
-            donationRecords.nextCursor = null;
-            donationRecords.items = [];
-            donationRecords.hasNext = true;
-            donationRecords.isInitialized = true;
+            DonationRecords.nextCursor = null;
+            DonationRecords.items = [];
+            DonationRecords.hasNext = true;
+            DonationRecords.isInitialized = true;
         }
-        if (!donationRecords.hasNext) return;
+        if (!DonationRecords.hasNext) return;
 
-        donationRecords.isLoading = true;
+        DonationRecords.isLoading = true;
         try {
-            const cursorParam = donationRecords.nextCursor ? `&cursor=${donationRecords.nextCursor}` : "";
-            const url = `/api/chat-point/${chzzkUid}/donations?search=${donationRecords.search}&sort=${donationRecords.sort}${cursorParam}&limit=20`;
+            const cursorParam = DonationRecords.nextCursor ? `&cursor=${DonationRecords.nextCursor}` : "";
+            const url = `/api/chat-point/${ChzzkUid}/donations?search=${DonationRecords.search}&sort=${DonationRecords.sort}${cursorParam}&limit=20`;
             const res = await apiFetch<any>(url);
             
-            donationRecords.items = [...donationRecords.items, ...res.items];
-            donationRecords.nextCursor = res.nextCursor;
-            donationRecords.hasNext = res.hasNext;
+            DonationRecords.items = [...DonationRecords.items, ...res.Items];
+            DonationRecords.nextCursor = res.NextCursor;
+            DonationRecords.hasNext = res.HasNext;
         } catch (e) {
             console.error("[물멍] 후원 기록 로드 실패:", e);
-            donationRecords.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
+            DonationRecords.hasNext = false; // 에러 발생 시 반복 요청 방지를 위해 일시 중단
         } finally {
-            donationRecords.isLoading = false;
+            DonationRecords.isLoading = false;
         }
     }
 
     onMount(async () => {
         try {
             const profile = await apiFetch<any>("/api/auth/me");
-            chzzkUid = profile.chzzkUid || profile.ChzzkUid;
-            if (chzzkUid && !isLoaded) {
-                await loadSettings();
+            ChzzkUid = profile.ChzzkUid;
+            if (ChzzkUid && !IsLoaded) {
+                await LoadSettings();
             }
         } catch (e) {
             console.error("[물멍] 초기 환경 동기화 실패:", e);
         } finally {
-            isLoaded = true;
+            IsLoaded = true;
         }
     });
 
     // 탭 변경 시 데이터 로드
     $effect(() => {
-        if (chzzkUid && isLoaded) {
-            if (activeTab === 'viewers' && !viewerPoints.isInitialized) loadViewerPoints(true);
-            if (activeTab === 'donations' && !donationRecords.isInitialized) loadDonationRecords(true);
+        if (ChzzkUid && IsLoaded) {
+            if (ActiveTab === 'viewers' && !ViewerPoints.isInitialized) LoadViewerPoints(true);
+            if (ActiveTab === 'donations' && !DonationRecords.isInitialized) LoadDonationRecords(true);
         }
     });
 </script>
@@ -155,74 +159,74 @@
         <!-- 탭 메뉴 -->
         <div class="flex gap-8 border-b border-slate-100 overflow-x-auto no-scrollbar">
             <button
-                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'settings' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                onclick={() => activeTab = 'settings'}
+                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab === 'settings' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                onclick={() => ActiveTab = 'settings'}
             >
                 <div class="flex items-center gap-2">
                     <Settings2 size={18} />
                     <span>포인트 생성 설정</span>
                 </div>
-                {#if activeTab === 'settings'}
+                {#if ActiveTab === 'settings'}
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                 {/if}
             </button>
             <button
-                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'viewers' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                onclick={() => activeTab = 'viewers'}
+                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab === 'viewers' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                onclick={() => ActiveTab = 'viewers'}
             >
                 <div class="flex items-center gap-2">
                     <Trophy size={18} />
                     <span>시청자 포인트 기록</span>
                 </div>
-                {#if activeTab === 'viewers'}
+                {#if ActiveTab === 'viewers'}
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                 {/if}
             </button>
             <button
-                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'donations' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                onclick={() => activeTab = 'donations'}
+                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab === 'donations' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                onclick={() => ActiveTab = 'donations'}
             >
                 <div class="flex items-center gap-2">
                     <Coins size={18} />
                     <span>후원 적립 내역</span>
                 </div>
-                {#if activeTab === 'donations'}
+                {#if ActiveTab === 'donations'}
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                 {/if}
             </button>
         </div>
     </header>
 
-    {#if isLoaded}
+    {#if IsLoaded}
         <main>
-            {#if activeTab === 'settings'}
+            {#if ActiveTab === 'settings'}
                 <div in:fade>
                     <PointSettings 
-                        {settings} 
-                        onSave={saveSettings} 
-                        {isSubmitting} 
+                        Settings={SettingsState} 
+                        OnSave={SaveSettings} 
+                        IsSubmitting={IsSubmitting} 
                     />
                 </div>
-            {:else if activeTab === 'viewers'}
+            {:else if ActiveTab === 'viewers'}
                 <div in:fade>
                     <ViewerPointList 
-                        items={viewerPoints.items}
-                        isLoading={viewerPoints.isLoading}
-                        hasNext={viewerPoints.hasNext}
-                        onLoadMore={loadViewerPoints}
-                        onSearch={(t) => { viewerPoints.search = t; loadViewerPoints(true); }}
-                        onSort={(s) => { viewerPoints.sort = s; loadViewerPoints(true); }}
+                        items={ViewerPoints.items}
+                        isLoading={ViewerPoints.isLoading}
+                        hasNext={ViewerPoints.hasNext}
+                        onLoadMore={LoadViewerPoints}
+                        onSearch={(t) => { ViewerPoints.search = t; LoadViewerPoints(true); }}
+                        onSort={(s) => { ViewerPoints.sort = s; LoadViewerPoints(true); }}
                     />
                 </div>
-            {:else if activeTab === 'donations'}
+            {:else if ActiveTab === 'donations'}
                 <div in:fade>
                     <DonationRecordList 
-                        items={donationRecords.items}
-                        isLoading={donationRecords.isLoading}
-                        hasNext={donationRecords.hasNext}
-                        onLoadMore={loadDonationRecords}
-                        onSearch={(t) => { donationRecords.search = t; loadDonationRecords(true); }}
-                        onSort={(s) => { donationRecords.sort = s; loadDonationRecords(true); }}
+                        items={DonationRecords.items}
+                        isLoading={DonationRecords.isLoading}
+                        hasNext={DonationRecords.hasNext}
+                        onLoadMore={LoadDonationRecords}
+                        onSearch={(t) => { DonationRecords.search = t; LoadDonationRecords(true); }}
+                        onSort={(s) => { DonationRecords.sort = s; LoadDonationRecords(true); }}
                     />
                 </div>
             {/if}

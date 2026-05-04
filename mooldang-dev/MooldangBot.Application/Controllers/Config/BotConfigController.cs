@@ -21,13 +21,13 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("status")]
         public async Task<IActionResult> GetBotStatus([FromRoute] string uid)
         {
-            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             return Ok(Result<object>.Success(new 
             { 
-                isEnabled = streamer.IsActive 
+                IsEnabled = streamer.IsActive 
             }));
         }
 
@@ -35,7 +35,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpPatch("status")]
         public async Task<IActionResult> ToggleBotStatus([FromRoute] string uid, [FromBody] BotToggleRequest req)
         {
-            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
@@ -59,9 +59,9 @@ namespace MooldangBot.Application.Controllers.Config
 
             return Ok(Result<object>.Success(new 
             { 
-                success = true, 
-                isActive = streamer.IsActive, 
-                message = req.IsEnabled ? "봇이 가동되었습니다." : "봇이 중지되었습니다." 
+                Success = true, 
+                IsActive = streamer.IsActive, 
+                Message = req.IsEnabled ? "봇이 가동되었습니다." : "봇이 중지되었습니다." 
             }));
         }
 
@@ -69,15 +69,15 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("slug")]
         public async Task<IActionResult> GetStreamerSlug([FromRoute] string uid)
         {
-            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             var baseDomain = configuration["BASE_DOMAIN"] ?? "https://mooldang.tv";
             return Ok(Result<object>.Success(new 
             { 
-                slug = streamer.Slug, 
-                baseDomain = baseDomain 
+                Slug = streamer.Slug, 
+                BaseDomain = baseDomain 
             }));
         }
 
@@ -92,11 +92,11 @@ namespace MooldangBot.Application.Controllers.Config
             if (!slugPattern.IsMatch(req.Slug)) 
                 return BadRequest(Result<string>.Failure("주소는 3~20자의 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다."));
 
-            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) 
                 return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-            var isTaken = await db.CoreStreamerProfiles.AnyAsync(p => p.Slug == req.Slug && p.ChzzkUid != uid);
+            var isTaken = await db.TableCoreStreamerProfiles.AnyAsync(p => p.Slug == req.Slug && p.ChzzkUid != uid);
             if (isTaken) 
                 return Conflict(Result<string>.Failure("이미 사용 중인 주소입니다."));
 
@@ -110,9 +110,9 @@ namespace MooldangBot.Application.Controllers.Config
             
             return Ok(Result<object>.Success(new 
             { 
-                success = true, 
-                slug = streamer.Slug, 
-                message = "물댕봇의 새로운 주소가 등록되었습니다." 
+                Success = true, 
+                Slug = streamer.Slug, 
+                Message = "물댕봇의 새로운 주소가 등록되었습니다." 
             }));
         }
 
@@ -120,15 +120,15 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("config")]
         public async Task<IActionResult> GetApiConfig([FromRoute] string uid)
         {
-            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             return Ok(Result<object>.Success(new 
             { 
-                clientId = streamer.ClientId,
-                clientSecret = streamer.ClientSecret,
-                redirectUrl = streamer.RedirectUrl,
-                botNickname = streamer.BotNickname
+                ClientId = streamer.ClientId,
+                ClientSecret = streamer.ClientSecret,
+                RedirectUrl = streamer.RedirectUrl,
+                BotNickname = streamer.BotNickname
             }));
         }
 
@@ -136,7 +136,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpPatch("config")]
         public async Task<IActionResult> UpdateApiConfig([FromRoute] string uid, [FromBody] BotConfigRequest req)
         {
-            var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             streamer.ClientId = req.ClientId;
@@ -154,7 +154,7 @@ namespace MooldangBot.Application.Controllers.Config
         [HttpGet("login")]
         public async Task<IActionResult> BotLogin([FromRoute] string uid)
         {
-            var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
+            var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == uid);
             if (streamer == null || string.IsNullOrEmpty(streamer.ClientId)) 
                 return BadRequest(Result<string>.Failure("API 설정이 완료되지 않았습니다."));
 

@@ -19,7 +19,7 @@ public class AdminStreamerController(AppDbContext dbContext) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetStreamers([FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var baseQuery = dbContext.CoreStreamerProfiles
+        var baseQuery = dbContext.TableCoreStreamerProfiles
             .Where(s => !s.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -59,11 +59,11 @@ public class AdminStreamerController(AppDbContext dbContext) : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetStreamer(int id)
     {
-        var streamer = await dbContext.CoreStreamerProfiles
+        var streamer = await dbContext.TableCoreStreamerProfiles
             .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
-        if (streamer == null) return NotFound(Result<StreamerProfile>.Failure("존재하지 않는 스트리머입니다."));
+        if (streamer == null) return NotFound(Result<CoreStreamerProfiles>.Failure("존재하지 않는 스트리머입니다."));
 
-        return Ok(Result<StreamerProfile>.Success(streamer));
+        return Ok(Result<CoreStreamerProfiles>.Success(streamer));
     }
 }

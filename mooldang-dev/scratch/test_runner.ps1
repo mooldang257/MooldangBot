@@ -4,7 +4,7 @@ Write-Host '1. Fetching Roulettes for UID...'
 $response = Invoke-RestMethod -Uri "http://localhost:8080/api/admin/roulette/$uid" -Method Get
 if ($response.isSuccess) {
     $rId = $response.data.data[0].id
-    Write-Host "Found Roulette ID: $rId"
+    Write-Host "Found FuncRouletteMain ID: $rId"
     
     Write-Host '2. Triggering Spin Test (Scenario A)...'
     $spinResp = Invoke-RestMethod -Uri "http://localhost:8080/api/admin/roulette/$uid/$rId/test" -Method Post

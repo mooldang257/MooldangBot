@@ -51,59 +51,59 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
-                {#each allRoulettes as roulette (roulette.id)}
+                {#each allRoulettes as roulette (roulette.Id)}
                     <tr class="hover:bg-sky-50/30 transition-colors group">
                         <td class="px-6 py-5">
                             <div class="flex flex-col">
-                                <span class="font-black text-slate-700 text-lg tracking-tight mb-1">{roulette.name}</span>
+                                <span class="font-black text-slate-700 text-lg tracking-tight mb-1">{roulette.Name}</span>
                                 <div class="flex items-center gap-1.5">
-                                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded border border-slate-200 uppercase">{roulette.command}</span>
+                                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded border border-slate-200 uppercase">{roulette.Command}</span>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-5">
                             <div class="flex flex-col">
-                                <span class="font-black text-slate-700">{roulette.costPerSpin.toLocaleString()}</span>
-                                <span class="text-[11px] font-bold text-slate-400">{getTypeName(roulette.type)}</span>
+                                <span class="font-black text-slate-700">{roulette.CostPerSpin?.toLocaleString() || 0}</span>
+                                <span class="text-[11px] font-bold text-slate-400">{getTypeName(roulette.Type)}</span>
                             </div>
                         </td>
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center border border-sky-100">
-                                    <span class="text-xs font-black text-primary">{roulette.activeItemCount}</span>
+                                    <span class="text-xs font-black text-primary">{roulette.ActiveItemCount || 0}</span>
                                 </div>
                                 <span class="text-xs font-bold text-slate-500">개 항목</span>
                             </div>
                         </td>
                         <td class="px-6 py-5">
                             <button 
-                                on:click={() => onToggleStatus(roulette.id, !roulette.isActive)}
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {roulette.isActive ? 'bg-primary' : 'bg-slate-200'}"
+                                onclick={() => onToggleStatus(roulette.Id, !roulette.IsActive)}
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {roulette.IsActive ? 'bg-primary' : 'bg-slate-200'}"
                             >
                                 <span class="sr-only">상태 변경</span>
                                 <span
-                                    class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {roulette.isActive ? 'translate-x-6' : 'translate-x-1'}"
+                                    class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {roulette.IsActive ? 'translate-x-6' : 'translate-x-1'}"
                                 />
                             </button>
                         </td>
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-end gap-2">
                                 <button 
-                                    on:click={() => onTestSpin(roulette.id)}
+                                    onclick={() => onTestSpin(roulette.Id)}
                                     title="테스트 실행"
                                     class="p-2 text-sky-500 hover:bg-sky-100 rounded-xl transition-all hover:scale-110 active:scale-90"
                                 >
                                     <Play size={18} fill="currentColor" />
                                 </button>
                                 <button 
-                                    on:click={() => onEdit(roulette)}
+                                    onclick={() => onEdit(roulette)}
                                     title="수정"
                                     class="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                                 >
                                     <Edit2 size={18} />
                                 </button>
                                 <button 
-                                    on:click={() => onDelete(roulette.id)}
+                                    onclick={() => onDelete(roulette.Id)}
                                     title="삭제"
                                     class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                 >

@@ -1,5 +1,5 @@
 🛠️ Philosophy & System 정규화 엔티티 설계안 (참고용)
-1. BroadcastSession (오시리스의 기록관)
+1. SysBroadcastSessions (오시리스의 기록관)
 
 C#
 using System.ComponentModel.DataAnnotations;
@@ -10,7 +10,7 @@ using MooldangBot.Domain.Common;
 namespace MooldangBot.Domain.Entities.Philosophy;
 
 [Index(nameof(StreamerProfileId), nameof(IsActive))]
-public class BroadcastSession
+public class SysBroadcastSessions
 {
     [Key]
     public int Id { get; set; }
@@ -20,7 +20,7 @@ public class BroadcastSession
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     public KstClock StartTime { get; set; }
     public KstClock? EndTime { get; set; }
@@ -31,7 +31,7 @@ public class BroadcastSession
     public string? TopEmotesJson { get; set; }   
     public bool IsActive { get; set; } = true;
 }
-2. IamfStreamerSetting (IAMF 스트리머 설정)
+2. IamfStreamerSettings (IAMF 스트리머 설정)
 
 C#
 using System.ComponentModel.DataAnnotations;
@@ -40,7 +40,7 @@ using MooldangBot.Domain.Common;
 
 namespace MooldangBot.Domain.Entities.Philosophy;
 
-public class IamfStreamerSetting
+public class IamfStreamerSettings
 {
     // [정규화] PK이자 FK로 활용하여 완벽한 1:1 관계 구성
     [Key]
@@ -48,7 +48,7 @@ public class IamfStreamerSetting
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     public bool IsIamfEnabled { get; set; } = true;
     public bool IsVisualResonanceEnabled { get; set; } = true;
@@ -57,7 +57,7 @@ public class IamfStreamerSetting
     public double OverlayOpacity { get; set; } = 0.5;
     public KstClock LastUpdatedAt { get; set; } = KstClock.Now;
 }
-3. IamfVibrationLog & StreamerKnowledge
+3. LogIamfVibrations & SysStreamerKnowledges
 
 C#
 using System.ComponentModel.DataAnnotations;
@@ -68,7 +68,7 @@ using MooldangBot.Domain.Common;
 namespace MooldangBot.Domain.Entities.Philosophy;
 
 [Index(nameof(StreamerProfileId), nameof(CreatedAt))]
-public class IamfVibrationLog
+public class LogIamfVibrations
 {
     [Key]
     public long Id { get; set; }
@@ -77,7 +77,7 @@ public class IamfVibrationLog
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     public double RawHz { get; set; }                    
     public double EmaHz { get; set; }                    
@@ -86,7 +86,7 @@ public class IamfVibrationLog
 }
 
 [Index(nameof(StreamerProfileId), nameof(Keyword))]
-public class StreamerKnowledge
+public class SysStreamerKnowledges
 {
     [Key]
     public int Id { get; set; }
@@ -95,7 +95,7 @@ public class StreamerKnowledge
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     [Required]
     [MaxLength(100)]

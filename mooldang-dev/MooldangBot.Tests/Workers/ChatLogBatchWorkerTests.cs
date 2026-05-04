@@ -75,14 +75,14 @@ public class ChatLogBatchWorkerTests
     public void Buffer_Enqueue_Should_Be_Retrievable_Via_DrainAll()
     {
         // [Arrange]: 실제 Channel 기반 버퍼 서비스의 Enqueue/Drain 정합성 검증
-        var channel = Channel.CreateBounded<ChatInteractionLog>(new BoundedChannelOptions(1000)
+        var channel = Channel.CreateBounded<LogChatInteractions>(new BoundedChannelOptions(1000)
         {
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
         });
 
-        var log = new ChatInteractionLog
+        var log = new LogChatInteractions
         {
             StreamerProfileId = 1,
             SenderNickname = "테스트",
@@ -97,7 +97,7 @@ public class ChatLogBatchWorkerTests
         channel.Writer.TryComplete();
 
         // [Assert]
-        var items = new List<ChatInteractionLog>();
+        var items = new List<LogChatInteractions>();
         while (channel.Reader.TryRead(out var item))
         {
             items.Add(item);
@@ -112,7 +112,7 @@ public class ChatLogBatchWorkerTests
     public void ChatInteractionLog_Should_Have_Default_Values()
     {
         // [Arrange & Act]: 기본값이 올바르게 설정되는지 확인
-        var log = new ChatInteractionLog();
+        var log = new LogChatInteractions();
 
         // [Assert]
         log.MessageType.Should().Be("Chat");
@@ -122,7 +122,7 @@ public class ChatLogBatchWorkerTests
     }
 
     // 헬퍼: 빈 IAsyncEnumerable 생성
-    private static async IAsyncEnumerable<ChatInteractionLog> EmptyAsyncEnumerable()
+    private static async IAsyncEnumerable<LogChatInteractions> EmptyAsyncEnumerable()
     {
         await Task.CompletedTask;
         yield break;

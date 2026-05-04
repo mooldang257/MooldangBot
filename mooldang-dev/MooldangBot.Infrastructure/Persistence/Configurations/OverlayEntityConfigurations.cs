@@ -4,15 +4,14 @@ using MooldangBot.Domain.Entities;
 
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
-public class AvatarSettingConfiguration : IEntityTypeConfiguration<AvatarSetting>
+public class AvatarSettingConfiguration : IEntityTypeConfiguration<SysAvatarSettings>
 {
-    public void Configure(EntityTypeBuilder<AvatarSetting> builder)
+    public void Configure(EntityTypeBuilder<SysAvatarSettings> builder)
     {
-        builder.ToTable("SysAvatarSettings");
         
-        builder.HasOne(a => a.StreamerProfile)
+        builder.HasOne(a => a.CoreStreamerProfiles)
                .WithOne()
-               .HasForeignKey<AvatarSetting>(a => a.StreamerProfileId)
+               .HasForeignKey<SysAvatarSettings>(a => a.StreamerProfileId)
                .IsRequired(false)
                .OnDelete(DeleteBehavior.Cascade);
                
@@ -20,13 +19,12 @@ public class AvatarSettingConfiguration : IEntityTypeConfiguration<AvatarSetting
     }
 }
 
-public class OverlayPresetConfiguration : IEntityTypeConfiguration<OverlayPreset>
+public class OverlayPresetConfiguration : IEntityTypeConfiguration<SysOverlayPresets>
 {
-    public void Configure(EntityTypeBuilder<OverlayPreset> builder)
+    public void Configure(EntityTypeBuilder<SysOverlayPresets> builder)
     {
-        builder.ToTable("SysOverlayPresets");
         
-        builder.HasOne(o => o.StreamerProfile)
+        builder.HasOne(o => o.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(o => o.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
@@ -35,13 +33,12 @@ public class OverlayPresetConfiguration : IEntityTypeConfiguration<OverlayPreset
     }
 }
 
-public class SharedComponentConfiguration : IEntityTypeConfiguration<SharedComponent>
+public class SharedComponentConfiguration : IEntityTypeConfiguration<SysSharedComponents>
 {
-    public void Configure(EntityTypeBuilder<SharedComponent> builder)
+    public void Configure(EntityTypeBuilder<SysSharedComponents> builder)
     {
-        builder.ToTable("SysSharedComponents");
         
-        builder.HasOne(s => s.StreamerProfile)
+        builder.HasOne(s => s.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(s => s.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
@@ -50,13 +47,12 @@ public class SharedComponentConfiguration : IEntityTypeConfiguration<SharedCompo
     }
 }
 
-public class PeriodicMessageConfiguration : IEntityTypeConfiguration<PeriodicMessage>
+public class PeriodicMessageConfiguration : IEntityTypeConfiguration<SysPeriodicMessages>
 {
-    public void Configure(EntityTypeBuilder<PeriodicMessage> builder)
+    public void Configure(EntityTypeBuilder<SysPeriodicMessages> builder)
     {
-        builder.ToTable("SysPeriodicMessages");
 
-        builder.HasOne(m => m.StreamerProfile)
+        builder.HasOne(m => m.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(m => m.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);

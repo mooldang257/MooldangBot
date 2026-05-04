@@ -22,12 +22,12 @@
     };
 
     // [물멍]: 내부 상태 관리
-    let settings = $state<any>({});
-    let isSubmitting = $state(false);
-    let showLayoutModal = $state(false);
+    let Settings = $state<any>({});
+    let IsSubmitting = $state(false);
+    let ShowLayoutModal = $state(false);
 
     $effect(() => {
-        // [물멍]: designSettings의 변경은 추적하되, 내부 settings 업데이트는 추적하지 않아 무한 루프를 방지합니다.
+        // [물멍]: designSettings의 변경은 추적하되, 내부 Settings 업데이트는 추적하지 않아 무한 루프를 방지합니다.
         const raw = designSettings; 
         
         untrack(() => {
@@ -51,7 +51,7 @@
                     CardBgOpacity: parsed.rouletteCardBgOpacity ?? 0.8
                 };
 
-                settings = {
+                Settings = {
                     ...parsed,
                     CurrentSong: currentSong,
                     Roulette: roulette,
@@ -61,7 +61,7 @@
                     layout: parsed.layout || {}
                 };
             } catch (e) {
-                settings = {
+                Settings = {
                     queueTheme: "card",
                     maxQueueCount: 5,
                     CurrentSong: {
@@ -85,19 +85,19 @@
     });
 
     const handleSave = async () => {
-        isSubmitting = true;
+        IsSubmitting = true;
         try {
-            designSettings = JSON.stringify(settings);
+            designSettings = JSON.stringify(Settings);
             await onSave();
         } finally {
-            isSubmitting = false;
+            IsSubmitting = false;
         }
     };
 
     const handleSaveLayout = async (updatedSettings: any) => {
-        settings = { ...updatedSettings };
+        Settings = { ...updatedSettings };
         await handleSave();
-        showLayoutModal = false;
+        ShowLayoutModal = false;
     };
 </script>
 
@@ -121,7 +121,7 @@
 
         <button 
             class="w-full flex items-center justify-center gap-3 py-4 bg-white border-2 border-indigo-100 rounded-2xl text-indigo-600 font-black hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
-            onclick={() => showLayoutModal = true}
+            onclick={() => ShowLayoutModal = true}
         >
             <Settings2 size={20} class="group-hover:rotate-90 transition-transform duration-500" />
             <span>정밀 에디터 열기</span>
@@ -132,9 +132,9 @@
     <button 
         class="save-action-btn" 
         onclick={handleSave}
-        disabled={isSubmitting}
+        disabled={IsSubmitting}
     >
-        {#if isSubmitting}
+        {#if IsSubmitting}
             <RefreshCw size={18} class="animate-spin" />
             <span>설정 동기화 중...</span>
         {:else}
@@ -145,7 +145,7 @@
 </div>
 
 <!-- [물멍]: 레이아웃 에디터 모달 (풀스토리 스타일) -->
-{#if showLayoutModal}
+{#if ShowLayoutModal}
     <div class="fixed inset-0 z-[100] flex flex-col bg-slate-50/95 backdrop-blur-xl" in:fade>
         <header class="p-6 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-4">
@@ -159,14 +159,14 @@
             </div>
             <button 
                 class="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all"
-                onclick={() => showLayoutModal = false}
+                onclick={() => ShowLayoutModal = false}
             >
                 편집 종료
             </button>
         </header>
         <div class="flex-1 overflow-y-auto p-8">
             <LayoutEditor 
-                bind:settings={settings} 
+                bind:settings={Settings} 
                 onSave={handleSaveLayout} 
             />
         </div>

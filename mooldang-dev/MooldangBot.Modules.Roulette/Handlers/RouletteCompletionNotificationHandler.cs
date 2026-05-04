@@ -23,7 +23,7 @@ public class RouletteCompletionNotificationHandler(
         try
         {
             // 1. 스트리머 프로필 조회 (채팅 발신을 위한 권한 획득)
-            var streamer = await db.CoreStreamerProfiles
+            var streamer = await db.TableCoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == notification.ChzzkUid, ct);
 

@@ -1,0 +1,1000 @@
+    WHERE (NOT (`f`.`IsDeleted`) AND ((`f`.`StreamerProfileId` = @__streamer_Id_0) AND NOT (`f`.`IsDeleted`))) AND (`f`.`Status` = @__status_Value_1)
+    ORDER BY `f`.`SortOrder`, `f`.`Id`
+    LIMIT @__p_2
+) AS `f0`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`IsDeleted`, `c`.`Nickname`, `c`.`PreviousNickname`, `c`.`ProfileImageUrl`, `c`.`UpdatedAt`, `c`.`ViewerUid`, `c`.`ViewerUidHash`
+    FROM `CoreGlobalViewers` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`GlobalViewerId` = `c0`.`Id`
+ORDER BY `f0`.`SortOrder`, `f0`.`Id`
+[17:12:26 INF] Executed DbCommand (3ms) [Parameters=[@__streamer_Id_0='1', @__status_Value_1='2', @__p_2='51'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`Title`, COALESCE(`f0`.`Artist`, '') AS `Artist`, `f0`.`Status`, `f0`.`Cost`, `f0`.`CostType`, `f0`.`CreatedAt`, `c0`.`Id`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`IsDeleted`, `c0`.`Nickname`, `c0`.`PreviousNickname`, `c0`.`ProfileImageUrl`, `c0`.`UpdatedAt`, `c0`.`ViewerUid`, `c0`.`ViewerUidHash`, COALESCE(`f0`.`RequesterNickname`, CASE
+    WHEN `c0`.`Id` IS NOT NULL THEN `c0`.`Nickname`
+    ELSE '익명'
+END) AS `Requester`, COALESCE((
+    SELECT `f1`.`YoutubeUrl`
+    FROM `FuncSongMasterStaging` AS `f1`
+    WHERE `f1`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1), (
+    SELECT `f2`.`YoutubeUrl`
+    FROM `FuncSongStreamerLibrary` AS `f2`
+    WHERE (`f2`.`StreamerProfileId` = `f0`.`StreamerProfileId`) AND (`f2`.`SongLibraryId` = `f0`.`SongLibraryId`)
+    LIMIT 1), (
+    SELECT `f3`.`YoutubeUrl`
+    FROM `FuncSongMasterLibrary` AS `f3`
+    WHERE `f3`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1)) AS `Url`, COALESCE((
+    SELECT `f4`.`LyricsUrl`
+    FROM `FuncSongMasterStaging` AS `f4`
+    WHERE `f4`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1), (
+    SELECT `f5`.`LyricsUrl`
+    FROM `FuncSongStreamerLibrary` AS `f5`
+    WHERE (`f5`.`StreamerProfileId` = `f0`.`StreamerProfileId`) AND (`f5`.`SongLibraryId` = `f0`.`SongLibraryId`)
+    LIMIT 1), (
+    SELECT `f6`.`LyricsUrl`
+    FROM `FuncSongMasterLibrary` AS `f6`
+    WHERE `f6`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1)) AS `LyricsUrl`, `f0`.`ThumbnailUrl`
+FROM (
+    SELECT `f`.`Id`, `f`.`Artist`, `f`.`Cost`, `f`.`CostType`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`RequesterNickname`, `f`.`SongLibraryId`, `f`.`Status`, `f`.`StreamerProfileId`, `f`.`ThumbnailUrl`, `f`.`Title`
+    FROM `FuncSongListQueues` AS `f`
+    WHERE (NOT (`f`.`IsDeleted`) AND ((`f`.`StreamerProfileId` = @__streamer_Id_0) AND NOT (`f`.`IsDeleted`))) AND (`f`.`Status` = @__status_Value_1)
+    ORDER BY `f`.`Id` DESC
+    LIMIT @__p_2
+) AS `f0`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`IsDeleted`, `c`.`Nickname`, `c`.`PreviousNickname`, `c`.`ProfileImageUrl`, `c`.`UpdatedAt`, `c`.`ViewerUid`, `c`.`ViewerUidHash`
+    FROM `CoreGlobalViewers` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`GlobalViewerId` = `c0`.`Id`
+ORDER BY `f0`.`Id` DESC
+[17:12:26 INF] HTTP GET /api/song/c74931e68d4d90ce9f11d6f343c1d54c/queue responded 200 in 140.4046 ms
+[17:12:26 INF] HTTP GET /api/song/c74931e68d4d90ce9f11d6f343c1d54c/queue responded 200 in 140.4455 ms
+[17:12:27 INF] [이지스 쉴드] Access GRANTED for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c) on Channel c74931e68d4d90ce9f11d6f343c1d54c
+[17:12:27 INF] Executed DbCommand (2ms) [Parameters=[@__streamer_Id_0='1', @__status_Value_1='1', @__p_2='2'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`Title`, COALESCE(`f0`.`Artist`, '') AS `Artist`, `f0`.`Status`, `f0`.`Cost`, `f0`.`CostType`, `f0`.`CreatedAt`, `c0`.`Id`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`IsDeleted`, `c0`.`Nickname`, `c0`.`PreviousNickname`, `c0`.`ProfileImageUrl`, `c0`.`UpdatedAt`, `c0`.`ViewerUid`, `c0`.`ViewerUidHash`, COALESCE(`f0`.`RequesterNickname`, CASE
+    WHEN `c0`.`Id` IS NOT NULL THEN `c0`.`Nickname`
+    ELSE '익명'
+END) AS `Requester`, COALESCE((
+    SELECT `f1`.`YoutubeUrl`
+    FROM `FuncSongMasterStaging` AS `f1`
+    WHERE `f1`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1), (
+    SELECT `f2`.`YoutubeUrl`
+    FROM `FuncSongStreamerLibrary` AS `f2`
+    WHERE (`f2`.`StreamerProfileId` = `f0`.`StreamerProfileId`) AND (`f2`.`SongLibraryId` = `f0`.`SongLibraryId`)
+    LIMIT 1), (
+    SELECT `f3`.`YoutubeUrl`
+    FROM `FuncSongMasterLibrary` AS `f3`
+    WHERE `f3`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1)) AS `Url`, COALESCE((
+    SELECT `f4`.`LyricsUrl`
+    FROM `FuncSongMasterStaging` AS `f4`
+    WHERE `f4`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1), (
+    SELECT `f5`.`LyricsUrl`
+    FROM `FuncSongStreamerLibrary` AS `f5`
+    WHERE (`f5`.`StreamerProfileId` = `f0`.`StreamerProfileId`) AND (`f5`.`SongLibraryId` = `f0`.`SongLibraryId`)
+    LIMIT 1), (
+    SELECT `f6`.`LyricsUrl`
+    FROM `FuncSongMasterLibrary` AS `f6`
+    WHERE `f6`.`SongLibraryId` = `f0`.`SongLibraryId`
+    LIMIT 1)) AS `LyricsUrl`, `f0`.`ThumbnailUrl`
+FROM (
+    SELECT `f`.`Id`, `f`.`Artist`, `f`.`Cost`, `f`.`CostType`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`RequesterNickname`, `f`.`SongLibraryId`, `f`.`Status`, `f`.`StreamerProfileId`, `f`.`ThumbnailUrl`, `f`.`Title`
+    FROM `FuncSongListQueues` AS `f`
+    WHERE (NOT (`f`.`IsDeleted`) AND ((`f`.`StreamerProfileId` = @__streamer_Id_0) AND NOT (`f`.`IsDeleted`))) AND (`f`.`Status` = @__status_Value_1)
+    ORDER BY `f`.`Id` DESC
+    LIMIT @__p_2
+) AS `f0`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`IsDeleted`, `c`.`Nickname`, `c`.`PreviousNickname`, `c`.`ProfileImageUrl`, `c`.`UpdatedAt`, `c`.`ViewerUid`, `c`.`ViewerUidHash`
+    FROM `CoreGlobalViewers` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`GlobalViewerId` = `c0`.`Id`
+ORDER BY `f0`.`Id` DESC
+[17:12:27 INF] HTTP GET /api/song/c74931e68d4d90ce9f11d6f343c1d54c/queue responded 200 in 33.4521 ms
+[17:12:27 INF] HTTP POST /api/hubs/overlay/negotiate responded 200 in 7.8402 ms
+[17:12:27 INF] [오시리스의 공명] 오버레이 연결 성공 (Identity: c74931e68d4d90ce9f11d6f343c1d54c)
+[17:12:27 INF] Executed DbCommand (0ms) [Parameters=[@__normalizedUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (LOWER(`c`.`ChzzkUid`) = @__normalizedUid_0)
+LIMIT 1
+[17:12:27 INF] Executed DbCommand (0ms) [Parameters=[@__profile_Id_0='1'], CommandType='Text', CommandTimeout='10']
+SELECT `f`.`Id`, `f`.`Artist`, `f`.`Cost`, `f`.`CostType`, `f`.`CreatedAt`, `f`.`DeletedAt`, `f`.`GlobalViewerId`, `f`.`IsActive`, `f`.`IsDeleted`, `f`.`Pitch`, `f`.`RequesterNickname`, `f`.`SongBookId`, `f`.`SongLibraryId`, `f`.`SortOrder`, `f`.`Status`, `f`.`StreamerProfileId`, `f`.`ThumbnailUrl`, `f`.`Title`, `f`.`UpdatedAt`, `f`.`VideoId`
+FROM `FuncSongListQueues` AS `f`
+WHERE NOT (`f`.`IsDeleted`) AND (((`f`.`StreamerProfileId` = @__profile_Id_0) AND (`f`.`Status` = 1)) AND NOT (`f`.`IsDeleted`))
+ORDER BY `f`.`UpdatedAt` DESC
+LIMIT 1
+[17:12:27 INF] Executed DbCommand (0ms) [Parameters=[@__profile_Id_0='1'], CommandType='Text', CommandTimeout='10']
+SELECT `f`.`Id`, `f`.`Artist`, `f`.`Cost`, `f`.`CostType`, `f`.`CreatedAt`, `f`.`DeletedAt`, `f`.`GlobalViewerId`, `f`.`IsActive`, `f`.`IsDeleted`, `f`.`Pitch`, `f`.`RequesterNickname`, `f`.`SongBookId`, `f`.`SongLibraryId`, `f`.`SortOrder`, `f`.`Status`, `f`.`StreamerProfileId`, `f`.`ThumbnailUrl`, `f`.`Title`, `f`.`UpdatedAt`, `f`.`VideoId`, `c0`.`Id`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`IsDeleted`, `c0`.`Nickname`, `c0`.`PreviousNickname`, `c0`.`ProfileImageUrl`, `c0`.`UpdatedAt`, `c0`.`ViewerUid`, `c0`.`ViewerUidHash`
+FROM `FuncSongListQueues` AS `f`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`IsDeleted`, `c`.`Nickname`, `c`.`PreviousNickname`, `c`.`ProfileImageUrl`, `c`.`UpdatedAt`, `c`.`ViewerUid`, `c`.`ViewerUidHash`
+    FROM `CoreGlobalViewers` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f`.`GlobalViewerId` = `c0`.`Id`
+WHERE NOT (`f`.`IsDeleted`) AND (((`f`.`StreamerProfileId` = @__profile_Id_0) AND (`f`.`Status` = 0)) AND NOT (`f`.`IsDeleted`))
+ORDER BY `f`.`SortOrder`, `f`.`Id`
+[17:12:27 INF] [오시리스의 공명] 신청곡 오버레이 상태 브로드캐스트 완료. Channel: c74931e68d4d90ce9f11d6f343c1d54c, State: Idle
+[17:12:28 INF] Executed DbCommand (0ms) [Parameters=[@__Slug_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`ChzzkUid`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE `c`.`Slug` = @__Slug_0
+LIMIT 1
+[17:12:28 DBG] 🛡️ [이지스 역방향 색인 로드] Slug: mooldang -> c74931e68d4d90ce9f11d6f343c1d54c
+[17:12:28 INF] [이지스 쉴드] Access GRANTED (Slug: mooldang -> UID: c74931e68d4d90ce9f11d6f343c1d54c) for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c)
+[17:12:28 INF] Executed DbCommand (0ms) [Parameters=[@__ChzzkUid_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE `c`.`ChzzkUid` = @__ChzzkUid_0
+LIMIT 1
+[17:12:28 INF] Executed DbCommand (0ms) [Parameters=[@__target_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND ((LOWER(`c`.`ChzzkUid`) = @__target_0) OR (`c`.`Slug` IS NOT NULL AND (LOWER(`c`.`Slug`) = @__target_0)))
+LIMIT 1
+[17:12:28 INF] Executed DbCommand (0ms) [Parameters=[@__streamer_Id_0='1'], CommandType='Text', CommandTimeout='10']
+SELECT `f`.`SongNo` AS `Id`, `f`.`Title`, `f`.`Artist`, `f`.`Category`, `f`.`Pitch`, `f`.`Proficiency`, `f`.`LyricsUrl`, `f`.`ReferenceUrl`, `f`.`ThumbnailUrl`, `f`.`RequiredPoints`, `f`.`UpdatedAt`
+FROM `FuncSongBooks` AS `f`
+WHERE NOT (`f`.`IsDeleted`) AND ((`f`.`StreamerProfileId` = @__streamer_Id_0) AND NOT (`f`.`IsDeleted`))
+ORDER BY `f`.`SongNo`
+[17:12:28 INF] HTTP GET /api/songbook/mooldang responded 200 in 32.2080 ms
+[17:12:28 INF] [이지스 쉴드] Access GRANTED (Slug: mooldang -> UID: c74931e68d4d90ce9f11d6f343c1d54c) for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c)
+[17:12:28 INF] Executed DbCommand (1ms) [Parameters=[@__ChzzkUid_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE `c`.`ChzzkUid` = @__ChzzkUid_0
+LIMIT 1
+[17:12:28 INF] Executed DbCommand (1ms) [Parameters=[@__target_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND ((LOWER(`c`.`ChzzkUid`) = @__target_0) OR (`c`.`Slug` IS NOT NULL AND (LOWER(`c`.`Slug`) = @__target_0)))
+LIMIT 1
+[17:12:28 INF] Executed DbCommand (1ms) [Parameters=[@__streamer_Id_0='1'], CommandType='Text', CommandTimeout='10']
+SELECT `f`.`SongNo` AS `Id`, `f`.`Title`, `f`.`Artist`, `f`.`Category`, `f`.`Pitch`, `f`.`Proficiency`, `f`.`LyricsUrl`, `f`.`ReferenceUrl`, `f`.`ThumbnailUrl`, `f`.`RequiredPoints`, `f`.`UpdatedAt`
+FROM `FuncSongBooks` AS `f`
+WHERE NOT (`f`.`IsDeleted`) AND ((`f`.`StreamerProfileId` = @__streamer_Id_0) AND NOT (`f`.`IsDeleted`))
+ORDER BY `f`.`SongNo`
+[17:12:28 INF] HTTP GET /api/songbook/mooldang responded 200 in 16.4491 ms
+[17:12:30 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:12:35.4309450' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:12:34 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3738ms
+[17:12:34 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:12:34 INF] HTTP HEAD /api/health responded 200 in 2.1582 ms
+[17:12:35 INF] [이지스 쉴드] Access GRANTED (Slug: mooldang -> UID: c74931e68d4d90ce9f11d6f343c1d54c) for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c)
+[17:12:35 INF] Executed DbCommand (0ms) [Parameters=[@__title_0='?' (Size = 200), @__p_2='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+SELECT `t`.`LocalPath`
+FROM `Thumbnails` AS `t`
+WHERE (`t`.`Title` = @__title_0) OR `t`.`Artist` IS NULL
+ORDER BY `t`.`ReferenceCount` DESC
+LIMIT @__p_2
+[17:12:36 INF] HTTP GET /api/songbook/mooldang/thumbnail/search responded 200 in 1035.2584 ms
+[17:12:40 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:12:45.4372029' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:12:44 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3846ms
+[17:12:44 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:12:44 INF] HTTP HEAD /api/health responded 200 in 1.8261 ms
+[17:12:50 INF] 📢 [정기 메시지] 방송 모듈로 송출 명령을 하달합니다.
+[17:12:50 INF] 🚀 [Broadcast] 정기 메시지 송출 작업 시작...
+[17:12:50 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:12:50 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`IntervalMinutes`, `s`.`IsEnabled`, `s`.`LastSentAt`, `s`.`Message`, `s`.`StreamerProfileId`
+FROM `SysPeriodicMessages` AS `s`
+WHERE (`s`.`StreamerProfileId` = 1) AND `s`.`IsEnabled`
+[17:12:50 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:12:55.4435450' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:12:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`ChzzkUid`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:12:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 라이브 여부를 점검합니다.
+[17:12:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`ChzzkUid` = @__chzzkUid_0)
+LIMIT 1
+[17:12:50 INF] 🔄 [송신 엔드포인트 명령] c74931e68d4d90ce9f11d6f343c1d54c 채널에 대한 재연결을 시도합니다.
+[17:12:50 DBG] 📤 [Fire&Forget] 명령 송신: ReconnectCommand (ID: 86e6d82b-c10e-4782-8b86-573c56f5a0c9)
+[17:12:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT EXISTS (
+    SELECT 1
+    FROM `SysBroadcastSessions` AS `s`
+    LEFT JOIN (
+        SELECT `c`.`Id`, `c`.`ChzzkUid`
+        FROM `CoreStreamerProfiles` AS `c`
+        WHERE NOT (`c`.`IsDeleted`)
+    ) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+    WHERE NOT (`s`.`IsDeleted`) AND (`c0`.`ChzzkUid` = @__chzzkUid_0))
+[17:12:50 DBG] [ゲートウェイ通信] GET: /api/internal/channels/c74931e68d4d90ce9f11d6f343c1d54c/live-detail
+[17:12:50 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.9454ms
+[17:12:50 INF] Executed DbCommand (0ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:07:50.7226771' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:12:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:12:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:12:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:6e1a4673fe8d 알림이 이미 발송되어 쿨다운 중입니다.
+[17:12:54 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3651ms
+[17:12:54 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:12:54 INF] HTTP HEAD /api/health responded 200 in 1.7608 ms
+[17:13:00 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:05.4479870' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:04 INF] [이지스 쉴드] Access GRANTED (Slug: mooldang -> UID: c74931e68d4d90ce9f11d6f343c1d54c) for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c)
+[17:13:04 INF] Executed DbCommand (1ms) [Parameters=[@__title_0='?' (Size = 200), @__artist_1='?' (Size = 200), @__p_2='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+SELECT `t`.`LocalPath`
+FROM `Thumbnails` AS `t`
+WHERE (`t`.`Title` = @__title_0) OR (`t`.`Artist` = @__artist_1)
+ORDER BY `t`.`ReferenceCount` DESC
+LIMIT @__p_2
+[17:13:04 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3463ms
+[17:13:04 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:04 INF] HTTP HEAD /api/health responded 200 in 1.6351 ms
+[17:13:04 INF] HTTP GET /api/songbook/mooldang/thumbnail/search responded 200 in 497.9025 ms
+[17:13:10 INF] [이지스 쉴드] Access GRANTED (Slug: mooldang -> UID: c74931e68d4d90ce9f11d6f343c1d54c) for 물댕 Mooldang(c74931e68d4d90ce9f11d6f343c1d54c)
+[17:13:10 INF] Executed DbCommand (0ms) [Parameters=[@__ChzzkUid_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE `c`.`ChzzkUid` = @__ChzzkUid_0
+LIMIT 1
+[17:13:10 INF] Executed DbCommand (0ms) [Parameters=[@__target_0='mooldang' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND ((LOWER(`c`.`ChzzkUid`) = @__target_0) OR (`c`.`Slug` IS NOT NULL AND (LOWER(`c`.`Slug`) = @__target_0)))
+LIMIT 1
+[17:13:10 INF] Executed DbCommand (0ms) [Parameters=[@__profile_Id_0='1'], CommandType='Text', CommandTimeout='10']
+SELECT MAX(`f`.`SongNo`)
+FROM `FuncSongBooks` AS `f`
+WHERE NOT (`f`.`IsDeleted`) AND (`f`.`StreamerProfileId` = @__profile_Id_0)
+[17:13:10 INF] Executed DbCommand (1ms) [Parameters=[@__hash_0='?' (Size = 64)], CommandType='Text', CommandTimeout='30']
+SELECT `t`.`Id`, `t`.`Artist`, `t`.`CreatedAt`, `t`.`FileHash`, `t`.`LocalPath`, `t`.`ReferenceCount`, `t`.`SourceUrl`, `t`.`Title`, `t`.`UpdatedAt`
+FROM `Thumbnails` AS `t`
+WHERE `t`.`FileHash` = @__hash_0
+LIMIT 1
+[17:13:10 INF] Executed DbCommand (1ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:15.4539088' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:10 INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 200), @p1='?' (DbType = DateTime), @p2='?' (Size = 64), @p3='?' (Size = 500), @p4='?' (DbType = Int32), @p5='?' (Size = 1000), @p6='?' (Size = 200), @p7='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+SET AUTOCOMMIT = 1;
+INSERT INTO `Thumbnails` (`Artist`, `CreatedAt`, `FileHash`, `LocalPath`, `ReferenceCount`, `SourceUrl`, `Title`, `UpdatedAt`)
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7)
+RETURNING `Id`;
+[17:13:10 INF] Executed DbCommand (0ms) [Parameters=[@p0=NULL (Size = 255), @p1=NULL (Size = 500), @p2='코요테' (Size = 255), @p3='K-POP' (Size = 100), @p4='2026-05-04T02:13:10.3538219' (DbType = DateTime), @p5=NULL (DbType = DateTime), @p6='True', @p7='False', @p8='True', @p9=NULL (DbType = DateTime), @p10='' (Size = 1000), @p11=NULL (Size = 1000), @p12='원키' (Size = 50), @p13='완창' (Size = 50), @p14='' (Size = 1000), @p15='0', @p16='0', @p17=NULL (DbType = Int64), @p18='6', @p19='1', @p20=NULL (Size = 500), @p21='/api/storage/library/songs/967d6265cd366559a8014f5e894062afa070da5ebbb316eda429120853986262.webp' (Size = 1000), @p22='우리의 꿈' (Nullable = false) (Size = 255), @p23=NULL (Size = 200), @p24=NULL (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SET AUTOCOMMIT = 1;
+INSERT INTO `FuncSongBooks` (`Album`, `Alias`, `Artist`, `Category`, `CreatedAt`, `DeletedAt`, `IsActive`, `IsDeleted`, `IsRequestable`, `LastSungAt`, `LyricsUrl`, `MrUrl`, `Pitch`, `Proficiency`, `ReferenceUrl`, `RequiredPoints`, `SingCount`, `SongLibraryId`, `SongNo`, `StreamerProfileId`, `ThumbnailPath`, `ThumbnailUrl`, `Title`, `TitleChosung`, `UpdatedAt`)
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24)
+RETURNING `Id`;
+[17:13:10 ERR] An exception occurred in the database while saving changes for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> MySqlConnector.MySqlException (0x80004005): Duplicate entry '1-6' for key 'IX_FuncSongBooks_StreamerProfileId_SongNo'
+   at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1125
+   at MySqlConnector.Core.ResultSet.ScanRowAsync(IOBehavior ioBehavior, Row row, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 241
+   at MySqlConnector.Core.ResultSet.ReadAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 204
+   at MySqlConnector.MySqlDataReader.ReadAsync(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 39
+   at Pomelo.EntityFrameworkCore.MySql.Update.Internal.MySqlModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> MySqlConnector.MySqlException (0x80004005): Duplicate entry '1-6' for key 'IX_FuncSongBooks_StreamerProfileId_SongNo'
+   at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1125
+   at MySqlConnector.Core.ResultSet.ScanRowAsync(IOBehavior ioBehavior, Row row, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 241
+   at MySqlConnector.Core.ResultSet.ReadAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 204
+   at MySqlConnector.MySqlDataReader.ReadAsync(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 39
+   at Pomelo.EntityFrameworkCore.MySql.Update.Internal.MySqlModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at MooldangBot.Application.Controllers.FuncSongListQueues.SongBookController.AddSong(String chzzkUid, SongBookDto request) in /src/MooldangBot.Application/Controllers/SongQueue/SongBookController.cs:line 270
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Prometheus.HttpMetrics.HttpRequestDurationMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpRequestCountMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpInProgressMiddleware.Invoke(HttpContext context)
+   at MooldangBot.Application.Middleware.LogEnrichmentMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/LogEnrichmentMiddleware.cs:line 25
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.RateLimiting.RateLimitingMiddleware.InvokeInternal(HttpContext context, EnableRateLimitingAttribute enableRateLimitingAttribute)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at MooldangBot.Application.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/ExceptionMiddleware.cs:line 21
+[17:13:10 ERR] HTTP POST /api/songbook/mooldang responded 500 in 180.2373 ms
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> MySqlConnector.MySqlException (0x80004005): Duplicate entry '1-6' for key 'IX_FuncSongBooks_StreamerProfileId_SongNo'
+   at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1125
+   at MySqlConnector.Core.ResultSet.ScanRowAsync(IOBehavior ioBehavior, Row row, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 241
+   at MySqlConnector.Core.ResultSet.ReadAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 204
+   at MySqlConnector.MySqlDataReader.ReadAsync(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 39
+   at Pomelo.EntityFrameworkCore.MySql.Update.Internal.MySqlModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at MooldangBot.Application.Controllers.FuncSongListQueues.SongBookController.AddSong(String chzzkUid, SongBookDto request) in /src/MooldangBot.Application/Controllers/SongQueue/SongBookController.cs:line 270
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Prometheus.HttpMetrics.HttpRequestDurationMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpRequestCountMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpInProgressMiddleware.Invoke(HttpContext context)
+   at MooldangBot.Application.Middleware.LogEnrichmentMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/LogEnrichmentMiddleware.cs:line 25
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.RateLimiting.RateLimitingMiddleware.InvokeInternal(HttpContext context, EnableRateLimitingAttribute enableRateLimitingAttribute)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at MooldangBot.Application.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/ExceptionMiddleware.cs:line 21
+[17:13:10 ERR] 🔥 [오시리스의 거절] 예외 발생 (User: c74931e68d4d90ce9f11d6f343c1d54c, TraceId: 0HNL96S9DALST:00000008) - An error occurred while saving the entity changes. See the inner exception for details.
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> MySqlConnector.MySqlException (0x80004005): Duplicate entry '1-6' for key 'IX_FuncSongBooks_StreamerProfileId_SongNo'
+   at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1125
+   at MySqlConnector.Core.ResultSet.ScanRowAsync(IOBehavior ioBehavior, Row row, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 241
+   at MySqlConnector.Core.ResultSet.ReadAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ResultSet.cs:line 204
+   at MySqlConnector.MySqlDataReader.ReadAsync(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 39
+   at Pomelo.EntityFrameworkCore.MySql.Update.Internal.MySqlModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at MooldangBot.Application.Controllers.FuncSongListQueues.SongBookController.AddSong(String chzzkUid, SongBookDto request) in /src/MooldangBot.Application/Controllers/SongQueue/SongBookController.cs:line 270
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Prometheus.HttpMetrics.HttpRequestDurationMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpRequestCountMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpInProgressMiddleware.Invoke(HttpContext context)
+   at MooldangBot.Application.Middleware.LogEnrichmentMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/LogEnrichmentMiddleware.cs:line 25
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.RateLimiting.RateLimitingMiddleware.InvokeInternal(HttpContext context, EnableRateLimitingAttribute enableRateLimitingAttribute)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at MooldangBot.Application.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context) in /src/MooldangBot.Application/Middleware/ExceptionMiddleware.cs:line 21
+[17:13:14 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3526ms
+[17:13:14 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:14 INF] HTTP HEAD /api/health responded 200 in 1.7340 ms
+[17:13:20 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:25.4564294' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:20 INF] Executed DbCommand (2ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:08:20.7258719' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:13:20 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:20 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:20 DBG] [이지스의 침묵] lost:mooldang-dev-main:6e1a4673fe8d 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:24 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3498ms
+[17:13:24 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:24 INF] HTTP HEAD /api/health responded 200 in 1.6992 ms
+[17:13:30 INF] Executed DbCommand (4ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:35.4616725' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:34 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3659ms
+[17:13:34 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:34 INF] HTTP HEAD /api/health responded 200 in 1.6710 ms
+[17:13:40 INF] Executed DbCommand (4ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:45.4664427' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:44 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3547ms
+[17:13:44 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:44 INF] HTTP HEAD /api/health responded 200 in 1.5958 ms
+[17:13:50 INF] 📢 [정기 메시지] 방송 모듈로 송출 명령을 하달합니다.
+[17:13:50 INF] 🚀 [Broadcast] 정기 메시지 송출 작업 시작...
+[17:13:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:13:50 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`IntervalMinutes`, `s`.`IsEnabled`, `s`.`LastSentAt`, `s`.`Message`, `s`.`StreamerProfileId`
+FROM `SysPeriodicMessages` AS `s`
+WHERE (`s`.`StreamerProfileId` = 1) AND `s`.`IsEnabled`
+[17:13:50 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:13:55.4717770' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:13:50 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`ChzzkUid`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:13:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 라이브 여부를 점검합니다.
+[17:13:50 INF] Executed DbCommand (0ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`ChzzkUid` = @__chzzkUid_0)
+LIMIT 1
+[17:13:50 INF] 🔄 [송신 엔드포인트 명령] c74931e68d4d90ce9f11d6f343c1d54c 채널에 대한 재연결을 시도합니다.
+[17:13:50 DBG] 📤 [Fire&Forget] 명령 송신: ReconnectCommand (ID: e262181f-8b6e-41ff-b3e3-369d7fc1bde4)
+[17:13:50 INF] Executed DbCommand (0ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT EXISTS (
+    SELECT 1
+    FROM `SysBroadcastSessions` AS `s`
+    LEFT JOIN (
+        SELECT `c`.`Id`, `c`.`ChzzkUid`
+        FROM `CoreStreamerProfiles` AS `c`
+        WHERE NOT (`c`.`IsDeleted`)
+    ) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+    WHERE NOT (`s`.`IsDeleted`) AND (`c0`.`ChzzkUid` = @__chzzkUid_0))
+[17:13:50 DBG] [ゲートウェイ通信] GET: /api/internal/channels/c74931e68d4d90ce9f11d6f343c1d54c/live-detail
+[17:13:50 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.655ms
+[17:13:50 INF] Executed DbCommand (1ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:08:50.7319981' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:13:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:eac08894de00 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:6e1a4673fe8d 알림이 이미 발송되어 쿨다운 중입니다.
+[17:13:54 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.6366ms
+[17:13:54 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:13:54 INF] HTTP HEAD /api/health responded 200 in 2.1206 ms
+[17:14:00 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:05.4759873' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:04 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.487ms
+[17:14:04 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:04 INF] HTTP HEAD /api/health responded 200 in 2.0126 ms
+[17:14:10 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:15.4804629' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:14 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.749ms
+[17:14:14 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:14 INF] HTTP HEAD /api/health responded 200 in 3.3446 ms
+[17:14:20 INF] Executed DbCommand (1ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:25.4850183' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:20 INF] Executed DbCommand (0ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:09:20.7484566' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:14:20 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:eac08894de00 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:20 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:20 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:20 DBG] [이지스의 침묵] lost:mooldang-dev-main:6e1a4673fe8d 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:24 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3513ms
+[17:14:24 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:24 INF] HTTP HEAD /api/health responded 200 in 1.5645 ms
+[17:14:30 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:35.4874591' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:34 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3434ms
+[17:14:34 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:34 INF] HTTP HEAD /api/health responded 200 in 1.5582 ms
+[17:14:40 INF] Executed DbCommand (1ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:45.4933115' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:44 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3388ms
+[17:14:44 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:44 INF] HTTP HEAD /api/health responded 200 in 1.5708 ms
+[17:14:50 INF] 📢 [정기 메시지] 방송 모듈로 송출 명령을 하달합니다.
+[17:14:50 INF] 🚀 [Broadcast] 정기 메시지 송출 작업 시작...
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`IntervalMinutes`, `s`.`IsEnabled`, `s`.`LastSentAt`, `s`.`Message`, `s`.`StreamerProfileId`
+FROM `SysPeriodicMessages` AS `s`
+WHERE (`s`.`StreamerProfileId` = 1) AND `s`.`IsEnabled`
+[17:14:50 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:14:55.4943245' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`ChzzkUid`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:14:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 라이브 여부를 점검합니다.
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`ChzzkUid` = @__chzzkUid_0)
+LIMIT 1
+[17:14:50 INF] 🔄 [송신 엔드포인트 명령] c74931e68d4d90ce9f11d6f343c1d54c 채널에 대한 재연결을 시도합니다.
+[17:14:50 DBG] 📤 [Fire&Forget] 명령 송신: ReconnectCommand (ID: 88052ce7-d1ca-45b8-b43b-f5a553e9d38d)
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT EXISTS (
+    SELECT 1
+    FROM `SysBroadcastSessions` AS `s`
+    LEFT JOIN (
+        SELECT `c`.`Id`, `c`.`ChzzkUid`
+        FROM `CoreStreamerProfiles` AS `c`
+        WHERE NOT (`c`.`IsDeleted`)
+    ) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+    WHERE NOT (`s`.`IsDeleted`) AND (`c0`.`ChzzkUid` = @__chzzkUid_0))
+[17:14:50 DBG] [ゲートウェイ通信] GET: /api/internal/channels/c74931e68d4d90ce9f11d6f343c1d54c/live-detail
+[17:14:50 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.907ms
+[17:14:50 INF] Executed DbCommand (1ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:09:50.7507966' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:14:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:eac08894de00 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:14:54 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3368ms
+[17:14:54 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:14:54 INF] HTTP HEAD /api/health responded 200 in 1.4775 ms
+[17:15:00 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:05.4986312' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:04 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.352ms
+[17:15:04 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:04 INF] HTTP HEAD /api/health responded 200 in 1.4558 ms
+[17:15:10 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:15.5025754' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:15 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3438ms
+[17:15:15 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:15 INF] HTTP HEAD /api/health responded 200 in 1.4981 ms
+[17:15:20 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:25.5065102' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:20 INF] Executed DbCommand (3ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:10:20.7611811' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:15:20 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:eac08894de00 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:20 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:20 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:25 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.355ms
+[17:15:25 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:25 INF] HTTP HEAD /api/health responded 200 in 1.5462 ms
+[17:15:30 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:35.5115066' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:35 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.369ms
+[17:15:35 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:35 INF] HTTP HEAD /api/health responded 200 in 1.6391 ms
+[17:15:40 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:45.5164908' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:45 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3367ms
+[17:15:45 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:45 INF] HTTP HEAD /api/health responded 200 in 1.4273 ms
+[17:15:50 INF] 📢 [정기 메시지] 방송 모듈로 송출 명령을 하달합니다.
+[17:15:50 INF] 🚀 [Broadcast] 정기 메시지 송출 작업 시작...
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`IntervalMinutes`, `s`.`IsEnabled`, `s`.`LastSentAt`, `s`.`Message`, `s`.`StreamerProfileId`
+FROM `SysPeriodicMessages` AS `s`
+WHERE (`s`.`StreamerProfileId` = 1) AND `s`.`IsEnabled`
+[17:15:50 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:15:55.5209127' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`ChzzkUid`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`IsActive` AND `c`.`IsMasterEnabled`)
+[17:15:50 INF] 📊 [병렬 배치] 활성 스트리머 1명 라이브 여부를 점검합니다.
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+FROM `CoreStreamerProfiles` AS `c`
+WHERE NOT (`c`.`IsDeleted`) AND (`c`.`ChzzkUid` = @__chzzkUid_0)
+LIMIT 1
+[17:15:50 INF] 🔄 [송신 엔드포인트 명령] c74931e68d4d90ce9f11d6f343c1d54c 채널에 대한 재연결을 시도합니다.
+[17:15:50 DBG] 📤 [Fire&Forget] 명령 송신: ReconnectCommand (ID: 459131f7-87f4-4206-8c35-c73961ef61c8)
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[@__chzzkUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
+SELECT EXISTS (
+    SELECT 1
+    FROM `SysBroadcastSessions` AS `s`
+    LEFT JOIN (
+        SELECT `c`.`Id`, `c`.`ChzzkUid`
+        FROM `CoreStreamerProfiles` AS `c`
+        WHERE NOT (`c`.`IsDeleted`)
+    ) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+    WHERE NOT (`s`.`IsDeleted`) AND (`c0`.`ChzzkUid` = @__chzzkUid_0))
+[17:15:50 DBG] [ゲートウェイ通信] GET: /api/internal/channels/c74931e68d4d90ce9f11d6f343c1d54c/live-detail
+[17:15:50 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 2.1264ms
+[17:15:50 INF] Executed DbCommand (1ms) [Parameters=[@__AddMinutes_0='2026-05-04T02:10:50.7673342' (DbType = DateTime)], CommandType='Text', CommandTimeout='10']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`CurrentCategory`, `s`.`CurrentTitle`, `s`.`DeletedAt`, `s`.`EndTime`, `s`.`InitialCategory`, `s`.`InitialTitle`, `s`.`IsActive`, `s`.`IsDeleted`, `s`.`LastHeartbeatAt`, `s`.`StartTime`, `s`.`StreamerProfileId`, `s`.`TopEmotesJson`, `s`.`TopKeywordsJson`, `s`.`TotalChatCount`, `s`.`UpdatedAt`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM `SysBroadcastSessions` AS `s`
+LEFT JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `s`.`StreamerProfileId` = `c0`.`Id`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`IsActive` AND (`s`.`LastHeartbeatAt` < @__AddMinutes_0))
+[17:15:50 DBG] [이지스의 침묵] instance_halt:mooldang-dev-main:eac08894de00 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:2c36f9361df4 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:50 DBG] [이지스의 침묵] lost:mooldang-dev-main:9ff1255ae4cc 알림이 이미 발송되어 쿨다운 중입니다.
+[17:15:55 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.6874ms
+[17:15:55 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:15:55 INF] HTTP HEAD /api/health responded 200 in 1.7109 ms
+[17:16:00 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:16:05.5249377' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`
+[17:16:05 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.3474ms
+[17:16:05 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
+[17:16:05 INF] HTTP HEAD /api/health responded 200 in 1.4015 ms
+[17:16:10 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-05-04T02:16:15.5289311' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
+SELECT `f0`.`Id`, `f0`.`CreatedAt`, `f0`.`GlobalViewerId`, `f0`.`IsCompleted`, `f0`.`ResultsJson`, `f0`.`RouletteId`, `f0`.`ScheduledTime`, `f0`.`StreamerProfileId`, `f0`.`Summary`, `c0`.`Id`, `c0`.`ActiveOverlayPresetId`, `c0`.`BotNickname`, `c0`.`ChannelName`, `c0`.`ChzzkAccessToken`, `c0`.`ChzzkRefreshToken`, `c0`.`ChzzkUid`, `c0`.`ClientId`, `c0`.`ClientSecret`, `c0`.`CreatedAt`, `c0`.`DeletedAt`, `c0`.`DesignSettingsJson`, `c0`.`IsActive`, `c0`.`IsAutoAccumulateDonation`, `c0`.`IsDeleted`, `c0`.`IsMasterEnabled`, `c0`.`NoticeMemo`, `c0`.`OverlayToken`, `c0`.`OverlayTokenVersion`, `c0`.`PointPerAttendance`, `c0`.`PointPerChat`, `c0`.`PointPerDonation1000`, `c0`.`ProfileImageUrl`, `c0`.`RedirectUrl`, `c0`.`Slug`, `c0`.`TokenExpiresAt`, `c0`.`UpdatedAt`
+FROM (
+    SELECT `f`.`Id`, `f`.`CreatedAt`, `f`.`GlobalViewerId`, `f`.`IsCompleted`, `f`.`ResultsJson`, `f`.`RouletteId`, `f`.`ScheduledTime`, `f`.`StreamerProfileId`, `f`.`Summary`
+    FROM `FuncRouletteSpins` AS `f`
+    WHERE NOT (`f`.`IsCompleted`) AND (`f`.`ScheduledTime` < @__AddSeconds_0)
+    ORDER BY `f`.`ScheduledTime`
+    LIMIT @__p_1
+) AS `f0`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`ActiveOverlayPresetId`, `c`.`BotNickname`, `c`.`ChannelName`, `c`.`ChzzkAccessToken`, `c`.`ChzzkRefreshToken`, `c`.`ChzzkUid`, `c`.`ClientId`, `c`.`ClientSecret`, `c`.`CreatedAt`, `c`.`DeletedAt`, `c`.`DesignSettingsJson`, `c`.`IsActive`, `c`.`IsAutoAccumulateDonation`, `c`.`IsDeleted`, `c`.`IsMasterEnabled`, `c`.`NoticeMemo`, `c`.`OverlayToken`, `c`.`OverlayTokenVersion`, `c`.`PointPerAttendance`, `c`.`PointPerChat`, `c`.`PointPerDonation1000`, `c`.`ProfileImageUrl`, `c`.`RedirectUrl`, `c`.`Slug`, `c`.`TokenExpiresAt`, `c`.`UpdatedAt`
+    FROM `CoreStreamerProfiles` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `c0` ON `f0`.`StreamerProfileId` = `c0`.`Id`
+ORDER BY `f0`.`ScheduledTime`

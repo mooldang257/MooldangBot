@@ -19,21 +19,21 @@ public class StagingCleanupWorker(
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        _logger.LogDebug("[SongBook] 만료된 스테이징 데이터 정찰을 시작합니다.");
-        using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
+        _logger.LogDebug("[FuncSongBooks] 만료된 스테이징 데이터 정찰을 시작합니다.");
+        using var Scope = _serviceProvider.CreateScope();
+        var DbContext = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+ 
         // 30일 경과 데이터 기준
-        var cutoffDate = DateTime.UtcNow.AddDays(-30);
-
+        var CutoffDate = DateTime.UtcNow.AddDays(-30);
+ 
         // 고성능 벌크 삭제 (EF Core 7+ ExecuteDeleteAsync)
-        int deletedCount = await dbContext.FuncMasterSongStagings
-            .Where(s => s.CreatedAt < cutoffDate)
+        int DeletedCount = await DbContext.TableFuncSongMasterStaging
+            .Where(s => s.CreatedAt < CutoffDate)
             .ExecuteDeleteAsync(ct);
-
-        if (deletedCount > 0)
+ 
+        if (DeletedCount > 0)
         {
-            _logger.LogInformation("[SongBook] 만료된 스테이징 데이터 {Count}건을 삭제했습니다. (기준: {Cutoff})", deletedCount, cutoffDate);
+            _logger.LogInformation("[FuncSongBooks] 만료된 스테이징 데이터 {Count}건을 삭제했습니다. (기준: {Cutoff})", DeletedCount, CutoffDate);
         }
     }
 }

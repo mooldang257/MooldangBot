@@ -6,8 +6,8 @@
 
 ### 1. 데이터베이스 스키마 고도화
 - **스트리머 독립 계층 (Streamer Bound)**: 모든 철학 지표가 `StreamerProfileId`를 통해 물리적/논리적으로 격리되었습니다.
-- **제약 조건 최적화**: `IamfParhosCycle`의 `[StreamerProfileId, CycleId]` 유니크 인덱스로 데이터 중복을 원천 차단했습니다.
-- **전용 보관소 신설**: `IamfStreamerSetting`을 통한 개별 스트리머의 IAMF 제어(민감도, 오버레이 가시성 등) 설정을 확보했습니다.
+- **제약 조건 최적화**: `IamfParhosCycles`의 `[StreamerProfileId, CycleId]` 유니크 인덱스로 데이터 중복을 원천 차단했습니다.
+- **전용 보관소 신설**: `IamfStreamerSettings`을 통한 개별 스트리머의 IAMF 제어(민감도, 오버레이 가시성 등) 설정을 확보했습니다.
 
 ### 2. 고성능 멀티테넌트 상태 관리
 - **메모리 효율성**: `BroadcastScribe`와 `ResonanceService`의 키 타입을 `string`에서 `int`로 전환하여 메모리 점유율을 최적화하고 조회 성능을 향상시켰습니다.

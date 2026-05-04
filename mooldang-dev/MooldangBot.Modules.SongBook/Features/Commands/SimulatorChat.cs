@@ -19,18 +19,18 @@ public class SimulatorChatHandler(
 {
     public async Task<Result<object>> Handle(SimulatorChatCommand request, CancellationToken ct)
     {
-        var profile = await db.CoreStreamerProfiles.AsNoTracking()
+        var Profile = await db.TableCoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
             
-        if (profile == null) 
+        if (Profile == null) 
             return Result<object>.Failure("스트리머를 찾을 수 없습니다.");
-
+ 
         // [v15.1]: 기존 레거시 이벤트 발행 (호환성 유지)
         await mediator.Publish(new ChatMessageEvent(
             Guid.NewGuid(),
             Guid.NewGuid(),
             DateTime.UtcNow,
-            profile, 
+            Profile, 
             "시뮬레이터", 
             request.Message, 
             "streamer", 
@@ -38,13 +38,13 @@ public class SimulatorChatHandler(
             null, 
             request.Donation
         ), ct);
-
-        if (!string.IsNullOrEmpty(request.Message) && !string.IsNullOrEmpty(profile.ChzzkAccessToken))
+ 
+        if (!string.IsNullOrEmpty(request.Message) && !string.IsNullOrEmpty(Profile.ChzzkAccessToken))
         {
             // 실제 치지직 채팅 전송 (연동 테스트용)
-            await chzzkApi.SendChatMessageAsync(profile.ChzzkAccessToken, profile.ChzzkUid, request.Message);
+            await chzzkApi.SendChatMessageAsync(Profile.ChzzkAccessToken, Profile.ChzzkUid, request.Message);
         }
-
-        return Result<object>.Success(new { message = "시뮬레이션 채팅이 전송되었습니다." });
+ 
+        return Result<object>.Success(new { Message = "시뮬레이션 채팅이 전송되었습니다." });
     }
 }

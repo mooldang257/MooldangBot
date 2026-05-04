@@ -31,17 +31,17 @@
     let statusCards = $derived([
         { 
             title: '방송 상태', 
-            value: summary?.isLive ? 'LIVE' : 'OFFLINE', 
-            detail: summary?.isLive ? '현재 방송 중' : '보조 시스템 대기 중', 
+            value: summary?.IsLive ? 'LIVE' : 'OFFLINE', 
+            detail: summary?.IsLive ? '현재 방송 중' : '보조 시스템 대기 중', 
             icon: Activity, 
-            color: summary?.isLive ? 'text-rose-500' : 'text-slate-400', 
-            bg: summary?.isLive ? 'bg-rose-50' : 'bg-slate-50',
-            trend: summary?.isLive ? 'Active' : 'Stable'
+            color: summary?.IsLive ? 'text-rose-500' : 'text-slate-400', 
+            bg: summary?.IsLive ? 'bg-rose-50' : 'bg-slate-50',
+            trend: summary?.IsLive ? 'Active' : 'Stable'
         },
         { 
             title: '오늘의 신청곡', 
-            value: `${summary?.todaySongs || 0}곡`, 
-            detail: `${summary?.pendingSongs || 0}곡이 대기를 기다리고 있습니다`, 
+            value: `${summary?.TodaySongs || 0}곡`, 
+            detail: `${summary?.PendingSongs || 0}곡이 대기를 기다리고 있습니다`, 
             icon: Music, 
             color: 'text-blue-500', 
             bg: 'bg-blue-50',
@@ -49,8 +49,8 @@
         },
         { 
             title: '오늘의 포인트', 
-            value: summary?.todayPoints >= 0 ? `+${(summary?.todayPoints / 1000).toFixed(1)}k` : `${(summary?.todayPoints / 1000).toFixed(1)}k`, 
-            detail: `전체: ${(summary?.totalPoints / 1000).toFixed(1)}k`, 
+            value: (summary?.TodayPoints ?? 0) >= 0 ? `+${((summary?.TodayPoints ?? 0) / 1000).toFixed(1)}k` : `${((summary?.TodayPoints ?? 0) / 1000).toFixed(1)}k`, 
+            detail: `전체: ${((summary?.TotalPoints ?? 0) / 1000).toFixed(1)}k`, 
             icon: Coins, 
             color: 'text-amber-600', 
             bg: 'bg-amber-50',
@@ -58,8 +58,8 @@
         },
         { 
             title: '명령어 호출', 
-            value: `${summary?.todayCommands || 0}회`, 
-            detail: `최다: ${summary?.topCommand || '-'}`, 
+            value: `${summary?.TodayCommands || 0}회`, 
+            detail: `최다: ${summary?.TopCommand || '-'}`, 
             icon: Zap, 
             color: 'text-emerald-500', 
             bg: 'bg-emerald-50',
@@ -81,10 +81,10 @@
         try {
             const res: any = await apiFetch(`/api/config/bot/${streamerId}/slug`, {
                 method: 'PATCH',
-                body: { slug: newSlug.toLowerCase().trim() }
+                body: { Slug: newSlug.toLowerCase().trim() }
             });
 
-            currentSlug = res.slug;
+            currentSlug = res.Value.Slug;
             slugFeedback = '✅ 물댕봇의 정문 주소가 새롭게 단장되었습니다!';
         } catch (e: any) {
             // [물멍]: 백엔드에서 보낸 메시지(e.message)를 그대로 사용하되, 가독성을 위해 다듬음
@@ -98,10 +98,10 @@
         try {
             const [sumData, actData] = await Promise.all([
                 apiFetch<any>(`/api/dashboard/${streamerId}/summary`),
-                apiFetch<any[]>(`/api/dashboard/${streamerId}/activities`)
+                apiFetch<any>(`/api/dashboard/${streamerId}/activities`)
             ]);
-            summary = sumData;
-            activities = actData;
+            summary = sumData.Value;
+            activities = actData.Value;
         } catch (e) {}
     }
 
@@ -135,10 +135,11 @@
         initSignalR();
 
         try {
-            const profile: any = await apiFetch('/api/auth/me');
-            if (profile.slug) {
-                currentSlug = profile.slug;
-                newSlug = profile.slug;
+            const profileRes: any = await apiFetch('/api/auth/me');
+            const profile = profileRes.Value;
+            if (profile.Slug) {
+                currentSlug = profile.Slug;
+                newSlug = profile.Slug;
             }
         } catch (e) {}
 
@@ -238,17 +239,17 @@
             <div class="bg-white/85 backdrop-blur-xl rounded-[2.5rem] border border-white p-6 md:p-8 shadow-[0_15px_45px_rgba(0,147,233,0.04)] overflow-hidden">
                 <div class="space-y-3">
                     {#each activities as activity}
-                        {@const ActivityIcon = iconMap[activity.iconType] || Bell}
+                        {@const ActivityIcon = iconMap[activity.IconType] || Bell}
                         <div class="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/60 transition-all group cursor-pointer border border-transparent hover:border-sky-50 shadow-sm hover:shadow-md">
                             <div class="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
                                 <ActivityIcon size={18} />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-center mb-0.5">
-                                    <span class="text-sm font-black text-slate-800">{activity.user}</span>
-                                    <span class="text-[10px] font-bold text-slate-400">{activity.time}</span>
+                                    <span class="text-sm font-black text-slate-800">{activity.User}</span>
+                                    <span class="text-[10px] font-bold text-slate-400">{activity.Time}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 font-bold truncate">{activity.content}</p>
+                                <p class="text-xs text-slate-500 font-bold truncate">{activity.Content}</p>
                             </div>
                             <div class="opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
                                 <ArrowUpRight size={14} class="text-slate-300" />

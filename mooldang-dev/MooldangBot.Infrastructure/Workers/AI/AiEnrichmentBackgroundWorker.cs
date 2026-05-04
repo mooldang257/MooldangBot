@@ -23,8 +23,8 @@ public class AiEnrichmentBackgroundWorker(
             try
             {
                 // 1. 큐에서 작업 데려오기
-                var workItem = await taskQueue.DequeueAsync(stoppingToken);
-
+                var WorkItem = await taskQueue.DequeueAsync(stoppingToken);
+ 
                 // 2. 작업 수행
                 // [참고]: AdaptiveAiRateLimiter는 각 작업 내부에서 호출되거나, 
                 // 여기서 공통으로 호출하도록 설계할 수 있습니다.
@@ -32,15 +32,15 @@ public class AiEnrichmentBackgroundWorker(
                 // 리미터를 직접 여기서 제어할 수 있습니다. 
                 // 안전을 위해 작업 실행 직전에 로깅을 남깁니다.
                 
-                await workItem(stoppingToken);
+                await WorkItem(stoppingToken);
             }
             catch (OperationCanceledException)
             {
                 // 정상 종료
             }
-            catch (Exception ex)
+            catch (Exception Ex)
             {
-                logger.LogError(ex, "❌ [거울의 집사] 백그라운드 작업 수행 중 오류 발생");
+                logger.LogError(Ex, "❌ [거울의 집사] 백그라운드 작업 수행 중 오류 발생");
             }
         }
     }

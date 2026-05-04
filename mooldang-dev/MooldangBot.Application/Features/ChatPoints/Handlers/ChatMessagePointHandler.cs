@@ -21,30 +21,30 @@ public class ChatMessagePointHandler(
     public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
         // 1. [다형성 선별]: 채팅 이벤트만 처리
-        if (notification.Payload is not ChzzkChatEvent chat)
+        if (notification.Payload is not ChzzkChatEvent Chat)
             return;
-
+ 
         // 2. [시스템 배제]: 발신자 정보가 없는 경우 제외
-        if (string.IsNullOrEmpty(chat.SenderId))
+        if (string.IsNullOrEmpty(Chat.SenderId))
             return;
-
+ 
         // [v7.2] 시청자 정보 로깅 강화
         logger.LogDebug("💬 [채팅 포인트 이벤트] {Nickname}({Uid}): {Amount}포인트 적립 시도", 
-            chat.Nickname, chat.SenderId, notification.Profile.PointPerChat);
-
+            Chat.Nickname, Chat.SenderId, notification.Profile.PointPerChat);
+ 
         // 3. [오시리스의 직결]: 중간 버퍼 없이 Redis 캐시로 직접 적재 (Atomic INCR)
         try
         {
             await pointCache.AddPointAsync(
                 notification.Profile.ChzzkUid, 
-                chat.SenderId, 
-                chat.Nickname, 
+                Chat.SenderId, 
+                Chat.Nickname, 
                 notification.Profile.PointPerChat
             );
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "❌ [포인트 적립 실패] {Nickname}: {Msg}", chat.Nickname, ex.Message);
+            logger.LogError(Ex, "❌ [포인트 적립 실패] {Nickname}: {Msg}", Chat.Nickname, Ex.Message);
         }
     }
 }

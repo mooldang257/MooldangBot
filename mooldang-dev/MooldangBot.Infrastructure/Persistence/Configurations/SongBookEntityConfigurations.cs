@@ -5,11 +5,10 @@ using MooldangBot.Domain.Entities;
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
 // [v19.0] 고도화된 송북 매핑: '완성형' 구조 반영
-public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
+public class SongBookConfiguration : IEntityTypeConfiguration<FuncSongBooks>
 {
-    public void Configure(EntityTypeBuilder<SongBook> builder)
+    public void Configure(EntityTypeBuilder<FuncSongBooks> builder)
     {
-        builder.ToTable("FuncSongBooks"); // 기존 song_book_main에서 변경 (고도화 반영)
         
         builder.HasIndex(s => new { s.StreamerProfileId, s.SongNo }).IsUnique();
         builder.HasIndex(s => s.Title);
@@ -21,24 +20,23 @@ public class SongBookConfiguration : IEntityTypeConfiguration<SongBook>
     }
 }
 
-public class SongQueueConfiguration : IEntityTypeConfiguration<SongQueue>
+public class SongQueueConfiguration : IEntityTypeConfiguration<FuncSongListQueues>
 {
-    public void Configure(EntityTypeBuilder<SongQueue> builder)
+    public void Configure(EntityTypeBuilder<FuncSongListQueues> builder)
     {
-        builder.ToTable("FuncSongListQueues");
 
-        builder.HasOne(s => s.StreamerProfile)
+        builder.HasOne(s => s.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(s => s.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(s => s.GlobalViewer)
+        builder.HasOne(s => s.CoreGlobalViewers)
                .WithMany()
                .HasForeignKey(s => s.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);
 
         // [v6.2.2] 노래책 연동 (선택 사항)
-        builder.HasOne(s => s.SongBook)
+        builder.HasOne(s => s.FuncSongBooks)
                .WithMany()
                .HasForeignKey(s => s.SongBookId)
                .OnDelete(DeleteBehavior.SetNull); // 노래책 항목이 삭제되어도 신청 기록은 유지
@@ -58,13 +56,12 @@ public class SongQueueConfiguration : IEntityTypeConfiguration<SongQueue>
     }
 }
 
-public class SonglistSessionConfiguration : IEntityTypeConfiguration<SonglistSession>
+public class SonglistSessionConfiguration : IEntityTypeConfiguration<FuncSongListSessions>
 {
-    public void Configure(EntityTypeBuilder<SonglistSession> builder)
+    public void Configure(EntityTypeBuilder<FuncSongListSessions> builder)
     {
-        builder.ToTable("FuncSongListSessions");
 
-        builder.HasOne(s => s.StreamerProfile)
+        builder.HasOne(s => s.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(s => s.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
@@ -73,13 +70,12 @@ public class SonglistSessionConfiguration : IEntityTypeConfiguration<SonglistSes
     }
 }
 
-public class StreamerOmakaseItemConfiguration : IEntityTypeConfiguration<StreamerOmakaseItem>
+public class StreamerOmakaseItemConfiguration : IEntityTypeConfiguration<FuncSongListOmakases>
 {
-    public void Configure(EntityTypeBuilder<StreamerOmakaseItem> builder)
+    public void Configure(EntityTypeBuilder<FuncSongListOmakases> builder)
     {
-        builder.ToTable("FuncSongListOmakases");
         
-        builder.HasOne(o => o.StreamerProfile)
+        builder.HasOne(o => o.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(o => o.StreamerProfileId)
                .IsRequired(false)
@@ -88,11 +84,10 @@ public class StreamerOmakaseItemConfiguration : IEntityTypeConfiguration<Streame
 }
 
 // 🎵 [v12.0] 중앙 병기창 (Media Library) 매핑
-public class MasterSongLibraryConfiguration : IEntityTypeConfiguration<Master_SongLibrary>
+public class MasterSongLibraryConfiguration : IEntityTypeConfiguration<FuncSongMasterLibrary>
 {
-    public void Configure(EntityTypeBuilder<Master_SongLibrary> builder)
+    public void Configure(EntityTypeBuilder<FuncSongMasterLibrary> builder)
     {
-        builder.ToTable("FuncSongMasterLibrary");
         
         builder.HasIndex(e => e.SongLibraryId).IsUnique(); 
         builder.HasIndex(e => e.YoutubeUrl);
@@ -106,22 +101,20 @@ public class MasterSongLibraryConfiguration : IEntityTypeConfiguration<Master_So
 }
 
 // [v12.5] 스트리머 라이브러리
-public class StreamerSongLibraryConfiguration : IEntityTypeConfiguration<Streamer_SongLibrary>
+public class StreamerSongLibraryConfiguration : IEntityTypeConfiguration<FuncSongStreamerLibrary>
 {
-    public void Configure(EntityTypeBuilder<Streamer_SongLibrary> builder)
+    public void Configure(EntityTypeBuilder<FuncSongStreamerLibrary> builder)
     {
-        builder.ToTable("FuncSongStreamerLibrary");
         
         builder.HasIndex(e => e.SongLibraryId).IsUnique();
         builder.HasIndex(e => new { e.StreamerProfileId, e.SongLibraryId }).IsUnique();
     }
 }
 
-public class MasterSongStagingConfiguration : IEntityTypeConfiguration<Master_SongStaging>
+public class MasterSongStagingConfiguration : IEntityTypeConfiguration<FuncSongMasterStaging>
 {
-    public void Configure(EntityTypeBuilder<Master_SongStaging> builder)
+    public void Configure(EntityTypeBuilder<FuncSongMasterStaging> builder)
     {
-        builder.ToTable("FuncSongMasterStaging");
         
         builder.HasIndex(e => e.SongLibraryId).IsUnique(); 
         builder.HasIndex(e => e.CreatedAt); // [v13.1] 백그라운드 삭제 성능 향상

@@ -21,11 +21,11 @@ public class ZeroingWorker(IServiceProvider serviceProvider,
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var pulse = scope.ServiceProvider.GetRequiredService<PulseService>();
-        var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
-
+        using var Scope = scopeFactory.CreateScope();
+        var Pulse = Scope.ServiceProvider.GetRequiredService<PulseService>();
+        var Mediator = Scope.ServiceProvider.GetRequiredService<ISender>();
+ 
         _logger.LogInformation("🛡️ [영점 조절] 함대 동기화 명령을 하달합니다.");
-        await mediator.Send(new SyncFleetConnectionsCommand(), ct);
+        await Mediator.Send(new SyncFleetConnectionsCommand(), ct);
     }
 }

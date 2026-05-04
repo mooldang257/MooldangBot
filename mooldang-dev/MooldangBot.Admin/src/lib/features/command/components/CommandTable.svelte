@@ -3,20 +3,20 @@
     import { fade } from 'svelte/transition';
     import { apiFetch } from '$lib/api/client'; // [Osiris] 표준 통신 모듈 주입
 
-    export let allCommands: any[] = [];
-    export let masterData: any;
-    export let chzzkUid: string;
-    export let onEdit: (cmd: any) => void;
-    export let onDelete: (id: number) => Promise<void>;
+    export let AllCommands: any[] = [];
+    export let MasterData: any;
+    export let ChzzkUid: string;
+    export let OnEdit: (cmd: any) => void;
+    export let OnDelete: (id: number) => Promise<void>;
 
     let searchQuery = '';
-    let sortColumn = 'keyword';
+    let sortColumn = 'Keyword';
     let sortOrder: 'asc' | 'desc' = 'asc';
 
-    $: filteredCommands = allCommands
+    $: filteredCommands = AllCommands
         .filter(c => 
-            (c.keyword || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (c.responseText || '').toLowerCase().includes(searchQuery.toLowerCase())
+            (c.Keyword || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (c.ResponseText || '').toLowerCase().includes(searchQuery.toLowerCase())
         )
         .sort((a, b) => {
             let valA = a[sortColumn];
@@ -31,9 +31,9 @@
 
     async function toggleCommand(cmd: any) {
         try {
-            await apiFetch(`/api/command/${chzzkUid}/${cmd.id}/status`, { method: 'PATCH' });
-            cmd.isActive = !cmd.isActive;
-            allCommands = [...allCommands];
+            await apiFetch(`/api/command/${ChzzkUid}/${cmd.Id}/status`, { method: 'PATCH' });
+            cmd.IsActive = !cmd.IsActive;
+            AllCommands = [...AllCommands];
         } catch (err: any) {
             console.error("토글 실패: ", err);
         }
@@ -46,11 +46,11 @@
 
     // [물멍]: 기능 타입별 아이콘 및 표시 이름 매핑 (선장님 지시 사항 반영)
     function getFeatureInfo(featureType: string) {
-        const feat = masterData.features.find((f: any) => f.typeName === featureType);
+        const feat = MasterData.Features.find((f: any) => f.TypeName === featureType);
         
         // [이지스의 방패]: 정의되지 않은 타입에 대한 안전한 Fallback 처리
-        const typeName = feat?.typeName || featureType || "Unknown";
-        const displayName = feat?.displayName || featureType || "미지정 기능";
+        const typeName = feat?.TypeName || featureType || "Unknown";
+        const displayName = feat?.DisplayName || featureType || "미지정 기능";
         
         let icon = '🧩';
         if (typeName === 'Notice') icon = '📢';
@@ -91,59 +91,59 @@
             <thead>
                 <tr class="bg-slate-50/50">
                     <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">활성</th>
-                    <th on:click={() => toggleSort('requiredRole')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap">
+                    <th on:click={() => toggleSort('RequiredRole')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap">
                         <div class="flex items-center gap-2">권한 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
-                    <th on:click={() => toggleSort('featureType')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap">
+                    <th on:click={() => toggleSort('FeatureType')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group whitespace-nowrap">
                         <div class="flex items-center gap-2">기능 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
-                    <th on:click={() => toggleSort('keyword')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group">
+                    <th on:click={() => toggleSort('Keyword')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest cursor-pointer group">
                         <div class="flex items-center gap-2">키워드 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
                     <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">응답 내용</th>
-                    <th on:click={() => toggleSort('cost')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
+                    <th on:click={() => toggleSort('Cost')} class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer group">
                         <div class="flex items-center justify-center gap-2">비용 <ArrowUpDown size={12} class="group-hover:text-primary transition-colors" /></div>
                     </th>
                     <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">관리</th>
                 </tr>
             </thead>
             <tbody>
-                {#each filteredCommands as cmd (cmd.id)}
+                {#each filteredCommands as cmd (cmd.Id)}
                     <tr class="border-t border-slate-50 hover:bg-sky-50/20 transition-all group/row" in:fade>
                         <td class="p-6 text-center">
-                            <button on:click={() => toggleCommand(cmd)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.isActive ? 'bg-emerald-500' : 'bg-slate-300'}">
-                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {cmd.isActive ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
+                            <button on:click={() => toggleCommand(cmd)} class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {cmd.IsActive ? 'bg-emerald-500' : 'bg-slate-300'}">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {cmd.IsActive ? 'translate-x-6' : 'translate-x-1'} shadow-sm"></span>
                             </button>
                         </td>
                         <td class="p-6 whitespace-nowrap">
-                            <div class="flex items-center gap-2 text-xs font-black {cmd.requiredRole === 'Streamer' ? 'text-rose-500' : cmd.requiredRole === 'Manager' ? 'text-amber-500' : 'text-slate-500'}">
+                            <div class="flex items-center gap-2 text-xs font-black {cmd.RequiredRole === 'Streamer' ? 'text-rose-500' : cmd.RequiredRole === 'Manager' ? 'text-amber-500' : 'text-slate-500'}">
                                 <Shield size={14} />
-                                {cmd.requiredRole}
+                                {cmd.RequiredRole}
                             </div>
                         </td>
                         <td class="p-6 whitespace-nowrap">
                             <div class="flex items-center gap-2">
                                 <span class="text-lg">
-                                    {getFeatureInfo(cmd.featureType).icon}
+                                    {getFeatureInfo(cmd.FeatureType).icon}
                                 </span>
                                 <span class="px-3 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-[1000] text-slate-500 shadow-sm uppercase tracking-tighter">
-                                    {getFeatureInfo(cmd.featureType).displayName}
+                                    {getFeatureInfo(cmd.FeatureType).displayName}
                                 </span>
                             </div>
                         </td>
                         <td class="p-6 whitespace-nowrap">
                             <span class="text-sm font-black text-primary bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
-                                {cmd.keyword}
+                                {cmd.Keyword}
                             </span>
                         </td>
                         <td class="p-6">
-                            <p class="text-sm font-bold text-slate-600 line-clamp-1 max-w-sm group-hover/row:line-clamp-none transition-all">{cmd.responseText || '-'}</p>
+                            <p class="text-sm font-bold text-slate-600 line-clamp-1 max-w-sm group-hover/row:line-clamp-none transition-all">{cmd.ResponseText || '-'}</p>
                         </td>
                         <td class="p-6 text-center">
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black {cmd.cost > 0 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-300 border border-slate-100'} shadow-sm">
-                                {#if cmd.cost > 0}
-                                    <span>{cmd.cost.toLocaleString()}</span>
-                                    <span>{cmd.costType === 'Point' ? '🅿️' : '🧀'}</span>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black {cmd.Cost > 0 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-300 border border-slate-100'} shadow-sm">
+                                {#if cmd.Cost > 0}
+                                    <span>{cmd.Cost.toLocaleString()}</span>
+                                    <span>{cmd.CostType === 'Point' ? '🅿️' : '🧀'}</span>
                                 {:else}
                                     FREE
                                 {/if}
@@ -151,10 +151,10 @@
                         </td>
                         <td class="p-6">
                             <div class="flex items-center justify-center gap-2 transition-all">
-                                <button on:click={() => onEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
+                                <button on:click={() => OnEdit(cmd)} class="p-2.5 rounded-xl bg-white border border-sky-100 text-primary hover:bg-primary hover:text-white hover:shadow-lg transition-all shadow-sm">
                                     <Edit2 size={18} />
                                 </button>
-                                <button on:click={() => onDelete(cmd.id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm">
+                                <button on:click={() => OnDelete(cmd.Id)} class="p-2.5 rounded-xl bg-white border border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:shadow-lg transition-all shadow-sm">
                                     <Trash2 size={18} />
                                 </button>
                             </div>

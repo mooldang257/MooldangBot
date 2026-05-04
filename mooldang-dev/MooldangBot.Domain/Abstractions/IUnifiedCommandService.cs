@@ -11,7 +11,7 @@ namespace MooldangBot.Domain.Abstractions;
 public interface IUnifiedCommandService
 {
     Task<CursorPagedResponse<UnifiedCommandDto>> GetPagedCommandsAsync(string chzzkUid, CursorPagedRequest request);
-    Task<UnifiedCommand> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req);
+    Task<FuncCmdUnified> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req);
     Task DeleteCommandAsync(string chzzkUid, int id);
     Task ToggleCommandAsync(string chzzkUid, int id);
     Task InitializeDefaultCommandsAsync(string chzzkUid);

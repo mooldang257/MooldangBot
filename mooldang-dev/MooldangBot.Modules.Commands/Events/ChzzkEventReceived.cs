@@ -10,7 +10,7 @@ namespace MooldangBot.Modules.Commands.Events;
 /// </summary>
 public record ChzzkEventReceived(
     Guid MessageId,
-    StreamerProfile Profile,
+    CoreStreamerProfiles Profile,
     ChzzkEventBase Payload,
     DateTimeOffset ReceivedAt
 ) : INotification, IEvent

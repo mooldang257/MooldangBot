@@ -78,10 +78,10 @@ public class CommandCacheService : ICommandCache
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
 
-            var commandEntities = await db.SysUnifiedCommands
+            var commandEntities = await db.TableFuncCmdUnified
                 .AsNoTracking()
-                .Include(c => c.StreamerProfile)
-                .Where(c => c.StreamerProfile!.ChzzkUid == normalizedUid)
+                .Include(c => c.CoreStreamerProfiles)
+                .Where(c => c.CoreStreamerProfiles!.ChzzkUid == normalizedUid)
                 .ToListAsync(ct);
 
             var metadataDict = new ConcurrentDictionary<int, CommandMetadata>();

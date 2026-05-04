@@ -1,5 +1,5 @@
 ⚖️ [오시리스의 저울]: 모든 필수 환경 변수 검증 완료. 기동을 계속합니다.
-[06:32:54 INF] Configured endpoint command-execution-saga, Saga: MooldangBot.Infrastructure.Sagas.CommandExecutionSagaState, State Machine: MooldangBot.Infrastructure.Sagas.CommandExecutionSaga
+[06:32:54 INF] Configured endpoint command-execution-saga, Saga: MooldangBot.Infrastructure.Sagas.SysSagaCommandExecutions, State Machine: MooldangBot.Infrastructure.Sagas.CommandExecutionSaga
 [06:32:54 INF] Configured endpoint ChatReceived, Consumer: MooldangBot.Application.Consumers.ChatReceivedConsumer
 [06:32:54 INF] Configured endpoint CommandLogIntegration, Consumer: MooldangBot.Application.Consumers.CommandLogIntegrationConsumer
 [06:32:54 INF] Configured endpoint DonationReceived, Consumer: MooldangBot.Application.Consumers.DonationReceivedConsumer
@@ -7,57 +7,57 @@
 [06:32:54 INF] 🛠️ [오시리스의 시동] 데이터베이스 마이그레이션을 적용 중...
 [06:32:54 WRN] The type 'MooldangBot.Infrastructure.Persistence.Configurations.GlobalViewerConfiguration' was found while scanning assemblies but could not instantiated because it does not have a parameterless constructor.
 [06:32:55 WRN] The type 'MooldangBot.Infrastructure.Persistence.Configurations.StreamerProfileConfiguration' was found while scanning assemblies but could not instantiated because it does not have a parameterless constructor.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'ChatInteractionLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'CommandExecutionLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'Roulette' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteStats'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'OverlayPreset'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'PeriodicMessage'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'BroadcastSession' has a global query filter defined and is the required end of a relationship with the entity 'BroadcastHistoryLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'IamfStreamerSetting'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'IamfVibrationLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'StreamerKnowledge'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'PointDailySummary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'PointTransactionHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'Roulette' has a global query filter defined and is the required end of a relationship with the entity 'RouletteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'RouletteLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'RouletteSpin'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'SharedComponent'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'SoundAsset'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'StreamerManager'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'Streamer_SongLibrary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerDonation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerDonationHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerPoint'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogChatInteractions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogCommandExecutions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'FuncRouletteMain' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteStats'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysOverlayPresets'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysPeriodicMessages'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'SysBroadcastSessions' has a global query filter defined and is the required end of a relationship with the entity 'LogBroadcastHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'IamfStreamerSettings'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogIamfVibrations'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysStreamerKnowledges'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogPointDailySummaries'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogPointTransactions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'FuncRouletteMain' has a global query filter defined and is the required end of a relationship with the entity 'FuncRouletteItems'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteResults'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncRouletteSpins'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysSharedComponents'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'FuncSoundAssets'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'CoreStreamerManagers'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'FuncSongStreamerLibrary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerDonations'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerDonationHistories'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerPoints'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
 [06:32:55 WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
-[06:32:55 WRN] The property 'Master_SongLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
-[06:32:55 WRN] The property 'SongBook.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
-[06:32:55 WRN] The property 'Streamer_SongLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] The property 'FuncSongMasterLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] The property 'FuncSongBooks.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] The property 'FuncSongStreamerLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
 [06:32:55 WRN] The type 'MooldangBot.Infrastructure.Persistence.Configurations.GlobalViewerConfiguration' was found while scanning assemblies but could not instantiated because it does not have a parameterless constructor.
 [06:32:55 WRN] The type 'MooldangBot.Infrastructure.Persistence.Configurations.StreamerProfileConfiguration' was found while scanning assemblies but could not instantiated because it does not have a parameterless constructor.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'ChatInteractionLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'CommandExecutionLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'Roulette' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteStats'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'OverlayPreset'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'PeriodicMessage'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'BroadcastSession' has a global query filter defined and is the required end of a relationship with the entity 'BroadcastHistoryLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'IamfStreamerSetting'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'IamfVibrationLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'StreamerKnowledge'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'PointDailySummary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'PointTransactionHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'Roulette' has a global query filter defined and is the required end of a relationship with the entity 'RouletteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'RouletteLog'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'RouletteSpin'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'SharedComponent'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'SoundAsset'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'StreamerManager'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'StreamerProfile' has a global query filter defined and is the required end of a relationship with the entity 'Streamer_SongLibrary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerDonation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerDonationHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] Entity 'GlobalViewer' has a global query filter defined and is the required end of a relationship with the entity 'ViewerPoint'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-[06:32:55 WRN] The property 'Master_SongLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
-[06:32:55 WRN] The property 'SongBook.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
-[06:32:55 WRN] The property 'Streamer_SongLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogChatInteractions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogCommandExecutions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'FuncRouletteMain' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteStats'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysOverlayPresets'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysPeriodicMessages'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'SysBroadcastSessions' has a global query filter defined and is the required end of a relationship with the entity 'LogBroadcastHistory'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'IamfStreamerSettings'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogIamfVibrations'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysStreamerKnowledges'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'LogPointDailySummaries'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogPointTransactions'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'FuncRouletteMain' has a global query filter defined and is the required end of a relationship with the entity 'FuncRouletteItems'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'LogRouletteResults'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncRouletteSpins'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'SysSharedComponents'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'FuncSoundAssets'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'CoreStreamerManagers'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreStreamerProfiles' has a global query filter defined and is the required end of a relationship with the entity 'FuncSongStreamerLibrary'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerDonations'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerDonationHistories'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] Entity 'CoreGlobalViewers' has a global query filter defined and is the required end of a relationship with the entity 'FuncViewerPoints'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+[06:32:55 WRN] The property 'FuncSongMasterLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] The property 'FuncSongBooks.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+[06:32:55 WRN] The property 'FuncSongStreamerLibrary.TitleVector' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
 [06:32:55 ERR] The model for context 'AppDbContext' has pending changes. Add a new migration before updating the database. See https://aka.ms/efcore-docs-pending-changes.
 [06:32:55 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
 SELECT GET_LOCK('__MooldangBot_EFMigrationsLock', 259200)
@@ -124,7 +124,7 @@ WHERE NOT (`s`.`is_deleted`) AND (`s`.`is_active` AND (`s`.`last_heartbeat_at` <
 [06:32:55 INF] 🚀 [오시리스 엔진] PeriodicMessageWorker 기동 시작 (지휘관 지침 대기 중)
 [06:32:55 INF] 🚀 [오시리스 엔진] StagingCleanupWorker 기동 시작 (지휘관 지침 대기 중)
 [06:32:55 INF] 📢 [정기 메시지] 방송 모듈로 송출 명령을 하달합니다.
-[06:32:55 DBG] [SongBook] 만료된 스테이징 데이터 정찰을 시작합니다.
+[06:32:55 DBG] [FuncSongBooks] 만료된 스테이징 데이터 정찰을 시작합니다.
 [06:32:55 INF] 🚀 [Broadcast] 정기 메시지 송출 작업 시작...
 [06:32:55 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id`, `c`.`active_overlay_preset_id`, `c`.`bot_nickname`, `c`.`channel_name`, `c`.`chzzk_access_token`, `c`.`chzzk_refresh_token`, `c`.`chzzk_uid`, `c`.`client_id`, `c`.`client_secret`, `c`.`created_at`, `c`.`deleted_at`, `c`.`design_settings_json`, `c`.`is_active`, `c`.`is_auto_accumulate_donation`, `c`.`is_deleted`, `c`.`is_master_enabled`, `c`.`notice_memo`, `c`.`overlay_token`, `c`.`overlay_token_version`, `c`.`point_per_attendance`, `c`.`point_per_chat`, `c`.`point_per_donation1000`, `c`.`profile_image_url`, `c`.`redirect_url`, `c`.`slug`, `c`.`token_expires_at`, `c`.`updated_at`
@@ -658,7 +658,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:33:19 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:33:19 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:33:19 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:33:19 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:33:19 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:33:19 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -708,7 +708,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:33:20 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -728,7 +728,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -749,7 +749,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
 [06:33:20 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 193537ac-8f36-4771-a267-9b5fca0c1eda)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -773,7 +773,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:33:21 INF] [기록관의 수레] 1개의 진동 로그를 벌크 저장합니다.
 [06:33:21 ERR] [기록관의 수레] 벌크 인서트 실패
@@ -1400,7 +1400,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:33:56 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:33:56 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:33:56 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:33:56 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:33:56 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:33:56 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -1445,7 +1445,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:33:56 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1465,7 +1465,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1488,7 +1488,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:33:56 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 3e7f8952-9227-437b-9e82-78d337ede32a)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1512,7 +1512,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:33:57 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:33:57 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -1546,7 +1546,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:33:57 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:33:57 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:33:57 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:33:57 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:33:57 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:33:57 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -1612,7 +1612,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:33:57 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:33:57 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:33:57 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:33:57 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:33:57 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:33:57 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -1657,7 +1657,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:33:57 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1677,7 +1677,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1700,7 +1700,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:33:57 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 79b9e437-0703-4576-a1f6-d8f2dbb06457)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1724,7 +1724,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:33:57 INF] [기록관의 수레] 3개의 진동 로그를 벌크 저장합니다.
 [06:33:57 ERR] [기록관의 수레] 벌크 인서트 실패
@@ -1745,7 +1745,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:33:58 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1765,7 +1765,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1787,7 +1787,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:33:58 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 9a13b76d-ab6f-4f48-804f-154f38dad0e7)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1811,7 +1811,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:33:59 INF] Execution attempt. Source: 'ChzzkGateway-standard//Standard-Retry', Operation Key: 'null', Result: '200', Handled: 'False', Attempt: '0', Execution Time: 0.6913ms
 [06:33:59 INF] 📡 [Gateway Proxy] 1개의 샤드 상태를 수신했습니다.
@@ -1848,7 +1848,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:02 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:02 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:02 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:02 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:02 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:02 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -1893,7 +1893,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:02 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1913,7 +1913,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1935,7 +1935,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:34:02 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: a0981b75-5e4f-4e9a-848d-5b3d0907d0cf)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -1959,7 +1959,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:02 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:34:02 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -1993,7 +1993,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:02 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:02 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:02 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:02 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:02 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:02 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2038,7 +2038,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:03 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2058,7 +2058,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2080,7 +2080,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:34:03 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 23ea5a9a-0f51-4dea-9379-7431a1a1bc5d)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2104,7 +2104,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:03 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:34:03 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -2138,7 +2138,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:03 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:03 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:03 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:03 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:03 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:03 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2183,7 +2183,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:03 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2203,7 +2203,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2226,7 +2226,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:34:03 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 5e98d8d6-aebc-4437-b80d-aa505101d1fe)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2250,7 +2250,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:03 INF] [기록관의 수레] 3개의 진동 로그를 벌크 저장합니다.
 [06:34:03 ERR] [기록관의 수레] 벌크 인서트 실패
@@ -2313,7 +2313,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:14 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:14 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:14 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:14 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:14 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:14 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2379,7 +2379,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:15 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:15 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:15 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:15 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:15 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:15 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2424,7 +2424,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:15 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2444,7 +2444,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2469,7 +2469,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
 [06:34:15 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 002d916d-de84-44c7-896f-fa209098ce72)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2493,7 +2493,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:15 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:34:15 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -2527,7 +2527,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:15 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:15 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:15 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:15 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:15 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:15 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2572,7 +2572,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:15 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2592,7 +2592,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2615,7 +2615,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:34:15 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 01b32bc3-9435-411f-99a2-727d79a29ed4)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2639,7 +2639,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:15 INF] 🔄 [WriteBack] 1건의 스냅샷(d6f51c86f81b4b699e832497b8506907) 동기화를 시도합니다.
 [06:34:15 INF] ✅ [WriteBack] 스냅샷 d6f51c86f81b4b699e832497b8506907 동기화 및 정리 완료!
@@ -2662,7 +2662,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:15 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2682,7 +2682,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2707,7 +2707,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at System.Runtime.CompilerServices.TaskAwaiter`1.GetResult()
 [06:34:15 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 4d42e3ba-5db4-4ed0-b83f-04a34047c767)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -2731,7 +2731,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:16 INF] Executed DbCommand (3ms) [Parameters=[@__AddSeconds_0='2026-04-28T15:34:21.1145597' (DbType = DateTime), @__p_1='10'], CommandType='Text', CommandTimeout='10']
 SELECT `f0`.`id`, `f0`.`created_at`, `f0`.`global_viewer_id`, `f0`.`is_completed`, `f0`.`results_json`, `f0`.`roulette_id`, `f0`.`scheduled_time`, `f0`.`streamer_profile_id`, `f0`.`summary`, `c0`.`id`, `c0`.`active_overlay_preset_id`, `c0`.`bot_nickname`, `c0`.`channel_name`, `c0`.`chzzk_access_token`, `c0`.`chzzk_refresh_token`, `c0`.`chzzk_uid`, `c0`.`client_id`, `c0`.`client_secret`, `c0`.`created_at`, `c0`.`deleted_at`, `c0`.`design_settings_json`, `c0`.`is_active`, `c0`.`is_auto_accumulate_donation`, `c0`.`is_deleted`, `c0`.`is_master_enabled`, `c0`.`notice_memo`, `c0`.`overlay_token`, `c0`.`overlay_token_version`, `c0`.`point_per_attendance`, `c0`.`point_per_chat`, `c0`.`point_per_donation1000`, `c0`.`profile_image_url`, `c0`.`redirect_url`, `c0`.`slug`, `c0`.`token_expires_at`, `c0`.`updated_at`
@@ -2937,7 +2937,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:34 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:34 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:34 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:34 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:34 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:34 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -2982,7 +2982,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:34 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3002,7 +3002,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3026,7 +3026,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
 [06:34:34 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 6d33b893-bb0e-43cb-9230-76b052a65441)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3050,7 +3050,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:34 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:34:34 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -3084,7 +3084,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:34 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:34 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:34 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:34 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:34 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:34 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -3129,7 +3129,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:35 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3149,7 +3149,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3172,7 +3172,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
 [06:34:35 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 4f83c48c-de99-4c45-ac5f-0ddb22695ced)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3196,7 +3196,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:35 INF] 💰 [DonationConsumer] Received donation: 1000 from TEST (Msg: 유저가 입력한 후원메시지입니다)
 [06:34:35 INF] 💰 [후원 포인트] TEST님 1000원 후원 -> 100포인트 적립 시도
@@ -3230,7 +3230,7 @@ WHERE NOT (`c`.`is_deleted`) AND (`c`.`chzzk_uid` = @__chzzkUid_0)
 LIMIT 1
 [06:34:35 INF] 💡 [CommandCache] IsMatch('유저가 입력한 후원메시지입니다', '유저가') MatchType=Prefix Result=True
 [06:34:35 DBG] 🤔 [CommandCache] Checking '유저가' against '유저가 입력한 후원메시지입니다': Matched=True
-[06:34:35 INF] 🔍 [UnifiedCommand] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
+[06:34:35 INF] 🔍 [FuncCmdUnified] Matched 1 commands. Primary: 유저가 (Feature: SongRequest)
 [06:34:35 INF] 💳 [Billing] Processing: 0 None for c74931e68d4d90ce9f11d6f343c1d54c
 [06:34:35 INF] Executed DbCommand (0ms) [Parameters=[@__request_StreamerUid_0='c74931e68d4d90ce9f11d6f343c1d54c' (Size = 50)], CommandType='Text', CommandTimeout='10']
 SELECT `c`.`id` AS `Id`, `c`.`chzzk_uid` AS `ChzzkUid`
@@ -3275,7 +3275,7 @@ FROM (
 ) AS `m`
 WHERE NOT (`m`.`is_deleted`)
 [06:34:35 ERR] An exception occurred while iterating over the results of a query for context type 'MooldangBot.Infrastructure.Persistence.AppDbContext'.
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3295,7 +3295,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
    at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3320,7 +3320,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
 [06:34:35 ERR] ❌ [BridgeHandler] 브릿지 실행 중 치명적 오류 발생. (CorrelationId: 6cd05b18-9dfa-4038-b652-2e9f8aa59c1b)
-System.InvalidOperationException: An error occurred while reading a database value for property 'SongBook.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
+System.InvalidOperationException: An error occurred while reading a database value for property 'FuncSongBooks.TitleVector'. The expected type was 'System.Single[]' but the actual value was of type 'System.Byte[]'.
  ---> System.InvalidCastException: Unable to cast object of type 'System.Byte[]' to type 'System.String'.
    at MySqlConnector.MySqlDataReader.GetString(Int32 ordinal) in /_/src/MySqlConnector/MySqlDataReader.cs:line 299
    at lambda_method2163(Closure, DbDataReader, Int32[])
@@ -3344,7 +3344,7 @@ System.InvalidOperationException: An error occurred while reading a database val
    at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
    at MooldangBot.Modules.SongBook.Persistence.SongBookRepository.SearchPersonalSongBookAsync(Int32 streamerProfileId, String query, Single[] vector, Int32 limit) in /src/MooldangBot.Modules.SongBook/Persistence/SongBookRepository.cs:line 87
    at MooldangBot.Modules.SongBook.Features.Commands.AddSongRequestCommandHandler.Handle(AddSongRequestCommand request, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Commands/AddSongRequestCommand.cs:line 51
-   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
+   at MooldangBot.Modules.SongBook.Features.Strategies.SongRequestStrategy.ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct) in /src/MooldangBot.Modules.SongBook/Features/Strategies/SongRequestStrategy.cs:line 35
    at MooldangBot.Modules.Commands.Handlers.FeatureExecutionBridgeHandler.Handle(CommandExecutedEvent notification, CancellationToken ct) in /src/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs:line 85
 [06:34:35 INF] 🔄 [WriteBack] 1건의 스냅샷(f48738cf9c9b464f93d9539b876317d3) 동기화를 시도합니다.
 [06:34:35 INF] ✅ [WriteBack] 스냅샷 f48738cf9c9b464f93d9539b876317d3 동기화 및 정리 완료!

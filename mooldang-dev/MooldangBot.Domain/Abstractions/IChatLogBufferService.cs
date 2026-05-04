@@ -13,12 +13,12 @@ public interface IChatLogBufferService
     /// <summary>
     /// 로그를 큐에 즉시 삽입합니다. (비차단)
     /// </summary>
-    void Enqueue(ChatInteractionLog log);
+    void Enqueue(LogChatInteractions log);
 
     /// <summary>
     /// 저장된 모든 로그를 채널에서 적출하여 반환합니다.
     /// </summary>
-    IAsyncEnumerable<ChatInteractionLog> DrainAllAsync(CancellationToken ct);
+    IAsyncEnumerable<LogChatInteractions> DrainAllAsync(CancellationToken ct);
 
     /// <summary>
     /// 채널을 완료 상태로 변경합니다.

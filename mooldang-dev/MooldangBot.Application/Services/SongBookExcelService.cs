@@ -4,83 +4,129 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using MiniExcelLibs;
+
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Application.Common.Utils;
 using MooldangBot.Domain.Abstractions;
+using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Common;
 using MooldangBot.Domain.DTOs;
-using MooldangBot.Domain.Entities;
+using MediatR;
+using MooldangBot.Domain.Contracts.SongBook.Events;
 
 namespace MooldangBot.Application.Services;
 
 /// <summary>
-/// [v19.0] MiniExcel 기반 노래책 고속 일괄 처리 구현체 (High-Speed Ingestion)
+/// [v19.0] ClosedXML 기반 노래책 일괄 처리 구현체
 /// </summary>
 public class SongBookExcelService(
     IAppDbContext dbContext,
-    ISongLibraryService libraryService) : ISongBookExcelService
+    ISongLibraryService libraryService,
+    IMediator mediator) : ISongBookExcelService
 {
     private readonly IAppDbContext _db = dbContext;
     private readonly ISongLibraryService _libraryService = libraryService;
+    private readonly IMediator _mediator = mediator;
+
+    // [컬럼 이름 정의]: 내보내기/가져오기 시 공유됨
+    private const string ColId = "번호";
+    private const string ColTitle = "곡 제목";
+    private const string ColArtist = "아티스트/가수";
+    private const string ColCategory = "카테고리";
+    private const string ColPitch = "키(Pitch)";
+    private const string ColProficiency = "숙련도";
+    private const string ColYoutube = "유튜브 링크";
+    private const string ColLyrics = "가사 링크";
+    private const string ColThumbnail = "섬네일 링크";
+    private const string ColPoints = "필요포인트";
+    private const string ColAlias = "검색태그";
+
+    private static readonly string[] ExcelHeaders = 
+    [ 
+        ColId, ColTitle, ColArtist, ColCategory, ColPitch, 
+        ColProficiency, ColYoutube, ColLyrics, ColThumbnail, 
+        ColPoints, ColAlias 
+    ];
 
     public async Task<Stream> ExportSongBookAsync(int streamerProfileId)
     {
-        // 1. 현재 노래책 데이터 조회 (가장 최근 등록순)
-        var songs = await _db.FuncSongBooks
+        // 1. 데이터 조회 (활성 곡 & 삭제된 곡 분리)
+        var allSongs = await _db.TableFuncSongBooks
+            .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(s => s.StreamerProfileId == streamerProfileId && !s.IsDeleted)
+            .Where(s => s.StreamerProfileId == streamerProfileId)
             .OrderBy(s => s.SongNo)
             .ToListAsync();
 
-        // 2. ClosedXML을 사용하여 엑셀 생성 (콤보박스 지원을 위함)
+        var activeSongs = allSongs.Where(s => !s.IsDeleted).ToList();
+        var deletedSongs = allSongs.Where(s => s.IsDeleted).ToList();
+
+        // 2. ClosedXML을 사용하여 엑셀 생성
         using var workbook = new ClosedXML.Excel.XLWorkbook();
-        var worksheet = workbook.Worksheets.Add("노래책");
+        
+        // --- 시트 1: 활성 노래책 ---
+        var sheet1 = workbook.Worksheets.Add("노래책");
+        for (int i = 0; i < ExcelHeaders.Length; i++) sheet1.Cell(1, i + 1).Value = ExcelHeaders[i];
 
-        // 헤더 설정
-        var headers = new[] { "Id", "Title", "Artist", "Category", "Pitch", "Proficiency", "Youtube", "Lyrics", "Thumbnail", "Points", "Alias" };
-        for (int i = 0; i < headers.Length; i++)
+        for (int i = 0; i < activeSongs.Count; i++)
         {
-            worksheet.Cell(1, i + 1).Value = headers[i];
-        }
-
-        // 데이터 채우기
-        for (int i = 0; i < songs.Count; i++)
-        {
-            var song = songs[i];
+            var song = activeSongs[i];
             int row = i + 2;
-            worksheet.Cell(row, 1).Value = song.SongNo;
-            worksheet.Cell(row, 2).Value = song.Title;
-            worksheet.Cell(row, 3).Value = song.Artist;
-            worksheet.Cell(row, 4).Value = song.Category;
-            worksheet.Cell(row, 5).Value = song.Pitch ?? "원키";
-            worksheet.Cell(row, 6).Value = song.Proficiency ?? "완창";
-            worksheet.Cell(row, 7).Value = song.ReferenceUrl;
-            worksheet.Cell(row, 8).Value = song.LyricsUrl;
-            worksheet.Cell(row, 9).Value = song.ThumbnailUrl;
-            worksheet.Cell(row, 10).Value = song.RequiredPoints;
-            worksheet.Cell(row, 11).Value = song.Alias;
+            sheet1.Cell(row, 1).Value = song.SongNo;
+            sheet1.Cell(row, 2).Value = song.Title;
+            sheet1.Cell(row, 3).Value = song.Artist;
+            sheet1.Cell(row, 4).Value = song.Category;
+            sheet1.Cell(row, 5).Value = song.Pitch ?? "원키";
+            sheet1.Cell(row, 6).Value = song.Proficiency ?? "완창";
+            sheet1.Cell(row, 7).Value = song.ReferenceUrl;
+            sheet1.Cell(row, 8).Value = song.LyricsUrl;
+            sheet1.Cell(row, 9).Value = song.ThumbnailUrl;
+            sheet1.Cell(row, 10).Value = song.RequiredPoints;
+            sheet1.Cell(row, 11).Value = song.Alias;
         }
 
-        // 3. [오시리스의 편의]: 콤보박스(데이터 유효성 검사) 설정
-        // Pitch (E열)
-        var pitchList = new[] { "원키", "-6", "-5", "-4", "-3", "-2", "-1", "+1", "+2", "+3", "+4", "+5", "+6" };
-        var pitchRange = worksheet.Range(2, 5, 2000, 5); // 최대 2000행까지 지원
-        pitchRange.CreateDataValidation().List(string.Join(",", pitchList));
+        // --- 시트 2: 삭제된 곡 목록 (조회용) ---
+        var sheet2 = workbook.Worksheets.Add("삭제된 곡 목록");
+        for (int i = 0; i < ExcelHeaders.Length; i++) sheet2.Cell(1, i + 1).Value = ExcelHeaders[i];
 
-        // Proficiency (F열)
-        var profList = new[] { "완창", "1절", "연습중", "구걸가능" };
-        var profRange = worksheet.Range(2, 6, 2000, 6);
-        profRange.CreateDataValidation().List(string.Join(",", profList));
+        for (int i = 0; i < deletedSongs.Count; i++)
+        {
+            var song = deletedSongs[i];
+            int row = i + 2;
+            sheet2.Cell(row, 1).Value = song.SongNo;
+            sheet2.Cell(row, 2).Value = song.Title;
+            sheet2.Cell(row, 3).Value = song.Artist;
+            sheet2.Cell(row, 4).Value = song.Category;
+            sheet2.Cell(row, 5).Value = song.Pitch ?? "원키";
+            sheet2.Cell(row, 6).Value = song.Proficiency ?? "완창";
+            sheet2.Cell(row, 7).Value = song.ReferenceUrl;
+            sheet2.Cell(row, 8).Value = song.LyricsUrl;
+            sheet2.Cell(row, 9).Value = song.ThumbnailUrl;
+            sheet2.Cell(row, 10).Value = song.RequiredPoints;
+            sheet2.Cell(row, 11).Value = song.Alias;
+        }
 
-        // 4. 스타일링 및 마무리
-        var headerRow = worksheet.FirstRow();
-        headerRow.Style.Font.Bold = true;
-        headerRow.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#E0F2FE"); // Sky 100
-        headerRow.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
+        // 공통 스타일 적용 (시트 1, 2 모두)
+        foreach (var ws in workbook.Worksheets)
+        {
+            var headerRange = ws.Range(1, 1, 1, ExcelHeaders.Length);
+            headerRange.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#007BFF");
+            headerRange.Style.Font.FontColor = ClosedXML.Excel.XLColor.White;
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
 
-        worksheet.Columns().AdjustToContents();
-        worksheet.Column(2).Width = 30; // Title 컬럼은 조금 더 넓게
+            ws.Columns(1, ExcelHeaders.Length).Width = 20;
+            ws.Column(1).Width = 10; // 번호
+            ws.Column(2).Width = 35; // 곡 제목
+            ws.Column(3).Width = 25; // 아티스트
+            ws.Column(7).Width = 50; // 유튜브
+            ws.Column(8).Width = 50; // 가사
+            ws.Column(9).Width = 50; // 썸네일
+            ws.Column(11).Width = 30; // 검색태그
+
+            int dataRows = ws.RowsUsed().Count();
+            if (dataRows > 0) ws.Range(1, 1, dataRows, ExcelHeaders.Length).SetAutoFilter();
+        }
 
         var memoryStream = new MemoryStream();
         workbook.SaveAs(memoryStream);
@@ -95,12 +141,46 @@ public class SongBookExcelService(
         
         try
         {
-            // 1. 엑셀 데이터 읽기
-            var rows = excelStream.Query<SongBookExcelRow>().ToList();
-            result.TotalCount = rows.Count;
+            // 1. 엑셀 데이터 읽기 (ClosedXML 사용)
+            using var workbook = new ClosedXML.Excel.XLWorkbook(excelStream);
+            var worksheet = workbook.Worksheet(1);
 
-            // 2. 현재 스트리머의 곡 목록 미리 로드 (업데이트 및 SongNo 관리를 위해)
-            var existingSongs = await _db.FuncSongBooks
+            // [헤더 위치 동적 매핑]: 컬럼 순서가 바뀌거나 일부가 없어도 이름만 맞으면 동작함
+            var firstRow = worksheet.Row(1);
+            var colMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var cell in firstRow.CellsUsed())
+            {
+                var headerName = cell.GetValue<string>().Trim();
+                if (!string.IsNullOrEmpty(headerName)) colMap[headerName] = cell.Address.ColumnNumber;
+            }
+
+            // 인덱스 확보 헬퍼
+            int GetCol(string name) => colMap.TryGetValue(name, out int idx) ? idx : -1;
+
+            int colIdIdx = GetCol(ColId);
+            int colTitleIdx = GetCol(ColTitle);
+            int colArtistIdx = GetCol(ColArtist);
+            int colCategoryIdx = GetCol(ColCategory);
+            int colPitchIdx = GetCol(ColPitch);
+            int colProficiencyIdx = GetCol(ColProficiency);
+            int colYoutubeIdx = GetCol(ColYoutube);
+            int colLyricsIdx = GetCol(ColLyrics);
+            int colThumbnailIdx = GetCol(ColThumbnail);
+            int colPointsIdx = GetCol(ColPoints);
+            int colAliasIdx = GetCol(ColAlias);
+
+            // 필수 컬럼 존재 여부 확인
+            if (colTitleIdx == -1)
+            {
+                result.Errors.Add($"'{ColTitle}' 컬럼이 엑셀에 없습니다. 헤더 이름을 확인해주세요.");
+                return result;
+            }
+
+            var rows = worksheet.RowsUsed().Skip(1); // 헤더 제외
+
+            // 2. 현재 스트리머의 곡 목록 미리 로드
+            var existingSongs = await _db.TableFuncSongBooks
+                .IgnoreQueryFilters()
                 .Where(s => s.StreamerProfileId == streamerProfileId)
                 .ToListAsync();
 
@@ -109,68 +189,89 @@ public class SongBookExcelService(
 
             foreach (var row in rows)
             {
-                if (string.IsNullOrWhiteSpace(row.Title))
-                {
-                    result.Errors.Add($"{result.TotalCount}번째 행: 제목이 없습니다. 건너뜁니다.");
-                    continue;
-                }
+                var cellTitle = row.Cell(colTitleIdx).GetValue<string>();
+                if (string.IsNullOrWhiteSpace(cellTitle)) continue;
 
                 try
                 {
                     // 3. 라이브러리 ID 확보 (지능형 매칭)
+                    var cellArtist = colArtistIdx != -1 ? row.Cell(colArtistIdx).GetValue<string>() : "Unknown";
+                    var cellYoutube = colYoutubeIdx != -1 ? row.Cell(colYoutubeIdx).GetValue<string>() : string.Empty;
+                    var cellLyrics = colLyricsIdx != -1 ? row.Cell(colLyricsIdx).GetValue<string>() : null;
+                    var cellAlias = colAliasIdx != -1 ? row.Cell(colAliasIdx).GetValue<string>() : null;
+
                     long capturedId = await _libraryService.CaptureStagingAsync(new SongLibraryCaptureDto
                     {
-                        Title = row.Title.Trim(),
-                        Artist = row.Artist?.Trim() ?? "Unknown",
-                        YoutubeUrl = row.YoutubeUrl?.Trim() ?? string.Empty,
-                        LyricsUrl = row.LyricsUrl?.Trim(),
-                        Alias = row.Alias,
+                        Title = cellTitle.Trim(),
+                        Artist = (cellArtist ?? "Unknown").Trim(),
+                        YoutubeUrl = (cellYoutube ?? string.Empty).Trim(),
+                        LyricsUrl = cellLyrics?.Trim(),
+                        Alias = cellAlias?.Trim(),
                         SourceType = (int)MetadataSourceType.Streamer,
                         SourceId = streamerProfileId.ToString()
                     });
 
-                    // 4. [SongNo 기반 업데이트 또는 신규 생성]
-                    SongBook? songBook = null;
+                    // [v19.5] 중복 체크: 제목과 가수가 완전히 일치하는 곡이 이미 활성 상태로 있는지 확인
+                    var duplicateSong = existingSongs.FirstOrDefault(s => s.Title == cellTitle.Trim() && 
+                                                                         s.Artist == (cellArtist ?? "Unknown").Trim() &&
+                                                                         !s.IsDeleted);
 
-                    if (row.Id.HasValue)
+                    if (duplicateSong != null)
                     {
-                        // 엑셀에 Id(SongNo)가 명시된 경우 기존 곡 찾기 (삭제된 곡 포함)
-                        songBook = existingSongs.FirstOrDefault(s => s.SongNo == (int)row.Id.Value);
+                        // 중복 발견: 실제로 삭제 처리 (IsDeleted = true)
+                        duplicateSong.IsDeleted = true;
+                        duplicateSong.UpdatedAt = KstClock.Now;
+                        
+                        if (!result.Errors.Any(e => e.Contains("중복된 노래가 존재합니다")))
+                        {
+                            result.Errors.Add("중복된 노래가 존재합니다. 중복된 노래는 삭제됩니다. 삭제된 노래는 엑셀의 삭제된 노래 탭에서 확인 가능합니다.");
+                        }
+                    }
+
+                    // 4. [SongNo 기반 업데이트 또는 신규 생성] - 중복 처리와 별개로 데이터 영속화 진행
+                    FuncSongBooks? songBook = null;
+                    var cellIdStr = colIdIdx != -1 ? row.Cell(colIdIdx).GetValue<string>() : null;
+
+                    if (int.TryParse(cellIdStr, out int idValue))
+                    {
+                        songBook = existingSongs.FirstOrDefault(s => s.SongNo == idValue);
                     }
                     
                     if (songBook == null)
                     {
-                        // 기존 곡이 없으면 중복 체크 (LibraryId 기준)
                         songBook = existingSongs.FirstOrDefault(s => s.SongLibraryId == capturedId);
                     }
 
                     if (songBook == null)
                     {
-                        // 완전히 새로운 곡 생성
-                        songBook = new SongBook
+                        songBook = new FuncSongBooks
                         {
                             StreamerProfileId = streamerProfileId,
-                            SongNo = row.Id.HasValue ? (int)row.Id.Value : ++maxSongNo,
+                            SongNo = int.TryParse(cellIdStr, out int newId) ? newId : ++maxSongNo,
                             CreatedAt = KstClock.Now
                         };
-                        _db.FuncSongBooks.Add(songBook);
+                        _db.TableFuncSongBooks.Add(songBook);
                     }
 
                     // 5. 정보 업데이트 및 활성화
                     songBook.SongLibraryId = capturedId;
-                    songBook.Title = row.Title.Trim();
-                    songBook.Artist = row.Artist?.Trim();
-                    songBook.Category = row.Category?.Trim();
-                    songBook.Pitch = row.Pitch?.Trim();
-                    songBook.Proficiency = row.Proficiency?.Trim();
-                    songBook.ReferenceUrl = row.YoutubeUrl?.Trim();
-                    songBook.LyricsUrl = row.LyricsUrl?.Trim();
-                    songBook.ThumbnailUrl = row.ThumbnailUrl?.Trim();
-                    songBook.RequiredPoints = row.RequiredPoints ?? 0;
-                    songBook.Alias = row.Alias?.Trim();
-                    songBook.TitleChosung = KoreanUtils.NormalizeForSearch(row.Title);
+                    songBook.Title = cellTitle.Trim();
+                    songBook.Artist = (cellArtist ?? "Unknown").Trim();
+                    
+                    if (colCategoryIdx != -1) songBook.Category = row.Cell(colCategoryIdx).GetValue<string>()?.Trim();
+                    if (colPitchIdx != -1) songBook.Pitch = row.Cell(colPitchIdx).GetValue<string>()?.Trim();
+                    if (colProficiencyIdx != -1) songBook.Proficiency = row.Cell(colProficiencyIdx).GetValue<string>()?.Trim();
+                    
+                    songBook.ReferenceUrl = (cellYoutube ?? string.Empty).Trim();
+                    songBook.LyricsUrl = cellLyrics?.Trim();
+                    
+                    if (colThumbnailIdx != -1) songBook.ThumbnailUrl = row.Cell(colThumbnailIdx).GetValue<string>()?.Trim();
+                    if (colPointsIdx != -1) songBook.RequiredPoints = row.Cell(colPointsIdx).GetValue<int>();
+                    
+                    songBook.Alias = cellAlias?.Trim();
+                    songBook.TitleChosung = KoreanUtils.NormalizeForSearch(cellTitle);
                     songBook.IsRequestable = true;
-                    songBook.IsDeleted = false; // 엑셀에 있으면 활성화
+                    songBook.IsDeleted = false;
                     songBook.UpdatedAt = KstClock.Now;
 
                     processedSongNos.Add(songBook.SongNo);
@@ -178,7 +279,7 @@ public class SongBookExcelService(
                 }
                 catch (Exception ex)
                 {
-                    result.Errors.Add($"[{row.Title}] 처리 중 오류: {ex.Message}");
+                    result.Errors.Add($"[{cellTitle}] 처리 중 오류: {ex.Message}");
                 }
             }
 
@@ -194,6 +295,16 @@ public class SongBookExcelService(
             }
 
             await _db.SaveChangesAsync();
+
+            // [오시리스의 예지]: 새로 등록되거나 업데이트된 곡 중 썸네일이 없는 곡들에 대해 비동기 수집 요청
+            var songsToFetch = existingSongs
+                .Where(s => !s.IsDeleted && processedSongNos.Contains(s.SongNo) && string.IsNullOrEmpty(s.ThumbnailUrl))
+                .ToList();
+
+            foreach (var song in songsToFetch)
+            {
+                await _mediator.Publish(new SongMetadataFetchEvent(song.Artist ?? "Unknown", song.Title, song.Id));
+            }
         }
         catch (Exception ex)
         {

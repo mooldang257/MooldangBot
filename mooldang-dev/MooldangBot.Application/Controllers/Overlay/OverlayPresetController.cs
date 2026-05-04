@@ -61,21 +61,21 @@ namespace MooldangBot.Application.Controllers.Overlay
         [HttpGet]
         public async Task<IActionResult> GetPresets(string chzzkUid, [FromQuery] CursorPagedRequest request)
         {
-            var query = db.SysOverlayPresets
+            var query = db.TableSysOverlayPresets
                 .IgnoreQueryFilters() 
-                .Include(p => p.StreamerProfile)
-                .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(p => p.CoreStreamerProfiles)
+                .Where(p => p.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
 
             var presets = await query.ToListAsync();
 
             if (presets.Count == 0)
             {
-                var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+                var profile = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
                 if (profile == null) 
                     return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
                 // 기본 프리셋 생성
-                var defaultPreset = new OverlayPreset
+                var defaultPreset = new SysOverlayPresets
                 {
                     StreamerProfileId = profile.Id,
                     Name = "기본 프리셋",
@@ -92,10 +92,10 @@ namespace MooldangBot.Application.Controllers.Overlay
                     UpdatedAt = KstClock.Now
                 };
 
-                db.SysOverlayPresets.Add(defaultPreset);
+                db.TableSysOverlayPresets.Add(defaultPreset);
                 await db.SaveChangesAsync();
                 // [물멍]: 재조회하여 페이징 엔진에 진입시킵니다.
-                query = db.SysOverlayPresets.IgnoreQueryFilters().Where(p => p.Id == defaultPreset.Id);
+                query = db.TableSysOverlayPresets.IgnoreQueryFilters().Where(p => p.Id == defaultPreset.Id);
             }
 
             var pagedResult = await query
@@ -116,11 +116,11 @@ namespace MooldangBot.Application.Controllers.Overlay
         [AllowAnonymous] 
         public async Task<IActionResult> GetPreset(string chzzkUid, int id)
         {
-            var preset = await db.SysOverlayPresets
+            var preset = await db.TableSysOverlayPresets
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .Include(p => p.StreamerProfile)
-                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(p => p.CoreStreamerProfiles)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
 
             if (preset == null) 
                 return NotFound(Result<string>.Failure("프리셋을 찾을 수 없습니다."));
@@ -138,7 +138,7 @@ namespace MooldangBot.Application.Controllers.Overlay
         [AllowAnonymous]
         public async Task<IActionResult> GetPublicPreset(int id)
         {
-            var preset = await db.SysOverlayPresets
+            var preset = await db.TableSysOverlayPresets
                 .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -159,7 +159,7 @@ namespace MooldangBot.Application.Controllers.Overlay
         [AllowAnonymous]
         public async Task<IActionResult> GetActivePreset(string chzzkUid)
         {
-            var profile = await db.CoreStreamerProfiles
+            var profile = await db.TableCoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
@@ -167,10 +167,10 @@ namespace MooldangBot.Application.Controllers.Overlay
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
-            OverlayPreset? preset = null;
+            SysOverlayPresets? preset = null;
             if (profile.ActiveOverlayPresetId.HasValue)
             {
-                preset = await db.SysOverlayPresets
+                preset = await db.TableSysOverlayPresets
                     .IgnoreQueryFilters()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == profile.ActiveOverlayPresetId.Value);
@@ -178,10 +178,10 @@ namespace MooldangBot.Application.Controllers.Overlay
 
             if (preset == null)
             {
-                preset = await db.SysOverlayPresets
+                preset = await db.TableSysOverlayPresets
                     .IgnoreQueryFilters()
-                    .Include(p => p.StreamerProfile)
-                    .Where(p => p.StreamerProfile!.ChzzkUid == chzzkUid)
+                    .Include(p => p.CoreStreamerProfiles)
+                    .Where(p => p.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
                     .OrderBy(p => p.Id)
                     .FirstOrDefaultAsync();
             }
@@ -201,11 +201,11 @@ namespace MooldangBot.Application.Controllers.Overlay
         [HttpPost]
         public async Task<IActionResult> CreatePreset(string chzzkUid, OverlayPresetDto dto)
         {
-            var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("스트리머 프로필을 찾을 수 없습니다."));
 
-            var preset = new OverlayPreset
+            var preset = new SysOverlayPresets
             {
                 StreamerProfileId = profile.Id,
                 Name = dto.Name ?? "새 프리셋",
@@ -214,7 +214,7 @@ namespace MooldangBot.Application.Controllers.Overlay
                 UpdatedAt = KstClock.Now
             };
 
-            db.SysOverlayPresets.Add(preset);
+            db.TableSysOverlayPresets.Add(preset);
             await db.SaveChangesAsync();
 
             return Ok(Result<OverlayPresetDto>.Success(new OverlayPresetDto
@@ -229,10 +229,10 @@ namespace MooldangBot.Application.Controllers.Overlay
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePreset(string chzzkUid, int id, OverlayPresetDto dto)
         {
-            var preset = await db.SysOverlayPresets
+            var preset = await db.TableSysOverlayPresets
                 .IgnoreQueryFilters()
-                .Include(p => p.StreamerProfile)
-                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(p => p.CoreStreamerProfiles)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
             
             if (preset == null) 
                 return NotFound(Result<string>.Failure("프리셋을 찾을 수 없습니다."));
@@ -248,15 +248,15 @@ namespace MooldangBot.Application.Controllers.Overlay
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePreset(string chzzkUid, int id)
         {
-            var preset = await db.SysOverlayPresets
+            var preset = await db.TableSysOverlayPresets
                 .IgnoreQueryFilters()
-                .Include(p => p.StreamerProfile)
-                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(p => p.CoreStreamerProfiles)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
             
             if (preset == null) 
                 return NotFound(Result<string>.Failure("프리셋을 찾을 수 없습니다."));
 
-            db.SysOverlayPresets.Remove(preset);
+            db.TableSysOverlayPresets.Remove(preset);
             await db.SaveChangesAsync();
 
             return Ok(Result<object>.Success(new { success = true, message = "프리셋이 삭제되었습니다." }));
@@ -265,16 +265,16 @@ namespace MooldangBot.Application.Controllers.Overlay
         [HttpPatch("{id}/active")]
         public async Task<IActionResult> SyncPreset(string chzzkUid, int id)
         {
-            var preset = await db.SysOverlayPresets
+            var preset = await db.TableSysOverlayPresets
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .Include(p => p.StreamerProfile)
-                .FirstOrDefaultAsync(p => p.Id == id && p.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(p => p.CoreStreamerProfiles)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
 
             if (preset == null) 
                 return NotFound(Result<string>.Failure("프리셋을 찾을 수 없습니다."));
 
-            var profile = await db.CoreStreamerProfiles
+            var profile = await db.TableCoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 

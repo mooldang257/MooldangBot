@@ -17,10 +17,10 @@ namespace MooldangBot.Modules.Roulette.Features.Commands.SpinRoulette;
 /// [하모니의 회전 명령]: 룰렛 추첨을 요청하는 명령입니다.
 /// </summary>
 public record RouletteExecutionResult(
-    List<RouletteItem> Items,
+    List<FuncRouletteItems> Items,
     long SpinId,
     SpinRouletteResponse Response,
-    List<RouletteLog> Logs
+    List<LogRouletteResults> Logs
 );
 
 /// <summary>
@@ -74,14 +74,14 @@ public class SpinRouletteHandler(
                 try
                 {
                     // 1. 컨텍스트 조회
-                    var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
+                    var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid, ct);
                     if (streamer == null) return null;
 
                     // [이지스 통합]: 시청자 정보를 캐시 서비스에서 조회/생성합니다.
                     var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(viewerUid, viewerNickname ?? "비회원", null, ct);
 
                     // 2. 룰렛 및 항목 조회
-                    var roulette = await db.FuncRoulettes
+                    var roulette = await db.TableFuncRouletteMain
                         .Include(r => r.Items)
                         .FirstOrDefaultAsync(r => r.Id == rouletteId && r.StreamerProfileId == streamer.Id, ct);
 
@@ -95,7 +95,7 @@ public class SpinRouletteHandler(
                     var (results, logs) = ExecuteSpinLogic(roulette, globalViewerId, count);
 
                     // 4. 영속성 반영
-                    db.FuncRouletteLogs.AddRange(logs);
+                    db.TableLogRouletteResults.AddRange(logs);
                     await db.SaveChangesAsync(ct);
 
                     var spinId = await CreateRouletteSpinAsync(streamer.Id, rouletteId, globalViewerId, results, chzzkUid, count, ct);
@@ -138,11 +138,11 @@ public class SpinRouletteHandler(
         }
     }
 
-    private (List<RouletteItem> results, List<RouletteLog> logs) ExecuteSpinLogic(MooldangBot.Domain.Entities.Roulette roulette, int globalViewerId, int count)
+    private (List<FuncRouletteItems> results, List<LogRouletteResults> logs) ExecuteSpinLogic(MooldangBot.Domain.Entities.FuncRouletteMain roulette, int globalViewerId, int count)
     {
         var activeItems = roulette.Items.Where(i => i.IsActive).ToList();
-        var results = new List<RouletteItem>();
-        var logs = new List<RouletteLog>();
+        var results = new List<FuncRouletteItems>();
+        var logs = new List<LogRouletteResults>();
         bool is10x = count >= 10;
 
         for (int i = 0; i < count; i++)
@@ -150,7 +150,7 @@ public class SpinRouletteHandler(
             var result = DrawItem(activeItems, is10x);
             results.Add(result);
 
-            logs.Add(new RouletteLog
+            logs.Add(new LogRouletteResults
             {
                 StreamerProfileId = roulette.StreamerProfileId,
                 RouletteId = roulette.Id,
@@ -167,7 +167,7 @@ public class SpinRouletteHandler(
         return (results, logs);
     }
 
-    private RouletteItem DrawItem(List<RouletteItem> items, bool is10x)
+    private FuncRouletteItems DrawItem(List<FuncRouletteItems> items, bool is10x)
     {
         double totalWeight = items.Sum(i => is10x ? i.Probability10x : i.Probability);
         
@@ -192,10 +192,10 @@ public class SpinRouletteHandler(
         return items.Last();
     }
 
-    private async Task<long> CreateRouletteSpinAsync(int streamerId, int rouletteId, int viewerId, List<RouletteItem> results, string chzzkUid, int count, CancellationToken ct)
+    private async Task<long> CreateRouletteSpinAsync(int streamerId, int rouletteId, int viewerId, List<FuncRouletteItems> results, string chzzkUid, int count, CancellationToken ct)
     {
         var summaryList = results.GroupBy(r => r.ItemName).Select(g => $"{g.Key} x{g.Count()}");
-        var spin = new RouletteSpin
+        var spin = new FuncRouletteSpins
         {
             StreamerProfileId = streamerId,
             RouletteId = rouletteId,
@@ -206,7 +206,7 @@ public class SpinRouletteHandler(
             ScheduledTime = (await rouletteState.GetAndSetNextEndTimeAsync(chzzkUid, count)).AddSeconds(3),
             CreatedAt = KstClock.Now
         };
-        db.FuncRouletteSpins.Add(spin);
+        db.TableFuncRouletteSpins.Add(spin);
         await db.SaveChangesAsync(ct);
         return spin.Id;
     }

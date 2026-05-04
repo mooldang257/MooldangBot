@@ -7,7 +7,7 @@
 
 ## 1. 개요 및 목적 (Purpose)
 - **데이터 최적화**: 기존 문자열 기반 식별자(`ChzzkUid`)를 정수형 PK/FK(`StreamerProfileId`)로 전환하여 인덱스 성능을 극대화하고 데이터 용량을 절감합니다.
-- **무결성 강화**: `StreamerProfile`과의 강한 결합(Foreign Key Constraint) 및 연쇄 삭제(Cascade) 설정을 통해 파편화된 유령 데이터 생성을 원천 차단합니다.
+- **무결성 강화**: `CoreStreamerProfiles`과의 강한 결합(Foreign Key Constraint) 및 연쇄 삭제(Cascade) 설정을 통해 파편화된 유령 데이터 생성을 원천 차단합니다.
 - **격리성 보장**: 전역 쿼리 필터(Global Query Filter)를 통해 멀티테넌트 환경에서의 데이터 노출 위험을 제거합니다.
 
 ---
@@ -15,9 +15,9 @@
 ## 2. 디자인 철학 (Philosophy)
 > "기록은 차갑되, 담긴 지혜는 뜨거워야 한다."
 
-- **[오시리스의 기록관]**: 방송 세션 데이터(`BroadcastSession`)는 단순한 로그가 아니라 스트리머의 발자취입니다. 이를 정밀한 인덱스로 보호하여 언제든 빠르게 회상할 수 있도록 설계했습니다.
-- **[피닉스의 눈금]**: 진동수 로그(`IamfVibrationLog`)는 시스템의 맥박입니다. 시계열 데이터의 특성에 맞춰 최소한의 저장 공간을 소모하면서도 최대의 조회 성능을 낼 수 있도록 정수형 인덱스를 적용했습니다.
-- **[주인의 목소리]**: 스트리머의 지식(`StreamerKnowledge`)은 봇의 인격입니다. 이를 스트리머 프로필에 귀속시켜 봇이 주인의 의도를 정확히 대변하도록 구조화했습니다.
+- **[오시리스의 기록관]**: 방송 세션 데이터(`SysBroadcastSessions`)는 단순한 로그가 아니라 스트리머의 발자취입니다. 이를 정밀한 인덱스로 보호하여 언제든 빠르게 회상할 수 있도록 설계했습니다.
+- **[피닉스의 눈금]**: 진동수 로그(`LogIamfVibrations`)는 시스템의 맥박입니다. 시계열 데이터의 특성에 맞춰 최소한의 저장 공간을 소모하면서도 최대의 조회 성능을 낼 수 있도록 정수형 인덱스를 적용했습니다.
+- **[주인의 목소리]**: 스트리머의 지식(`SysStreamerKnowledges`)은 봇의 인격입니다. 이를 스트리머 프로필에 귀속시켜 봇이 주인의 의도를 정확히 대변하도록 구조화했습니다.
 
 ---
 
@@ -25,8 +25,8 @@
 
 ### 3.1. 엔티티 리팩토링
 - **`ChzzkUid` (String) 제거**: 모든 테이블에서 중복 저장되던 문자열 식별자를 제거했습니다.
-- **`StreamerProfileId` (Int) 도입**: `StreamerProfile` 테이블의 ID를 외래 키로 사용하여 관계형 모델을 완성했습니다.
-- **PK 전환**: `IamfStreamerSetting`의 PK를 `ChzzkUid`에서 `StreamerProfileId`로 전환하여 1:1 관계의 정체성을 확립했습니다.
+- **`StreamerProfileId` (Int) 도입**: `CoreStreamerProfiles` 테이블의 ID를 외래 키로 사용하여 관계형 모델을 완성했습니다.
+- **PK 전환**: `IamfStreamerSettings`의 PK를 `ChzzkUid`에서 `StreamerProfileId`로 전환하여 1:1 관계의 정체성을 확립했습니다.
 
 ### 3.2. 무손실 데이터 이관 (Migration Strategy)
 - **임시 컬럼 전략**: `StreamerProfileId`를 Nullable로 추가한 후 데이터를 채우고 Not Null로 변경하는 안전한 방식을 택했습니다.

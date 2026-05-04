@@ -31,14 +31,14 @@ public class UnifiedCommandService : IUnifiedCommandService
     public async Task<CursorPagedResponse<UnifiedCommandDto>> GetPagedCommandsAsync(string chzzkUid, CursorPagedRequest request)
     {
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
-        var streamer = await _db.CoreStreamerProfiles
+        var streamer = await _db.TableCoreStreamerProfiles
             .AsNoTracking()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.ChzzkUid == targetUid);
 
         if (streamer == null) throw new KeyNotFoundException("스트리머를 찾을 수 없습니다.");
 
-        var query = _db.SysUnifiedCommands
+        var query = _db.TableFuncCmdUnified
             .AsNoTracking()
             .Where(c => c.StreamerProfileId == streamer.Id);
 
@@ -49,18 +49,14 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         var pagedResult = await query
             .OrderByDescending(c => c.Id)
-            .Select(c => new {
-                Entity = c,
-                Meta = CommandFeatureRegistry.GetByType(c.FeatureType)
-            })
-            .ToPagedListAsync(request.Limit, x => x.Entity.Id);
+            .ToPagedListAsync(request.Limit, x => x.Id);
 
-        var items = pagedResult.Items.Select(x => {
-            var c = x.Entity;
+        var items = pagedResult.Items.Select(c => {
+            var meta = CommandFeatureRegistry.GetByType(c.FeatureType);
             return new UnifiedCommandDto(
                 c.Id, 
                 c.Keyword, 
-                x.Meta != null ? ((CommandCategory)(x.Meta.CategoryId - 1)).ToString() : "General", 
+                meta != null ? ((CommandCategory)(meta.CategoryId - 1)).ToString() : "General", 
                 c.CostType.ToString(), 
                 c.Cost, 
                 c.FeatureType.ToString(), 
@@ -77,12 +73,12 @@ public class UnifiedCommandService : IUnifiedCommandService
         return new CursorPagedResponse<UnifiedCommandDto>(items, pagedResult.NextCursor, pagedResult.HasNext);
     }
 
-    public async Task<UnifiedCommand> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req)
+    public async Task<FuncCmdUnified> UpsertCommandAsync(string chzzkUid, SaveUnifiedCommandRequest req)
     {
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
 
         // [v4.3] 스트리머 프로필 조회 및 ID 확보
-        var streamer = await _db.CoreStreamerProfiles
+        var streamer = await _db.TableCoreStreamerProfiles
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
         if (streamer == null) throw new KeyNotFoundException("스트리머 프로필을 찾을 수 없습니다.");
@@ -96,10 +92,10 @@ public class UnifiedCommandService : IUnifiedCommandService
             throw new InvalidOperationException($"정의되지 않은 명령어 기능 타입입니다. (Type: {req.FeatureType})");
         }
 
-        UnifiedCommand? entity;
+        FuncCmdUnified? entity;
         if (req.Id.HasValue && req.Id.Value > 0)
         {
-            entity = await _db.SysUnifiedCommands
+            entity = await _db.TableFuncCmdUnified
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(c => c.Id == req.Id.Value && c.StreamerProfileId == streamer.Id);
 
@@ -107,12 +103,12 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
         else
         {
-            entity = new UnifiedCommand 
+            entity = new FuncCmdUnified 
             { 
                 StreamerProfileId = streamer.Id, 
                 CreatedAt = KstClock.Now 
             };
-            _db.SysUnifiedCommands.Add(entity);
+            _db.TableFuncCmdUnified.Add(entity);
         }
 
         // [물멍]: 다중 타격(Multicasting) 전술을 위해 동일 키워드로 여러 명령 중복 등록을 허용합니다. (키워드 중복 검사 제거)
@@ -176,21 +172,21 @@ public class UnifiedCommandService : IUnifiedCommandService
     public async Task DeleteCommandAsync(string chzzkUid, int id)
     {
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
-        var entity = await _db.SysUnifiedCommands
+        var entity = await _db.TableFuncCmdUnified
             .IgnoreQueryFilters()
-            .Include(c => c.StreamerProfile)
-            .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == targetUid);
+            .Include(c => c.CoreStreamerProfiles)
+            .FirstOrDefaultAsync(c => c.Id == id && c.CoreStreamerProfiles!.ChzzkUid == targetUid);
 
         if (entity == null) throw new KeyNotFoundException("삭제할 명령어를 찾을 수 없거나 이미 삭제되었습니다.");
 
         // [물멍]: 자식 엔티티(오마카세 등)는 연쇄 삭제하지 않고 보존합니다. (선장님 피드백 반영: 데이터 영속성 유지)
 
-        _db.SysUnifiedCommands.Remove(entity);
+        _db.TableFuncCmdUnified.Remove(entity);
         await _db.SaveChangesAsync(default);
         await _cacheService.RefreshUnifiedAsync(targetUid, default);
     }
 
-    private async Task OnBeforeSaveAsync(UnifiedCommand entity, SaveUnifiedCommandRequest req, string targetUid)
+    private async Task OnBeforeSaveAsync(FuncCmdUnified entity, SaveUnifiedCommandRequest req, string targetUid)
     {
         var featureType = req.FeatureType; // DTO에서 기능 타입 확인
         switch (featureType)
@@ -205,7 +201,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
     }
 
-    private async Task OnAfterSaveAsync(UnifiedCommand entity, SaveUnifiedCommandRequest req, string targetUid, bool isNew)
+    private async Task OnAfterSaveAsync(FuncCmdUnified entity, SaveUnifiedCommandRequest req, string targetUid, bool isNew)
     {
         // [물멍]: 신규 생성이 아니거나, 이미 TargetId가 할당된 경우(컨트롤러에서 직접 생성 등) 건너뜁니다.
         if (!isNew || entity.TargetId.HasValue) return;
@@ -222,49 +218,49 @@ public class UnifiedCommandService : IUnifiedCommandService
         }
     }
 
-    private async Task HandleOmakaseAfterSave(UnifiedCommand entity, string targetUid)
+    private async Task HandleOmakaseAfterSave(FuncCmdUnified entity, string targetUid)
     {
-        var newItem = new StreamerOmakaseItem { StreamerProfileId = entity.StreamerProfileId, Icon = "🍣", Count = 0 };
-        _db.FuncStreamerOmakases.Add(newItem);
+        var newItem = new FuncSongListOmakases { StreamerProfileId = entity.StreamerProfileId, Icon = "🍣", Count = 0 };
+        _db.TableFuncSongListOmakases.Add(newItem);
         await _db.SaveChangesAsync(default);
 
         entity.TargetId = newItem.Id;
         await _db.SaveChangesAsync(default);
     }
 
-    private async Task HandleRouletteAfterSave(UnifiedCommand entity, string targetUid)
+    private async Task HandleRouletteAfterSave(FuncCmdUnified entity, string targetUid)
     {
-        var newRoulette = new MooldangBot.Domain.Entities.Roulette
+        var newRoulette = new MooldangBot.Domain.Entities.FuncRouletteMain
         {
             StreamerProfileId = entity.StreamerProfileId, // [v4.4] ChzzkUid 대신 ID 사용
             Name = entity.ResponseText.Length > 0 ? entity.ResponseText : "행운의 룰렛",
             UpdatedAt = KstClock.Now
         };
-        newRoulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
-        newRoulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
-        newRoulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
+        newRoulette.Items.Add(new FuncRouletteItems { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
+        newRoulette.Items.Add(new FuncRouletteItems { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
+        newRoulette.Items.Add(new FuncRouletteItems { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
 
-        _db.FuncRoulettes.Add(newRoulette);
+        _db.TableFuncRouletteMain.Add(newRoulette);
         await _db.SaveChangesAsync(default);
 
         entity.TargetId = newRoulette.Id;
         await _db.SaveChangesAsync(default);
     }
 
-    private async Task HandleUnifiedRouletteSave(UnifiedCommand entity, RouletteSaveDto rouletteData, string targetUid)
+    private async Task HandleUnifiedRouletteSave(FuncCmdUnified entity, RouletteSaveDto rouletteData, string targetUid)
     {
-        MooldangBot.Domain.Entities.Roulette? roulette = null;
+        MooldangBot.Domain.Entities.FuncRouletteMain? roulette = null;
         if (entity.TargetId.HasValue && entity.TargetId > 0)
         {
-            roulette = await _db.FuncRoulettes.Include(r => r.Items)
-                .Include(r => r.StreamerProfile)
+            roulette = await _db.TableFuncRouletteMain.Include(r => r.Items)
+                .Include(r => r.CoreStreamerProfiles)
                 .FirstOrDefaultAsync(r => r.Id == entity.TargetId.Value && r.StreamerProfileId == entity.StreamerProfileId);
         }
 
         if (roulette == null)
         {
-            roulette = new MooldangBot.Domain.Entities.Roulette { StreamerProfileId = entity.StreamerProfileId };
-            _db.FuncRoulettes.Add(roulette);
+            roulette = new MooldangBot.Domain.Entities.FuncRouletteMain { StreamerProfileId = entity.StreamerProfileId };
+            _db.TableFuncRouletteMain.Add(roulette);
         }
 
         roulette.Name = string.IsNullOrWhiteSpace(rouletteData.Name) ? entity.ResponseText : rouletteData.Name;
@@ -272,8 +268,8 @@ public class UnifiedCommandService : IUnifiedCommandService
 
         if (rouletteData.Items != null && rouletteData.Items.Any())
         {
-            _db.FuncRouletteItems.RemoveRange(roulette.Items);
-            roulette.Items = rouletteData.Items.Select(i => new RouletteItem
+            _db.TableFuncRouletteItems.RemoveRange(roulette.Items);
+            roulette.Items = rouletteData.Items.Select(i => new FuncRouletteItems
             {
                 ItemName = i.ItemName,
                 Probability = i.Probability,
@@ -286,9 +282,9 @@ public class UnifiedCommandService : IUnifiedCommandService
         else if (roulette.Items.Count == 0)
         {
             // 데이터가 없는데 신규면 기본값 생성
-            roulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
-            roulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
-            roulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
+            roulette.Items.Add(new FuncRouletteItems { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
+            roulette.Items.Add(new FuncRouletteItems { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
+            roulette.Items.Add(new FuncRouletteItems { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
         }
         await _db.SaveChangesAsync(default);
         entity.TargetId = roulette.Id;
@@ -297,10 +293,10 @@ public class UnifiedCommandService : IUnifiedCommandService
     public async Task ToggleCommandAsync(string chzzkUid, int id)
     {
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
-        var entity = await _db.SysUnifiedCommands
+        var entity = await _db.TableFuncCmdUnified
             .IgnoreQueryFilters()
-            .Include(c => c.StreamerProfile)
-            .FirstOrDefaultAsync(c => c.Id == id && c.StreamerProfile!.ChzzkUid == targetUid);
+            .Include(c => c.CoreStreamerProfiles)
+            .FirstOrDefaultAsync(c => c.Id == id && c.CoreStreamerProfiles!.ChzzkUid == targetUid);
 
         if (entity != null)
         {
@@ -319,11 +315,11 @@ public class UnifiedCommandService : IUnifiedCommandService
         var targetUid = (chzzkUid ?? "").Trim().ToLower();
         _logger.LogInformation("🌱 [CommandSeeder]: 스트리머({Uid})를 위한 기본 명령어 생성을 시작합니다.", targetUid);
 
-        var streamer = await _db.CoreStreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
+        var streamer = await _db.TableCoreStreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == targetUid);
         if (streamer == null) return;
 
         // [물멍의 지혜]: 존재 여부를 한 번의 쿼리로 대량 확인하여 N+1 문제를 방지합니다.
-        var existingKeywords = await _db.SysUnifiedCommands
+        var existingKeywords = await _db.TableFuncCmdUnified
             .IgnoreQueryFilters()
             .Where(c => c.StreamerProfileId == streamer.Id)
             .Select(c => c.Keyword)
@@ -338,14 +334,14 @@ public class UnifiedCommandService : IUnifiedCommandService
             return;
         }
 
-        var createdEntities = new List<(UnifiedCommand Entity, string Feature)>();
+        var createdEntities = new List<(FuncCmdUnified Entity, string Feature)>();
 
         foreach (var keyword in missingKeywords)
         {
             var entity = CreateDefaultCommandEntity(streamer, keyword);
             if (entity != null)
             {
-                _db.SysUnifiedCommands.Add(entity);
+                _db.TableFuncCmdUnified.Add(entity);
                 
                 // 어떤 기능인지 추후 사후 처리를 위해 보관
                 var feature = GetFeatureByKeyword(keyword);
@@ -363,15 +359,15 @@ public class UnifiedCommandService : IUnifiedCommandService
             if (feature == CommandFeatureTypes.Roulette)
             {
                 var roulette = CreateDefaultRoulette(streamer.Id, entity.ResponseText);
-                _db.FuncRoulettes.Add(roulette);
+                _db.TableFuncRouletteMain.Add(roulette);
                 await _db.SaveChangesAsync(default); // 각 룰렛 ID가 필요하므로 어쩔 수 없이 저장
                 entity.TargetId = roulette.Id;
                 needsSecondSave = true;
             }
             else if (feature == CommandFeatureTypes.Omakase)
             {
-                var omakase = new StreamerOmakaseItem { StreamerProfileId = streamer.Id, Icon = "🍣", Count = 0 };
-                _db.FuncStreamerOmakases.Add(omakase);
+                var omakase = new FuncSongListOmakases { StreamerProfileId = streamer.Id, Icon = "🍣", Count = 0 };
+                _db.TableFuncSongListOmakases.Add(omakase);
                 await _db.SaveChangesAsync(default);
                 entity.TargetId = omakase.Id;
                 needsSecondSave = true;
@@ -399,7 +395,7 @@ public class UnifiedCommandService : IUnifiedCommandService
         _ => CommandFeatureTypes.Reply
     };
 
-    private UnifiedCommand? CreateDefaultCommandEntity(StreamerProfile streamer, string keyword)
+    private FuncCmdUnified? CreateDefaultCommandEntity(CoreStreamerProfiles streamer, string keyword)
     {
         string feature = GetFeatureByKeyword(keyword);
         var masterFeature = CommandFeatureRegistry.GetByTypeName(feature);
@@ -418,7 +414,7 @@ public class UnifiedCommandService : IUnifiedCommandService
             _ => (CommandCostType.None, 0, "", CommandRole.Viewer)
         };
 
-        return new UnifiedCommand
+        return new FuncCmdUnified
         {
             StreamerProfileId = streamer.Id,
             Keyword = keyword,
@@ -435,17 +431,17 @@ public class UnifiedCommandService : IUnifiedCommandService
         };
     }
 
-    private MooldangBot.Domain.Entities.Roulette CreateDefaultRoulette(int streamerProfileId, string name)
+    private MooldangBot.Domain.Entities.FuncRouletteMain CreateDefaultRoulette(int streamerProfileId, string name)
     {
-        var roulette = new MooldangBot.Domain.Entities.Roulette
+        var roulette = new MooldangBot.Domain.Entities.FuncRouletteMain
         {
             StreamerProfileId = streamerProfileId,
             Name = string.IsNullOrWhiteSpace(name) ? "행운의 룰렛" : name,
             UpdatedAt = KstClock.Now
         };
-        roulette.Items.Add(new RouletteItem { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
-        roulette.Items.Add(new RouletteItem { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
-        roulette.Items.Add(new RouletteItem { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
+        roulette.Items.Add(new FuncRouletteItems { ItemName = "꽝... 🌧️", Probability = 70, Probability10x = 70, IsActive = true, Color = "#9E9E9E" });
+        roulette.Items.Add(new FuncRouletteItems { ItemName = "물댕의 축복 ✨", Probability = 20, Probability10x = 20, IsActive = true, Color = "#0093E9" });
+        roulette.Items.Add(new FuncRouletteItems { ItemName = "대박 당첨! 💎", Probability = 10, Probability10x = 10, IsActive = true, Color = "#FF9A9E" });
         return roulette;
     }
 }

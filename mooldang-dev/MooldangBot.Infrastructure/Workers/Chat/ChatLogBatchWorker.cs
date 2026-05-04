@@ -26,7 +26,7 @@ public class ChatLogBatchWorker(IServiceProvider serviceProvider,
     ILogger<ChatLogBatchWorker> logger) : BaseHybridWorker(serviceProvider, logger, optionsMonitor, nameof(ChatLogBatchWorker))
 {
     private const string BackupFileName = "data/temp_chat_logs.json";
-    private readonly ConcurrentQueue<ChatInteractionLog> _retryBuffer = new();
+    private readonly ConcurrentQueue<LogChatInteractions> _retryBuffer = new();
 
     protected override int DefaultIntervalSeconds => 1;
 
@@ -38,8 +38,8 @@ public class ChatLogBatchWorker(IServiceProvider serviceProvider,
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        var settings = _optionsMonitor.Get(_workerName);
-        await FlushAsync(settings.MaxBatchSize, ct);
+        var Settings = _optionsMonitor.Get(_workerName);
+        await FlushAsync(Settings.MaxBatchSize, ct);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
@@ -51,87 +51,87 @@ public class ChatLogBatchWorker(IServiceProvider serviceProvider,
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task FlushAsync(int maxBatchSize, CancellationToken ct)
+    private async Task FlushAsync(int MaxBatchSize, CancellationToken ct)
     {
-        var logs = new List<ChatInteractionLog>();
-        while (_retryBuffer.TryDequeue(out var retryLog))
+        var Logs = new List<LogChatInteractions>();
+        while (_retryBuffer.TryDequeue(out var RetryLog))
         {
-            logs.Add(retryLog);
-            if (logs.Count >= maxBatchSize) break;
+            Logs.Add(RetryLog);
+            if (Logs.Count >= MaxBatchSize) break;
         }
-
-        if (logs.Count < maxBatchSize)
+ 
+        if (Logs.Count < MaxBatchSize)
         {
-            await foreach (var log in bufferService.DrainAllAsync(ct))
+            await foreach (var Log in bufferService.DrainAllAsync(ct))
             {
-                logs.Add(log);
-                if (logs.Count >= maxBatchSize) break;
+                Logs.Add(Log);
+                if (Logs.Count >= MaxBatchSize) break;
             }
         }
-
-        if (logs.Count == 0) return;
+ 
+        if (Logs.Count == 0) return;
 
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var dbConnection = db.Database.GetDbConnection();
-
-            if (dbConnection is not MySqlConnection mysqlConn)
+            using var Scope = scopeFactory.CreateScope();
+            var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var DbConnection = Db.Database.GetDbConnection();
+ 
+            if (DbConnection is not MySqlConnection MysqlConn)
             {
                 _logger.LogError("❌ [{WorkerName}] 커넥션이 MySqlConnection이 아닙니다.", _workerName);
-                foreach (var log in logs) _retryBuffer.Enqueue(log);
+                foreach (var Log in Logs) _retryBuffer.Enqueue(Log);
                 return;
             }
-
-            if (mysqlConn.State != ConnectionState.Open)
-                await mysqlConn.OpenAsync(ct);
-
-            var dataTable = BuildDataTable(logs);
-            var bulkCopy = new MySqlBulkCopy(mysqlConn)
+ 
+            if (MysqlConn.State != ConnectionState.Open)
+                await MysqlConn.OpenAsync(ct);
+ 
+            var DataTable = BuildDataTable(Logs);
+            var BulkCopy = new MySqlBulkCopy(MysqlConn)
             {
-                DestinationTableName = "log_chat_interactions",
+                DestinationTableName = "LogChatInteractions",
                 BulkCopyTimeout = 30
             };
-
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(0, "streamer_profile_id"));
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(1, "sender_nickname"));
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(2, "message"));
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(3, "is_command"));
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(4, "message_type"));
-            bulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(5, "created_at"));
-
-            await bulkCopy.WriteToServerAsync(dataTable, ct);
+ 
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(0, "StreamerProfileId"));
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(1, "SenderNickname"));
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(2, "Message"));
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(3, "IsCommand"));
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(4, "MessageType"));
+            BulkCopy.ColumnMappings.Add(new MySqlBulkCopyColumnMapping(5, "CreatedAt"));
+ 
+            await BulkCopy.WriteToServerAsync(DataTable, ct);
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, "❌ [{WorkerName}] 벌크 적재 실패. {Count}건 대피.", _workerName, logs.Count);
-            foreach (var log in logs) _retryBuffer.Enqueue(log);
+            _logger.LogError(Ex, "❌ [{WorkerName}] 벌크 적재 실패. {Count}건 대피.", _workerName, Logs.Count);
+            foreach (var Log in Logs) _retryBuffer.Enqueue(Log);
         }
     }
 
-    private static DataTable BuildDataTable(List<ChatInteractionLog> logs)
+    private static DataTable BuildDataTable(List<LogChatInteractions> Logs)
     {
-        var table = new DataTable();
-        table.Columns.Add("streamer_profile_id", typeof(int));
-        table.Columns.Add("sender_nickname", typeof(string));
-        table.Columns.Add("message", typeof(string));
-        table.Columns.Add("is_command", typeof(bool));
-        table.Columns.Add("message_type", typeof(string));
-        table.Columns.Add("created_at", typeof(DateTime));
-
-        foreach (var log in logs)
+        var Table = new DataTable();
+        Table.Columns.Add("StreamerProfileId", typeof(int));
+        Table.Columns.Add("SenderNickname", typeof(string));
+        Table.Columns.Add("Message", typeof(string));
+        Table.Columns.Add("IsCommand", typeof(bool));
+        Table.Columns.Add("MessageType", typeof(string));
+        Table.Columns.Add("CreatedAt", typeof(DateTime));
+ 
+        foreach (var Log in Logs)
         {
-            table.Rows.Add(
-                log.StreamerProfileId,
-                log.SenderNickname,
-                log.Message,
-                log.IsCommand,
-                log.MessageType,
-                log.CreatedAt == default ? (DateTime)KstClock.Now : (DateTime)log.CreatedAt
+            Table.Rows.Add(
+                Log.StreamerProfileId,
+                Log.SenderNickname,
+                Log.Message,
+                Log.IsCommand,
+                Log.MessageType,
+                Log.CreatedAt == default ? (DateTime)KstClock.Now : (DateTime)Log.CreatedAt
             );
         }
-        return table;
+        return Table;
     }
 
     private async Task CreateBackupAsync()
@@ -139,15 +139,15 @@ public class ChatLogBatchWorker(IServiceProvider serviceProvider,
         if (_retryBuffer.IsEmpty) return;
         try
         {
-            var data = _retryBuffer.ToArray();
-            var json = JsonSerializer.Serialize(data, ChzzkJsonContext.Default.ChatInteractionLogArray);
-            var dir = Path.GetDirectoryName(BackupFileName);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            await File.WriteAllTextAsync(BackupFileName, json);
+            var Data = _retryBuffer.ToArray();
+            var Json = JsonSerializer.Serialize(Data, ChzzkJsonContext.Default.LogChatInteractionsArray);
+            var Dir = Path.GetDirectoryName(BackupFileName);
+            if (!string.IsNullOrEmpty(Dir) && !Directory.Exists(Dir)) Directory.CreateDirectory(Dir);
+            await File.WriteAllTextAsync(BackupFileName, Json);
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogCritical(ex, "🚨 [{WorkerName}] 백업 파일 덤프 실패!", _workerName);
+            _logger.LogCritical(Ex, "🚨 [{WorkerName}] 백업 파일 덤프 실패!", _workerName);
         }
     }
 
@@ -156,18 +156,18 @@ public class ChatLogBatchWorker(IServiceProvider serviceProvider,
         if (!File.Exists(BackupFileName)) return;
         try
         {
-            var json = await File.ReadAllTextAsync(BackupFileName);
-            var data = JsonSerializer.Deserialize(json, ChzzkJsonContext.Default.ChatInteractionLogArray);
-            if (data != null)
+            var Json = await File.ReadAllTextAsync(BackupFileName);
+            var Data = JsonSerializer.Deserialize(Json, ChzzkJsonContext.Default.LogChatInteractionsArray);
+            if (Data != null)
             {
-                foreach (var log in data) _retryBuffer.Enqueue(log);
-                _logger.LogInformation("📦 [{WorkerName}] 파일에서 {Count}건 복원 완료.", _workerName, data.Length);
+                foreach (var Log in Data) _retryBuffer.Enqueue(Log);
+                _logger.LogInformation("📦 [{WorkerName}] 파일에서 {Count}건 복원 완료.", _workerName, Data.Length);
             }
             File.Delete(BackupFileName);
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, "❌ [{WorkerName}] 복구 중 오류 발생", _workerName);
+            _logger.LogError(Ex, "❌ [{WorkerName}] 복구 중 오류 발생", _workerName);
         }
     }
 }

@@ -163,14 +163,14 @@ public class AuthService(
     private async Task<AuthResult> SyncStreamerProfileAsync(string chzzkUid, string channelName, string? profileImageUrl, string accessToken, string refreshToken, KstClock? expireDate)
     {
         // [물멍]: 네이버 공식 Channel ID를 기반으로 프로필을 색인합니다.
-        var streamer = await _db.CoreStreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await _db.TableCoreStreamerProfiles.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         bool isNewStreamer = false; // [오시리스의 눈]: 신입 대원 판별 플래그
         
         if (streamer == null)
         {
             isNewStreamer = true;
             _logger.LogInformation("📡 [인증] 신규 스트리머 채널 등록 시작 (ChannelId: {ChannelId})", chzzkUid);
-            streamer = new StreamerProfile 
+            streamer = new CoreStreamerProfiles 
             { 
                 ChzzkUid = chzzkUid,
                 Slug = chzzkUid, 
@@ -178,11 +178,11 @@ public class AuthService(
                 IsMasterEnabled = true,
                 CreatedAt = KstClock.Now
             };
-            _db.CoreStreamerProfiles.Add(streamer);
+            _db.TableCoreStreamerProfiles.Add(streamer);
 
-            _db.FuncSonglistSessions.Add(new SonglistSession 
+            _db.TableFuncSongListSessions.Add(new FuncSongListSessions 
             { 
-                StreamerProfile = streamer, 
+                CoreStreamerProfiles = streamer, 
                 StartedAt = KstClock.Now,
                 IsActive = true 
             });
@@ -227,7 +227,7 @@ public class AuthService(
 
     public async Task<string> IssueOverlayTokenAsync(string chzzkUid, string role)
     {
-        var streamer = await _db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await _db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null) throw new Exception("[오시리스의 거절] 해당 스트리머를 찾을 수 없습니다.");
 
         // [오시리스의 정제]: URL 가독성을 위해 16자리 짧은 해시 토큰을 생성하거나 반환합니다.
@@ -250,7 +250,7 @@ public class AuthService(
 
     public async Task<bool> RevokeOverlayTokenAsync(string chzzkUid)
     {
-        var streamer = await _db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await _db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
         if (streamer == null) return false;
 
         // [오시리스의 철퇴]: 버전을 올림으로써 기존 JWT 토큰들을 무효화

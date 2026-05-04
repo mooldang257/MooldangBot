@@ -9,7 +9,7 @@ namespace MooldangBot.Domain.DTOs;
 public record SongLibrarySearchResultDto
 {
     // [1순위]: 검증된 내부 병기창 데이터 (가사 포함)
-    public Master_SongLibrary? Song { get; init; }
+    public FuncSongMasterLibrary? Song { get; init; }
 
     // [2순위]: 유튜브 실시간 정찰 결과
     public YouTubeSearchResultDto? ExternalSong { get; init; }

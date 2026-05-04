@@ -8,7 +8,7 @@
     - 전달해주신 Gemini API 키를 `.env`에 등록하고 **실제 AI 신경망(`GeminiLlmService`)을 활성화**했습니다.
     - 이제 봇은 가상의 응답이 아닌 실제 구글 AI와 통신합니다.
 - **데이터 구조 설계**:
-    - `Streamer_SongLibrary` 엔티티에 줄임말(`Alias`), 초성(`TitleChosung`), 의미 좌표(`TitleVector`) 필드를 추가했습니다.
+    - `FuncSongStreamerLibrary` 엔티티에 줄임말(`Alias`), 초성(`TitleChosung`), 의미 좌표(`TitleVector`) 필드를 추가했습니다.
 - **검색 엔진 고도화**:
     - `SongBookRepository`에 **하이브리드 검색(제목+별명+초성+벡터)** 로직을 구현했습니다.
     - 오타가 있어도 의미가 비슷하면 찾아낼 수 있는 기반(Vector Search)을 마련했습니다.
@@ -22,7 +22,7 @@
 
 ## 3. 향후 작업 로드맵 (Remaining Tasks)
 
-- [ ] **인터페이스 수정**: `ISongBookDbContext.cs`에 `DbSet<Streamer_SongLibrary> StreamerSongLibraries` 속성 추가.
+- [ ] **인터페이스 수정**: `ISongBookDbContext.cs`에 `DbSet<FuncSongStreamerLibrary> StreamerSongLibraries` 속성 추가.
 - [ ] **DB 마이그레이션**: 신규 컬럼 반영을 위한 마이그레이션 생성 및 적용.
 - [ ] **AI 메타데이터 자동 생성 연동**:
     - 노래가 등록되거나 신청될 때 AI가 자동으로 별명("우언죽")과 벡터를 생성하여 저장하는 로직 연결.

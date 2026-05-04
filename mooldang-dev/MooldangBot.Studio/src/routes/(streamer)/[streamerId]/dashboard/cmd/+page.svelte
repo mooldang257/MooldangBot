@@ -12,90 +12,74 @@
     import { apiFetch } from "$lib/api/client";
 
     // [물멍]: Svelte 5 Runes ($state) 기반의 현대적 상태 관리
-    let isLoaded = $state(false);
-    let chzzkUid = $state("");
-    let activeTab: "commands" | "periodic" = $state("commands");
-    const tabs = ["commands", "periodic"] as const;
+    let IsLoaded = $state(false);
+    let ChzzkUid = $state("");
+    let ActiveTab: "commands" | "periodic" = $state("commands");
+    const Tabs = ["commands", "periodic"] as const;
 
-    let skipDeleteConfirm = $state(false);
-    let showDeleteModal = $state(false);
-    let deleteTargetId: number | null = $state(null);
-    let deleteTargetKeyword = $state("");
+    let SkipDeleteConfirm = $state(false);
+    let ShowDeleteModal = $state(false);
+    let DeleteTargetId: number | null = $state(null);
+    let DeleteTargetKeyword = $state("");
 
-    let masterData = $state({
-        categories: [],
-        features: [],
-        roles: ["Viewer", "Manager", "Streamer"],
-        variables: [],
+    let MasterData = $state({
+        Categories: [],
+        Features: [],
+        Roles: ["Viewer", "Manager", "Streamer"],
+        Variables: [],
     });
-    let isMasterDataValid = $state(true);
+    let IsMasterDataValid = $state(true);
 
-    let allCommands: any[] = $state([]);
-    let periodicMessages: any[] = $state([]);
+    let AllCommands: any[] = $state([]);
+    let PeriodicMessages: any[] = $state([]);
 
-    let cmdForm = $state({
-        id: 0,
-        keyword: "",
-        category: "General",
-        featureType: "Reply",
-        cost: 0,
-        costType: "None",
-        responseText: "",
-        requiredRole: "Viewer",
-        isActive: true,
-        priority: 0,
-        matchType: "Exact",
-        requiresSpace: true,
+    let CmdForm = $state({
+        Id: 0,
+        Keyword: "",
+        Category: "General",
+        FeatureType: "Reply",
+        Cost: 0,
+        CostType: "None",
+        ResponseText: "",
+        RequiredRole: "Viewer",
+        IsActive: true,
+        Priority: 0,
+        MatchType: "Exact",
+        RequiresSpace: true,
     });
 
-    async function loadMasterData() {
+    async function LoadMasterData() {
         try {
-            const res = await apiFetch<any>(`/api/command/${chzzkUid}/master`);
-            if (res) {
-                masterData = res;
-                isMasterDataValid = true;
-            }
+            const data = await apiFetch<any>(`/api/command/${ChzzkUid}/master`);
+            MasterData = data;
+            IsMasterDataValid = true;
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
-            if (!masterData.categories.length) isMasterDataValid = false;
+            if (!MasterData.Categories.length) IsMasterDataValid = false;
         }
     }
 
-    async function loadCommands() {
-        if (!chzzkUid) return;
+    async function LoadCommands() {
+        if (!ChzzkUid) return;
         try {
-            const data = await apiFetch<any>(
-                `/api/command/${chzzkUid}?limit=100`
+            const res = await apiFetch<any>(
+                `/api/command/${ChzzkUid}?limit=100`
             );
-            const items = data.items || data.Items || [];
-            allCommands = items.map((c: any) => ({
-                id: c.id ?? c.Id ?? 0,
-                keyword: c.keyword ?? c.Keyword ?? "",
-                category: c.category ?? c.Category ?? "NORMAL",
-                featureType: c.featureType ?? c.FeatureType ?? "Reply",
-                cost: c.cost ?? c.Cost ?? 0,
-                costType: c.costType ?? c.CostType ?? "None",
-                responseText: c.responseText ?? c.ResponseText ?? "",
-                requiredRole: c.requiredRole ?? c.RequiredRole ?? "Viewer",
-                isActive: c.isActive ?? c.IsActive ?? true,
-                priority: c.priority ?? c.Priority ?? 0,
-                matchType: c.matchType ?? c.MatchType ?? "Exact",
-                requiresSpace: c.requiresSpace ?? c.RequiresSpace ?? true,
-                targetId: c.targetId ?? c.TargetId ?? null,
-            }));
+            const data = res; // [물멍]: apiFetch already returns result.Value
+            AllCommands = data.Items || [];
         } catch (e) {
             console.error("[물멍] 명령어 목록 로드 실패:", e);
         }
     }
 
-    async function loadPeriodicMessages() {
-        if (!chzzkUid) return;
+    async function LoadPeriodicMessages() {
+        if (!ChzzkUid) return;
         try {
-            const data = await apiFetch<any>(
-                `/api/periodic-message/${chzzkUid}`
+            const res = await apiFetch<any>(
+                `/api/periodic-message/${ChzzkUid}`
             );
-            // [물멍]: ListResponse 객체에서 실제 목록인 items를 추출합니다.
-            periodicMessages = data?.items || data?.Items || (Array.isArray(data) ? data : []);
+            const data = res;
+            PeriodicMessages = data?.Items || (Array.isArray(data) ? data : []);
         } catch (e) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
         }
@@ -104,31 +88,31 @@
     onMount(async () => {
         try {
             const profile = await apiFetch<any>("/api/auth/me");
-            const targetUid = profile.chzzkUid || profile.ChzzkUid;
+            const targetUid = profile.ChzzkUid;
 
             if (targetUid) {
-                chzzkUid = targetUid;
+                ChzzkUid = targetUid;
                 await Promise.allSettled([
-                    loadMasterData(),
-                    loadCommands(),
-                    loadPeriodicMessages()
+                    LoadMasterData(),
+                    LoadCommands(),
+                    LoadPeriodicMessages()
                 ]);
 
                 await apiFetch<any>("/api/Preference/temporary/skipDeleteConfirm")
                     .then((data) => {
-                        if (data.value === "true") skipDeleteConfirm = true;
+                if (data === "true") SkipDeleteConfirm = true;
                     })
                     .catch(() => {});
             }
         } catch (e: any) {
             console.error("[물멍] 물댕봇 데스크 동기화 실패:", e);
         } finally {
-            isLoaded = true;
+            IsLoaded = true;
         }
     });
 
-    function handleEdit(cmd: any) {
-        cmdForm = { ...cmd };
+    function HandleEdit(cmd: any) {
+        CmdForm = { ...cmd };
         // [물멍]: 맨 위가 아닌 상세 수정 폼 위치로 정밀하게 스크롤합니다.
         const formElement = document.getElementById("command-form-section");
         if (formElement) {
@@ -136,47 +120,46 @@
         }
     }
 
-    async function handleDelete(id: number) {
-        const cmd = allCommands.find((c) => c.id === id);
+    async function HandleDelete(id: number) {
+        const cmd = AllCommands.find((c) => c.Id === id);
         if (!cmd) return;
-        if (skipDeleteConfirm) return await executeDelete(id);
+        if (SkipDeleteConfirm) return await ExecuteDelete(id);
 
-        deleteTargetId = id;
-        deleteTargetKeyword = cmd.keyword;
-        showDeleteModal = true;
+        DeleteTargetId = id;
+        DeleteTargetKeyword = cmd.Keyword;
+        ShowDeleteModal = true;
     }
 
-    async function executeDelete(id: number) {
+    async function ExecuteDelete(id: number) {
         try {
-            // [물멍]: 룰렛 명령어인 경우 룰렛 전용 삭제 API를 호출하여 데이터 무결성을 유지합니다.
-            const cmd = allCommands.find(c => c.id === id);
+            const cmd = AllCommands.find(c => c.Id === id);
             
-            if (cmd?.featureType === 'Roulette' && cmd.targetId) {
-                await apiFetch(`/api/admin/roulette/${chzzkUid}/${cmd.targetId}`, {
+            if (cmd?.FeatureType === 'Roulette' && cmd.TargetId) {
+                await apiFetch(`/api/admin/roulette/${ChzzkUid}/${cmd.TargetId}`, {
                     method: "DELETE",
                 });
             } else {
-                await apiFetch(`/api/command/${chzzkUid}/${id}`, {
+                await apiFetch(`/api/command/${ChzzkUid}/${id}`, {
                     method: "DELETE",
                 });
             }
             
-            allCommands = allCommands.filter((c) => c.id !== id);
+            AllCommands = AllCommands.filter((c) => c.Id !== id);
         } catch (err: any) {
             alert(err.message || "삭제 실패!");
         }
     }
 
-    async function onConfirmDelete(data: { dontAskAgain: boolean }) {
+    async function OnConfirmDelete(data: { dontAskAgain: boolean }) {
         if (data.dontAskAgain) {
-            skipDeleteConfirm = true;
+            SkipDeleteConfirm = true;
             await apiFetch("/api/Preference/temporary/skipDeleteConfirm", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ value: "true" }),
+                body: { Value: "true" },
             }).catch(console.error);
         }
-        if (deleteTargetId) await executeDelete(deleteTargetId);
+        if (DeleteTargetId) await ExecuteDelete(DeleteTargetId);
     }
 </script>
 
@@ -185,9 +168,9 @@
 </svelte:head>
 
 <ConfirmModal
-    bind:isOpen={showDeleteModal}
-    keyword={deleteTargetKeyword}
-    onconfirm={onConfirmDelete}
+    bind:isOpen={ShowDeleteModal}
+    keyword={DeleteTargetKeyword}
+    onconfirm={OnConfirmDelete}
 />
 
 <div class="space-y-12 pb-20 text-left">
@@ -212,13 +195,13 @@
         <div
             class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar"
         >
-            {#each tabs as tab}
+            {#each Tabs as tab}
                 <button
-                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab ===
+                    class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab ===
                     tab
                         ? 'text-primary'
                         : 'text-slate-400 hover:text-slate-600'}"
-                    onclick={() => (activeTab = tab)}
+                    onclick={() => (ActiveTab = tab)}
                 >
                     <div class="flex items-center gap-2">
                         {#if tab === "commands"}
@@ -232,9 +215,9 @@
                                 : "정기 알림 설정"}</span
                         >
                     </div>
-                    {#if activeTab === tab}
+                    {#if ActiveTab === tab}
                         <div
-                            class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]"
+                            class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15_rgba(0,147,233,0.4)]"
                             in:fly={{ y: 5 }}
                         ></div>
                     {/if}
@@ -243,25 +226,25 @@
         </div>
     </header>
 
-    {#if isLoaded}
-        {#if activeTab === "commands"}
-            {#if isMasterDataValid}
+    {#if IsLoaded}
+        {#if ActiveTab === "commands"}
+            {#if IsMasterDataValid}
                 <div class="space-y-10" in:fade>
-                    <VariableBadge variables={masterData.variables} />
+                    <VariableBadge variables={MasterData.Variables} />
                     <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
                         <CommandForm
-                            bind:cmdForm
-                            {masterData}
-                            {chzzkUid}
-                            onSave={loadCommands}
+                            bind:CmdForm={CmdForm}
+                            MasterData={MasterData}
+                            ChzzkUid={ChzzkUid}
+                            OnSave={LoadCommands}
                         />
                     </div>
                     <CommandTable
-                        bind:allCommands
-                        {masterData}
-                        {chzzkUid}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        bind:allCommands={AllCommands}
+                        masterData={MasterData}
+                        chzzkUid={ChzzkUid}
+                        onEdit={HandleEdit}
+                        onDelete={HandleDelete}
                     />
                 </div>
             {:else}
@@ -273,12 +256,12 @@
                         <AlertTriangle size={32} />
                     </div>
                     <h3 class="text-xl font-black text-slate-800 mb-2">
-                        {chzzkUid
+                        {ChzzkUid
                             ? "정보를 불러오지 못했습니다"
                             : "로그인이 필요한 서비스입니다"}
                     </h3>
                     <p class="text-slate-500 font-bold mb-6 text-center">
-                        {chzzkUid
+                        {ChzzkUid
                             ? "마스터 데이터를 불러오는 데 실패했습니다. 통신 상태를 확인해 주세요."
                             : "스트리머님의 물댕봇 기록을 찾을 수 없습니다. 다시 로그인이 필요할 것 같아요."}
                     </p>
@@ -299,11 +282,11 @@
                     </div>
                 </div>
             {/if}
-        {:else if activeTab === "periodic"}
+        {:else if ActiveTab === "periodic"}
             <PeriodicTab
-                bind:messages={periodicMessages}
-                {chzzkUid}
-                onRefresh={loadPeriodicMessages}
+                bind:messages={PeriodicMessages}
+                chzzkUid={ChzzkUid}
+                onRefresh={LoadPeriodicMessages}
             />
         {/if}
     {:else}

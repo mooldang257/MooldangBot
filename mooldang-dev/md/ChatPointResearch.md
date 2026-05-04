@@ -28,8 +28,8 @@
 | `Features/Viewers/Handlers/ViewerPointEventHandler.cs` | **핵심** — 포인트 적립 & 출석 처리 로직 |
 | `Controllers/ChatPointController.cs` | REST API — 설정 저장/조회, 시청자 랭킹 반환 |
 | `Models/ViewerProfile.cs` | DB 엔터티 — 시청자 포인트/출석 데이터 |
-| `Models/StreamerProfile.cs` | DB 엔터티 — 스트리머별 포인트 설정값 |
-| `Features/Roulette/Handlers/RouletteEventHandler.cs` | 포인트 **소비** — ChatPoint 룰렛 |
+| `Models/CoreStreamerProfiles.cs` | DB 엔터티 — 스트리머별 포인트 설정값 |
+| `Features/FuncRouletteMain/Handlers/RouletteEventHandler.cs` | 포인트 **소비** — ChatPoint 룰렛 |
 | `Features/Commands/Handlers/CustomCommandEventHandler.cs` | 포인트 **조회** 명령어 처리 |
 | `wwwroot/ChatPoint.html` | 프론트엔드 — 설정 UI + 시청자 랭킹 테이블 |
 
@@ -57,7 +57,7 @@ public class ViewerProfile
 > **⚠️ 중요:** `(StreamerChzzkUid, ViewerUid)`에 **유니크 복합 인덱스** 존재  
 > → 동일 시청자가 여러 스트리머 채널에 각각 독립적 포인트/출석 이력 보유 가능
 
-### 3-2. `StreamerProfile` — 포인트 관련 설정 필드
+### 3-2. `CoreStreamerProfiles` — 포인트 관련 설정 필드
 
 ```csharp
 public int    PointPerChat { get; set; } = 1;             // 채팅 1회당 포인트 (기본 1)
@@ -99,7 +99,7 @@ sequenceDiagram
     MediatR->>ViewerPointEventHandler: Handle() [병렬 실행]
 
     ViewerPointEventHandler->>DB(ViewerProfile): 시청자 프로필 조회 or 신규 생성
-    ViewerPointEventHandler->>DB(ViewerProfile): StreamerProfile 설정 조회
+    ViewerPointEventHandler->>DB(ViewerProfile): CoreStreamerProfiles 설정 조회
 
     alt 출석 명령어인 경우
         ViewerPointEventHandler->>ViewerPointEventHandler: KST 기준 오늘 첫 출석 여부 체크

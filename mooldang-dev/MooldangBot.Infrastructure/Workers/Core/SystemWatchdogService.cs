@@ -70,14 +70,14 @@ public class SystemWatchdogService(
         var scribe = scope.ServiceProvider.GetRequiredService<IBroadcastScribe>();
         var chatClient = scope.ServiceProvider.GetRequiredService<IChzzkChatClient>();
 
-        var inactiveSessions = await db.SysBroadcastSessions
-            .Include(s => s.StreamerProfile)
+        var inactiveSessions = await db.TableSysBroadcastSessions
+            .Include(s => s.CoreStreamerProfiles)
             .Where(s => s.IsActive && s.LastHeartbeatAt < KstClock.Now.AddMinutes(-5))
             .ToListAsync(ct);
 
         foreach (var session in inactiveSessions)
         {
-            var chzzkUid = session.StreamerProfile?.ChzzkUid ?? "Unknown";
+            var chzzkUid = session.CoreStreamerProfiles?.ChzzkUid ?? "Unknown";
             _logger.LogWarning("[Watchdog] {ChzzkUid} 하트비트 단절. 세션 갈무리.", chzzkUid);
             await scribe.FinalizeSessionAsync(chzzkUid);
             await chatClient.DisconnectAsync(chzzkUid);

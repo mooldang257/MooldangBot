@@ -18,8 +18,9 @@
         try {
             const res = await fetch(`/api/config/bot/${streamerId}/slug`);
             if (res.ok) {
-                const data = await res.json();
-                currentSlug = data.slug || '';
+                const response = await res.json();
+                const data = response.Value;
+                currentSlug = data.Slug || '';
                 newSlug = currentSlug;
             }
         } catch (e) {
@@ -44,19 +45,20 @@
             const res = await fetch(`/api/config/bot/${streamerId}/slug`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug: newSlug })
+                body: JSON.stringify({ Slug: newSlug })
             });
 
-            const data = await res.json();
+            const response = await res.json();
+            const data = response.Value;
             if (res.ok) {
                 currentSlug = newSlug;
                 status = 'success';
-                message = data.message;
+                message = data.Message;
                 // [물멍]: 주소가 변경되었으므로 페이지 새로고침이나 리다이렉트가 필요할 수 있으나, 
                 // 일단은 성공 메시지만 표시합니다.
             } else {
                 status = 'error';
-                message = data.message || data || '변경에 실패했습니다.';
+                message = data.Message || data || '변경에 실패했습니다.';
             }
         } catch (e) {
             status = 'error';

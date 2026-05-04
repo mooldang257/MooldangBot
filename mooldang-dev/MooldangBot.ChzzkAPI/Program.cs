@@ -36,8 +36,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddMooldangSignalR(builder.Configuration);
 builder.Services.AddMooldangMediatR();
 
-// [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 및 수신)
-builder.Services.AddMessagingInfrastructure(builder.Configuration, typeof(SendMessageCommandConsumer).Assembly);
+// [v4.0.0] 오시리스의 전령: MassTransit 기반 고가용성 메시징 인프라 구축 (송신 전용)
+builder.Services.AddMessagingInfrastructure(builder.Configuration, 
+    typeof(SendMessageCommandConsumer).Assembly);
 
 builder.Services.AddHealthChecks();
 
@@ -67,10 +68,8 @@ builder.Services.AddTransient<MooldangBot.Domain.Contracts.Chzzk.Interfaces.IChz
 // 2. 비즈니스 로직 및 봇 엔진 주입
 builder.Services.AddHttpContextAccessor(); // [v4.1.1] LocalFileStorageService 의존성 해결
 builder.Services.AddApplicationServices();
-builder.Services.AddSongBookModule();
-builder.Services.AddRouletteModule();
 builder.Services.AddCommandsModule();
-builder.Services.AddWorkerRegistry(builder.Configuration);
+builder.Services.AddCoreBotWorker(builder.Configuration);
 builder.Services.AddBotEngineServices();
 
 // 4. 아웃바운드 제어 컨슈머 및 게이트웨이 워커 등록

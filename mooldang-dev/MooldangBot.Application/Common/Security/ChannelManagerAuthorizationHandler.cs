@@ -63,7 +63,7 @@ public class ChannelManagerAuthorizationHandler(
 
         // 4. [슬러그 대응]: 전달된 ID가 슬러그일 경우 실제 UID로 변환하여 확인
         // [물멍]: 세션에 없는 ID가 들어왔을 때만 DB 조회를 수행하여 성능 부하를 최소화합니다.
-        var resolvedUid = await _db.CoreStreamerProfiles
+        var resolvedUid = await _db.TableCoreStreamerProfiles
             .AsNoTracking()
             .Where(p => p.Slug != null && p.Slug.ToLower() == targetId)
             .Select(p => p.ChzzkUid)

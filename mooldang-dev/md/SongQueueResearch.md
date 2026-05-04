@@ -14,7 +14,7 @@
 ```
 신청 (시청자/스트리머)       관리 (대시보드)           송출 (오버레이)
 ────────────────         ──────────────         ────────────────
-채팅 !신청          ──▶    SongQueue        ──▶   songlist_overlay
+채팅 !신청          ──▶    FuncSongListQueues        ──▶   songlist_overlay
 치즈 후원           ──▶    (Active Session) ──▶   (PascalCase Sync)
 노래책에서 추가      ──▶
 ```
@@ -28,8 +28,8 @@
 | `Controllers/SongController.cs` | 신청곡 CRUD 및 상태 변경 (Pending/Playing/Completed) |
 | `Controllers/SonglistController.cs` | 신청곡 세션 및 오버레이용 통합 데이터 제공 |
 | `Controllers/SongBookController.cs` | **[NEW]** 노래책(전체 레퍼토리) CRUD 및 인풋 페이징 |
-| `Models/SongQueue.cs` | 현재 활성 대기열 엔터티 |
-| `Models/SongBook.cs` | **[NEW]** 스트리머 전체 곡 목록 엔터티 |
+| `Models/FuncSongListQueues.cs` | 현재 활성 대기열 엔터티 |
+| `Models/FuncSongBooks.cs` | **[NEW]** 스트리머 전체 곡 목록 엔터티 |
 | `wwwroot/songlist.html` | 스트리머 대시보드 UI |
 | `wwwroot/songlist_overlay.html` | OBS용 실시간 송리스트 오버레이 |
 | `wwwroot/admin_songbook.html` | **[NEW]** 노래책 관리 및 인풋 페이징 UI |
@@ -52,7 +52,7 @@
 
 ## 4. 데이터 모델 설계
 
-### 4-1. `SongBook` (노래책 엔터티)
+### 4-1. `FuncSongBooks` (노래책 엔터티)
 | 필드명 | 설명 | 비고 |
 |---|---|---|
 | `Id` | 고유 식별자 | PK, 인덱스 |
@@ -66,7 +66,7 @@
 
 ## 5. 향후 확장 계획
 1. **노래책 검색**: 제목/가수 기반의 실시간 서버 사이드 검색 기능.
-2. **자동 동기화**: `SongQueue`에서 완료된 곡을 자동으로 노래책에 등록하거나 카운트를 증가시키는 로직.
+2. **자동 동기화**: `FuncSongListQueues`에서 완료된 곡을 자동으로 노래책에 등록하거나 카운트를 증가시키는 로직.
 3. **엑셀 반입/반출**: 대량의 노래책 데이터를 관리하기 위한 CSV/Excel 인터페이스.
 
 ---

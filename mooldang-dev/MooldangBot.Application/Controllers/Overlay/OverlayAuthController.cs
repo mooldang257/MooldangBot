@@ -30,14 +30,14 @@ public class OverlayAuthController(IAuthService _authService) : ControllerBase
             var token = await _authService.IssueOverlayTokenAsync(chzzkUid, "Streamer");
             
             return Ok(new { 
-                success = true, 
-                token = token,
-                message = "오시리스의 공명 토큰이 성공적으로 발급되었습니다. 방송 소스에 이 토큰을 사용하세요."
+                Success = true, 
+                Token = token,
+                Message = "오시리스의 공명 토큰이 성공적으로 발급되었습니다. 방송 소스에 이 토큰을 사용하세요."
             });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { success = false, message = ex.Message });
+            return BadRequest(new { Success = false, Message = ex.Message });
         }
     }
 
@@ -55,11 +55,11 @@ public class OverlayAuthController(IAuthService _authService) : ControllerBase
         if (result)
         {
             return Ok(new { 
-                success = true, 
-                message = "오시리스의 철퇴가 가동되었습니다. 기존의 모든 오버레이 토큰이 즉시 폐기되었습니다. 새로운 토큰을 발급받으세요." 
+                Success = true, 
+                Message = "오시리스의 철퇴가 가동되었습니다. 기존의 모든 오버레이 토큰이 즉시 폐기되었습니다. 새로운 토큰을 발급받으세요." 
             });
         }
         
-        return BadRequest(new { success = false, message = "토큰 폐기에 실패했습니다." });
+        return BadRequest(new { Success = false, Message = "토큰 폐기에 실패했습니다." });
     }
 }

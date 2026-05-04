@@ -43,12 +43,12 @@ public interface ILogBulkBuffer
     /// <summary>
     /// DB 인서트 실패 시, 누락을 방지하기 위해 진동 로그를 버퍼에 다시 환원합니다.
     /// </summary>
-    void RestoreVibrationLogs(IReadOnlyList<IamfVibrationLog> logs);
+    void RestoreVibrationLogs(IReadOnlyList<LogIamfVibrations> logs);
 
     /// <summary>
     /// DB 인서트 실패 시, 누락을 방지하기 위해 시나리오 로그를 버퍼에 다시 환원합니다.
     /// </summary>
-    void RestoreScenarios(IReadOnlyList<IamfScenario> scenarios);
+    void RestoreScenarios(IReadOnlyList<IamfScenarios> scenarios);
 }
 [Modify] LogBulkBuffer.cs (Infrastructure/Implementation)
 ConcurrentQueue<T>를 안전하게 다루는 구현체에 환원 로직을 작성합니다.
@@ -57,12 +57,12 @@ C#
 public class LogBulkBuffer : ILogBulkBuffer
 {
     // 기존에 사용 중인 ConcurrentQueue 선언부 (예시)
-    private readonly ConcurrentQueue<IamfVibrationLog> _vibrationLogs = new();
-    private readonly ConcurrentQueue<IamfScenario> _scenarios = new();
+    private readonly ConcurrentQueue<LogIamfVibrations> _vibrationLogs = new();
+    private readonly ConcurrentQueue<IamfScenarios> _scenarios = new();
 
     // ... 기존 구현부 유지
 
-    public void RestoreVibrationLogs(IReadOnlyList<IamfVibrationLog> logs)
+    public void RestoreVibrationLogs(IReadOnlyList<LogIamfVibrations> logs)
     {
         if (logs == null || logs.Count == 0) return;
         
@@ -72,7 +72,7 @@ public class LogBulkBuffer : ILogBulkBuffer
         }
     }
 
-    public void RestoreScenarios(IReadOnlyList<IamfScenario> scenarios)
+    public void RestoreScenarios(IReadOnlyList<IamfScenarios> scenarios)
     {
         if (scenarios == null || scenarios.Count == 0) return;
 

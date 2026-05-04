@@ -24,7 +24,7 @@ namespace MooldangBot.Domain.Contracts.Chzzk;
 /// 모든 외부 시스템(Api, Bot, Worker)이 동일한 직렬화 규격을 공유합니다.
 /// </summary>
 [JsonSourceGenerationOptions(
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, 
+    PropertyNamingPolicy = JsonKnownNamingPolicy.Unspecified, 
     GenerationMode = JsonSourceGenerationMode.Default,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ChzzkApiResponse<TokenResponse>))]
@@ -117,7 +117,7 @@ namespace MooldangBot.Domain.Contracts.Chzzk;
 [JsonSerializable(typeof(ChzzkLiveDetailResponse))]
 // Domain DTOs (from Domain project)
 [JsonSerializable(typeof(SetupRequest))]
-// SongBook Module DTOs (Contracts)
+// FuncSongBooks Module DTOs (Contracts)
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SonglistDataDto))]
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SongUpdateRequest))]
 [JsonSerializable(typeof(MooldangBot.Domain.Contracts.SongBook.SonglistSettingsUpdateRequest))]
@@ -151,14 +151,14 @@ namespace MooldangBot.Domain.Contracts.Chzzk;
 [JsonSerializable(typeof(ChatOverlayDto))]
 [JsonSerializable(typeof(ChzzkChatEventPayload))]
 [JsonSerializable(typeof(MooldangBot.Domain.Models.Chzzk.ChzzkChatProfile))]
-[JsonSerializable(typeof(MooldangBot.Domain.Entities.RouletteLog))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.LogRouletteResults))]
 [JsonSerializable(typeof(MooldangBot.Domain.DTOs.RouletteMissionOverlayDto))]
 [JsonSerializable(typeof(List<RouletteResultDto>))]
 [JsonSerializable(typeof(List<RouletteSpinSummaryDto>))]
 [JsonSerializable(typeof(object))]
 
-[JsonSerializable(typeof(MooldangBot.Domain.Entities.ChatInteractionLog[]))]
-[JsonSerializable(typeof(MooldangBot.Domain.Entities.StreamerProfile))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.LogChatInteractions[]))]
+[JsonSerializable(typeof(MooldangBot.Domain.Entities.CoreStreamerProfiles))]
 // [v10.1] Bot Config DTOs
 [JsonSerializable(typeof(MooldangBot.Domain.DTOs.BotToggleRequest))]
 [JsonSerializable(typeof(MooldangBot.Domain.DTOs.SlugUpdateRequest))]

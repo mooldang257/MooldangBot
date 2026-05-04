@@ -10,9 +10,9 @@
 
 | 트리거 (Trigger) | 타겟 핸들러 | 상태 읽기 (Read DB / API) | 상태 쓰기 (Write DB) | 외부 발행 (Emit Event / SignalR) |
 | :--- | :--- | :--- | :--- | :--- |
-| **일반 채팅 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`StreamerProfile` | `.Points += PointPerChat` | **없음** |
-| **출석 명령어 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`StreamerProfile` | `.Points += 포인트 + 출석보너스`<br>`.AttendanceCount++`<br>`.LastAttendanceAt` = KST Now | **봇 채팅 전송:** `AttendanceReply` |
-| **치즈 후원 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`StreamerProfile` | `.Points += 후원보너스`<br>*(일반 포인트와 합산)* | **없음** |
+| **일반 채팅 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`CoreStreamerProfiles` | `.Points += PointPerChat` | **없음** |
+| **출석 명령어 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`CoreStreamerProfiles` | `.Points += 포인트 + 출석보너스`<br>`.AttendanceCount++`<br>`.LastAttendanceAt` = KST Now | **봇 채팅 전송:** `AttendanceReply` |
+| **치즈 후원 수신** | `ViewerPointEventHandler` | `ViewerProfile` (조회/생성)<br>`CoreStreamerProfiles` | `.Points += 후원보너스`<br>*(일반 포인트와 합산)* | **없음** |
 | **포인트 조회 명령어** | `CustomCommandEventHandler` | `ViewerProfile`<br>**[API]** 치지직 팔로우 일수 | **없음** | **봇 채팅 전송:** `PointCheckReply` |
 | **포인트 룰렛 성공** | `RouletteEventHandler` | `ViewerProfile` | `.Points -= CostPerSpin` | **SignalR:** `RouletteTriggered` |
 
@@ -22,7 +22,7 @@
 
 ### 2-1. 주요 엔터티
 * **`ViewerProfile`:** 시청자별 데이터. `(StreamerChzzkUid, ViewerUid)` 복합 유니크 인덱스로 식별. (`Points`, `AttendanceCount`, `LastAttendanceAt` 등 보유)
-* **`StreamerProfile`:** 포인트 정책 설정. (`PointPerChat`, `PointPerDonation1000`, `PointPerAttendance`, `AttendanceCommands` 등 보유)
+* **`CoreStreamerProfiles`:** 포인트 정책 설정. (`PointPerChat`, `PointPerDonation1000`, `PointPerAttendance`, `AttendanceCommands` 등 보유)
 
 ### 2-2. 포인트 최종 합산 공식
 이벤트 핸들러 내에서 DB `Save`는 비용 최적화를 위해 **최종 1회만 수행**합니다.

@@ -7,13 +7,12 @@ namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
 // IAMF Philosophy Mappings (Osiris Standard)
 
-public class IamfScenarioConfiguration : IEntityTypeConfiguration<IamfScenario>
+public class IamfScenarioConfiguration : IEntityTypeConfiguration<IamfScenarios>
 {
-    public void Configure(EntityTypeBuilder<IamfScenario> builder)
+    public void Configure(EntityTypeBuilder<IamfScenarios> builder)
     {
-        builder.ToTable("IamfScenarios");
         
-        builder.HasOne(s => s.StreamerProfile)
+        builder.HasOne(s => s.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(s => s.StreamerProfileId)
                .OnDelete(DeleteBehavior.Restrict); // [v4.9] 존재의 보존
@@ -24,77 +23,71 @@ public class IamfGenosRegistryConfiguration : IEntityTypeConfiguration<IamfGenos
 {
     public void Configure(EntityTypeBuilder<IamfGenosRegistry> builder)
     {
-        builder.ToTable("IamfGenosRegistry");
         
-        builder.HasOne(g => g.StreamerProfile)
+        builder.HasOne(g => g.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(g => g.StreamerProfileId)
                .OnDelete(DeleteBehavior.Restrict); // [v4.9] 존재의 보존
     }
 }
 
-public class IamfParhosCycleConfiguration : IEntityTypeConfiguration<IamfParhosCycle>
+public class IamfParhosCycleConfiguration : IEntityTypeConfiguration<IamfParhosCycles>
 {
-    public void Configure(EntityTypeBuilder<IamfParhosCycle> builder)
+    public void Configure(EntityTypeBuilder<IamfParhosCycles> builder)
     {
-        builder.ToTable("IamfParhosCycles");
         
         // [v4.9] 복합 고유 인덱스 설정 (동시성 및 무결성 보장)
         builder.HasIndex(p => new { p.StreamerProfileId, p.CycleId }).IsUnique();
 
-        builder.HasOne(p => p.StreamerProfile)
+        builder.HasOne(p => p.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(p => p.StreamerProfileId)
                .OnDelete(DeleteBehavior.Restrict); // [v4.9] 존재의 보존
     }
 }
 
-public class IamfVibrationLogConfiguration : IEntityTypeConfiguration<IamfVibrationLog>
+public class IamfVibrationLogConfiguration : IEntityTypeConfiguration<LogIamfVibrations>
 {
-    public void Configure(EntityTypeBuilder<IamfVibrationLog> builder)
+    public void Configure(EntityTypeBuilder<LogIamfVibrations> builder)
     {
-        builder.ToTable("LogIamfVibrations");
         
-        builder.HasOne(v => v.StreamerProfile)
+        builder.HasOne(v => v.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(v => v.StreamerProfileId)
                .OnDelete(DeleteBehavior.Restrict); // [v4.9] 존재의 보존
     }
 }
 
-public class IamfStreamerSettingConfiguration : IEntityTypeConfiguration<IamfStreamerSetting>
+public class IamfStreamerSettingConfiguration : IEntityTypeConfiguration<IamfStreamerSettings>
 {
-    public void Configure(EntityTypeBuilder<IamfStreamerSetting> builder)
+    public void Configure(EntityTypeBuilder<IamfStreamerSettings> builder)
     {
-        builder.ToTable("IamfStreamerSettings");
         
-        builder.HasOne(s => s.StreamerProfile)
+        builder.HasOne(s => s.CoreStreamerProfiles)
                .WithOne()
-               .HasForeignKey<IamfStreamerSetting>(s => s.StreamerProfileId)
+               .HasForeignKey<IamfStreamerSettings>(s => s.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
-public class StreamerKnowledgeConfiguration : IEntityTypeConfiguration<StreamerKnowledge>
+public class StreamerKnowledgeConfiguration : IEntityTypeConfiguration<SysStreamerKnowledges>
 {
-    public void Configure(EntityTypeBuilder<StreamerKnowledge> builder)
+    public void Configure(EntityTypeBuilder<SysStreamerKnowledges> builder)
     {
-        builder.ToTable("SysStreamerKnowledges");
         
-        builder.HasOne(k => k.StreamerProfile)
+        builder.HasOne(k => k.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(k => k.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
-public class BroadcastSessionConfiguration : IEntityTypeConfiguration<BroadcastSession>
+public class BroadcastSessionConfiguration : IEntityTypeConfiguration<SysBroadcastSessions>
 {
-    public void Configure(EntityTypeBuilder<BroadcastSession> builder)
+    public void Configure(EntityTypeBuilder<SysBroadcastSessions> builder)
     {
-        builder.ToTable("SysBroadcastSessions");
         
-        builder.HasOne(b => b.StreamerProfile)
+        builder.HasOne(b => b.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(b => b.StreamerProfileId)
                .IsRequired(false)
@@ -102,13 +95,12 @@ public class BroadcastSessionConfiguration : IEntityTypeConfiguration<BroadcastS
     }
 }
 
-public class BroadcastHistoryLogConfiguration : IEntityTypeConfiguration<BroadcastHistoryLog>
+public class BroadcastHistoryLogConfiguration : IEntityTypeConfiguration<LogBroadcastHistory>
 {
-    public void Configure(EntityTypeBuilder<BroadcastHistoryLog> builder)
+    public void Configure(EntityTypeBuilder<LogBroadcastHistory> builder)
     {
-        builder.ToTable("LogBroadcastHistory");
         
-        builder.HasOne(h => h.BroadcastSession)
+        builder.HasOne(h => h.SysBroadcastSessions)
                .WithMany()
                .HasForeignKey(h => h.BroadcastSessionId)
                .OnDelete(DeleteBehavior.Cascade);

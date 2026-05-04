@@ -109,7 +109,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    {#each items as item, i (item.id)}
+                    {#each items as item, i (item.Id)}
                         <tr class="hover:bg-slate-50/50 transition-colors group">
                             <td class="px-8 py-6 font-black text-slate-300 group-hover:text-primary transition-colors italic text-lg">
                                 {i + 1}
@@ -119,24 +119,24 @@
                                     <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
                                         <User size={20} />
                                     </div>
-                                    <span class="font-black text-slate-700">{item.nickname}</span>
+                                    <span class="font-black text-slate-700">{item.Nickname}</span>
                                 </div>
                             </td>
                             <td class="px-8 py-6 font-black text-primary">
-                                {item.points.toLocaleString()} <span class="text-[10px] opacity-70 ml-0.5">P</span>
+                                {item.Points.toLocaleString()} <span class="text-[10px] opacity-70 ml-0.5">P</span>
                             </td>
                             <td class="px-8 py-6 text-center">
                                 <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[11px] font-black border border-emerald-100">
-                                    {item.attendanceCount}회
+                                    {item.AttendanceCount}회
                                 </span>
                             </td>
                             <td class="px-8 py-6 text-center">
                                 <span class="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[11px] font-black border border-orange-100">
-                                    {item.consecutiveAttendanceCount}회
+                                    {item.ConsecutiveAttendanceCount}회
                                 </span>
                             </td>
                             <td class="px-8 py-6 text-right text-xs font-bold text-slate-400">
-                                {item.lastAttendanceAt ? new Date(item.lastAttendanceAt).toLocaleString() : '-'}
+                                {item.LastAttendanceAt ? new Date(item.LastAttendanceAt).toLocaleString() : '-'}
                             </td>
                         </tr>
                     {/each}

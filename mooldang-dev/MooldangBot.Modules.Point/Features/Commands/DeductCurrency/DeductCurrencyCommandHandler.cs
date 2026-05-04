@@ -36,45 +36,45 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
     public async Task<DeductResult> Handle(DeductCurrencyCommand request, CancellationToken ct)
     {
         // 1. [하이브리드 조회]: 닉네임/ID 등을 기반으로 내부 정수형 ID 확보
-        var cleanedUid = (request.ViewerUid ?? "").Trim();
-        var viewerHash = Sha256Hasher.ComputeHash(cleanedUid);
+        var CleanedUid = (request.ViewerUid ?? "").Trim();
+        var ViewerHash = Sha256Hasher.ComputeHash(CleanedUid);
         
-        var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
+        var Streamer = await _db.TableCoreStreamerProfiles.AsNoTracking()
             .Select(s => new { s.Id, s.ChzzkUid })
             .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
         
-        if (streamer == null) 
+        if (Streamer == null) 
             return new DeductResult(false, 0, "스트리머 정보를 찾을 수 없습니다.");
-
-        var globalViewerId = await _db.CoreGlobalViewers.AsNoTracking()
-            .Where(g => g.ViewerUidHash == viewerHash)
+ 
+        var GlobalViewerId = await _db.TableCoreGlobalViewers.AsNoTracking()
+            .Where(g => g.ViewerUidHash == ViewerHash)
             .Select(g => g.Id)
             .FirstOrDefaultAsync(ct);
-
-        if (globalViewerId == 0)
+ 
+        if (GlobalViewerId == 0)
         {
             try
             {
                 // [오시리스의 자비]: 지갑이 없는 신규 유저라면 즉석에서 개설합니다. (JIT Onboarding)
-                var newViewer = new GlobalViewer 
+                var NewViewer = new CoreGlobalViewers 
                 { 
-                    ViewerUid = cleanedUid, 
-                    ViewerUidHash = viewerHash, 
+                    ViewerUid = CleanedUid, 
+                    ViewerUidHash = ViewerHash, 
                     Nickname = request.ViewerNickname ?? "시청자" 
                 };
-                _db.CoreGlobalViewers.Add(newViewer);
+                _db.TableCoreGlobalViewers.Add(NewViewer);
                 await _db.SaveChangesAsync(ct);
-                globalViewerId = newViewer.Id;
+                GlobalViewerId = NewViewer.Id;
             }
             catch (DbUpdateException)
             {
                 // 🛡️ [동시성 방어]: 찰나의 순간에 다른 쓰레드가 생성했다면, 조용히 다시 조회합니다.
-                globalViewerId = await _db.CoreGlobalViewers.AsNoTracking()
-                    .Where(g => g.ViewerUidHash == viewerHash)
+                GlobalViewerId = await _db.TableCoreGlobalViewers.AsNoTracking()
+                    .Where(g => g.ViewerUidHash == ViewerHash)
                     .Select(g => g.Id)
                     .FirstOrDefaultAsync(ct);
                 
-                if (globalViewerId == 0) throw; // 진짜 알 수 없는 오류라면 상위로 전파
+                if (GlobalViewerId == 0) throw; // 진짜 알 수 없는 오류라면 상위로 전파
             }
         }
 
@@ -84,7 +84,7 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         {
             await _mediator.Send(new AddPointsCommand(
                 request.StreamerUid,
-                cleanedUid,
+                CleanedUid,
                 request.ViewerNickname ?? "시청자",
                 request.DonationAmount,
                 PointCurrencyType.DonationPoint,
@@ -95,58 +95,58 @@ public class DeductCurrencyCommandHandler : IRequestHandler<DeductCurrencyComman
         // 3. [ChatPoint 특수 처리]: Redis 증분값을 포함한 잔액 검증
         if (request.CurrencyType == PointCurrencyType.ChatPoint)
         {
-            var dbBalance = await _db.FuncViewerPoints.AsNoTracking()
-                .Where(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId)
+            var DbBalance = await _db.TableFuncViewerPoints.AsNoTracking()
+                .Where(v => v.StreamerProfileId == Streamer.Id && v.GlobalViewerId == GlobalViewerId)
                 .Select(v => v.Points)
                 .FirstOrDefaultAsync(ct);
-
-            var redisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, cleanedUid);
-            var totalBalance = dbBalance + redisIncrement;
-
-            if (totalBalance < request.Amount)
+ 
+            var RedisIncrement = await _pointCache.GetIncrementalPointAsync(request.StreamerUid, CleanedUid);
+            var TotalBalance = DbBalance + RedisIncrement;
+ 
+            if (TotalBalance < request.Amount)
             {
-                return new DeductResult(false, totalBalance, "포인트가 부족합니다.");
+                return new DeductResult(false, TotalBalance, "포인트가 부족합니다.");
             }
-
+ 
             // 고빈도 포인트는 캐시에 음수 증분으로 기록 (Write-Back 동기화 대기)
-            await _pointCache.AddPointAsync(request.StreamerUid, cleanedUid, request.ViewerNickname ?? "Unknown", -request.Amount);
-            return new DeductResult(true, totalBalance - request.Amount);
+            await _pointCache.AddPointAsync(request.StreamerUid, CleanedUid, request.ViewerNickname ?? "Unknown", -request.Amount);
+            return new DeductResult(true, TotalBalance - request.Amount);
         }
 
         // 4. [유료 재화(DonationPoint) 원자적 차감 처리]
-        var conn = _db.Database.GetDbConnection();
-        if (conn.State != ConnectionState.Open) await conn.OpenAsync(ct);
+        var Conn = _db.Database.GetDbConnection();
+        if (Conn.State != ConnectionState.Open) await Conn.OpenAsync(ct);
         
         // 🛡️ [철옹성 쿼리]: 현장 결제 시스템(Real-time Donation Credit)
         // [수정]: 위 AddPointsCommand에서 이미 후원금이 가산되어 DB에 반영되었으므로, 
         // 여기서는 순수하게 현재 DB의 balance 기준으로 차감을 진행합니다.
-        const string updateSql = @"
+        const string UpdateSql = @"
             UPDATE FuncViewerDonations 
             SET Balance = Balance - @DeductAmount, UpdatedAt = NOW()
             WHERE StreamerProfileId = @StreamerId 
               AND GlobalViewerId = @GlobalId 
               AND Balance >= @DeductAmount";
-
-        var affectedRows = await conn.ExecuteAsync(updateSql, new 
+ 
+        var AffectedRows = await Conn.ExecuteAsync(UpdateSql, new 
         { 
-            StreamerId = streamer.Id, 
-            GlobalId = globalViewerId, 
+            StreamerId = Streamer.Id, 
+            GlobalId = GlobalViewerId, 
             DeductAmount = request.Amount
         });
-
-        if (affectedRows == 0)
+ 
+        if (AffectedRows == 0)
         {
-            var currentBalance = await conn.QueryFirstOrDefaultAsync<int>(
+            var CurrentBalance = await Conn.QueryFirstOrDefaultAsync<int>(
                 "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
-                new { StreamerId = streamer.Id, GlobalId = globalViewerId });
-
-            return new DeductResult(false, currentBalance, "치즈 잔액이 부족합니다.");
+                new { StreamerId = Streamer.Id, GlobalId = GlobalViewerId });
+ 
+            return new DeductResult(false, CurrentBalance, "치즈 잔액이 부족합니다.");
         }
-
-        var finalBalance = await conn.QueryFirstOrDefaultAsync<int>(
+ 
+        var FinalBalance = await Conn.QueryFirstOrDefaultAsync<int>(
             "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
-            new { StreamerId = streamer.Id, GlobalId = globalViewerId });
-
-        return new DeductResult(true, finalBalance);
+            new { StreamerId = Streamer.Id, GlobalId = GlobalViewerId });
+ 
+        return new DeductResult(true, FinalBalance);
     }
 }

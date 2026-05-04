@@ -19,19 +19,19 @@ public class CleanupExpiredLogsCommandHandler(
     public async Task Handle(CleanupExpiredLogsCommand request, CancellationToken ct)
     {
         logger.LogInformation("🧹 [포인트 모듈] {RetentionDays}일이 지난 상세 로그를 숙청합니다...", request.RetentionDays);
-        var connection = db.Database.GetDbConnection();
-
-        const string sql = "DELETE FROM LogPointTransactions WHERE CreatedAt < DATE_SUB(NOW(), INTERVAL @Days DAY) LIMIT 10000;";
+        var Connection = db.Database.GetDbConnection();
+ 
+        const string Sql = "DELETE FROM LogPointTransactions WHERE CreatedAt < DATE_SUB(NOW(), INTERVAL @Days DAY) LIMIT 10000;";
         
-        int totalDeleted = 0;
-        int deleted;
+        int TotalDeleted = 0;
+        int Deleted;
         do
         {
-            deleted = await connection.ExecuteAsync(new CommandDefinition(sql, new { Days = request.RetentionDays }, cancellationToken: ct));
-            totalDeleted += deleted;
-        } while (deleted >= 10000 && !ct.IsCancellationRequested);
-
-        if (totalDeleted > 0)
-            logger.LogWarning("⚠️ [포인트 모듈] {Count}건의 오래된 포인트 로그가 숙청되었습니다.", totalDeleted);
+            Deleted = await Connection.ExecuteAsync(new CommandDefinition(Sql, new { Days = request.RetentionDays }, cancellationToken: ct));
+            TotalDeleted += Deleted;
+        } while (Deleted >= 10000 && !ct.IsCancellationRequested);
+ 
+        if (TotalDeleted > 0)
+            logger.LogWarning("⚠️ [포인트 모듈] {Count}건의 오래된 포인트 로그가 숙청되었습니다.", TotalDeleted);
     }
 }

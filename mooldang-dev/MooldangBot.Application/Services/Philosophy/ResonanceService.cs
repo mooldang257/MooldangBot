@@ -54,7 +54,7 @@ public class ResonanceService : IResonanceService
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == profileId);
+            var profile = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == profileId);
             
             if (profile != null)
             {
@@ -62,7 +62,7 @@ public class ResonanceService : IResonanceService
                 channelName = profile.ChannelName ?? chzzkUid;
                 _uidToIdMap[chzzkUid] = profileId;
 
-                var lastCycle = await db.IamfParhosCycles
+                var lastCycle = await db.TableIamfParhosCycles
                     .Where(c => c.StreamerProfileId == profileId)
                     .OrderByDescending(c => c.CreatedAt)
                     .FirstOrDefaultAsync();
@@ -109,14 +109,14 @@ public class ResonanceService : IResonanceService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
             
             // [정규화] ChzzkUid 문자열로 실시간 프로필 ID 조회
-            var profile = await db.CoreStreamerProfiles
+            var profile = await db.TableCoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
             if (profile == null) return false;
             profileId = profile.Id;
 
-            var setting = await db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfileId == profileId);
+            var setting = await db.TableIamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfileId == profileId);
             if (setting != null)
             {
                 if (!setting.IsIamfEnabled) return false; // [거울의 법칙]: 비활성화 시 침묵
@@ -145,7 +145,7 @@ public class ResonanceService : IResonanceService
         state.LastEmaHz = newEma;
 
         // 6. [피닉스의 눈금] 버퍼 기록
-        _buffer.AddVibrationLog(new IamfVibrationLog
+        _buffer.AddVibrationLog(new LogIamfVibrations
         {
             StreamerProfileId = profileId,
             RawHz = targetVibration.Value,
@@ -188,7 +188,7 @@ public class ResonanceService : IResonanceService
         using (var scope = _serviceProvider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) return new MooldangBot.Domain.Contracts.AI.Models.Parhos("NULL", "None", 10.01, 1, false, KstClock.Now);
             
             var state = await GetOrHydrateStateAsync(profile.Id);

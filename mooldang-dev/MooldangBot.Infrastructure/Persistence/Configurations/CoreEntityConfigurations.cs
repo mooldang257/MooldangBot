@@ -5,7 +5,7 @@ using MooldangBot.Infrastructure.Persistence.Converters;
 
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
-public class StreamerProfileConfiguration : IEntityTypeConfiguration<StreamerProfile>
+public class StreamerProfileConfiguration : IEntityTypeConfiguration<CoreStreamerProfiles>
 {
     private readonly EncryptedValueConverter _converter;
 
@@ -14,13 +14,13 @@ public class StreamerProfileConfiguration : IEntityTypeConfiguration<StreamerPro
         _converter = converter;
     }
 
-    public void Configure(EntityTypeBuilder<StreamerProfile> builder)
+    public void Configure(EntityTypeBuilder<CoreStreamerProfiles> builder)
     {
-        builder.ToTable("CoreStreamerProfiles");
 
         // ⭐ 검색 성능 최적화를 위한 인덱스 추가
         builder.HasIndex(p => p.ChzzkUid).IsUnique();
         builder.HasIndex(p => p.Slug).IsUnique();
+        builder.HasIndex(p => p.OverlayToken); // [v2.4.1] 오버레이 토큰 기반 검색 성능 최적화
 
         // 🔍 대소문자 무관 검색을 위한 명시적 Collation 설정 (Osiris)
         var ciCollation = "utf8mb4_unicode_ci";
@@ -36,7 +36,7 @@ public class StreamerProfileConfiguration : IEntityTypeConfiguration<StreamerPro
     }
 }
 
-public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
+public class GlobalViewerConfiguration : IEntityTypeConfiguration<CoreGlobalViewers>
 {
     private readonly EncryptedValueConverter _converter;
 
@@ -45,9 +45,8 @@ public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
         _converter = converter;
     }
 
-    public void Configure(EntityTypeBuilder<GlobalViewer> builder)
+    public void Configure(EntityTypeBuilder<CoreGlobalViewers> builder)
     {
-        builder.ToTable("CoreGlobalViewers");
 
         var ciCollation = "utf8mb4_unicode_ci";
 
@@ -68,18 +67,17 @@ public class GlobalViewerConfiguration : IEntityTypeConfiguration<GlobalViewer>
     }
 }
 
-public class StreamerManagerConfiguration : IEntityTypeConfiguration<StreamerManager>
+public class StreamerManagerConfiguration : IEntityTypeConfiguration<CoreStreamerManagers>
 {
-    public void Configure(EntityTypeBuilder<StreamerManager> builder)
+    public void Configure(EntityTypeBuilder<CoreStreamerManagers> builder)
     {
-        builder.ToTable("CoreStreamerManagers");
         
-        builder.HasOne(m => m.StreamerProfile)
+        builder.HasOne(m => m.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(m => m.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(m => m.GlobalViewer)
+        builder.HasOne(m => m.CoreGlobalViewers)
                .WithMany()
                .HasForeignKey(m => m.GlobalViewerId)
                .IsRequired(false)
@@ -87,11 +85,10 @@ public class StreamerManagerConfiguration : IEntityTypeConfiguration<StreamerMan
     }
 }
 
-public class ChzzkCategoryConfiguration : IEntityTypeConfiguration<ChzzkCategory>
+public class ChzzkCategoryConfiguration : IEntityTypeConfiguration<SysChzzkCategories>
 {
-    public void Configure(EntityTypeBuilder<ChzzkCategory> builder)
+    public void Configure(EntityTypeBuilder<SysChzzkCategories> builder)
     {
-        builder.ToTable("SysChzzkCategories");
 
         builder.HasMany(c => c.Aliases)
                .WithOne(a => a.Category)
@@ -99,24 +96,22 @@ public class ChzzkCategoryConfiguration : IEntityTypeConfiguration<ChzzkCategory
     }
 }
 
-public class ChzzkCategoryAliasConfiguration : IEntityTypeConfiguration<ChzzkCategoryAlias>
+public class ChzzkCategoryAliasConfiguration : IEntityTypeConfiguration<SysChzzkCategoryAliases>
 {
-    public void Configure(EntityTypeBuilder<ChzzkCategoryAlias> builder)
+    public void Configure(EntityTypeBuilder<SysChzzkCategoryAliases> builder)
     {
-        builder.ToTable("SysChzzkCategoryAliases");
         
         builder.HasIndex(a => a.Alias);
     }
 }
 
 // [v4.9.4] 물댕봇 개인화 설정 (Permanent Preferences)
-public class StreamerPreferenceConfiguration : IEntityTypeConfiguration<StreamerPreference>
+public class StreamerPreferenceConfiguration : IEntityTypeConfiguration<SysStreamerPreferences>
 {
-    public void Configure(EntityTypeBuilder<StreamerPreference> builder)
+    public void Configure(EntityTypeBuilder<SysStreamerPreferences> builder)
     {
-        builder.ToTable("SysStreamerPreferences");
         
-        builder.HasOne(p => p.StreamerProfile)
+        builder.HasOne(p => p.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(p => p.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
@@ -127,18 +122,17 @@ public class StreamerPreferenceConfiguration : IEntityTypeConfiguration<Streamer
 }
 
 // 시청자와 스트리머 간의 관계 및 채널별 고유 상태
-public class ViewerRelationConfiguration : IEntityTypeConfiguration<ViewerRelation>
+public class ViewerRelationConfiguration : IEntityTypeConfiguration<CoreViewerRelations>
 {
-    public void Configure(EntityTypeBuilder<ViewerRelation> builder)
+    public void Configure(EntityTypeBuilder<CoreViewerRelations> builder)
     {
-        builder.ToTable("CoreViewerRelations");
         
-        builder.HasOne(v => v.StreamerProfile)
+        builder.HasOne(v => v.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(v => v.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
                
-        builder.HasOne(v => v.GlobalViewer)
+        builder.HasOne(v => v.CoreGlobalViewers)
                .WithMany()
                .HasForeignKey(v => v.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);

@@ -7,25 +7,25 @@
         layout: any
     }>();
     // [물멍]: 현재 재생 곡 영역 전용 설정 참조
-    let currentSongSettings = $derived(settings.CurrentSong || {
-        TitleFont: settings.liveTitleFont,
-        ArtistFont: settings.liveArtistFont,
-        TitleColor: settings.liveTitleColor,
-        ArtistColor: settings.liveArtistColor,
-        CardBgColor: settings.liveCardBgColor,
-        CardBgOpacity: settings.liveCardBgOpacity
+    let currentSongSettings = $derived(settings.CurrentSong ?? settings.currentSong ?? {
+        TitleFont: settings.LiveTitleFont ?? settings.liveTitleFont,
+        ArtistFont: settings.LiveArtistFont ?? settings.liveArtistFont,
+        TitleColor: settings.LiveTitleColor ?? settings.liveTitleColor,
+        ArtistColor: settings.LiveArtistColor ?? settings.liveArtistColor,
+        CardBgColor: settings.LiveCardBgColor ?? settings.liveCardBgColor,
+        CardBgOpacity: settings.LiveCardBgOpacity ?? settings.liveCardBgOpacity
     });
 </script>
 
-{#if currentSong && layout?.visible !== false && settings.showCurrentSong !== false}
+{#if currentSong && layout?.visible !== false && (settings.ShowCurrentSong ?? settings.showCurrentSong) !== false}
     <div 
         class="current-song-widget" 
         style="
-            left: {layout?.x ?? 50}px; 
-            top: {layout?.y ?? 50}px; 
-            width: {layout?.width ?? 600}px; 
-            height: {layout?.height ?? 180}px;
-            opacity: {layout?.opacity ?? 1};
+            left: {layout?.X ?? layout?.x ?? 50}px; 
+            top: {layout?.Y ?? layout?.y ?? 50}px; 
+            width: {layout?.Width ?? layout?.width ?? 600}px; 
+            height: {layout?.Height ?? layout?.height ?? 180}px;
+            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
             --live-title-font: {currentSongSettings.TitleFont || 'Gmarket Sans'};
             --live-artist-font: {currentSongSettings.ArtistFont || 'Gmarket Sans'};
             --live-title-color: {currentSongSettings.TitleColor || '#FFFFFF'};
@@ -36,9 +36,9 @@
         in:fly={{ y: -20, duration: 800 }}
     >
         <div class="live-content">
-            <h1 class="live-title">{currentSong.title}</h1>
-            {#if currentSong.artist}
-                <span class="live-artist">{currentSong.artist}</span>
+            <h1 class="live-title">{currentSong.Title ?? currentSong.title}</h1>
+            {#if (currentSong.Artist ?? currentSong.artist)}
+                <span class="live-artist">{currentSong.Artist ?? currentSong.artist}</span>
             {/if}
         </div>
     </div>

@@ -13,19 +13,18 @@
     }
 
     interface OverlayData {
+        CurrentSong?: SongData;
         currentSong?: SongData;
-        queue: SongData[];
-        settings?: {
-            liveTitleFont: string;
-            liveArtistFont: string;
-            queueFont: string;
-        };
+        Queue?: SongData[];
+        queue?: SongData[];
+        Settings?: any;
+        settings?: any;
     }
 
     let { data } = $props<{ data: OverlayData | null }>();
 
-    let currentSong = $derived(data?.currentSong);
-    let queue = $derived(data?.queue || []);
+    let currentSong = $derived(data?.CurrentSong ?? data?.currentSong);
+    let queue = $derived(data?.Queue ?? data?.queue ?? []);
 </script>
 
 <!-- [오시리스의 무대]: 프리미엄 가로형 신청곡 레이아웃 -->
@@ -35,8 +34,8 @@
         <div class="live-card-wrapper" in:fly={{ y: -30, duration: 800 }}>
             <div class="live-card">
                 <div class="thumbnail-section">
-                    {#if currentSong.thumbnailUrl}
-                        <img src={currentSong.thumbnailUrl} alt={currentSong.title} class="live-thumb" />
+                    {#if (currentSong.ThumbnailUrl ?? currentSong.thumbnailUrl)}
+                        <img src={currentSong.ThumbnailUrl ?? currentSong.thumbnailUrl} alt={currentSong.Title ?? currentSong.title} class="live-thumb" />
                     {:else}
                         <div class="live-thumb-placeholder">
                             <Music size={40} />
@@ -48,8 +47,8 @@
                     </div>
                 </div>
                 <div class="info-section">
-                    <h1 class="live-title">{currentSong.title}</h1>
-                    <p class="live-artist">{currentSong.artist || 'Unknown Artist'}</p>
+                    <h1 class="live-title">{currentSong.Title ?? currentSong.title}</h1>
+                    <p class="live-artist">{currentSong.Artist ?? currentSong.artist ?? 'Unknown Artist'}</p>
                 </div>
             </div>
         </div>

@@ -5,30 +5,61 @@
  */
 class ModalState {
     isOpen = $state(false);
-    title = $state("정말로 삭제할까요?");
-    message = $state("이 작업은 되돌릴 수 없으며 모든 데이터가 유실됩니다.");
-    confirmText = $state("삭제하기");
+    isAlert = $state(false);
+    style = $state<"classic" | "mooldang">("classic"); // 스타일 선택 옵션 추가
+    title = $state("알림");
+    message = $state("");
+    confirmText = $state("확인");
     cancelText = $state("취소");
-    variant = $state<"danger" | "warning" | "info">("danger");
+    variant = $state<"danger" | "warning" | "info">("info");
     
     private resolve: ((value: boolean) => void) | null = null;
 
+    /**
+     * ⚠️ [물멍]: 확인/취소 선택형 모달
+     */
     async confirm(options: {
         title?: string;
         message?: string;
         confirmText?: string;
         cancelText?: string;
         variant?: "danger" | "warning" | "info";
+        style?: "classic" | "mooldang";
     }): Promise<boolean> {
-        this.title = options.title ?? "정말로 삭제할까요?";
-        this.message = options.message ?? "이 작업은 되돌릴 수 없으며 모든 데이터가 유실됩니다.";
-        this.confirmText = options.confirmText ?? "삭제하기";
+        this.isAlert = false;
+        this.style = options.style ?? "classic";
+        this.title = options.title ?? "확인해 주세요";
+        this.message = options.message ?? "";
+        this.confirmText = options.confirmText ?? "확인";
         this.cancelText = options.cancelText ?? "취소";
-        this.variant = options.variant ?? "danger";
+        this.variant = options.variant ?? "info";
         this.isOpen = true;
 
         return new Promise((resolve) => {
             this.resolve = resolve;
+        });
+    }
+
+    /**
+     * 💡 [물멍]: 확인 버튼만 있는 단순 알림 모달
+     */
+    async alert(options: {
+        title?: string;
+        message?: string;
+        confirmText?: string;
+        variant?: "danger" | "warning" | "info";
+        style?: "classic" | "mooldang";
+    }): Promise<void> {
+        this.isAlert = true;
+        this.style = options.style ?? "classic";
+        this.title = options.title ?? "알림";
+        this.message = options.message ?? "";
+        this.confirmText = options.confirmText ?? "확인";
+        this.variant = options.variant ?? "info";
+        this.isOpen = true;
+
+        return new Promise((resolve) => {
+            this.resolve = () => resolve();
         });
     }
 

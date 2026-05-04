@@ -39,7 +39,7 @@ graph LR
 | **MassTransit 컨슈머** | [ChatReceivedConsumer.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Consumers/ChatReceivedConsumer.cs) | ✅ 완성 |
 | **메시징 인프라 DI** | [Infrastructure/DependencyInjection.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Infrastructure/DependencyInjection.cs#L228-L336) | ✅ 완성 |
 | **포인트 Channel** | [PointBatchService.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Services/PointBatchService.cs) | ✅ `BoundedChannel<PointJob>(100k)` |
-| **채팅로그 Channel** | [ChatLogBufferService.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Services/ChatLogBufferService.cs) | ✅ `BoundedChannel<ChatInteractionLog>(50k)` |
+| **채팅로그 Channel** | [ChatLogBufferService.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Services/ChatLogBufferService.cs) | ✅ `BoundedChannel<LogChatInteractions>(50k)` |
 | **서킷 브레이커 / 재시도** | Infrastructure DI 내 MassTransit 설정 | ✅ 3회 재시도 + CB |
 | **RabbitMQ Docker 서비스** | [docker-compose.yml](file:///c:/webapi/MooldangAPI/MooldangBot/docker-compose.yml#L49-L72) | ✅ `ulimits: 65536` |
 

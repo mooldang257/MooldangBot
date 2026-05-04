@@ -19,7 +19,7 @@ public class RouletteService(IAppDbContext db, IMediator mediator) : IRouletteSe
 }
 
 // [v11.0] required 프로퍼티를 통한 필수 필드 강제 (Entity 및 DTO 공통)
-public class StreamerProfile : ISoftDeletable {
+public class CoreStreamerProfiles : ISoftDeletable {
     [Key] public int Id { get; init; } // 식별자는 고정(init)
     [MaxLength(50)] public required string ChzzkUid { get; set; } // 필수값(required)
 }
@@ -34,7 +34,7 @@ public class StreamerProfile : ISoftDeletable {
 public record RouletteSpinCompletedEvent(
     string ChzzkUid, 
     int SpinId, 
-    List<RouletteItem> Results
+    List<FuncRouletteItems> Results
 ) : INotification;
 ```
 
@@ -51,7 +51,7 @@ public record RouletteSpinCompletedEvent(
 **[핵심 코드: Full Async Propagation]**
 ```csharp
 // CancellationToken(ct)을 반드시 끝까지 전파하여 자원 낭비를 방지합니다.
-public async Task<List<RouletteItem>> SpinMultiAsync(..., CancellationToken ct) {
+public async Task<List<FuncRouletteItems>> SpinMultiAsync(..., CancellationToken ct) {
     return await db.RouletteSpins
         .Include(s => s.Items)
         .ToListAsync(ct); // [v6.2] ct 전파 준수
@@ -100,7 +100,7 @@ try {
 - **얇은 위임자 (Thin Orchestrator)**: Controller나 레거시 Service 계층은 스스로 복잡한 비즈니스 로직을 처리하지 않습니다. 오직 MediatR의 `ISender.Send()`를 호출하여 모듈 내부의 핸들러에 제어권을 위임하는 중계 역할만 수행합니다.
 
 ### 🤝 모듈별 격리된 계약(Abstractions) 관리
-- **모듈별 추상화 (Modular Abstractions)**: `MooldangBot.Contracts`의 비대화를 막기 위해, 각 기능 모듈(`Roulette`, `Point`, `Commands`, `SongBook`)은 자신의 인터페이스를 독자적인 `Abstractions` 폴더 내에 정의합니다. (예: `MooldangBot.Modules.Roulette/Abstractions/IRouletteDbContext.cs`)
+- **모듈별 추상화 (Modular Abstractions)**: `MooldangBot.Contracts`의 비대화를 막기 위해, 각 기능 모듈(`FuncRouletteMain`, `Point`, `Commands`, `FuncSongBooks`)은 자신의 인터페이스를 독자적인 `Abstractions` 폴더 내에 정의합니다. (예: `MooldangBot.Modules.Roulette/Abstractions/IRouletteDbContext.cs`)
 - **수평적 참조 금지 (Layering strictly enforced)**: 모듈 간에 구체적인 핸들러나 내부 서비스를 직접 참조하는 것을 엄격히 금지합니다. 오직 `MediatR` 메시지나 공용 인터페이스(`Abstractions`)를 통해서만 상호작용합니다.
 - **순환 참조 방지**: `Infrastructure`는 모든 모듈의 인터페이스를 구현하지만, 모듈은 서로를 모르고 오직 인프라가 제공하는 계약(Abstractions)에만 의존하게 함으로써 순환 참조의 고리를 완벽히 끊어냅니다.
 

@@ -13,20 +13,20 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
 {
     private IDbConnection GetConnection() => db.Database.GetDbConnection();
 
-    public async Task<List<Master_SongLibrary>> SearchByVectorAsync(float[] vector, int limit = 10)
+    public async Task<List<FuncSongMasterLibrary>> SearchByVectorAsync(float[] Vector, int Limit = 10)
     {
-        var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
-        const string sql = @"
+        var VectorString = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+        const string Sql = @"
             SELECT Id, SongLibraryId, Title, Artist, ThumbnailUrl,
-                   VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance
+                   VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) as Distance
             FROM FuncSongMasterLibrary
-            WHERE VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25
+            WHERE VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) < 0.25
             ORDER BY Distance
-            LIMIT @limit";
-
-        var conn = GetConnection();
-        var results = await conn.QueryAsync<dynamic>(sql, new { vector = vectorString, limit });
-        return results.Select(r => new Master_SongLibrary {
+            LIMIT @Limit";
+ 
+        var Conn = GetConnection();
+        var Results = await Conn.QueryAsync<dynamic>(Sql, new { Vector = VectorString, Limit });
+        return Results.Select(r => new FuncSongMasterLibrary {
             Id = (int)r.Id,
             SongLibraryId = (long)r.SongLibraryId,
             Title = (string)r.Title,
@@ -35,103 +35,110 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         }).ToList();
     }
 
-    public async Task<List<MooldangBot.Domain.Entities.SongBook>> SearchPersonalSongBookAsync(int streamerProfileId, string? query, float[]? vector, int limit = 5)
+    public async Task<List<MooldangBot.Domain.Entities.FuncSongBooks>> SearchPersonalSongBookAsync(int StreamerProfileId, string? Query, float[]? Vector, int Limit = 5)
     {
-        var conn = GetConnection();
-        logger.LogInformation("🔍 [SongBookRepo] Search Start - Query: {Query}, HasVector: {HasVector}", query, vector != null);
-
+        var Conn = GetConnection();
+        logger.LogInformation("🔍 [SongBookRepo] Search Start - Query: {Query}, HasVector: {HasVector}", Query, Vector != null);
+ 
         // 0단계: ID 검색 (SongNo) 또는 제목 정확한 일치
-        if (!string.IsNullOrEmpty(query))
+        if (!string.IsNullOrEmpty(Query))
         {
-            if (int.TryParse(query, out int songNo))
+            if (int.TryParse(Query, out int SongNo))
             {
-                const string idSql = @"
+                const string IdSql = @"
                     SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
                            IsRequestable, SingCount, RequiredPoints, LastSungAt, 
                            LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
                            SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
                            IsActive, IsDeleted, CreatedAt, UpdatedAt
                     FROM FuncSongBooks
-                    WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND SongNo = @songNo
+                    WHERE StreamerProfileId = @StreamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND SongNo = @SongNo
                     LIMIT 1";
-                var idResult = await conn.QueryFirstOrDefaultAsync<dynamic>(idSql, new { streamerProfileId, songNo });
-                if (idResult != null) {
-                    var mapped = MapToSongBook(idResult);
-                    logger.LogInformation("🔍 [SongBookRepo] SongNo Match Found: {Title} (#{SongNo})", (object)mapped.Title, (object)mapped.SongNo);
-                    return new List<MooldangBot.Domain.Entities.SongBook> { mapped };
+                var IdResult = await Conn.QueryFirstOrDefaultAsync<dynamic>(IdSql, new { StreamerProfileId, SongNo });
+                if (IdResult != null) {
+                    var Mapped = MapToSongBook(IdResult);
+                    logger.LogInformation("🔍 [SongBookRepo] SongNo Match Found: {Title} (#{SongNo})", (object)Mapped.Title, (object)Mapped.SongNo);
+                    return new List<MooldangBot.Domain.Entities.FuncSongBooks> { Mapped };
                 }
             }
-
-            const string exactSql = @"
+ 
+            const string ExactSql = @"
                 SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
                        IsRequestable, SingCount, RequiredPoints, LastSungAt, 
                        LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
                        SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
                        IsActive, IsDeleted, CreatedAt, UpdatedAt
                 FROM FuncSongBooks
-                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND Title = @query
+                WHERE StreamerProfileId = @StreamerProfileId AND IsActive = 1 AND IsDeleted = 0 AND Title = @Query
                 LIMIT 1";
-            var exactResult = await conn.QueryFirstOrDefaultAsync<dynamic>(exactSql, new { streamerProfileId, query });
-            if (exactResult != null) {
-                var mapped = MapToSongBook(exactResult);
-                logger.LogInformation("🔍 [SongBookRepo] Exact Match Found: {Title} (Cost: {Points})", (object)mapped.Title, (object)mapped.RequiredPoints);
-                return new List<MooldangBot.Domain.Entities.SongBook> { mapped };
+            var ExactResult = await Conn.QueryFirstOrDefaultAsync<dynamic>(ExactSql, new { StreamerProfileId, Query });
+            if (ExactResult != null) {
+                var Mapped = MapToSongBook(ExactResult);
+                logger.LogInformation("🔍 [SongBookRepo] Exact Match Found: {Title} (Cost: {Points})", (object)Mapped.Title, (object)Mapped.RequiredPoints);
+                return new List<MooldangBot.Domain.Entities.FuncSongBooks> { Mapped };
             }
         }
-
+ 
         // 1단계: 벡터 검색
-        if (vector != null && vector.Length > 0)
+        if (Vector != null && Vector.Length > 0)
         {
-            var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
-            const string vectorSql = @"
+            var VectorString = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+            const string VectorSql = @"
                 SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
                        IsRequestable, SingCount, RequiredPoints, LastSungAt, 
                        LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
                        SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
                        IsActive, IsDeleted, CreatedAt, UpdatedAt,
-                       VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance
+                       VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) as Distance
                 FROM FuncSongBooks
-                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0
-                  AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25
-                ORDER BY Distance LIMIT @limit";
-
-            var vectorResults = (await conn.QueryAsync<dynamic>(vectorSql, new { streamerProfileId, vector = vectorString, limit })).ToList();
-            if (vectorResults.Any()) {
-                List<MooldangBot.Domain.Entities.SongBook> mappedResults = vectorResults.Select(r => (MooldangBot.Domain.Entities.SongBook)MapToSongBook(r)).ToList();
-                foreach(var m in mappedResults) logger.LogInformation("🔍 [SongBookRepo] Vector Match: {Title}, Distance: {Distance}, Cost: {Cost}", (object)m.Title, (object)vectorResults.First(v => v.Id == m.Id).Distance, (object)m.RequiredPoints);
-                return mappedResults;
+                WHERE StreamerProfileId = @StreamerProfileId AND IsActive = 1 AND IsDeleted = 0
+                  AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) < 0.25
+                ORDER BY Distance, RAND() LIMIT @Limit";
+ 
+            var VectorResults = (await Conn.QueryAsync<dynamic>(VectorSql, new { StreamerProfileId, Vector = VectorString, Limit })).ToList();
+            if (VectorResults.Any()) {
+                List<MooldangBot.Domain.Entities.FuncSongBooks> MappedResults = VectorResults.Select(r => (MooldangBot.Domain.Entities.FuncSongBooks)MapToSongBook(r)).ToList();
+                foreach(var m in MappedResults) logger.LogInformation("🔍 [SongBookRepo] Vector Match: {Title}, Distance: {Distance}, Cost: {Cost}", (object)m.Title, (object)VectorResults.First(v => v.Id == m.Id).Distance, (object)m.RequiredPoints);
+                return MappedResults;
             }
             logger.LogInformation("🔍 [SongBookRepo] No Vector Match under 0.25");
         }
-
+ 
         // 2단계: LIKE 검색
-        if (!string.IsNullOrEmpty(query))
+        if (!string.IsNullOrEmpty(Query))
         {
-            const string likeSql = @"
+            // [v28.2] 검색어 정규화: 특수 구분자를 공백으로 치환하여 유연한 검색 보장
+            var NormalizedQuery = Query.Replace("-", " ").Replace("_", " ").Replace("/", " ").Trim();
+
+            const string LikeSql = @"
                 SELECT Id, SongNo, StreamerProfileId, Title, Artist, Album, Alias, Category, 
                        IsRequestable, SingCount, RequiredPoints, LastSungAt, 
                        LyricsUrl, MrUrl, Pitch, Proficiency, ReferenceUrl, 
                        SongLibraryId, ThumbnailPath, ThumbnailUrl, TitleChosung, 
                        IsActive, IsDeleted, CreatedAt, UpdatedAt
                 FROM FuncSongBooks
-                WHERE StreamerProfileId = @streamerProfileId AND IsActive = 1 AND IsDeleted = 0 
-                  AND (Title LIKE CONCAT('%', @query, '%') OR Artist LIKE CONCAT('%', @query, '%') OR (Alias IS NOT NULL AND Alias LIKE CONCAT('%', @query, '%')))
-                ORDER BY (Title = @query) DESC LIMIT @limit";
-
-            var likeResults = (await conn.QueryAsync<dynamic>(likeSql, new { streamerProfileId, query, limit })).ToList();
-            if (likeResults.Any()) {
-                List<MooldangBot.Domain.Entities.SongBook> mappedResults = likeResults.Select(r => (MooldangBot.Domain.Entities.SongBook)MapToSongBook(r)).ToList();
-                logger.LogInformation("🔍 [SongBookRepo] LIKE Match Found: {Title} (Count: {Count})", (object)mappedResults.First().Title, (object)mappedResults.Count);
-                return mappedResults;
+                WHERE StreamerProfileId = @StreamerProfileId AND IsActive = 1 AND IsDeleted = 0 
+                  AND (
+                    CONCAT(Title, ' ', IFNULL(Artist, ''), ' ', IFNULL(Alias, '')) LIKE CONCAT('%', REPLACE(@NormalizedQuery, ' ', '%'), '%')
+                    OR 
+                    CONCAT(IFNULL(Artist, ''), ' ', Title) LIKE CONCAT('%', REPLACE(@NormalizedQuery, ' ', '%'), '%')
+                  )
+                ORDER BY (Title = @Query) DESC, RAND() LIMIT @Limit";
+ 
+            var LikeResults = (await Conn.QueryAsync<dynamic>(LikeSql, new { StreamerProfileId, Query, NormalizedQuery, Limit })).ToList();
+            if (LikeResults.Any()) {
+                List<MooldangBot.Domain.Entities.FuncSongBooks> MappedResults = LikeResults.Select(r => (MooldangBot.Domain.Entities.FuncSongBooks)MapToSongBook(r)).ToList();
+                logger.LogInformation("🔍 [SongBookRepo] LIKE Match Found: {Title} (Count: {Count})", (object)MappedResults.First().Title, (object)MappedResults.Count);
+                return MappedResults;
             }
         }
-
+ 
         logger.LogInformation("🔍 [SongBookRepo] No results found in any stage.");
-        return new List<MooldangBot.Domain.Entities.SongBook>();
+        return new List<MooldangBot.Domain.Entities.FuncSongBooks>();
     }
 
-    private MooldangBot.Domain.Entities.SongBook MapToSongBook(dynamic r) {
-        return new MooldangBot.Domain.Entities.SongBook {
+    private MooldangBot.Domain.Entities.FuncSongBooks MapToSongBook(dynamic r) {
+        return new MooldangBot.Domain.Entities.FuncSongBooks {
             Id = (int)r.Id,
             SongNo = (int)r.SongNo,
             StreamerProfileId = (int)r.StreamerProfileId,
@@ -160,35 +167,35 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         };
     }
 
-    public async Task<List<Streamer_SongLibrary>> SearchStreamerSongsAsync(int streamerProfileId, string? query, float[]? vector, int limit = 5)
+    public async Task<List<FuncSongStreamerLibrary>> SearchStreamerSongsAsync(int StreamerProfileId, string? Query, float[]? Vector, int Limit = 5)
     {
-        var conn = GetConnection();
-        if (!string.IsNullOrEmpty(query))
+        var Conn = GetConnection();
+        if (!string.IsNullOrEmpty(Query))
         {
-            const string textSql = @"SELECT Id, Title, Artist, ThumbnailUrl FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @streamerProfileId AND (Title LIKE CONCAT('%', @query, '%') OR Artist LIKE CONCAT('%', @query, '%')) LIMIT @limit";
-            var textResults = (await conn.QueryAsync<dynamic>(textSql, new { streamerProfileId, query, limit })).ToList();
-            if (textResults.Any()) return textResults.Select(r => new Streamer_SongLibrary { Id = (int)r.Id, Title = (string)r.Title, Artist = (string?)r.Artist }).ToList();
+            const string TextSql = @"SELECT Id, Title, Artist, ThumbnailUrl FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @StreamerProfileId AND (Title LIKE CONCAT('%', @Query, '%') OR Artist LIKE CONCAT('%', @Query, '%')) LIMIT @Limit";
+            var TextResults = (await Conn.QueryAsync<dynamic>(TextSql, new { StreamerProfileId, Query, Limit })).ToList();
+            if (TextResults.Any()) return TextResults.Select(r => new FuncSongStreamerLibrary { Id = (int)r.Id, Title = (string)r.Title, Artist = (string?)r.Artist }).ToList();
         }
-        if (vector != null && vector.Length > 0)
+        if (Vector != null && Vector.Length > 0)
         {
-            var vectorString = "[" + string.Join(",", vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
-            const string vectorSql = @"SELECT Id, Title, Artist, ThumbnailUrl, VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) as Distance FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @streamerProfileId AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@vector)) < 0.25 ORDER BY Distance LIMIT @limit";
-            var vectorResults = (await conn.QueryAsync<dynamic>(vectorSql, new { streamerProfileId, vector = vectorString, limit })).ToList();
-            return vectorResults.Select(r => new Streamer_SongLibrary { 
+            var VectorString = "[" + string.Join(",", Vector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
+            const string VectorSql = @"SELECT Id, Title, Artist, ThumbnailUrl, VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) as Distance FROM FuncSongStreamerLibrary WHERE StreamerProfileId = @StreamerProfileId AND VEC_DISTANCE_COSINE(TitleVector, VEC_FromText(@Vector)) < 0.25 ORDER BY Distance LIMIT @Limit";
+            var VectorResults = (await Conn.QueryAsync<dynamic>(VectorSql, new { StreamerProfileId, Vector = VectorString, Limit })).ToList();
+            return VectorResults.Select(r => new FuncSongStreamerLibrary { 
                 Id = (int)r.Id, 
                 Title = (string)r.Title, 
                 Artist = (string?)r.Artist 
             }).ToList();
         }
-        return new List<Streamer_SongLibrary>();
+        return new List<FuncSongStreamerLibrary>();
     }
 
-    public async Task<Master_SongLibrary?> GetMasterSongByLibraryIdAsync(long songLibraryId)
+    public async Task<FuncSongMasterLibrary?> GetMasterSongByLibraryIdAsync(long SongLibraryId)
     {
-        const string sql = @"SELECT Id, SongLibraryId, Title, Artist, ThumbnailUrl FROM FuncSongMasterLibrary WHERE SongLibraryId = @songLibraryId LIMIT 1";
-        var r = await GetConnection().QueryFirstOrDefaultAsync<dynamic>(sql, new { songLibraryId });
+        const string Sql = @"SELECT Id, SongLibraryId, Title, Artist, ThumbnailUrl FROM FuncSongMasterLibrary WHERE SongLibraryId = @SongLibraryId LIMIT 1";
+        var r = await GetConnection().QueryFirstOrDefaultAsync<dynamic>(Sql, new { SongLibraryId });
         if (r == null) return null;
-        return new Master_SongLibrary {
+        return new FuncSongMasterLibrary {
             Id = (int)r.Id,
             SongLibraryId = (long)r.SongLibraryId,
             Title = (string)r.Title,
@@ -197,10 +204,10 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
         };
     }
 
-    public async Task<MooldangBot.Domain.Entities.SongBook?> GetByStreamerIdAsync(string streamerUid)
+    public async Task<MooldangBot.Domain.Entities.FuncSongBooks?> GetByStreamerIdAsync(string streamerUid)
     {
-        return await db.FuncSongBooks.AsNoTracking()
-            .Select(s => new MooldangBot.Domain.Entities.SongBook {
+        return await db.TableFuncSongBooks.AsNoTracking()
+            .Select(s => new MooldangBot.Domain.Entities.FuncSongBooks {
                 Id = s.Id,
                 StreamerProfileId = s.StreamerProfileId,
                 Title = s.Title,
@@ -214,9 +221,9 @@ public class SongBookRepository(ISongBookDbContext db, ILogger<SongBookRepositor
             .FirstOrDefaultAsync(s => s.StreamerProfileId.ToString() == streamerUid);
     }
 
-    public async Task AddAsync(MooldangBot.Domain.Entities.SongBook songBook)
+    public async Task AddAsync(MooldangBot.Domain.Entities.FuncSongBooks songBook)
     {
-        db.FuncSongBooks.Add(songBook);
+        db.TableFuncSongBooks.Add(songBook);
         await db.SaveChangesAsync(default);
     }
 }

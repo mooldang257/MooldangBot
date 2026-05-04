@@ -69,7 +69,7 @@ sequenceDiagram
 ## 3. 핵심 기술 컴포넌트 분석
 
 ### 3-1. [오시리스의 기록관] BroadcastScribe
-- **기능**: 단일 방송 세션(`BroadcastSession`)의 생명주기를 관리하고 통계(채팅 수, 키워드)를 기록합니다.
+- **기능**: 단일 방송 세션(`SysBroadcastSessions`)의 생명주기를 관리하고 통계(채팅 수, 키워드)를 기록합니다.
 - **안정성**: `IHostApplicationLifetime`의 `ApplicationStopping` 이벤트를 구독하여, 서버 종료 시 메모리의 통계 데이터를 즉시 DB로 플러시(Flush)합니다.
 
 ### 3-2. [파동의 지휘자] ShardedWebSocketManager

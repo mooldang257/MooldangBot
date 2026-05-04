@@ -22,7 +22,7 @@
 ## 3. 세부 구현 단계 (Implementation Steps)
 
 ### Phase 3.1: 데이터 레이어 확장
-- [ ] **Domain**: `IamfStreamerSetting` 엔티티에 `IsVisualResonanceEnabled`, `IsPersonaChatEnabled` 필드 추가.
+- [ ] **Domain**: `IamfStreamerSettings` 엔티티에 `IsVisualResonanceEnabled`, `IsPersonaChatEnabled` 필드 추가.
 - [ ] **Infrastructure**: `AppDbContext`를 통해 MariaDB 스키마 동기화 (Migration 또는 DDL).
 
 ### Phase 3.2: API 및 서비스 연동
@@ -81,7 +81,7 @@
 ---
 
 ## 13.### Phase 15: [오시리스의 기록관] 방송 세션 및 통계
-- [x] **Domain**: `BroadcastSession` 엔티티 구축.
+- [x] **Domain**: `SysBroadcastSessions` 엔티티 구축.
 - [x] **Engine**: `BroadcastScribe` 실시간 집계 파이프라인 완성.
 
 ---

@@ -21,7 +21,7 @@ public static class SignalRExtensions
             options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("MooldangBot");
         })
         .AddJsonProtocol(options => {
-            options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.PayloadSerializerOptions.PropertyNamingPolicy = null;
             options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
         });
 

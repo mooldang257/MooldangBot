@@ -9,42 +9,29 @@ namespace MooldangBot.Domain.DTOs;
 /// </summary>
 public class SongQueueResponseDto
 {
-    [JsonPropertyName("id")]
     public long Id { get; set; }
 
-    [JsonPropertyName("streamerProfileId")]
     public int StreamerProfileId { get; set; }
 
-    [JsonPropertyName("globalViewerId")]
     public int GlobalViewerId { get; set; }
 
-    [JsonPropertyName("viewerNickname")]
     public string ViewerNickname { get; set; } = string.Empty;
 
-    [JsonPropertyName("viewerProfileImageUrl")]
     public string? ViewerProfileImageUrl { get; set; }
 
-    [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
 
-    [JsonPropertyName("artist")]
     public string Artist { get; set; } = string.Empty;
 
-    [JsonPropertyName("videoId")]
     public string? VideoId { get; set; }
 
-    [JsonPropertyName("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
 
-    [JsonPropertyName("status")]
     public SongStatus Status { get; set; }
 
-    [JsonPropertyName("paidAmount")]
     public int FinalCost { get; set; }
 
-    [JsonPropertyName("createdAt")]
     public KstClock CreatedAt { get; set; }
 
-    [JsonPropertyName("isPriority")]
     public bool IsPriority { get; set; }
 }

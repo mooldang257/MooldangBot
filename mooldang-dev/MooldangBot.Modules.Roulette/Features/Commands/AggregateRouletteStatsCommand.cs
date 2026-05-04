@@ -18,8 +18,8 @@ public class AggregateRouletteStatsCommandHandler(
     public async Task Handle(AggregateRouletteStatsCommand request, CancellationToken ct)
     {
         logger.LogInformation("🎰 [룰렛 모듈] 룰렛 확률 감사 집계 중...");
-        var connection = db.Database.GetDbConnection();
-
+        var Connection = db.Database.GetDbConnection();
+ 
         const string sql = @"
             INSERT INTO LogRouletteStats (RouletteId, ItemName, TheoreticalProbability, TotalSpins, WinCount, LastUpdatedAt)
             SELECT 
@@ -38,8 +38,8 @@ public class AggregateRouletteStatsCommandHandler(
                 TotalSpins = VALUES(TotalSpins),
                 WinCount = VALUES(WinCount),
                 LastUpdatedAt = NOW();";;
-
-        int affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, cancellationToken: ct));
-        logger.LogInformation("✅ [룰렛 모듈] 룰렛 감사 집계 완료 ({Count}항목 갱신)", affectedRows);
+ 
+        int AffectedRows = await Connection.ExecuteAsync(new CommandDefinition(sql, cancellationToken: ct));
+        logger.LogInformation("✅ [룰렛 모듈] 룰렛 감사 집계 완료 ({Count}항목 갱신)", AffectedRows);
     }
 }

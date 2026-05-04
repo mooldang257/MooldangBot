@@ -10,7 +10,7 @@
 
 ### [x] Phase 2: AppDbContext 분리 (OnModelCreating 해체)
 - [x] `Infrastructure/Persistence/Configurations/` 디렉토리 구조 생성
-- [x] 엔티티별 `IEntityTypeConfiguration<T>` 구현 파일 생성 (SongBook, Point, Roulette, Commands 등 8개 도메인)
+- [x] 엔티티별 `IEntityTypeConfiguration<T>` 구현 파일 생성 (FuncSongBooks, Point, FuncRouletteMain, Commands 등 8개 도메인)
 - [x] `AppDbContext.cs` 리팩터링 및 `ApplyConfigurationsFromAssembly` 도입
 - [x] 정합성 및 빌드 성공 확인
 
@@ -20,8 +20,8 @@
 - [ ] 주기를 설정 파일(`appsettings.json`)과 연동하여 중앙 제어화
 - [ ] 기존 DI 파일에서 개별 워커 등록 코드 제거 및 `AddWorkerRegistry()` 호출로 통합
 
-### [ ] Phase 4: 대형 도메인(SongBook) 적출
-- [ ] `MooldangBot.Application` 내 `SongBook` 관련 로직 식별
+### [ ] Phase 4: 대형 도메인(FuncSongBooks) 적출
+- [ ] `MooldangBot.Application` 내 `FuncSongBooks` 관련 로직 식별
 - [ ] `MooldangBot.Modules.SongBook` 프로젝트로 이관 및 격리
 - [ ] 의존성 구조 최적화 및 빌드 검증
 

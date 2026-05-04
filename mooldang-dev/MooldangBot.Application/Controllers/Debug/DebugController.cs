@@ -14,7 +14,7 @@ namespace MooldangBot.Application.Controllers.Debug
         [HttpGet("system-check")]
         public async Task<IActionResult> CheckSystem()
         {
-            var streamers = await db.CoreStreamerProfiles
+            var streamers = await db.TableCoreStreamerProfiles
                 .IgnoreQueryFilters()
                 .Select(p => new { 
                     p.ChannelName, 

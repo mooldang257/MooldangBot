@@ -9,8 +9,8 @@
 컨트롤러가 하나의 폴더에 모여있지 않고, `Features/` 하위의 각 기능 폴더 내에 위치합니다.
 - **Features/Auth/AuthController**: 치지직 OAuth 2.0 인증, 세션 쿠키 발급, RBAC 처리를 담당합니다.
 - **Features/Admin/AdminBotController**: 스트리머별 봇 설정 및 마스터 관리 기능을 담당합니다.
-- **Features/SongQueue/SongController**: 신청곡 추가, 삭제 및 현재 큐 조회 기능을 제공합니다.
-- **Features/Roulette/RouletteController**: 룰렛 설정 및 결과 로그 조회를 담당합니다.
+- **Features/FuncSongListQueues/SongController**: 신청곡 추가, 삭제 및 현재 큐 조회 기능을 제공합니다.
+- **Features/FuncRouletteMain/RouletteController**: 룰렛 설정 및 결과 로그 조회를 담당합니다.
 
 ---
 

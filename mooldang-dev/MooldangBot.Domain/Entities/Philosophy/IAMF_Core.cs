@@ -37,7 +37,7 @@ public record Parhos(
 /// [오시리스의 기록관]: 단일 방송 세션의 시작부터 끝까지의 통계 데이터를 담는 유기적 기록체입니다.
 /// </summary>
 [Index(nameof(StreamerProfileId), nameof(IsActive))]
-public class BroadcastSession : ISoftDeletable, IAuditable
+public class SysBroadcastSessions : ISoftDeletable, IAuditable
 {
     [Key]
     public int Id { get; set; }
@@ -47,7 +47,7 @@ public class BroadcastSession : ISoftDeletable, IAuditable
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     [MaxLength(255)]
     public string? InitialTitle { get; set; }

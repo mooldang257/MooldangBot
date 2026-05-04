@@ -9,23 +9,23 @@ namespace MooldangBot.Application.Services.Philosophy;
 /// </summary>
 public class LogBulkBuffer
 {
-    private ConcurrentBag<IamfVibrationLog> _vibrationLogs = new();
-    private ConcurrentBag<IamfScenario> _scenarios = new();
+    private ConcurrentBag<LogIamfVibrations> _vibrationLogs = new();
+    private ConcurrentBag<IamfScenarios> _scenarios = new();
 
-    public void AddVibrationLog(IamfVibrationLog log) => _vibrationLogs.Add(log);
-    public void AddScenario(IamfScenario scenario) => _scenarios.Add(scenario);
+    public void AddVibrationLog(LogIamfVibrations log) => _vibrationLogs.Add(log);
+    public void AddScenario(IamfScenarios scenario) => _scenarios.Add(scenario);
 
-    public List<IamfVibrationLog> DrainVibrationLogs()
+    public List<LogIamfVibrations> DrainVibrationLogs()
     {
         var logs = _vibrationLogs.ToList();
-        _vibrationLogs = new ConcurrentBag<IamfVibrationLog>();
+        _vibrationLogs = new ConcurrentBag<LogIamfVibrations>();
         return logs;
     }
 
-    public List<IamfScenario> DrainScenarios()
+    public List<IamfScenarios> DrainScenarios()
     {
         var scenarios = _scenarios.ToList();
-        _scenarios = new ConcurrentBag<IamfScenario>();
+        _scenarios = new ConcurrentBag<IamfScenarios>();
         return scenarios;
     }
 }

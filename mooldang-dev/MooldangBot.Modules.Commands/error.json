@@ -1,0 +1,1021 @@
+{
+  "$schema": "http://json.schemastore.org/sarif-1.0.0",
+  "version": "1.0.0",
+  "runs": [
+    {
+      "tool": {
+        "name": "Microsoft (R) Visual C# Compiler",
+        "version": "5.0.0.0",
+        "fileVersion": "5.0.0-2.26217.108 (b16286c2)",
+        "semanticVersion": "5.0.0",
+        "language": "en-US"
+      },
+      "results": [
+        {
+          "ruleId": "CS0246",
+          "level": "error",
+          "message": "The type or namespace name 'OmakaseStrategy' could not be found (are you missing a using directive or an assembly reference?)",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/DependencyInjection.cs",
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 53,
+                  "endLine": 28,
+                  "endColumn": 68
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CA2254",
+          "level": "note",
+          "message": "The logging message template should not vary between calls to 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])'",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/NoticeStrategy.cs",
+                "region": {
+                  "startLine": 50,
+                  "startColumn": 33,
+                  "endLine": 50,
+                  "endColumn": 69
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'ExtractPrefixArgs' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/CommandArgumentParser.cs",
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 20,
+                  "endLine": 26,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'ExtractRegexArgs' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/CommandArgumentParser.cs",
+                "region": {
+                  "startLine": 44,
+                  "startColumn": 20,
+                  "endLine": 44,
+                  "endColumn": 36
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'ExtractContainsArgs' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/CommandArgumentParser.cs",
+                "region": {
+                  "startLine": 35,
+                  "startColumn": 20,
+                  "endLine": 35,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/CommandResponseAggregator.cs",
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 14,
+                  "endLine": 30,
+                  "endColumn": 30
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA2254",
+          "level": "note",
+          "message": "The logging message template should not vary between calls to 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])'",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/TitleStrategy.cs",
+                "region": {
+                  "startLine": 65,
+                  "startColumn": 33,
+                  "endLine": 65,
+                  "endColumn": 71
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/CommandResponseAggregator.cs",
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 33,
+                  "endLine": 38,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA2016",
+          "level": "note",
+          "message": "Forward the 'ct' parameter to the 'SyncGlobalViewerIdAsync' method or pass in 'CancellationToken.None' explicitly to indicate intentionally not propagating the token",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Feature/AttendanceStrategy.cs",
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 36,
+                  "endLine": 34,
+                  "endColumn": 73
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "ArgumentName": "ct",
+              "ParameterName": "ct",
+              "ShouldFix": "1"
+            }
+          }
+        },
+        {
+          "ruleId": "CA2254",
+          "level": "note",
+          "message": "The logging message template should not vary between calls to 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])'",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 162,
+                  "startColumn": 32,
+                  "endLine": 162,
+                  "endColumn": 97
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1866",
+          "level": "note",
+          "message": "Use 'string.StartsWith(char)' instead of 'string.StartsWith(string)' when you have a string with a single char",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 115,
+                  "startColumn": 31,
+                  "endLine": 115,
+                  "endColumn": 36
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 269,
+                  "startColumn": 43,
+                  "endLine": 269,
+                  "endColumn": 67
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 45,
+                  "startColumn": 21,
+                  "endLine": 45,
+                  "endColumn": 147
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 130,
+                  "startColumn": 14,
+                  "endLine": 130,
+                  "endColumn": 177
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 108,
+                  "startColumn": 13,
+                  "endLine": 108,
+                  "endColumn": 134
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/CategoryStrategy.cs",
+                "region": {
+                  "startLine": 54,
+                  "startColumn": 35,
+                  "endLine": 54,
+                  "endColumn": 104
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/ReplyCommandHandler.cs",
+                "region": {
+                  "startLine": 55,
+                  "startColumn": 13,
+                  "endLine": 55,
+                  "endColumn": 137
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/ProcessCommandBillingCommandHandler.cs",
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 9,
+                  "endLine": 24,
+                  "endColumn": 136
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs",
+                "region": {
+                  "startLine": 85,
+                  "startColumn": 17,
+                  "endLine": 85,
+                  "endColumn": 150
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs",
+                "region": {
+                  "startLine": 98,
+                  "startColumn": 21,
+                  "endLine": 98,
+                  "endColumn": 109
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA2254",
+          "level": "note",
+          "message": "The logging message template should not vary between calls to 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])'",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/CategoryStrategy.cs",
+                "region": {
+                  "startLine": 54,
+                  "startColumn": 35,
+                  "endLine": 54,
+                  "endColumn": 104
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA2254",
+          "level": "note",
+          "message": "The logging message template should not vary between calls to 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])'",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/CategoryStrategy.cs",
+                "region": {
+                  "startLine": 83,
+                  "startColumn": 33,
+                  "endLine": 83,
+                  "endColumn": 78
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'GetMatchWeight' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 144,
+                  "startColumn": 17,
+                  "endLine": 144,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'MatchPrefix' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Cache/CommandCacheService.cs",
+                "region": {
+                  "startLine": 135,
+                  "startColumn": 18,
+                  "endLine": 135,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 316,
+                  "startColumn": 9,
+                  "endLine": 316,
+                  "endColumn": 99
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 35,
+                  "startColumn": 9,
+                  "endLine": 35,
+                  "endColumn": 185
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 51,
+                  "startColumn": 9,
+                  "endLine": 51,
+                  "endColumn": 101
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 382,
+                  "startColumn": 9,
+                  "endLine": 382,
+                  "endColumn": 114
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 63,
+                  "startColumn": 9,
+                  "endLine": 63,
+                  "endColumn": 125
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 73,
+                  "startColumn": 13,
+                  "endLine": 73,
+                  "endColumn": 172
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1873",
+          "level": "note",
+          "message": "Evaluation of this argument may be expensive and unnecessary if logging is disabled",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 77,
+                  "startColumn": 13,
+                  "endLine": 77,
+                  "endColumn": 112
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/ReplyCommandHandler.cs",
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 18,
+                  "endLine": 34,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/FeatureExecutionBridgeHandler.cs",
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 18,
+                  "endLine": 38,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "SYSLIB1045",
+          "level": "note",
+          "message": "Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/SystemMessage/CategoryStrategy.cs",
+                "region": {
+                  "startLine": 65,
+                  "startColumn": 37,
+                  "endLine": 70,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 331,
+                  "startColumn": 14,
+                  "endLine": 331,
+                  "endColumn": 35
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'OnBeforeSaveAsync' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 189,
+                  "startColumn": 24,
+                  "endLine": 189,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'GetFeatureByKeyword' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 386,
+                  "startColumn": 20,
+                  "endLine": 386,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'CreateDefaultRoulette' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/General/UnifiedCommandService.cs",
+                "region": {
+                  "startLine": 434,
+                  "startColumn": 58,
+                  "endLine": 434,
+                  "endColumn": 79
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 70,
+                  "startColumn": 13,
+                  "endLine": 70,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA1860",
+          "level": "note",
+          "message": "Prefer comparing 'Count' to 0 rather than using 'Any()', both for clarity and for performance",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 84,
+                  "startColumn": 13,
+                  "endLine": 84,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1,
+            "customProperties": {
+              "DiagnosticPropertyKey": "Count"
+            }
+          }
+        },
+        {
+          "ruleId": "CA1822",
+          "level": "note",
+          "message": "Member 'ConvertToEvent' does not access instance data and can be marked as static",
+          "locations": [
+            {
+              "resultFile": {
+                "uri": "file:///home/mooldang/projects/MooldangBot/mooldang-dev/MooldangBot.Modules.Commands/Handlers/UnifiedCommandHandler.cs",
+                "region": {
+                  "startLine": 173,
+                  "startColumn": 31,
+                  "endLine": 173,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "properties": {
+            "warningLevel": 1
+          }
+        }
+      ],
+      "rules": {
+        "CA1822": {
+          "id": "CA1822",
+          "shortDescription": "Mark members as static",
+          "fullDescription": "Members that do not access instance data or call instance methods can be marked as static. After you mark the methods as static, the compiler will emit nonvirtual call sites to these members. This can give you a measurable performance gain for performance-sensitive code.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822",
+          "properties": {
+            "category": "Performance",
+            "isEnabledByDefault": true,
+            "tags": [
+              "PortedFromFxCop",
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CA1860": {
+          "id": "CA1860",
+          "shortDescription": "Avoid using 'Enumerable.Any()' extension method",
+          "fullDescription": "Prefer using 'IsEmpty', 'Count' or 'Length' properties whichever available, rather than calling 'Enumerable.Any()'. The intent is clearer and it is more performant than using 'Enumerable.Any()' extension method.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1860",
+          "properties": {
+            "category": "Performance",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CA1866": {
+          "id": "CA1866",
+          "shortDescription": "Use char overload",
+          "fullDescription": "The char overload is a better performing overload than a string with a single char.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1866",
+          "properties": {
+            "category": "Performance",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CA1873": {
+          "id": "CA1873",
+          "shortDescription": "Avoid potentially expensive logging",
+          "fullDescription": "In many situations, logging is disabled or set to a log level that results in an unnecessary evaluation for this argument.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873",
+          "properties": {
+            "category": "Performance",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CA2016": {
+          "id": "CA2016",
+          "shortDescription": "Forward the 'CancellationToken' parameter to methods",
+          "fullDescription": "Forward the 'CancellationToken' parameter to methods to ensure the operation cancellation notifications gets properly propagated, or pass in 'CancellationToken.None' explicitly to indicate intentionally not propagating the token.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2016",
+          "properties": {
+            "category": "Reliability",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CA2254": {
+          "id": "CA2254",
+          "shortDescription": "Template should be a static expression",
+          "fullDescription": "The logging message template should not vary between calls.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2254",
+          "properties": {
+            "category": "Usage",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Telemetry",
+              "EnabledRuleInAggressiveMode"
+            ]
+          }
+        },
+        "CS0246": {
+          "id": "CS0246",
+          "defaultLevel": "error",
+          "helpUri": "https://msdn.microsoft.com/query/roslyn.query?appId=roslyn&k=k(CS0246)",
+          "properties": {
+            "category": "Compiler",
+            "isEnabledByDefault": true,
+            "tags": [
+              "Compiler",
+              "Telemetry",
+              "NotConfigurable"
+            ]
+          }
+        },
+        "SYSLIB1045": {
+          "id": "SYSLIB1045",
+          "shortDescription": "Convert to 'GeneratedRegexAttribute'.",
+          "defaultLevel": "note",
+          "helpUri": "https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1045",
+          "properties": {
+            "category": "Performance",
+            "isEnabledByDefault": true
+          }
+        }
+      }
+    }
+  ]
+}

@@ -15,5 +15,5 @@ public interface IChzzkCategorySyncService
     static int LastUpdatedCount { get; }
 
     Task SyncCategoriesAsync(CancellationToken stoppingToken);
-    Task<List<ChzzkCategory>> SearchAndSaveCategoryAsync(string keyword, CancellationToken cancellationToken = default);
+    Task<List<SysChzzkCategories>> SearchAndSaveCategoryAsync(string keyword, CancellationToken cancellationToken = default);
 }

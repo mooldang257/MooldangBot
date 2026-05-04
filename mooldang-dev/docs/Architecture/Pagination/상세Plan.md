@@ -89,7 +89,7 @@ public async Task<IResult> GetSongQueue(string chzzkUid, [AsParameters] CursorPa
 
     int? nextCursor = hasNext ? songs.Last().Id : null;
 
-    return Results.Ok(new CursorPagedResponse<SongQueue>(songs, nextCursor, hasNext));
+    return Results.Ok(new CursorPagedResponse<FuncSongListQueues>(songs, nextCursor, hasNext));
 }
 ```
 
@@ -99,7 +99,7 @@ public async Task<IResult> GetSongQueue(string chzzkUid, [AsParameters] CursorPa
 
 ## 5. 단계별 실행 계획 (Action Items)
 1. `DTOs.cs`에 `CursorPagedRequest` 및 `CursorPagedResponse<T>` 추가
-2. `AppDbContext` 내의 엔티티(`StreamerCommand`, `SongQueue`)에 복합 인덱스 설정 (필요 시 마이그레이션 생성)
+2. `AppDbContext` 내의 엔티티(`StreamerCommand`, `FuncSongListQueues`)에 복합 인덱스 설정 (필요 시 마이그레이션 생성)
 3. `CommandsController.cs`의 `GetCommands` 메서드 수정
 4. `SongController.cs`에 `GetSongQueue` 메서드 추가 (또는 기존 로직 수정)
 5. 프론트엔드(`commands.html`, `dashboard.html`)에서 스크롤 시 `NextCursor`를 상태로 저장하여 무한 스크롤(Infinite Scroll) 또는 "더 보기" 버튼 로직으로 연동

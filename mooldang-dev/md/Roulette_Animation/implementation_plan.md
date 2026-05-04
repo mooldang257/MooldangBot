@@ -1,4 +1,4 @@
-# Roulette System Refinement Plan (v6) - Consolidated
+# FuncRouletteMain System Refinement Plan (v6) - Consolidated
 
 룰렛 시스템의 사용성 개선을 위해 채팅 형식 변경, 히스토리 자동 초기화, 그리고 레이아웃 줄바꿈 기능을 추가합니다. 특히 다중 회차 실행 시 '배치 처리'를 도입하여 안정성과 가독성을 높입니다.
 

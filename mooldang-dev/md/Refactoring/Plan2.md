@@ -22,8 +22,8 @@
 
 - **범위**: `Application`, `Presentation` 프로젝트 내부
 - **핵심 슬라이스**:
-    1. **SongBook**: 노래 리스트/오마카세 신청 큐 관리
-    2. **Roulette**: 룰렛 상태 물리 및 결과 히스토리
+    1. **FuncSongBooks**: 노래 리스트/오마카세 신청 큐 관리
+    2. **FuncRouletteMain**: 룰렛 상태 물리 및 결과 히스토리
     3. **Overlay**: 오버레이 렌더링 및 UI 상태 동기화
     4. **ChatPoints**: 시청자 채팅 포인트 적립 및 상점
     5. **ChatAndDonation**: 채팅 파싱 및 후원(치즈) 연동 처리
@@ -66,7 +66,7 @@ public static class PagingExtensions
 }
 ```
 
-### 3.3 서비스 레이어 구현 (Application/Features/SongBook)
+### 3.3 서비스 레이어 구현 (Application/Features/FuncSongBooks)
 ```csharp
 public class SongBookService(IAppDbContext db)
 {
@@ -116,7 +116,7 @@ public class SongHistory
 - [x] `Program.cs` 다이어트 준비 (DI 확장 메서드 스캐폴딩)
 
 ### Phase 2: 수직적 슬라이스 정렬 (Migration)
-- [ ] **Roulette/SongBook**: 기존 `Features/` 폴더의 핸들러 및 서비스를 `Application` 프로젝트의 해당 기능 폴더로 이동
+- [ ] **FuncRouletteMain/FuncSongBooks**: 기존 `Features/` 폴더의 핸들러 및 서비스를 `Application` 프로젝트의 해당 기능 폴더로 이동
 - [ ] **Controllers/Hubs**: 모든 컨트롤러를 `Presentation`으로 이동 및 네임스페이스 리팩토링
 
 ### Phase 3: 워커(Worker) 통합

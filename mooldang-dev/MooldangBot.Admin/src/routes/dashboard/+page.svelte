@@ -10,14 +10,18 @@
         try {
             const res = await fetch('/api/auth/me');
             if (res.ok) {
-                const data = await res.json();
-                if (data.isAuthenticated) {
+                const result = await res.json();
+                const isSuccess = result.IsSuccess || result.isSuccess;
+                const value = result.Value || result.value;
+                
+                if (isSuccess && value && (value.IsAuthenticated || value.isAuthenticated)) {
                     // [핵심]: 유저의 권한(Role)에 따라 독립된 물댕봇로 안내
-                    // 추후 Auth API에서 role 정보를 주게 되면 더 정교하게 분기 가능
-                    // 현재는 chzzkUid 존재 여부와 profile 정보를 통해 추론
-                    if (data.chzzkUid) {
+                    const uid = value.ChzzkUid || value.chzzkUid;
+                    const slug = value.Slug || value.slug;
+
+                    if (uid) {
                         status = "전용 물댕봇로 안내하고 있습니다...";
-                        goto(`/${data.slug || data.chzzkUid}/dashboard`);
+                        goto(`/${slug || uid}/dashboard`);
                     } else {
                         status = "시청자 전용 물댕봇로 안내하고 있습니다...";
                         goto('/viewer/dashboard');

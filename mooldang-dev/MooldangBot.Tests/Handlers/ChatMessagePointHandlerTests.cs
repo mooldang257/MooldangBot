@@ -17,7 +17,7 @@ public class ChatMessagePointHandlerTests
 
     private ChatMessagePointHandler CreateSut() => new(_cacheService, _logger);
 
-    private static StreamerProfile CreateProfile() => new()
+    private static CoreStreamerProfiles CreateProfile() => new()
     {
         Id = 1,
         ChzzkUid = "streamer1",

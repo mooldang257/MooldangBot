@@ -22,7 +22,7 @@ public record RouletteSpinResultNotification(
     string ChzzkUid,
     long SpinId,
     SpinRouletteResponse Response,
-    List<RouletteLog> Logs
+    List<LogRouletteResults> Logs
 ) : INotification;
 
 /// <summary>

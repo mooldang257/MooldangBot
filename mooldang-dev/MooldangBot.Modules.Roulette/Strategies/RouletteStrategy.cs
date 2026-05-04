@@ -15,11 +15,11 @@ public class RouletteStrategy(
 {
     public string FeatureType => "Roulette";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         if (command.TargetId == null)
         {
-            logger.LogWarning("⚠️ [룰렛 실행 실패] UnifiedCommand {Id}에 TargetId(RouletteId)가 없습니다.", command.Id);
+            logger.LogWarning("⚠️ [룰렛 실행 실패] FuncCmdUnified {Id}에 TargetId(RouletteId)가 없습니다.", command.Id);
             return CommandExecutionResult.Failure("룰렛 ID가 설정되지 않았습니다.");
         }
 

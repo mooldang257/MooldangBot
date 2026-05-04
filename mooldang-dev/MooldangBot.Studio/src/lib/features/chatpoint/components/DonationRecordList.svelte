@@ -101,7 +101,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    {#each items as item, i (item.id)}
+                    {#each items as item, i (item.Id)}
                         <tr class="hover:bg-amber-50/10 transition-colors group">
                             <td class="px-8 py-6 font-black text-slate-300 group-hover:text-amber-500 transition-colors italic text-lg">
                                 {i + 1}
@@ -111,20 +111,20 @@
                                     <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-amber-500/10 group-hover:text-amber-500 transition-all">
                                         <User size={20} />
                                     </div>
-                                    <span class="font-black text-slate-700">{item.nickname}</span>
+                                    <span class="font-black text-slate-700">{item.Nickname}</span>
                                 </div>
                             </td>
                             <td class="px-8 py-6 font-black text-amber-600 flex items-center gap-2">
                                 <Flame size={14} class="text-rose-500" />
-                                {item.totalDonated.toLocaleString()} <span class="text-[10px] opacity-70 ml-0.5">Cheese</span>
+                                {item.TotalDonated.toLocaleString()} <span class="text-[10px] opacity-70 ml-0.5">Cheese</span>
                             </td>
                             <td class="px-8 py-6 text-center">
                                 <span class="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-xs font-black border border-slate-200">
-                                    {item.balance.toLocaleString()} 🧀
+                                    {item.Balance.toLocaleString()} 🧀
                                 </span>
                             </td>
                             <td class="px-8 py-6 text-right text-xs font-bold text-slate-400">
-                                {new Date(item.updatedAt).toLocaleDateString()}
+                                {new Date(item.UpdatedAt).toLocaleDateString()}
                             </td>
                         </tr>
                     {/each}

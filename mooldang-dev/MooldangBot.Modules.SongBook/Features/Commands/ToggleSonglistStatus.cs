@@ -16,37 +16,37 @@ public class ToggleSonglistStatusHandler(ISongBookDbContext db) : IRequestHandle
 {
     public async Task<Result<object>> Handle(ToggleSonglistStatusCommand request, CancellationToken ct)
     {
-        var profile = await db.CoreStreamerProfiles
+        var Profile = await db.TableCoreStreamerProfiles
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
         
-        if (profile == null) 
+        if (Profile == null) 
             return Result<object>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
-
-        var activeSession = await db.FuncSonglistSessions
-                            .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
+ 
+        var ActiveSession = await db.TableFuncSongListSessions
+                            .Where(s => s.StreamerProfileId == Profile.Id && s.IsActive)
                             .FirstOrDefaultAsync(ct);
-
-        bool nowActive;
-        if (activeSession != null)
+ 
+        bool NowActive;
+        if (ActiveSession != null)
         {
-            activeSession.IsActive = false;
-            activeSession.EndedAt = KstClock.Now;
-            nowActive = false;
+            ActiveSession.IsActive = false;
+            ActiveSession.EndedAt = KstClock.Now;
+            NowActive = false;
         }
         else
         {
-            db.FuncSonglistSessions.Add(new SonglistSession
+            db.TableFuncSongListSessions.Add(new FuncSongListSessions
             {
-                StreamerProfileId = profile.Id,
+                StreamerProfileId = Profile.Id,
                 StartedAt = KstClock.Now,
                 IsActive = true,
                 RequestCount = 0,
                 CompleteCount = 0
             });
-            nowActive = true;
+            NowActive = true;
         }
-
+ 
         await db.SaveChangesAsync(ct);
-        return Result<object>.Success(new { isActive = nowActive });
+        return Result<object>.Success(new { IsActive = NowActive });
     }
 }

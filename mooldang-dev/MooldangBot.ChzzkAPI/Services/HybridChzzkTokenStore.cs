@@ -65,7 +65,7 @@ public class HybridChzzkTokenStore : IChzzkGatewayTokenStore
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var streamer = await dbContext.CoreStreamerProfiles
+        var streamer = await dbContext.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
 
@@ -108,7 +108,7 @@ public class HybridChzzkTokenStore : IChzzkGatewayTokenStore
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var streamers = await dbContext.CoreStreamerProfiles
+        var streamers = await dbContext.TableCoreStreamerProfiles
             .AsNoTracking()
             .Where(s => !string.IsNullOrEmpty(s.ChzzkAccessToken))
             .ToListAsync();

@@ -5,18 +5,17 @@ using MooldangBot.Domain.Entities;
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
 // [v7.0] Wallet Architecture 분산화 엔티티 - 시청자 포인트 지갑
-public class ViewerPointConfiguration : IEntityTypeConfiguration<ViewerPoint>
+public class ViewerPointConfiguration : IEntityTypeConfiguration<FuncViewerPoints>
 {
-    public void Configure(EntityTypeBuilder<ViewerPoint> builder)
+    public void Configure(EntityTypeBuilder<FuncViewerPoints> builder)
     {
-        builder.ToTable("FuncViewerPoints");
         
-        builder.HasOne(v => v.StreamerProfile)
+        builder.HasOne(v => v.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(v => v.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
                
-        builder.HasOne(v => v.GlobalViewer)
+        builder.HasOne(v => v.CoreGlobalViewers)
                .WithMany()
                .HasForeignKey(v => v.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);
@@ -27,18 +26,17 @@ public class ViewerPointConfiguration : IEntityTypeConfiguration<ViewerPoint>
 }
 
 // [v7.0] Wallet Architecture 분산화 엔티티 - 시청자 후원 상태/지갑
-public class ViewerDonationConfiguration : IEntityTypeConfiguration<ViewerDonation>
+public class ViewerDonationConfiguration : IEntityTypeConfiguration<FuncViewerDonations>
 {
-    public void Configure(EntityTypeBuilder<ViewerDonation> builder)
+    public void Configure(EntityTypeBuilder<FuncViewerDonations> builder)
     {
-        builder.ToTable("FuncViewerDonations");
         
-        builder.HasOne(v => v.StreamerProfile)
+        builder.HasOne(v => v.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(v => v.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
                
-        builder.HasOne(v => v.GlobalViewer)
+        builder.HasOne(v => v.CoreGlobalViewers)
                .WithMany()
                .HasForeignKey(v => v.GlobalViewerId)
                .OnDelete(DeleteBehavior.Restrict);

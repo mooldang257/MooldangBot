@@ -33,11 +33,11 @@
     $effect(() => {
         if (editingSong) {
             untrack(() => {
-                manualTitle = editingSong.title || "";
-                manualArtist = editingSong.artist || "";
-                manualUrl = editingSong.url || "";
-                manualLyrics = editingSong.lyrics || "";
-                manualThumbnail = editingSong.thumbnailUrl || "";
+                manualTitle = editingSong.Title || "";
+                manualArtist = editingSong.Artist || "";
+                manualUrl = editingSong.Url || "";
+                manualLyrics = editingSong.LyricsUrl || "";
+                manualThumbnail = editingSong.ThumbnailUrl || "";
                 showLyricsInput = !!manualLyrics;
             });
         }
@@ -66,8 +66,11 @@
                     fetch(`/api/song-library/search?q=${encodeURIComponent(manualTitle)}`).then(r => r.ok ? r.json() : [])
                 ]);
 
-                songbookResults = songbookRes.status === 'fulfilled' ? (songbookRes.value || []) : [];
-                searchResults = libraryRes.status === 'fulfilled' ? (libraryRes.value || []) : [];
+                const songbookData = songbookRes.status === 'fulfilled' ? songbookRes.value : null;
+                const libraryData = libraryRes.status === 'fulfilled' ? libraryRes.value : null;
+
+                songbookResults = (songbookData?.Value || []);
+                searchResults = (libraryData?.Value || []);
 
                 const hasResults = songbookResults.length > 0 || searchResults.length > 0;
                 showResults = isTitleFocused && hasResults;
@@ -81,10 +84,10 @@
 
     // [물멍]: 노래책 검색 결과 선택 시 자동 장전
     const selectSongbookSong = (song: any) => {
-        manualTitle = song.title;
-        manualArtist = song.artist || "";
-        manualUrl = song.referenceUrl || "";
-        manualThumbnail = song.thumbnailUrl || ""; // [물멍] 썸네일 획득
+        manualTitle = song.Title;
+        manualArtist = song.Artist || "";
+        manualUrl = song.ReferenceUrl || "";
+        manualThumbnail = song.ThumbnailUrl || ""; // [물멍] 썸네일 획득
         manualLyrics = "";
         showLyricsInput = false;
         showResults = false;
@@ -92,23 +95,27 @@
 
     // [물멍]: 병기창/유튜브 검색 결과 선택 시 자동 장전
     const selectSong = (result: any) => {
-        if (result.isExternal) {
+        const isExternal = result.IsExternal ?? result.isExternal;
+        const externalSong = result.ExternalSong || result.externalSong;
+        const song = result.Song || result.song;
+
+        if (isExternal) {
             // [v13.0] 유튜브 정찰 결과 장전 (2순위)
-            const yt = result.externalSong;
-            manualTitle = yt.title;
-            manualArtist = yt.author;
-            manualUrl = yt.url;
-            manualThumbnail = yt.thumbnailUrl || ""; // [물멍] 유튜브 썸네일 획득
+            const yt = externalSong;
+            manualTitle = yt.Title;
+            manualArtist = yt.Author;
+            manualUrl = yt.Url;
+            manualThumbnail = yt.ThumbnailUrl || ""; // [물멍] 유튜브 썸네일 획득
             manualLyrics = ""; 
             showLyricsInput = false;
         } else {
             // [v12.0] 내부 병기창 데이터 장전 (1순위)
-            const song = result.song;
-            manualTitle = song.title;
-            manualArtist = song.artist;
-            manualUrl = song.youtubeUrl;
+            const s = song;
+            manualTitle = s.Title;
+            manualArtist = s.Artist;
+            manualUrl = s.YoutubeUrl;
             manualThumbnail = ""; // 병기창 데이터는 썸네일이 없을 수 있음
-            manualLyrics = song.lyrics || "";
+            manualLyrics = s.Lyrics || "";
             if (manualLyrics) showLyricsInput = true;
         }
         showResults = false;
@@ -118,11 +125,11 @@
         if (!manualTitle.trim()) return;
 
         const songData = {
-            title: manualTitle,
-            artist: manualArtist || "Unknown",
-            url: manualUrl.trim(),
-            lyrics: manualLyrics.trim(),
-            thumbnailUrl: manualThumbnail // [물멍] 썸네일 URL 전송 추가
+            Title: manualTitle,
+            Artist: manualArtist || "Unknown",
+            Url: manualUrl.trim(),
+            Lyrics: manualLyrics.trim(),
+            ThumbnailUrl: manualThumbnail // [물멍] 썸네일 URL 전송 추가
         };
 
         // [v13.1] 이제 백엔드(AddSong)가 CaptureStagingAsync를 대행하므로 프론트엔드 중복 호출 제거
@@ -138,7 +145,7 @@
             // 신규 추가 모드
             onAddManualSong({
                 ...songData,
-                targetId: selectedOmakase?.id
+                TargetId: selectedOmakase?.Id
             });
             clearForm();
         }
@@ -164,7 +171,7 @@
         isEditMode
             ? "곡 정보 수정 완료"
             : selectedOmakase 
-                ? `${selectedOmakase.icon} ${selectedOmakase.name} 신청` 
+                ? `${selectedOmakase.Icon} ${selectedOmakase.Name} 신청` 
                 : "데이터 전송"
     );
 </script>
@@ -259,24 +266,24 @@
                                         >
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center gap-2.5">
-                                                    {#if song.thumbnailUrl}
-                                                        <img src={song.thumbnailUrl} alt="thumb" class="w-8 h-8 rounded-lg object-cover shadow-sm" />
+                                                    {#if song.ThumbnailUrl}
+                                                        <img src={song.ThumbnailUrl} alt="thumb" class="w-8 h-8 rounded-lg object-cover shadow-sm" />
                                                     {:else}
                                                         <div class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center">
                                                             <Music size={12} class="text-sky-400" />
                                                         </div>
                                                     {/if}
-                                                    <span class="font-black text-slate-800 text-sm">{song.title}</span>
+                                                    <span class="font-black text-slate-800 text-sm">{song.Title}</span>
                                                 </div>
                                                 <span class="text-[10px] font-bold text-sky-600 bg-sky-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                                     <BookOpen size={10} /> 노래책
                                                 </span>
                                             </div>
                                             <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold transition-colors group-hover/result:text-slate-600 ml-[42px]">
-                                                <span>{song.artist || 'Unknown'}</span>
-                                                {#if song.category}
+                                                <span>{song.Artist || 'Unknown'}</span>
+                                                {#if song.Category}
                                                     <span class="text-slate-300">•</span>
-                                                    <span class="truncate text-slate-300">{song.category}</span>
+                                                    <span class="truncate text-slate-300">{song.Category}</span>
                                                 {/if}
                                             </div>
                                         </button>
@@ -295,13 +302,13 @@
                                         class="w-full px-5 py-3 text-left hover:bg-primary/5 transition-colors border-b border-slate-100 last:border-none flex flex-col gap-0.5 group/result"
                                         onclick={() => selectSong(result)}
                                     >
-                                        {#if !result.isExternal}
+                                        {#if !(result.IsExternal)}
                                             <!-- [1순위] 내부 병기창 결과 -->
                                             <div class="flex items-center justify-between">
-                                                <span class="font-black text-slate-800 text-sm">{result.song.title}</span>
+                                                <span class="font-black text-slate-800 text-sm">{(result.Song)?.Title}</span>
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm bg-emerald-400 text-white shadow-emerald-200/50">
-                                                        {result.score}% Match
+                                                        {result.Score}% Match
                                                     </span>
                                                     <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                                                         <Check size={10} /> 병기창
@@ -309,27 +316,27 @@
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase transition-colors group-hover/result:text-slate-600">
-                                                <span>{result.song.artist}</span>
-                                                {#if result.song.alias}
+                                                <span>{(result.Song)?.Artist}</span>
+                                                {#if (result.Song)?.Alias}
                                                     <span class="text-slate-300">•</span>
-                                                    <span class="truncate">{result.song.alias}</span>
+                                                    <span class="truncate">{(result.Song)?.Alias}</span>
                                                 {/if}
                                             </div>
                                         {:else}
                                             <!-- [2순위] 유튜브 실시간 정찰 결과 -->
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center gap-3">
-                                                    {#if result.externalSong.thumbnailUrl}
-                                                        <img src={result.externalSong.thumbnailUrl} alt="thumb" class="w-10 h-6 rounded-md object-cover shadow-sm" />
+                                                    {#if (result.ExternalSong)?.ThumbnailUrl}
+                                                        <img src={(result.ExternalSong)?.ThumbnailUrl} alt="thumb" class="w-10 h-6 rounded-md object-cover shadow-sm" />
                                                     {/if}
-                                                    <span class="font-bold text-slate-600 text-sm line-clamp-1">{result.externalSong.title}</span>
+                                                    <span class="font-bold text-slate-600 text-sm line-clamp-1">{(result.ExternalSong)?.Title}</span>
                                                 </div>
                                                 <span class="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                                     <Youtube size={10} /> 유튜브
                                                 </span>
                                             </div>
                                             <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold ml-[52px]">
-                                                <span>{result.externalSong.author}</span>
+                                                <span>{(result.ExternalSong)?.Author}</span>
                                             </div>
                                         {/if}
                                     </button>

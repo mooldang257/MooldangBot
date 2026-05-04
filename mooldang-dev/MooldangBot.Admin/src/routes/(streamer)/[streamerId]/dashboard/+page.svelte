@@ -29,17 +29,17 @@
     let statusCards = $derived([
         { 
             title: '방송 상태', 
-            value: summary?.isLive ? 'LIVE' : 'OFFLINE', 
-            detail: summary?.isLive ? '현재 방송 중' : '보조 시스템 대기 중', 
+            value: (summary?.IsLive ?? summary?.isLive) ? 'LIVE' : 'OFFLINE', 
+            detail: (summary?.IsLive ?? summary?.isLive) ? '현재 방송 중' : '보조 시스템 대기 중', 
             icon: Activity, 
-            color: summary?.isLive ? 'text-rose-500' : 'text-slate-400', 
-            bg: summary?.isLive ? 'bg-rose-50' : 'bg-slate-50',
-            trend: summary?.isLive ? 'Active' : 'Stable'
+            color: (summary?.IsLive ?? summary?.isLive) ? 'text-rose-500' : 'text-slate-400', 
+            bg: (summary?.IsLive ?? summary?.isLive) ? 'bg-rose-50' : 'bg-slate-50',
+            trend: (summary?.IsLive ?? summary?.isLive) ? 'Active' : 'Stable'
         },
         { 
             title: '오늘의 신청곡', 
-            value: `${summary?.todaySongs || 0}곡`, 
-            detail: `대기열 ${summary?.pendingSongs || 0}곡`, 
+            value: `${(summary?.TodaySongs ?? summary?.todaySongs) || 0}곡`, 
+            detail: `대기열 ${(summary?.PendingSongs ?? summary?.pendingSongs) || 0}곡`, 
             icon: Music, 
             color: 'text-blue-500', 
             bg: 'bg-blue-50',
@@ -47,8 +47,8 @@
         },
         { 
             title: '오늘의 포인트', 
-            value: summary?.todayPoints >= 0 ? `+${(summary?.todayPoints / 1000).toFixed(1)}k` : `${(summary?.todayPoints / 1000).toFixed(1)}k`, 
-            detail: `전체: ${(summary?.totalPoints / 1000).toFixed(1)}k`, 
+            value: (summary?.TodayPoints ?? summary?.todayPoints) >= 0 ? `+${((summary?.TodayPoints ?? summary?.todayPoints) / 1000).toFixed(1)}k` : `${((summary?.TodayPoints ?? summary?.todayPoints) / 1000).toFixed(1)}k`, 
+            detail: `전체: ${((summary?.TotalPoints ?? summary?.totalPoints) / 1000).toFixed(1)}k`, 
             icon: Coins, 
             color: 'text-amber-600', 
             bg: 'bg-amber-50',
@@ -56,8 +56,8 @@
         },
         { 
             title: '명령어 호출', 
-            value: `${summary?.todayCommands || 0}회`, 
-            detail: `최다: ${summary?.topCommand || '-'}`, 
+            value: `${(summary?.TodayCommands ?? summary?.todayCommands) || 0}회`, 
+            detail: `최다: ${(summary?.TopCommand ?? summary?.topCommand) || '-'}`, 
             icon: Zap, 
             color: 'text-emerald-500', 
             bg: 'bg-emerald-50',
@@ -82,7 +82,7 @@
                 body: JSON.stringify({ slug: newSlug.toLowerCase().trim() })
             });
 
-            currentSlug = res.slug;
+            currentSlug = res.Slug ?? res.slug;
             slugFeedback = '✨ 물댕봇의 정문 주소가 변경되었습니다!';
             // [물멍]: 주소가 변경되면 페이지 전체의 문맥이 바뀔 수 있으므로 새로고침 권장
         } catch (e: any) {
@@ -135,9 +135,9 @@
         try {
             // [v3.9] 관리자가 타겟 스트리머를 관제할 때, 본인이 아닌 타겟의 정보를 가져오도록 수정
             const res = await apiFetch<any>(`/api/admin/streamers/${streamerId}`);
-            if (res && res.slug) {
-                currentSlug = res.slug;
-                newSlug = res.slug;
+            if (res && (res.Slug ?? res.slug)) {
+                currentSlug = res.Slug ?? res.slug;
+                newSlug = res.Slug ?? res.slug;
             } else {
                 currentSlug = streamerId;
                 newSlug = streamerId;
@@ -236,14 +236,14 @@
                     {#each activities as activity}
                         <div class="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/60 transition-all group cursor-pointer border border-transparent hover:border-sky-50 shadow-sm hover:shadow-md">
                             <div class="w-12 h-12 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-                                <svelte:component this={iconMap[activity.iconType] || Bell} size={18} />
+                                <svelte:component this={iconMap[(activity.IconType ?? activity.iconType)] || Bell} size={18} />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-center mb-0.5">
-                                    <span class="text-sm font-black text-slate-800">{activity.user}</span>
-                                    <span class="text-[10px] font-bold text-slate-400">{activity.time}</span>
+                                    <span class="text-sm font-black text-slate-800">{activity.User ?? activity.user}</span>
+                                    <span class="text-[10px] font-bold text-slate-400">{activity.Time ?? activity.time}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 font-bold truncate">{activity.content}</p>
+                                <p class="text-xs text-slate-500 font-bold truncate">{activity.Content ?? activity.content}</p>
                             </div>
                             <div class="opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
                                 <ArrowUpRight size={14} class="text-slate-300" />

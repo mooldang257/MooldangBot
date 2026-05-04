@@ -25,15 +25,15 @@ public class CelestialLedgerWorker(IServiceProvider serviceProvider,
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var pulse = scope.ServiceProvider.GetRequiredService<PulseService>();
-        var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
-
+        using var Scope = scopeFactory.CreateScope();
+        var Pulse = Scope.ServiceProvider.GetRequiredService<PulseService>();
+        var Mediator = Scope.ServiceProvider.GetRequiredService<ISender>();
+ 
         _logger.LogInformation("🔔 [천상의 장부] 정기 결산 및 데이터 무결성 검사 명령을 하달합니다.");
-
+ 
         // 각 모듈의 Handler로 명령 하달 (모듈 간 직접 참조 없이 MediatR로 통신)
-        await mediator.Send(new AggregatePointStatsCommand(), ct);
-        await mediator.Send(new AggregateRouletteStatsCommand(), ct);
-        await mediator.Send(new CleanupExpiredLogsCommand(), ct);
+        await Mediator.Send(new AggregatePointStatsCommand(), ct);
+        await Mediator.Send(new AggregateRouletteStatsCommand(), ct);
+        await Mediator.Send(new CleanupExpiredLogsCommand(), ct);
     }
 }

@@ -24,7 +24,7 @@ public class MergeDuplicateViewersCommandHandler(
         await DeduplicateSelfRecordsAsync(ct);
 
         // 1. 중복된 UID 해시 그룹 식별
-        var duplicates = await db.CoreGlobalViewers
+        var Duplicates = await db.TableCoreGlobalViewers
             .AsNoTracking()
             .GroupBy(v => v.ViewerUidHash)
             .Where(g => g.Count() > 1)
@@ -33,27 +33,27 @@ public class MergeDuplicateViewersCommandHandler(
                 Ids = g.OrderBy(v => v.Id).Select(v => v.Id).ToList() 
             })
             .ToListAsync(ct);
-
-        if (duplicates.Count == 0)
+ 
+        if (Duplicates.Count == 0)
         {
             logger.LogInformation("✅ [계정 통합] 중복된 시청자 데이터가 없습니다.");
             return Result<int>.Success(0);
         }
-
-        int mergedCount = 0;
-        var connection = db.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
-
-        foreach (var group in duplicates)
+ 
+        int MergedCount = 0;
+        var Connection = db.Database.GetDbConnection();
+        if (Connection.State != ConnectionState.Open) await Connection.OpenAsync(ct);
+ 
+        foreach (var Group in Duplicates)
         {
-            var targetId = group.Ids[0];
-            var sourceIds = group.Ids.Skip(1).ToList();
-            var sourceIdsStr = string.Join(",", sourceIds);
-
+            var TargetId = Group.Ids[0];
+            var SourceIds = Group.Ids.Skip(1).ToList();
+            var SourceIdsStr = string.Join(",", SourceIds);
+ 
             logger.LogInformation("🔄 [계정 통합] Hash: {Hash} -> Target: {TargetId}, Sources: [{Sources}]", 
-                group.Hash, targetId, sourceIdsStr);
-
-            using var transaction = await db.Database.BeginTransactionAsync(ct);
+                Group.Hash, TargetId, SourceIdsStr);
+ 
+            using var Transaction = await db.Database.BeginTransactionAsync(ct);
             try
             {
                 // A. 포인트 합산 및 통합 (FuncViewerPoints)
@@ -61,72 +61,72 @@ public class MergeDuplicateViewersCommandHandler(
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE FuncViewerPoints target
                     JOIN (
-                        SELECT StreamerProfileId, SUM(Points) as total_points
+                        SELECT StreamerProfileId, SUM(Points) as TotalPoints
                         FROM FuncViewerPoints
-                        WHERE GlobalViewerId IN ({sourceIdsStr})
+                        WHERE GlobalViewerId IN ({SourceIdsStr})
                         GROUP BY StreamerProfileId
                     ) source ON target.StreamerProfileId = source.StreamerProfileId
-                    SET target.Points = target.Points + source.total_points, target.UpdatedAt = NOW()
-                    WHERE target.GlobalViewerId = {targetId}", ct);
+                    SET target.Points = target.Points + source.TotalPoints, target.UpdatedAt = NOW()
+                    WHERE target.GlobalViewerId = {TargetId}", ct);
 
                 // 2) Target에는 없고 Source에만 있는 스트리머 데이터 이주
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE FuncViewerPoints
-                    SET GlobalViewerId = {targetId}, UpdatedAt = NOW()
-                    WHERE GlobalViewerId IN ({sourceIdsStr})
+                    SET GlobalViewerId = {TargetId}, UpdatedAt = NOW()
+                    WHERE GlobalViewerId IN ({SourceIdsStr})
                       AND StreamerProfileId NOT IN (
-                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM FuncViewerPoints WHERE GlobalViewerId = {targetId}) as t
+                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM FuncViewerPoints WHERE GlobalViewerId = {TargetId}) as t
                       )", ct);
 
                 // 3) 남은 Source 포인트 레코드 삭제
-                await db.Database.ExecuteSqlRawAsync($"DELETE FROM FuncViewerPoints WHERE GlobalViewerId IN ({sourceIdsStr})", ct);
+                await db.Database.ExecuteSqlRawAsync($"DELETE FROM FuncViewerPoints WHERE GlobalViewerId IN ({SourceIdsStr})", ct);
 
                 // B. 후원 잔액 합산 및 통합 (FuncViewerDonations)
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE FuncViewerDonations target
                     JOIN (
-                        SELECT StreamerProfileId, SUM(Balance) as total_balance, SUM(TotalDonated) as total_donated
+                        SELECT StreamerProfileId, SUM(Balance) as TotalBalance, SUM(TotalDonated) as TotalDonated
                         FROM FuncViewerDonations
-                        WHERE GlobalViewerId IN ({sourceIdsStr})
+                        WHERE GlobalViewerId IN ({SourceIdsStr})
                         GROUP BY StreamerProfileId
                     ) source ON target.StreamerProfileId = source.StreamerProfileId
-                    SET target.Balance = target.Balance + source.total_balance, 
-                        target.TotalDonated = target.TotalDonated + source.total_donated,
+                    SET target.Balance = target.Balance + source.TotalBalance, 
+                        target.TotalDonated = target.TotalDonated + source.TotalDonated,
                         target.UpdatedAt = NOW()
-                    WHERE target.GlobalViewerId = {targetId}", ct);
+                    WHERE target.GlobalViewerId = {TargetId}", ct);
 
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE FuncViewerDonations
-                    SET GlobalViewerId = {targetId}, UpdatedAt = NOW()
-                    WHERE GlobalViewerId IN ({sourceIdsStr})
+                    SET GlobalViewerId = {TargetId}, UpdatedAt = NOW()
+                    WHERE GlobalViewerId IN ({SourceIdsStr})
                       AND StreamerProfileId NOT IN (
-                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM FuncViewerDonations WHERE GlobalViewerId = {targetId}) as t
+                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM FuncViewerDonations WHERE GlobalViewerId = {TargetId}) as t
                       )", ct);
 
-                await db.Database.ExecuteSqlRawAsync($"DELETE FROM FuncViewerDonations WHERE GlobalViewerId IN ({sourceIdsStr})", ct);
+                await db.Database.ExecuteSqlRawAsync($"DELETE FROM FuncViewerDonations WHERE GlobalViewerId IN ({SourceIdsStr})", ct);
 
                 // C. 스트리머 관계 통합 (CoreViewerRelations)
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE CoreViewerRelations target
                     JOIN (
-                        SELECT StreamerProfileId, SUM(AttendanceCount) as att, SUM(ConsecutiveAttendanceCount) as cons
+                        SELECT StreamerProfileId, SUM(AttendanceCount) as Att, SUM(ConsecutiveAttendanceCount) as Cons
                         FROM CoreViewerRelations
-                        WHERE GlobalViewerId IN ({sourceIdsStr})
+                        WHERE GlobalViewerId IN ({SourceIdsStr})
                         GROUP BY StreamerProfileId
                     ) source ON target.StreamerProfileId = source.StreamerProfileId
-                    SET target.AttendanceCount = target.AttendanceCount + source.att,
-                        target.ConsecutiveAttendanceCount = GREATEST(target.ConsecutiveAttendanceCount, source.cons)
-                    WHERE target.GlobalViewerId = {targetId}", ct);
+                    SET target.AttendanceCount = target.AttendanceCount + source.Att,
+                        target.ConsecutiveAttendanceCount = GREATEST(target.ConsecutiveAttendanceCount, source.Cons)
+                    WHERE target.GlobalViewerId = {TargetId}", ct);
 
                 await db.Database.ExecuteSqlRawAsync($@"
                     UPDATE CoreViewerRelations
-                    SET GlobalViewerId = {targetId}
-                    WHERE GlobalViewerId IN ({sourceIdsStr})
+                    SET GlobalViewerId = {TargetId}
+                    WHERE GlobalViewerId IN ({SourceIdsStr})
                       AND StreamerProfileId NOT IN (
-                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM CoreViewerRelations WHERE GlobalViewerId = {targetId}) as t
+                          SELECT StreamerProfileId FROM (SELECT StreamerProfileId FROM CoreViewerRelations WHERE GlobalViewerId = {TargetId}) as t
                       )", ct);
 
-                await db.Database.ExecuteSqlRawAsync($"DELETE FROM CoreViewerRelations WHERE GlobalViewerId IN ({sourceIdsStr})", ct);
+                await db.Database.ExecuteSqlRawAsync($"DELETE FROM CoreViewerRelations WHERE GlobalViewerId IN ({SourceIdsStr})", ct);
 
                 // D. 단순 이력 데이터 업데이트 (Foreign Key 변경)
                 var logTables = new[] { 
@@ -142,24 +142,24 @@ public class MergeDuplicateViewersCommandHandler(
 
                 foreach (var table in logTables)
                 {
-                    await db.Database.ExecuteSqlRawAsync($"UPDATE {table} SET GlobalViewerId = {targetId} WHERE GlobalViewerId IN ({sourceIdsStr})", ct);
+                    await db.Database.ExecuteSqlRawAsync($"UPDATE {table} SET GlobalViewerId = {TargetId} WHERE GlobalViewerId IN ({SourceIdsStr})", ct);
                 }
-
+ 
                 // E. 부 계정 삭제
-                await db.Database.ExecuteSqlRawAsync($"DELETE FROM CoreGlobalViewers WHERE Id IN ({sourceIdsStr})", ct);
-
-                await transaction.CommitAsync(ct);
-                mergedCount++;
+                await db.Database.ExecuteSqlRawAsync($"DELETE FROM CoreGlobalViewers WHERE Id IN ({SourceIdsStr})", ct);
+ 
+                await Transaction.CommitAsync(ct);
+                MergedCount++;
             }
-            catch (Exception ex)
+            catch (Exception Ex)
             {
-                await transaction.RollbackAsync(ct);
-                logger.LogError(ex, "❌ [계정 통합] Hash {Hash} 통합 중 오류 발생", group.Hash);
+                await Transaction.RollbackAsync(ct);
+                logger.LogError(Ex, "❌ [계정 통합] Hash {Hash} 통합 중 오류 발생", Group.Hash);
             }
         }
-
-        logger.LogInformation("✅ [계정 통합] 총 {Count}개의 중복 그룹이 통합되었습니다.", mergedCount);
-        return Result<int>.Success(mergedCount);
+ 
+        logger.LogInformation("✅ [계정 통합] 총 {Count}개의 중복 그룹이 통합되었습니다.", MergedCount);
+        return Result<int>.Success(MergedCount);
     }
 
     private async Task DeduplicateSelfRecordsAsync(CancellationToken ct)
@@ -170,64 +170,64 @@ public class MergeDuplicateViewersCommandHandler(
         await db.Database.ExecuteSqlRawAsync(@"
             UPDATE FuncViewerPoints target
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(Points) as total_points
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId, SUM(Points) as TotalPoints
                 FROM FuncViewerPoints
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
-            ) source ON target.Id = source.target_id
-            SET target.Points = source.total_points, target.UpdatedAt = NOW()", ct);
-
+            ) source ON target.Id = source.TargetId
+            SET target.Points = source.TotalPoints, target.UpdatedAt = NOW()", ct);
+ 
         await db.Database.ExecuteSqlRawAsync(@"
             DELETE p FROM FuncViewerPoints p
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId
                 FROM FuncViewerPoints
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
             ) source ON p.StreamerProfileId = source.StreamerProfileId AND p.GlobalViewerId = source.GlobalViewerId
-            WHERE p.Id > source.target_id", ct);
+            WHERE p.Id > source.TargetId", ct);
 
         // B. 후원 테이블 중복 정리
         await db.Database.ExecuteSqlRawAsync(@"
             UPDATE FuncViewerDonations target
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(Balance) as total_bal, SUM(TotalDonated) as total_don
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId, SUM(Balance) as TotalBal, SUM(TotalDonated) as TotalDon
                 FROM FuncViewerDonations
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
-            ) source ON target.Id = source.target_id
-            SET target.Balance = source.total_bal, target.TotalDonated = source.total_don, target.UpdatedAt = NOW()", ct);
-
+            ) source ON target.Id = source.TargetId
+            SET target.Balance = source.TotalBal, target.TotalDonated = source.TotalDon, target.UpdatedAt = NOW()", ct);
+ 
         await db.Database.ExecuteSqlRawAsync(@"
             DELETE d FROM FuncViewerDonations d
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId
                 FROM FuncViewerDonations
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
             ) source ON d.StreamerProfileId = source.StreamerProfileId AND d.GlobalViewerId = source.GlobalViewerId
-            WHERE d.Id > source.target_id", ct);
+            WHERE d.Id > source.TargetId", ct);
 
         // C. 관계 테이블 중복 정리
         await db.Database.ExecuteSqlRawAsync(@"
             UPDATE CoreViewerRelations target
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId, SUM(AttendanceCount) as att
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId, SUM(AttendanceCount) as Att
                 FROM CoreViewerRelations
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
-            ) source ON target.Id = source.target_id
-            SET target.AttendanceCount = source.att", ct);
+            ) source ON target.Id = source.TargetId
+            SET target.AttendanceCount = source.Att", ct);
 
         await db.Database.ExecuteSqlRawAsync(@"
             DELETE r FROM CoreViewerRelations r
             JOIN (
-                SELECT MIN(Id) as target_id, StreamerProfileId, GlobalViewerId
+                SELECT MIN(Id) as TargetId, StreamerProfileId, GlobalViewerId
                 FROM CoreViewerRelations
                 GROUP BY StreamerProfileId, GlobalViewerId
                 HAVING COUNT(*) > 1
             ) source ON r.StreamerProfileId = source.StreamerProfileId AND r.GlobalViewerId = source.GlobalViewerId
-            WHERE r.Id > source.target_id", ct);
+            WHERE r.Id > source.TargetId", ct);
 
         logger.LogInformation("✅ [Self-Deduplication] 중복 레코드 정리가 완료되었습니다.");
     }

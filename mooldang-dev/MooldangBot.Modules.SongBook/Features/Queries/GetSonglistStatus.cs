@@ -14,13 +14,13 @@ public class GetSonglistStatusHandler(ISongBookDbContext db) : IRequestHandler<G
 {
     public async Task<Result<object>> Handle(GetSonglistStatusQuery request, CancellationToken ct)
     {
-        var profile = await db.CoreStreamerProfiles.AsNoTracking()
+        var profile = await db.TableCoreStreamerProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == request.ChzzkUid.ToLower() && !p.IsDeleted, ct);
             
         if (profile == null) 
             return Result<object>.Failure("?ㅽ듃由щ㉧瑜?李얠쓣 ???놁뒿?덈떎.");
 
-        var activeSession = await db.FuncSonglistSessions.AsNoTracking()
+        var activeSession = await db.TableFuncSongListSessions.AsNoTracking()
             .Where(s => s.StreamerProfileId == profile.Id && s.IsActive)
             .FirstOrDefaultAsync(ct);
 

@@ -6,10 +6,10 @@
   import RouletteOverlay from './lib/RouletteOverlay.svelte';
   import { createSignalRStore } from './store/signalrStore';
   
-  // URL 해시(#) 데이터에서 액세스 토큰 추출 (Security & Privacy Improvement)
-  const hashString = window.location.hash.substring(1);
-  const hashParams = new URLSearchParams(hashString);
-  const accessToken = hashParams.get('access_token') || "";
+  // URL 쿼리(?) 또는 해시(#) 데이터에서 액세스 토큰 추출 (유연한 호환성 확보)
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = searchParams.get('access_token') || hashParams.get('access_token') || "";
 
   // [오시리스의 공명]: 실시간 데이터 스토어 초기화
   const signalrStore = accessToken ? createSignalRStore(accessToken) : null;
@@ -21,13 +21,13 @@
   const popQueue = signalrStore?.popQueue;
 
   // [물멍]: 레이아웃 및 폰트 설정 추출
-  let layout = $derived(songOverlay?.settings?.layout || {});
-  let settings = $derived(songOverlay?.settings || {
+  let settings = $derived(songOverlay?.Settings ?? songOverlay?.settings ?? {
     liveTitleFont: "'GmarketSansBold', sans-serif",
     liveArtistFont: "'GmarketSansMedium', sans-serif",
     queueFont: "'Pretendard', sans-serif",
     rouletteFont: "'GmarketSansBold', sans-serif"
   });
+  let layout = $derived(settings?.Layout ?? settings?.layout ?? {});
 
   // [오시리스의 서체]: 81종 폰트 지원을 위한 동적 데이터
   const MOOLDANG_FONTS = [
@@ -79,12 +79,12 @@
     <div class="canvas-container" style="transform: scale({scale}); transform-origin: top left;">
         <!-- 1. 룰렛 알림 레이어 (절대 좌표 지원) -->
         <div class="overlay-item" style="
-            left: {layout.roulette?.x ?? 0}px; 
-            top: {layout.roulette?.y ?? 0}px;
-            width: {layout.roulette?.width ?? 1920}px;
-            height: {layout.roulette?.height ?? 1080}px;
-            opacity: {layout.roulette?.opacity ?? 1};
-            display: {layout.roulette?.visible === false ? 'none' : 'block'};
+            left: {layout.Roulette?.X ?? layout.roulette?.x ?? 0}px; 
+            top: {layout.Roulette?.Y ?? layout.roulette?.y ?? 0}px;
+            width: {layout.Roulette?.Width ?? layout.roulette?.width ?? 1920}px;
+            height: {layout.Roulette?.Height ?? layout.roulette?.height ?? 1080}px;
+            opacity: {layout.Roulette?.Opacity ?? layout.roulette?.opacity ?? 1};
+            display: {(layout.Roulette?.Visible ?? layout.roulette?.visible) === false ? 'none' : 'block'};
         ">
             <RouletteOverlay 
                 rouletteQueue={rouletteQueue} 
@@ -96,16 +96,16 @@
 
         <!-- 2. 신청곡 - 현재곡 -->
         <CurrentSongWidget 
-            currentSong={songOverlay?.currentSong} 
+            currentSong={songOverlay?.CurrentSong ?? songOverlay?.currentSong} 
             settings={settings}
-            layout={layout.currentSong}
+            layout={layout.CurrentSong ?? layout.currentSong}
         />
 
         <!-- 3. 신청곡 - 대기열 -->
         <QueueWidget 
-            queue={songOverlay?.queue || []} 
+            queue={songOverlay?.Queue ?? songOverlay?.queue ?? []} 
             settings={settings}
-            layout={layout.songQueue}
+            layout={layout.FuncSongListQueues ?? layout.songQueue}
         />
         
         <NoticeWidget message="물댕봇 시스템 온라인" />

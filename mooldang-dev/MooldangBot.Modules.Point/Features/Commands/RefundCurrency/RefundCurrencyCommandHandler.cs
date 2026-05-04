@@ -27,13 +27,13 @@ public class RefundCurrencyCommandHandler(
         try
         {
             // 0. 기반 정보 조회 (오시리스의 탐색): Uid를 통해 실제 ProfileId와 GlobalViewerId를 확보합니다.
-            var streamerProfile = await dbContext.CoreStreamerProfiles
+            var CoreStreamerProfiles = await dbContext.TableCoreStreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
             
             // [이지스 통합]: UID 기반 시청자 식별 및 동기화
-            var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.ViewerNickname ?? "Unknown", null, ct);
-
-            if (streamerProfile == null || globalViewerId == 0)
+            var GlobalViewerId = await identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, request.ViewerNickname ?? "Unknown", null, ct);
+ 
+            if (CoreStreamerProfiles == null || GlobalViewerId == 0)
             {
                 logger.LogWarning("⚠️ [자율 복구 실패] 대상 프로필 또는 시청자를 식별할 수 없습니다. (Uid: {Uid})", request.ViewerUid);
                 return false;
@@ -43,17 +43,17 @@ public class RefundCurrencyCommandHandler(
             
             // 1. DB 로그 기록 (천상의 장부 기입)
             // PointTransactionHistory의 실제 규격(StreamerProfileId, GlobalViewerId, KstClock)을 준수합니다.
-            var log = new PointTransactionHistory
+            var Log = new LogPointTransactions
             {
-                StreamerProfileId = streamerProfile.Id,
-                GlobalViewerId = globalViewerId,
+                StreamerProfileId = CoreStreamerProfiles.Id,
+                GlobalViewerId = GlobalViewerId,
                 Amount = request.Amount,
                 Type = PointTransactionType.System, // [v7.3] 오시리스 규률: 환불은 시스템 보정 트랜잭션으로 취급합니다.
                 Reason = $"[자율복구] {request.Reason} (ID: {request.CorrelationId})",
                 CreatedAt = KstClock.Now
             };
             
-            dbContext.LogPointTransactions.Add(log);
+            dbContext.TableLogPointTransactions.Add(Log);
 
             // 2. 캐시 메모리 복구
             // IPointCacheService 인터페이스 규격(AddPointAsync)을 사용합니다.
@@ -66,9 +66,9 @@ public class RefundCurrencyCommandHandler(
                 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "❌ [자율 복구 실패] {Viewer}님 환불 중 오류 발생. (CorrId: {Id})", request.ViewerUid, request.CorrelationId);
+            logger.LogError(Ex, "❌ [자율 복구 실패] {Viewer}님 환불 중 오류 발생. (CorrId: {Id})", request.ViewerUid, request.CorrelationId);
             return false;
         }
     }

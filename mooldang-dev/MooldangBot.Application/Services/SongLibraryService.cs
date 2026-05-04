@@ -42,7 +42,7 @@ public class SongLibraryService(
         string rawQuery = query.ToLowerInvariant().Trim();
 
         // 🚀 [1차 - 내부 병기창(DB)]: 제목, 별칭, 초성 필터링 (최우선 순위)
-        var candidates = await _context.FuncMasterSongLibraries
+        var candidates = await _context.TableFuncSongMasterLibrary
             .Where(s => s.Title.Contains(rawQuery) || 
                         (s.Alias != null && s.Alias.Contains(rawQuery)) ||
                         (s.TitleChosung != null && s.TitleChosung.Contains(normalizedQuery)))
@@ -86,7 +86,7 @@ public class SongLibraryService(
         // 1. [v13.1] 멱등성 확인 (최근 1개월 내 동일 URL 존재 여부)
         if (!string.IsNullOrWhiteSpace(dto.YoutubeUrl))
         {
-            var existing = await _context.FuncMasterSongStagings
+            var existing = await _context.TableFuncSongMasterStaging
                 .FirstOrDefaultAsync(s => s.YoutubeUrl == dto.YoutubeUrl);
             if (existing != null) return existing.SongLibraryId;
         }
@@ -100,7 +100,7 @@ public class SongLibraryService(
         // 3. [v13.1] 신규 전역 ID 발급
         var newLibraryId = _idGenerator.GenerateNewId();
 
-        var staging = new Master_SongStaging
+        var staging = new FuncSongMasterStaging
         {
             SongLibraryId = newLibraryId,
             Title = dto.Title,
@@ -123,7 +123,7 @@ public class SongLibraryService(
             await EnrichWithAiMetadataInBackgroundAsync(newLibraryId);
         });
 
-        _context.FuncMasterSongStagings.Add(staging);
+        _context.TableFuncSongMasterStaging.Add(staging);
         await _context.SaveChangesAsync();
 
         return newLibraryId;
@@ -141,7 +141,7 @@ public class SongLibraryService(
         }
 
         // 2. 기존 Staging 조회
-        var staging = await _context.FuncMasterSongStagings
+        var staging = await _context.TableFuncSongMasterStaging
             .FirstOrDefaultAsync(s => s.SongLibraryId == libraryIdToUse);
 
         if (staging != null)
@@ -174,7 +174,7 @@ public class SongLibraryService(
         else
         {
             // 3-B. [Insert]: 정보가 없으면 신규 생성 (Auto-Recovery)
-            staging = new Master_SongStaging
+            staging = new FuncSongMasterStaging
             {
                 SongLibraryId = libraryIdToUse,
                 Title = dto.Title,
@@ -194,7 +194,7 @@ public class SongLibraryService(
                 await EnrichWithAiMetadataInBackgroundAsync(libraryIdToUse);
             });
 
-            _context.FuncMasterSongStagings.Add(staging);
+            _context.TableFuncSongMasterStaging.Add(staging);
         }
 
         await _context.SaveChangesAsync();
@@ -211,7 +211,7 @@ public class SongLibraryService(
         var llm = scope.ServiceProvider.GetRequiredService<ILlmService>();
         var limiter = scope.ServiceProvider.GetRequiredService<AdaptiveAiRateLimiter>();
 
-        var staging = await db.FuncMasterSongStagings.FirstOrDefaultAsync(s => s.SongLibraryId == libraryId);
+        var staging = await db.TableFuncSongMasterStaging.FirstOrDefaultAsync(s => s.SongLibraryId == libraryId);
         if (staging == null) return;
 
         try 
@@ -231,7 +231,7 @@ public class SongLibraryService(
                 Buffer.BlockCopy(vector, 0, binaryVector, 0, binaryVector.Length);
                 
                 await db.Database.GetDbConnection().ExecuteAsync(
-                    "UPDATE FuncSongMasterStaging SET title_vector = @vector WHERE Id = @id",
+                    "UPDATE FuncSongMasterStaging SET TitleVector = @vector WHERE Id = @id",
                     new { vector = binaryVector, id = staging.Id });
             }
 

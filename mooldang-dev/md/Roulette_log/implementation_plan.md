@@ -1,13 +1,13 @@
 # 룰렛 로그 메타데이터 추가 및 인풋 페이징 지원 계획 (v3) [COMPLETED]
 
 ## 1. 개요
-- [RouletteLog](file:///c:/webapi/MooldangAPI/Models/RouletteLog.cs) 엔터티에 `RouletteId`와 `RouletteName`을 추가하여 데이터의 불변성과 추적성을 확보합니다.
+- [LogRouletteResults](file:///c:/webapi/MooldangAPI/Models/LogRouletteResults.cs) 엔터티에 `RouletteId`와 `RouletteName`을 추가하여 데이터의 불변성과 추적성을 확보합니다.
 - 미션 관리 대시보드([admin_missions.html](file:///c:/webapi/MooldangAPI/wwwroot/admin_missions.html))에 Keyset Pagination(인풋 페이징)을 도입하여 대규모 데이터 조회 성능을 최적화하고 UX를 개선합니다.
 
 ## 2. 주요 변경 사항
 
 ### [Backend]
-#### [MODIFY] [RouletteLog.cs](file:///c:/webapi/MooldangAPI/Models/RouletteLog.cs)
+#### [MODIFY] [LogRouletteResults.cs](file:///c:/webapi/MooldangAPI/Models/LogRouletteResults.cs)
 - `RouletteId` (int) 필드 추가
 - `RouletteName` (string) 필드 추가 (역정규화: 룰렛 삭제/이름 변경 시에도 과거 로그 유지)
 
@@ -42,7 +42,7 @@
 - `dotnet build`를 통한 컴파일 오류 및 경고 확인
 
 ### 실기 검증
-- **로그 정합성**: 룰렛 실행 후 [RouletteLog](file:///c:/webapi/MooldangAPI/Models/RouletteLog.cs#7-32) 테이블에 룰렛 ID와 이름이 불변으로 저장되는지 확인
+- **로그 정합성**: 룰렛 실행 후 [LogRouletteResults](file:///c:/webapi/MooldangAPI/Models/LogRouletteResults.cs#7-32) 테이블에 룰렛 ID와 이름이 불변으로 저장되는지 확인
 - **페이징 정합성**: "더 보기" 연타 시 중복 데이터 발생 여부 및 버튼 소멸 시점 확인
 
 > [!TIP]
@@ -60,7 +60,7 @@ C#
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     // ... 기존 코드 ...
-    modelBuilder.Entity<RouletteLog>()
+    modelBuilder.Entity<LogRouletteResults>()
         .HasIndex(l => l.RouletteId); // 향후 필터링 조회 성능 향상
 }
 2. 읽기 전용 쿼리 최적화 (AsNoTracking)

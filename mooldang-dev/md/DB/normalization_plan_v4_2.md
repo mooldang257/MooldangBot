@@ -3,11 +3,11 @@
 본 문서는 `MooldangBot` 데이터베이스의 용량 최적화 및 성능 향상을 위해 시청자 정보를 3개 계층(3-Tier)으로 정규화하고 적용한 결과를 기록합니다.
 
 ## 1. 개요 (Background) - 완료
-기존 `ViewerProfile` 테이블의 중복된 암호화 UID 데이터를 `GlobalViewer`로 분리하여 DB 용량을 약 70~80% 절감하고, 검색 성능을 최적화했습니다.
+기존 `ViewerProfile` 테이블의 중복된 암호화 UID 데이터를 `CoreGlobalViewers`로 분리하여 DB 용량을 약 70~80% 절감하고, 검색 성능을 최적화했습니다.
 
 ## 2. 구현된 도메인 엔티티 (Implemented Entities)
 
-### ① StreamerProfile (스트리머 마스터)
+### ① CoreStreamerProfiles (스트리머 마스터)
 - `ChzzkUid` 고유 인덱스 및 관리 정보 유지.
 - 정규화된 `ViewerProfile`의 상위 계층 역할을 수행합니다.
 
@@ -15,7 +15,7 @@
 namespace MooldangBot.Domain.Entities;
 
 [Index(nameof(ChzzkUid), IsUnique = true)]
-public class StreamerProfile
+public class CoreStreamerProfiles
 {
     [Key]
     public int Id { get; set; }
@@ -28,7 +28,7 @@ public class StreamerProfile
 }
 ```
 
-### ② GlobalViewer (시청자 마스터)
+### ② CoreGlobalViewers (시청자 마스터)
 - **PII(개인정보) 중앙 집중 관리**: 암호화된 `ViewerUid`를 단 한 번만 저장합니다.
 - `ViewerUidHash`를 통한 고속 인덱싱 지원.
 
@@ -36,7 +36,7 @@ public class StreamerProfile
 namespace MooldangBot.Domain.Entities;
 
 [Index(nameof(ViewerUidHash), IsUnique = true)]
-public class GlobalViewer
+public class CoreGlobalViewers
 {
     [Key]
     public int Id { get; set; }
@@ -68,13 +68,13 @@ public class ViewerProfile
     public int StreamerProfileId { get; set; }
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     [Required]
     public int GlobalViewerId { get; set; }
 
     [ForeignKey(nameof(GlobalViewerId))]
-    public virtual GlobalViewer? GlobalViewer { get; set; }
+    public virtual CoreGlobalViewers? CoreGlobalViewers { get; set; }
 
     [MaxLength(100)]
     public string Nickname { get; set; } = string.Empty;
@@ -92,16 +92,16 @@ public class ViewerProfile
 ```
 
 ## 3. AppDbContext 매팅 및 전역 쿼리 필터
-- `GlobalViewer` 암호화 및 `ViewerProfile` 멀티테넌트 격리 필터 적용 완료.
+- `CoreGlobalViewers` 암호화 및 `ViewerProfile` 멀티테넌트 격리 필터 적용 완료.
 
 ```csharp
 // [v4.2] 멀티테넌트 데이터 격리를 위한 글로벌 쿼리 필터 (네비게이션 프로퍼티 활용)
 modelBuilder.Entity<ViewerProfile>().HasQueryFilter(e => !_userSession.IsAuthenticated || 
-                                                           e.StreamerProfile!.ChzzkUid == _userSession.ChzzkUid);
+                                                           e.CoreStreamerProfiles!.ChzzkUid == _userSession.ChzzkUid);
 ```
 
 ## 4. 데이터 이관 시퀀스 가이드 (Migration Guide)
-1. **스키마 변경**: `GlobalViewer` 생성 및 `ViewerProfile` FK 컬럼 추가.
+1. **스키마 변경**: `CoreGlobalViewers` 생성 및 `ViewerProfile` FK 컬럼 추가.
 2. **데이터 이관**: SQL `INSERT IGNORE INTO globalviewers ...` 및 `UPDATE JOIN`을 통한 매핑 처리.
 3. **제약 조건**: FK 제약 조건(`OnDelete.Cascade`) 및 고유 인덱스 재구성.
 4. **정리**: 구형 문자열 컬럼(`ViewerUid`, `ViewerUidHash` 등) 삭제.

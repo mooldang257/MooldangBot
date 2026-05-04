@@ -5,7 +5,7 @@
 > 
 > * **채팅 포인트 & 출석 관련:** `md/ChatPointResearch.md` 참조
 > * **오마카세 및 커스텀 명령어 관련:** (예정) `md/CommandResearch.md` 참조
-> * **신청곡 큐 (SongQueue) 및 노래책 관련:** `md/SongQueueResearch.md` 참조
+> * **신청곡 큐 (FuncSongListQueues) 및 노래책 관련:** `md/SongQueueResearch.md` 참조
 
 ---
 
@@ -24,8 +24,8 @@
 * **진입점 및 설정:** `Program.cs` (DI 구성), `appsettings.json`, `.env` (DotNetEnv 로드)
 * **`Controllers/` (REST API 진입점):** 도메인별 분리된 16개 컨트롤러 (`AuthController`, `SongController`, `CommandsController`, `ChatPointController` 등)
 * **`Data/` (데이터 접근 계층):** `AppDbContext` (DB/테넌트 격리), `IUserSession` (현재 스트리머 컨텍스트)
-* **`Models/` (엔터티 및 DTO):** `StreamerProfile` (마스터), `ViewerProfile`, `SongQueue`, `Roulette` 등
-* **`Features/` (비즈니스 로직 / MediatR Handlers):** Chat, Commands, SongQueue, Roulette, Viewers 도메인별 분리. (예: `ChatMessageReceivedEvent` 구독)
+* **`Models/` (엔터티 및 DTO):** `CoreStreamerProfiles` (마스터), `ViewerProfile`, `FuncSongListQueues`, `FuncRouletteMain` 등
+* **`Features/` (비즈니스 로직 / MediatR Handlers):** Chat, Commands, FuncSongListQueues, FuncRouletteMain, Viewers 도메인별 분리. (예: `ChatMessageReceivedEvent` 구독)
 * **`Services/` (백그라운드 & 공유 서비스):** `ChzzkBackgroundService` (봇 매니저), `ChzzkChannelWorker` (웹소켓 연결), `CommandCacheService` (인메모리 캐시)
 * **`Hubs/` & `Strategies/`:** `OverlayHub` (SignalR 기반 실시간 브로드캐스트)
 * **`wwwroot/` (프론트엔드):** 대시보드 및 OBS 오버레이용 정적 HTML/JS 파일
@@ -39,12 +39,12 @@
 | 트리거 (Trigger) | 타겟 핸들러 | 읽기 (Read DB / Cache) | 쓰기 (Write DB) | 발행 (Emit Event / SignalR) |
 | :--- | :--- | :--- | :--- | :--- |
 | **일반 채팅 수신** | `ViewerPointEventHandler` | `ViewerProfile` | `.Points += 1` | `ReceiveChat` (오버레이) |
-| **`!출석` 수신** | `ViewerPointEventHandler` | `ViewerProfile`, `StreamerProfile` | `.Points += 보너스`<br>`.AttendanceCount++` | 봇 채팅 전송 (Reply) |
+| **`!출석` 수신** | `ViewerPointEventHandler` | `ViewerProfile`, `CoreStreamerProfiles` | `.Points += 보너스`<br>`.AttendanceCount++` | 봇 채팅 전송 (Reply) |
 | **치즈 후원** | `ViewerPointEventHandler` | `ViewerProfile` | `.Points += 후원보너스` | 후원 알림 (SignalR) |
 | **`!포인트` 수신** | `CustomCommandEventHandler` | `ViewerProfile` | **없음** | 봇 채팅 전송 (Reply) |
-| **오마카세 후원** | `OmakaseEventHandler` | `StreamerOmakaseItem` | `.Count += 1` | `RefreshSongAndDashboard` |
+| **오마카세 후원** | `OmakaseEventHandler` | `FuncSongListOmakases` | `.Count += 1` | `RefreshSongAndDashboard` |
 | **포인트 룰렛 성공** | `RouletteEventHandler` | `ViewerProfile` | `.Points -= 룰렛비용` | `RouletteTriggered` |
-| **방제/카테고리 변경** | `ChannelSettingEventHandler` | `StreamerProfile` (Role) | **없음** | 치지직 OpenAPI `PATCH` 호출 |
+| **방제/카테고리 변경** | `ChannelSettingEventHandler` | `CoreStreamerProfiles` (Role) | **없음** | 치지직 OpenAPI `PATCH` 호출 |
 
 ---
 
@@ -58,14 +58,14 @@
 * **Then:** `SocketIOClient` 라이브러리를 사용하지 않고, 텍스트를 `Substring(2)`로 자른 뒤 이중 `JsonDocument.Parse`를 수행하여 내부 페이로드를 안전하게 추출해야 한다.
 
 ### 4-2. 오마카세 후원 동시성 제어 (낙관적 락)
-* **Given:** 다수의 시청자가 동시에 오마카세 후원을 하여 `StreamerOmakaseItem`에 동시 업데이트가 발생할 때
+* **Given:** 다수의 시청자가 동시에 오마카세 후원을 하여 `FuncSongListOmakases`에 동시 업데이트가 발생할 때
 * **When:** DB에 `SaveChangesAsync()`를 호출하여 `DbUpdateConcurrencyException`이 발생하면
 * **Then:** `[ConcurrencyCheck]` 속성을 기반으로 예외를 캐치하고, 데이터를 Reload하여 카운트를 재계산한 뒤 최대 3회까지 저장을 재시도한다.
 
 ### 4-3. 봇 토큰 폴백(Fallback) 우선순위 적용
 * **Given:** 봇이 치지직 채팅 채널에 접근하여 메시지를 전송해야 할 때
 * **When:** 인증 토큰을 로드하는 과정에서
-* **Then:** 1순위 `StreamerProfile.BotAccessToken`을 확인하고, 없으면 2순위 `SystemSettings`의 전역 봇 토큰을 사용하며, 둘 다 유효하지 않으면 최종적으로 스트리머 본인의 `ChzzkAccessToken`을 사용하도록 분기 처리한다.
+* **Then:** 1순위 `CoreStreamerProfiles.BotAccessToken`을 확인하고, 없으면 2순위 `SystemSettings`의 전역 봇 토큰을 사용하며, 둘 다 유효하지 않으면 최종적으로 스트리머 본인의 `ChzzkAccessToken`을 사용하도록 분기 처리한다.
 
 ### 4-4. HTTP Client 인스턴스 과부하 방지
 * **Given:** 다수의 스트리머 채널(Worker)이 치지직 OpenAPI를 호출할 때

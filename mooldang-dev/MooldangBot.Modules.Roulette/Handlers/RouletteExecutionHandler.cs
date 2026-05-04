@@ -89,11 +89,11 @@ public class RouletteExecutionHandler(
                     using var scope = scopeFactory.CreateScope();
                     var scopedDb = scope.ServiceProvider.GetRequiredService<IRouletteDbContext>();
                     
-                    var streamerProfile = await scopedDb.CoreStreamerProfiles
+                    var streamerProfile = await scopedDb.TableCoreStreamerProfiles
                         .AsNoTracking()
                         .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, CancellationToken.None);
 
-                    var logEntry = new CommandExecutionLog
+                    var logEntry = new LogCommandExecutions
                     {
                         StreamerProfileId = streamerProfile?.Id ?? 0,
                         Keyword = rouletteCmd.Keyword,

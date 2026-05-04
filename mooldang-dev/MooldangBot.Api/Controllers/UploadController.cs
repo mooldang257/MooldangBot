@@ -55,7 +55,7 @@ namespace MooldangBot.Api.Controllers
                 // [하모니의 창고]: 파일 저장 및 URL 생성
                 var fileUrl = await _storageService.SaveFileAsync(file, type);
                 
-                return Ok(new { url = fileUrl });
+                return Ok(new { Url = fileUrl });
             }
             catch (Exception ex)
             {
@@ -65,7 +65,7 @@ namespace MooldangBot.Api.Controllers
         }
 
         /// <summary>
-        /// [하모니의 음성 기록]: 오디오 파일을 업로드하고 보관함(SoundAsset)에 등록합니다.
+        /// [하모니의 음성 기록]: 오디오 파일을 업로드하고 보관함(FuncSoundAssets)에 등록합니다.
         /// </summary>
         [HttpPost("audio")]
         public async Task<IActionResult> UploadAudio(IFormFile file, [FromQuery] string name = "", [FromQuery] string type = "Upload")
@@ -82,7 +82,7 @@ namespace MooldangBot.Api.Controllers
             var chzzkUid = User.FindFirst("StreamerId")?.Value;
             if (string.IsNullOrEmpty(chzzkUid)) return Unauthorized();
 
-            var streamer = await _db.CoreStreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
+            var streamer = await _db.TableCoreStreamerProfiles.FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
             if (streamer == null) return NotFound("스트리머 정보를 찾을 수 없습니다.");
 
             try
@@ -91,7 +91,7 @@ namespace MooldangBot.Api.Controllers
                 var fileUrl = await _storageService.SaveFileAsync(file, "sounds");
 
                 // 2. 보관함(DB) 등록
-                var asset = new SoundAsset
+                var asset = new FuncSoundAssets
                 {
                     StreamerProfileId = streamer.Id,
                     Name = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(file.FileName) : name,
@@ -100,10 +100,10 @@ namespace MooldangBot.Api.Controllers
                     CreatedAt = KstClock.Now
                 };
 
-                _db.FuncSoundAssets.Add(asset);
+                _db.TableFuncSoundAssets.Add(asset);
                 await _db.SaveChangesAsync();
 
-                return Ok(new { url = fileUrl, assetId = asset.Id, name = asset.Name });
+                return Ok(new { Url = fileUrl, AssetId = asset.Id, Name = asset.Name });
             }
             catch (Exception ex)
             {

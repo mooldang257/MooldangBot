@@ -7,7 +7,7 @@ using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Domain.Common.Models;
 
-namespace MooldangBot.Application.Controllers.SongQueue
+namespace MooldangBot.Application.Controllers.FuncSongListQueues
 {
     [ApiController]
     [Route("api/config/songlist/{chzzkUid}")]
@@ -33,7 +33,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             {
                 OverlayToken = overlayToken,
                 DesignSettingsJson = profile.DesignSettingsJson ?? "{}",
-                SongRequestCommands = await db.SysUnifiedCommands
+                SongRequestCommands = await db.TableFuncCmdUnified
                     .AsNoTracking()
                     .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest && !c.IsDeleted)
                     .Select(c => new SongRequestCommandDto
@@ -43,10 +43,10 @@ namespace MooldangBot.Application.Controllers.SongQueue
                         Price = c.Cost
                     })
                     .ToListAsync(),
-                Omakases = await db.FuncStreamerOmakases
+                Omakases = await db.TableFuncSongListOmakases
                     .AsNoTracking()
-                    .Where(o => o.StreamerProfileId == profile.Id && !db.SysUnifiedCommands.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && c.IsDeleted))
-                    .Join(db.SysUnifiedCommands.Where(c => c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted),
+                    .Where(o => o.StreamerProfileId == profile.Id && !db.TableFuncCmdUnified.Any(c => c.TargetId == o.Id && c.FeatureType == CommandFeatureType.Omakase && c.IsDeleted))
+                    .Join(db.TableFuncCmdUnified.Where(c => c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted),
                         o => o.Id,
                         c => c.TargetId,
                         (o, c) => new OmakaseDto
@@ -68,7 +68,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
         public async Task<IActionResult> UpdateSettings(string chzzkUid, [FromBody] SonglistSettingsUpdateRequest request)
         {
             // [오시리스의 영속]: 업데이트를 위해 DB에서 직접 조회하여 트래킹 상태로 만듭니다.
-            var profile = await db.CoreStreamerProfiles
+            var profile = await db.TableCoreStreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == chzzkUid.ToLower());
             
             if (profile == null)
@@ -78,7 +78,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
             profile.DesignSettingsJson = request.DesignSettingsJson;
 
             // 2. 노래 신청용 명령어 동기화 (간소화된 Sync 로직)
-            var existingSongCommands = await db.SysUnifiedCommands
+            var existingSongCommands = await db.TableFuncCmdUnified
                 .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.SongRequest && !c.IsDeleted)
                 .ToListAsync();
 
@@ -87,7 +87,7 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             foreach (var cmdDto in request.SongRequestCommands)
             {
-                db.SysUnifiedCommands.Add(new UnifiedCommand
+                db.TableFuncCmdUnified.Add(new FuncCmdUnified
                 {
                     StreamerProfileId = profile.Id,
                     FeatureType = CommandFeatureType.SongRequest,
@@ -103,11 +103,11 @@ namespace MooldangBot.Application.Controllers.SongQueue
 
             // 3. 오마카세 메뉴 동기화
             var incomingOmakaseIds = request.Omakases.Select(o => o.Id).ToList();
-            var existingOmakases = await db.FuncStreamerOmakases
+            var existingOmakases = await db.TableFuncSongListOmakases
                 .Where(o => o.StreamerProfileId == profile.Id)
                 .ToListAsync();
             
-            var existingCommands = await db.SysUnifiedCommands
+            var existingCommands = await db.TableFuncCmdUnified
                 .Where(c => c.StreamerProfileId == profile.Id && c.FeatureType == CommandFeatureType.Omakase && !c.IsDeleted)
                 .ToListAsync();
 
@@ -132,17 +132,17 @@ namespace MooldangBot.Application.Controllers.SongQueue
                 }
                 else // 신규 추가
                 {
-                    var newOmakase = new StreamerOmakaseItem
+                    var newOmakase = new FuncSongListOmakases
                     {
                         StreamerProfileId = profile.Id,
                         Icon = oDto.Icon,
                         Count = oDto.Count,
                         IsActive = true
                     };
-                    db.FuncStreamerOmakases.Add(newOmakase);
+                    db.TableFuncSongListOmakases.Add(newOmakase);
                     await db.SaveChangesAsync(); // ID 확보를 위해 일단 저장
 
-                    db.SysUnifiedCommands.Add(new UnifiedCommand
+                    db.TableFuncCmdUnified.Add(new FuncCmdUnified
                     {
                         StreamerProfileId = profile.Id,
                         FeatureType = CommandFeatureType.Omakase,
@@ -173,13 +173,13 @@ namespace MooldangBot.Application.Controllers.SongQueue
             return Ok(Result<bool>.Success(true));
         }
 
-        private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
+        private async Task<CoreStreamerProfiles?> GetCachedProfileAsync(string uid)
         {
             var profile = await identityCache.GetStreamerProfileAsync(uid);
             if (profile != null) return profile;
 
             var target = uid.ToLower();
-            return await db.CoreStreamerProfiles
+            return await db.TableCoreStreamerProfiles
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
         }
     }

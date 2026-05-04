@@ -62,7 +62,7 @@ connection.on("ReceiveRouletteResult", (data) => {
     const spinId = data.SpinId;
     const results = data.Results;
     
-    console.log(`[Roulette] SpinId received: ${spinId}`);
+    console.log(`[FuncRouletteMain] SpinId received: ${spinId}`);
     
     // 애니메이션 실행 및 종료 후 콜백 호출
     startAnimation(results, () => {

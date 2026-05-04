@@ -8,7 +8,7 @@ using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.DTOs;
 
-namespace MooldangBot.Application.Controllers.SongQueue
+namespace MooldangBot.Application.Controllers.FuncSongListQueues
 {
     [ApiController]
     [Route("api/song/{chzzkUid}")]

@@ -40,7 +40,7 @@ namespace MooldangBot.Infrastructure.Persistence
             using var db = CreateConnection();
 
             string sql = @"
-            INSERT INTO core_streamer_tokens (ChannelId, ChannelName, AccessToken, RefreshToken, UpdatedAt)
+            INSERT INTO CoreStreamerTokens (ChannelId, ChannelName, AccessToken, RefreshToken, UpdatedAt)
             VALUES (@ChannelId, @ChannelName, @AccessToken, @RefreshToken, NOW())
             ON DUPLICATE KEY UPDATE 
                 ChannelName = @ChannelName,
@@ -66,7 +66,7 @@ namespace MooldangBot.Infrastructure.Persistence
         {
             using var db = CreateConnection();
             // 단일 스트리머 로컬용이므로 가장 최근에 업데이트된 토큰 하나만 가져옵니다.
-            string sql = "SELECT AccessToken FROM core_streamer_tokens ORDER BY UpdatedAt DESC LIMIT 1;";
+            string sql = "SELECT AccessToken FROM CoreStreamerTokens ORDER BY UpdatedAt DESC LIMIT 1;";
             return await db.QueryFirstOrDefaultAsync<string>(sql);
         }
     }

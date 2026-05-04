@@ -57,7 +57,7 @@ public async Task Handle(ChatMessageReceivedEvent notification, CancellationToke
 
 ```csharp
 // Good (Reference: AppDbContext.cs)
-modelBuilder.Entity<StreamerProfile>(entity => {
+modelBuilder.Entity<CoreStreamerProfiles>(entity => {
     entity.ToTable("streamerprofiles");
     entity.Property(e => e.ChzzkUid).UseCollation("utf8mb4_unicode_ci");
 });

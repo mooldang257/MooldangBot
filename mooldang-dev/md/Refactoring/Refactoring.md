@@ -42,7 +42,7 @@ dotnet add MooldangAPI.csproj reference MooldangBot.Infrastructure/MooldangBot.I
 
 파일 이동: 기존 Models/ 폴더 내의 데이터 엔티티들을 MooldangBot.Domain/Entities/ 폴더로 이동.
 
-대상: SongQueue.cs, AvatarSetting.cs, StreamerProfile.cs, SystemSetting.cs 등 DB와 매핑되는 엔티티 클래스 전체.
+대상: FuncSongListQueues.cs, SysAvatarSettings.cs, CoreStreamerProfiles.cs, SystemSetting.cs 등 DB와 매핑되는 엔티티 클래스 전체.
 
 네임스페이스 수정: - 기존 namespace MooldangAPI.Models ➡️ namespace MooldangBot.Domain.Entities 로 전면 교체.
 

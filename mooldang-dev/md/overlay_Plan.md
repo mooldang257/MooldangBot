@@ -1,7 +1,7 @@
 # 오버레이 송리스트(SongList) 반영 이슈 해결 및 구현 계획 (최종본)
 
 > [!IMPORTANT]
-> 본 문서는 '물멍' 파트너의 제안을 바탕으로, **.NET 10 최신 문법**과 **Clean Code** 원칙을 준수하여 작성된 대기열(SongQueue) 수정 및 동기화 솔루션입니다. `SongBook` 연동을 배제하고 독립적인 영속성을 확보합니다.
+> 본 문서는 '물멍' 파트너의 제안을 바탕으로, **.NET 10 최신 문법**과 **Clean Code** 원칙을 준수하여 작성된 대기열(FuncSongListQueues) 수정 및 동기화 솔루션입니다. `FuncSongBooks` 연동을 배제하고 독립적인 영속성을 확보합니다.
 
 ## 1. 이슈 분석 결과 (Technical Analysis)
 
@@ -32,7 +32,7 @@ public async Task<IActionResult> UpdateSongDetails(string chzzkUid, int id, [Fro
 
     if (songItem == null) return NotFound(new { message = "수정할 곡을 찾을 수 없습니다." });
 
-    // 2. 필드 가공 및 업데이트 (SongBook 의존성 제거)
+    // 2. 필드 가공 및 업데이트 (FuncSongBooks 의존성 제거)
     if (!string.IsNullOrWhiteSpace(request.Title)) songItem.Title = request.Title;
     if (!string.IsNullOrWhiteSpace(request.Artist)) songItem.Artist = request.Artist;
     

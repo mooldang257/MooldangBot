@@ -27,36 +27,36 @@ public class ChatLogCleanupWorker(
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
         _logger.LogInformation("🧹 [ChatLogCleanup] 90일 이상 경과한 채팅 로그 정리를 시작합니다.");
-
-        using var scope = _serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+ 
+        using var Scope = _serviceProvider.CreateScope();
+        var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         
-        var connection = db.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Open)
+        var Connection = Db.Database.GetDbConnection();
+        if (Connection.State != System.Data.ConnectionState.Open)
         {
-            await connection.OpenAsync(ct);
+            await Connection.OpenAsync(ct);
         }
-
+ 
         try
         {
-            const string sql = @"
-                DELETE FROM log_chat_interactions 
-                WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)";
-
-            var deletedCount = await connection.ExecuteAsync(sql);
+            const string Sql = @"
+                DELETE FROM LogChatInteractions 
+                WHERE CreatedAt < DATE_SUB(NOW(), INTERVAL 90 DAY)";
+ 
+            var DeletedCount = await Connection.ExecuteAsync(Sql);
             
-            if (deletedCount > 0)
+            if (DeletedCount > 0)
             {
-                _logger.LogInformation("✅ [ChatLogCleanup] {Count}개의 오래된 채팅 로그를 정리했습니다.", deletedCount);
+                _logger.LogInformation("✅ [ChatLogCleanup] {Count}개의 오래된 채팅 로그를 정리했습니다.", DeletedCount);
             }
             else
             {
                 _logger.LogInformation("✅ [ChatLogCleanup] 정리할 채팅 로그가 없습니다.");
             }
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, "🚨 [ChatLogCleanup] 채팅 로그 정리 중 오류 발생!");
+            _logger.LogError(Ex, "🚨 [ChatLogCleanup] 채팅 로그 정리 중 오류 발생!");
         }
     }
 }

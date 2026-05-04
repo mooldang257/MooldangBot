@@ -23,7 +23,7 @@ public class ChatInteractionHandlerTests
 
     private ChatInteractionHandler CreateSut() => new(_buffer, _commandCache, _scribe, _logger);
 
-    private static StreamerProfile CreateProfile() => new()
+    private static CoreStreamerProfiles CreateProfile() => new()
     {
         Id = 1,
         ChzzkUid = "streamer1",
@@ -54,7 +54,7 @@ public class ChatInteractionHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]
-        _buffer.Received(1).Enqueue(Arg.Is<ChatInteractionLog>(log =>
+        _buffer.Received(1).Enqueue(Arg.Is<LogChatInteractions>(log =>
             log.StreamerProfileId == 1 &&
             log.SenderNickname == "물댕이" &&
             log.Message == "안녕하세요!" &&
@@ -89,7 +89,7 @@ public class ChatInteractionHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]
-        _buffer.Received(1).Enqueue(Arg.Is<ChatInteractionLog>(log =>
+        _buffer.Received(1).Enqueue(Arg.Is<LogChatInteractions>(log =>
             log.MessageType == "Donation" &&
             log.SenderNickname == "후원자"));
     }
@@ -115,7 +115,7 @@ public class ChatInteractionHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]: Enqueue가 호출되지 않아야 함
-        _buffer.DidNotReceive().Enqueue(Arg.Any<ChatInteractionLog>());
+        _buffer.DidNotReceive().Enqueue(Arg.Any<LogChatInteractions>());
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class ChatInteractionHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]: 구독 이벤트는 무시해야 함
-        _buffer.DidNotReceive().Enqueue(Arg.Any<ChatInteractionLog>());
+        _buffer.DidNotReceive().Enqueue(Arg.Any<LogChatInteractions>());
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class ChatInteractionHandlerTests
         {
             Id = 1,
             Keyword = "!룰렛",
-            FeatureType = MooldangBot.Domain.Entities.CommandFeatureType.Roulette,
+            FeatureType = MooldangBot.Domain.Entities.CommandFeatureType.FuncRouletteMain,
             StreamerProfileId = 1
         };
         _commandCache.GetMatchesAsync("streamer1", "!룰렛")
@@ -175,7 +175,7 @@ public class ChatInteractionHandlerTests
         await handler.Handle(notification, CancellationToken.None);
 
         // [Assert]: IsCommand가 true로 설정되어야 함
-        _buffer.Received(1).Enqueue(Arg.Is<ChatInteractionLog>(log =>
+        _buffer.Received(1).Enqueue(Arg.Is<LogChatInteractions>(log =>
             log.IsCommand == true &&
             log.Message == "!룰렛"));
     }

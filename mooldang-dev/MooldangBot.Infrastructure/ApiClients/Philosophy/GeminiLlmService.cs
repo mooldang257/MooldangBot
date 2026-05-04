@@ -29,10 +29,10 @@ public class GeminiLlmService(
             logger.LogWarning("[IAMF 경고] Gemini API 키가 설정되지 않았습니다. 기본 답변으로 대체합니다.");
             return "[지혜의 부재] 현재 신경망 연결이 끊겨 있어 깊은 대화가 어렵습니다.";
         }
-
+ 
         try
         {
-            var requestBody = new
+            var RequestBody = new
             {
                 system_instruction = new
                 {
@@ -48,30 +48,30 @@ public class GeminiLlmService(
                     maxOutputTokens = 300
                 }
             };
-
-            var apiUrl = string.Format(GenerateUrlTemplate, _apiKey);
-            var response = await httpClient.PostAsJsonAsync(apiUrl, requestBody);
-
-            if (!response.IsSuccessStatusCode)
+ 
+            var ApiUrl = string.Format(GenerateUrlTemplate, _apiKey);
+            var Response = await httpClient.PostAsJsonAsync(ApiUrl, RequestBody);
+ 
+            if (!Response.IsSuccessStatusCode)
             {
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                logger.LogError("[IAMF 오류] Gemini API 호출 실패: {StatusCode}, {ErrorMsg}", response.StatusCode, errorMsg);
+                var ErrorMsg = await Response.Content.ReadAsStringAsync();
+                logger.LogError("[IAMF 오류] Gemini API 호출 실패: {StatusCode}, {ErrorMsg}", Response.StatusCode, ErrorMsg);
                 return string.Empty;
             }
-
-            var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-            var aiText = jsonDoc?.RootElement
+ 
+            var JsonDoc = await Response.Content.ReadFromJsonAsync<JsonDocument>();
+            var AiText = JsonDoc?.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
                 .GetProperty("parts")[0]
                 .GetProperty("text")
                 .GetString();
-
-            return aiText?.Trim() ?? string.Empty;
+ 
+            return AiText?.Trim() ?? string.Empty;
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "[IAMF 오류] Gemini 연동 중 예외 발생");
+            logger.LogError(Ex, "[IAMF 오류] Gemini 연동 중 예외 발생");
             return string.Empty;
         }
     }
@@ -83,46 +83,46 @@ public class GeminiLlmService(
     {
         if (string.IsNullOrEmpty(_apiKey) || string.IsNullOrWhiteSpace(text))
             return Array.Empty<float>();
-
+ 
         try
         {
-            var modelName = "models/gemini-embedding-001"; // [v19.0] 3072차원을 지원하는 텍스트 전용 임베딩 모델
-            var requestBody = new
+            var ModelName = "models/gemini-embedding-001"; // [v19.0] 3072차원을 지원하는 텍스트 전용 임베딩 모델
+            var RequestBody = new
             {
-                model = modelName,
+                model = ModelName,
                 content = new { parts = new[] { new { text = text } } },
                 outputDimensionality = 3072 // [v19.0] MariaDB 11.8 고도화를 위해 3072차원으로 상향
             };
-
-            var apiUrl = string.Format(EmbeddingUrlTemplate, modelName, _apiKey);
-            var response = await httpClient.PostAsJsonAsync(apiUrl, requestBody);
-
-            if (!response.IsSuccessStatusCode)
+ 
+            var ApiUrl = string.Format(EmbeddingUrlTemplate, ModelName, _apiKey);
+            var Response = await httpClient.PostAsJsonAsync(ApiUrl, RequestBody);
+ 
+            if (!Response.IsSuccessStatusCode)
             {
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                logger.LogError("[IAMF 오류] Gemini Embedding 호출 실패: {StatusCode}, {ErrorMsg}", response.StatusCode, errorMsg);
+                var ErrorMsg = await Response.Content.ReadAsStringAsync();
+                logger.LogError("[IAMF 오류] Gemini Embedding 호출 실패: {StatusCode}, {ErrorMsg}", Response.StatusCode, ErrorMsg);
                 return Array.Empty<float>();
             }
-
-            var jsonDoc = await response.Content.ReadFromJsonAsync<JsonDocument>();
-            var values = jsonDoc?.RootElement
+ 
+            var JsonDoc = await Response.Content.ReadFromJsonAsync<JsonDocument>();
+            var Values = JsonDoc?.RootElement
                 .GetProperty("embedding")
                 .GetProperty("values");
-
-            if (values == null) return Array.Empty<float>();
-
-            var result = new float[values.Value.GetArrayLength()];
-            int i = 0;
-            foreach (var val in values.Value.EnumerateArray())
+ 
+            if (Values == null) return Array.Empty<float>();
+ 
+            var Result = new float[Values.Value.GetArrayLength()];
+            int I = 0;
+            foreach (var Val in Values.Value.EnumerateArray())
             {
-                result[i++] = val.GetSingle();
+                Result[I++] = Val.GetSingle();
             }
-
-            return result;
+ 
+            return Result;
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "[IAMF 오류] Gemini Embedding 연동 중 예외 발생");
+            logger.LogError(Ex, "[IAMF 오류] Gemini Embedding 연동 중 예외 발생");
             return Array.Empty<float>();
         }
     }

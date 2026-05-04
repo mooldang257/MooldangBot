@@ -6,7 +6,7 @@
 
 ## 1. 개요 (Overview)
 
-노래책(Songbook)은 스트리머가 부를 수 있는 방대한 곡 목록을 효율적으로 관리하고, 시청자의 신청곡 대기열(SongQueue)과 연동하는 핵심 관리 모듈입니다.
+노래책(Songbook)은 스트리머가 부를 수 있는 방대한 곡 목록을 효율적으로 관리하고, 시청자의 신청곡 대기열(FuncSongListQueues)과 연동하는 핵심 관리 모듈입니다.
 
 - **목표**: 대규모(1,000곡 이상) 곡 목록의 무중단 조회 및 관리.
 - **핵심 기술**: ASP.NET 10, EF Core(MariaDB), Seek Pagination(인풋 페이징), SignalR.
@@ -15,7 +15,7 @@
 
 ## 2. 데이터베이스 설계 (Database Schema)
 
-### 2-1. `SongBook` 테이블
+### 2-1. `FuncSongBooks` 테이블
 `LastId` 기반의 성능 최적화(Index Seek)를 위해 `(ChzzkUid, Id DESC)` 복합 인덱스를 적용했습니다.
 
 | 필드명 | 타입 | 제약 조건 | 설명 |
@@ -39,11 +39,11 @@
   - `Search`: 선택 (제목/가수 통합 검색 키워드).
 - **특징**: `WHERE Id < LastId` 조건을 사용하여 데이터 양에 관계없이 일정한 조회 성능 유지.
 
-### 3-2. 대기열(SongQueue) 연동
+### 3-2. 대기열(FuncSongListQueues) 연동
 - **URL**: `POST /api/songbook/{chzzkUid}/add-to-queue/{id}`
 - **로직**:
   1. 노래책에서 곡 정보 조회.
-  2. `SongQueue`의 마지막 `SortOrder`를 확인하여 새로운 항목 추가.
+  2. `FuncSongListQueues`의 마지막 `SortOrder`를 확인하여 새로운 항목 추가.
   3. 노래책의 `UsageCount`를 1 증가시켜 통계 데이터 갱신.
 
 ---

@@ -35,7 +35,7 @@ public class IamfDashboardController : ControllerBase
         var parhos = await _resonance.GetCurrentParhosStateAsync(chzzkUid);
         
         // [거울의 법칙]: 설정 로드
-        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
+        var setting = await _db.TableIamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
         double opacity = setting?.OverlayOpacity ?? 0.5;
 
         return Ok(new IamfDashboardStatus(
@@ -56,8 +56,8 @@ public class IamfDashboardController : ControllerBase
     public async Task<IActionResult> GetHistory([FromQuery] string chzzkUid, [FromQuery] int limit = 10)
     {
         // [v4.9] 스트리머별 시나리오 기록 필터링 (전역 필터 제거 대응)
-        var history = await _db.IamfScenarios
-            .Where(s => s.StreamerProfile!.ChzzkUid == chzzkUid)
+        var history = await _db.TableIamfScenarios
+            .Where(s => s.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
             .OrderByDescending(s => s.CreatedAt)
             .Take(limit)
             .ToListAsync();
@@ -72,8 +72,8 @@ public class IamfDashboardController : ControllerBase
     public async Task<IActionResult> GetGenos([FromQuery] string chzzkUid)
     {
         // [v4.9] 스트리머별 제노스 레지스트리 필터링
-        var genos = await _db.IamfGenosRegistries
-            .Where(g => g.StreamerProfile!.ChzzkUid == chzzkUid)
+        var genos = await _db.TableIamfGenosRegistry
+            .Where(g => g.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
             .Select(g => new GenosStatusDto(g.Name, g.Frequency, g.Role, g.Metaphor))
             .ToListAsync();
             
@@ -86,8 +86,8 @@ public class IamfDashboardController : ControllerBase
     [HttpGet("trends")]
     public async Task<IActionResult> GetTrends([FromQuery] string chzzkUid, [FromQuery] int limit = 50)
     {
-        var trends = await _db.LogIamfVibrations
-            .Where(v => v.StreamerProfile!.ChzzkUid == chzzkUid)
+        var trends = await _db.TableLogIamfVibrations
+            .Where(v => v.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
             .OrderByDescending(v => v.CreatedAt)
             .Take(limit)
             .Select(v => new {
@@ -107,17 +107,17 @@ public class IamfDashboardController : ControllerBase
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings([FromQuery] string chzzkUid = "SYSTEM")
     {
-        var setting = await _db.IamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.StreamerProfile!.ChzzkUid == chzzkUid);
+        var setting = await _db.TableIamfStreamerSettings.AsNoTracking().FirstOrDefaultAsync(s => s.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
         
         // 설정이 없으면 기본값 반환
         if (setting == null) 
         {
             return Ok(new { 
-                isIamfEnabled = true, 
-                isVisualResonanceEnabled = true,
-                isPersonaChatEnabled = true,
-                sensitivityMultiplier = 1.0, 
-                overlayOpacity = 0.5 
+                IsIamfEnabled = true, 
+                IsVisualResonanceEnabled = true,
+                IsPersonaChatEnabled = true,
+                SensitivityMultiplier = 1.0, 
+                OverlayOpacity = 0.5 
             });
         }
 
@@ -142,21 +142,21 @@ public class IamfDashboardController : ControllerBase
 
         // 2. [기록 검색 및 생성]
         // [정규화] ChzzkUid 문자열로 실시간 프로필 조회
-        var profile = await _db.CoreStreamerProfiles
+        var profile = await _db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == request.ChzzkUid);
 
         if (profile == null)
             return BadRequest(new { Error = "[오시리스의 거절] 해당 스트리머 프로필을 찾을 수 없습니다." });
 
-        var setting = await _db.IamfStreamerSettings
+        var setting = await _db.TableIamfStreamerSettings
                                .FirstOrDefaultAsync(s => s.StreamerProfileId == profile.Id);
         
         if (setting == null)
         {
             // 최초 설정 시 새로운 레코드 생성
-            setting = new IamfStreamerSetting { StreamerProfileId = profile.Id };
-            _db.IamfStreamerSettings.Add(setting);
+            setting = new IamfStreamerSettings { StreamerProfileId = profile.Id };
+            _db.TableIamfStreamerSettings.Add(setting);
         }
 
         // 3. [스트리머의 통제권 확장]: 투트랙 제어 필드 갱신

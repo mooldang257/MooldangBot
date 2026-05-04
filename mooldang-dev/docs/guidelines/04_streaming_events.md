@@ -99,7 +99,7 @@ await foreach (var item in _msgBuffer.Reader.ReadAllAsync(ct)) {
 **[핵심 코드: Identity Cache]**
 ```csharp
 // [v8.0] 단 1초의 인메모리 캐싱만으로도 폭발적인 동시 조회를 차단합니다.
-public async Task<StreamerProfile?> GetProfileCachedAsync(string uid) {
+public async Task<CoreStreamerProfiles?> GetProfileCachedAsync(string uid) {
     return await _cache.GetOrCreateAsync($"profile:{uid}", async entry => {
         entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1); // 1초 가드
         return await _db.StreamerProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.ChzzkUid == uid);

@@ -35,14 +35,14 @@ try
     // 🪵 [로깅 설정]: Serilog 확장 메서드 호출
     builder.Host.AddMooldangLogging();
 
-    // 🧩 [서비스 등록]: 핵심 도메인 및 모듈 서비스
+    // [오시리스의 시동]: 봇 전용 서비스 및 핵심 통신 워커만 등록합니다.
+    builder.Services.AddInfrastructureServices(builder.Configuration);
+    builder.Services.AddCoreBotWorker(builder.Configuration); // [오시리스의 지침]: 봇 서버는 오직 치지직 통신과 중계만 전담합니다.
     builder.Services
-        .AddInfrastructureServices(builder.Configuration)
-        .AddWorkerRegistry(builder.Configuration)
         .AddSongBookModule()
         .AddRouletteModule()
         .AddCommandsModule()
-        .AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly)
+        .AddMessagingInfrastructure(builder.Configuration, typeof(MooldangBot.Application.Consumers.ChatReceivedConsumer).Assembly) // [오시리스의 지침]: API 서버는 알림 및 로직 처리를 담당합니다.
         .AddApplicationServices();
 
     // 🔍 [지능형 광역 소나]: MediatR 어셈블리 스캔
@@ -104,12 +104,13 @@ try
     builder.Services.AddHealthChecks().AddCheck<BotHealthCheck>("MooldangBot_Shards");
     
     builder.Services.ConfigureHttpJsonOptions(options => {
+        options.SerializerOptions.PropertyNamingPolicy = null;
         options.SerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
     });
 
     builder.Services.AddControllers()
         .AddJsonOptions(options => {
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
             options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, ChzzkJsonContext.Default);
         });
 

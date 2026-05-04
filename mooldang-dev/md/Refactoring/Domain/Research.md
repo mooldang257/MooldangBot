@@ -7,7 +7,7 @@
 
 ## 2. 주요 엔티티 (Entities)
 
-### 2-1. StreamerProfile (핵심 테넌트 엔티티)
+### 2-1. CoreStreamerProfiles (핵심 테넌트 엔티티)
 - **용도**: 스트리머의 마스터 설정 및 인증 정보를 보관합니다.
 - **주요 필드**:
     - `ChzzkUid`: 치지직 고유 식별자 (Unique Index).
@@ -22,13 +22,13 @@
 - **용도**: 스트리머별 시청자의 포인트 및 출석 정보를 관리합니다.
 - **관계**: 스트리머와 시청자 ID를 조합하여 고유성을 유지합니다.
 
-### 2-3. SongQueue & SongBook
-- **SongQueue**: 현재 방송에서 대기 중인 신청곡 리스트.
-- **SongBook**: 스트리머의 전체 신청 가능 곡 목록 (레퍼토리).
+### 2-3. FuncSongListQueues & FuncSongBooks
+- **FuncSongListQueues**: 현재 방송에서 대기 중인 신청곡 리스트.
+- **FuncSongBooks**: 스트리머의 전체 신청 가능 곡 목록 (레퍼토리).
 
-### 2-4. Roulette & RouletteItem
-- **Roulette**: 룰렛의 이름, 명령어, 비용(치즈/포인트) 설정.
-- **RouletteItem**: 룰렛 내 개별 당첨 항목과 확률(일반/10배) 설정.
+### 2-4. FuncRouletteMain & FuncRouletteItems
+- **FuncRouletteMain**: 룰렛의 이름, 명령어, 비용(치즈/포인트) 설정.
+- **FuncRouletteItems**: 룰렛 내 개별 당첨 항목과 확률(일반/10배) 설정.
 
 ---
 

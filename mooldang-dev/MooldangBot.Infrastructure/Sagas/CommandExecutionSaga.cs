@@ -10,7 +10,7 @@ namespace MooldangBot.Infrastructure.Sagas;
 /// [오시리스의 지휘관]: 명령어 실행의 전 과정을 감시하고 통제하는 Saga State Machine입니다.
 /// 장애 발생 시 자율적으로 보상 트랜잭션(환불)을 수행하여 함선의 정합성을 지킵니다.
 /// </summary>
-public class CommandExecutionSaga : MassTransitStateMachine<CommandExecutionSagaState>
+public class CommandExecutionSaga : MassTransitStateMachine<SysSagaCommandExecutions>
 {
     public CommandExecutionSaga(ILogger<CommandExecutionSaga> logger)
     {

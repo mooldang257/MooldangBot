@@ -20,7 +20,7 @@
 ### 1-3. 봇 토큰 폴백(Fallback) 3단계 우선순위
 * **Given:** 봇이 치지직 채팅 채널에 접근하여 응답 메시지를 전송해야 할 때
 * **When:** `ChzzkApiClient`가 인증 토큰을 로드하는 과정에서
-* **Then:** 1순위 `StreamerProfile.BotAccessToken`을 확인하고, 유효하지 않으면 2순위 `SystemSettings`의 전역 봇 토큰을 사용하며, 둘 다 실패하면 최종적으로 스트리머 본인의 `ChzzkAccessToken`을 사용하도록 분기 처리한다.
+* **Then:** 1순위 `CoreStreamerProfiles.BotAccessToken`을 확인하고, 유효하지 않으면 2순위 `SystemSettings`의 전역 봇 토큰을 사용하며, 둘 다 실패하면 최종적으로 스트리머 본인의 `ChzzkAccessToken`을 사용하도록 분기 처리한다.
 
 ---
 
@@ -41,7 +41,7 @@
 * **Then:** DB의 포인트를 차감하지 않고, `RouletteService`를 호출하지 않으며, 봇이 "포인트가 부족합니다"라는 멘션 채팅을 해당 시청자에게 전송한 뒤 로직을 즉시 종료한다.
 
 ### 3-2. 포인트/오마카세 데이터 동시성 경합 (Concurrency Check)
-* **Given:** 다수의 시청자가 동시에 오마카세 후원을 하거나, 동일 시청자가 매우 빠른 속도로 연속 채팅을 쳐서 `ViewerProfile` 또는 `StreamerOmakaseItem`에 동시 업데이트 트랜잭션이 발생할 때
+* **Given:** 다수의 시청자가 동시에 오마카세 후원을 하거나, 동일 시청자가 매우 빠른 속도로 연속 채팅을 쳐서 `ViewerProfile` 또는 `FuncSongListOmakases`에 동시 업데이트 트랜잭션이 발생할 때
 * **When:** DB에 `SaveChangesAsync()`를 호출하여 `DbUpdateConcurrencyException`이 발생하면
 * **Then:** 엔터티에 설정된 `[ConcurrencyCheck]` 속성을 기반으로 예외를 캐치하고, DB에서 최신 값을 Reload하여 더할 포인트/카운트를 재계산한 뒤 최대 3회까지 저장을 재시도한다. 3회 모두 실패 시 에러 로그를 남긴다.
 

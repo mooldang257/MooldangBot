@@ -28,7 +28,7 @@ public interface ISoftDeletable {
 }
 
 // AppDbContext에서 전역 쿼리 필터를 통해 삭제된 데이터는 자동으로 배제됩니다.
-modelBuilder.Entity<StreamerProfile>().HasQueryFilter(s => !s.IsDeleted);
+modelBuilder.Entity<CoreStreamerProfiles>().HasQueryFilter(s => !s.IsDeleted);
 ```
 
 ---

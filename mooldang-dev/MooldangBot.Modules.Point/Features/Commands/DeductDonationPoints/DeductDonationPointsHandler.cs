@@ -36,77 +36,77 @@ public class DeductDonationPointsHandler : IRequestHandler<DeductDonationPointsC
     {
         try
         {
-            var streamer = await _db.CoreStreamerProfiles.AsNoTracking()
+            var Streamer = await _db.TableCoreStreamerProfiles.AsNoTracking()
                 .Select(s => new { s.Id, s.ChzzkUid })
                 .FirstOrDefaultAsync(s => s.ChzzkUid == request.StreamerUid, ct);
-            if (streamer == null) return (false, 0);
-
+            if (Streamer == null) return (false, 0);
+ 
             // [이지스 통합]: 시청자 식별을 캐시 서비스로 일원화
-            var globalId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, "viewer", null, ct);
-            if (globalId == 0) return (false, 0);
+            var GlobalId = await _identityCache.SyncGlobalViewerIdAsync(request.ViewerUid, "viewer", null, ct);
+            if (GlobalId == 0) return (false, 0);
 
-            var connection = _db.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
-
-            using var transaction = await connection.BeginTransactionAsync(ct);
+            var Connection = _db.Database.GetDbConnection();
+            if (Connection.State != System.Data.ConnectionState.Open) await Connection.OpenAsync(ct);
+ 
+            using var Transaction = await Connection.BeginTransactionAsync(ct);
             try
             {
                 // [오시리스의 철퇴]: 잔액이 부족하면 차감하지 않는 원자적 쿼리 (Atomic Update)
-                var sql = @"
+                var Sql = @"
                     UPDATE FuncViewerDonations 
                     SET Balance = Balance - @Amount, UpdatedAt = NOW()
                     WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId 
                       AND Balance >= @Amount;";
-
-                int affectedRows = await connection.ExecuteAsync(sql, new
+ 
+                int AffectedRows = await Connection.ExecuteAsync(Sql, new
                 {
-                    StreamerId = streamer.Id,
-                    GlobalId = globalId,
+                    StreamerId = Streamer.Id,
+                    GlobalId = GlobalId,
                     Amount = request.Amount
-                }, transaction);
-
-                var currentBalance = await connection.QueryFirstOrDefaultAsync<int>(
+                }, Transaction);
+ 
+                var CurrentBalance = await Connection.QueryFirstOrDefaultAsync<int>(
                     "SELECT Balance FROM FuncViewerDonations WHERE StreamerProfileId = @StreamerId AND GlobalViewerId = @GlobalId",
-                    new { StreamerId = streamer.Id, GlobalId = globalId }, transaction);
-
-                if (affectedRows == 0) 
+                    new { StreamerId = Streamer.Id, GlobalId = GlobalId }, Transaction);
+ 
+                if (AffectedRows == 0) 
                 {
                     _logger.LogWarning("⚠️ [후원 포인트 차감 실패] 잔액 부족: {Uid} (Req: {Amount})", request.ViewerUid, request.Amount);
-                    await transaction.RollbackAsync(ct);
-                    return (false, currentBalance);
+                    await Transaction.RollbackAsync(ct);
+                    return (false, CurrentBalance);
                 }
 
-                // [v7.0] 감사 로그(ViewerDonationHistory) 자동 생성
-                const string logSql = @"
+                // [v7.0] 감사 로그(FuncViewerDonationHistories) 자동 생성
+                const string LogSql = @"
                     INSERT INTO FuncViewerDonationHistories (StreamerProfileId, GlobalViewerId, PlatformTransactionId, Amount, BalanceAfter, TransactionType, Metadata, CreatedAt, UpdatedAt)
                     VALUES (@StreamerId, @GlobalId, @TxId, @Amount, @BalanceAfter, @Type, @Metadata, NOW(), NOW());";;
-
-                await connection.ExecuteAsync(logSql, new
+ 
+                await Connection.ExecuteAsync(LogSql, new
                 {
-                    StreamerId = streamer.Id,
-                    GlobalId = globalId,
+                    StreamerId = Streamer.Id,
+                    GlobalId = GlobalId,
                     TxId = Guid.NewGuid().ToString(), // 실전에서는 주문/결제 ID
                     Amount = -request.Amount,
-                    BalanceAfter = currentBalance,
+                    BalanceAfter = CurrentBalance,
                     Type = "SPEND",
                     Metadata = "{\"reason\": \"Used in Command\"}",
                     CreatedAt = KstClock.Now
-                }, transaction);
-
-                await transaction.CommitAsync(ct);
+                }, Transaction);
+ 
+                await Transaction.CommitAsync(ct);
                 
                 _ = _notificationService.NotifyPointChangedAsync(request.StreamerUid);
-                return (true, currentBalance);
+                return (true, CurrentBalance);
             }
             catch
             {
-                await transaction.RollbackAsync(ct);
+                await Transaction.RollbackAsync(ct);
                 throw;
             }
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, $"❌ [DeductDonationPointsHandler] {request.ViewerUid} 차감 중 오작동: {ex.Message}");
+            _logger.LogError(Ex, $"❌ [DeductDonationPointsHandler] {request.ViewerUid} 차감 중 오작동: {Ex.Message}");
             return (false, 0);
         }
     }

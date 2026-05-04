@@ -26,136 +26,153 @@ public class IdentityCacheService(
 {
     private const string StreamerKeyPrefix = "Streamer:";
     private const string ViewerKeyPrefix = "ViewerId:";
+    private const string InvalidTokenKeyPrefix = "InvalidToken:";
     private readonly DistributedCacheEntryOptions _streamerOptions = new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) };
     private readonly DistributedCacheEntryOptions _viewerOptions = new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
+    private readonly DistributedCacheEntryOptions _invalidTokenOptions = new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) };
 
-    public async Task<StreamerProfile?> GetStreamerProfileAsync(string chzzkUid, CancellationToken ct = default)
+    public async Task<CoreStreamerProfiles?> GetStreamerProfileAsync(string ChzzkUid, CancellationToken ct = default)
     {
         // ⛈️ [혼돈의 시련]: 인위적 장애 주입 (테스트 모드 가동 시)
         await chaos.TryInjectFaultAsync("IdentityCache");
-
-        string key = $"{StreamerKeyPrefix}{chzzkUid}";
-        byte[]? raw = await cache.GetAsync(key, ct);
-
-        if (raw != null)
+ 
+        string Key = $"{StreamerKeyPrefix}{ChzzkUid}";
+        byte[]? Raw = await cache.GetAsync(Key, ct);
+ 
+        if (Raw != null)
         {
             // [P0 Quick Win] Source Gen 경로: 10k TPS 핫패스 직렬화 최적화
-            return JsonSerializer.Deserialize(raw, ChzzkJsonContext.Default.StreamerProfile);
+            return JsonSerializer.Deserialize(Raw, ChzzkJsonContext.Default.CoreStreamerProfiles);
         }
-
+ 
         // Cache Miss: DB 조회
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-        var profile = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
-        if (profile != null)
+        using var Scope = scopeFactory.CreateScope();
+        var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+ 
+        var Profile = await Db.TableCoreStreamerProfiles.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == ChzzkUid, ct);
+        if (Profile != null)
         {
             // [P0 Quick Win] Source Gen 경로: 10k TPS 핫패스 직렬화 최적화
-            await cache.SetAsync(key, JsonSerializer.SerializeToUtf8Bytes(profile, ChzzkJsonContext.Default.StreamerProfile), _streamerOptions, ct);
-            logger.LogDebug("🛡️ [이지스 캐시 로드] 스트리머 프로필: {ChzzkUid}", chzzkUid);
+            await cache.SetAsync(Key, JsonSerializer.SerializeToUtf8Bytes(Profile, ChzzkJsonContext.Default.CoreStreamerProfiles), _streamerOptions, ct);
+            logger.LogDebug("🛡️ [이지스 캐시 로드] 스트리머 프로필: {ChzzkUid}", ChzzkUid);
         }
-
-        return profile;
+ 
+        return Profile;
     }
 
-    public async Task<int> SyncGlobalViewerIdAsync(string viewerUid, string nickname, string? profileImageUrl = null, CancellationToken ct = default)
+    public async Task<int> SyncGlobalViewerIdAsync(string ViewerUid, string Nickname, string? ProfileImageUrl = null, CancellationToken ct = default)
     {
-        var hash = Sha256Hasher.ComputeHash(viewerUid);
-        string key = $"{ViewerKeyPrefix}{hash}";
+        var Hash = Sha256Hasher.ComputeHash(ViewerUid);
+        string Key = $"{ViewerKeyPrefix}{Hash}";
         
-        string? val = await cache.GetStringAsync(key, ct);
-        bool cacheHit = val != null;
-
+        string? Val = await cache.GetStringAsync(Key, ct);
+        bool CacheHit = Val != null;
+ 
         // Cache Hit인 경우에도 만료 전까지는 DB 조회를 건너뛰지만, 
         // AuthService나 특정 트리거에서 강제로 최신 동기화가 필요한 경우가 있으므로 로직 설계 주의
-        if (cacheHit && int.TryParse(val, out int cachedId))
+        if (CacheHit && int.TryParse(Val, out int CachedId))
         {
-            return cachedId;
+            return CachedId;
         }
-
+ 
         // Cache Miss: DB 조회 (없을 경우 생성, 있을 경우 정보 업데이트)
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-        var viewer = await db.CoreGlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == hash, ct);
-        bool isNew = viewer == null;
-
-        if (isNew)
+        using var Scope = scopeFactory.CreateScope();
+        var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+ 
+        var Viewer = await Db.TableCoreGlobalViewers.IgnoreQueryFilters().FirstOrDefaultAsync(v => v.ViewerUidHash == Hash, ct);
+        bool IsNew = Viewer == null;
+ 
+        if (IsNew)
         {
-            viewer = new GlobalViewer 
+            Viewer = new CoreGlobalViewers 
             { 
-                ViewerUid = viewerUid, 
-                ViewerUidHash = hash, 
-                Nickname = nickname,
-                ProfileImageUrl = profileImageUrl,
+                ViewerUid = ViewerUid, 
+                ViewerUidHash = Hash, 
+                Nickname = Nickname,
+                ProfileImageUrl = ProfileImageUrl,
                 CreatedAt = KstClock.Now
             };
-            db.CoreGlobalViewers.Add(viewer);
-            logger.LogInformation("🆕 [이지스 신규 시청자 생성] {Nickname} (Hash: {Hash})", nickname, hash);
+            Db.TableCoreGlobalViewers.Add(Viewer);
+            logger.LogInformation("🆕 [이지스 신규 시청자 생성] {Nickname} (Hash: {Hash})", Nickname, Hash);
         }
         else
         {
             // 정보가 바뀌었는지 확인 후 업데이트 (Dirty Check)
-            bool isUpdated = false;
-            if (viewer!.Nickname != nickname) { 
-                viewer.PreviousNickname = viewer.Nickname;
-                viewer.Nickname = nickname; 
-                isUpdated = true; 
+            bool IsUpdated = false;
+            if (Viewer!.Nickname != Nickname) { 
+                Viewer.PreviousNickname = Viewer.Nickname;
+                Viewer.Nickname = Nickname; 
+                IsUpdated = true; 
             }
-            if (profileImageUrl != null && viewer.ProfileImageUrl != profileImageUrl) { viewer.ProfileImageUrl = profileImageUrl; isUpdated = true; }
-
-            if (isUpdated)
+            if (ProfileImageUrl != null && Viewer.ProfileImageUrl != ProfileImageUrl) { Viewer.ProfileImageUrl = ProfileImageUrl; IsUpdated = true; }
+ 
+            if (IsUpdated)
             {
-                viewer.UpdatedAt = KstClock.Now;
-                logger.LogDebug("🔄 [이지스 시청자 정보 업데이트] {Nickname}", nickname);
+                Viewer.UpdatedAt = KstClock.Now;
+                logger.LogDebug("🔄 [이지스 시청자 정보 업데이트] {Nickname}", Nickname);
             }
         }
-
-        await db.SaveChangesAsync(ct);
-        await cache.SetStringAsync(key, viewer.Id.ToString(), _viewerOptions, ct);
+ 
+        await Db.SaveChangesAsync(ct);
+        await cache.SetStringAsync(Key, Viewer.Id.ToString(), _viewerOptions, ct);
         
-        return viewer.Id;
+        return Viewer.Id;
     }
 
-    public async Task<string?> GetChzzkUidBySlugAsync(string slug, CancellationToken ct = default)
+    public async Task<string?> GetChzzkUidBySlugAsync(string Slug, CancellationToken ct = default)
     {
-        string key = $"Slug:{slug}";
-        string? val = await cache.GetStringAsync(key, ct);
+        string Key = $"Slug:{Slug}";
+        string? Val = await cache.GetStringAsync(Key, ct);
         
-        if (val != null)
+        if (Val != null)
         {
-            return val;
+            return Val;
         }
-
+ 
         // Cache Miss: DB 조회 (지목한 슬러그를 가진 스트리머 검색)
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-        var uid = await db.CoreStreamerProfiles
+        using var Scope = scopeFactory.CreateScope();
+        var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+ 
+        var Uid = await Db.TableCoreStreamerProfiles
+            .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(p => p.Slug == slug)
+            .Where(p => p.Slug == Slug)
             .Select(p => p.ChzzkUid)
             .FirstOrDefaultAsync(ct);
-
-        if (uid != null)
+ 
+        if (Uid != null)
         {
-            await cache.SetStringAsync(key, uid, _streamerOptions, ct);
-            logger.LogDebug("🛡️ [이지스 역방향 색인 로드] Slug: {Slug} -> {Uid}", slug, uid);
+            await cache.SetStringAsync(Key, Uid, _streamerOptions, ct);
+            logger.LogDebug("🛡️ [이지스 역방향 색인 로드] Slug: {Slug} -> {Uid}", Slug, Uid);
         }
-
-        return uid;
+ 
+        return Uid;
     }
 
-    public void InvalidateStreamer(string chzzkUid)
+    public void InvalidateStreamer(string ChzzkUid)
     {
-        cache.Remove($"{StreamerKeyPrefix}{chzzkUid}");
-        logger.LogInformation("🛡️ [이지스 캐시 무효화] 스트리머 : {ChzzkUid}", chzzkUid);
+        cache.Remove($"{StreamerKeyPrefix}{ChzzkUid}");
+        logger.LogInformation("🛡️ [이지스 캐시 무효화] 스트리머 : {ChzzkUid}", ChzzkUid);
+    }
+ 
+    public void InvalidateSlug(string Slug)
+    {
+        if (string.IsNullOrWhiteSpace(Slug)) return;
+        cache.Remove($"Slug:{Slug}");
+        logger.LogInformation("🛡️ [이지스 캐시 무효화] 슬러그 : {Slug}", Slug);
     }
 
-    public void InvalidateSlug(string slug)
+    public async Task<bool> IsInvalidTokenAsync(string token, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(slug)) return;
-        cache.Remove($"Slug:{slug}");
-        logger.LogInformation("🛡️ [이지스 캐시 무효화] 슬러그 : {Slug}", slug);
+        if (string.IsNullOrWhiteSpace(token)) return true;
+        var val = await cache.GetStringAsync($"{InvalidTokenKeyPrefix}{token}", ct);
+        return val != null;
+    }
+
+    public async Task MarkTokenAsInvalidAsync(string token, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return;
+        await cache.SetStringAsync($"{InvalidTokenKeyPrefix}{token}", "1", _invalidTokenOptions, ct);
+        logger.LogWarning("🚫 [이지스 부정 토큰 감지] {Token}을(를) 블랙리스트에 추가했습니다. (5분간 DB 조회 차단)", token);
     }
 }

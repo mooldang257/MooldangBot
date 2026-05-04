@@ -8,53 +8,54 @@ namespace MooldangBot.Domain.Abstractions
     {
         Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
         
-        DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
-        DbSet<SongQueue> FuncSongQueues { get; set; }
-        DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
-        DbSet<AvatarSetting> SysAvatarSettings { get; set; }
-        DbSet<ChzzkCategory> SysChzzkCategories { get; set; }
-        DbSet<ChzzkCategoryAlias> SysChzzkCategoryAliases { get; set; }
-        DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
+        DbSet<CoreStreamerProfiles> TableCoreStreamerProfiles { get; set; }
+        DbSet<FuncSongListQueues> TableFuncSongListQueues { get; set; }
+        DbSet<FuncSongListOmakases> TableFuncSongListOmakases { get; set; }
+        DbSet<SysAvatarSettings> TableSysAvatarSettings { get; set; }
+        DbSet<SysChzzkCategories> TableSysChzzkCategories { get; set; }
+        DbSet<SysChzzkCategoryAliases> TableSysChzzkCategoryAliases { get; set; }
+        DbSet<CoreGlobalViewers> TableCoreGlobalViewers { get; set; }
         
         // [v7.0] Wallet Architecture 분산화 엔티티
-        DbSet<ViewerRelation> CoreViewerRelations { get; set; }
-        DbSet<ViewerPoint> FuncViewerPoints { get; set; }
-        DbSet<ViewerDonation> FuncViewerDonations { get; set; }
-        DbSet<ViewerDonationHistory> FuncViewerDonationHistories { get; set; }
-        DbSet<MooldangBot.Domain.Entities.Roulette> FuncRoulettes { get; set; }
-        DbSet<RouletteItem> FuncRouletteItems { get; set; }
-        DbSet<PeriodicMessage> SysPeriodicMessages { get; set; }
-        DbSet<SonglistSession> FuncSonglistSessions { get; set; }
-        DbSet<OverlayPreset> SysOverlayPresets { get; set; }
-        DbSet<StreamerPreference> SysStreamerPreferences { get; set; }
-        DbSet<BroadcastSession> SysBroadcastSessions { get; set; }
-        DbSet<BroadcastHistoryLog> LogBroadcastHistory { get; set; }
-        DbSet<UnifiedCommand> SysUnifiedCommands { get; set; }
+        DbSet<CoreViewerRelations> TableCoreViewerRelations { get; set; }
+        DbSet<FuncViewerPoints> TableFuncViewerPoints { get; set; }
+        DbSet<FuncViewerDonations> TableFuncViewerDonations { get; set; }
+        DbSet<FuncViewerDonationHistories> TableFuncViewerDonationHistories { get; set; }
+        DbSet<FuncRouletteMain> TableFuncRouletteMain { get; set; }
+        DbSet<FuncRouletteItems> TableFuncRouletteItems { get; set; }
+        DbSet<SysPeriodicMessages> TableSysPeriodicMessages { get; set; }
+        DbSet<FuncSongListSessions> TableFuncSongListSessions { get; set; }
+        DbSet<SysOverlayPresets> TableSysOverlayPresets { get; set; }
+        DbSet<SysStreamerPreferences> TableSysStreamerPreferences { get; set; }
+        DbSet<SysBroadcastSessions> TableSysBroadcastSessions { get; set; }
+        DbSet<LogBroadcastHistory> TableLogBroadcastHistory { get; set; }
+        DbSet<FuncCmdUnified> TableFuncCmdUnified { get; set; }
         
         // IAMF Philosophy
-        DbSet<IamfScenario> IamfScenarios { get; set; }
-        DbSet<IamfGenosRegistry> IamfGenosRegistries { get; set; }
-        DbSet<IamfParhosCycle> IamfParhosCycles { get; set; }
-        DbSet<IamfVibrationLog> LogIamfVibrations { get; set; }
-        DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
-        DbSet<StreamerKnowledge> SysStreamerKnowledges { get; set; }
+        DbSet<IamfScenarios> TableIamfScenarios { get; set; }
+        DbSet<IamfGenosRegistry> TableIamfGenosRegistry { get; set; }
+        DbSet<IamfParhosCycles> TableIamfParhosCycles { get; set; }
+        DbSet<LogIamfVibrations> TableLogIamfVibrations { get; set; }
+        DbSet<IamfStreamerSettings> TableIamfStreamerSettings { get; set; }
+        DbSet<SysStreamerKnowledges> TableSysStreamerKnowledges { get; set; }
 
-        DbSet<SharedComponent> SysSharedComponents { get; set; }
-        DbSet<StreamerManager> CoreStreamerManagers { get; set; }
-        DbSet<MooldangBot.Domain.Entities.SongBook> FuncSongBooks { get; set; }
-        DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; set; }
-        DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; set; } // [v12.5] 스트리머 전용 라이브러리
-        DbSet<Master_SongStaging> FuncMasterSongStagings { get; set; }
-        DbSet<RouletteLog> FuncRouletteLogs { get; set; }
-        DbSet<RouletteSpin> FuncRouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성 레이어 추가
-        DbSet<SoundAsset> FuncSoundAssets { get; set; }
+        DbSet<SysSharedComponents> TableSysSharedComponents { get; set; }
+        DbSet<CoreStreamerManagers> TableCoreStreamerManagers { get; set; }
+        DbSet<FuncSongBooks> TableFuncSongBooks { get; set; }
+        DbSet<GlobalMusicMetadata> TableGlobalMusicMetadata { get; set; }
+        DbSet<FuncSongMasterLibrary> TableFuncSongMasterLibrary { get; set; }
+        DbSet<FuncSongStreamerLibrary> TableFuncSongStreamerLibrary { get; set; } // [v12.5] 스트리머 전용 라이브러리
+        DbSet<FuncSongMasterStaging> TableFuncSongMasterStaging { get; set; }
+        DbSet<LogRouletteResults> TableLogRouletteResults { get; set; }
+        DbSet<FuncRouletteSpins> TableFuncRouletteSpins { get; set; } // [v1.9.9] 룰렛 영속성 레이어 추가
+        DbSet<FuncSoundAssets> TableFuncSoundAssets { get; set; }
         
         // [v11.1] 천상의 장부 (Celestial Ledger)
-        DbSet<PointTransactionHistory> LogPointTransactions { get; set; }
-        DbSet<PointDailySummary> LogPointDailySummaries { get; set; }
-        DbSet<LogRouletteStats> LogRouletteStats { get; set; }
-        DbSet<CommandExecutionLog> LogCommandExecutions { get; set; }
-        DbSet<ChatInteractionLog> LogChatInteractions { get; set; }
+        DbSet<LogPointTransactions> TableLogPointTransactions { get; set; }
+        DbSet<LogPointDailySummaries> TableLogPointDailySummaries { get; set; }
+        DbSet<LogRouletteStats> TableLogRouletteStats { get; set; }
+        DbSet<LogCommandExecutions> TableLogCommandExecutions { get; set; }
+        DbSet<LogChatInteractions> TableLogChatInteractions { get; set; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

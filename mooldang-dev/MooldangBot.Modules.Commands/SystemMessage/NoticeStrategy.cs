@@ -16,7 +16,7 @@ public class NoticeStrategy(
 {
     public string FeatureType => CommandFeatureTypes.Notice;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         // [v4.6.1] 명령어 뒤에 인수가 있으면 해당 내용을 공지로 사용, 없으면 기본 ResponseText 사용
         string rawMessage = notification.Message.Trim();

@@ -52,20 +52,20 @@ namespace MooldangBot.Application.Controllers.Dashboard
             }
             
             // [물멍]: 통계 데이터 집계
-            var todaySongs = await db.FuncSongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
-            var pendingSongs = await db.FuncSongQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
+            var todaySongs = await db.TableFuncSongListQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.CreatedAt >= today);
+            var pendingSongs = await db.TableFuncSongListQueues.CountAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Pending);
             
-            var todayPoints = await db.LogPointTransactions
+            var todayPoints = await db.TableLogPointTransactions
                 .Where(t => t.StreamerProfileId == profile.Id && t.CreatedAt >= today)
                 .SumAsync(t => (long?)t.Amount) ?? 0;
 
-            var totalPoints = await db.FuncViewerPoints
+            var totalPoints = await db.TableFuncViewerPoints
                 .Where(v => v.StreamerProfileId == profile.Id)
                 .SumAsync(v => (long)v.Points);
 
-            var todayCommands = await db.LogCommandExecutions.CountAsync(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today);
+            var todayCommands = await db.TableLogCommandExecutions.CountAsync(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today);
             
-            var topCommand = await db.LogCommandExecutions
+            var topCommand = await db.TableLogCommandExecutions
                 .Where(l => l.StreamerProfileId == profile.Id && l.CreatedAt >= today)
                 .GroupBy(l => l.Keyword)
                 .OrderByDescending(g => g.Count())
@@ -99,25 +99,25 @@ namespace MooldangBot.Application.Controllers.Dashboard
             if (profile == null) return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
             // [물멍]: 각 도메인별 원본 데이터를 먼저 가져온 후 메모리에서 매핑합니다. (DB 엔진 해석 오류 방지)
-            var rawSongs = await db.FuncSongQueues
+            var rawSongs = await db.TableFuncSongListQueues
                 .AsNoTracking()
-                .Include(s => s.GlobalViewer)
+                .Include(s => s.CoreGlobalViewers)
                 .Where(s => s.StreamerProfileId == profile.Id)
                 .OrderByDescending(s => s.CreatedAt)
                 .Take(5)
                 .ToListAsync();
 
-            var rawPoints = await db.LogPointTransactions
+            var rawPoints = await db.TableLogPointTransactions
                 .AsNoTracking()
-                .Include(t => t.GlobalViewer)
+                .Include(t => t.CoreGlobalViewers)
                 .Where(t => t.StreamerProfileId == profile.Id && t.Amount < 0)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(5)
                 .ToListAsync();
 
-            var rawRoulettes = await db.FuncRouletteLogs
+            var rawRoulettes = await db.TableLogRouletteResults
                 .AsNoTracking()
-                .Include(l => l.GlobalViewer)
+                .Include(l => l.CoreGlobalViewers)
                 .Where(l => l.StreamerProfileId == profile.Id)
                 .OrderByDescending(l => l.CreatedAt)
                 .Take(5)
@@ -127,7 +127,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
             var songActivities = rawSongs.Select(s => new DashboardActivityDto {
                 Id = $"song_{s.Id}",
                 Type = "song",
-                User = s.GlobalViewer?.Nickname ?? "익명",
+                User = s.CoreGlobalViewers?.Nickname ?? "익명",
                 Content = $"곡 신청: {s.Title} - {s.Artist}",
                 CreatedAt = s.CreatedAt,
                 IconType = "Music"
@@ -136,7 +136,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
             var pointActivities = rawPoints.Select(t => new DashboardActivityDto {
                 Id = $"point_{t.Id}",
                 Type = "point",
-                User = t.GlobalViewer?.Nickname ?? "익명",
+                User = t.CoreGlobalViewers?.Nickname ?? "익명",
                 Content = $"{(t.Reason ?? "포인트 사용")}: {Math.Abs(t.Amount)}포인트 소모",
                 CreatedAt = t.CreatedAt,
                 IconType = "Coins"
@@ -145,7 +145,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
             var rouletteActivities = rawRoulettes.Select(l => new DashboardActivityDto {
                 Id = $"roulette_{l.Id}",
                 Type = "roulette",
-                User = l.GlobalViewer?.Nickname ?? "익명",
+                User = l.CoreGlobalViewers?.Nickname ?? "익명",
                 Content = $"룰렛 결과: {l.ItemName}",
                 CreatedAt = l.CreatedAt,
                 IconType = "Zap"
@@ -166,7 +166,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
             return Ok(Result<List<DashboardActivityDto>>.Success(activities));
         }
 
-        private async Task<StreamerProfile?> GetCachedProfileAsync(string uidOrSlug)
+        private async Task<CoreStreamerProfiles?> GetCachedProfileAsync(string uidOrSlug)
         {
             if (string.IsNullOrWhiteSpace(uidOrSlug)) return null;
 
@@ -176,7 +176,7 @@ namespace MooldangBot.Application.Controllers.Dashboard
 
             // 2. 캐시에 없으면 DB 조회 후 수동 캐시 (slug 대응)
             var target = uidOrSlug.ToLower();
-            profile = await db.CoreStreamerProfiles
+            profile = await db.TableCoreStreamerProfiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
 

@@ -5,7 +5,7 @@ mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint chzzk-commands-rpc, Con
 mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint chzzk-commands-rpc, Consumer: MooldangBot.ChzzkAPI.Messaging.Consumers.SendMessageCommandConsumer
 mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint chzzk-commands-rpc, Consumer: MooldangBot.ChzzkAPI.Messaging.Consumers.UpdateCategoryCommandConsumer
 mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint chzzk-commands-rpc, Consumer: MooldangBot.ChzzkAPI.Messaging.Consumers.UpdateTitleCommandConsumer
-mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint command-execution-saga, Saga: MooldangBot.Infrastructure.Sagas.CommandExecutionSagaState, State Machine: MooldangBot.Infrastructure.Sagas.CommandExecutionSaga
+mooldang-chzzk-bot  | [14:55:46 INF] Configured endpoint command-execution-saga, Saga: MooldangBot.Infrastructure.Sagas.SysSagaCommandExecutions, State Machine: MooldangBot.Infrastructure.Sagas.CommandExecutionSaga
 mooldang-chzzk-bot  | [14:55:46 INF] 🚀 [GatewayWorker] 치지직 게이트웨이 서비스가 가동되었습니다.
 mooldang-chzzk-bot  | [14:55:46 INF] 🚀 [Sharding] 샤드 매니저 초기화를 시작합니다... (목표 샤드 수: 1)
 mooldang-chzzk-bot  | [14:55:46 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:8080'.

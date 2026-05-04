@@ -10,131 +10,131 @@
     import RouletteHistory from "$lib/features/roulette/components/RouletteHistory.svelte";
 
     // [오시리스의 인장]: Svelte 5 Runes 기반 필드
-    let isLoaded = $state(false);
-    let chzzkUid = $state("");
-    let activeTab: "manage" | "history" = $state("manage");
-    let isSubmitting = $state(false);
-    let isLoadingHistory = $state(false);
+    let IsLoaded = $state(false);
+    let ChzzkUid = $state("");
+    let ActiveTab: "manage" | "history" = $state("manage");
+    let IsSubmitting = $state(false);
+    let IsLoadingHistory = $state(false);
 
-    let allRoulettes: any[] = $state([]);
-    let historyLogs: any[] = $state([]);
+    let AllRoulettes: any[] = $state([]);
+    let HistoryLogs: any[] = $state([]);
     
     // [페이징/필터 상태]: 신규 커서 규격 적용
-    let nextCursor: number | null = $state(null);
-    let currentFilters = $state({
-        nickname: "",
-        itemName: "",
-        status: null as number | null
+    let NextCursor: number | null = $state(null);
+    let CurrentFilters = $state({
+        Nickname: "",
+        ItemName: "",
+        Status: null as number | null
     });
-    let hasNext = $derived(nextCursor !== null);
+    let HasNext = $derived(NextCursor !== null);
 
-    let rouletteForm = $state({
-        id: 0,
-        name: "",
-        type: "ChatPoint",
-        command: "",
-        costPerSpin: 1000,
-        isActive: true,
-        items: [] as any[]
+    let RouletteFormState = $state({
+        Id: 0,
+        Name: "",
+        Type: "ChatPoint",
+        Command: "",
+        CostPerSpin: 1000,
+        IsActive: true,
+        Items: [] as any[]
     });
 
-    async function loadRoulettes() {
-        if (!chzzkUid) return;
+    async function LoadRoulettes() {
+        if (!ChzzkUid) return;
         try {
-            const response = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}`);
-            allRoulettes = response.items || [];
+            const response = await apiFetch<any>(`/api/admin/roulette/${ChzzkUid}`);
+            AllRoulettes = response.Items || [];
         } catch (e) {
             console.error("[물멍] 룰렛 목록 로드 실패:", e);
         }
     }
 
-    async function loadHistory(filters: any = null) {
-        if (!chzzkUid) return;
-        isLoadingHistory = true;
+    async function LoadHistory(filters: any = null) {
+        if (!ChzzkUid) return;
+        IsLoadingHistory = true;
         
         // 필터 업데이트
         if (filters) {
-            currentFilters = { ...currentFilters, ...filters };
+            CurrentFilters = { ...CurrentFilters, ...filters };
         } else if (filters === undefined) {
             // 필터 초기화 시 (새로고침 버튼 등)
-            currentFilters = { nickname: "", itemName: "", status: null };
+            CurrentFilters = { Nickname: "", ItemName: "", Status: null };
         }
 
         try {
             const queryParams = new URLSearchParams();
-            if (currentFilters.nickname) queryParams.append("nickname", currentFilters.nickname);
-            if (currentFilters.itemName) queryParams.append("itemName", currentFilters.itemName);
-            if (currentFilters.status !== null) queryParams.append("status", currentFilters.status.toString());
+            if (CurrentFilters.Nickname) queryParams.append("nickname", CurrentFilters.Nickname);
+            if (CurrentFilters.ItemName) queryParams.append("itemName", CurrentFilters.ItemName);
+            if (CurrentFilters.Status !== null) queryParams.append("status", CurrentFilters.Status.toString());
             
-            const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
+            const url = `/api/admin/roulette/${ChzzkUid}/history?${queryParams.toString()}`;
             const response = await apiFetch<any>(url);
             
-            historyLogs = response.items || [];
-            nextCursor = response.nextCursor;
+            HistoryLogs = response.Items || [];
+            NextCursor = response.NextCursor;
         } catch (e) {
             console.error("[물멍] 룰렛 히스토리 로드 실패:", e);
         } finally {
-            isLoadingHistory = false;
+            IsLoadingHistory = false;
         }
     }
 
-    async function loadMoreHistory() {
-        if (!chzzkUid || !nextCursor || isLoadingHistory) return;
+    async function LoadMoreHistory() {
+        if (!ChzzkUid || !NextCursor || IsLoadingHistory) return;
         
-        isLoadingHistory = true;
+        IsLoadingHistory = true;
         try {
             const queryParams = new URLSearchParams();
-            if (currentFilters.nickname) queryParams.append("nickname", currentFilters.nickname);
-            if (currentFilters.itemName) queryParams.append("itemName", currentFilters.itemName);
-            if (currentFilters.status !== null) queryParams.append("status", currentFilters.status.toString());
-            queryParams.append("cursor", nextCursor.toString());
+            if (CurrentFilters.Nickname) queryParams.append("nickname", CurrentFilters.Nickname);
+            if (CurrentFilters.ItemName) queryParams.append("itemName", CurrentFilters.ItemName);
+            if (CurrentFilters.Status !== null) queryParams.append("status", CurrentFilters.Status.toString());
+            queryParams.append("cursor", NextCursor.toString());
 
-            const url = `/api/admin/roulette/${chzzkUid}/history?${queryParams.toString()}`;
+            const url = `/api/admin/roulette/${ChzzkUid}/history?${queryParams.toString()}`;
             const response = await apiFetch<any>(url);
             
-            const newData = response.items || [];
-            historyLogs = [...historyLogs, ...newData];
-            nextCursor = response.nextCursor;
+            const newData = response.Items || [];
+            HistoryLogs = [...HistoryLogs, ...newData];
+            NextCursor = response.NextCursor;
         } catch (e) {
             console.error("[물멍] 추가 히스토리 로드 실패:", e);
         } finally {
-            isLoadingHistory = false;
+            IsLoadingHistory = false;
         }
     }
 
-    async function handleUpdateLogStatus(id: number, status: number) {
+    async function HandleUpdateLogStatus(id: number, status: number) {
         try {
-            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/${id}/status`, {
+            await apiFetch(`/api/admin/roulette/${ChzzkUid}/history/${id}/status`, {
                 method: "PUT",
-                body: JSON.stringify(status)
+                body: status
             });
             
-            const idx = historyLogs.findIndex(l => l.id === id);
-            if (idx !== -1) historyLogs[idx].status = status;
+            const idx = HistoryLogs.findIndex(l => l.Id === id);
+            if (idx !== -1) HistoryLogs[idx].Status = status;
         } catch (e: any) {
             alert(e.message || "상태 변경 실패!");
         }
     }
 
-    async function handleDeleteLog(id: number) {
+    async function HandleDeleteLog(id: number) {
         if (!confirm("이 기록을 정말 삭제하시겠습니까?")) return;
         try {
-            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/${id}`, { method: "DELETE" });
-            historyLogs = historyLogs.filter(l => l.id !== id);
+            await apiFetch(`/api/admin/roulette/${ChzzkUid}/history/${id}`, { method: "DELETE" });
+            HistoryLogs = HistoryLogs.filter(l => l.Id !== id);
         } catch (e: any) {
             alert(e.message || "삭제 실패!");
         }
     }
 
-    async function handleBulkDelete(ids: number[]) {
-        if (!chzzkUid || ids.length === 0) return;
+    async function HandleBulkDelete(ids: number[]) {
+        if (!ChzzkUid || ids.length === 0) return;
         try {
-            await apiFetch(`/api/admin/roulette/${chzzkUid}/history/bulk-delete`, {
+            await apiFetch(`/api/admin/roulette/${ChzzkUid}/history/bulk-delete`, {
                 method: "POST",
-                body: JSON.stringify(ids)
+                body: ids
             });
             
-            historyLogs = historyLogs.filter(l => !ids.includes(l.id));
+            HistoryLogs = HistoryLogs.filter(l => !ids.includes(l.Id));
         } catch (e: any) {
             alert(e.message || "일괄 삭제 실패!");
         }
@@ -143,61 +143,62 @@
     onMount(async () => {
         try {
             const profile = await apiFetch<any>("/api/auth/me");
-            chzzkUid = profile.chzzkUid || profile.ChzzkUid;
+            ChzzkUid = profile.ChzzkUid;
 
-            if (chzzkUid) {
-                await loadRoulettes();
+            if (ChzzkUid) {
+                await LoadRoulettes();
             }
         } catch (e) {
             console.error("[물멍] 프로필 로드 실패:", e);
         } finally {
-            isLoaded = true;
+            IsLoaded = true;
         }
     });
 
-    async function handleSave() {
-        if (!chzzkUid) return;
-        isSubmitting = true;
+    async function HandleSave() {
+        if (!ChzzkUid) return;
+        IsSubmitting = true;
         try {
-            const url = rouletteForm.id === 0 
-                ? `/api/admin/roulette/${chzzkUid}` 
-                : `/api/admin/roulette/${chzzkUid}/${rouletteForm.id}`;
+            const url = RouletteFormState.Id === 0 
+                ? `/api/admin/roulette/${ChzzkUid}` 
+                : `/api/admin/roulette/${ChzzkUid}/${RouletteFormState.Id}`;
             
             await apiFetch(url, {
                 method: "POST",
-                body: JSON.stringify(rouletteForm)
+                body: {
+                    ...RouletteFormState,
+                    ChzzkUid: ChzzkUid,
+                    Type: RouletteFormState.Type === "Cheese" ? 1 : 0
+                }
             });
 
-            await loadRoulettes();
-            // 폼 초기화는 RouletteForm 내부에서 제공하거나 여기서 처리
-            if (rouletteForm.id === 0) {
-                rouletteForm.id = 0;
-                rouletteForm.name = "";
-                rouletteForm.items = [];
+            await LoadRoulettes();
+            if (RouletteFormState.Id === 0) {
+                RouletteFormState.Id = 0;
+                RouletteFormState.Name = "";
+                RouletteFormState.Items = [];
             }
-            alert(rouletteForm.id === 0 ? "새 룰렛이 생성되었습니다!" : "수정사항이 저장되었습니다.");
+            alert(RouletteFormState.Id === 0 ? "새 룰렛이 생성되었습니다!" : "수정사항이 저장되었습니다.");
         } catch (e: any) {
             alert(e.message || "저장 실패!");
         } finally {
-            isSubmitting = false;
+            IsSubmitting = false;
         }
     }
 
-    async function handleEdit(roulette: any) {
+    async function HandleEdit(roulette: any) {
         try {
-            // 상세 데이터를 다시 받아와서 아이템 목록을 채움
-            const detail = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}/${roulette.id}`);
-            rouletteForm = {
-                id: detail.id,
-                name: detail.name,
-                type: detail.type === 1 || detail.type === "Cheese" ? "Cheese" : "ChatPoint",
-                command: detail.command,
-                costPerSpin: detail.costPerSpin,
-                isActive: detail.isActive,
-                items: detail.items || []
+            const detail = await apiFetch<any>(`/api/admin/roulette/${ChzzkUid}/${roulette.Id}`);
+            RouletteFormState = {
+                Id: detail.Id,
+                Name: detail.Name,
+                Type: detail.Type === 1 || detail.Type === "Cheese" ? "Cheese" : "ChatPoint",
+                Command: detail.Command,
+                CostPerSpin: detail.CostPerSpin,
+                IsActive: detail.IsActive,
+                Items: detail.Items || []
             };
             
-            // 폼 위치로 스크롤
             const formEl = document.getElementById("roulette-form-section");
             formEl?.scrollIntoView({ behavior: "smooth" });
         } catch (e) {
@@ -205,41 +206,41 @@
         }
     }
 
-    async function handleDelete(id: number) {
+    async function HandleDelete(id: number) {
         if (!confirm("정말로 이 룰렛을 삭제하시겠습니까? 관련 데이터가 모두 삭제됩니다.")) return;
         try {
-            await apiFetch(`/api/admin/roulette/${chzzkUid}/${id}`, { method: "DELETE" });
-            allRoulettes = allRoulettes.filter(r => r.id !== id);
+            await apiFetch(`/api/admin/roulette/${ChzzkUid}/${id}`, { method: "DELETE" });
+            AllRoulettes = AllRoulettes.filter(r => r.Id !== id);
         } catch (e: any) {
             alert(e.message || "삭제 실패!");
         }
     }
 
-    async function handleToggleStatus(id: number, active: boolean) {
+    async function HandleToggleStatus(id: number, active: boolean) {
         try {
-            await apiFetch(`/api/admin/roulette/${chzzkUid}/${id}/status`, {
+            await apiFetch(`/api/admin/roulette/${ChzzkUid}/${id}/status`, {
                 method: "PATCH",
-                body: JSON.stringify(active)
+                body: active
             });
-            const idx = allRoulettes.findIndex(r => r.id === id);
-            if (idx !== -1) allRoulettes[idx].isActive = active;
+            const idx = AllRoulettes.findIndex(r => r.Id === id);
+            if (idx !== -1) AllRoulettes[idx].IsActive = active;
         } catch (e: any) {
             alert(e.message || "상태 변경 실패!");
         }
     }
 
-    async function handleTestSpin(id: number) {
+    async function HandleTestSpin(id: number) {
         try {
-            const results = await apiFetch<any>(`/api/admin/roulette/${chzzkUid}/${id}/test`, { method: "POST" });
-            alert(`[테스트 결과] ${results.map((r: any) => r.itemName).join(", ")} 당첨!`);
+            const result = await apiFetch<any>(`/api/admin/roulette/${ChzzkUid}/${id}/test`, { method: "POST" });
+            alert(`[테스트 결과] ${result.map((r: any) => r.ItemName).join(", ")} 당첨!`);
         } catch (e: any) {
             alert(e.message || "테스트 실패!");
         }
     }
 
     $effect(() => {
-        if (activeTab === "history" && chzzkUid) {
-            loadHistory();
+        if (ActiveTab === "history" && ChzzkUid) {
+            LoadHistory();
         }
     });
 </script>
@@ -266,62 +267,62 @@
 
         <div class="flex gap-8 border-b border-sky-100/30 overflow-x-auto no-scrollbar">
             <button
-                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'manage' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                onclick={() => (activeTab = "manage")}
+                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab === 'manage' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                onclick={() => (ActiveTab = "manage")}
             >
                 <div class="flex items-center gap-2">
                     <Settings size={18} />
                     <span>룰렛 설정</span>
                 </div>
-                {#if activeTab === 'manage'}
+                {#if ActiveTab === 'manage'}
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                 {/if}
             </button>
             <button
-                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {activeTab === 'history' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
-                onclick={() => (activeTab = "history")}
+                class="pb-4 px-1 font-black transition-all relative whitespace-nowrap {ActiveTab === 'history' ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}"
+                onclick={() => (ActiveTab = "history")}
             >
                 <div class="flex items-center gap-2">
                     <History size={18} />
                     <span>당첨 기록</span>
                 </div>
-                {#if activeTab === 'history'}
+                {#if ActiveTab === 'history'}
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_-2px_15px_rgba(0,147,233,0.4)]" in:fly={{ y: 5 }}></div>
                 {/if}
             </button>
         </div>
     </header>
 
-    {#if isLoaded}
-        {#if activeTab === "manage"}
+    {#if IsLoaded}
+        {#if ActiveTab === "manage"}
             <div class="space-y-10" in:fade>
                 <div id="roulette-form-section" class="scroll-mt-24 md:scroll-mt-32">
                     <RouletteForm 
-                        bind:rouletteForm 
-                        onSave={handleSave} 
-                        {isSubmitting} 
+                        bind:rouletteForm={RouletteFormState} 
+                        onSave={HandleSave} 
+                        {IsSubmitting} 
                     />
                 </div>
                 
                 <RouletteTable 
-                    bind:allRoulettes 
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onToggleStatus={handleToggleStatus}
-                    onTestSpin={handleTestSpin}
+                    bind:allRoulettes={AllRoulettes} 
+                    onEdit={HandleEdit}
+                    onDelete={HandleDelete}
+                    onToggleStatus={HandleToggleStatus}
+                    onTestSpin={HandleTestSpin}
                 />
             </div>
         {:else}
             <div in:fade>
                 <RouletteHistory 
-                    {historyLogs} 
-                    onRefresh={loadHistory} 
-                    onLoadMore={loadMoreHistory}
-                    onUpdateStatus={handleUpdateLogStatus}
-                    onDelete={handleDeleteLog}
-                    onBulkDelete={handleBulkDelete}
-                    {hasNext}
-                    isLoading={isLoadingHistory} 
+                    historyLogs={HistoryLogs} 
+                    onRefresh={LoadHistory} 
+                    onLoadMore={LoadMoreHistory}
+                    onUpdateStatus={HandleUpdateLogStatus}
+                    onDelete={HandleDeleteLog}
+                    onBulkDelete={HandleBulkDelete}
+                    hasNext={HasNext}
+                    isLoading={IsLoadingHistory} 
                 />
             </div>
         {/if}

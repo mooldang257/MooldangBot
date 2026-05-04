@@ -25,11 +25,11 @@ namespace MooldangBot.Application.Controllers.Overlay
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return BadRequest(Result<string>.Failure("Invalid ChzzkUid"));
 
-            var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("Streamer profile not found"));
 
-            var preference = await db.SysStreamerPreferences
+            var preference = await db.TableSysStreamerPreferences
                 .FirstOrDefaultAsync(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "OverlayLayout");
 
             if (preference == null || string.IsNullOrEmpty(preference.PreferenceValue))
@@ -60,24 +60,24 @@ namespace MooldangBot.Application.Controllers.Overlay
             if (string.IsNullOrEmpty(chzzkUid)) 
                 return BadRequest(Result<string>.Failure("Invalid ChzzkUid"));
 
-            var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
                 return NotFound(Result<string>.Failure("Streamer profile not found"));
 
             string layoutJson = JsonSerializer.Serialize(layoutData);
-            var preference = await db.SysStreamerPreferences
+            var preference = await db.TableSysStreamerPreferences
                 .FirstOrDefaultAsync(p => p.StreamerProfileId == profile.Id && p.PreferenceKey == "OverlayLayout");
 
             if (preference == null)
             {
-                preference = new StreamerPreference 
+                preference = new SysStreamerPreferences 
                 { 
                     StreamerProfileId = profile.Id,
                     PreferenceKey = "OverlayLayout", 
                     PreferenceValue = layoutJson,
                     CreatedAt = KstClock.Now
                 };
-                db.SysStreamerPreferences.Add(preference);
+                db.TableSysStreamerPreferences.Add(preference);
             }
             else
             {

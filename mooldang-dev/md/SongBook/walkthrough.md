@@ -15,14 +15,14 @@
 - **결과**: 오버레이에서 곡 정보가 `undefined`로 표시되던 현상을 완전히 해결했습니다.
 
 ### 3. 데이터베이스 최적화
-- [SongBook](file:///c:/webapi/MooldangAPI/Models/SongBook.cs#5-29) 테이블 신규 생성 및 [(ChzzkUid, Id DESC)](file:///c:/webapi/MooldangAPI/wwwroot/songlist.html#508-516) 복합 인덱스 적용.
+- [FuncSongBooks](file:///c:/webapi/MooldangAPI/Models/FuncSongBooks.cs#5-29) 테이블 신규 생성 및 [(ChzzkUid, Id DESC)](file:///c:/webapi/MooldangAPI/wwwroot/songlist.html#508-516) 복합 인덱스 적용.
 - 멀티테넌트 격리를 위한 **글로벌 쿼리 필터** 적용 완료.
 
 ## 📂 관련 파일 목록
 
 | 분류 | 파일 경로 |
 |---|---|
-| **백엔드** | [SongBook.cs](file:///c:/webapi/MooldangAPI/Models/SongBook.cs), [SongBookController.cs](file:///c:/webapi/MooldangAPI/Controllers/SongBookController.cs), [AppDbContext.cs](file:///c:/webapi/MooldangAPI/Data/AppDbContext.cs) |
+| **백엔드** | [FuncSongBooks.cs](file:///c:/webapi/MooldangAPI/Models/FuncSongBooks.cs), [SongBookController.cs](file:///c:/webapi/MooldangAPI/Controllers/SongBookController.cs), [AppDbContext.cs](file:///c:/webapi/MooldangAPI/Data/AppDbContext.cs) |
 | **프론트엔드** | [admin_songbook.html](file:///c:/webapi/MooldangAPI/wwwroot/admin_songbook.html), [main.html](file:///c:/webapi/MooldangAPI/wwwroot/main.html), [songlist.html](file:///c:/webapi/MooldangAPI/wwwroot/songlist.html), [songlist_overlay.html](file:///c:/webapi/MooldangAPI/wwwroot/songlist_overlay.html) |
 | **문서** | [Research.md](file:///c:/webapi/MooldangAPI/md/Research.md), [SongQueueResearch.md](file:///c:/webapi/MooldangAPI/md/SongQueueResearch.md) |
 

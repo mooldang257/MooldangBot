@@ -21,4 +21,5 @@ public interface IOverlayClient
     Task SongAdded(string sender, string message);
     Task NotifySongQueueChanged();
     Task RefreshSongAndDashboard();
+    Task ThumbnailUpdated(int songBookId, string thumbnailUrl);
 }

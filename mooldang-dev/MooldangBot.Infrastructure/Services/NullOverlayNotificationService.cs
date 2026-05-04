@@ -30,4 +30,6 @@ public class NullOverlayNotificationService : IOverlayNotificationService
     public Task NotifySongOverlayUpdateAsync(string chzzkUid, SongOverlayDto data, CancellationToken token = default) => Task.CompletedTask;
 
     public Task BroadcastSongOverlayUpdateAsync(string chzzkUid, string? connectionId = null, CancellationToken token = default) => Task.CompletedTask;
+
+    public Task SendThumbnailUpdatedAsync(int songBookId, string thumbnailUrl, CancellationToken token = default) => Task.CompletedTask;
 }

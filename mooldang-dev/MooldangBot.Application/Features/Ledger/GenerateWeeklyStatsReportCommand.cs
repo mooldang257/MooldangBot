@@ -33,7 +33,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
         logger.LogInformation("📊 [Ledger] 주간 리포트 생성 및 발송 시작...");
 
         // 2. 데이터 취합
-        var last7Days = await db.LogPointDailySummaries
+        var last7Days = await db.TableLogPointDailySummaries
             .OrderByDescending(s => s.Date)
             .Take(7)
             .ToListAsync(ct);
@@ -57,7 +57,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
             } catch { }
         }
 
-        var auditAlerts = await db.LogRouletteStats
+        var auditAlerts = await db.TableLogRouletteStats
             .Where(a => a.TotalSpins > 10 && Math.Abs(a.TheoreticalProbability - ((double)a.WinCount / a.TotalSpins * 100)) > 2.0)
             .Take(3)
             .ToListAsync(ct);
@@ -93,7 +93,7 @@ public class GenerateWeeklyStatsReportCommandHandler(
 
     private async Task<bool> ShouldSendReportAsync(DateTime today, CancellationToken ct)
     {
-        var lastSentDate = await db.SysStreamerPreferences
+        var lastSentDate = await db.TableSysStreamerPreferences
             .Where(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey)
             .Select(p => p.PreferenceValue)
             .FirstOrDefaultAsync(ct);
@@ -103,12 +103,12 @@ public class GenerateWeeklyStatsReportCommandHandler(
 
     private async Task MarkReportAsSentAsync(DateTime today, CancellationToken ct)
     {
-        var preference = await db.SysStreamerPreferences
+        var preference = await db.TableSysStreamerPreferences
             .FirstOrDefaultAsync(p => p.StreamerProfileId == null && p.PreferenceKey == SettingKey, ct);
             
         if (preference == null)
         {
-            db.SysStreamerPreferences.Add(new Domain.Entities.StreamerPreference 
+            db.TableSysStreamerPreferences.Add(new Domain.Entities.SysStreamerPreferences 
             { 
                 StreamerProfileId = null,
                 PreferenceKey = SettingKey, 

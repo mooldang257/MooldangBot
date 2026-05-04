@@ -118,6 +118,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
 
     public bool IsConnected(string chzzkUid)
     {
+        chzzkUid = chzzkUid.ToLower();
         if (_shardCount == 0) return false;
         int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
         return _shards.TryGetValue(shardId, out var shard) && shard.IsConnected(chzzkUid);
@@ -127,6 +128,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
 
     public async Task<bool> ConnectAsync(string chzzkUid, string accessToken, string? clientId = null, string? clientSecret = null)
     {
+        chzzkUid = chzzkUid.ToLower();
         try 
         {
             // [오시리스의 영혼]: WebSocket 연결을 위한 서버 URL을 API 클라이언트로부터 획득합니다.
@@ -158,6 +160,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
 
     public async Task ConnectAsync(string chzzkUid, string url, string accessToken)
     {
+        chzzkUid = chzzkUid.ToLower();
         if (_shardCount == 0) return;
         int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
         if (_shards.TryGetValue(shardId, out var shard))
@@ -168,6 +171,7 @@ public class ShardedWebSocketManager : IShardedWebSocketManager, IDisposable, IA
 
     public async Task DisconnectAsync(string chzzkUid)
     {
+        chzzkUid = chzzkUid.ToLower();
         if (_shardCount == 0) return;
         int shardId = Math.Abs(chzzkUid.GetHashCode()) % _shardCount;
         if (_shards.TryGetValue(shardId, out var shard))

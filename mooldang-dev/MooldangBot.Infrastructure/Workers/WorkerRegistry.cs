@@ -10,41 +10,48 @@ namespace MooldangBot.Infrastructure.Workers;
 
 public static class WorkerRegistry
 {
-    public static IServiceCollection AddWorkerRegistry(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// [v2.5.0] 코어 봇 워커 등록 (치지직 통신 전담)
+    /// </summary>
+    public static IServiceCollection AddCoreBotWorker(this IServiceCollection services, IConfiguration configuration)
     {
-        // 1. appsettings.json의 "WorkerSettings" 구역을 탐색하여 모든 워커 설정을 Named Options로 등록
+        services.AddHostedService<ChzzkBackgroundService>();
+        services.AddHostedService<SystemWatchdogService>();
+        return services;
+    }
+
+    /// <summary>
+    /// [v2.5.0] 백그라운드 비즈니스 워커 등록 (데이터 처리 및 유지보수 전담)
+    /// </summary>
+    public static IServiceCollection AddBackgroundWorkers(this IServiceCollection services, IConfiguration configuration)
+    {
+        // 1. 설정 등록
         var rootSection = configuration.GetSection("WorkerSettings");
         RegisterWorkerSettingsRecursive(services, rootSection);
 
-        // 2. 모든 워커 일괄 등록 (Infrastructure/Workers 폴더 구조에 따름)
+        // 2. 비즈니스 로직 워커들
         services.AddHostedService<Points.PointWriteBackWorker>();
-        
-        // Chat Workers
         services.AddHostedService<Chat.ChatLogBatchWorker>();
         services.AddHostedService<Chat.LogBulkBufferWorker>();
-
-        // Core Workers (GateWay는 독립 위치 유지를 위해 여기서 배제함)
-        services.AddHostedService<ChzzkBackgroundService>();
-        services.AddHostedService<SystemWatchdogService>();
-
-        // Broadcast Workers
         services.AddHostedService<Broadcast.TokenRenewalBackgroundService>();
         services.AddHostedService<Broadcast.PeriodicMessageWorker>();
-
-        // Maintenance Workers
         services.AddHostedService<Maintenance.StagingCleanupWorker>();
         services.AddHostedService<Maintenance.RouletteLogCleanupService>();
         services.AddHostedService<Maintenance.ZeroingWorker>();
         services.AddHostedService<Maintenance.ChatLogCleanupWorker>();
-
-        // Ledger & Analytics Workers
         services.AddHostedService<Ledger.CelestialLedgerWorker>();
         services.AddHostedService<Ledger.WeeklyStatsReporter>();
-
-        // Module Workers 통합 (지휘관 지침: Roulette 통합 - Infrastructure로 이관됨)
         services.AddHostedService<Maintenance.RouletteResultWorker>();
 
         return services;
+    }
+
+    // [DEPRECATED]: 가급적 역할별로 AddCoreBotWorker 또는 AddBackgroundWorkers를 사용하세요.
+    public static IServiceCollection AddWorkerRegistry(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services
+            .AddCoreBotWorker(configuration)
+            .AddBackgroundWorkers(configuration);
     }
 
     /// <summary>

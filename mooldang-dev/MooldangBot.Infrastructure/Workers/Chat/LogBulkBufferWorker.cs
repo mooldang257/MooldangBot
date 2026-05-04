@@ -34,37 +34,37 @@ public class LogBulkBufferWorker(IServiceProvider serviceProvider,
 
     private async Task FlushAsync()
     {
-        var vibrationLogs = buffer.DrainVibrationLogs();
-        var scenarios = buffer.DrainScenarios();
-
-        if (vibrationLogs.Count == 0 && scenarios.Count == 0) return;
-
+        var VibrationLogs = buffer.DrainVibrationLogs();
+        var Scenarios = buffer.DrainScenarios();
+ 
+        if (VibrationLogs.Count == 0 && Scenarios.Count == 0) return;
+ 
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-            var dbContext = (DbContext)db;
-
-            var bulkConfig = new BulkConfig 
+            using var Scope = scopeFactory.CreateScope();
+            var Db = Scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var DbContext = (DbContext)Db;
+ 
+            var BulkConfig = new BulkConfig 
             { 
                 BatchSize = 1000
             };
-
-            if (vibrationLogs.Count > 0)
+ 
+            if (VibrationLogs.Count > 0)
             {
-                _logger.LogInformation("[기록관의 수레] {Count}개의 진동 로그를 벌크 저장합니다.", vibrationLogs.Count);
-                await dbContext.BulkInsertAsync(vibrationLogs, bulkConfig);
+                _logger.LogInformation("[기록관의 수레] {Count}개의 진동 로그를 벌크 저장합니다.", VibrationLogs.Count);
+                await DbContext.BulkInsertAsync(VibrationLogs, BulkConfig);
             }
-
-            if (scenarios.Count > 0)
+ 
+            if (Scenarios.Count > 0)
             {
-                _logger.LogInformation("[기록관의 수레] {Count}개의 시나리오 로그를 벌크 저장합니다.", scenarios.Count);
-                await dbContext.BulkInsertAsync(scenarios, bulkConfig);
+                _logger.LogInformation("[기록관의 수레] {Count}개의 시나리오 로그를 벌크 저장합니다.", Scenarios.Count);
+                await DbContext.BulkInsertAsync(Scenarios, BulkConfig);
             }
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            _logger.LogError(ex, "[기록관의 수레] 벌크 인서트 실패");
+            _logger.LogError(Ex, "[기록관의 수레] 벌크 인서트 실패");
         }
     }
 }

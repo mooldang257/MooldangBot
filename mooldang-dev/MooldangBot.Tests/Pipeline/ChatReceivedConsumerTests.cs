@@ -39,7 +39,7 @@ public class ChatReceivedConsumerTests
         // [Arrange]
         var consumer = CreateSut();
         var chatEvent = CreateChatEvent();
-        var profile = new StreamerProfile { Id = 1, ChzzkUid = "streamer1", ChannelName = "테스트채널" };
+        var profile = new CoreStreamerProfiles { Id = 1, ChzzkUid = "streamer1", ChannelName = "테스트채널" };
 
         _identityCache.GetStreamerProfileAsync("streamer1", Arg.Any<CancellationToken>())
             .Returns(profile);
@@ -69,7 +69,7 @@ public class ChatReceivedConsumerTests
 
         // 스트리머를 찾을 수 없는 경우
         _identityCache.GetStreamerProfileAsync("unknown_streamer", Arg.Any<CancellationToken>())
-            .Returns((StreamerProfile?)null);
+            .Returns((CoreStreamerProfiles?)null);
 
         var context = Substitute.For<ConsumeContext<ChzzkChatEvent>>();
         context.Message.Returns(chatEvent);

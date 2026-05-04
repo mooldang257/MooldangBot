@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MooldangBot.Domain.Entities;
+using MooldangBot.Domain.Entities.Philosophy;
 
 namespace MooldangBot.Domain.Abstractions;
 
@@ -9,16 +10,16 @@ namespace MooldangBot.Domain.Abstractions;
 /// </summary>
 public interface ICommandDbContext
 {
-    DbSet<UnifiedCommand> SysUnifiedCommands { get; set; }
-    DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
-    DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
-    DbSet<ViewerRelation> CoreViewerRelations { get; set; }
-    DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
-    DbSet<MooldangBot.Domain.Entities.Roulette> FuncRoulettes { get; set; }
-    DbSet<MooldangBot.Domain.Entities.RouletteItem> FuncRouletteItems { get; set; }
-    DbSet<SongQueue> FuncSongQueues { get; set; }
-    DbSet<SonglistSession> FuncSonglistSessions { get; set; }
-    DbSet<MooldangBot.Domain.Entities.Philosophy.BroadcastSession> SysBroadcastSessions { get; set; }
+    DbSet<FuncCmdUnified> TableFuncCmdUnified { get; set; }
+    DbSet<CoreStreamerProfiles> TableCoreStreamerProfiles { get; set; }
+    DbSet<CoreGlobalViewers> TableCoreGlobalViewers { get; set; }
+    DbSet<CoreViewerRelations> TableCoreViewerRelations { get; set; }
+    DbSet<FuncSongListOmakases> TableFuncSongListOmakases { get; set; }
+    DbSet<FuncRouletteMain> TableFuncRouletteMain { get; set; }
+    DbSet<FuncRouletteItems> TableFuncRouletteItems { get; set; }
+    DbSet<FuncSongListQueues> TableFuncSongListQueues { get; set; }
+    DbSet<FuncSongListSessions> TableFuncSongListSessions { get; set; }
+    DbSet<SysBroadcastSessions> TableSysBroadcastSessions { get; set; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

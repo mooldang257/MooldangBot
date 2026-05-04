@@ -7,7 +7,7 @@ namespace MooldangBot.Infrastructure.Sagas;
 /// [오시리스의 서판]: 명령어 실행 Saga의 전 과정을 기록하고 영속화하는 엔티티입니다.
 /// 분산 환경에서 특정 작전(CorrelationId)의 상태를 기억하여 장애 시 자율 복구를 가능케 합니다.
 /// </summary>
-public class CommandExecutionSagaState : SagaStateMachineInstance
+public class SysSagaCommandExecutions : SagaStateMachineInstance
 {
     /// <summary>
     /// 작전 고유 식별자 (전사적 추적인자)

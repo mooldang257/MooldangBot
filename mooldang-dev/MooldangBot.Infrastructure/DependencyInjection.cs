@@ -186,7 +186,7 @@ namespace MooldangBot.Infrastructure
             services.AddSingleton<IOmakaseCacheService, OmakaseCacheService>();
 
             // [v13.1] 리포지토리 등록
-            // [Phase 2] ISongBookRepository는 SongBook 모듈에서 등록됩니다.
+            // [Phase 2] ISongBookRepository는 FuncSongBooks 모듈에서 등록됩니다.
 
             // [v1.8] Safe Dynamic Query Engine 등록
             services.AddScoped<IDynamicQueryEngine, MooldangBot.Infrastructure.Services.Engines.DynamicQueryEngine>();
@@ -213,16 +213,25 @@ namespace MooldangBot.Infrastructure
             services.Configure<YouTubeSettings>(configuration.GetSection("YouTube"));
             services.AddScoped<IYouTubeSearchService, YouTubeSearchService>();
 
-            // [v19.2] 노래책 썸네일 검색 서비스 (플러그인 방식 - iTunes & YouTube/YoutubeExplode)
-            // YouTube 썸네일은 YoutubeExplode 기반으로 전환하여 API 할당량 소모 제거
-            services.AddHttpClient<ISongThumbnailService, ItunesThumbnailService>();
-            services.AddHttpClient<ISongThumbnailService, YoutubeThumbnailService>();
+            // [v19.2] 노래책 썸네일 검색 서비스 (플러그인 방식 - iTunes & YouTube/YoutubeExplode & Spotify)
+            // 🖼️ [오시리스의 눈]: 썸네일(앨범 아트) 검색 엔진 체인 구성
+            services.AddScoped<ISongThumbnailService, DeezerThumbnailService>();    // 1계층: 글로벌 고화질 (Deezer)
+            services.AddScoped<ISongThumbnailService, ManiaDbThumbnailService>();   // 2계층: 국내 곡 특화 (ManiaDB)
+            services.AddScoped<ISongThumbnailService, GeniusThumbnailService>();    // 3계층: 서브컬처/커버곡 (Genius)
+            services.AddScoped<ISongThumbnailService, ItunesThumbnailService>();    // 4계층: 글로벌 범용 (iTunes)
+            services.AddScoped<ISongThumbnailService, YoutubeThumbnailService>();   // 최종: 백업 (YouTube)
 
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             // [v2.0] 영겁의 저장소: 분산 토큰 저장소 등록
             services.AddSingleton<IChzzkAccessCredentialStore, RedisTokenStore>();
+
+            // [v23.0] 오시리스의 예지: 지능형 하이브리드 검색 코어 등록
+            // BGE-M3 로컬 추론 서버 연동을 위한 싱글톤 서비스
+            services.AddSingleton<IVectorEmbeddingService, BgeM3EmbeddingService>();
+            // Dapper 기반의 고속 벡터 검색 저장소
+            services.AddScoped<IVectorSearchRepository, VectorSearchRepository>();
 
             // [v4.0] 오시리스의 시동: 시스템 초기화 처리기 등록
             services.AddScoped<IDbInitializer, DbInitializer>();
@@ -325,7 +334,7 @@ namespace MooldangBot.Infrastructure
                     // 🧠 [v6.0] 자율 복구 신경망: Saga 인프라 구성
                     cfg.ReceiveEndpoint("command-execution-saga", e => 
                     {
-                        e.ConfigureSaga<Sagas.CommandExecutionSagaState>(context);
+                        e.ConfigureSaga<Sagas.SysSagaCommandExecutions>(context);
                     });
 
                     // ⚡ [P0 Quick Win] 10k TPS 대응: 동시 소비 한도 상향
@@ -339,7 +348,7 @@ namespace MooldangBot.Infrastructure
                 });
 
                 // Saga State Machine 및 영속성 설정
-                x.AddSagaStateMachine<Sagas.CommandExecutionSaga, Sagas.CommandExecutionSagaState>()
+                x.AddSagaStateMachine<Sagas.CommandExecutionSaga, Sagas.SysSagaCommandExecutions>()
                     .EntityFrameworkRepository(r => 
                     {
                         r.ConcurrencyMode = ConcurrencyMode.Optimistic; // 낙관적 동시성 제어

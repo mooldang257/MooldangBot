@@ -79,22 +79,6 @@ services:
       retries: 5
       start_period: 20s
 
-  adminer:
-    image: adminer:latest
-    container_name: mooldang-dev-adminer
-    restart: always
-    environment:
-      - ADMINER_DEFAULT_SERVER=db
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.adminer-dev.rule=(Host(`${BASE_DOMAIN}`)) && PathPrefix(`/adminer`)"
-      - "traefik.http.routers.adminer-dev.entrypoints=web"
-      - "traefik.http.routers.adminer-dev.middlewares=traefik-auth@file,cloudflare-real-ip@file"
-      - "traefik.http.services.adminer-dev.loadbalancer.server.port=8080"
-      - "traefik.env=dev"
-    networks:
-      - mooldang_dev_net
-
   grafana:
     image: grafana/grafana-oss:latest
     container_name: mooldang-dev-grafana
@@ -152,6 +136,25 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+
+  embedding-server:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
+    container_name: mooldang-dev-embeddings
+    command: --model-id BAAI/bge-m3
+    restart: always
+    ports:
+      - "7997:80"
+    networks:
+      - mooldang_dev_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
 networks:
   mooldang_dev_net:

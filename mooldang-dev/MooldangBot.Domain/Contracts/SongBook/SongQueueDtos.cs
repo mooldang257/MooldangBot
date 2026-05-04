@@ -7,64 +7,46 @@ namespace MooldangBot.Domain.Contracts.SongBook;
 
 public class SongQueueDto
 {
-    [JsonPropertyName("id")]
     public int Id { get; set; }
-
-    [JsonPropertyName("title")]
+ 
     public string Title { get; set; } = string.Empty;
-
-    [JsonPropertyName("artist")]
+ 
     public string Artist { get; set; } = string.Empty;
-
-    [JsonPropertyName("status")]
+ 
     public SongStatus Status { get; set; }
     
-    [JsonPropertyName("sortOrder")]
     public int SortOrder { get; set; }
-
-    [JsonPropertyName("requesterNickname")]
+ 
     public string? RequesterNickname { get; set; }
-
-    [JsonPropertyName("cost")]
+ 
     public int? Cost { get; set; }
-
-    [JsonPropertyName("costType")]
+ 
     public CommandCostType? CostType { get; set; }
-
-    [JsonPropertyName("thumbnailUrl")]
+ 
     public string? ThumbnailUrl { get; set; }
-
-    [JsonPropertyName("pitch")]
+ 
     public string? Pitch { get; set; }
 }
 
 public class SongQueueViewDto : SongQueueDto
 {
-    [JsonPropertyName("url")]
     public string? Url { get; set; }
-
-    [JsonPropertyName("lyricsUrl")]
+ 
     public string? LyricsUrl { get; set; }
-
-    [JsonPropertyName("createdAt")]
+ 
     public KstClock CreatedAt { get; set; }
-
-    [JsonPropertyName("globalViewer")]
-    public GlobalViewer? GlobalViewer { get; set; }
-
-    [JsonPropertyName("requester")]
+ 
+    public CoreGlobalViewers? CoreGlobalViewers { get; set; }
+ 
     public string Requester { get; set; } = "익명";
 }
 
 public class SonglistDataDto
 {
-    [JsonPropertyName("memo")]
     public string Memo { get; set; } = string.Empty;
-
-    [JsonPropertyName("omakases")]
+ 
     public List<OmakaseDto> Omakases { get; set; } = new();
-
-    [JsonPropertyName("songs")]
+ 
     public List<SongQueueDto> Songs { get; set; } = new();
 }
 
@@ -81,5 +63,5 @@ public record SongAddRequest(
     string? RequesterNickname = null,
     int? Cost = null,
     CommandCostType? CostType = null,
-    [property: JsonPropertyName("thumbnailUrl")] string? ThumbnailUrl = null
+    string? ThumbnailUrl = null
 );

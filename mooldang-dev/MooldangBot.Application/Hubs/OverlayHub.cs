@@ -22,12 +22,14 @@ namespace MooldangBot.Application.Hubs;
 public class OverlayHub(
     IMediator mediator,
     PulseService pulseService,
+    IIdentityCacheService identityCache,
     ILogger<OverlayHub> logger, 
     IOverlayState overlayState) : Hub<IOverlayClient>
 {
     private IOverlayNotificationService GetNotificationService() 
         => Context.GetHttpContext()?.RequestServices.GetRequiredService<IOverlayNotificationService>() 
            ?? throw new InvalidOperationException("IOverlayNotificationService is not available.");
+
     /// <summary>
     /// [v1.9.9] 오버레이 애니메이션 완료 후 서버에 결과를 알립니다.
     /// </summary>
@@ -51,16 +53,29 @@ public class OverlayHub(
 
             if (!string.IsNullOrEmpty(shortToken) && shortToken.Length == 16)
             {
+                // 🛑 [v2.4.2] 부정 접속 캐싱: 이미 블랙리스트에 있는 토큰이면 즉시 차단
+                if (await identityCache.IsInvalidTokenAsync(shortToken))
+                {
+                    logger.LogWarning("🚫 [이지스 차단] 블랙리스트 토큰 감지 : {Token}", shortToken);
+                    Context.Abort();
+                    return;
+                }
+
                 using var scope = Context.GetHttpContext()?.RequestServices.CreateScope();
                 var db = scope?.ServiceProvider.GetRequiredService<IAppDbContext>();
                 
-                var streamer = await db!.CoreStreamerProfiles
+                var streamer = await db!.TableCoreStreamerProfiles
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.OverlayToken == shortToken);
 
                 if (streamer != null)
                 {
                     chzzkUid = streamer.ChzzkUid;
+                }
+                else
+                {
+                    // 📝 [v2.4.2] 존재하지 않는 토큰인 경우 블랙리스트에 등록하여 DB 부하 방지
+                    await identityCache.MarkTokenAsInvalidAsync(shortToken);
                 }
             }
         }
@@ -101,12 +116,29 @@ public class OverlayHub(
     /// <summary>
     /// [v2.2.0] 스트리머 전용 그룹에 명시적으로 합류합니다.
     /// </summary>
-    public async Task JoinStreamerGroup()
+    public async Task JoinStreamerGroup(string? explicitUid = null)
     {
-        var streamerUid = Context.User?.FindFirst("StreamerId")?.Value;
-        if (!string.IsNullOrEmpty(streamerUid))
+        try 
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, streamerUid.ToLower());
+            logger.LogInformation("[오시리스의 지혜] JoinStreamerGroup 호출됨. (ExplicitUid: {Uid}, ConnectionId: {ConnId})", explicitUid ?? "NULL", Context.ConnectionId);
+            
+            var streamerUid = explicitUid ?? Context.User?.FindFirst("StreamerId")?.Value;
+            
+            if (!string.IsNullOrEmpty(streamerUid))
+            {
+                var normalizedUid = streamerUid.ToLower();
+                await Groups.AddToGroupAsync(Context.ConnectionId, normalizedUid);
+                logger.LogInformation("[오시리스의 지혜] 클라이언트 그룹 합류 성공: {Group}", normalizedUid);
+            }
+            else 
+            {
+                logger.LogWarning("[오시리스의 지혜] JoinStreamerGroup 실패: StreamerUid를 식별할 수 없습니다.");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[오시리스의 지혜] JoinStreamerGroup 실행 중 심각한 예외 발생: {Message}", ex.Message);
+            throw; // SignalR에 예외를 다시 던져서 클라이언트가 에러를 인지하게 함
         }
     }
 

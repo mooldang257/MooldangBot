@@ -11,32 +11,32 @@
         settings: any;
         layout: any;
     }>();
-    // [물멍]: 인라인 테마 전용 설정 참조
+    // [물멍]: 개편된 중첩 모델(Queue.Inline)을 우선 참조하고, 없으면 구버전 필드들로 폴백
     let inlineSettings = $derived(
-        settings.Inline || {
-            TitleFont: settings.queueTitleFont,
-            ArtistFont: settings.queueArtistFont,
-            TitleColor: settings.queueTitleColor,
-            ArtistColor: settings.queueArtistColor,
-            ItemBgColor: settings.queueItemBgColor,
-            ItemBgOpacity: settings.queueItemBgOpacity,
-            BgColor: settings.queueBgColor,
-            BgOpacity: settings.queueBgOpacity,
-            BorderColor: settings.queueBorderColor,
-            BorderWidth: settings.queueBorderWidth,
-            ShowBorder: settings.showQueueBorder,
+        settings.Queue?.Inline ?? settings.Queue?.inline ?? settings.Inline ?? settings.inline ?? {
+            TitleFont: settings.QueueTitleFont ?? settings.queueTitleFont,
+            ArtistFont: settings.QueueArtistFont ?? settings.queueArtistFont,
+            TitleColor: settings.QueueTitleColor ?? settings.queueTitleColor,
+            ArtistColor: settings.QueueArtistColor ?? settings.queueArtistColor,
+            ItemBgColor: settings.QueueItemBgColor ?? settings.queueItemBgColor,
+            ItemBgOpacity: settings.QueueItemBgOpacity ?? settings.queueItemBgOpacity,
+            BgColor: settings.QueueBgColor ?? settings.queueBgColor,
+            BgOpacity: settings.QueueBgOpacity ?? settings.queueBgOpacity,
+            BorderColor: settings.QueueBorderColor ?? settings.queueBorderColor,
+            BorderWidth: settings.QueueBorderWidth ?? settings.queueBorderWidth,
+            ShowBorder: settings.ShowQueueBorder ?? settings.showQueueBorder,
         },
     );
 </script>
 
-{#if layout?.visible !== false && settings.showQueue !== false}
+{#if layout?.visible !== false && (settings.ShowQueue ?? settings.showQueue) !== false}
     <div
         class="queue-container"
         style="
-            left: {layout?.x ?? 1400}px; 
-            top: {layout?.y ?? 100}px; 
-            width: {layout?.width ?? 450}px; 
-            opacity: {layout?.opacity ?? 1};
+            left: {layout?.X ?? layout?.x ?? 1400}px; 
+            top: {layout?.Y ?? layout?.y ?? 100}px; 
+            width: {layout?.Width ?? layout?.width ?? 450}px; 
+            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
             --queue-title-font: {inlineSettings.TitleFont || 'Pretendard'};
             --queue-artist-font: {inlineSettings.ArtistFont || 'Pretendard'};
             --queue-title-color: {inlineSettings.TitleColor || '#FFFFFF'};
@@ -53,7 +53,7 @@
         "
     >
         <div class="inline-queue">
-            {#each queue as song, i (song.id)}
+            {#each queue as song, i (song.Id ?? song.id)}
                 <div
                     animate:flip={{ duration: 600 }}
                     in:fade={{ duration: 800 }}
@@ -61,7 +61,7 @@
                     class="inline-pill"
                     class:next-1={i === 0}
                 >
-                    <span class="pill-title">{song.title}</span>
+                    <span class="pill-title">{song.Title ?? song.title}</span>
                 </div>
             {/each}
         </div>

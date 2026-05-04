@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using MooldangBot.Domain.Contracts.SongBook.Events;
 
 namespace MooldangBot.Modules.SongBook.Features.Commands;
 
@@ -35,6 +36,8 @@ public class AddSongRequestCommandHandler(
     ILlmService llmService,
     IOverlayNotificationService overlayNotification,
     IIdentityCacheService identityCache,
+    IVectorEmbeddingService embeddingService,
+    IVectorSearchRepository vectorRepository,
     ILogger<AddSongRequestCommandHandler> logger) : IRequestHandler<AddSongRequestCommand, Result<string>>
 {
     public async Task<Result<string>> Handle(AddSongRequestCommand request, CancellationToken ct)
@@ -42,135 +45,161 @@ public class AddSongRequestCommandHandler(
         logger.LogInformation("🚀 [SongRequest] Starting request processing: {Title} from {User} (Donation: {Donation})", request.SongTitle, request.Username, request.DonationAmount);
 
         // 1. [식별]: 스트리머 및 시청자 정보 로드
-        var profile = await db.CoreStreamerProfiles
+        var Profile = await db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == request.StreamerUid, ct);
-
-        if (profile == null) return Result<string>.Failure("스트리머 정보를 찾을 수 없습니다.");
+ 
+        if (Profile == null) return Result<string>.Failure("스트리머 정보를 찾을 수 없습니다.");
         logger.LogInformation("🔍 [SongRequest] Repo Type: {RepoType}", repository.GetType().FullName);
-
-        float[]? vector = null;
+ 
+        float[]? Vector = null;
         try 
         {
-            vector = await llmService.GetEmbeddingAsync(request.SongTitle);
+            // [오시리스의 예지]: BGE-M3 로컬 임베딩을 사용하여 다국어 의미론적 공간 확보
+            Vector = await embeddingService.GetEmbeddingAsync(request.SongTitle);
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogWarning(ex, "⚠️ [SongRequest] Failed to get embedding for vector search.");
+            logger.LogWarning(Ex, "⚠️ [SongRequest] Failed to get BGE-M3 embedding.");
         }
 
-        // [v19.0]: 개인 노래책(SongBook)에서 우선 수색
-        var personalResults = await repository.SearchPersonalSongBookAsync(profile.Id, request.SongTitle, vector, limit: 1);
-        var matchedSong = personalResults.FirstOrDefault();
+        // [v19.0]: 개인 노래책(FuncSongBooks)에서 우선 수색
+        var PersonalResults = await repository.SearchPersonalSongBookAsync(Profile.Id, request.SongTitle, Vector, limit: 1);
+        var MatchedSong = PersonalResults.FirstOrDefault();
         
-        string finalTitle;
-        string? artist = null;
-        string? thumbnailUrl = null;
-        string? pitch = null;
-        int requiredPoints = request.RequiredPoints;
-
-        if (matchedSong != null)
+        string FinalTitle;
+        string? Artist = null;
+        string? ThumbnailUrl = null;
+        string? Pitch = null;
+        int RequiredPoints = request.RequiredPoints;
+ 
+        if (MatchedSong != null)
         {
-            finalTitle = matchedSong.Title;
-            artist = matchedSong.Artist;
-            thumbnailUrl = matchedSong.ThumbnailUrl;
-            pitch = matchedSong.Pitch;
-            requiredPoints = matchedSong.RequiredPoints;
-            logger.LogInformation("🎯 [SongRequest] Match Found in SongBook: {Title} (Cost: {Points} Cheese)", finalTitle, requiredPoints);
+            FinalTitle = MatchedSong.Title;
+            Artist = MatchedSong.Artist;
+            ThumbnailUrl = MatchedSong.ThumbnailUrl;
+            Pitch = MatchedSong.Pitch;
+            RequiredPoints = MatchedSong.RequiredPoints;
+            logger.LogInformation("🎯 [SongRequest] Match Found in FuncSongBooks: {Title} (Cost: {Points} Cheese)", FinalTitle, RequiredPoints);
         }
         else
         {
+            // [오시리스의 영속]: 개인 노래책에 없으면 글로벌 메타데이터에서 하이브리드 수색 (자동 교정)
+            if (Vector != null)
+            {
+                var GlobalMatches = await vectorRepository.SearchHybridAsync<GlobalMusicMetadata>(
+                    "GlobalMusicMetadata", request.SongTitle, Vector, limit: 1);
+                
+                var GlobalSong = GlobalMatches.FirstOrDefault();
+                if (GlobalSong != null)
+                {
+                    FinalTitle = GlobalSong.NormalizedTitle;
+                    Artist = GlobalSong.NormalizedArtist;
+                    ThumbnailUrl = GlobalSong.ThumbnailUrl;
+                    logger.LogInformation("🧠 [SongRequest] Semantic Correction Applied: '{Input}' -> '{Corrected}' by {Artist}", request.SongTitle, FinalTitle, Artist);
+                    goto Processing; // 교정 완료 시 AI 추출 스킵
+                }
+            }
+
             logger.LogInformation("❓ [SongRequest] No match found. Attempting AI Title Extraction for '{Input}'", request.SongTitle);
             try
             {
-                var prompt = $@"Extract the song title and artist from the following request: ""{request.SongTitle}""
-Return as JSON: {{ ""title"": ""..."", ""artist"": ""..."" }}
-If you can't find it, use the original text as title.";
-                var extracted = await llmService.GenerateResponseAsync(prompt, "");
-                logger.LogInformation("🤖 [SongRequest] AI Raw Result: {Result}", extracted);
-
-                using var doc = JsonDocument.Parse(extracted);
-                finalTitle = doc.RootElement.GetProperty("title").GetString() ?? request.SongTitle;
-                artist = doc.RootElement.TryGetProperty("artist", out var a) ? a.GetString() : null;
+                var Prompt = $@"Extract the song title and artist from the following request: ""{request.SongTitle}""
+                Return as JSON: {{ ""title"": ""..."", ""artist"": ""..."" }}
+                If you can't find it, use the original text as title.";
+                var Extracted = await llmService.GenerateResponseAsync(Prompt, "");
+                logger.LogInformation("🤖 [SongRequest] AI Raw Result: {Result}", Extracted);
+ 
+                using var Doc = JsonDocument.Parse(Extracted);
+                FinalTitle = Doc.RootElement.GetProperty("title").GetString() ?? request.SongTitle;
+                Artist = Doc.RootElement.TryGetProperty("artist", out var a) ? a.GetString() : null;
             }
-            catch (Exception ex)
+            catch (Exception Ex)
             {
-                logger.LogWarning("⚠️ [SongRequest] AI Extraction failed: {Msg}. Using raw title.", ex.Message);
-                finalTitle = request.SongTitle;
+                logger.LogWarning("⚠️ [SongRequest] AI Extraction failed: {Msg}. Using raw title.", Ex.Message);
+                FinalTitle = request.SongTitle;
             }
         }
-
-        logger.LogInformation("📝 [SongRequest] Final Title for Queue: {Title}", finalTitle);
+ 
+        Processing: // 레이블 추가
+        logger.LogInformation("📝 [SongRequest] Final Title for Queue: {Title}", FinalTitle);
 
         // 2. [결제]: 포인트 차감 처리
-        if (request.DonationAmount < requiredPoints)
+        if (request.DonationAmount < RequiredPoints)
         {
-            int needed = requiredPoints - request.DonationAmount;
-            logger.LogInformation("💳 [SongRequest] Points deduction: {Needed}", needed);
+            int Needed = RequiredPoints - request.DonationAmount;
+            logger.LogInformation("💳 [SongRequest] Points deduction: {Needed}", Needed);
             
-            var deductResult = await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.DeductDonationPointsCommand(
+            var DeductResult = await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.DeductDonationPointsCommand(
                 request.StreamerUid,
                 request.SenderId,
-                needed
+                Needed
             ), ct);
-
-            if (!deductResult.Success)
+ 
+            if (!DeductResult.Success)
             {
-                logger.LogWarning("⚠️ [SongRequest] Insufficient balance for {User}: Needs {Needed}", request.Username, needed);
-                return Result<string>.Failure($"포인트가 부족합니다. (현재 잔액: {deductResult.CurrentBalance} / 필요: {needed} 치즈 🧀)");
+                logger.LogWarning("⚠️ [SongRequest] Insufficient balance for {User}: Needs {Needed}", request.Username, Needed);
+                return Result<string>.Failure($"포인트가 부족합니다. (현재 잔액: {DeductResult.CurrentBalance} / 필요: {Needed} 치즈 🧀)");
             }
         }
 
         // 3. [영속화]: DB에 신청 내역 저장
         try 
         {
-            var queueCount = await db.FuncSongQueues
-                .Where(q => q.StreamerProfileId == profile.Id && !q.IsDeleted)
+            var QueueCount = await db.TableFuncSongListQueues
+                .Where(q => q.StreamerProfileId == Profile.Id && !q.IsDeleted)
                 .CountAsync(ct);
-
-            var newRequest = new SongQueue
+ 
+            var NewRequest = new FuncSongListQueues
             {
-                StreamerProfileId = profile.Id,
+                StreamerProfileId = Profile.Id,
                 GlobalViewerId = await ResolveGlobalViewerIdAsync(request.SenderId, request.Username, ct),
                 RequesterNickname = request.Username,
-                Title = finalTitle,
-                Artist = artist,
+                Title = FinalTitle,
+                Artist = Artist,
                 Status = SongStatus.Pending,
                 CreatedAt = KstClock.Now,
-                SortOrder = queueCount + 1,
-                VideoId = matchedSong?.ReferenceUrl, 
-                ThumbnailUrl = thumbnailUrl,
-                Pitch = pitch
+                SortOrder = QueueCount + 1,
+                VideoId = MatchedSong?.ReferenceUrl, 
+                ThumbnailUrl = ThumbnailUrl,
+                Pitch = Pitch
             };
-
-            db.FuncSongQueues.Add(newRequest);
+ 
+            db.TableFuncSongListQueues.Add(NewRequest);
             await db.SaveChangesAsync(ct);
-            int newSongId = newRequest.Id;
-            logger.LogInformation("✅ [SongRequest] Successfully saved to DB (ID: {Id})", newSongId);
-
+            int NewSongId = NewRequest.Id;
+            logger.LogInformation("✅ [SongRequest] Successfully saved to DB (ID: {Id})", NewSongId);
+ 
             // 인메모리 버퍼 실제 추가
-            var added = state.AddSong(request.StreamerUid, newSongId, request.Username, finalTitle, artist, matchedSong?.ReferenceUrl, thumbnailUrl, pitch);
-            if (!added) logger.LogWarning("⚠️ [SongRequest] Failed to add to in-memory state.");
+            var Added = state.AddSong(request.StreamerUid, NewSongId, request.Username, FinalTitle, Artist, MatchedSong?.ReferenceUrl, ThumbnailUrl, Pitch);
+            if (!Added) logger.LogWarning("⚠️ [SongRequest] Failed to add to in-memory state.");
             
             // 4. [알림]: 오버레이 업데이트 통지
             await overlayNotification.BroadcastSongOverlayUpdateAsync(request.StreamerUid, null, ct);
             await overlayNotification.NotifyPointChangedAsync(request.StreamerUid, ct);
-            logger.LogInformation("📡 [SongRequest] All notifications (Overlay, Queue, Dashboard) sent.");
 
-            return Result<string>.Success(finalTitle);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "❌ [SongRequest] Persistence failed. (Refund process starting)");
-            // 환불 로직
-            if (request.DonationAmount < requiredPoints)
+            // [오시리스의 예지]: 썸네일이 없거나 벡터가 없는 경우 비동기 수집 요청
+            if (string.IsNullOrEmpty(ThumbnailUrl))
             {
-                int needed = requiredPoints - request.DonationAmount;
+                await mediator.Publish(new SongMetadataFetchEvent(Artist ?? "", FinalTitle), ct);
+            }
+
+            logger.LogInformation("📡 [SongRequest] All notifications (Overlay, Queue, Dashboard) sent.");
+ 
+            return Result<string>.Success(FinalTitle);
+        }
+        catch (Exception Ex)
+        {
+            logger.LogError(Ex, "❌ [SongRequest] Persistence failed. (Refund process starting)");
+            // 환불 로직
+            if (request.DonationAmount < RequiredPoints)
+            {
+                int Needed = RequiredPoints - request.DonationAmount;
                 await mediator.Send(new MooldangBot.Modules.Point.Requests.Commands.AddPointsCommand(
                     request.StreamerUid,
                     request.SenderId,
                     request.Username,
-                    needed,
+                    Needed,
                     MooldangBot.Modules.Point.Enums.PointCurrencyType.DonationPoint,
                     "곡 신청 등록 실패로 인한 환불"
                 ), ct);
@@ -179,15 +208,15 @@ If you can't find it, use the original text as title.";
         }
     }
 
-    private async Task<int?> ResolveGlobalViewerIdAsync(string senderId, string nickname, CancellationToken ct)
+    private async Task<int?> ResolveGlobalViewerIdAsync(string SenderId, string Nickname, CancellationToken ct)
     {
         try 
         {
-            return await identityCache.SyncGlobalViewerIdAsync(senderId, nickname, null, ct);
+            return await identityCache.SyncGlobalViewerIdAsync(SenderId, Nickname, null, ct);
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "⚠️ [SongRequest] Failed to resolve GlobalViewerId for {User}", nickname);
+            logger.LogError(Ex, "⚠️ [SongRequest] Failed to resolve GlobalViewerId for {User}", Nickname);
             return null;
         }
     }

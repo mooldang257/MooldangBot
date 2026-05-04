@@ -24,31 +24,31 @@ public class ProcessTimeoutSpinsHandler(
 {
     public async Task Handle(ProcessTimeoutSpinsCommand request, CancellationToken ct)
     {
-        var now = KstClock.Now;
-
+        var Now = KstClock.Now;
+ 
         // 1. 미완료 상태인 룰렛 세션 쿼리 (가볍게 10건씩)
-        var pendingSpins = await db.FuncRouletteSpins
-            .Include(s => s.StreamerProfile)
-            .Where(s => !s.IsCompleted && s.ScheduledTime < now.AddSeconds(5))
+        var PendingSpins = await db.TableFuncRouletteSpins
+            .Include(s => s.CoreStreamerProfiles)
+            .Where(s => !s.IsCompleted && s.ScheduledTime < Now.AddSeconds(5))
             .OrderBy(s => s.ScheduledTime)
             .Take(10)
             .ToListAsync(ct);
-
-        foreach (var spin in pendingSpins)
+ 
+        foreach (var Spin in PendingSpins)
         {
-            if (spin.StreamerProfile == null) continue;
-
+            if (Spin.CoreStreamerProfiles == null) continue;
+ 
             // ⚖️ [지능형 유예 기간]: 오버레이 접속 여부에 따라 유예 기간 결정
-            bool isOverlayConnected = await overlayState.GetConnectionCountAsync(spin.StreamerProfile.ChzzkUid) > 0;
-            int graceSeconds = isOverlayConnected ? 10 : 0;
-
-            if (spin.ScheduledTime.AddSeconds(graceSeconds) <= now)
+            bool IsOverlayConnected = await overlayState.GetConnectionCountAsync(Spin.CoreStreamerProfiles.ChzzkUid) > 0;
+            int GraceSeconds = IsOverlayConnected ? 10 : 0;
+ 
+            if (Spin.ScheduledTime.AddSeconds(GraceSeconds) <= Now)
             {
                 logger.LogInformation("🕵️ [파수꾼의 개입] 룰렛 {SpinId} 자동 완료 시도 (Overlay: {IsConnected})", 
-                    spin.Id, isOverlayConnected);
+                    Spin.Id, IsOverlayConnected);
                 
                 // 내부 명령 호출을 통해 완료 처리
-                await mediator.Send(new CompleteRouletteCommand(spin.Id), ct);
+                await mediator.Send(new CompleteRouletteCommand(Spin.Id), ct);
             }
         }
     }

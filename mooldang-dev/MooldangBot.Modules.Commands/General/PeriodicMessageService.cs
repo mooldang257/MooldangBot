@@ -12,9 +12,9 @@ public class PeriodicMessageService(IAppDbContext db) : IPeriodicMessageService
 {
     public async Task<CursorPagedResponse<PeriodicMessageDto>> GetListAsync(string chzzkUid, CursorPagedRequest request)
     {
-        return await db.SysPeriodicMessages
-            .Include(m => m.StreamerProfile)
-            .Where(m => m.StreamerProfile!.ChzzkUid == chzzkUid)
+        return await db.TableSysPeriodicMessages
+            .Include(m => m.CoreStreamerProfiles)
+            .Where(m => m.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
             .OrderByDescending(m => m.Id)
             .Select(m => new PeriodicMessageDto
             {
@@ -30,10 +30,10 @@ public class PeriodicMessageService(IAppDbContext db) : IPeriodicMessageService
     {
         if (req.Id > 0)
         {
-            var existing = await db.SysPeriodicMessages
+            var existing = await db.TableSysPeriodicMessages
                 .IgnoreQueryFilters()
-                .Include(m => m.StreamerProfile)
-                .FirstOrDefaultAsync(m => m.Id == req.Id && m.StreamerProfile!.ChzzkUid == chzzkUid);
+                .Include(m => m.CoreStreamerProfiles)
+                .FirstOrDefaultAsync(m => m.Id == req.Id && m.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
                 
             if (existing == null)
                 return Result<bool>.Failure("해당 메시지를 찾을 수 없습니다.");
@@ -44,11 +44,11 @@ public class PeriodicMessageService(IAppDbContext db) : IPeriodicMessageService
         }
         else
         {
-            var profile = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+            var profile = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
             if (profile == null) 
                 return Result<bool>.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
-            db.SysPeriodicMessages.Add(new PeriodicMessage
+            db.TableSysPeriodicMessages.Add(new SysPeriodicMessages
             {
                 StreamerProfileId = profile.Id,
                 IntervalMinutes = req.IntervalMinutes,
@@ -63,15 +63,15 @@ public class PeriodicMessageService(IAppDbContext db) : IPeriodicMessageService
 
     public async Task<Result<bool>> DeleteAsync(string chzzkUid, int id)
     {
-        var item = await db.SysPeriodicMessages
+        var item = await db.TableSysPeriodicMessages
             .IgnoreQueryFilters()
-            .Include(m => m.StreamerProfile)
-            .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
+            .Include(m => m.CoreStreamerProfiles)
+            .FirstOrDefaultAsync(m => m.Id == id && m.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
             
         if (item == null)
             return Result<bool>.Failure("해당 메시지를 찾을 수 없습니다.");
 
-        db.SysPeriodicMessages.Remove(item);
+        db.TableSysPeriodicMessages.Remove(item);
         await db.SaveChangesAsync();
         
         return Result<bool>.Success(true);
@@ -79,10 +79,10 @@ public class PeriodicMessageService(IAppDbContext db) : IPeriodicMessageService
 
     public async Task<Result<bool>> ToggleAsync(string chzzkUid, int id)
     {
-        var item = await db.SysPeriodicMessages
+        var item = await db.TableSysPeriodicMessages
             .IgnoreQueryFilters()
-            .Include(m => m.StreamerProfile)
-            .FirstOrDefaultAsync(m => m.Id == id && m.StreamerProfile!.ChzzkUid == chzzkUid);
+            .Include(m => m.CoreStreamerProfiles)
+            .FirstOrDefaultAsync(m => m.Id == id && m.CoreStreamerProfiles!.ChzzkUid == chzzkUid);
             
         if (item == null)
             return Result<bool>.Failure("해당 메시지를 찾을 수 없습니다.");

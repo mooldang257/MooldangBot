@@ -39,17 +39,17 @@ public class ChzzkBotService : IChzzkBotService
     }
 
 
-    public async Task SendReplyChatAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token)
+    public async Task SendReplyChatAsync(CoreStreamerProfiles profile, string message, string viewerUid, CancellationToken token)
     {
         await SendGenericChatAsync(profile, message, viewerUid, false, token);
     }
 
-    public async Task SendReplyNoticeAsync(StreamerProfile profile, string message, string viewerUid, CancellationToken token)
+    public async Task SendReplyNoticeAsync(CoreStreamerProfiles profile, string message, string viewerUid, CancellationToken token)
     {
         await SendGenericChatAsync(profile, message, viewerUid, true, token);
     }
 
-    public async Task<string?> GetStreamerTokenAsync(StreamerProfile profile)
+    public async Task<string?> GetStreamerTokenAsync(CoreStreamerProfiles profile)
     {
         // [v13.1] 통합 갱신 엔진(ITokenRenewalService)으로 일원화
         await _renewalService.RenewIfNeededAsync(profile.ChzzkUid);
@@ -58,7 +58,7 @@ public class ChzzkBotService : IChzzkBotService
         return profile.ChzzkAccessToken;
     }
 
-    private async Task SendGenericChatAsync(StreamerProfile profile, string message, string viewerUid, bool isNotice, CancellationToken token)
+    private async Task SendGenericChatAsync(CoreStreamerProfiles profile, string message, string viewerUid, bool isNotice, CancellationToken token)
     {
         try
         {
@@ -80,14 +80,14 @@ public class ChzzkBotService : IChzzkBotService
         }
     }
 
-    public async Task UpdateTitleAsync(StreamerProfile profile, string newTitle, string senderUid, CancellationToken token)
+    public async Task UpdateTitleAsync(CoreStreamerProfiles profile, string newTitle, string senderUid, CancellationToken token)
     {
         _logger.LogInformation($"📡 [비동기 방송 정보 변경] 채널: {profile.ChzzkUid}, 제목: {newTitle}");
         var command = new UpdateTitleCommand(Guid.NewGuid(), profile.ChzzkUid, DateTimeOffset.UtcNow, newTitle);
         await _commandSender.SendAsync(command, token);
     }
 
-    public async Task UpdateCategoryAsync(StreamerProfile profile, string category, string senderUid, string? categoryId = null, string? categoryType = null, CancellationToken token = default)
+    public async Task UpdateCategoryAsync(CoreStreamerProfiles profile, string category, string senderUid, string? categoryId = null, string? categoryType = null, CancellationToken token = default)
     {
         _logger.LogInformation($"📡 [비동기 방송 정보 변경] 채널: {profile.ChzzkUid}, 카테고리: {category}");
         var command = new UpdateCategoryCommand(Guid.NewGuid(), profile.ChzzkUid, DateTimeOffset.UtcNow, categoryId, categoryType, category);
@@ -104,7 +104,7 @@ public class ChzzkBotService : IChzzkBotService
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-        var streamer = await db.CoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
+        var streamer = await db.TableCoreStreamerProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid);
 
         if (streamer == null || !streamer.IsActive || !streamer.IsMasterEnabled)
         {

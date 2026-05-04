@@ -17,21 +17,21 @@
 순환 참조 방지 및 안전한 데이터 전달을 위해 엔티티 대신 사용할 전용 응답 DTO를 추가하거나 기존 DTO를 확장합니다.
 
 #### [MODIFY] [RouletteResponseDto.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Domain/DTOs/RouletteDtos.cs) [NEW]
-- `RouletteItem` 엔티티를 포함하되, 역참조(`I.Roulette`)가 없는 순수 DTO 정의
+- `FuncRouletteItems` 엔티티를 포함하되, 역참조(`I.FuncRouletteMain`)가 없는 순수 DTO 정의
 
 #### [MODIFY] [SongQueueDtos.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Domain/DTOs/SongQueueDtos.cs) [NEW]
-- `SongQueue` 엔티티 대신 사용할 `SongQueueResponseDto` 정의
+- `FuncSongListQueues` 엔티티 대신 사용할 `SongQueueResponseDto` 정의
 
 ---
 
 ### 2. [Backend] 컨트롤러 리팩토링
 
-#### [MODIFY] [RouletteController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Roulette/RouletteController.cs)
+#### [MODIFY] [RouletteController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/FuncRouletteMain/RouletteController.cs)
 - `CreateRoulette`, `UpdateRoulette`의 반환 타입을 `Result<RouletteResponseDto>`로 변경
 - 엔티티의 수동 `null` 처리 로직(`foreach ... = null`) 제거
 - `UpdateRoulette` HTTP 메서드를 `POST` → `PUT`으로 변경
 
-#### [MODIFY] [SongController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/SongQueue/SongController.cs)
+#### [MODIFY] [SongController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/FuncSongListQueues/SongController.cs)
 - `AddSong`, `UpdateSongDetails`의 반환 타입을 `Result<SongQueueResponseDto>`로 변경
 - `AddSong` 경로: `/api/song/add/{chzzkUid}` → `POST /api/song/{chzzkUid}`
 - `DeleteSongs` 경로: `/api/song/delete/{chzzkUid}` → `DELETE /api/song/{chzzkUid}`
@@ -40,13 +40,13 @@
 - `[Route("api/SongRequest")]` → `[Route("api/song-request")]`
 
 #### [MODIFY] [SharedComponentController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Shared/SharedComponentController.cs)
-- `[Route("api/SharedComponent")]` → `[Route("api/shared-component")]`
+- `[Route("api/SysSharedComponents")]` → `[Route("api/shared-component")]`
 
-#### [MODIFY] [PeriodicMessageController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/PeriodicMessage/PeriodicMessageController.cs)
-- `[Route("api/PeriodicMessage")]` → `[Route("api/periodic-message")]`
+#### [MODIFY] [PeriodicMessageController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/SysPeriodicMessages/PeriodicMessageController.cs)
+- `[Route("api/SysPeriodicMessages")]` → `[Route("api/periodic-message")]`
 
 #### [MODIFY] [OverlayPresetController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Overlay/OverlayPresetController.cs)
-- `[Route("api/OverlayPreset")]` → `[Route("api/overlay-preset")]`
+- `[Route("api/SysOverlayPresets")]` → `[Route("api/overlay-preset")]`
 
 #### [MODIFY] [CommandsController.cs](file:///c:/webapi/MooldangAPI/MooldangBot/MooldangBot.Application/Controllers/Commands/CommandsController.cs)
 - `/api/commands/unified/save/{chzzkUid}` → `POST /api/commands/unified/{chzzkUid}`

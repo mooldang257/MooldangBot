@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using MiniExcelLibs.Attributes;
+
 
 namespace MooldangBot.Application.Common.Interfaces;
 
@@ -30,41 +30,4 @@ public class SongBookImportResultDto
     public List<string> Errors { get; set; } = new();
 }
 
-/// <summary>
-/// 엑셀 파일 내 행 데이터를 표현하는 DTO (MiniExcel 매핑용)
-/// </summary>
-public class SongBookExcelRow
-{
-    [ExcelColumnName("Id")]
-    public long? Id { get; set; }           // 수정용 ID [NEW]
 
-    [ExcelColumnName("Title")]
-    public string? Title { get; set; }      // 필수
-
-    [ExcelColumnName("Artist")]
-    public string? Artist { get; set; }     // 선택
-
-    [ExcelColumnName("Category")]
-    public string? Category { get; set; }   // 선택
-
-    [ExcelColumnName("Pitch")]
-    public string? Pitch { get; set; }      // 선택
-
-    [ExcelColumnName("Proficiency")]
-    public string? Proficiency { get; set; } // 선택
-
-    [ExcelColumnName("Youtube")]
-    public string? YoutubeUrl { get; set; }  // 선택 (ReferenceUrl)
-
-    [ExcelColumnName("Lyrics")]
-    public string? LyricsUrl { get; set; }   // 선택 [NEW]
-
-    [ExcelColumnName("Thumbnail")]
-    public string? ThumbnailUrl { get; set; } // 선택 [NEW]
-
-    [ExcelColumnName("Points")]
-    public int? RequiredPoints { get; set; } // 선택 [NEW]
-
-    [ExcelColumnName("Alias")]
-    public string? Alias { get; set; }       // 선택
-}

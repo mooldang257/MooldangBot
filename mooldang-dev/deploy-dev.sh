@@ -12,6 +12,7 @@ NC='\033[0m'
 
 # 환경 변수 로드
 [ -f .env ] && source .env
+export COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mooldang-dev}
 
 # 1. 대상 선택
 TARGET_IDX=$1

@@ -21,8 +21,8 @@
 
   // [v20.1] 로그인 상태라면 닉네임 자동 동기화
   $effect(() => {
-    if (userState.isAuthenticated && userState.channelName) {
-      viewerNickname = userState.channelName;
+    if (userState.IsAuthenticated && userState.ChannelName) {
+      viewerNickname = userState.ChannelName;
     }
   });
 
@@ -30,12 +30,12 @@
   onMount(() => {
     isLoaded = true;
     const saved = localStorage.getItem('viewerNickname');
-    if (saved && !userState.isAuthenticated) viewerNickname = saved;
+    if (saved && !userState.IsAuthenticated) viewerNickname = saved;
   });
 
   // [닉네임 변경 시 저장]
   $effect(() => {
-    if (viewerNickname && !userState.isAuthenticated) {
+    if (viewerNickname && !userState.IsAuthenticated) {
       localStorage.setItem('viewerNickname', viewerNickname);
     }
   });
@@ -44,7 +44,8 @@
   let categories = $derived(() => {
     const counts: Record<string, number> = {};
     songLibrary.forEach((s: any) => {
-      if (s.category) counts[s.category] = (counts[s.category] || 0) + 1;
+      const cat = s.Category;
+      if (cat) counts[cat] = (counts[cat] || 0) + 1;
     });
     return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
   });
@@ -52,7 +53,8 @@
   let artists = $derived(() => {
     const counts: Record<string, number> = {};
     songLibrary.forEach((s: any) => {
-      if (s.artist) counts[s.artist] = (counts[s.artist] || 0) + 1;
+      const art = s.Artist;
+      if (art) counts[art] = (counts[art] || 0) + 1;
     });
     return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
   });
@@ -60,13 +62,18 @@
   // [검색 및 필터링 로직]
   let filteredSongs = $derived(
     songLibrary.filter((song: any) => {
+      const title = song.Title || "";
+      const artist = song.Artist || "";
+      const alias = song.Alias || "";
+      const category = song.Category || "";
+
       const matchesSearch = searchQuery === '' || 
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (song.artist?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (song.alias?.toLowerCase().includes(searchQuery.toLowerCase()));
+        title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        alias.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCategory = !selectedCategory || song.category === selectedCategory;
-      const matchesArtist = !selectedArtist || song.artist === selectedArtist;
+      const matchesCategory = !selectedCategory || category === selectedCategory;
+      const matchesArtist = !selectedArtist || artist === selectedArtist;
 
       return matchesSearch && matchesCategory && matchesArtist;
     })
@@ -85,28 +92,29 @@
     }
 
     localStorage.setItem('viewerNickname', viewerNickname.trim());
-    requestingId = song.id;
+    requestingId = song.Id;
     
     try {
       const response = await fetch('/api/songbook/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chzzkUid: streamerId,
-          username: viewerNickname.trim(),
-          songTitle: song.title
+          ChzzkUid: streamerId,
+          Username: viewerNickname.trim(),
+          SongTitle: song.Title
         })
       });
 
       const result = await response.json();
+      const isSuccess = result.IsSuccess;
       
-      if (result.isSuccess) {
-        toast.success(`${song.title} 신청 완료!`, {
+      if (isSuccess) {
+        toast.success(`${song.Title} 신청 완료!`, {
           description: '대기열에 성공적으로 추가되었습니다.',
           icon: CheckCircle2
         });
       } else {
-        toast.error('신청 실패', { description: result.message });
+        toast.error('신청 실패', { description: result.Message || result.Error });
       }
     } catch (error) {
       toast.error('서버와 통신 중 오류가 발생했습니다.');
@@ -140,19 +148,19 @@
 
                         <!-- [닉네임 입력] -->
                         <div class="relative group w-full md:w-72" in:fly={{ y: 10, duration: 800 }}>
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300" class:text-primary={userState.isAuthenticated}>
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300" class:text-primary={userState.IsAuthenticated}>
                                 <UserCircle class="w-4 h-4 opacity-50" />
                             </div>
                             <input
                                 type="text"
                                 bind:value={viewerNickname}
-                                readonly={userState.isAuthenticated}
-                                placeholder={userState.isAuthenticated ? "" : "신청자 닉네임 입력..."}
+                                readonly={userState.IsAuthenticated}
+                                placeholder={userState.IsAuthenticated ? "" : "신청자 닉네임 입력..."}
                                 class="w-full bg-white border border-slate-200/60 rounded-2xl py-3.5 pl-11 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all shadow-sm text-sm font-bold"
-                                class:bg-slate-50={userState.isAuthenticated}
-                                class:cursor-not-allowed={userState.isAuthenticated}
+                                class:bg-slate-50={userState.IsAuthenticated}
+                                class:cursor-not-allowed={userState.IsAuthenticated}
                             />
-                            {#if userState.isAuthenticated}
+                            {#if userState.IsAuthenticated}
                                 <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                                     <CheckCircle2 class="w-4 h-4 text-emerald-500" />
                                 </div>
@@ -206,15 +214,15 @@
                     </div>
                 {:else}
                     <div class="flex flex-col">
-                        {#each filteredSongs as song (song.id)}
+                        {#each filteredSongs as song (song.Id)}
                             <div 
                                 animate:flip={{ duration: 400 }}
                                 class="group flex items-center gap-4 px-4 md:px-6 py-2.5 hover:bg-slate-50/80 border-b border-slate-100 last:border-0 transition-colors"
                             >
                                 <!-- [썸네일/아이콘] -->
                                 <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors flex-shrink-0 overflow-hidden border border-slate-100/50">
-                                    {#if song.thumbnailUrl}
-                                        <img src={song.thumbnailUrl} alt={song.title} class="w-full h-full object-cover" />
+                                    {#if song.ThumbnailUrl}
+                                        <img src={song.ThumbnailUrl} alt={song.Title} class="w-full h-full object-cover" />
                                     {:else}
                                         <Music size={18} />
                                     {/if}
@@ -224,14 +232,14 @@
                                 <div class="flex-1 min-w-0 py-0.5">
                                     <div class="flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3">
                                         <h3 class="font-bold text-slate-800 truncate tracking-tight text-sm md:text-base leading-tight">
-                                            {song.title}
+                                            {song.Title}
                                         </h3>
                                         <div class="flex items-center gap-2">
                                             <span class="text-[11px] font-bold text-slate-400 truncate max-w-[150px]">
-                                                {song.artist || 'Artist Unknown'}
+                                                {song.Artist || 'Artist Unknown'}
                                             </span>
-                                            {#if song.alias}
-                                                <span class="px-1 py-0.5 bg-slate-100 text-slate-400 text-[8px] font-black rounded uppercase tracking-tighter">{song.alias}</span>
+                                            {#if song.Alias}
+                                                <span class="px-1 py-0.5 bg-slate-100 text-slate-400 text-[8px] font-black rounded uppercase tracking-tighter">{song.Alias}</span>
                                             {/if}
                                         </div>
                                     </div>
@@ -239,9 +247,9 @@
 
                                 <!-- [신청 비용] -->
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    {#if song.requiredPoints > 0}
+                                    {#if song.RequiredPoints > 0}
                                         <div class="flex items-center gap-1 px-2 py-1 bg-amber-50 border border-amber-100 rounded-lg">
-                                            <span class="text-[10px] font-black text-amber-600 leading-none">{song.requiredPoints.toLocaleString()}</span>
+                                            <span class="text-[10px] font-black text-amber-600 leading-none">{song.RequiredPoints.toLocaleString()}</span>
                                             <span class="text-[10px] leading-none">🧀</span>
                                         </div>
                                     {:else}
@@ -254,11 +262,11 @@
                                     <button 
                                         type="button"
                                         onclick={() => handleRequest(song)}
-                                        disabled={requestingId === song.id}
+                                        disabled={requestingId === song.Id}
                                         class="p-2.5 text-slate-300 hover:text-primary disabled:text-slate-100 transition-all transform active:scale-90"
                                         title="신청하기"
                                     >
-                                        {#if requestingId === song.id}
+                                        {#if requestingId === song.Id}
                                             <Loader2 size={18} class="animate-spin text-primary" />
                                         {:else}
                                             <PlusCircle size={20} />

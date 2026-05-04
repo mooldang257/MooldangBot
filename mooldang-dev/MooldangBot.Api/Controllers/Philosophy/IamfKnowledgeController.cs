@@ -21,9 +21,9 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetKnowledge([FromQuery] string chzzkUid = "SYSTEM")
     {
-        var list = await db.SysStreamerKnowledges
+        var list = await db.TableSysStreamerKnowledges
             .AsNoTracking()
-            .Where(k => k.StreamerProfile!.ChzzkUid == chzzkUid)
+            .Where(k => k.CoreStreamerProfiles!.ChzzkUid == chzzkUid)
             .OrderByDescending(k => k.CreatedAt)
             .ToListAsync();
             
@@ -42,7 +42,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
         }
 
         // [정규화] ChzzkUid 문자열로 실시간 프로필 조회
-        var profile = await db.CoreStreamerProfiles
+        var profile = await db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == (request.ChzzkUid ?? "SYSTEM"));
 
@@ -50,7 +50,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
             return BadRequest(new { Error = "[지식의 거절] 해당 스트리머 프로필을 찾을 수 없습니다." });
 
         // [대변인의 방패]: 동일 키워드 중복 체크 필수는 아니나 권장 (여기서는 허용 후 최신순 처리)
-        var knowledge = new StreamerKnowledge
+        var knowledge = new SysStreamerKnowledges
         {
             StreamerProfileId = profile.Id,
             Keyword = request.Keyword.Trim(),
@@ -58,7 +58,7 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
             IsActive = true
         };
 
-        db.SysStreamerKnowledges.Add(knowledge);
+        db.TableSysStreamerKnowledges.Add(knowledge);
         await db.SaveChangesAsync();
 
         return Ok(new { Message = "[지식의 수용] 서재에 새로운 지식이 기록되었습니다.", Knowledge = knowledge });
@@ -73,13 +73,13 @@ public class IamfKnowledgeController(IAppDbContext db) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteKnowledge(int id)
     {
-        var knowledge = await db.SysStreamerKnowledges.FindAsync(id);
+        var knowledge = await db.TableSysStreamerKnowledges.FindAsync(id);
         if (knowledge == null)
         {
             return NotFound(new { Error = "[지식의 부재] 해당 ID의 지식을 찾을 수 없습니다." });
         }
 
-        db.SysStreamerKnowledges.Remove(knowledge);
+        db.TableSysStreamerKnowledges.Remove(knowledge);
         await db.SaveChangesAsync();
 
         return Ok(new { Message = "[지식의 소멸] 해당 지식이 서재에서 제거되었습니다." });

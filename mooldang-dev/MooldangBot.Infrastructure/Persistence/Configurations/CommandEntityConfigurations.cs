@@ -5,12 +5,11 @@ using MooldangBot.Infrastructure.Sagas;
 
 namespace MooldangBot.Infrastructure.Persistence.Configurations;
 
-// [파로스의 통합]: UnifiedCommand 설정 (v4.3 정형화 적용)
-public class UnifiedCommandConfiguration : IEntityTypeConfiguration<UnifiedCommand>
+// [파로스의 통합]: FuncCmdUnified 설정 (v4.3 정형화 적용)
+public class UnifiedCommandConfiguration : IEntityTypeConfiguration<FuncCmdUnified>
 {
-    public void Configure(EntityTypeBuilder<UnifiedCommand> builder)
+    public void Configure(EntityTypeBuilder<FuncCmdUnified> builder)
     {
-        builder.ToTable("FuncCmdUnified");
 
         builder.Property(e => e.Keyword)
                // 🔍 대소문자 무관 검색을 위한 명시적 Collation 설정 (Osiris)
@@ -27,7 +26,7 @@ public class UnifiedCommandConfiguration : IEntityTypeConfiguration<UnifiedComma
         builder.Property(e => e.Priority).HasDefaultValue(0);
 
         // 1. 스트리머 삭제 시 해당 채널의 명령어도 연쇄 삭제 (Cascade)
-        builder.HasOne(c => c.StreamerProfile)
+        builder.HasOne(c => c.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(c => c.StreamerProfileId)
                .OnDelete(DeleteBehavior.Cascade);
@@ -46,13 +45,12 @@ public class UnifiedCommandConfiguration : IEntityTypeConfiguration<UnifiedComma
 }
 
 // [v11.1] 천상의 장부 매핑 설정 중 명령어 실행 로그
-public class CommandExecutionLogConfiguration : IEntityTypeConfiguration<CommandExecutionLog>
+public class CommandExecutionLogConfiguration : IEntityTypeConfiguration<LogCommandExecutions>
 {
-    public void Configure(EntityTypeBuilder<CommandExecutionLog> builder)
+    public void Configure(EntityTypeBuilder<LogCommandExecutions> builder)
     {
-        builder.ToTable("LogCommandExecutions");
 
-        builder.HasOne(c => c.StreamerProfile)
+        builder.HasOne(c => c.CoreStreamerProfiles)
                .WithMany()
                .HasForeignKey(c => c.StreamerProfileId)
                .IsRequired(false)
@@ -61,11 +59,10 @@ public class CommandExecutionLogConfiguration : IEntityTypeConfiguration<Command
 }
 
 // 🧠 [v6.0] 자율 복구 신경망: Saga State Machine 영속성 매핑
-public class CommandExecutionSagaStateConfiguration : IEntityTypeConfiguration<CommandExecutionSagaState>
+public class CommandExecutionSagaStateConfiguration : IEntityTypeConfiguration<SysSagaCommandExecutions>
 {
-    public void Configure(EntityTypeBuilder<CommandExecutionSagaState> builder)
+    public void Configure(EntityTypeBuilder<SysSagaCommandExecutions> builder)
     {
-        builder.ToTable("SysSagaCommandExecutions");
         
         // 추적 유전자를 PK로 사용
         builder.HasKey(e => e.CorrelationId); 

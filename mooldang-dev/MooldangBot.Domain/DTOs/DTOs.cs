@@ -7,73 +7,54 @@ namespace MooldangBot.Domain.DTOs
 {
     public class SetupRequest
     {
-        [JsonPropertyName("chzzkUid")]
         public string ChzzkUid { get; set; } = "";
     }
 
     public class PeriodicMessageDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
         
-        [JsonPropertyName("intervalMinutes")]
         public int IntervalMinutes { get; set; }
         
-        [JsonPropertyName("message")]
         public string Message { get; set; } = "";
         
-        [JsonPropertyName("isEnabled")]
         public bool IsEnabled { get; set; }
     }
 
     public class OverlayPresetDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
 
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("configJson")]
         public string ConfigJson { get; set; } = "{}";
 
-        [JsonPropertyName("updatedAt")]
         public KstClock UpdatedAt { get; set; }
     }
 
     public class SharedComponentDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
 
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
-        [JsonPropertyName("configJson")]
         public string ConfigJson { get; set; } = "{}";
     }
 
     public class CombinedCommandDto
     {
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty; // "Custom:12", "Roulette:5" 등
+        public string Id { get; set; } = string.Empty; // "Custom:12", "FuncRouletteMain:5" 등
 
-        [JsonPropertyName("keyword")]
         public string Keyword { get; set; } = string.Empty;
 
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = string.Empty; // "Custom", "SongRequest", "Attendance", "Point", "Roulette", "Omakase"
+        public string Type { get; set; } = string.Empty; // "Custom", "SongRequest", "Attendance", "Point", "FuncRouletteMain", "Omakase"
 
-        [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        [JsonPropertyName("actionType")]
         public string? ActionType { get; set; }
 
-        [JsonPropertyName("requiredRole")]
         public string RequiredRole { get; set; } = "all";
     }
 
@@ -86,35 +67,22 @@ namespace MooldangBot.Domain.DTOs
     // 🎰 룰렛 저장용 DTO (통합 저장 지원)
     public class RouletteSaveDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-        [JsonPropertyName("items")]
         public List<RouletteItemSaveDto>? Items { get; set; }
     }
 
     public class RouletteItemSaveDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
-        [JsonPropertyName("itemName")]
         public string ItemName { get; set; } = string.Empty;
-        [JsonPropertyName("probability")]
         public double Probability { get; set; }
-        [JsonPropertyName("probability10x")]
         public double Probability10x { get; set; }
-        [JsonPropertyName("color")]
         public string Color { get; set; } = "#3498db";
-        [JsonPropertyName("isMission")]
         public bool IsMission { get; set; }
-        [JsonPropertyName("template")]
         public string Template { get; set; } = "Standard";
-        [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
-        [JsonPropertyName("soundUrl")]
         public string? SoundUrl { get; set; }
-        [JsonPropertyName("useDefaultSound")]
         public bool UseDefaultSound { get; set; } = true;
     }
 
@@ -190,45 +158,30 @@ namespace MooldangBot.Domain.DTOs
     // 🎰 [v6.2.6] 이지스의 정화: 룰렛 관리용 요청 DTO
     public class RouletteSummaryDto
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-        [JsonPropertyName("type")]
         public RouletteType Type { get; set; }
-        [JsonPropertyName("command")]
         public string Command { get; set; } = string.Empty;
-        [JsonPropertyName("costPerSpin")]
         public int CostPerSpin { get; set; }
-        [JsonPropertyName("isActive")]
         public bool IsActive { get; set; }
-        [JsonPropertyName("activeItemCount")]
         public int ActiveItemCount { get; set; }
-        [JsonPropertyName("lstUpdDt")]
         public KstClock? LstUpdDt { get; set; }
     }
 
     public record RouletteLogDto(long Id, int? RouletteId, string RouletteName, string ViewerNickname, string ItemName, KstClock CreatedAt, int Status);
 
     public record CompleteRequest(
-        [property: JsonPropertyName("spinId")] long SpinId
+        long SpinId
     );
 
     public class RouletteUpdateRequest
     {
-        [JsonPropertyName("id")]
         public int Id { get; set; }
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-        [JsonPropertyName("type")]
         public RouletteType Type { get; set; } = RouletteType.Cheese;
-        [JsonPropertyName("command")]
         public string? Command { get; set; }
-        [JsonPropertyName("costPerSpin")]
         public int CostPerSpin { get; set; }
-        [JsonPropertyName("isActive")]
         public bool IsActive { get; set; }
-        [JsonPropertyName("items")]
         public List<RouletteItemSaveDto> Items { get; set; } = new();
     }
 }

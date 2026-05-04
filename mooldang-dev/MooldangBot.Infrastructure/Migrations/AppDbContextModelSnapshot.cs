@@ -24,7 +24,7 @@ namespace MooldangBot.Infrastructure.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.AvatarSetting", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysAvatarSettings", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -67,7 +67,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysAvatarSettings", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChatInteractionLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogChatInteractions", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -107,7 +107,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogChatInteractions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysChzzkCategories", b =>
                 {
                     b.Property<string>("CategoryId")
                         .HasMaxLength(100)
@@ -135,7 +135,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysChzzkCategories", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategoryAlias", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysChzzkCategoryAliases", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,7 +162,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysChzzkCategoryAliases", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.CommandExecutionLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogCommandExecutions", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -212,7 +212,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogCommandExecutions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.GlobalViewer", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreGlobalViewers", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -307,7 +307,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogRouletteStats", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Master_SongLibrary", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongMasterLibrary", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -403,7 +403,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongMasterLibrary", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Master_SongStaging", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongMasterStaging", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -473,7 +473,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongMasterStaging", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.OverlayPreset", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysOverlayPresets", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -506,7 +506,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysOverlayPresets", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PeriodicMessage", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysPeriodicMessages", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -537,7 +537,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysPeriodicMessages", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastHistoryLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.LogBroadcastHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -566,7 +566,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogBroadcastHistory", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.SysBroadcastSessions", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -686,7 +686,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("IamfGenosRegistry", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfParhosCycle", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfParhosCycles", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -726,7 +726,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("IamfParhosCycles", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfScenario", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfScenarios", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -774,7 +774,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("IamfScenarios", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSettings", b =>
                 {
                     b.Property<int>("StreamerProfileId")
                         .HasColumnType("int");
@@ -802,7 +802,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("IamfStreamerSettings", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfVibrationLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.LogIamfVibrations", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -832,7 +832,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogIamfVibrations", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.StreamerKnowledge", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.SysStreamerKnowledges", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -868,7 +868,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysStreamerKnowledges", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PointDailySummary", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogPointDailySummaries", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -906,7 +906,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogPointDailySummaries", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PointTransactionHistory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogPointTransactions", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -945,7 +945,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogPointTransactions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteMain", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -994,7 +994,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncRouletteMain", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteItem", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteItems", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1067,7 +1067,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.HasAnnotation("Relational:JsonPropertyName", "items");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteResults", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -1126,7 +1126,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("LogRouletteResults", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteSpins", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -1171,7 +1171,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncRouletteSpins", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysSharedComponents", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1206,7 +1206,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysSharedComponents", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongBooks", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1326,7 +1326,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongBooks", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongQueue", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListQueues", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1415,7 +1415,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongListQueues", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SonglistSession", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListSessions", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1460,7 +1460,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongListSessions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SoundAsset", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSoundAssets", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1499,7 +1499,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSoundAssets");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreStreamerManagers", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1531,7 +1531,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("CoreStreamerManagers", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerOmakaseItem", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListOmakases", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1561,7 +1561,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongListOmakases", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerPreference", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysStreamerPreferences", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1595,7 +1595,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysStreamerPreferences", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerProfile", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreStreamerProfiles", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1704,7 +1704,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("CoreStreamerProfiles", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Streamer_SongLibrary", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongStreamerLibrary", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1764,7 +1764,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncSongStreamerLibrary", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.UnifiedCommand", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncCmdUnified", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1852,7 +1852,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncCmdUnified", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerDonation", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerDonations", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1893,7 +1893,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncViewerDonations", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerDonationHistory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerDonationHistories", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -1944,7 +1944,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncViewerDonationHistories", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerPoint", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerPoints", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1977,7 +1977,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("FuncViewerPoints", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerRelation", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreViewerRelations", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2031,7 +2031,7 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("CoreViewerRelations", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Infrastructure.Sagas.CommandExecutionSagaState", b =>
+            modelBuilder.Entity("MooldangBot.Infrastructure.Sagas.SysSagaCommandExecutions", b =>
                 {
                     b.Property<Guid>("CorrelationId")
                         .ValueGeneratedOnAdd()
@@ -2075,30 +2075,30 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.ToTable("SysSagaCommandExecutions", (string)null);
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.AvatarSetting", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysAvatarSettings", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithOne()
-                        .HasForeignKey("MooldangBot.Domain.Entities.AvatarSetting", "StreamerProfileId")
+                        .HasForeignKey("MooldangBot.Domain.Entities.SysAvatarSettings", "StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChatInteractionLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogChatInteractions", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategoryAlias", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysChzzkCategoryAliases", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.ChzzkCategory", "Category")
+                    b.HasOne("MooldangBot.Domain.Entities.SysChzzkCategories", "Category")
                         .WithMany("Aliases")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2107,450 +2107,450 @@ namespace MooldangBot.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.CommandExecutionLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogCommandExecutions", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteStats", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
+                    b.HasOne("MooldangBot.Domain.Entities.FuncRouletteMain", "FuncRouletteMain")
                         .WithMany()
                         .HasForeignKey("RouletteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Roulette");
+                    b.Navigation("FuncRouletteMain");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.OverlayPreset", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysOverlayPresets", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PeriodicMessage", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysPeriodicMessages", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastHistoryLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.LogBroadcastHistory", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", "BroadcastSession")
+                    b.HasOne("MooldangBot.Domain.Entities.Philosophy.SysBroadcastSessions", "SysBroadcastSessions")
                         .WithMany()
                         .HasForeignKey("BroadcastSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("BroadcastSession");
+                    b.Navigation("SysBroadcastSessions");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.BroadcastSession", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.SysBroadcastSessions", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
             modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfGenosRegistry", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfParhosCycle", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfParhosCycles", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfScenario", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfScenarios", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSettings", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithOne()
-                        .HasForeignKey("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSetting", "StreamerProfileId")
+                        .HasForeignKey("MooldangBot.Domain.Entities.Philosophy.IamfStreamerSettings", "StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.IamfVibrationLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.LogIamfVibrations", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.StreamerKnowledge", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.Philosophy.SysStreamerKnowledges", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PointDailySummary", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogPointDailySummaries", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.PointTransactionHistory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogPointTransactions", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteMain", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteItem", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteItems", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.Roulette", "Roulette")
+                    b.HasOne("MooldangBot.Domain.Entities.FuncRouletteMain", "FuncRouletteMain")
                         .WithMany("Items")
                         .HasForeignKey("RouletteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Roulette");
+                    b.Navigation("FuncRouletteMain");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteLog", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.LogRouletteResults", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.RouletteItem", "RouletteItem")
+                    b.HasOne("MooldangBot.Domain.Entities.FuncRouletteItems", "FuncRouletteItems")
                         .WithMany()
                         .HasForeignKey("RouletteItemId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("RouletteItem");
+                    b.Navigation("FuncRouletteItems");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.RouletteSpin", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteSpins", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SharedComponent", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysSharedComponents", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongBook", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongBooks", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SongQueue", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListQueues", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("MooldangBot.Domain.Entities.SongBook", "SongBook")
+                    b.HasOne("MooldangBot.Domain.Entities.FuncSongBooks", "FuncSongBooks")
                         .WithMany()
                         .HasForeignKey("SongBookId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("SongBook");
+                    b.Navigation("FuncSongBooks");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SonglistSession", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListSessions", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.SoundAsset", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSoundAssets", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerManager", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreStreamerManagers", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerOmakaseItem", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongListOmakases", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.StreamerPreference", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysStreamerPreferences", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Streamer_SongLibrary", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncSongStreamerLibrary", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.UnifiedCommand", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncCmdUnified", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerDonation", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerDonations", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerDonationHistory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerDonationHistories", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerPoint", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncViewerPoints", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ViewerRelation", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.CoreViewerRelations", b =>
                 {
-                    b.HasOne("MooldangBot.Domain.Entities.GlobalViewer", "GlobalViewer")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreGlobalViewers", "CoreGlobalViewers")
                         .WithMany()
                         .HasForeignKey("GlobalViewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MooldangBot.Domain.Entities.StreamerProfile", "StreamerProfile")
+                    b.HasOne("MooldangBot.Domain.Entities.CoreStreamerProfiles", "CoreStreamerProfiles")
                         .WithMany()
                         .HasForeignKey("StreamerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GlobalViewer");
+                    b.Navigation("CoreGlobalViewers");
 
-                    b.Navigation("StreamerProfile");
+                    b.Navigation("CoreStreamerProfiles");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.ChzzkCategory", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.SysChzzkCategories", b =>
                 {
                     b.Navigation("Aliases");
                 });
 
-            modelBuilder.Entity("MooldangBot.Domain.Entities.Roulette", b =>
+            modelBuilder.Entity("MooldangBot.Domain.Entities.FuncRouletteMain", b =>
                 {
                     b.Navigation("Items");
                 });

@@ -61,6 +61,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     public async Task ConnectAsync(string chzzkUid, string url, string accessToken)
     {
+        chzzkUid = chzzkUid.ToLower();
         if (_clients.TryGetValue(chzzkUid, out var existingClient))
         {
             if (existingClient.State == WebSocketState.Open || existingClient.State == WebSocketState.Connecting)
@@ -563,6 +564,7 @@ public class WebSocketShard : IWebSocketShard, IDisposable
 
     public async Task DisconnectAsync(string chzzkUid)
     {
+        chzzkUid = chzzkUid.ToLower();
         if (_channelCts.TryRemove(chzzkUid, out var cts))
         {
             cts.Cancel();

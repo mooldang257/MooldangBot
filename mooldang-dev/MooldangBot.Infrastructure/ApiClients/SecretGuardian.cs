@@ -21,12 +21,12 @@ namespace MooldangBot.Infrastructure.ApiClients
         {
             // 실제 환경에서는 AES 복호화 로직을 넣거나 파편을 결합합니다.
             // 여기서는 직관적인 결합의 예시를 보여줍니다.
-            List<byte> combined = new List<byte>();
-            combined.AddRange(FragmentA);
-            combined.AddRange(FragmentB);
-
+            List<byte> Combined = new List<byte>();
+            Combined.AddRange(FragmentA);
+            Combined.AddRange(FragmentB);
+ 
             // "chzzk_실제키값..." 형태로 복원됨
-            //return Encoding.UTF8.GetString(combined.ToArray()) + "YOUR_REAL_ID_PART";
+            //return Encoding.UTF8.GetString(Combined.ToArray()) + "YOUR_REAL_ID_PART";
             return string.Empty;
         }
 

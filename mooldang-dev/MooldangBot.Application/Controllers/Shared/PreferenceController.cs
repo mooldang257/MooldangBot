@@ -100,10 +100,10 @@ public class PreferenceController(
         return Ok(Result<bool>.Success(true));
     }
 
-    private async Task<StreamerProfile?> GetProfileByUidOrSlugAsync(string uid)
+    private async Task<CoreStreamerProfiles?> GetProfileByUidOrSlugAsync(string uid)
     {
         var target = uid.ToLower();
-        return await db.CoreStreamerProfiles
+        return await db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
     }

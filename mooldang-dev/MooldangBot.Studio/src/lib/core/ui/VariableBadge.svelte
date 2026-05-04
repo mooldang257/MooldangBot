@@ -3,9 +3,9 @@
     import { fade } from "svelte/transition";
 
     export let variables: {
-        keyword: string;
-        description: string;
-        badgeColor: string;
+        Keyword: string;
+        Description: string;
+        BadgeColor: string;
     }[] = [];
 
     // [물멍]: 변수별 아이콘 매핑 (4차 디자인용)
@@ -79,7 +79,7 @@
                        {copiedIndex === i
                     ? 'bg-primary text-white border-primary shadow-lg scale-95'
                     : 'bg-white border-slate-200/60 text-slate-600 hover:border-primary hover:text-primary hover:shadow-[0_8px_30px_rgb(0,147,233,0.12)] hover:-translate-y-1'}"
-                on:click={() => handleCopy(v.keyword, i)}
+                onclick={() => handleCopy(v.Keyword, i)}
             >
                 {#if copiedIndex === i}
                     <span
@@ -92,10 +92,10 @@
                     <span
                         class="text-lg group-hover/peb:rotate-12 transition-transform shrink-0 drop-shadow-sm"
                     >
-                        {variableIcons[v.keyword] || "✨"}
+                        {variableIcons[v.Keyword] || "✨"}
                     </span>
                     <span class="whitespace-nowrap tracking-tight"
-                        >{v.description}</span
+                        >{v.Description}</span
                     >
                 {/if}
             </button>

@@ -49,7 +49,7 @@
     let commandList = $state<any[]>([]); 
     let designSettings = $state("{}"); // [물멍]: 디자인 설정 원본 보존용
 
-    let visibleOmakases = $derived(commandList.filter((c: any) => c.type === 'omakase'));
+    let visibleOmakases = $derived(commandList.filter((c: any) => (c.Type ?? c.type) === 'omakase'));
     let errorMessage = $state("");
     let showCompleted = $state(false);
     let editingSong = $state<any | null>(null); 
@@ -73,8 +73,29 @@
                 apiFetch<any>(`/api/admin/settings/songlist/${targetUid}`)
             ]);
 
-            queue = pendingData.items || [];
-            completed = completedData.items || [];
+            queue = (pendingData.items || []).map((s: any) => ({
+                Id: s.Id ?? s.id ?? 0,
+                Title: s.Title ?? s.title ?? "",
+                Artist: s.Artist ?? s.artist ?? "",
+                Url: s.Url ?? s.url ?? "",
+                Lyrics: s.Lyrics ?? s.lyrics ?? "",
+                Requester: s.Requester ?? s.requester ?? "",
+                CreatedAt: s.CreatedAt ?? s.createdAt ?? "",
+                UpdatedAt: s.UpdatedAt ?? s.updatedAt ?? "",
+                CoreGlobalViewers: s.CoreGlobalViewers ?? s.globalViewer ?? null
+            }));
+            
+            completed = (completedData.items || []).map((s: any) => ({
+                Id: s.Id ?? s.id ?? 0,
+                Title: s.Title ?? s.title ?? "",
+                Artist: s.Artist ?? s.artist ?? "",
+                Url: s.Url ?? s.url ?? "",
+                Lyrics: s.Lyrics ?? s.lyrics ?? "",
+                Requester: s.Requester ?? s.requester ?? "",
+                CreatedAt: s.CreatedAt ?? s.createdAt ?? "",
+                UpdatedAt: s.UpdatedAt ?? s.updatedAt ?? "",
+                CoreGlobalViewers: s.CoreGlobalViewers ?? s.globalViewer ?? null
+            }));
             
             // ... (명령어 매핑 로직 원본 유지)
             if (settingsData) {
@@ -86,30 +107,55 @@
                     sData.songRequestCommands.forEach((c: any) => {
                         // [물멍]: 서버에서 받은 'name' 필드 매핑 및 Fallback 처리
                         newCommandList.push({ 
-                            type: 'songlist', 
-                            trigger: c.keyword || "!신청", 
-                            name: c.name || "일반 곡 신청", 
-                            cost: c.price || 0, 
-                            currency: 'cheese', 
-                            isActive: true 
+                            Type: 'songlist', 
+                            Trigger: c.keyword ?? c.Keyword ?? "!신청", 
+                            Name: c.name ?? c.Name ?? "일반 곡 신청", 
+                            Cost: c.price ?? c.Price ?? 0, 
+                            Currency: 'cheese', 
+                            IsActive: true 
                         });
                     });
                 }
                 if (sData.omakases) {
                     sData.omakases.forEach((o: any) => {
-                        newCommandList.push({ id: o.id, type: 'omakase', trigger: o.command, name: o.name, cost: o.price, currency: 'cheese', icon: o.icon || '🍣', isActive: true, count: 0 });
+                        newCommandList.push({ 
+                            Id: o.id ?? o.Id, 
+                            Type: 'omakase', 
+                            Trigger: o.command ?? o.Command, 
+                            Name: o.name ?? o.Name, 
+                            Cost: o.price ?? o.Price, 
+                            Currency: 'cheese', 
+                            Icon: o.icon ?? o.Icon ?? '🍣', 
+                            IsActive: true, 
+                            Count: 0 
+                        });
                     });
                 }
                 commandList = newCommandList;
             }
             
             const playingData = await apiFetch<any>(`/api/admin/song/${targetUid}/queue?status=Playing&limit=1`);
-            const fetchedSong = (playingData.items && playingData.items.length > 0) ? playingData.items[0] : null;
+            const rawFetchedSong = (playingData.items && playingData.items.length > 0) ? playingData.items[0] : null;
+            let fetchedSong = null;
+
+            if (rawFetchedSong) {
+                fetchedSong = {
+                    Id: rawFetchedSong.Id ?? rawFetchedSong.id ?? 0,
+                    Title: rawFetchedSong.Title ?? rawFetchedSong.title ?? "",
+                    Artist: rawFetchedSong.Artist ?? rawFetchedSong.artist ?? "",
+                    Url: rawFetchedSong.Url ?? rawFetchedSong.url ?? "",
+                    Lyrics: rawFetchedSong.Lyrics ?? rawFetchedSong.lyrics ?? "",
+                    Requester: rawFetchedSong.Requester ?? rawFetchedSong.requester ?? "",
+                    CreatedAt: rawFetchedSong.CreatedAt ?? rawFetchedSong.createdAt ?? "",
+                    UpdatedAt: rawFetchedSong.UpdatedAt ?? rawFetchedSong.updatedAt ?? "",
+                    CoreGlobalViewers: rawFetchedSong.CoreGlobalViewers ?? rawFetchedSong.globalViewer ?? null
+                };
+            }
 
             // [물멍]: 가사 정보 보호 (Safeguard) - 새로 가져온 데이터에 가사가 없지만 기존에 있었다면 유지합니다.
-            if (currentSong && fetchedSong && currentSong.id === fetchedSong.id) {
-                if (!fetchedSong.lyrics && currentSong.lyrics) {
-                    fetchedSong.lyrics = currentSong.lyrics;
+            if (currentSong && fetchedSong && (currentSong.Id ?? (currentSong as any).id) === (fetchedSong.Id ?? (fetchedSong as any).id)) {
+                if (!(fetchedSong.Lyrics ?? (fetchedSong as any).lyrics) && (currentSong.Lyrics ?? (currentSong as any).lyrics)) {
+                    fetchedSong.Lyrics = currentSong.Lyrics ?? (currentSong as any).lyrics;
                 }
             }
             currentSong = fetchedSong;
@@ -180,10 +226,10 @@
             completed = [currentSong, ...completed].slice(0, 50);
         }
         currentSong = song;
-        queue = queue.filter((s) => s.id !== song.id);
+        queue = queue.filter((s) => (s.Id ?? s.id) !== (song.Id ?? song.id));
 
         try {
-            await apiFetch(`/api/admin/song/${streamerId}/${song.id}/status?status=Playing`, { method: "PATCH" });
+            await apiFetch(`/api/admin/song/${streamerId}/${song.Id ?? song.id}/status?status=Playing`, { method: "PATCH" });
         } catch (err) {
             // 실패 시 롤백
             queue = previousQueue;
@@ -201,7 +247,7 @@
         currentSong = null;
 
         try {
-            await apiFetch(`/api/admin/song/${streamerId}/${song.id}/status?status=Completed`, { method: "PATCH" });
+            await apiFetch(`/api/admin/song/${streamerId}/${song.Id ?? song.id}/status?status=Completed`, { method: "PATCH" });
         } catch (err) {
             completed = previousCompleted;
             currentSong = previousCurrent;
@@ -213,7 +259,7 @@
         const previousQueue = [...queue];
         
         // [낙관적 업데이트]
-        queue = queue.filter((s) => !ids.includes(s.id));
+        queue = queue.filter((s) => !ids.includes(s.Id ?? s.id));
 
         try {
          const result = await apiFetch<any>(`/api/admin/song/${streamerId}/bulk`, {
@@ -237,10 +283,13 @@
         
         // [낙관적 업데이트용 임시 아이템]
         const tempSong = {
-            id: -Date.now(), // 임시 ID
-            ...song,
-            requester: userState.channelName,
-            createdAt: new Date().toISOString()
+            Id: -Date.now(), // 임시 ID
+            Title: song.title,
+            Artist: song.artist,
+            Url: song.url,
+            Lyrics: song.lyrics,
+            Requester: userState.channelName,
+            CreatedAt: new Date().toISOString()
         };
         queue = [...queue, tempSong];
 
@@ -248,11 +297,11 @@
             await apiFetch(`/api/admin/song/${streamerId}`, {
                 method: "POST",
                 body: JSON.stringify({
-                    title: song.title,
-                    artist: song.artist,
-                    url: song.url,
-                    lyricsUrl: song.lyrics,
-                    status: 0 // Pending
+                    Title: song.title,
+                    Artist: song.artist,
+                    Url: song.url,
+                    LyricsUrl: song.lyrics,
+                    Status: 0 // Pending
                 })
             });
             // 성공 시 SignalR을 통해 실제 데이터를 다시 받아오므로 별도 처리 불필요하거나 refreshData 호출
@@ -275,7 +324,7 @@
 
     const handleUpdateSong = async (updatedSong: any) => {
         const previousQueue = [...queue];
-        const index = queue.findIndex((s) => s.id === updatedSong.id);
+        const index = queue.findIndex((s) => (s.Id ?? s.id) === (updatedSong.Id ?? updatedSong.id));
         
         if (index !== -1) {
             // [낙관적 업데이트]
@@ -284,13 +333,13 @@
         }
 
         try {
-            await apiFetch(`/api/admin/song/${streamerId}/${updatedSong.id}`, {
+            await apiFetch(`/api/admin/song/${streamerId}/${updatedSong.Id ?? updatedSong.id}`, {
                 method: "PUT",
                 body: JSON.stringify({
-                    title: updatedSong.title,
-                    artist: updatedSong.artist,
-                    url: updatedSong.url,
-                    lyricsUrl: updatedSong.lyrics
+                    title: updatedSong.Title ?? updatedSong.title,
+                    artist: updatedSong.Artist ?? updatedSong.artist,
+                    url: updatedSong.Url ?? updatedSong.url,
+                    lyricsUrl: updatedSong.Lyrics ?? updatedSong.lyrics
                 })
             });
         } catch (err) {
@@ -306,22 +355,22 @@
             if (!targetUid) return;
 
             const payload = {
-                designSettingsJson: designSettings,
-                songRequestCommands: commandList
-                    .filter(c => c.type === 'songlist')
+                DesignSettingsJson: designSettings,
+                SongRequestCommands: commandList
+                    .filter(c => (c.Type ?? c.type) === 'songlist')
                     .map(c => ({ 
-                        name: c.name || "노래 신청", // [물멍]: 유저가 지정한 이름 포함하여 전송
-                        keyword: c.trigger, 
-                        price: c.cost 
+                        Name: c.Name ?? c.name ?? "노래 신청",
+                        Keyword: c.Trigger ?? c.trigger, 
+                        Price: c.Cost ?? c.cost 
                     })),
-                omakases: commandList
-                    .filter(c => c.type === 'omakase')
+                Omakases: commandList
+                    .filter(c => (c.Type ?? c.type) === 'omakase')
                     .map(c => ({
-                        id: c.id > 2000000000 ? 0 : c.id, // Snowflake/Date.now이면 0(신규)으로 처리
-                        name: c.name,
-                        command: c.trigger,
-                        icon: c.icon,
-                        price: c.cost
+                        Id: (c.Id ?? c.id) > 2000000000 ? 0 : (c.Id ?? c.id), // Snowflake/Date.now이면 0(신규)으로 처리
+                        Name: c.Name ?? c.name,
+                        Command: c.Trigger ?? c.trigger,
+                        Icon: c.Icon ?? c.icon,
+                        Price: c.Cost ?? c.cost
                     }))
             };
 
@@ -342,11 +391,11 @@
         const previousCompleted = [...completed];
 
         // [낙관적 업데이트]
-        completed = completed.filter(s => s.id !== song.id);
+        completed = completed.filter(s => (s.Id ?? s.id) !== (song.Id ?? song.id));
         queue = [song, ...queue];
 
         try {
-            await apiFetch(`/api/admin/song/${streamerId}/${song.id}/status?status=Pending`, { method: "PATCH" });
+            await apiFetch(`/api/admin/song/${streamerId}/${song.Id ?? song.id}/status?status=Pending`, { method: "PATCH" });
         } catch (err) {
             queue = previousQueue;
             completed = previousCompleted;
@@ -359,7 +408,7 @@
         const previousCompleted = [...completed];
 
         // [낙관적 업데이트]
-        completed = completed.filter(s => s.id !== id);
+        completed = completed.filter(s => (s.Id ?? s.id) !== id);
 
         try {
             await apiFetch(`/api/admin/song/${streamerId}/bulk`, {

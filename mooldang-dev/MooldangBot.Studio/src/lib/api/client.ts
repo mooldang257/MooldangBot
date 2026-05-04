@@ -2,10 +2,10 @@
 import { browser } from '$app/environment';
 
 export interface Result<T> {
-    isSuccess: boolean;
-    value: T;
-    error: string | null;
-    responseTime: string;
+    IsSuccess: boolean;
+    Value: T;
+    Error: string | null;
+    ResponseTime: string;
 }
 
 /**
@@ -34,6 +34,13 @@ export async function apiFetch<T>(
         credentials: 'include' // 쿠키 전달을 위해 명시
     };
 
+    // [물멍]: body가 FormData인 경우 브라우저가 boundary를 자동 생성하도록 Content-Type 헤더를 제거합니다.
+    if (options?.body instanceof FormData) {
+        const headers = new Headers(fetchOptions.headers);
+        headers.delete('Content-Type');
+        fetchOptions.headers = headers;
+    }
+
     // [물멍]: body가 객체인 경우 자동으로 JSON.stringify 처리
     if (options?.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
         fetchOptions.body = JSON.stringify(options.body);
@@ -56,20 +63,20 @@ export async function apiFetch<T>(
     // [물멍]: HTTP 상태 코드가 2xx가 아닌 경우 처리
     if (!response.ok) {
         // 백엔드에서 보낸 상세 에러 메시지가 있다면 사용
-        if (result && result.error) {
-            throw new Error(result.error);
+        if (result && result.Error) {
+            throw new Error(result.Error);
         }
         throw new Error(`HTTP Error: ${response.status}`);
     }
-
+ 
     if (!result) {
         throw new Error("물댕봇 데이터 형식 오류");
     }
     
-    if (!result.isSuccess) {
-        console.warn("[apiFetch] 비즈니스 로직 실패:", result.error);
-        throw new Error(result.error || '물댕봇 통신 오류 발생');
+    if (!result.IsSuccess) {
+        console.warn("[apiFetch] 비즈니스 로직 실패:", result.Error);
+        throw new Error(result.Error || '물댕봇 통신 오류 발생');
     }
     
-    return result.value;
+    return result.Value;
 }

@@ -20,7 +20,7 @@ public class SonglistToggleStrategy(
 {
     public string FeatureType => CommandFeatureTypes.SonglistToggle;
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.ResponseText, ct);
     }
@@ -30,7 +30,7 @@ public class SonglistToggleStrategy(
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
 
-        var activeSession = await db.FuncSonglistSessions
+        var activeSession = await db.TableFuncSongListSessions
             .FirstOrDefaultAsync(s => s.StreamerProfileId == notification.Profile.Id && s.IsActive, ct);
 
         string statusText = "";
@@ -42,7 +42,7 @@ public class SonglistToggleStrategy(
         }
         else
         {
-            db.FuncSonglistSessions.Add(new SonglistSession
+            db.TableFuncSongListSessions.Add(new FuncSongListSessions
             {
                 StreamerProfileId = notification.Profile.Id,
                 StartedAt = KstClock.Now,

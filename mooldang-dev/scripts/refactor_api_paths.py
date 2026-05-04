@@ -51,28 +51,28 @@ REPLACEMENTS = [
     (r"/api/commands/unified/(\$\{.*?\})", r"/api/commands/\1"),
 
     # 7. Periodic Message
-    (r"/api/PeriodicMessage/list/(\$\{.*?\})", r"/api/periodic-message/\1"),
-    (r"/api/PeriodicMessage/save/(\$\{.*?\})", r"/api/periodic-message/\1"),
-    (r"/api/PeriodicMessage/delete/(\$\{.*?\})/(\$\{.*?\})", r"/api/periodic-message/\1/\2"),
-    (r"/api/PeriodicMessage/toggle/(\$\{.*?\})/(\$\{.*?\})", r"/api/periodic-message/\1/\2/status"),
-    (r"api/PeriodicMessage", r"api/periodic-message"),
+    (r"/api/SysPeriodicMessages/list/(\$\{.*?\})", r"/api/periodic-message/\1"),
+    (r"/api/SysPeriodicMessages/save/(\$\{.*?\})", r"/api/periodic-message/\1"),
+    (r"/api/SysPeriodicMessages/delete/(\$\{.*?\})/(\$\{.*?\})", r"/api/periodic-message/\1/\2"),
+    (r"/api/SysPeriodicMessages/toggle/(\$\{.*?\})/(\$\{.*?\})", r"/api/periodic-message/\1/\2/status"),
+    (r"api/SysPeriodicMessages", r"api/periodic-message"),
 
     # 8. Overlay Preset
-    (r"/api/OverlayPreset/list/(\$\{.*?\})", r"/api/overlay-preset/\1"),
-    (r"/api/OverlayPreset/upload-image/(\$\{.*?\})", r"/api/overlay-preset/\1/image"),
-    (r"/api/OverlayPreset/active/(\$\{.*?\})", r"/api/overlay-preset/\1/active"),
-    (r"/api/OverlayPreset/sync/(\$\{.*?\})/(\$\{.*?\})", r"/api/overlay-preset/\1/\2/active"),
-    (r"api/OverlayPreset", r"api/overlay-preset"),
+    (r"/api/SysOverlayPresets/list/(\$\{.*?\})", r"/api/overlay-preset/\1"),
+    (r"/api/SysOverlayPresets/upload-image/(\$\{.*?\})", r"/api/overlay-preset/\1/image"),
+    (r"/api/SysOverlayPresets/active/(\$\{.*?\})", r"/api/overlay-preset/\1/active"),
+    (r"/api/SysOverlayPresets/sync/(\$\{.*?\})/(\$\{.*?\})", r"/api/overlay-preset/\1/\2/active"),
+    (r"api/SysOverlayPresets", r"api/overlay-preset"),
 
     # 9. Song Request (Sample)
     (r"/api/SongRequest/pending/(\$\{.*?\})", r"/api/song-request/\1/pending"),
     (r"api/SongRequest", r"api/song-request"),
     
-    # 10. Roulette Bulk History
+    # 10. FuncRouletteMain Bulk History
     (r"api/admin/roulette/history/bulk-delete", r"api/admin/roulette/history/bulk"),
     
     # 11. Shared Component
-    (r"api/SharedComponent", r"api/shared-component"),
+    (r"api/SysSharedComponents", r"api/shared-component"),
 
     # 12. Method Replacements (Specific to Status/Toggle)
     # This matches apiFetch calls for status updates that were PUT but should be PATCH

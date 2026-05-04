@@ -88,7 +88,7 @@ public class TokenRenewalService : ITokenRenewalService
     private async Task<bool> ProcessRenewalAsync(string chzzkUid, bool force)
     {
         // [v10.0] AsNoTracking을 제거하여 갱신된 토큰이 DB에 실제 저장되도록 복구
-        var streamer = await _db.CoreStreamerProfiles
+        var streamer = await _db.TableCoreStreamerProfiles
             .FirstOrDefaultAsync(s => s.ChzzkUid == chzzkUid);
             
         if (streamer == null) return false;
@@ -111,7 +111,7 @@ public class TokenRenewalService : ITokenRenewalService
         return true;
     }
 
-    private async Task<bool> RenewTokenInternalAsync(StreamerProfile streamer, bool force)
+    private async Task<bool> RenewTokenInternalAsync(CoreStreamerProfiles streamer, bool force)
     {
         var expiresAt = streamer.TokenExpiresAt;
         var refreshToken = streamer.ChzzkRefreshToken;

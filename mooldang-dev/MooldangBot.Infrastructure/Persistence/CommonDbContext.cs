@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MooldangBot.Application.Common.Interfaces;
+using MooldangBot.Domain.Abstractions;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Infrastructure.Persistence.Converters;
 using MooldangBot.Domain.Common;
@@ -15,7 +15,7 @@ public class CommonDbContext : DbContext, ICommonDbContext
     {
     }
 
-    public DbSet<CommonThumbnail> Thumbnails => Set<CommonThumbnail>();
+    public DbSet<CommonThumbnail> TableCommonThumbnail { get; set; }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         => configurationBuilder.Properties<KstClock>().HaveConversion<KstClockConverter>();
@@ -26,6 +26,7 @@ public class CommonDbContext : DbContext, ICommonDbContext
 
         modelBuilder.Entity<CommonThumbnail>(entity =>
         {
+            entity.ToTable("Thumbnails");
             entity.HasIndex(e => e.FileHash).IsUnique();
             entity.HasIndex(e => new { e.Artist, e.Title });
         });

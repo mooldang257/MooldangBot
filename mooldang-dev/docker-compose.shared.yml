@@ -1,5 +1,5 @@
 # [오시리스의 함대] - SHARED ASSETS LAYER
-# 개발과 운영이 공동으로 사용하는 공용 자산(폰트 등)을 담당합니다.
+# 개발 환경(dev.mooldang.com) 전용 공용 자산 레이어입니다.
 
 services:
   fonts:
@@ -7,7 +7,7 @@ services:
       context: ../fonts
       dockerfile: Dockerfile
     image: mooldang-fonts:${VERSION_FONTS:-latest}
-    container_name: mooldang-fonts
+    container_name: mooldang-dev-fonts
     restart: always
     deploy:
       resources:
@@ -15,14 +15,21 @@ services:
           memory: 128M
     labels:
       - "traefik.enable=true"
-      # 개발(dev)과 운영(bot) 도메인 모두에서 /fonts 경로를 수용합니다.
-      - "traefik.http.routers.fonts-shared.rule=(Host(`bot.mooldang.com`) || Host(`${BASE_DOMAIN}`)) && PathPrefix(`/fonts`)"
-      - "traefik.http.routers.fonts-shared.entrypoints=web,web-dev"
-      - "traefik.http.services.fonts-shared.loadbalancer.server.port=80"
-      - "traefik.http.routers.fonts-shared.middlewares=cloudflare-real-ip@file"
+      # [물멍]: 개발(dev) 도메인 전용 명시적 라우팅 (우선순위 트릭 제거)
+      - "traefik.http.routers.mooldang-dev-fonts.rule=Host(`dev.mooldang.com`) && PathPrefix(`/fonts`)"
+      - "traefik.http.routers.mooldang-dev-fonts.entrypoints=web,web-dev"
+      
+      # [물멍]: 캐시 방지 미들웨어 (개발 편의성 유지)
+      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Pragma=no-cache"
+      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Expires=0"
+      
+      - "traefik.http.routers.mooldang-dev-fonts.middlewares=cloudflare-real-ip@file,fonts-dev-no-cache"
+      
+      - "traefik.http.services.mooldang-dev-fonts-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.mooldang-dev-fonts.service=mooldang-dev-fonts-svc"
       - "traefik.docker.network=mooldang_dev_net"
-      # 공용 자산이지만 환경 식별을 위해 라벨 유지
-      - "traefik.env=bot" 
+      - "traefik.env=dev" 
     networks:
       - mooldang_dev_net
 

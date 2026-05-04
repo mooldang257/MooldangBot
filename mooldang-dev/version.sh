@@ -28,13 +28,17 @@ print_environment() {
         local service_name=$2
         local container_name="mooldang-${env_name}-${service_name}"
         
-        # 공용 자산(fonts)은 예외 처리
+        # 공용 자산(fonts) 및 게이트웨이 예외 처리
         if [ "$service_name" == "fonts" ]; then
-            container_name="mooldang-fonts"
+            if [ "$env_name" == "dev" ]; then
+                container_name="mooldang-dev-fonts"
+            else
+                container_name="mooldang-fonts"
+            fi
         fi
 
         # 컨테이너 정보 조회 (Image, Status)
-        local info=$(docker ps -a --filter "name=^/${container_name}$" --format "{{.Image}}\t{{.Status}}")
+        local info=$(docker ps -a --filter "name=${container_name}" --format "{{.Image}}\t{{.Status}}" | head -n 1)
         
         if [ -z "$info" ]; then
             printf "  %-12s | %-35s | %b\n" "$label" "$container_name" "${RED}Stopped / Not Found${NC}"
@@ -72,7 +76,6 @@ print_environment() {
     print_container "DB" "db"
     print_container "Redis" "redis"
     print_container "MQ" "rabbitmq"
-    print_container "Adminer" "adminer"
     print_container "Grafana" "grafana"
 
     echo -e "\n${CYAN}[8] Gateway (게이트웨이)${NC}"

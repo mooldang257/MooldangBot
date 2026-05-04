@@ -21,10 +21,10 @@ public class RouletteResultWorker(IServiceProvider serviceProvider,
 
     protected override async Task ProcessWorkAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-
+        using var Scope = scopeFactory.CreateScope();
+        var Mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
+ 
         // [순수 수직 분할]: 타임아웃 처리를 독립 모듈에 요청
-        await mediator.Send(new ProcessTimeoutSpinsCommand(), ct);
+        await Mediator.Send(new ProcessTimeoutSpinsCommand(), ct);
     }
 }

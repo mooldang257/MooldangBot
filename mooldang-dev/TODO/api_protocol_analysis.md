@@ -110,18 +110,18 @@ export interface Result<T> {
 | `/api/settings/{분류}/{uid}` | BotConfigController | `api/settings/bot/slug/{uid}` |
 | `api/[controller]` | PreferenceController | `api/Preference/temporary/{key}` |
 | `api/SongRequest` | SongRequestController | **PascalCase** 라우트!!! |
-| `api/SharedComponent` | SharedComponentController | **PascalCase** |
-| `api/PeriodicMessage` | PeriodicMessageController | **PascalCase** |
-| `api/OverlayPreset` | OverlayPresetController | **PascalCase** |
+| `api/SysSharedComponents` | SharedComponentController | **PascalCase** |
+| `api/SysPeriodicMessages` | PeriodicMessageController | **PascalCase** |
+| `api/SysOverlayPresets` | OverlayPresetController | **PascalCase** |
 
 #### 문제 분류
 
 ```
 🔴 PascalCase 라우트 (REST 위반)
 ├── api/SongRequest
-├── api/SharedComponent
-├── api/PeriodicMessage
-└── api/OverlayPreset
+├── api/SysSharedComponents
+├── api/SysPeriodicMessages
+└── api/SysOverlayPresets
 
 🟡 절대경로 vs 상대경로 혼용
 ├── [HttpGet("/api/auth/chzzk-login")]     ← 절대경로
@@ -235,7 +235,7 @@ public class OverlayHub : Hub<IOverlayClient> { ... }
 
 ```csharp
 // 패턴 1: 엔티티 직접 반환
-return Ok(Result<Roulette>.Success(RouletteObj));
+return Ok(Result<FuncRouletteMain>.Success(RouletteObj));
 
 // 패턴 2: 익명 객체 반환
 return Ok(Result<object>.Success(new { success = true, message = "저장 완료" }));
@@ -247,8 +247,8 @@ return Ok(Result<bool>.Success(true));
 return Ok(Result<DashboardSummaryDto>.Success(summary));
 
 // 패턴 5: 엔티티의 순환참조 수동 제거 (!)
-foreach (var I in RouletteObj.Items) I.Roulette = null;
-return Ok(Result<Roulette>.Success(RouletteObj));
+foreach (var I in RouletteObj.Items) I.FuncRouletteMain = null;
+return Ok(Result<FuncRouletteMain>.Success(RouletteObj));
 ```
 
 > [!CAUTION]
@@ -346,8 +346,8 @@ GET    api/command/{chzzkUid}               → 명령어 목록
 
 | # | 항목 | 변경 범위 | 예상 소요 | 의존 | 이유 |
 |---|------|-----------|-----------|------|------|
-| P0-1 | **엔티티 직접 반환 제거**<br/>→ 전용 Response DTO로 전환<br/>`Roulette` → `RouletteResponseDto` 등 | 백엔드 | 2~3시간 | 없음 | 순환참조 직렬화 에러 + 민감정보 노출 위험이 **지금 존재**합니다. `I.Roulette = null` 을 잊으면 500 에러 |
-| P0-2 | **PascalCase 라우트 → kebab-case 통일**<br/>`api/SongRequest` → `api/song-request`<br/>`api/OverlayPreset` → `api/overlay-preset` 등 4개 | 백엔드 + 프론트 | 1시간 | 없음 | REST 표준 위반. 프론트에서 URL 추측이 불가능하여 매번 소스 확인 필요 |
+| P0-1 | **엔티티 직접 반환 제거**<br/>→ 전용 Response DTO로 전환<br/>`FuncRouletteMain` → `RouletteResponseDto` 등 | 백엔드 | 2~3시간 | 없음 | 순환참조 직렬화 에러 + 민감정보 노출 위험이 **지금 존재**합니다. `I.FuncRouletteMain = null` 을 잊으면 500 에러 |
+| P0-2 | **PascalCase 라우트 → kebab-case 통일**<br/>`api/SongRequest` → `api/song-request`<br/>`api/SysOverlayPresets` → `api/overlay-preset` 등 4개 | 백엔드 + 프론트 | 1시간 | 없음 | REST 표준 위반. 프론트에서 URL 추측이 불가능하여 매번 소스 확인 필요 |
 | P0-3 | **URL 내 동사 제거**<br/>`POST /song/add/` → `POST /song/`<br/>`DELETE /song/delete/` → `DELETE /song/` | 백엔드 + 프론트 | 1.5시간 | P0-2 | HTTP 메서드가 이미 동사 역할. 중복 동사가 프론트 개발 시 혼란 유발 |
 
 ### 🟠 P1 — 단기 (일관성 / 인지 부하 감소)

@@ -14,11 +14,14 @@ using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
 using MooldangBot.Domain.DTOs;
 using MooldangBot.Application.Interfaces;
+using MediatR;
+using MooldangBot.Domain.Contracts.AI.Interfaces;
+using MooldangBot.Domain.Contracts.SongBook.Events;
 
-namespace MooldangBot.Application.Controllers.SongQueue;
+namespace MooldangBot.Application.Controllers.FuncSongListQueues;
 
 /// <summary>
-/// [v19.0] 스트리머 전용 노래책(SongBook) 관리 컨트롤러
+/// [v19.0] 스트리머 전용 노래책(FuncSongBooks) 관리 컨트롤러
 /// 엑셀 일괄 처리 및 데이터 관리를 담당합니다.
 /// </summary>
 [ApiController]
@@ -33,6 +36,9 @@ public class SongBookController : ControllerBase
     private readonly IEnumerable<ISongThumbnailService> _thumbnailServices;
     private readonly IFileStorageService _fileStorage;
     private readonly HttpClient _httpClient;
+    private readonly IMediator _mediator;
+    private readonly IVectorEmbeddingService _embeddingService;
+    private readonly IVectorSearchRepository _vectorRepository;
 
     public SongBookController(
         IAppDbContext db, 
@@ -41,7 +47,10 @@ public class SongBookController : ControllerBase
         IIdentityCacheService identityCache,
         IEnumerable<ISongThumbnailService> thumbnailServices,
         IFileStorageService fileStorage,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        IMediator mediator,
+        IVectorEmbeddingService embeddingService,
+        IVectorSearchRepository vectorRepository)
     {
         _db = db;
         _commonDb = commonDb;
@@ -50,6 +59,9 @@ public class SongBookController : ControllerBase
         _thumbnailServices = thumbnailServices;
         _fileStorage = fileStorage;
         _httpClient = httpClient;
+        _mediator = mediator;
+        _embeddingService = embeddingService;
+        _vectorRepository = vectorRepository;
     }
 
     /// <summary>
@@ -62,10 +74,29 @@ public class SongBookController : ControllerBase
         if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(artist))
             return BadRequest(Result<System.Collections.Generic.List<string>>.Failure("곡 제목이나 가수 이름을 입력해주세요."));
 
-        var allResults = new List<string>();
+        var allResults = new System.Collections.Generic.List<string>();
 
-        // [오시리스의 도서관]: 1순위로 우리 서버 공용 저장소 확인
-        var localCandidates = await _commonDb.Thumbnails
+        // [오시리스의 영속]: 1순위 - 하이브리드 벡터 검색 (GlobalMusicMetadata)
+        try 
+        {
+            var queryVector = await _embeddingService.GetEmbeddingAsync($"{artist} {title}");
+            var vectorResults = await _vectorRepository.SearchHybridAsync<GlobalMusicMetadata>(
+                "GlobalMusicMetadata", artist ?? "", queryVector, 15);
+            
+            var vectorThumbnails = vectorResults
+                .Where(v => !string.IsNullOrEmpty(v.ThumbnailUrl))
+                .Select(v => v.ThumbnailUrl!)
+                .ToList();
+
+            if (vectorThumbnails.Any()) allResults.AddRange(vectorThumbnails);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SongBookController] 벡터 검색 실패: {ex.Message}");
+        }
+
+        // 2순위: 로컬 도서관 레거시 검색
+        var localCandidates = await _commonDb.TableCommonThumbnail
             .Where(t => t.Title == title || t.Artist == artist)
             .OrderByDescending(t => t.ReferenceCount)
             .Select(t => t.LocalPath)
@@ -74,8 +105,8 @@ public class SongBookController : ControllerBase
 
         if (localCandidates.Any()) allResults.AddRange(localCandidates);
         
-        // 2순위: 외부 검색 엔진(iTunes, YouTube 등)
-        var searchTasks = _thumbnailServices.Select(s => s.SearchThumbnailsAsync(artist, title));
+        // 3순위: 외부 검색 엔진 실시간 쿼리 (Fallback)
+        var searchTasks = _thumbnailServices.Select(s => s.SearchThumbnailsAsync(artist ?? "Unknown", title ?? "Unknown"));
         var resultsArray = await Task.WhenAll(searchTasks);
 
         foreach (var results in resultsArray)
@@ -83,7 +114,7 @@ public class SongBookController : ControllerBase
             if (results != null) allResults.AddRange(results);
         }
 
-        // 중복 제거 및 최대 40개로 확장
+        // 중복 제거 및 최대 40개
         var finalResults = allResults.Distinct().Take(40).ToList();
 
         return Ok(Result<System.Collections.Generic.List<string>>.Success(finalResults));
@@ -99,7 +130,7 @@ public class SongBookController : ControllerBase
         if (streamer == null) 
             return NotFound(Result<string>.Failure("스트리머를 찾을 수 없습니다."));
 
-        var dbQuery = _db.FuncSongBooks
+        var dbQuery = _db.TableFuncSongBooks
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamer.Id && !s.IsDeleted);
 
@@ -184,13 +215,27 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
+        // [v19.5] 중복 등록 방지 로직 (동일 스트리머 내 제목+가수 중복 불가)
+        var existingSong = await _db.TableFuncSongBooks
+            .FirstOrDefaultAsync(s => s.StreamerProfileId == profile.Id && 
+                           s.Title == request.Title && 
+                           s.Artist == request.Artist && 
+                           !s.IsDeleted);
+
+        if (existingSong != null)
+        {
+            // 중복 발견 시 409 Conflict 반환 (프론트엔드에서 모달을 띄우기 위함)
+            return Conflict(Result<object>.Failure($"이미 존재하는 노래입니다.", existingSong.SongNo.ToString()));
+        }
+
         // [v19.1] 다음 SongNo 계산 (1부터 시작)
-        var maxSongNo = await _db.FuncSongBooks
+        var maxSongNo = await _db.TableFuncSongBooks
+            .IgnoreQueryFilters()
             .Where(s => s.StreamerProfileId == profile.Id)
             .Select(s => (int?)s.SongNo)
             .MaxAsync() ?? 0;
 
-        var song = new SongBook
+        var song = new FuncSongBooks
         {
             StreamerProfileId = profile.Id,
             SongNo = maxSongNo + 1,
@@ -214,11 +259,11 @@ public class SongBookController : ControllerBase
                 {
                     song.ThumbnailUrl = request.ThumbnailUrl;
                     // 해당 이미지의 레퍼런스 카운트 증가
-                    var existingThumb = await _commonDb.Thumbnails.FirstOrDefaultAsync(t => t.LocalPath == request.ThumbnailUrl);
+                    var existingThumb = await _commonDb.TableCommonThumbnail.FirstOrDefaultAsync(t => t.LocalPath == request.ThumbnailUrl);
                     if (existingThumb != null)
                     {
                         existingThumb.ReferenceCount++;
-                        _commonDb.Thumbnails.Update(existingThumb);
+                        _commonDb.TableCommonThumbnail.Update(existingThumb);
                         await _commonDb.SaveChangesAsync();
                     }
                 }
@@ -228,14 +273,14 @@ public class SongBookController : ControllerBase
                     var hash = ComputeHash(imageBytes);
 
                     // 1. 이미 동일한 내용의 이미지가 있는지 해시로 체크
-                    var sharedThumb = await _commonDb.Thumbnails.FirstOrDefaultAsync(t => t.FileHash == hash);
+                    var sharedThumb = await _commonDb.TableCommonThumbnail.FirstOrDefaultAsync(t => t.FileHash == hash);
 
                     if (sharedThumb != null)
                     {
                         // 중복 발견: 기존 경로 재사용
                         song.ThumbnailUrl = sharedThumb.LocalPath;
                         sharedThumb.ReferenceCount++;
-                        _commonDb.Thumbnails.Update(sharedThumb);
+                        _commonDb.TableCommonThumbnail.Update(sharedThumb);
                     }
                     else
                     {
@@ -253,7 +298,7 @@ public class SongBookController : ControllerBase
                             SourceUrl = request.ThumbnailUrl,
                             ReferenceCount = 1
                         };
-                        _commonDb.Thumbnails.Add(newThumb);
+                        _commonDb.TableCommonThumbnail.Add(newThumb);
                         song.ThumbnailUrl = localPath;
                     }
                     await _commonDb.SaveChangesAsync();
@@ -261,15 +306,21 @@ public class SongBookController : ControllerBase
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[SongBook] 썸네일 처리 실패: {ex.Message}");
+                Console.WriteLine($"[FuncSongBooks] 썸네일 처리 실패: {ex.Message}");
                 song.ThumbnailUrl = request.ThumbnailUrl;
             }
         }
 
-        _db.FuncSongBooks.Add(song);
+        _db.TableFuncSongBooks.Add(song);
         await _db.SaveChangesAsync();
 
-        return Ok(Result<object>.Success(new { id = song.SongNo, title = song.Title, localPath = song.ThumbnailUrl }));
+        // [오시리스의 예지]: 썸네일이 없는 경우 백그라운드 수집 이벤트 발행
+        if (string.IsNullOrEmpty(song.ThumbnailUrl))
+        {
+            await _mediator.Publish(new SongMetadataFetchEvent(song.Artist ?? "", song.Title, song.Id));
+        }
+
+        return Ok(Result<object>.Success(new { Id = song.SongNo, Title = song.Title, LocalPath = song.ThumbnailUrl }));
     }
 
     /// <summary>
@@ -281,7 +332,7 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
-        var song = await _db.FuncSongBooks
+        var song = await _db.TableFuncSongBooks
             .FirstOrDefaultAsync(s => s.SongNo == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
@@ -298,7 +349,7 @@ public class SongBookController : ControllerBase
         song.RequiredPoints = request.RequiredPoints;
 
         await _db.SaveChangesAsync();
-        return Ok(Result<object>.Success(new { id = song.SongNo, title = song.Title }));
+        return Ok(Result<object>.Success(new { Id = song.SongNo, Title = song.Title }));
     }
 
     /// <summary>
@@ -310,7 +361,7 @@ public class SongBookController : ControllerBase
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Unauthorized();
 
-        var song = await _db.FuncSongBooks
+        var song = await _db.TableFuncSongBooks
             .FirstOrDefaultAsync(s => s.SongNo == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
         
         if (song == null)
@@ -319,7 +370,7 @@ public class SongBookController : ControllerBase
         song.IsDeleted = true;
         await _db.SaveChangesAsync();
 
-        return Ok(Result<object>.Success(new { id = song.SongNo }));
+        return Ok(Result<object>.Success(new { Id = song.SongNo }));
     }
 
     private string ComputeHash(byte[] data)
@@ -329,13 +380,13 @@ public class SongBookController : ControllerBase
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
-    private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
+    private async Task<CoreStreamerProfiles?> GetCachedProfileAsync(string uid)
     {
         var profile = await _identityCache.GetStreamerProfileAsync(uid);
         if (profile != null) return profile;
 
         var target = uid.ToLower();
-        return await _db.CoreStreamerProfiles
+        return await _db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
     }

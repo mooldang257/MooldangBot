@@ -30,7 +30,7 @@ public class FeatureExecutionBridgeHandler(
     {
         try
         {
-            // [1. Filtering]: 실행 대상 중 브릿지가 필요한 기능형 명령어들 추출 (Reply 및 전용 핸들러가 있는 Roulette 제외)
+            // [1. Filtering]: 실행 대상 중 브릿지가 필요한 기능형 명령어들 추출 (Reply 및 전용 핸들러가 있는 FuncRouletteMain 제외)
             var targets = notification.AllMatchedCommands
                 .Where(c => c.FeatureType != CommandFeatureType.Reply && c.FeatureType != CommandFeatureType.Roulette)
                 .ToList();
@@ -38,7 +38,7 @@ public class FeatureExecutionBridgeHandler(
             if (!targets.Any()) return;
 
             // [2. Context Preparation]: 스트리머 프로필 획득 (전략 실행에 필요)
-            var streamerProfile = await db.CoreStreamerProfiles.AsNoTracking()
+            var streamerProfile = await db.TableCoreStreamerProfiles.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.ChzzkUid == notification.StreamerUid, ct);
 
             if (streamerProfile == null)
@@ -71,8 +71,8 @@ public class FeatureExecutionBridgeHandler(
                     continue;
                 }
 
-                // [물멍]: UnifiedCommand 엔티티를 더미나 캐시 데이터로 재구성 (전략 내부에서 ID 등이 필요할 수 있음)
-                var commandEntity = new UnifiedCommand
+                // [물멍]: FuncCmdUnified 엔티티를 더미나 캐시 데이터로 재구성 (전략 내부에서 ID 등이 필요할 수 있음)
+                var commandEntity = new FuncCmdUnified
                 {
                     Id = commandMetadata.Id,
                     Keyword = commandMetadata.Keyword,

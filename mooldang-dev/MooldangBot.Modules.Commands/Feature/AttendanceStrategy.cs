@@ -23,32 +23,32 @@ public class AttendanceStrategy(
 {
     public string FeatureType => "Attendance";
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ICommandDbContext>();
-        var streamer = await db.CoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, ct);
+        var streamer = await db.TableCoreStreamerProfiles.FirstOrDefaultAsync(p => p.ChzzkUid == notification.Profile.ChzzkUid, ct);
         if (streamer == null) return CommandExecutionResult.Failure("스트리머 프로필을 찾을 수 없습니다.");
 
         // 1. 글로벌 시청자 확보 (이지스 통합 캐시 활용)
         var globalViewerId = await identityCache.SyncGlobalViewerIdAsync(notification.SenderId, notification.Username);
 
         // 2. 채널별 프로필 확보
-        var viewer = await db.CoreViewerRelations
+        var viewer = await db.TableCoreViewerRelations
             .FirstOrDefaultAsync(v => v.StreamerProfileId == streamer.Id && v.GlobalViewerId == globalViewerId, ct);
 
         if (viewer == null)
         {
-            viewer = new ViewerRelation 
+            viewer = new CoreViewerRelations 
             { 
                 StreamerProfileId = streamer.Id,
                 GlobalViewerId = globalViewerId
             };
-            db.CoreViewerRelations.Add(viewer);
+            db.TableCoreViewerRelations.Add(viewer);
         }
 
         // [v18.6] 🛡️ 오시리스의 무언: 방송 중이 아니거나 이미 출석했을 경우 Silent Ignore 처리
-        var activeSession = await db.SysBroadcastSessions
+        var activeSession = await db.TableSysBroadcastSessions
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.StreamerProfileId == streamer.Id && s.IsActive && s.EndTime == null, ct);
 
@@ -61,7 +61,7 @@ public class AttendanceStrategy(
 
         // 3. 정상 출석 로직 진입
         // [오시리스의 영명]: 방송 세션 기반 연속 출석 판정 로직
-        var latestSessions = await db.SysBroadcastSessions
+        var latestSessions = await db.TableSysBroadcastSessions
             .AsNoTracking()
             .Where(s => s.StreamerProfileId == streamer.Id && s.Id < activeSession.Id) // 현재 이전 세션 조회
             .OrderByDescending(s => s.Id)

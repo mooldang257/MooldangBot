@@ -3,17 +3,21 @@
     import { fade, fly } from 'svelte/transition';
     import { Home, Music, FerrisWheel, LogIn } from 'lucide-svelte';
     import { onMount } from 'svelte';
+    import { apiFetch } from '$lib/api/client';
 
-    // [물멍]: 시청자 전용 상태 관리
-    let isLoaded = false;
-    let isAuthenticated = false;
-    let userData = {
-        channelName: "시청자",
-        profileImageUrl: ""
-    };
+    let { children } = $props();
 
-    $: streamerId = $page.params.streamerId;
-    $: basePath = `/${streamerId}/viewer`;
+    // [물멍]: 시청자 전용 상태 관리 (Svelte 5 Runes)
+    let isLoaded = $state(false);
+    let isAuthenticated = $state(false);
+    let userData = $state({
+        ChannelName: "시청자",
+        ProfileImageUrl: ""
+    });
+
+    const streamerId = $derived($page.params.streamerId);
+    const basePath = $derived(`/${streamerId}/viewer`);
+    const currentPath = $derived($page.url.pathname);
 
     onMount(async () => {
         await checkAuth();
@@ -22,29 +26,24 @@
 
     async function checkAuth() {
         try {
-            const res = await fetch('/api/auth/me');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.isAuthenticated) {
-                    isAuthenticated = true;
-                    userData = {
-                        channelName: data.channelName,
-                        profileImageUrl: data.profileImageUrl ? `/api/proxy/image?url=${encodeURIComponent(data.profileImageUrl)}` : ""
-                    };
-                }
+            const res: any = await apiFetch('/api/auth/me');
+            if (res.IsAuthenticated) {
+                isAuthenticated = true;
+                userData = {
+                    ChannelName: res.ChannelName,
+                    ProfileImageUrl: res.ProfileImageUrl ? `/api/proxy/image?url=${encodeURIComponent(res.ProfileImageUrl)}` : ""
+                };
             }
         } catch (e) {
             console.error("Viewer Layout 인증 확인 실패:", e);
         }
     }
 
-    const navItems = [
+    const navItems = $derived([
         { id: 'home', icon: Home, label: '대시보드', path: basePath },
         { id: 'song', icon: Music, label: '신청곡', path: `${basePath}/song` },
         { id: 'roulette', icon: FerrisWheel, label: '룰렛', path: `${basePath}/roulette` },
-    ];
-
-    $: currentPath = $page.url.pathname;
+    ]);
 </script>
 
 <div class="viewer-layout min-h-screen flex flex-col bg-[#f8fbff] font-sans selection:bg-primary/20">
@@ -65,15 +64,15 @@
                 {#if !isAuthenticated}
                     <button 
                         class="flex items-center gap-2 px-4 py-2 bg-chzzk text-white text-[10px] font-black rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all outline-none"
-                        on:click={() => window.location.href = '/api/auth/chzzk-login?type=viewer'}
+                        onclick={() => window.location.href = `/api/auth/chzzk-login?type=viewer&redirect=${encodeURIComponent(currentPath)}`}
                     >
                         <LogIn size={12} />
                         참여하기 (로그인)
                     </button>
                 {:else}
                     <div class="flex items-center gap-2 bg-white/60 p-1 pr-3 rounded-full border border-white shadow-sm" in:fade>
-                        <img src={userData.profileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-6 h-6 rounded-full border-2 border-white object-cover" />
-                        <span class="font-bold text-slate-700 text-[10px] truncate max-w-[80px]">{userData.channelName}</span>
+                        <img src={userData.ProfileImageUrl || "/images/wman_sd_transparent.png"} alt="Profile" class="w-6 h-6 rounded-full border-2 border-white object-cover" />
+                        <span class="font-bold text-slate-700 text-[10px] truncate max-w-[80px]">{userData.ChannelName}</span>
                     </div>
                 {/if}
             {/if}
@@ -82,7 +81,7 @@
 
     <!-- [메인 콘텐츠] -->
     <main class="flex-1 w-full pt-20 px-4 md:px-8 max-w-5xl mx-auto">
-        <slot />
+        {@render children()}
     </main>
 
     <!-- [하단 퀵 네비바 (모바일 대응)] -->
@@ -92,7 +91,7 @@
                 href={item.path} 
                 class="flex flex-col items-center gap-1 no-underline transition-all group {currentPath === item.path ? 'text-primary scale-110' : 'text-slate-400 hover:text-slate-600'}"
             >
-                <svelte:component this={item.icon} size={20} strokeWidth={currentPath === item.path ? 3 : 2.5} class="group-hover:scale-110 transition-transform" />
+                <item.icon size={20} strokeWidth={currentPath === item.path ? 3 : 2.5} class="group-hover:scale-110 transition-transform" />
                 <span class="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
             </a>
         {/each}

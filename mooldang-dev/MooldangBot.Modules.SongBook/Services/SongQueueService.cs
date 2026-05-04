@@ -28,9 +28,9 @@ public class SongQueueService(
         int maxLimit = (status == SongStatus.Completed) ? 50 : config.GetValue<int>("Pagination:MaxLimit", 100);
         int effectiveLimit = Math.Min(request.Limit, maxLimit);
 
-        var query = db.FuncSongQueues
+        var query = db.TableFuncSongListQueues
             .AsNoTracking()
-            .Include(s => s.GlobalViewer)
+            .Include(s => s.CoreGlobalViewers)
             .Where(s => s.StreamerProfileId == streamer.Id && !s.IsDeleted);
 
         if (status.HasValue)
@@ -58,29 +58,29 @@ public class SongQueueService(
                 Cost = s.Cost,
                 CostType = s.CostType,
                 CreatedAt = s.CreatedAt,
-                GlobalViewer = s.GlobalViewer,
-                Requester = s.RequesterNickname ?? (s.GlobalViewer != null ? s.GlobalViewer.Nickname : "익명"),
-                Url = db.FuncMasterSongStagings
+                CoreGlobalViewers = s.CoreGlobalViewers,
+                Requester = s.RequesterNickname ?? (s.CoreGlobalViewers != null ? s.CoreGlobalViewers.Nickname : "익명"),
+                Url = db.TableFuncSongMasterStaging
                         .Where(l => l.SongLibraryId == s.SongLibraryId)
                         .Select(l => l.YoutubeUrl)
                         .FirstOrDefault()
-                    ?? db.FuncStreamerSongLibraries
+                    ?? db.TableFuncSongStreamerLibrary
                         .Where(l => l.StreamerProfileId == s.StreamerProfileId && l.SongLibraryId == s.SongLibraryId)
                         .Select(l => l.YoutubeUrl)
                         .FirstOrDefault()
-                    ?? db.FuncMasterSongLibraries
+                    ?? db.TableFuncSongMasterLibrary
                         .Where(m => m.SongLibraryId == s.SongLibraryId)
                         .Select(m => m.YoutubeUrl)
                         .FirstOrDefault(),
-                LyricsUrl = db.FuncMasterSongStagings
+                LyricsUrl = db.TableFuncSongMasterStaging
                         .Where(l => l.SongLibraryId == s.SongLibraryId)
                         .Select(l => l.LyricsUrl)
                         .FirstOrDefault()
-                    ?? db.FuncStreamerSongLibraries
+                    ?? db.TableFuncSongStreamerLibrary
                         .Where(l => l.StreamerProfileId == s.StreamerProfileId && l.SongLibraryId == s.SongLibraryId)
                         .Select(l => l.LyricsUrl)
                         .FirstOrDefault()
-                    ?? db.FuncMasterSongLibraries
+                    ?? db.TableFuncSongMasterLibrary
                         .Where(m => m.SongLibraryId == s.SongLibraryId)
                         .Select(m => m.LyricsUrl)
                         .FirstOrDefault(),
@@ -106,7 +106,7 @@ public class SongQueueService(
             SourceId = request.GlobalViewerId?.ToString()
         });
 
-        var newSong = new MooldangBot.Domain.Entities.SongQueue
+        var newSong = new MooldangBot.Domain.Entities.FuncSongListQueues
         {
             StreamerProfileId = profile.Id,
             GlobalViewerId = request.GlobalViewerId,
@@ -122,11 +122,11 @@ public class SongQueueService(
             CreatedAt = KstClock.Now
         };
 
-        db.FuncSongQueues.Add(newSong);
+        db.TableFuncSongListQueues.Add(newSong);
 
         if (omakaseId.HasValue)
         {
-            var omakase = await db.FuncStreamerOmakases
+            var omakase = await db.TableFuncSongListOmakases
                 .Where(o => o.Id == omakaseId.Value && o.StreamerProfileId == profile.Id)
                 .FirstOrDefaultAsync();
 
@@ -135,7 +135,7 @@ public class SongQueueService(
                 omakase.Count--;
                 if (omakase.Count < 0) omakase.Count = 0;
 
-                var activeSession = await db.FuncSonglistSessions
+                var activeSession = await db.TableFuncSongListSessions
                     .Where(s => s.StreamerProfileId == profile.Id && s.IsActive && !s.IsDeleted)
                     .FirstOrDefaultAsync();
                 if (activeSession != null) activeSession.RequestCount++;
@@ -145,6 +145,7 @@ public class SongQueueService(
         await db.SaveChangesAsync();
         songBuffer.AddSong(chzzkUid, newSong.Id, newSong.RequesterNickname ?? "익명", newSong.Title, newSong.Artist);
         await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+        await notificationService.NotifySongQueueChangedAsync(chzzkUid);
 
         return Result<SongQueueResponseDto>.Success(new SongQueueResponseDto
         {
@@ -165,12 +166,12 @@ public class SongQueueService(
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Result<bool>.Failure("스트리머를 찾을 수 없습니다.");
 
-        var song = await db.FuncSongQueues
+        var song = await db.TableFuncSongListQueues
             .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
 
         if (song == null) return Result<bool>.Failure("지정된 곡을 찾을 수 없습니다.");
 
-        var activeSession = await db.FuncSonglistSessions
+        var activeSession = await db.TableFuncSongListSessions
             .Where(s => s.StreamerProfileId == profile.Id && s.IsActive && !s.IsDeleted)
             .FirstOrDefaultAsync();
 
@@ -187,7 +188,7 @@ public class SongQueueService(
 
         if (status == SongStatus.Playing)
         {
-            var current = await db.FuncSongQueues
+            var current = await db.TableFuncSongListQueues
                 .FirstOrDefaultAsync(s => s.StreamerProfileId == profile.Id && s.Status == SongStatus.Playing && !s.IsDeleted);
             if (current != null)
             {
@@ -207,6 +208,7 @@ public class SongQueueService(
         song.Status = status;
         await db.SaveChangesAsync();
         await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+        await notificationService.NotifySongQueueChangedAsync(chzzkUid);
         return Result<bool>.Success(true);
     }
 
@@ -215,17 +217,18 @@ public class SongQueueService(
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Result<bool>.Failure("스트리머를 찾을 수 없습니다.");
 
-        var songs = await db.FuncSongQueues
+        var songs = await db.TableFuncSongListQueues
             .Where(s => ids.Contains(s.Id) && s.StreamerProfileId == profile.Id && !s.IsDeleted)
             .ToListAsync();
 
         if (!songs.Any()) return Result<bool>.Failure("삭제할 대상을 찾을 수 없습니다.");
 
-        db.FuncSongQueues.RemoveRange(songs);
+        db.TableFuncSongListQueues.RemoveRange(songs);
         await db.SaveChangesAsync();
 
         foreach (var songId in ids) songBuffer.RemoveSong(chzzkUid, songId);
         await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+        await notificationService.NotifySongQueueChangedAsync(chzzkUid);
         return Result<bool>.Success(true);
     }
 
@@ -234,7 +237,7 @@ public class SongQueueService(
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Result<SongQueueResponseDto>.Failure("스트리머를 찾을 수 없습니다.");
 
-        var songItem = await db.FuncSongQueues
+        var songItem = await db.TableFuncSongListQueues
             .FirstOrDefaultAsync(s => s.Id == id && s.StreamerProfileId == profile.Id && !s.IsDeleted);
 
         if (songItem == null) return Result<SongQueueResponseDto>.Failure("지정된 곡을 찾을 수 없습니다.");
@@ -256,6 +259,7 @@ public class SongQueueService(
 
         await db.SaveChangesAsync();
         await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+        await notificationService.NotifySongQueueChangedAsync(chzzkUid);
 
         return Result<SongQueueResponseDto>.Success(new SongQueueResponseDto
         {
@@ -276,7 +280,7 @@ public class SongQueueService(
         var streamer = await GetCachedProfileAsync(chzzkUid);
         if (streamer == null) return Result<int>.Failure("스트리머를 찾을 수 없습니다.");
 
-        int deletedCount = await db.FuncSongQueues
+        int deletedCount = await db.TableFuncSongListQueues
             .Where(s => s.StreamerProfileId == streamer.Id && s.Status == status && !s.IsDeleted)
             .ExecuteDeleteAsync();
 
@@ -284,6 +288,7 @@ public class SongQueueService(
         {
             songBuffer.Clear(chzzkUid);
             await notificationService.BroadcastSongOverlayUpdateAsync(chzzkUid);
+            await notificationService.NotifySongQueueChangedAsync(chzzkUid);
             return Result<int>.Success(deletedCount);
         }
         return Result<int>.Success(0);
@@ -294,7 +299,7 @@ public class SongQueueService(
         var profile = await GetCachedProfileAsync(chzzkUid);
         if (profile == null) return Result<bool>.Failure("스트리머를 찾을 수 없습니다.");
 
-        var songs = await db.FuncSongQueues
+        var songs = await db.TableFuncSongListQueues
             .Where(s => s.StreamerProfileId == profile.Id && ids.Contains(s.Id) && s.Status == SongStatus.Pending && !s.IsDeleted)
             .ToListAsync();
 
@@ -313,13 +318,13 @@ public class SongQueueService(
         return Result<bool>.Success(true);
     }
 
-    private async Task<StreamerProfile?> GetCachedProfileAsync(string uid)
+    private async Task<CoreStreamerProfiles?> GetCachedProfileAsync(string uid)
     {
         var profile = await identityCache.GetStreamerProfileAsync(uid);
         if (profile != null) return profile;
 
         var target = uid.ToLower();
-        return await db.CoreStreamerProfiles
+        return await db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == target || (p.Slug != null && p.Slug.ToLower() == target));
     }

@@ -52,7 +52,7 @@ public class ChatInteractionHandler(
         bool isCommand = await DetermineIfCommandAsync(profile.ChzzkUid, message);
 
         // 3. [영속성 위임]: 버퍼 서비스를 통해 벌크 적재 요청 (Non-blocking)
-        var log = new ChatInteractionLog
+        var log = new LogChatInteractions
         {
             StreamerProfileId = profile.Id,
             SenderNickname = senderNickname,

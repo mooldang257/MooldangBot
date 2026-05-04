@@ -17,7 +17,7 @@
 | **MooldangBot.Contracts** | 108 | 3,284 | 인터페이스, DTO, 이벤트 |
 | **MooldangBot.ChzzkAPI** | 33 | 3,120 | 치지직 게이트웨이 (별도 프로세스) |
 | **MooldangBot.Domain** | 57 | 2,615 | 엔티티, 값 객체 |
-| **MooldangBot.Modules.*** | 51 | 3,810 | Commands, SongBook, Roulette, Point |
+| **MooldangBot.Modules.*** | 51 | 3,810 | Commands, FuncSongBooks, FuncRouletteMain, Point |
 | **MooldangBot.Api** | 9 | 1,021 | 진입점 (Program.cs 403줄) |
 | **MooldangBot.Tests** | 4 | 402 | 테스트 |
 | **도구류** (Cli, Verifier, StressTool 등) | 7 | 906 | 운영 도구 |
@@ -119,7 +119,7 @@ graph TB
 
 | 항목 | 설명 | 점수 |
 |------|------|:----:|
-| **모듈 분리** | Commands, SongBook, Roulette, Point가 독립 프로젝트 | ⭐⭐⭐⭐⭐ |
+| **모듈 분리** | Commands, FuncSongBooks, FuncRouletteMain, Point가 독립 프로젝트 | ⭐⭐⭐⭐⭐ |
 | **주석 문화** | 거의 모든 클래스에 역할 설명 주석, 버전 태깅 | ⭐⭐⭐⭐⭐ |
 | **DI 구조** | 레이어별 `AddXxxServices()` 확장 메서드로 명확한 분리 | ⭐⭐⭐⭐ |
 | **명확한 네이밍** | "익산 보험", "오시리스의 서기" 등 비즈니스 로직에 의미 부여 | ⭐⭐⭐⭐ |
@@ -197,7 +197,7 @@ graph TB
 | Core | `SystemWatchdogService` | WorkerSettings:Core:SystemWatchdogService |
 | Broadcast | `TokenRenewalBackgroundService` | WorkerSettings:Broadcast:TokenRenewal |
 | Broadcast | `CategorySyncBackgroundService` | WorkerSettings:Broadcast:CategorySync |
-| Broadcast | `PeriodicMessageWorker` | WorkerSettings:Broadcast:PeriodicMessage |
+| Broadcast | `PeriodicMessageWorker` | WorkerSettings:Broadcast:SysPeriodicMessages |
 | Maintenance | `StagingCleanupWorker` | WorkerSettings:Maintenance:StagingCleanup |
 | Maintenance | `RouletteLogCleanupService` | WorkerSettings:Maintenance:RouletteLogCleanup |
 | Maintenance | `ZeroingWorker` | WorkerSettings:Maintenance:Zeroing |
@@ -244,14 +244,14 @@ graph TB
 ### ✅ ~~Priority 2~~: "복잡도를 줄이세요" — **완료** (2026-04-16~17)
 
 1. [x] **Contracts 프로젝트 경량화**: 모듈별 인터페이스를 해당 모듈 `Abstractions/` 폴더로 이동
-   - `ISongBookDbContext` → `Modules.SongBook/Abstractions/`
-   - `IRouletteDbContext` → `Modules.Roulette/Abstractions/`
+   - `ISongBookDbContext` → `Modules.FuncSongBooks/Abstractions/`
+   - `IRouletteDbContext` → `Modules.FuncRouletteMain/Abstractions/`
    - `IPointDbContext` → `Modules.Point/Abstractions/`
    - `ICommandDbContext` → `Modules.Commands/Abstractions/`
 
 2. [x] **AppDbContext 분리**: `partial class` 전환 + `IEntityTypeConfiguration<T>` 8개 파일로 분산
    - `AppDbContext.cs` (44줄) + `AppDbContext.DbSets.cs` (71줄)
-   - `Configurations/` — Core, SongBook, Roulette, Point, Command, Overlay, Philosophy, Ledger
+   - `Configurations/` — Core, FuncSongBooks, FuncRouletteMain, Point, Command, Overlay, Philosophy, Ledger
 
 3. [x] **워커 등록 통합**: `WorkerRegistry.cs`에서 14개 워커 일괄 등록, `appsettings.json` 기반 주기 관리
 
@@ -284,7 +284,7 @@ graph TB
 #### Phase 2: Contracts 프로젝트 완전 해체 (난이도: ⭐⭐⭐⭐ | 위험도: 🟡)
 
 - 공용 타입(Common, AI, Chzzk, Extensions, Security, Events) → `Application/Contracts/`로 이동
-- 모듈 전용 타입(SongBook, Roulette, Point, Commands) → 각 모듈 내부로 이동
+- 모듈 전용 타입(FuncSongBooks, FuncRouletteMain, Point, Commands) → 각 모듈 내부로 이동
 - Contracts 프로젝트 솔루션 및 디렉토리 삭제
 - **독립 브랜치**: `refactor/contracts-dissolution`
 
@@ -301,7 +301,7 @@ graph TB
 
 - `Modules.Core`, `Modules.Broadcast`, `Modules.Ledger` (Features 폴더만 존재)
 - → `Application/Features/Core/`, `Features/Broadcast/`, `Features/Ledger/`로 흡수
-- Commands, SongBook, Roulette, Point는 독립 유지 (실질적 모듈)
+- Commands, FuncSongBooks, FuncRouletteMain, Point는 독립 유지 (실질적 모듈)
 
 **결과**: 12개 → **10개**
 

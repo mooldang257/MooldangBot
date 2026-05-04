@@ -10,63 +10,67 @@ using MooldangBot.Infrastructure.Sagas;
 namespace MooldangBot.Infrastructure.Persistence;
 
 // partial 클래스를 사용하여 기존 AppDbContext의 덩치를 줄입니다.
-public partial class AppDbContext : IAppDbContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext
+public partial class AppDbContext : IAppDbContext, ISongBookDbContext, IRouletteDbContext, IPointDbContext, ICommandDbContext, ICommonDbContext
 {
     // ────────── [Core & System] ──────────
-    public DbSet<StreamerProfile> CoreStreamerProfiles { get; set; }
-    public DbSet<GlobalViewer> CoreGlobalViewers { get; set; }
-    public DbSet<ViewerRelation> CoreViewerRelations { get; set; }
-    public DbSet<StreamerManager> CoreStreamerManagers { get; set; }
-    public DbSet<ChzzkCategory> SysChzzkCategories { get; set; }
-    public DbSet<ChzzkCategoryAlias> SysChzzkCategoryAliases { get; set; }
-    public DbSet<StreamerPreference> SysStreamerPreferences { get; set; }
-    public DbSet<PeriodicMessage> SysPeriodicMessages { get; set; }
-    public DbSet<BroadcastSession> SysBroadcastSessions { get; set; }
-    public DbSet<BroadcastHistoryLog> LogBroadcastHistory { get; set; }
+    public DbSet<CoreStreamerProfiles> TableCoreStreamerProfiles { get; set; }
+    public DbSet<CoreGlobalViewers> TableCoreGlobalViewers { get; set; }
+    public DbSet<CoreViewerRelations> TableCoreViewerRelations { get; set; }
+    public DbSet<CoreStreamerManagers> TableCoreStreamerManagers { get; set; }
+    public DbSet<SysChzzkCategories> TableSysChzzkCategories { get; set; }
+    public DbSet<SysChzzkCategoryAliases> TableSysChzzkCategoryAliases { get; set; }
+    public DbSet<SysStreamerPreferences> TableSysStreamerPreferences { get; set; }
+    public DbSet<SysPeriodicMessages> TableSysPeriodicMessages { get; set; }
+    public DbSet<SysBroadcastSessions> TableSysBroadcastSessions { get; set; }
+    public DbSet<LogBroadcastHistory> TableLogBroadcastHistory { get; set; }
 
-    // ────────── [SongBook & Media] ──────────
-    public DbSet<SongQueue> FuncSongQueues { get; set; }
-    public DbSet<SongBook> FuncSongBooks { get; set; }
+    // ────────── [FuncSongBooks & Media] ──────────
+    public DbSet<FuncSongListQueues> TableFuncSongListQueues { get; set; }
+    public DbSet<FuncSongBooks> TableFuncSongBooks { get; set; }
 
-    public DbSet<SonglistSession> FuncSonglistSessions { get; set; }
-    public DbSet<StreamerOmakaseItem> FuncStreamerOmakases { get; set; }
-    public DbSet<Master_SongLibrary> FuncMasterSongLibraries { get; set; }
-    public DbSet<Streamer_SongLibrary> FuncStreamerSongLibraries { get; set; }
-    public DbSet<Master_SongStaging> FuncMasterSongStagings { get; set; }
+    public DbSet<FuncSongListSessions> TableFuncSongListSessions { get; set; }
+    public DbSet<FuncSongListOmakases> TableFuncSongListOmakases { get; set; }
+    public DbSet<FuncSongMasterLibrary> TableFuncSongMasterLibrary { get; set; }
+    public DbSet<FuncSongStreamerLibrary> TableFuncSongStreamerLibrary { get; set; }
+    public DbSet<FuncSongMasterStaging> TableFuncSongMasterStaging { get; set; }
+    public DbSet<GlobalMusicMetadata> TableGlobalMusicMetadata { get; set; }
 
-    // ────────── [Roulette] ──────────
-    public DbSet<Roulette> FuncRoulettes { get; set; }
-    public DbSet<RouletteItem> FuncRouletteItems { get; set; }
-    public DbSet<RouletteLog> FuncRouletteLogs { get; set; }
-    public DbSet<RouletteSpin> FuncRouletteSpins { get; set; }
-    public DbSet<SoundAsset> FuncSoundAssets { get; set; }
+    // ────────── [FuncRouletteMain] ──────────
+    public DbSet<FuncRouletteMain> TableFuncRouletteMain { get; set; }
+    public DbSet<FuncRouletteItems> TableFuncRouletteItems { get; set; }
+    public DbSet<LogRouletteResults> TableLogRouletteResults { get; set; }
+    public DbSet<FuncRouletteSpins> TableFuncRouletteSpins { get; set; }
+    public DbSet<FuncSoundAssets> TableFuncSoundAssets { get; set; }
 
     // ────────── [Point & Wallet] ──────────
-    public DbSet<ViewerPoint> FuncViewerPoints { get; set; }
-    public DbSet<ViewerDonation> FuncViewerDonations { get; set; }
-    public DbSet<ViewerDonationHistory> FuncViewerDonationHistories { get; set; }
+    public DbSet<FuncViewerPoints> TableFuncViewerPoints { get; set; }
+    public DbSet<FuncViewerDonations> TableFuncViewerDonations { get; set; }
+    public DbSet<FuncViewerDonationHistories> TableFuncViewerDonationHistories { get; set; }
 
     // ────────── [Commands & Saga] ──────────
-    public DbSet<UnifiedCommand> SysUnifiedCommands { get; set; }
-    public DbSet<CommandExecutionSagaState> CommandExecutionSagaStates { get; set; }
+    public DbSet<FuncCmdUnified> TableFuncCmdUnified { get; set; }
+    public DbSet<SysSagaCommandExecutions> TableSysSagaCommandExecutions { get; set; }
 
     // ────────── [Overlay] ──────────
-    public DbSet<AvatarSetting> SysAvatarSettings { get; set; }
-    public DbSet<OverlayPreset> SysOverlayPresets { get; set; }
-    public DbSet<SharedComponent> SysSharedComponents { get; set; }
+    public DbSet<SysAvatarSettings> TableSysAvatarSettings { get; set; }
+    public DbSet<SysOverlayPresets> TableSysOverlayPresets { get; set; }
+    public DbSet<SysSharedComponents> TableSysSharedComponents { get; set; }
+
+    // ────────── [Common] ──────────
+    public DbSet<CommonThumbnail> TableCommonThumbnail { get; set; }
 
     // ────────── [IAMF Philosophy] ──────────
-    public DbSet<IamfScenario> IamfScenarios { get; set; }
-    public DbSet<IamfGenosRegistry> IamfGenosRegistries { get; set; }
-    public DbSet<IamfParhosCycle> IamfParhosCycles { get; set; }
-    public DbSet<IamfVibrationLog> LogIamfVibrations { get; set; }
-    public DbSet<IamfStreamerSetting> IamfStreamerSettings { get; set; }
-    public DbSet<StreamerKnowledge> SysStreamerKnowledges { get; set; }
+    public DbSet<IamfScenarios> TableIamfScenarios { get; set; }
+    public DbSet<IamfGenosRegistry> TableIamfGenosRegistry { get; set; }
+    public DbSet<IamfParhosCycles> TableIamfParhosCycles { get; set; }
+    public DbSet<LogIamfVibrations> TableLogIamfVibrations { get; set; }
+    public DbSet<IamfStreamerSettings> TableIamfStreamerSettings { get; set; }
+    public DbSet<SysStreamerKnowledges> TableSysStreamerKnowledges { get; set; }
 
     // ────────── [Ledger & Stats (천상의 장부)] ──────────
-    public DbSet<PointTransactionHistory> LogPointTransactions { get; set; }
-    public DbSet<PointDailySummary> LogPointDailySummaries { get; set; }
-    public DbSet<LogRouletteStats> LogRouletteStats { get; set; }
-    public DbSet<CommandExecutionLog> LogCommandExecutions { get; set; }
-    public DbSet<ChatInteractionLog> LogChatInteractions { get; set; }
+    public DbSet<LogPointTransactions> TableLogPointTransactions { get; set; }
+    public DbSet<LogPointDailySummaries> TableLogPointDailySummaries { get; set; }
+    public DbSet<LogRouletteStats> TableLogRouletteStats { get; set; }
+    public DbSet<LogCommandExecutions> TableLogCommandExecutions { get; set; }
+    public DbSet<LogChatInteractions> TableLogChatInteractions { get; set; }
 }

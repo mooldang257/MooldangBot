@@ -63,9 +63,10 @@ export const handle: Handle = async ({ event, resolve }) => {
             
             if (res.ok) {
                 const result = await res.json();
-                if (result.isSuccess && result.value) {
+                // [Fix]: 백엔드가 PascalCase(PropertyNamingPolicy=null)를 사용하므로 대문자로 접근
+                if (result.IsSuccess && result.Value) {
                     // 검증 성공: 실질적 UID 주입
-                    event.locals.streamerUid = result.value.chzzkUid;
+                    event.locals.streamerUid = result.Value.chzzkUid;
                 } else {
                     // 권한 없음 또는 슬러그 요류: 메인으로 튕겨냄 (Toast 알림용 파라미터 포함)
                     throw redirect(303, `/?error=unauthorized&target=${segment}`);
@@ -79,8 +80,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             const res = await event.fetch(`/api/auth/resolve-slug/${segment}`);
             if (res.ok) {
                 const result = await res.json();
-                if (result.isSuccess && result.value) {
-                    event.locals.streamerUid = result.value.chzzkUid;
+                if (result.IsSuccess && result.Value) {
+                    event.locals.streamerUid = result.Value.chzzkUid;
                 }
             }
         }

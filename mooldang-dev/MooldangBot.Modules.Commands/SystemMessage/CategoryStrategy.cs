@@ -28,7 +28,7 @@ public class CategoryStrategy(
         { "로아", "로스트아크" }, { "철권", "철권 8" }
     };
 
-    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, UnifiedCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> ExecuteAsync(ChatMessageEvent notification, FuncCmdUnified command, CancellationToken ct)
     {
         return await ExecuteInternalAsync(notification, command.Keyword, command.ResponseText, ct);
     }

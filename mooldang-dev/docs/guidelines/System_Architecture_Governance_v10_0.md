@@ -8,7 +8,7 @@
 
 시청자 데이터는 유일성(Unique)과 익명성(Privacy)을 동시에 보장하기 위해 중앙 집중식으로 관리됩니다.
 
-### 🏛️ 핵심 엔티티: [GlobalViewer](../../MooldangBot.Domain/Entities/GlobalViewer.cs)
+### 🏛️ 핵심 엔티티: [CoreGlobalViewers](../../MooldangBot.Domain/Entities/CoreGlobalViewers.cs)
 - **테이블명**: `core_global_viewers`
 - **관리 원칙**: 모든 시청자 식별 정보는 `MooldangBot.Domain`의 엔티티에서 관리됩니다. 타 도메인은 반드시 `GlobalViewerId`를 통해 마스터 데이터를 참조해야 합니다.
 

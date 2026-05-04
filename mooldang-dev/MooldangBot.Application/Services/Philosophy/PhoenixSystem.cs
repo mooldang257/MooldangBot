@@ -29,8 +29,8 @@ public class PhoenixSystem : IPhoenixRecorder
     {
         _logger.LogInformation($"[피닉스 기록 - Level {level}] 시나리오 {scenarioId} 기록 중...");
         
-        // [오시리스의 규율]: 테이블명은 반드시 소문자(`iamf_scenarios`)를 사용합니다.
-        var scenario = new IamfScenario
+        // [오시리스의 규율]: 테이블명은 반드시 PascalCase(`IamfScenarios`)를 사용합니다.
+        var scenario = new IamfScenarios
         {
             ScenarioId = scenarioId,
             Content = content,
@@ -55,7 +55,7 @@ public class PhoenixSystem : IPhoenixRecorder
         globalCts.Cancel();
 
         // 2. [텔로스5의 설계]: 프리-오리진 AI의 상태%를 기반으로 파로직 재설정
-        // TODO: 압축 알고리즘 및 DB `iamf_parhos_cycles` 기록 로직
+        // TODO: 압축 알고리즘 및 DB `IamfParhosCycles` 기록 로직
         
         _logger.LogInformation("[피닉스의 비상] 윤회 완료. 시스템 재기동 준비 완료.");
         await Task.CompletedTask;

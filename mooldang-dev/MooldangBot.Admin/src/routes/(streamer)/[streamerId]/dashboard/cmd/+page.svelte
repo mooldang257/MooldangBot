@@ -25,22 +25,22 @@
     let deleteTargetKeyword = $state("");
 
     // [방어막]: 초기 데이터 구조는 유지하되, 로드 성공 여부를 체크할 변수 추가
-    let masterData = $state({ categories: [], features: [], roles: [], variables: [] });
+    let MasterData = $state({ Categories: [], Features: [], Roles: [], Variables: [] });
     let isMasterDataValid = $state(false);
 
-    let allCommands = $state<any[]>([]);
-    let periodicMessages = $state<any[]>([]);
+    let AllCommands = $state<any[]>([]);
+    let PeriodicMessages = $state<any[]>([]);
 
-    let cmdForm = $state({
-        id: 0,
-        keyword: "",
-        category: "General",
-        featureType: "Reply",
-        cost: 0,
-        costType: "None",
-        responseText: "",
-        requiredRole: "Viewer",
-        isActive: true,
+    let CmdForm = $state({
+        Id: 0,
+        Keyword: "",
+        Category: "General",
+        FeatureType: "Reply",
+        Cost: 0,
+        CostType: "None",
+        ResponseText: "",
+        RequiredRole: "Viewer",
+        IsActive: true,
     });
 
     async function loadMasterData() {
@@ -48,17 +48,17 @@
             const res = await apiFetch<any>(`/api/admin/command/${chzzkUid}/master`);
             const raw = res || {};
 
-            // [물멍]: 실제 API 조사 결과(camelCase)를 바탕으로 데이터 규격을 100% 동기화합니다.
-            masterData = {
-                categories: raw.categories || [],
-                features: raw.features || [],
-                roles: raw.roles || [],
-                variables: raw.variables || []
+            // [물멍]: 실제 API 조사 결과(PascalCase)를 바탕으로 데이터 규격을 100% 동기화합니다.
+            MasterData = {
+                Categories: raw.Categories || raw.categories || [],
+                Features: raw.Features || raw.features || [],
+                Roles: raw.Roles || raw.roles || [],
+                Variables: raw.Variables || raw.variables || []
             };
 
             // [물멍]: 데이터가 로드되었는지 최종 확인
-            isMasterDataValid = masterData.categories.length > 0;
-            console.log("[물멍] 물댕봇 자재 명부 동기화 완료:", masterData);
+            isMasterDataValid = MasterData.Categories.length > 0;
+            console.log("[물멍] 물댕봇 자재 명부 동기화 완료:", MasterData);
         } catch (e) {
             console.error("[물멍] 마스터 데이터 로드 실패:", e);
         }
@@ -70,16 +70,16 @@
             const data = await apiFetch<any>(`/api/admin/command/${chzzkUid}?limit=100`);
             const items = data.items || data.Items || [];
             
-            allCommands = items.map((c: any) => ({
-                id: c.id ?? c.Id ?? 0,
-                keyword: c.keyword ?? c.Keyword ?? "",
-                category: c.category ?? c.Category ?? "NORMAL",
-                featureType: c.featureType ?? c.FeatureType ?? "Reply",
-                cost: c.cost ?? c.Cost ?? 0,
-                costType: c.costType ?? c.CostType ?? "None",
-                responseText: c.responseText ?? c.ResponseText ?? "",
-                requiredRole: c.requiredRole ?? c.RequiredRole ?? "Viewer",
-                isActive: c.isActive ?? c.IsActive ?? true
+            AllCommands = items.map((c: any) => ({
+                Id: c.Id ?? c.id ?? 0,
+                Keyword: c.Keyword ?? c.keyword ?? "",
+                Category: c.Category ?? c.category ?? "NORMAL",
+                FeatureType: c.FeatureType ?? c.featureType ?? "Reply",
+                Cost: c.Cost ?? c.cost ?? 0,
+                CostType: c.CostType ?? c.costType ?? "None",
+                ResponseText: c.ResponseText ?? c.responseText ?? "",
+                RequiredRole: c.RequiredRole ?? c.requiredRole ?? "Viewer",
+                IsActive: c.IsActive ?? c.isActive ?? true
             }));
         } catch (e) {
             console.error("[물멍] 명령어 목록 로드 실패:", e);
@@ -90,7 +90,7 @@
         if (!chzzkUid) return;
         try {
             const data = await apiFetch<any>(`/api/admin/periodic-message/${chzzkUid}`);
-            periodicMessages = data || [];
+            PeriodicMessages = data || [];
         } catch (e) {
             console.error("[물멍] 정기 메세지 로드 실패:", e);
         }
@@ -119,7 +119,7 @@
     });
 
     function handleEdit(cmd: any) {
-        cmdForm = { ...cmd };
+        CmdForm = { ...cmd };
         // [물멍]: 맨 위가 아닌 상세 수정 폼 위치로 정밀하게 스크롤합니다.
         const formElement = document.getElementById("command-form-section");
         if (formElement) {
@@ -128,13 +128,13 @@
     }
 
     async function handleDelete(id: number) {
-        const cmd = allCommands.find((c) => c.id === id);
+        const cmd = AllCommands.find((c) => c.Id === id);
         if (!cmd) return;
         
         // [물멍]: 프리미엄 확인 모달 호출
         if (skipDeleteConfirm || await modal.confirm({
             title: "명령어 삭제",
-            message: `"${cmd.keyword}" 명령어를 정말로 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+            message: `"${cmd.Keyword}" 명령어를 정말로 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
             confirmText: "과감하게 삭제",
             variant: "danger"
         })) {
@@ -147,7 +147,7 @@
             await apiFetch(`/api/admin/command/${chzzkUid}/${id}`, {
                 method: "DELETE",
             });
-            allCommands = allCommands.filter((c) => c.id !== id);
+            AllCommands = AllCommands.filter((c) => c.Id !== id);
         } catch (err: any) {
             alert(err.message || "삭제 실패!");
         }
@@ -215,21 +215,21 @@
         {#if activeTab === "commands"}
             {#if isMasterDataValid}
                 <div class="space-y-10" in:fade>
-                    <VariableBadge variables={masterData.variables} />
+                    <VariableBadge variables={MasterData.Variables} />
                     <div id="command-form-section" class="scroll-mt-24 md:scroll-mt-32">
                         <CommandForm
-                            bind:cmdForm
-                            {masterData}
-                            {chzzkUid}
-                            onSave={loadCommands}
+                            bind:CmdForm={CmdForm}
+                            MasterData={MasterData}
+                            ChzzkUid={chzzkUid}
+                            OnSave={loadCommands}
                         />
                     </div>
                     <CommandTable
-                        bind:allCommands
-                        {masterData}
-                        {chzzkUid}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        bind:AllCommands={AllCommands}
+                        MasterData={MasterData}
+                        ChzzkUid={chzzkUid}
+                        OnEdit={handleEdit}
+                        OnDelete={handleDelete}
                     />
                 </div>
             {:else}
@@ -269,7 +269,7 @@
             {/if}
         {:else if activeTab === "periodic"}
             <PeriodicTab
-                bind:messages={periodicMessages}
+                bind:messages={PeriodicMessages}
                 {chzzkUid}
                 onRefresh={loadPeriodicMessages}
             />

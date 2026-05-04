@@ -8,7 +8,7 @@
 
 ## 1. 데이터베이스 설계: Osiris's Regulation [✅ 완료]
 
-### [요청 1] `UnifiedCommand` Entity 및 Fluent API 설정 [✅ 완료]
+### [요청 1] `FuncCmdUnified` Entity 및 Fluent API 설정 [✅ 완료]
 
 C# 10+의 파일 범위 네임스페이스와 MariaDB의 소문자 매핑 규율을 준수합니다.
 
@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 /// [파로스의 통합]: 시스템의 모든 유료/무료 명령어를 통합 관리하는 엔티티입니다.
 /// </summary>
 [Index(nameof(ChzzkUid), nameof(Keyword), IsUnique = true)]
-public class UnifiedCommand
+public class FuncCmdUnified
 {
     [Key]
     public int Id { get; set; }
@@ -48,7 +48,7 @@ public class UnifiedCommand
 
     [Required]
     [MaxLength(50)]
-    public string FeatureType { get; set; } = "Reply"; // SongRequest, Roulette, Attendance, Reply 등
+    public string FeatureType { get; set; } = "Reply"; // SongRequest, FuncRouletteMain, Attendance, Reply 등
 
     public int? TargetId { get; set; } // 특정 룰렛 ID 등 연관 필드
 
@@ -59,7 +59,7 @@ public enum CommandCategory { Fixed, General, Donation, Point }
 public enum CommandCostType { None, Cheese, Point }
 
 // AppDbContext.cs 내 Fluent API 설정
-modelBuilder.Entity<UnifiedCommand>(entity => {
+modelBuilder.Entity<FuncCmdUnified>(entity => {
     entity.ToTable("unifiedcommands");
     entity.Property(e => e.ChzzkUid).HasColumnName("chzzkuid").UseCollation("utf8mb4_unicode_ci");
     entity.Property(e => e.Keyword).HasColumnName("keyword").UseCollation("utf8mb4_unicode_ci");
@@ -106,12 +106,12 @@ public class UnifiedCommandHandler(
         {
             "Attendance" => HandleAttendanceAsync(notification, command, ct),
             "SongRequest" => HandleSongRequestAsync(notification, command, ct),
-            "Roulette"   => HandleRouletteAsync(notification, command, ct),
+            "FuncRouletteMain"   => HandleRouletteAsync(notification, command, ct),
             "Reply" or _ => HandleSimpleReplyAsync(notification, command, ct)
         });
     }
 
-    private async Task HandleSimpleReplyAsync(ChatMessageReceivedEvent n, UnifiedCommand c, CancellationToken ct)
+    private async Task HandleSimpleReplyAsync(ChatMessageReceivedEvent n, FuncCmdUnified c, CancellationToken ct)
     {
         string reply = c.ResponseText.Replace("{닉네임}", n.Username);
         await botService.SendReplyChatAsync(n.Profile, reply, ct);

@@ -20,7 +20,7 @@ public class ChzzkChatService(
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // 최신 스트리머 프로필 로드 (영속성 보장 및 격리된 상태 유지)
-        var profile = await db.CoreStreamerProfiles
+        var profile = await db.TableCoreStreamerProfiles
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.ChzzkUid == chzzkUid, ct);
 

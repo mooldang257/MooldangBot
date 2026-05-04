@@ -45,8 +45,8 @@ export const createSignalRStore = (token: string) => {
     connection.on("ReceiveOverlayState", (data: any) => {
         update(s => ({
             ...s,
-            songList: data.pendingSongs || [],
-            overlayTheme: data.themeId || 1
+            songList: data.PendingSongs ?? data.pendingSongs ?? [],
+            overlayTheme: data.ThemeId ?? data.themeId ?? 1
         }));
     });
 
@@ -79,9 +79,11 @@ export const createSignalRStore = (token: string) => {
 
     // 영구 단절 시(Retry 횟수 초과 등) 다시 초기 연결 시퀀스 가동
     connection.onclose(async (error) => {
-        console.error("🚨 [연결 완전 단절] 공명이 멈췄습니다. 자가 회복 모드를 가동합니다.", error);
+        console.error("🚨 [연결 완전 단절] 공명이 멈췄습니다. 5초 후 자가 회복 모드를 가동합니다.", error);
         update(s => ({ ...s, isConnected: false }));
-        await connectWithRetry(0);
+        
+        // [물멍]: 즉시 재접속하지 않고 최소한의 유예 시간을 두어 서버 마비를 방지
+        setTimeout(() => connectWithRetry(0), 5000);
     });
 
     /**

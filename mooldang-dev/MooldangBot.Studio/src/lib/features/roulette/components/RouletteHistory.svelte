@@ -23,16 +23,16 @@
     }>();
 
     let filters = $state({
-        nickname: "",
-        itemName: "",
-        status: "" as any
+        Nickname: "",
+        ItemName: "",
+        Status: "" as any
     });
 
     let showFilters = $state(false);
     let selectedIds = $state<number[]>([]);
 
     function handleSearch() {
-        onRefresh({ ...filters, status: filters.status === "" ? null : Number(filters.status) });
+        onRefresh({ ...filters, Status: filters.Status === "" ? null : Number(filters.Status) });
     }
 
     // [전체 선택 로직]
@@ -42,7 +42,7 @@
         if (isAllSelected) {
             selectedIds = [];
         } else {
-            selectedIds = historyLogs.map(log => log.id);
+            selectedIds = historyLogs.map(log => log.Id);
         }
     }
 
@@ -129,7 +129,7 @@
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">닉네임</label>
                 <input 
                     type="text" 
-                    bind:value={filters.nickname}
+                    bind:value={filters.Nickname}
                     placeholder="참여자 검색..."
                     class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold transition-all"
                     onkeydown={(e) => e.key === 'Enter' && handleSearch()}
@@ -139,7 +139,7 @@
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">당첨 결과</label>
                 <input 
                     type="text" 
-                    bind:value={filters.itemName}
+                    bind:value={filters.ItemName}
                     placeholder="결과명 검색..."
                     class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold transition-all"
                     onkeydown={(e) => e.key === 'Enter' && handleSearch()}
@@ -148,7 +148,7 @@
             <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">상태</label>
                 <select 
-                    bind:value={filters.status}
+                    bind:value={filters.Status}
                     class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold bg-white transition-all"
                 >
                     <option value="">전체 상태</option>
@@ -190,16 +190,16 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
-                {#each historyLogs as log (log.id)}
+                {#each historyLogs as log (log.Id)}
                     <tr 
-                        onclick={() => toggleSelect(log.id)}
-                        class="hover:bg-slate-50/50 transition-colors cursor-pointer group/row {selectedIds.includes(log.id) ? 'bg-primary/[0.04]' : ''}" 
+                        onclick={() => toggleSelect(log.Id)}
+                        class="hover:bg-slate-50/50 transition-colors cursor-pointer group/row {selectedIds.includes(log.Id) ? 'bg-primary/[0.04]' : ''}" 
                         in:fade
                     >
                         <td class="px-6 py-4">
                             <input 
                                 type="checkbox" 
-                                checked={selectedIds.includes(log.id)} 
+                                checked={selectedIds.includes(log.Id)} 
                                 class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20 pointer-events-none"
                                 readonly
                             />
@@ -207,7 +207,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center gap-2 text-slate-400">
                                 <Clock size={14} />
-                                <span class="text-xs font-bold">{formatKstDate(log.createdAt)}</span>
+                                <span class="text-xs font-bold">{formatKstDate(log.CreatedAt)}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -215,28 +215,28 @@
                                 <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover/row:bg-white transition-colors">
                                     <User size={16} />
                                 </div>
-                                <span class="font-black text-slate-700 text-sm tracking-tight">{log.viewerNickname}</span>
+                                <span class="font-black text-slate-700 text-sm tracking-tight">{log.ViewerNickname}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-xs font-bold text-slate-500">{log.rouletteName}</span>
+                            <span class="text-xs font-bold text-slate-500">{log.RouletteName}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <Gift size={16} class="text-primary" />
-                                <span class="font-black text-slate-800 text-sm">{log.itemName}</span>
+                                <span class="font-black text-slate-800 text-sm">{log.ItemName}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 text-[10px] font-black rounded-full border {getStatusBadgeClass(log.status)} uppercase tracking-tighter">
-                                {getStatusText(log.status)}
+                            <span class="px-2.5 py-1 text-[10px] font-black rounded-full border {getStatusBadgeClass(log.Status)} uppercase tracking-tighter">
+                                {getStatusText(log.Status)}
                             </span>
                         </td>
                         <td class="px-6 py-4" onclick={(e) => e.stopPropagation()} class:cursor-default={true}>
                             <div class="flex items-center justify-center gap-2">
-                                {#if log.status === 0}
+                                {#if log.Status === 0}
                                     <button 
-                                        onclick={() => onUpdateStatus(log.id, 1)}
+                                        onclick={() => onUpdateStatus(log.Id, 1)}
                                         class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors tooltip"
                                         title="지급 완료"
                                     >
@@ -244,7 +244,7 @@
                                     </button>
                                 {/if}
                                 <button 
-                                    onclick={() => onDelete(log.id)}
+                                    onclick={() => onDelete(log.Id)}
                                     class="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                     title="삭제"
                                 >

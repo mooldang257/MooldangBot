@@ -9,15 +9,15 @@ namespace MooldangBot.Modules.Roulette.Abstractions;
 /// </summary>
 public interface IRouletteDbContext
 {
-    DbSet<MooldangBot.Domain.Entities.Roulette> FuncRoulettes { get; }
-    DbSet<MooldangBot.Domain.Entities.RouletteItem> FuncRouletteItems { get; }
-    DbSet<RouletteSpin> FuncRouletteSpins { get; }
-    DbSet<RouletteLog> FuncRouletteLogs { get; }
-    DbSet<SoundAsset> FuncSoundAssets { get; }
+    DbSet<FuncRouletteMain> TableFuncRouletteMain { get; }
+    DbSet<FuncRouletteItems> TableFuncRouletteItems { get; }
+    DbSet<FuncRouletteSpins> TableFuncRouletteSpins { get; }
+    DbSet<LogRouletteResults> TableLogRouletteResults { get; }
+    DbSet<FuncSoundAssets> TableFuncSoundAssets { get; }
     
     // 핵심 엔티티
-    DbSet<StreamerProfile> CoreStreamerProfiles { get; }
-    DbSet<GlobalViewer> CoreGlobalViewers { get; }
+    DbSet<CoreStreamerProfiles> TableCoreStreamerProfiles { get; }
+    DbSet<CoreGlobalViewers> TableCoreGlobalViewers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     

@@ -44,7 +44,7 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
             var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
             // [오시리스 v10.1]: 현재 DB에 등록된 별칭(Alias) 기반으로 최신 카테고리 정보 업데이트
-            var aliases = await db.SysChzzkCategoryAliases
+            var aliases = await db.TableSysChzzkCategoryAliases
                 .Include(a => a.Category)
                 .ToListAsync(stoppingToken);
 
@@ -79,30 +79,30 @@ public class ChzzkCategorySyncService : IChzzkCategorySyncService
         }
     }
 
-    public async Task<List<ChzzkCategory>> SearchAndSaveCategoryAsync(string keyword, CancellationToken ct = default)
+    public async Task<List<SysChzzkCategories>> SearchAndSaveCategoryAsync(string keyword, CancellationToken ct = default)
     {
         var result = await _chzzkApi.SearchCategoryAsync(keyword);
-        if (result?.Data == null) return new List<ChzzkCategory>();
+        if (result?.Data == null) return new List<SysChzzkCategories>();
 
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var savedCategories = new List<ChzzkCategory>();
+        var savedCategories = new List<SysChzzkCategories>();
         int added = 0;
 
         foreach (var data in result.Data)
         {
-            var existing = await db.SysChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
+            var existing = await db.TableSysChzzkCategories.FirstOrDefaultAsync(c => c.CategoryId == data.CategoryId && c.CategoryType == data.CategoryType, ct);
             if (existing == null)
             {
-                var newCategory = new ChzzkCategory
+                var newCategory = new SysChzzkCategories
                 {
                     CategoryId = data.CategoryId,
                     CategoryType = data.CategoryType,
                     CategoryValue = data.CategoryValue,
                     UpdatedAt = KstClock.Now
                 };
-                db.SysChzzkCategories.Add(newCategory);
+                db.TableSysChzzkCategories.Add(newCategory);
                 savedCategories.Add(newCategory);
                 added++;
             }

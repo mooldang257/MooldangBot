@@ -12,11 +12,16 @@
     } from "lucide-svelte";
 
     type HealthReport = {
-        database: boolean;
-        redis: boolean;
-        rabbitMQ: boolean;
-        workers: Record<string, boolean>;
-        checkedAt: string;
+        Database: boolean;
+        Redis: boolean;
+        RabbitMQ: boolean;
+        FleetInstances: Record<string, {
+            Workers: Record<string, boolean>;
+            MemoryUsageMb: number;
+            CpuTimeMs: number;
+            LastSeenAt: string;
+        }>;
+        CheckedAt: string;
     };
 
     let report: HealthReport | null = null;
@@ -48,7 +53,7 @@
         if (interval) clearInterval(interval);
     });
 
-    $: workerEntries = report ? Object.entries(report.workers) : [];
+    $: workerEntries = report ? Object.values(report.FleetInstances).flatMap(instance => Object.entries(instance.Workers)) : [];
 </script>
 
 <!-- [시스템 맥박 관제 콘텐츠] -->
@@ -93,70 +98,73 @@
     <!-- 주요 인프라 상태 카드 -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div
-            class="p-6 glass-card rounded-2xl border {report?.database
+            class="p-6 glass-card rounded-2xl border {report?.Database
                 ? 'border-green-500/20'
                 : 'border-red-500/20'} transition-all"
         >
             <div class="flex justify-between items-start mb-4">
                 <div class="p-3 bg-slate-800 rounded-xl">
                     <Database
-                        class={report?.database
+                        class={report?.Database
                             ? "text-green-400"
                             : "text-red-400"}
                     />
                 </div>
                 <span
-                    class="text-[10px] font-mono {report?.database
+                    class="text-[10px] font-mono {report?.Database
                         ? 'text-green-500'
                         : 'text-red-500'} uppercase font-bold"
-                    >{report?.database ? "Active" : "Offline"}</span
                 >
+                    {report?.Database ? "Active" : "Offline"}
+                </span>
             </div>
             <h3 class="text-lg font-bold text-white mb-1">MariaDB</h3>
             <p class="text-xs text-slate-400">데이터 영속성 레코드 엔진</p>
         </div>
 
         <div
-            class="p-6 glass-card rounded-2xl border {report?.redis
+            class="p-6 glass-card rounded-2xl border {report?.Redis
                 ? 'border-green-500/20'
                 : 'border-red-500/20'} transition-all"
         >
             <div class="flex justify-between items-start mb-4">
                 <div class="p-3 bg-slate-800 rounded-xl">
                     <Zap
-                        class={report?.redis ? "text-blue-400" : "text-red-400"}
+                        class={report?.Redis ? "text-blue-400" : "text-red-400"}
                     />
                 </div>
                 <span
-                    class="text-[10px] font-mono {report?.redis
+                    class="text-[10px] font-mono {report?.Redis
                         ? 'text-blue-500'
                         : 'text-red-500'} uppercase font-bold"
-                    >{report?.redis ? "Connected" : "Offline"}</span
                 >
+                    {report?.Redis ? "Connected" : "Offline"}
+                </span>
             </div>
             <h3 class="text-lg font-bold text-white mb-1">Redis</h3>
             <p class="text-xs text-slate-400">분산 락 및 고속 캐시 레이어</p>
         </div>
 
         <div
-            class="p-6 glass-card rounded-2xl border {report?.rabbitMQ
+            class="p-6 glass-card rounded-2xl border {report?.RabbitMQ
                 ? 'border-green-500/20'
                 : 'border-red-500/20'} transition-all"
         >
             <div class="flex justify-between items-start mb-4">
                 <div class="p-3 bg-slate-800 rounded-xl">
                     <Share2
-                        class={report?.rabbitMQ
+                        class={report?.RabbitMQ
                             ? "text-orange-400"
                             : "text-red-400"}
                     />
                 </div>
                 <span
-                    class="text-[10px] font-mono {report?.rabbitMQ
+                    class="text-[10px] font-mono {report?.RabbitMQ
                         ? 'text-orange-500'
                         : 'text-red-500'} uppercase font-bold"
-                    >{report?.rabbitMQ ? "Ready" : "Offline"}</span
                 >
+                    {report?.RabbitMQ ? "Ready" : "Offline"}
+                </span>
             </div>
             <h3 class="text-lg font-bold text-white mb-1">RabbitMQ</h3>
             <p class="text-xs text-slate-400">비동기 이벤트 메시징 브로커</p>

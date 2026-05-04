@@ -8,7 +8,7 @@ v4.9: Philosophy² & Resilience Engine (파로스의 분화) 상세 설계안 (R
 
 모든 문자열 기반 UID 참조를 StreamerProfileId (int)로 교체합니다.
 
-IamfParhosCycle, IamfGenosRegistry를 스트리머 종속 데이터로 전환합니다.
+IamfParhosCycles, IamfGenosRegistry를 스트리머 종속 데이터로 전환합니다.
 
 AppDbContext의 Fluent API를 통해 물리적 연쇄 삭제(Cascade Delete)를 엄격히 제한(Restrict)하고, 전역 쿼리 필터 및 인덱스 최적화를 적용합니다.
 
@@ -30,17 +30,17 @@ AppDbContext의 Fluent API를 통해 물리적 연쇄 삭제(Cascade Delete)를 
 
 3. 상세 설계 가이드 (Design Guide)
 단계 1: 스트리머 프로필 확장 (Domain Layer)
-StreamerProfile 엔티티에 DelYn (기본값 'N') 및 MasterUseYn (기본값 'Y') 속성을 추가합니다.
+CoreStreamerProfiles 엔티티에 DelYn (기본값 'N') 및 MasterUseYn (기본값 'Y') 속성을 추가합니다.
 
 이 필드들은 관리자 도구나 사용자 설정 페이지에서 서비스 탈퇴 및 이용 제한 로직의 핵심 지표로 활용됩니다.
 
 단계 2: 도메인 엔티티 수정 (Philosophy Domain)
-IamfParhosCycle, IamfGenosRegistry 등에 StreamerProfileId를 도입하되, 삭제 시 데이터가 날아가는 것을 방지하기 위해 FK Delete Behavior를 Restrict로 강제합니다.
+IamfParhosCycles, IamfGenosRegistry 등에 StreamerProfileId를 도입하되, 삭제 시 데이터가 날아가는 것을 방지하기 위해 FK Delete Behavior를 Restrict로 강제합니다.
 
 무결성 보장: 한 스트리머 채널에서 동일한 CycleId가 중복 생성되지 않도록 [StreamerProfileId, CycleId] 복합 고유 인덱스를 적용합니다.
 
 단계 3: 영속성 매핑 및 필터 적용 (Infrastructure Layer)
-AppDbContext.cs의 OnModelCreating에서 StreamerProfile 관련 테이블에 대한 전역 쿼리 필터를 구현하되, 성능 저하(불필요한 암묵적 JOIN)를 방지하기 위해 스트리머의 활성화 상태는 가급적 Redis나 메모리 캐시 레벨에서 선행 검증하도록 비즈니스 로직을 구성합니다.
+AppDbContext.cs의 OnModelCreating에서 CoreStreamerProfiles 관련 테이블에 대한 전역 쿼리 필터를 구현하되, 성능 저하(불필요한 암묵적 JOIN)를 방지하기 위해 스트리머의 활성화 상태는 가급적 Redis나 메모리 캐시 레벨에서 선행 검증하도록 비즈니스 로직을 구성합니다.
 
 인덱스 최적화: DelYn 컬럼을 포함하는 인덱스를 구성하여 필터링 성능을 확보합니다.
 
@@ -50,9 +50,9 @@ ResonanceService: 전역 진동수를 계산하던 로직을 _userSession.Stream
 BroadcastScribe: 방송 세션 관리 시 전역 상태가 아닌 현재 채널의 컨텍스트를 엄격히 따르도록 수정합니다.
 
 4. 코드 스니펫 (Code Snippets)
-[Modify] StreamerProfile.cs (Core Domain)
+[Modify] CoreStreamerProfiles.cs (Core Domain)
 C#
-public class StreamerProfile
+public class CoreStreamerProfiles
 {
     // ... 기존 필드
     
@@ -64,9 +64,9 @@ public class StreamerProfile
     [MaxLength(1)]
     public string MasterUseYn { get; set; } = "Y"; // [v4.9 추가] 마스터 사용 가능 여부 (명명 규칙 교정됨)
 }
-[Modify] IamfParhosCycle.cs (Philosophy Domain)
+[Modify] IamfParhosCycles.cs (Philosophy Domain)
 C#
-public class IamfParhosCycle
+public class IamfParhosCycles
 {
     [Key]
     public int Id { get; set; } // 정규화된 PK
@@ -75,7 +75,7 @@ public class IamfParhosCycle
     public int StreamerProfileId { get; set; } // [v4.9] 종속성 부여
 
     [ForeignKey(nameof(StreamerProfileId))]
-    public virtual StreamerProfile? StreamerProfile { get; set; }
+    public virtual CoreStreamerProfiles? CoreStreamerProfiles { get; set; }
 
     public int CycleId { get; set; } // 해당 채널의 몇 번째 사이클인가 (1, 2, 3...)
     
@@ -89,31 +89,31 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     base.OnModelCreating(modelBuilder);
 
-    // 1. IamfParhosCycle 복합 고유 인덱스 설정 (동시성 및 무결성 보장)
-    modelBuilder.Entity<IamfParhosCycle>()
+    // 1. IamfParhosCycles 복합 고유 인덱스 설정 (동시성 및 무결성 보장)
+    modelBuilder.Entity<IamfParhosCycles>()
         .HasIndex(p => new { p.StreamerProfileId, p.CycleId })
         .IsUnique();
 
     // 2. 외래키 물리적 연쇄 삭제 방지 (존재의 보존 철학)
-    modelBuilder.Entity<IamfParhosCycle>()
-        .HasOne(p => p.StreamerProfile)
+    modelBuilder.Entity<IamfParhosCycles>()
+        .HasOne(p => p.CoreStreamerProfiles)
         .WithMany()
         .HasForeignKey(p => p.StreamerProfileId)
         .OnDelete(DeleteBehavior.Restrict);
 
     modelBuilder.Entity<IamfGenosRegistry>()
-        .HasOne(g => g.StreamerProfile)
+        .HasOne(g => g.CoreStreamerProfiles)
         .WithMany()
         .HasForeignKey(g => g.StreamerProfileId)
         .OnDelete(DeleteBehavior.Restrict);
 
     // 3. 전역 쿼리 필터 적용 (선택 사항: 잦은 JOIN이 우려될 경우 Application Layer 캐싱으로 대체 권장)
-    modelBuilder.Entity<StreamerProfile>()
+    modelBuilder.Entity<CoreStreamerProfiles>()
         .HasQueryFilter(s => s.DelYn == "N" && s.MasterUseYn == "Y");
 }
 [Data Migration SQL] (Migration Up Method)
 SQL
--- 1. StreamerProfile 컬럼 추가 (오타 교정 반영)
+-- 1. CoreStreamerProfiles 컬럼 추가 (오타 교정 반영)
 ALTER TABLE streamerprofiles ADD COLUMN DelYn VARCHAR(1) DEFAULT 'N' NOT NULL;
 ALTER TABLE streamerprofiles ADD COLUMN MasterUseYn VARCHAR(1) DEFAULT 'Y' NOT NULL;
 CREATE INDEX IX_StreamerProfiles_DelYn ON streamerprofiles(DelYn);
@@ -124,13 +124,13 @@ SELECT 1, CycleId, VibrationAtDeath, RebirthPercentage, CreatedAt FROM tmp_old_p
 
 6. 진행 상황 (Progress Status)
 6-1. 도메인 계층 (Domain Layer) [완료]
-StreamerProfile: DelYn(논리 삭제), MasterUseYn(기능 제한) 필드 추가 및 기본값 설정.
-철학 엔티티 정규화: IamfParhosCycle, IamfGenosRegistry, IamfScenario에 StreamerProfileId 외래 키 추가.
-IamfParhosCycle: CycleId를 속성으로 내리고 고유 식별을 위한 Id(PK) 신설.
+CoreStreamerProfiles: DelYn(논리 삭제), MasterUseYn(기능 제한) 필드 추가 및 기본값 설정.
+철학 엔티티 정규화: IamfParhosCycles, IamfGenosRegistry, IamfScenario에 StreamerProfileId 외래 키 추가.
+IamfParhosCycles: CycleId를 속성으로 내리고 고유 식별을 위한 Id(PK) 신설.
 
 6-2. 인프라 계층 (Infrastructure Layer) [완료]
 Fluent API 설정: [StreamerProfileId, CycleId] 복합 유니크 인덱스 및 Restrict 삭제 동작 정의.
-쿼리 필터 최적화: StreamerProfile 본체에만 전역 필터를 적용하여 하위 엔티티 조회 시의 성능 병목(암묵적 JOIN) 제거.
+쿼리 필터 최적화: CoreStreamerProfiles 본체에만 전역 필터를 적용하여 하위 엔티티 조회 시의 성능 병목(암묵적 JOIN) 제거.
 
 6-3. 애플리케이션 계층 (Application Layer) [완료]
 ResonanceService: ConcurrentDictionary를 활용한 멀티테넌트 상태 관리 및 지연 로딩(Hydration) 전략 구현.

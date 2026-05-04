@@ -61,7 +61,7 @@ Redis 컨테이너 장애라는 극한의 카오스 상황에서도 시스템이
   ```csharp
   // 시스템 전체의 데이터를 하나로 묶는 근원적인 통제 센터
   public interface IAppDbContext {
-      DbSet<StreamerProfile> StreamerProfiles { get; set; }
+      DbSet<CoreStreamerProfiles> StreamerProfiles { get; set; }
       DbSet<SystemSetting> SystemSettings { get; set; }
       Task<int> SaveChangesAsync(CancellationToken ct);
   }

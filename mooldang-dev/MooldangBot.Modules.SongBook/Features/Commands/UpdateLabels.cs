@@ -15,22 +15,22 @@ public class UpdateLabelsHandler(ISongBookDbContext db) : IRequestHandler<Update
 {
     public async Task<Result<object>> Handle(UpdateLabelsCommand request, CancellationToken ct)
     {
-        var targetUid = request.StreamerUid.ToLower();
-        var profile = await db.CoreStreamerProfiles
-            .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == targetUid && !p.IsDeleted, ct);
+        var TargetUid = request.StreamerUid.ToLower();
+        var Profile = await db.TableCoreStreamerProfiles
+            .FirstOrDefaultAsync(p => p.ChzzkUid.ToLower() == TargetUid && !p.IsDeleted, ct);
         
-        if (profile == null) 
+        if (Profile == null) 
             return Result<object>.Failure("議댁옱?섏? ?딅뒗 梨꾨꼸?낅땲??");
-
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        var designData = string.IsNullOrEmpty(profile.DesignSettingsJson) 
+ 
+        var Options = new JsonSerializerOptions { WriteIndented = true };
+        var DesignData = string.IsNullOrEmpty(Profile.DesignSettingsJson) 
             ? new Dictionary<string, object>() 
-            : JsonSerializer.Deserialize<Dictionary<string, object>>(profile.DesignSettingsJson) ?? new Dictionary<string, object>();
-
-        designData["Labels"] = request.Labels;
-        profile.DesignSettingsJson = JsonSerializer.Serialize(designData, options);
+            : JsonSerializer.Deserialize<Dictionary<string, object>>(Profile.DesignSettingsJson) ?? new Dictionary<string, object>();
+ 
+        DesignData["Labels"] = request.Labels;
+        Profile.DesignSettingsJson = JsonSerializer.Serialize(DesignData, Options);
         
         await db.SaveChangesAsync(ct);
-        return Result<object>.Success(new { success = true });
+        return Result<object>.Success(new { Success = true });
     }
 }

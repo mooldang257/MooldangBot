@@ -2,7 +2,7 @@
 
 ## 🏗️ Phase 0: 안정성 강화 (완료)
 - [x] API 경로 규약 kebab-case 통일
-- [x] 고부하 API(Roulette, Song) DTO 전환
+- [x] 고부하 API(FuncRouletteMain, Song) DTO 전환
 - [x] Admin/Studio 프론트엔드 API 경로 동기화
 - [x] 빌드 안정성 검증 및 버그 수정
 
@@ -17,7 +17,7 @@
     - [x] `BotConfigController`: `api/config/bot/{uid}`로 이전 및 PATCH 전환
     - [x] `SongController`: `api/song/{uid}/queue` 경로 정문화 및 캐시 적용
     - [x] `RouletteController`: 히스토리 페이징 및 경로 정문화
-    - [x] 기타 컨트롤러(ChatPoint, PeriodicMessage, Overlay) 정문화 완료
+    - [x] 기타 컨트롤러(ChatPoint, SysPeriodicMessages, Overlay) 정문화 완료
 - [x] Phase 4: 프론트엔드 동기화 (Frontend Sync)
     - [x] `Studio`: 룰렛, 포인트, 곡 관리 페이지 페이징/경로 동기화
     - [x] `Admin`: 설정/대시보드 경로 동기화

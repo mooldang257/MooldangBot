@@ -22,7 +22,7 @@ public record ChatMessageEvent(
     Guid EventId,
     Guid CorrelationId,
     DateTime OccurredOn,
-    StreamerProfile Profile,
+    CoreStreamerProfiles Profile,
     string Username,
     string Message,
     string UserRole,

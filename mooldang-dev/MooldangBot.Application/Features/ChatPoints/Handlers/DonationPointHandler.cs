@@ -17,36 +17,36 @@ public class DonationPointHandler(
     public async Task Handle(ChzzkEventReceived notification, CancellationToken ct)
     {
         // 1. [유형 선별]: 후원 이벤트만 처리
-        if (notification.Payload is not ChzzkDonationEvent donation)
+        if (notification.Payload is not ChzzkDonationEvent Donation)
             return;
-
+ 
         // 2. [조건 확인]: 포인트 설정값이 있는지 확인 (UI 옵션과 관계없이 포인트가 설정되어 있으면 지급)
         if (notification.Profile.PointPerDonation1000 <= 0)
             return;
-
+ 
         // 3. [포인트 계산]: 1,000원당 설정된 포인트만큼 지급
         // 예: 5,000원 후원, 1000원당 10포인트 설정 -> 50포인트
-        int pointsToGive = (int)Math.Floor((donation.PayAmount / 1000.0) * notification.Profile.PointPerDonation1000);
-
-        if (pointsToGive <= 0)
+        int PointsToGive = (int)Math.Floor((Donation.PayAmount / 1000.0) * notification.Profile.PointPerDonation1000);
+ 
+        if (PointsToGive <= 0)
             return;
-
+ 
         // 4. [적립 실행]: Redis 캐시로 즉시 적재
         try
         {
             logger.LogInformation("💰 [후원 포인트] {Nickname}님 {Amount}원 후원 -> {Points}포인트 적립 시도", 
-                donation.Nickname, donation.PayAmount, pointsToGive);
-
+                Donation.Nickname, Donation.PayAmount, PointsToGive);
+ 
             await pointCache.AddPointAsync(
                 notification.Profile.ChzzkUid, 
-                donation.SenderId, 
-                donation.Nickname, 
-                pointsToGive
+                Donation.SenderId, 
+                Donation.Nickname, 
+                PointsToGive
             );
         }
-        catch (Exception ex)
+        catch (Exception Ex)
         {
-            logger.LogError(ex, "❌ [후원 포인트 적립 실패] {Nickname}: {Msg}", donation.Nickname, ex.Message);
+            logger.LogError(Ex, "❌ [후원 포인트 적립 실패] {Nickname}: {Msg}", Donation.Nickname, Ex.Message);
         }
     }
 }

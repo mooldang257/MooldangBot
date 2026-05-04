@@ -1,14 +1,14 @@
 # [상세 계획] 오마카세 및 명령어 관리 통합 및 인풋 페이징 도입
 
 ## 1. 개요
-현재 `MooldangBot`의 오마카세 기능은 단일 리스트로만 동작하며, `UnifiedCommand` 시스템과 연동되지 않아 관리 효율성이 떨어집니다. 또한, 데이터 증가 시 성능 저하를 유발하는 오프셋 페이징 대신 **인풋 페이징(Keyset Pagination)**을 도입하여 시스템의 확장성을 확보합니다.
+현재 `MooldangBot`의 오마카세 기능은 단일 리스트로만 동작하며, `FuncCmdUnified` 시스템과 연동되지 않아 관리 효율성이 떨어집니다. 또한, 데이터 증가 시 성능 저하를 유발하는 오프셋 페이징 대신 **인풋 페이징(Keyset Pagination)**을 도입하여 시스템의 확장성을 확보합니다.
 
 ## 2. 주요 개선 사항
 
 ### 2.1. 명령어 관리 연동 및 라이프사이클 동기화
-- **라이프사이클 동기화**: `UnifiedCommand`에서 오마카세 타입의 명령어를 **생성**할 때, 해당 `TargetId(MenuId)`를 가진 메뉴 그룹을 준비하고, 명령어를 **삭제**할 때 연관된 `StreamerOmakaseItem`들도 함께 삭제되도록 처리합니다.
-- **명령어 필드 통합**: `StreamerOmakaseItem`에 존재하던 개별 `Command` 필드를 제거하고, `UnifiedCommand`의 `Keyword`를 공통으로 사용합니다. 이를 통해 명령어 변경 시 오마카세 메뉴와 즉각적으로 동기화됩니다.
-- **다중 메뉴판**: 하나의 스트리머가 여러 개의 오마카세 메뉴판을 가질 수 있도록 지원하며, 각 메뉴판은 독립적인 `UnifiedCommand`와 연결됩니다.
+- **라이프사이클 동기화**: `FuncCmdUnified`에서 오마카세 타입의 명령어를 **생성**할 때, 해당 `TargetId(MenuId)`를 가진 메뉴 그룹을 준비하고, 명령어를 **삭제**할 때 연관된 `FuncSongListOmakases`들도 함께 삭제되도록 처리합니다.
+- **명령어 필드 통합**: `FuncSongListOmakases`에 존재하던 개별 `Command` 필드를 제거하고, `FuncCmdUnified`의 `Keyword`를 공통으로 사용합니다. 이를 통해 명령어 변경 시 오마카세 메뉴와 즉각적으로 동기화됩니다.
+- **다중 메뉴판**: 하나의 스트리머가 여러 개의 오마카세 메뉴판을 가질 수 있도록 지원하며, 각 메뉴판은 독립적인 `FuncCmdUnified`와 연결됩니다.
 
 ### 2.2. 인풋 페이징 (Keyset Pagination) 도입
 - **대상**: 오마카세 메뉴 아이템 목록 조회 API.
@@ -17,9 +17,9 @@
 
 ## 3. 데이터 구조 변경안
 
-### [MODIFY] StreamerOmakaseItem.cs (Domain/Entities)
+### [MODIFY] FuncSongListOmakases.cs (Domain/Entities)
 ```csharp
-public class StreamerOmakaseItem
+public class FuncSongListOmakases
 {
     [Key]
     public int Id { get; set; }
@@ -32,7 +32,7 @@ public class StreamerOmakaseItem
     [MaxLength(100)]
     public string Name { get; set; } = "새 오마카세";
 
-    // [기존 필드 제거] public string Command { get; set; } -> UnifiedCommand.Keyword 사용
+    // [기존 필드 제거] public string Command { get; set; } -> FuncCmdUnified.Keyword 사용
 
     [Required]
     [MaxLength(20)]
@@ -44,7 +44,7 @@ public class StreamerOmakaseItem
     public int Count { get; set; } = 0;
     
     /// <summary>
-    /// [추가] 메뉴판 그룹 ID. UnifiedCommand.TargetId와 매칭됩니다.
+    /// [추가] 메뉴판 그룹 ID. FuncCmdUnified.TargetId와 매칭됩니다.
     /// </summary>
     public int MenuId { get; set; } = 0;
 }
@@ -86,7 +86,7 @@ public async Task<IActionResult> GetOmakaseItems(
 ```
 
 ### 4.2. 명령어 실행 로직 수정 (OmakaseEventHandler)
-명령어 기반으로 오마카세를 실행할 때 `UnifiedCommand`를 먼저 조회하도록 변경합니다.
+명령어 기반으로 오마카세를 실행할 때 `FuncCmdUnified`를 먼저 조회하도록 변경합니다.
 
 ```csharp
 // 1. UnifiedCommand에서 명령어 조회
@@ -108,7 +108,7 @@ if (command != null)
 ## 5. 검증 계획 (Verification Plan)
 
 ### 자동화 테스트 (xUnit 가상 시나리오)
-- `UnifiedCommand` 삭제 시 연관된 `StreamerOmakaseItem`들이 함께 삭제(Cascade Delete 또는 Manual)되는지 확인.
+- `FuncCmdUnified` 삭제 시 연관된 `FuncSongListOmakases`들이 함께 삭제(Cascade Delete 또는 Manual)되는지 확인.
 
 ### 수동 검증
 1. 명령어 관리 대시보드에서 `!물마카세` 명령어 등록 (Type: Omakase, TargetId: 10).

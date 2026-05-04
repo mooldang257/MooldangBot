@@ -9,7 +9,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
     
     return {
         streamerId,
-        channelName: result.isSuccess ? (result.value.channelName || result.value.ChannelName || streamerId) : streamerId,
-        songLibrary: result.isSuccess ? result.value.songs : []
+        channelName: result.IsSuccess ? (result.Value.ChannelName || streamerId) : streamerId,
+        songLibrary: result.IsSuccess ? (result.Value.Songs || []) : []
     };
 };
