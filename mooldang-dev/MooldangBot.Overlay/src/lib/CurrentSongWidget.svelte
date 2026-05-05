@@ -6,14 +6,12 @@
         settings: any,
         layout: any
     }>();
-    // [물멍]: 현재 재생 곡 영역 전용 설정 참조
-    let currentSongSettings = $derived(settings.CurrentSong ?? settings.currentSong ?? {
-        TitleFont: settings.LiveTitleFont ?? settings.liveTitleFont,
-        ArtistFont: settings.LiveArtistFont ?? settings.liveArtistFont,
-        TitleColor: settings.LiveTitleColor ?? settings.liveTitleColor,
-        ArtistColor: settings.LiveArtistColor ?? settings.liveArtistColor,
-        CardBgColor: settings.LiveCardBgColor ?? settings.liveCardBgColor,
-        CardBgOpacity: settings.LiveCardBgOpacity ?? settings.liveCardBgOpacity
+    // [물멍]: 현재 재생 곡 영역 전용 설정 참조 (PascalCase 표준)
+    let currentSongSettings = $derived(settings.CurrentSong || {
+        TitleColor: '#FFFFFF',
+        ArtistColor: '#CCCCCC',
+        CardBgColor: '#0f172a',
+        CardBgOpacity: 0.8
     });
 </script>
 

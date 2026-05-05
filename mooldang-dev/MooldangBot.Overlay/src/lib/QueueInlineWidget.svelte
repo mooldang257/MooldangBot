@@ -11,22 +11,16 @@
         settings: any;
         layout: any;
     }>();
-    // [물멍]: 개편된 중첩 모델(Queue.Inline)을 우선 참조하고, 없으면 구버전 필드들로 폴백
-    let inlineSettings = $derived(
-        settings.Queue?.Inline ?? settings.Queue?.inline ?? settings.Inline ?? settings.inline ?? {
-            TitleFont: settings.QueueTitleFont ?? settings.queueTitleFont,
-            ArtistFont: settings.QueueArtistFont ?? settings.queueArtistFont,
-            TitleColor: settings.QueueTitleColor ?? settings.queueTitleColor,
-            ArtistColor: settings.QueueArtistColor ?? settings.queueArtistColor,
-            ItemBgColor: settings.QueueItemBgColor ?? settings.queueItemBgColor,
-            ItemBgOpacity: settings.QueueItemBgOpacity ?? settings.queueItemBgOpacity,
-            BgColor: settings.QueueBgColor ?? settings.queueBgColor,
-            BgOpacity: settings.QueueBgOpacity ?? settings.queueBgOpacity,
-            BorderColor: settings.QueueBorderColor ?? settings.queueBorderColor,
-            BorderWidth: settings.QueueBorderWidth ?? settings.queueBorderWidth,
-            ShowBorder: settings.ShowQueueBorder ?? settings.showQueueBorder,
-        },
-    );
+    // [물멍]: 개편된 표준 모델(SongQueue) 참조
+    let inlineSettings = $derived(settings.SongQueue || {
+        TitleColor: '#FFFFFF',
+        ItemBgColor: '#0f172a',
+        ItemBgOpacity: 0.8,
+        BgColor: '#000000',
+        BgOpacity: 0.1,
+        BorderColor: '#FFFFFF',
+        BorderWidth: 2,
+    });
 </script>
 
 {#if layout?.visible !== false && (settings.ShowQueue ?? settings.showQueue) !== false}

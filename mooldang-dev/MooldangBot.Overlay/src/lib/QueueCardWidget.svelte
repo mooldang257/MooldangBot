@@ -9,26 +9,22 @@
         layout: any
     }>();
     
-    // [물멍]: 설정에서 표시 개수를 가져옴 (기본값 5)
-    let maxQueueCount = $derived(settings.MaxQueueCount ?? settings.maxQueueCount ?? 5);
+    // [물멍]: 설정에서 표시 개수를 가져옴 (표준 경로 우선)
+    let maxQueueCount = $derived(settings.SongQueue?.MaxItems ?? 5);
 
     // [물멍]: 상위 N개 곡을 하나의 리스트로 관리
     let displayQueue = $derived(queue.slice(0, maxQueueCount) || []);
 
-    // [물멍]: 개편된 중첩 모델(Queue.Card)을 우선 참조하고, 없으면 구버전 필드들로 폴백
-    let cardSettings = $derived(
-        settings.Queue?.Card ?? settings.Queue?.card ?? settings.Card ?? settings.card ?? {
-            TitleFont: settings.QueueTitleFont ?? settings.queueTitleFont,
-            ArtistFont: settings.QueueArtistFont ?? settings.queueArtistFont,
-            TitleColor: settings.QueueTitleColor ?? settings.queueTitleColor,
-            ArtistColor: settings.QueueArtistColor ?? settings.queueArtistColor,
-            ItemBgColor: settings.QueueItemBgColor ?? settings.queueItemBgColor,
-            ItemBgOpacity: settings.QueueItemBgOpacity ?? settings.queueItemBgOpacity
-        }
-    );
+    // [물멍]: 개편된 표준 모델(SongQueue) 참조
+    let cardSettings = $derived(settings.SongQueue || {
+        TitleColor: '#FFFFFF',
+        ItemBgColor: '#0f172a',
+        ItemBgOpacity: 0.8,
+        ShowThumbnail: true
+    });
 </script>
 
-{#if layout?.visible !== false && (settings.ShowQueue ?? settings.showQueue) !== false}
+{#if layout?.visible !== false}
     <div 
         class="queue-container" 
         style="
@@ -52,7 +48,7 @@
                     class:next-1={i === 0}
                 >
                     <!-- 썸네일 영역 (없으면 음표 아이콘) -->
-                    {#if (settings.ShowQueueThumbnail ?? settings.showQueueThumbnail) !== false}
+                    {#if cardSettings.ShowThumbnail !== false}
                         <div class="thumbnail-wrapper">
                             {#if (song.ThumbnailUrl ?? song.thumbnailUrl)}
                                 <img 

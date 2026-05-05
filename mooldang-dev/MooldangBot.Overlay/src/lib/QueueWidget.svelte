@@ -9,7 +9,7 @@
     }>();
 </script>
 
-{#if settings.queueTheme === 'inline'}
+{#if (settings.SongQueue?.Theme || 'Inline') === 'Inline'}
     <QueueInlineWidget {queue} {settings} {layout} />
 {:else}
     <QueueCardWidget {queue} {settings} {layout} />

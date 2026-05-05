@@ -17,12 +17,12 @@
     let particleContainer: HTMLDivElement | null = $state(null);
     let ctx: gsap.Context | null = $state(null);
 
-    // [물멍]: 룰렛 영역 전용 설정 참조
-    let rouletteSettings = $derived((props.settings?.Roulette ?? props.settings?.roulette) || {
-        Font: props.settings?.RouletteFont ?? props.settings?.rouletteFont,
-        TitleColor: props.settings?.RouletteTitleColor ?? props.settings?.rouletteTitleColor,
-        CardBgColor: props.settings?.RouletteCardBgColor ?? props.settings?.rouletteCardBgColor,
-        CardBgOpacity: props.settings?.RouletteCardBgOpacity ?? props.settings?.rouletteCardBgOpacity
+    // [물멍]: 룰렛 영역 전용 설정 참조 (PascalCase 표준)
+    let rouletteSettings = $derived(props.settings?.Roulette || {
+        Font: 'GmarketSansMedium',
+        TitleColor: '#FFFFFF',
+        CardBgColor: '#0f172a',
+        CardBgOpacity: 0.8
     });
 
     // [상태 제어]: 지휘관 설계안(아쿠아틱 메이크오버) 반영

@@ -3,6 +3,7 @@
     import { fade, fly } from 'svelte/transition';
     import { Move, Maximize2, MousePointer2, Save, RotateCcw, Eye, EyeOff, ChevronDown, ChevronUp, Palette, Type, Check, ListOrdered, Music, Smile, UploadCloud } from 'lucide-svelte';
     import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
+    import { OVERLAY_WIDGET_REGISTRY } from '../registry';
 
     // [물멍]: 1920x1080 표준 해상도 정의
     const CANVAS_W = 1920;
@@ -31,86 +32,63 @@
     let LayoutData = $derived(settings?.Layout || {});
     let Fonts = MOOLDANG_FONTS;
 
-    // [물멍]: 테마별/영역별 독립 설정을 위한 반응성 헬퍼
-    let ActiveThemeSettings = $derived(
-        settings?.QueueTheme === 'inline' ? settings?.Queue?.Inline : (settings?.Queue?.Card || settings?.Queue?.Inline)
-    );
-
-    let ActiveCurrentSongSettings = $derived(settings?.CurrentSong);
-    let ActiveRouletteSettings = $derived(settings?.Roulette);
-
-    // [물멍]: 설정 데이터가 들어올 때 누락된 속성들을 즉시 보정
+    // [물멍]: 설정 데이터가 들어올 때 누락된 속성들을 즉시 보정 (PascalCase 표준)
     $effect(() => {
         if (!settings) return;
 
-        // [개편]: 대기열 통합 모델(Queue) 초기화
-        if (!settings.Queue) {
-            settings.Queue = {
-                ShowThumbnail: settings.ShowQueueThumbnail ?? true,
-                GlobalFont: settings.QueueFont || 'Pretendard-Regular',
-                Inline: null,
-                Card: null
-            };
-        }
-        
-        if (!settings.Queue.Inline) {
-            settings.Queue.Inline = {
-                TitleFont: settings.QueueTitleFont || 'Pretendard-Regular',
-                ArtistFont: settings.QueueArtistFont || 'Pretendard-Regular',
-                TitleColor: settings.QueueTitleColor || '#FFFFFF',
-                ArtistColor: settings.QueueArtistColor || 'rgba(255, 255, 255, 0.6)',
-                ItemBgColor: settings.QueueItemBgColor || '#0f172a',
-                ItemBgOpacity: settings.QueueItemBgOpacity ?? 0.8,
-                BgColor: settings.QueueBgColor || '#000000',
-                BgOpacity: settings.QueueBgOpacity ?? 0.1,
-                BorderColor: settings.QueueBorderColor || '#FFFFFF',
-                BorderWidth: settings.QueueBorderWidth ?? 2,
-                ShowBorder: settings.ShowQueueBorder ?? true
-            };
-        }
-        if (!settings.Queue.Card) {
-            settings.Queue.Card = {
-                TitleFont: settings.QueueTitleFont || 'Pretendard-Regular',
-                ArtistFont: settings.QueueArtistFont || 'Pretendard-Regular',
-                TitleColor: settings.QueueTitleColor || '#FFFFFF',
-                ArtistColor: settings.QueueArtistColor || 'rgba(255, 255, 255, 0.6)',
-                ItemBgColor: settings.QueueItemBgColor || '#0f172a',
-                ItemBgOpacity: settings.QueueItemBgOpacity ?? 0.8,
-                BgColor: settings.QueueBgColor || '#000000',
-                BgOpacity: settings.QueueBgOpacity ?? 0.1,
-                BorderColor: settings.QueueBorderColor || '#FFFFFF',
-                BorderWidth: settings.QueueBorderWidth ?? 2,
-                ShowBorder: settings.ShowQueueBorder ?? true
+        if (!settings.CurrentSong) {
+            settings.CurrentSong = {
+                TitleColor: '#FFFFFF',
+                ArtistColor: '#CCCCCC',
+                CardBgColor: '#0f172a',
+                CardBgOpacity: 0.8
             };
         }
 
-        if (!settings.CurrentSong) {
-            settings.CurrentSong = {
-                TitleFont: settings.LiveTitleFont || 'GmarketSansMedium',
-                ArtistFont: settings.LiveArtistFont || 'GmarketSansMedium',
-                TitleColor: settings.LiveTitleColor || '#FFFFFF',
-                ArtistColor: settings.LiveArtistColor || '#CCCCCC',
-                CardBgColor: settings.LiveCardBgColor || '#0f172a',
-                CardBgOpacity: settings.LiveCardBgOpacity ?? 0.8
+        if (!settings.SongQueue) {
+            settings.SongQueue = {
+                Theme: 'Default',
+                TitleColor: '#FFFFFF',
+                ItemBgColor: '#0f172a',
+                ItemBgOpacity: 0.8,
+                BorderColor: '#FFFFFF',
+                BorderWidth: 2,
+                MaxItems: 10,
+                ShowThumbnail: true
             };
         }
 
         if (!settings.Roulette) {
             settings.Roulette = {
-                Font: settings.RouletteFont || 'GmarketSansMedium',
-                TitleColor: settings.RouletteTitleColor || '#FFFFFF',
-                CardBgColor: settings.RouletteCardBgColor || '#0f172a',
-                CardBgOpacity: settings.RouletteCardBgOpacity ?? 0.8
+                Font: 'GmarketSansMedium',
+                TitleColor: '#FFFFFF',
+                CardBgColor: '#0f172a',
+                CardBgOpacity: 0.8
+            };
+        }
+
+        if (!settings.Notice) {
+            settings.Notice = {
+                TitleColor: '#FFFFFF',
+                BgColor: '#000000',
+                BgOpacity: 0.1
             };
         }
     });
 
-    // [물멍]: 에디터 내부 상태 관리
-    let Elements = $state<ElementConfig[]>([
-        { Id: 'CurrentSong', Label: '현재 재생 중인 곡', X: 50, Y: 50, Width: 600, Height: 180, Visible: true, Color: '#3b82f6' },
-        { Id: 'SongQueue', Label: '신청곡 대기열', X: 1400, Y: 100, Width: 450, Height: 800, Visible: true, Color: '#10b981' },
-        { Id: 'Roulette', Label: '룰렛 결과 알림', X: 710, Y: 340, Width: 500, Height: 400, Visible: true, Color: '#f59e0b' }
-    ]);
+    // [물멍]: 에디터 내부 상태 관리 (Registry 기반 초기화)
+    let Elements = $state<ElementConfig[]>(
+        Object.values(OVERLAY_WIDGET_REGISTRY).map(w => ({
+            Id: w.Id,
+            Label: w.Label,
+            X: w.DefaultLayout.X,
+            Y: w.DefaultLayout.Y,
+            Width: w.DefaultLayout.Width,
+            Height: w.DefaultLayout.Height,
+            Visible: w.DefaultLayout.Visible,
+            Color: w.Color
+        }))
+    );
 
     let DraggingId = $state<string | null>(null);
     let StartX = $state(0);
@@ -121,7 +99,7 @@
     let StartElemH = $state(0);
 
     let ResizingId = $state<string | null>(null);
-    let CollapsedIds = $state<Set<string>>(new Set(['roulette']));
+    let CollapsedIds = $state<Set<string>>(new Set(['Roulette', 'Notice']));
     let OpenDropdown = $state<string | null>(null);
 
     const toggleDropdown = (id: string) => {
@@ -277,7 +255,12 @@
                                         {#if CollapsedIds.has(el.Id)}<ChevronDown size={18} />{:else}<ChevronUp size={18} />{/if}
                                     </button>
                                     <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white" style="background-color: {el.Color}">
-                                        {#if el.Id === 'CurrentSong'}<Music size={16} />{:else if el.Id === 'SongQueue'}<ListOrdered size={16} />{:else}<RotateCcw size={16} />{/if}
+                                        {#if OVERLAY_WIDGET_REGISTRY[el.Id]?.Icon}
+                                            {@const Icon = OVERLAY_WIDGET_REGISTRY[el.Id].Icon}
+                                            <Icon size={16} />
+                                        {:else}
+                                            <RotateCcw size={16} />
+                                        {/if}
                                     </div>
                                     <div>
                                         <h5 class="text-xs font-black text-slate-700">{el.Label}</h5>
@@ -291,181 +274,69 @@
 
                             {#if !CollapsedIds.has(el.Id)}
                                 <div class="px-4 pb-4 space-y-4" in:fade>
-                                    {#if el.Id === 'CurrentSong' && ActiveCurrentSongSettings}
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">제목 색상</label>
-                                                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
-                                                    <Palette size={12} class="text-slate-400" />
-                                                    <input type="color" bind:value={settings.CurrentSong.TitleColor} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
-                                                </div>
-                                            </div>
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">가수 색상</label>
-                                                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
-                                                    <Palette size={12} class="text-slate-400" />
-                                                    <input type="color" bind:value={settings.CurrentSong.ArtistColor} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">카드 배경</label>
-                                                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
-                                                    <Palette size={12} class="text-slate-400" />
-                                                    <input type="color" bind:value={settings.CurrentSong.CardBgColor} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
-                                                </div>
-                                            </div>
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">투명도 ({Math.round((ActiveCurrentSongSettings?.CardBgOpacity || 0) * 100)}%)</label>
-                                                <input type="range" min="0" max="1" step="0.01" bind:value={settings.CurrentSong.CardBgOpacity} class="w-full accent-primary" />
-                                            </div>
-                                        </div>
-                                    {:else if el.Id === 'SongQueue' && ActiveThemeSettings}
-                                        <div class="mt-4 pt-4 border-t border-slate-100 space-y-4" in:fade>
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">대기열 테마</label>
-                                                <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
-                                                    <button class="flex-1 py-1 text-[10px] font-black rounded-lg transition-all {settings.QueueTheme === 'inline' ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}" onclick={() => settings.QueueTheme = 'inline'}>인라인</button>
-                                                    <button class="flex-1 py-1 text-[10px] font-black rounded-lg transition-all {settings.QueueTheme === 'card' || !settings.QueueTheme ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}" onclick={() => settings.QueueTheme = 'card'}>카드형</button>
-                                                </div>
-                                            </div>
-
-                                            <div class="grid grid-cols-2 gap-3">
+                                    {#if OVERLAY_WIDGET_REGISTRY[el.Id]?.SettingsSchema}
+                                        {@const widgetConfig = OVERLAY_WIDGET_REGISTRY[el.Id]}
+                                        <div class="space-y-4">
+                                            {#each widgetConfig.SettingsSchema as field}
                                                 <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">제목 색상</label>
-                                                    <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
-                                                        <Palette size={12} class="text-slate-400" />
-                                                        {#if settings.QueueTheme === 'inline'}
-                                                            <input type="color" bind:value={settings.Queue.Inline.TitleColor} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
-                                                        {:else}
-                                                            <input type="color" bind:value={settings.Queue.Card.TitleColor} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
+                                                    <label class="text-[10px] font-black text-slate-400 uppercase">
+                                                        {field.Label} 
+                                                        {#if field.Type === 'Number' && field.Step && field.Step < 1}
+                                                            ({Math.round((settings[el.Id]?.[field.Key] || 0) * 100)}%)
                                                         {/if}
-                                                    </div>
-                                                </div>
-                                                <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">제목 폰트</label>
-                                                    <div class="relative">
-                                                        <button class="w-full flex items-center justify-between text-left px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" onclick={() => toggleDropdown('queueTitleFont')} style="font-family: {ActiveThemeSettings?.TitleFont}">
-                                                            <span class="truncate">{Fonts.find(f => f.family === ActiveThemeSettings?.TitleFont)?.name || ActiveThemeSettings?.TitleFont}</span>
-                                                            <ChevronDown size={14} class="text-slate-400 shrink-0" />
-                                                        </button>
-                                                        {#if OpenDropdown === 'queueTitleFont'}
-                                                            <div class="absolute z-[100] top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto p-1" in:fly={{ y: -5, duration: 200 }}>
-                                                                {#each Fonts as font}
-                                                                    <button class="w-full text-left px-3 py-2 hover:bg-primary/5 rounded-lg transition-all text-xs flex items-center justify-between" 
-                                                                        onclick={() => { 
-                                                                            if (settings.QueueTheme === 'inline') settings.Queue.Inline.TitleFont = font.family;
-                                                                            else settings.Queue.Card.TitleFont = font.family;
-                                                                            OpenDropdown = null; 
-                                                                        }}>
-                                                                        <span style="font-family: {font.family}">{font.name}</span>
-                                                                        {#if (settings.QueueTheme === 'inline' ? settings.Queue.Inline.TitleFont : settings.Queue.Card.TitleFont) === font.family}
-                                                                            <Check size={12} class="text-primary" />
-                                                                        {/if}
-                                                                    </button>
-                                                                {/each}
-                                                            </div>
-                                                        {/if}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                    </label>
 
-                                            <div class="pt-2 border-t border-slate-50 space-y-3">
-                                                <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider">항목 스타일</h4>
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div class="space-y-1">
-                                                        <label class="text-[10px] font-black text-slate-400 uppercase">배경색</label>
-                                                        {#if settings.QueueTheme === 'inline'}
-                                                            <input type="color" bind:value={settings.Queue.Inline.ItemBgColor} class="w-full h-8 rounded-lg cursor-pointer" />
+                                                    {#if field.Type === 'Color'}
+                                                        <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
+                                                            <Palette size={12} class="text-slate-400" />
+                                                            <input type="color" bind:value={settings[el.Id][field.Key]} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
+                                                        </div>
+                                                    {:else if field.Type === 'Number'}
+                                                        {#if field.Step && field.Step < 1}
+                                                            <input type="range" min={field.Min} max={field.Max} step={field.Step} bind:value={settings[el.Id][field.Key]} class="w-full accent-primary" />
                                                         {:else}
-                                                            <input type="color" bind:value={settings.Queue.Card.ItemBgColor} class="w-full h-8 rounded-lg cursor-pointer" />
+                                                            <input type="number" min={field.Min} max={field.Max} bind:value={settings[el.Id][field.Key]} class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
                                                         {/if}
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <label class="text-[10px] font-black text-slate-400 uppercase">투명도 ({Math.round((ActiveThemeSettings?.ItemBgOpacity || 0) * 100)}%)</label>
-                                                        {#if settings.QueueTheme === 'inline'}
-                                                            <input type="range" min="0" max="1" step="0.01" bind:value={settings.Queue.Inline.ItemBgOpacity} class="w-full accent-primary" />
-                                                        {:else}
-                                                            <input type="range" min="0" max="1" step="0.01" bind:value={settings.Queue.Card.ItemBgOpacity} class="w-full accent-primary" />
-                                                        {/if}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="pt-2 border-t border-slate-50 space-y-3">
-                                                <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider">전체 테두리/배경</h4>
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div class="space-y-1">
-                                                        <label class="text-[10px] font-black text-slate-400 uppercase">테두리 색상</label>
-                                                        {#if settings.QueueTheme === 'inline'}
-                                                            <input type="color" bind:value={settings.Queue.Inline.BorderColor} class="w-full h-8 rounded-lg cursor-pointer" />
-                                                        {:else}
-                                                            <input type="color" bind:value={settings.Queue.Card.BorderColor} class="w-full h-8 rounded-lg cursor-pointer" />
-                                                        {/if}
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <label class="text-[10px] font-black text-slate-400 uppercase">두께 ({settings.QueueTheme === 'inline' ? settings.Queue.Inline.BorderWidth : settings.Queue.Card.BorderWidth}px)</label>
-                                                        {#if settings.QueueTheme === 'inline'}
-                                                            <input type="number" min="0" max="10" bind:value={settings.Queue.Inline.BorderWidth} class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold" />
-                                                        {:else}
-                                                            <input type="number" min="0" max="10" bind:value={settings.Queue.Card.BorderWidth} class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold" />
-                                                        {/if}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
-                                                <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">최대 표시 개수</label>
-                                                    <input type="number" min="0" max="50" bind:value={settings.MaxQueueCount} class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
-                                                </div>
-                                                <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">썸네일 표시</label>
-                                                    <div class="flex items-center h-[38px]">
-                                                        <label class="relative inline-flex items-center cursor-pointer">
-                                                            <input type="checkbox" bind:checked={settings.Queue.ShowThumbnail} class="sr-only peer">
-                                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {:else if el.Id === 'Roulette' && ActiveRouletteSettings}
-                                        <div class="mt-4 pt-4 border-t border-slate-100 space-y-4" in:fade>
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">결과 폰트</label>
-                                                <div class="relative">
-                                                    <button class="w-full flex items-center justify-between text-left px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" onclick={() => toggleDropdown('rouletteFont')} style="font-family: {ActiveRouletteSettings.Font}">
-                                                        <span class="truncate">{Fonts.find(f => f.family === ActiveRouletteSettings.Font)?.name || ActiveRouletteSettings.Font}</span>
-                                                        <ChevronDown size={14} class="text-slate-400 shrink-0" />
-                                                    </button>
-                                                    {#if OpenDropdown === 'rouletteFont'}
-                                                        <div class="absolute z-[100] top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto p-1" in:fly={{ y: -5, duration: 200 }}>
-                                                            {#each Fonts as font}
-                                                                <button class="w-full text-left px-3 py-2 hover:bg-primary/5 rounded-lg transition-all text-xs flex items-center justify-between" onclick={() => { ActiveRouletteSettings.Font = font.family; OpenDropdown = null; }}>
-                                                                    <span style="font-family: {font.family}">{font.name}</span>
-                                                                    {#if ActiveRouletteSettings.Font === font.family}<Check size={12} class="text-primary" />{/if}
+                                                    {:else if field.Type === 'Select'}
+                                                        <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+                                                            {#each field.Options || [] as opt}
+                                                                <button 
+                                                                    class="flex-1 py-1 text-[10px] font-black rounded-lg transition-all {settings[el.Id][field.Key] === opt ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}" 
+                                                                    onclick={() => settings[el.Id][field.Key] = opt}
+                                                                >
+                                                                    {opt}
                                                                 </button>
                                                             {/each}
                                                         </div>
+                                                    {:else if field.Type === 'Font'}
+                                                        <div class="relative">
+                                                            <button 
+                                                                class="w-full flex items-center justify-between text-left px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" 
+                                                                onclick={() => toggleDropdown(el.Id + field.Key)} 
+                                                                style="font-family: {settings[el.Id][field.Key]}"
+                                                            >
+                                                                <span class="truncate">{Fonts.find(f => f.family === settings[el.Id][field.Key])?.name || settings[el.Id][field.Key]}</span>
+                                                                <ChevronDown size={14} class="text-slate-400 shrink-0" />
+                                                            </button>
+                                                            {#if OpenDropdown === (el.Id + field.Key)}
+                                                                <div class="absolute z-[100] top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto p-1" in:fly={{ y: -5, duration: 200 }}>
+                                                                    {#each Fonts as font}
+                                                                        <button 
+                                                                            class="w-full text-left px-3 py-2 hover:bg-primary/5 rounded-lg transition-all text-xs flex items-center justify-between" 
+                                                                            onclick={() => { settings[el.Id][field.Key] = font.family; OpenDropdown = null; }}
+                                                                        >
+                                                                            <span style="font-family: {font.family}">{font.name}</span>
+                                                                            {#if settings[el.Id][field.Key] === font.family}
+                                                                                <Check size={12} class="text-primary" />
+                                                                            {/if}
+                                                                        </button>
+                                                                    {/each}
+                                                                </div>
+                                                            {/if}
+                                                        </div>
                                                     {/if}
                                                 </div>
-                                            </div>
-                                            <div class="grid grid-cols-2 gap-3">
-                                                <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">텍스트 색상</label>
-                                                    <input type="color" bind:value={ActiveRouletteSettings.TitleColor} class="w-full h-8 rounded-lg cursor-pointer" />
-                                                </div>
-                                                <div class="space-y-1">
-                                                    <label class="text-[10px] font-black text-slate-400 uppercase">카드 배경</label>
-                                                    <input type="color" bind:value={ActiveRouletteSettings.CardBgColor} class="w-full h-8 rounded-lg cursor-pointer" />
-                                                </div>
-                                            </div>
-                                            <div class="space-y-1">
-                                                <label class="text-[10px] font-black text-slate-400 uppercase">배경 투명도 ({Math.round((ActiveRouletteSettings?.CardBgOpacity || 0) * 100)}%)</label>
-                                                <input type="range" min="0" max="1" step="0.01" bind:value={settings.Roulette.CardBgOpacity} class="w-full accent-primary" />
-                                            </div>
+                                            {/each}
                                         </div>
                                     {/if}
                                 </div>

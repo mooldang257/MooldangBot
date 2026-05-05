@@ -2,7 +2,15 @@
     import { onMount, onDestroy } from 'svelte';
     import gsap from 'gsap';
     
-    let { message = "새로운 후원이 도착했습니다!" } = $props();
+    let { message = "새로운 후원이 도착했습니다!", settings = {} } = $props();
+    
+    // [물멍]: 공지사항 전용 설정 참조 (PascalCase 표준)
+    let noticeSettings = $derived(settings.Notice || {
+        TitleColor: '#FFFFFF',
+        BgColor: '#0f172a',
+        BgOpacity: 0.92
+    });
+
     let widgetRef: HTMLDivElement;
     let ctx: gsap.Context;
 
@@ -62,10 +70,10 @@
 
 <div bind:this={widgetRef} class="notice-container">
     <div class="notice-wrapper">
-        <div class="glow-effect"></div>
-        <div class="notice-inner">
+        <div class="glow-effect" style="background: linear-gradient(90deg, {noticeSettings.BgColor}, #a855f7, #ec4899)"></div>
+        <div class="notice-inner" style="background: {noticeSettings.BgColor}; opacity: {noticeSettings.BgOpacity}; border-color: color-mix(in srgb, {noticeSettings.TitleColor} 15%, transparent)">
             <span class="resonance-icon">💎</span>
-            <p class="notice-text">{message}</p>
+            <p class="notice-text" style="color: {noticeSettings.TitleColor}">{message}</p>
         </div>
     </div>
 </div>
@@ -76,8 +84,9 @@
         display: flex;
         justify-content: center;
         padding-top: 60px;
-        /* GPU 가속 레이어 힌트 제공 */
         will-change: transform, opacity;
+        width: 100%;
+        height: 100%;
     }
 
     .notice-wrapper {
@@ -87,7 +96,6 @@
     .glow-effect {
         position: absolute;
         inset: -5px;
-        background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
         border-radius: 24px;
         filter: blur(15px);
         opacity: 0.4;
@@ -101,15 +109,14 @@
 
     .notice-inner {
         position: relative;
-        background: rgba(15, 23, 42, 0.92);
         backdrop-filter: blur(12px);
-        border: 2px solid rgba(255, 255, 255, 0.15);
         padding: 24px 50px;
         border-radius: 24px;
         display: flex;
         align-items: center;
         gap: 20px;
         box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.15);
     }
 
     .resonance-icon {
