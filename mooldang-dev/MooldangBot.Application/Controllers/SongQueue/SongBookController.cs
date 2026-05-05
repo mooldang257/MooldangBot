@@ -121,7 +121,21 @@ public class SongBookController : ControllerBase
             var finalArtist = refinedArtist ?? artist;
             var finalTitle = refinedTitle ?? title ?? query;
 
-            // [iTunes 단일 검색 실행]
+            // [Step: 로컬 DB 캐시 조회 (Big Data)]
+            if (!string.IsNullOrEmpty(refinedArtist) && !string.IsNullOrEmpty(refinedTitle))
+            {
+                var cachedMetadata = await _db.TableGlobalMusicMetadata
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.NormalizedArtist == refinedArtist && m.NormalizedTitle == refinedTitle);
+
+                if (cachedMetadata != null && !string.IsNullOrEmpty(cachedMetadata.ThumbnailUrl))
+                {
+                    _logger.LogInformation("[SongBookThumbnail] 로컬 캐시 히트! (Artist: {Artist}, Title: {Title})", refinedArtist, refinedTitle);
+                    return Ok(Result<List<string>>.Success(new List<string> { cachedMetadata.ThumbnailUrl }));
+                }
+            }
+
+            // [Step: iTunes 단일 검색 실행]
             var itunesService = _thumbnailServices.FirstOrDefault(s => s.GetType().Name.Contains("Itunes"));
             if (itunesService == null)
             {
@@ -139,6 +153,43 @@ public class SongBookController : ControllerBase
                 .Distinct()
                 .Take(30)
                 .ToList();
+
+            // [Step: 검색 성공 시 로컬 DB에 캐싱 (Big Data 축적)]
+            if (finalUrls.Any() && !string.IsNullOrEmpty(refinedArtist) && !string.IsNullOrEmpty(refinedTitle))
+            {
+                try
+                {
+                    var existing = await _db.TableGlobalMusicMetadata
+                        .FirstOrDefaultAsync(m => m.NormalizedArtist == refinedArtist && m.NormalizedTitle == refinedTitle);
+
+                    if (existing == null)
+                    {
+                        var vector = await _embeddingService.GetEmbeddingAsync($"{refinedArtist} {refinedTitle}");
+                        var newMetadata = new GlobalMusicMetadata
+                        {
+                            NormalizedArtist = refinedArtist,
+                            NormalizedTitle = refinedTitle,
+                            ThumbnailUrl = finalUrls.First(),
+                            SearchVector = vector,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        };
+                        _db.TableGlobalMusicMetadata.Add(newMetadata);
+                    }
+                    else if (string.IsNullOrEmpty(existing.ThumbnailUrl))
+                    {
+                        existing.ThumbnailUrl = finalUrls.First();
+                        existing.UpdatedAt = DateTime.Now;
+                    }
+                    
+                    await _db.SaveChangesAsync();
+                    _logger.LogInformation("[SongBookThumbnail] 로컬 캐시 업데이트 완료 (Artist: {Artist}, Title: {Title})", refinedArtist, refinedTitle);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[SongBookThumbnail] 캐시 저장 중 오류 발생 (무시하고 진행): {Message}", ex.Message);
+                }
+            }
 
             _logger.LogInformation("[SongBookThumbnail] 검색 최종 완료: {Count}건", finalUrls.Count);
             return Ok(Result<List<string>>.Success(finalUrls));
