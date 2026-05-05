@@ -107,9 +107,9 @@
 
     // [물멍]: 에디터 내부 상태 관리
     let Elements = $state<ElementConfig[]>([
-        { Id: 'currentSong', Label: '현재 재생 중인 곡', X: 50, Y: 50, Width: 600, Height: 180, Visible: true, Color: '#3b82f6' },
-        { Id: 'songQueue', Label: '신청곡 대기열', X: 1400, Y: 100, Width: 450, Height: 800, Visible: true, Color: '#10b981' },
-        { Id: 'roulette', Label: '룰렛 결과 알림', X: 710, Y: 340, Width: 500, Height: 400, Visible: true, Color: '#f59e0b' }
+        { Id: 'CurrentSong', Label: '현재 재생 중인 곡', X: 50, Y: 50, Width: 600, Height: 180, Visible: true, Color: '#3b82f6' },
+        { Id: 'SongQueue', Label: '신청곡 대기열', X: 1400, Y: 100, Width: 450, Height: 800, Visible: true, Color: '#10b981' },
+        { Id: 'Roulette', Label: '룰렛 결과 알림', X: 710, Y: 340, Width: 500, Height: 400, Visible: true, Color: '#f59e0b' }
     ]);
 
     let DraggingId = $state<string | null>(null);
@@ -229,9 +229,9 @@
     function resetLayout() {
         if (confirm('모든 위치를 초기화하시겠습니까?')) {
             Elements = [
-                { Id: 'currentSong', Label: '현재 재생 중인 곡', X: 50, Y: 50, Width: 600, Height: 180, Visible: true, Color: '#3b82f6' },
-                { Id: 'songQueue', Label: '신청곡 대기열', X: 1400, Y: 100, Width: 450, Height: 800, Visible: true, Color: '#10b981' },
-                { Id: 'roulette', Label: '룰렛 결과 알림', X: 710, Y: 340, Width: 500, Height: 400, Visible: true, Color: '#f59e0b' }
+                { Id: 'CurrentSong', Label: '현재 재생 중인 곡', X: 50, Y: 50, Width: 600, Height: 180, Visible: true, Color: '#3b82f6' },
+                { Id: 'SongQueue', Label: '신청곡 대기열', X: 1400, Y: 100, Width: 450, Height: 800, Visible: true, Color: '#10b981' },
+                { Id: 'Roulette', Label: '룰렛 결과 알림', X: 710, Y: 340, Width: 500, Height: 400, Visible: true, Color: '#f59e0b' }
             ];
         }
     }
@@ -277,7 +277,7 @@
                                         {#if CollapsedIds.has(el.Id)}<ChevronDown size={18} />{:else}<ChevronUp size={18} />{/if}
                                     </button>
                                     <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white" style="background-color: {el.Color}">
-                                        {#if el.Id === 'currentSong'}<Music size={16} />{:else if el.Id === 'songQueue'}<ListOrdered size={16} />{:else}<RotateCcw size={16} />{/if}
+                                        {#if el.Id === 'CurrentSong'}<Music size={16} />{:else if el.Id === 'SongQueue'}<ListOrdered size={16} />{:else}<RotateCcw size={16} />{/if}
                                     </div>
                                     <div>
                                         <h5 class="text-xs font-black text-slate-700">{el.Label}</h5>
@@ -291,7 +291,7 @@
 
                             {#if !CollapsedIds.has(el.Id)}
                                 <div class="px-4 pb-4 space-y-4" in:fade>
-                                    {#if el.Id === 'currentSong' && ActiveCurrentSongSettings}
+                                    {#if el.Id === 'CurrentSong' && ActiveCurrentSongSettings}
                                         <div class="grid grid-cols-2 gap-3">
                                             <div class="space-y-1">
                                                 <label class="text-[10px] font-black text-slate-400 uppercase">제목 색상</label>
@@ -321,7 +321,7 @@
                                                 <input type="range" min="0" max="1" step="0.01" bind:value={settings.CurrentSong.CardBgOpacity} class="w-full accent-primary" />
                                             </div>
                                         </div>
-                                    {:else if el.Id === 'songQueue' && ActiveThemeSettings}
+                                    {:else if el.Id === 'SongQueue' && ActiveThemeSettings}
                                         <div class="mt-4 pt-4 border-t border-slate-100 space-y-4" in:fade>
                                             <div class="space-y-1">
                                                 <label class="text-[10px] font-black text-slate-400 uppercase">대기열 테마</label>
@@ -431,7 +431,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    {:else if el.Id === 'roulette' && ActiveRouletteSettings}
+                                    {:else if el.Id === 'Roulette' && ActiveRouletteSettings}
                                         <div class="mt-4 pt-4 border-t border-slate-100 space-y-4" in:fade>
                                             <div class="space-y-1">
                                                 <label class="text-[10px] font-black text-slate-400 uppercase">결과 폰트</label>

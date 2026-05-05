@@ -401,11 +401,17 @@
     }
 
     .overlay-container {
-        position: absolute; inset: 0; display: flex; flex-direction: column; 
-        justify-content: center; align-items: center;
-        z-index: 1000; pointer-events: none; 
+        position: relative;
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center;
+        z-index: 1000; 
+        pointer-events: none; 
         font-family: var(--roulette-font, 'Pretendard', sans-serif);
-        width: 100%; height: 100%; overflow: hidden;
+        width: 100%; 
+        height: 100%; 
+        overflow: hidden;
     }
 
     .deep-sea-gradient {

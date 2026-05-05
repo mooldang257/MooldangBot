@@ -169,7 +169,7 @@
         <LayoutEditor 
             bind:settings={DesignSettings} 
             onSave={(updatedSettings) => {
-                HandleSaveLayout(updatedSettings.layout);
+                HandleSaveLayout(updatedSettings.Layout);
             }} 
         />
     {/if}

@@ -33,10 +33,7 @@
     <div
         class="queue-container"
         style="
-            left: {layout?.X ?? layout?.x ?? 1400}px; 
-            top: {layout?.Y ?? layout?.y ?? 100}px; 
-            width: {layout?.Width ?? layout?.width ?? 450}px; 
-            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
+            width: 100%; 
             --queue-title-font: {inlineSettings.TitleFont || 'Pretendard'};
             --queue-artist-font: {inlineSettings.ArtistFont || 'Pretendard'};
             --queue-title-color: {inlineSettings.TitleColor || '#FFFFFF'};

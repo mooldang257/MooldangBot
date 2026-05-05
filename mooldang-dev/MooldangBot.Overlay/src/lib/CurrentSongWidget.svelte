@@ -21,11 +21,8 @@
     <div 
         class="current-song-widget" 
         style="
-            left: {layout?.X ?? layout?.x ?? 50}px; 
-            top: {layout?.Y ?? layout?.y ?? 50}px; 
-            width: {layout?.Width ?? layout?.width ?? 600}px; 
-            height: {layout?.Height ?? layout?.height ?? 180}px;
-            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
+            width: 100%; 
+            height: 100%;
             --live-title-font: {currentSongSettings.TitleFont || 'Gmarket Sans'};
             --live-artist-font: {currentSongSettings.ArtistFont || 'Gmarket Sans'};
             --live-title-color: {currentSongSettings.TitleColor || '#FFFFFF'};

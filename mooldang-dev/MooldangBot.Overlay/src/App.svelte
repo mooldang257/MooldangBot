@@ -1,9 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import CurrentSongWidget from './lib/CurrentSongWidget.svelte';
-  import QueueWidget from './lib/QueueWidget.svelte';
-  import NoticeWidget from './lib/NoticeWidget.svelte';
-  import RouletteOverlay from './lib/RouletteOverlay.svelte';
+  import WidgetRenderer from './lib/WidgetRenderer.svelte';
+  import { OVERLAY_WIDGET_REGISTRY } from './lib/registry';
   import { createSignalRStore } from './store/signalrStore';
   
   // URL 쿼리(?) 또는 해시(#) 데이터에서 액세스 토큰 추출 (유연한 호환성 확보)
@@ -77,38 +75,39 @@
   {#if accessToken}
     <!-- [오시리스의 무대]: 1920x1080 표준 캔버스 -->
     <div class="canvas-container" style="transform: scale({scale}); transform-origin: top left;">
-        <!-- 1. 룰렛 알림 레이어 (절대 좌표 지원) -->
-        <div class="overlay-item" style="
-            left: {layout.Roulette?.X ?? layout.roulette?.x ?? 0}px; 
-            top: {layout.Roulette?.Y ?? layout.roulette?.y ?? 0}px;
-            width: {layout.Roulette?.Width ?? layout.roulette?.width ?? 1920}px;
-            height: {layout.Roulette?.Height ?? layout.roulette?.height ?? 1080}px;
-            opacity: {layout.Roulette?.Opacity ?? layout.roulette?.opacity ?? 1};
-            display: {(layout.Roulette?.Visible ?? layout.roulette?.visible) === false ? 'none' : 'block'};
-        ">
-            <RouletteOverlay 
-                rouletteQueue={rouletteQueue} 
-                connection={connection} 
-                popQueue={popQueue} 
-                settings={settings}
-            />
-        </div>
+        <!-- 1. 룰렛 알림 레이어 -->
+        <WidgetRenderer 
+            widget={OVERLAY_WIDGET_REGISTRY.Roulette}
+            {settings}
+            layout={layout.Roulette}
+            rouletteQueue={rouletteQueue} 
+            connection={connection} 
+            popQueue={popQueue} 
+        />
 
         <!-- 2. 신청곡 - 현재곡 -->
-        <CurrentSongWidget 
-            currentSong={songOverlay?.CurrentSong ?? songOverlay?.currentSong} 
-            settings={settings}
-            layout={layout.CurrentSong ?? layout.currentSong}
+        <WidgetRenderer 
+            widget={OVERLAY_WIDGET_REGISTRY.CurrentSong}
+            {settings}
+            layout={layout.CurrentSong}
+            currentSong={songOverlay?.CurrentSong} 
         />
 
         <!-- 3. 신청곡 - 대기열 -->
-        <QueueWidget 
-            queue={songOverlay?.Queue ?? songOverlay?.queue ?? []} 
-            settings={settings}
-            layout={layout.FuncSongListQueues ?? layout.songQueue}
+        <WidgetRenderer 
+            widget={OVERLAY_WIDGET_REGISTRY.SongQueue}
+            {settings}
+            layout={layout.SongQueue}
+            queue={songOverlay?.Queue ?? []} 
         />
         
-        <NoticeWidget message="물댕봇 시스템 온라인" />
+        <!-- 4. 공지사항 -->
+        <WidgetRenderer 
+            widget={OVERLAY_WIDGET_REGISTRY.Notice}
+            {settings}
+            layout={layout.Notice}
+            message="물댕봇 시스템 온라인"
+        />
     </div>
   {:else}
     <div class="unauthorized">

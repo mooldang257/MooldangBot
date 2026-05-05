@@ -33,8 +33,8 @@ public record SongOverlaySettings(
     string QueueTheme = "card",
     int MaxQueueCount = 5,
     CurrentSongSettings? CurrentSong = null,
-    RouletteSettings? FuncRouletteMain = null,
-    QueueThemeSettings? Queue = null, // [개편]: 대기열 전용 세부 모델
+    RouletteSettings? Roulette = null,
+    QueueThemeSettings? Queue = null, 
     Dictionary<string, OverlayElementDto>? Layout = null
 );
 

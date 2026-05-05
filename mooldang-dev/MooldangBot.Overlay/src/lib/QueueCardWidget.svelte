@@ -32,11 +32,8 @@
     <div 
         class="queue-container" 
         style="
-            left: {layout?.X ?? layout?.x ?? 1400}px; 
-            top: {layout?.Y ?? layout?.y ?? 100}px; 
-            width: {layout?.Width ?? layout?.width ?? 450}px; 
-            height: {layout?.Height ?? layout?.height ?? 800}px;
-            opacity: {layout?.Opacity ?? layout?.opacity ?? 1};
+            width: 100%; 
+            height: 100%;
             --queue-title-font: {cardSettings.TitleFont || 'Pretendard'};
             --queue-artist-font: {cardSettings.ArtistFont || 'Pretendard'};
             --queue-title-color: {cardSettings.TitleColor || '#FFFFFF'};
