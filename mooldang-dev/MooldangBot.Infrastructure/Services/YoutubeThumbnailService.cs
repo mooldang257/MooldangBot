@@ -23,32 +23,32 @@ public class YoutubeThumbnailService : ISongThumbnailService
         _logger = logger;
     }
 
-    public async Task<List<string>> SearchThumbnailsAsync(string? artist, string? title)
+    public bool IsOfficialSource => false;
+
+    public async Task<List<ThumbnailResult>> SearchThumbnailsAsync(string? artist, string? title, System.Threading.CancellationToken cancellationToken = default)
     {
         try
         {
-            var query = $"{artist} {title}".Trim();
-            if (string.IsNullOrEmpty(query)) return new List<string>();
+            var results = new List<ThumbnailResult>();
+            var query = $"{artist} {title} Official MV".Trim();
+            if (string.IsNullOrWhiteSpace(query)) return results;
 
-            var results = new List<string>();
-
-            await foreach (var video in _youtubeClient.Search.GetVideosAsync(query))
+            // [v26.0] CancellationToken을 전달하여 YouTube 검색 중단 지원
+            var searchResults = await _youtubeClient.Search.GetVideosAsync(query, cancellationToken);
+            results.AddRange(searchResults.Take(3).Select(v => new ThumbnailResult
             {
-                if (results.Count >= 10) break;
-
-                var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url;
-                if (!string.IsNullOrEmpty(thumbnailUrl))
-                {
-                    results.Add(thumbnailUrl);
-                }
-            }
+                Url = v.Thumbnails.OrderByDescending(t => t.Resolution.Width).FirstOrDefault()?.Url ?? string.Empty,
+                Title = v.Title,
+                Artist = v.Author.ChannelTitle
+            }));
 
             return results;
         }
+        catch (OperationCanceledException) { return new List<ThumbnailResult>(); }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "[YouTube Thumbnail] YoutubeExplode 검색 오류: {Artist} - {Title}", artist, title);
-            return new List<string>();
+            _logger.LogError(ex, "[YouTube] 검색 오류");
+            return new List<ThumbnailResult>();
         }
     }
 }

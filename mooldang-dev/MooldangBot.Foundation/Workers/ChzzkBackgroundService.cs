@@ -29,7 +29,8 @@ public class ChzzkBackgroundService(
 
         try
         {
-            List<string> activeUids;
+            List<string> activeUids = new();
+            /* 일시적 비활성화 (서버 안정화용)
             using (var scope = scopeFactory.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
@@ -38,6 +39,7 @@ public class ChzzkBackgroundService(
                     .Select(p => p.ChzzkUid)
                     .ToListAsync(ct);
             }
+            */
 
             if (activeUids.Count > 0)
             {

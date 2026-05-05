@@ -17,54 +17,50 @@ namespace MooldangBot.Infrastructure.Services;
 public class GeniusThumbnailService : ISongThumbnailService
 {
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
+    private readonly string? _accessToken;
 
     public GeniusThumbnailService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _configuration = configuration;
+        _accessToken = configuration["Thumbnails:GeniusAccessToken"];
     }
 
-    public async Task<List<string>> SearchThumbnailsAsync(string? artist, string? title)
+    public bool IsOfficialSource => true;
+
+    public async Task<List<ThumbnailResult>> SearchThumbnailsAsync(string? artist, string? title, System.Threading.CancellationToken cancellationToken = default)
     {
         try
         {
-            var token = _configuration["GENIUS:ACCESSTOKEN"];
-            if (string.IsNullOrEmpty(token)) return new List<string>();
-
-            var query = BuildQuery(artist, title);
-            if (string.IsNullOrEmpty(query)) return new List<string>();
-
-            Console.WriteLine($"[Genius] 검색 시작: {query}");
+            var results = new List<ThumbnailResult>();
+            var query = $"{artist} {title}".Trim();
+            if (string.IsNullOrWhiteSpace(query)) return results;
 
             var url = $"https://api.genius.com/search?q={Uri.EscapeDataString(query)}";
             
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _accessToken);
+            
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return results;
 
-            var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
+            var content = await response.Content.ReadFromJsonAsync<GeniusResponse>(cancellationToken: cancellationToken);
+            if (content?.Response?.Hits != null)
             {
-                Console.WriteLine($"[Genius] API 호출 실패: {response.StatusCode}");
-                return new List<string>();
+                results.AddRange(content.Response.Hits.Take(5).Select(h => new ThumbnailResult
+                {
+                    Url = h.Result?.SongArtImageUrl ?? string.Empty,
+                    Title = h.Result?.Title,
+                    Artist = h.Result?.PrimaryArtist?.Name
+                }));
             }
 
-            var geniusResponse = await response.Content.ReadFromJsonAsync<GeniusResponse>();
-            var resultsCount = geniusResponse?.Response?.Hits?.Count ?? 0;
-            Console.WriteLine($"[Genius] 검색 완료: {resultsCount}개의 결과 발견");
-
-            if (geniusResponse?.Response?.Hits == null) return new List<string>();
-
-            return geniusResponse.Response.Hits
-                .Select(h => h.Result?.SongArtImageUrl)
-                .Where(url => !string.IsNullOrEmpty(url))
-                .Distinct()
-                .ToList()!;
+            return results;
         }
+        catch (OperationCanceledException) { return new List<ThumbnailResult>(); }
         catch (Exception ex)
         {
             Console.WriteLine($"[Genius] 검색 오류: {ex.Message}");
-            return new List<string>();
+            return new List<ThumbnailResult>();
         }
     }
 
@@ -98,8 +94,20 @@ public class GeniusThumbnailService : ISongThumbnailService
 
     private class GeniusResult
     {
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("primary_artist")]
+        public GeniusArtist? PrimaryArtist { get; set; }
+
         [JsonPropertyName("song_art_image_url")]
         public string? SongArtImageUrl { get; set; }
+    }
+
+    private class GeniusArtist
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
     }
 
     #endregion

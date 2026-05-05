@@ -9,7 +9,20 @@ namespace MooldangBot.Domain.Contracts.SongBook;
 public interface ISongThumbnailService
 {
     /// <summary>
-    /// 아티스트와 제목으로 썸네일 이미지 후보를 검색합니다.
+    /// 공식 데이터 소스(iTunes, Deezer 등) 여부를 반환합니다.
     /// </summary>
-    Task<List<string>> SearchThumbnailsAsync(string artist, string title);
+    bool IsOfficialSource { get; }
+
+    /// <summary>
+    /// [v26.0] 주어진 정보를 바탕으로 앨범 아트를 검색합니다.
+    /// </summary>
+    Task<List<ThumbnailResult>> SearchThumbnailsAsync(string? artist, string? title, System.Threading.CancellationToken cancellationToken = default);
+}
+
+public class ThumbnailResult
+{
+    public string Url { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public string? Artist { get; set; }
+    public double Score { get; set; } // 판별 점수
 }

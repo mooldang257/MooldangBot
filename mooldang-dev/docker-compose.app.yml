@@ -22,6 +22,8 @@ services:
     image: mooldang-app:${VERSION_APP:-latest}
     container_name: mooldang-dev-app
     restart: always
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
     deploy:
       resources:
         limits:

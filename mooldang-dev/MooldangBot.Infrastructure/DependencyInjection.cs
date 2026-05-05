@@ -140,8 +140,8 @@ namespace MooldangBot.Infrastructure
             // [피닉스의 심장]: 실전 채팅 클라이언트
             services.AddSingleton<MooldangBot.Domain.Abstractions.IChzzkChatClient, GatewayChatClientProxy>();
 
-            // [거울의 신경망]: 실전 Gemini AI 서비스 등록
-            services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GeminiLlmService>();
+            // [신속의 추론기]: 실전 Groq AI 서비스 등록 (Gemini 대체)
+            services.AddHttpClient<ILlmService, MooldangBot.Infrastructure.ApiClients.Philosophy.GroqLlmService>();
 
             // [거울의 집사]: AI 백그라운드 워커 등록 (가변 속도 제한 및 순차 처리)
             services.AddHostedService<AiEnrichmentBackgroundWorker>();
@@ -188,13 +188,14 @@ namespace MooldangBot.Infrastructure
             services.Configure<YouTubeSettings>(configuration.GetSection("YouTube"));
             services.AddScoped<IYouTubeSearchService, YouTubeSearchService>();
 
-            // [v19.2] 노래책 썸네일 검색 서비스 (플러그인 방식 - iTunes & YouTube/YoutubeExplode & Spotify)
+            // [v19.2] 노래책 썸네일 검색 서비스 (플러그인 방식 - iTunes & YouTube/YoutubeExplode)
             // 🖼️ [오시리스의 눈]: 썸네일(앨범 아트) 검색 엔진 체인 구성
-            services.AddScoped<ISongThumbnailService, DeezerThumbnailService>();    // 1계층: 글로벌 고화질 (Deezer)
-            services.AddScoped<ISongThumbnailService, ManiaDbThumbnailService>();   // 2계층: 국내 곡 특화 (ManiaDB)
-            services.AddScoped<ISongThumbnailService, GeniusThumbnailService>();    // 3계층: 서브컬처/커버곡 (Genius)
-            services.AddScoped<ISongThumbnailService, ItunesThumbnailService>();    // 4계층: 글로벌 범용 (iTunes)
-            services.AddScoped<ISongThumbnailService, YoutubeThumbnailService>();   // 최종: 백업 (YouTube)
+            // [v19.5] 정확도 중심 엔진 체인 재구성 (iTunes -> Deezer -> Genius -> YouTube -> ManiaDB)
+            services.AddScoped<ISongThumbnailService, ItunesThumbnailService>();    // 1순위: 가장 정확한 글로벌 표준
+            services.AddScoped<ISongThumbnailService, DeezerThumbnailService>();    // 2순위: 고화질 앨범 아트
+            services.AddScoped<ISongThumbnailService, GeniusThumbnailService>();    // 3순위: 커버곡 및 서브컬처
+            services.AddScoped<ISongThumbnailService, YoutubeThumbnailService>();   // 4순위: 유튜브 MV 기반
+            services.AddScoped<ISongThumbnailService, ManiaDbThumbnailService>();   // 5순위: 국내 전용 (키워드 매칭 오류 가능성으로 최하위 배치)
 
             // [하모니의 창고]: 커스텀 아이콘 등을 위한 로컬 파일 저장소 등록
             services.AddScoped<IFileStorageService, LocalFileStorageService>();

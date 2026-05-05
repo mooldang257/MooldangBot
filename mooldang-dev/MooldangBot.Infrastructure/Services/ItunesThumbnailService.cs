@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MooldangBot.Domain.Contracts.SongBook;
-using MooldangBot.Domain.DTOs;
 
 namespace MooldangBot.Infrastructure.Services;
 
@@ -16,65 +17,72 @@ namespace MooldangBot.Infrastructure.Services;
 public class ItunesThumbnailService : ISongThumbnailService
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<ItunesThumbnailService> _logger;
 
-    public ItunesThumbnailService(HttpClient httpClient)
+    public ItunesThumbnailService(HttpClient? httpClient = null, ILogger<ItunesThumbnailService>? logger = null)
     {
-        _httpClient = httpClient;
-        // iTunes API는 User-Agent가 없으면 거부될 수 있으므로 기본값 설정
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ItunesThumbnailService>.Instance;
+
+        if (httpClient != null)
+        {
+            _httpClient = httpClient;
+        }
+        else
+        {
+            // [오시리스의 지혜]: IPv6 지연 문제를 회피하기 위해 IPv4를 우선하도록 설정
+            var handler = new SocketsHttpHandler
+            {
+                ConnectTimeout = TimeSpan.FromSeconds(2),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            };
+            _httpClient = new HttpClient(handler);
+        }
+
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
         {
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "MooldangBot/1.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "MooldangBot/1.0 (Osiris Fleet; +https://github.com/mooldang)");
         }
     }
 
-    public async Task<List<string>> SearchThumbnailsAsync(string? artist, string? title)
+    public bool IsOfficialSource => true;
+
+    public async Task<List<ThumbnailResult>> SearchThumbnailsAsync(string? artist, string? title, System.Threading.CancellationToken cancellationToken = default)
     {
         try
         {
-            // 1. "제목 + 가수" 조합으로 우선 시도
-            var results = await ExecuteSearchAsync(artist, title);
+            var results = new List<ThumbnailResult>();
+            var query = $"{artist} {title}".Trim();
+            if (string.IsNullOrWhiteSpace(query)) return results;
+
+            var url = $"https://itunes.apple.com/search?term={Uri.EscapeDataString(query)}&entity=song&limit=5";
             
-            // 2. 결과가 없고 제목이 있다면 "제목"만으로 재시도 (폴백)
-            if ((results == null || results.Count == 0) && !string.IsNullOrWhiteSpace(title))
+            // [v2.0 로깅]: 원본 JSON 응답을 로깅하기 위해 문자열로 먼저 읽음
+            var jsonString = await _httpClient.GetStringAsync(url, cancellationToken);
+            _logger.LogInformation("[SongBookThumbnail] iTunes Raw Response: {Response}", jsonString);
+
+            var response = JsonSerializer.Deserialize<ItunesResponse>(jsonString);
+
+            if (response?.Results != null)
             {
-                results = await ExecuteSearchAsync(null, title);
+                results.AddRange(response.Results.Select(r => new ThumbnailResult
+                {
+                    Url = r.ArtworkUrl100?.Replace("100x100bb", "600x600bb") ?? string.Empty,
+                    Title = r.TrackName,
+                    Artist = r.ArtistName
+                }));
             }
 
-            return results ?? new List<string>();
+            return results;
         }
+        catch (OperationCanceledException) { return new List<ThumbnailResult>(); }
         catch (Exception ex)
         {
-            Console.WriteLine($"[iTunes] 검색 오류: {ex.Message}");
-            return new List<string>();
+            _logger.LogError(ex, "[SongBookThumbnail] [iTunes] 검색 오류: {Message}", ex.Message);
+            return new List<ThumbnailResult>();
         }
     }
 
-    private async Task<List<string>> ExecuteSearchAsync(string? artist, string? title)
-    {
-        var queryParts = new List<string>();
-        // [UX] 보통 "제목 + 가수" 순서가 검색 정확도가 더 높음
-        if (!string.IsNullOrWhiteSpace(title)) queryParts.Add(title.Trim());
-        if (!string.IsNullOrWhiteSpace(artist)) queryParts.Add(artist.Trim());
-
-        var searchTerm = string.Join(" ", queryParts);
-        if (string.IsNullOrWhiteSpace(searchTerm)) return new List<string>();
-
-        var encodedTerm = Uri.EscapeDataString(searchTerm);
-        // attribute=songTerm을 추가하여 커버나 앱보다는 곡 위주로 검색 정확도 향상 (결과 개수 20개로 확장)
-        var url = $"https://itunes.apple.com/search?term={encodedTerm}&media=music&entity=song&attribute=songTerm&limit=20";
-
-        var response = await _httpClient.GetFromJsonAsync<ItunesSearchResponse>(url);
-        
-        if (response?.Results == null) return new List<string>();
-
-        return response.Results
-            .Select(r => r.ArtworkUrl100?.Replace("100x100bb.jpg", "600x600bb.jpg"))
-            .Where(url => !string.IsNullOrEmpty(url))
-            .Distinct()
-            .ToList()!;
-    }
-
-    private class ItunesSearchResponse
+    private class ItunesResponse
     {
         [JsonPropertyName("results")]
         public List<ItunesResult>? Results { get; set; }
@@ -82,7 +90,37 @@ public class ItunesThumbnailService : ISongThumbnailService
 
     private class ItunesResult
     {
+        [JsonPropertyName("wrapperType")]
+        public string? WrapperType { get; set; }
+
+        [JsonPropertyName("kind")]
+        public string? Kind { get; set; }
+
+        [JsonPropertyName("artistId")]
+        public long? ArtistId { get; set; }
+
+        [JsonPropertyName("collectionId")]
+        public long? CollectionId { get; set; }
+
+        [JsonPropertyName("trackId")]
+        public long? TrackId { get; set; }
+
+        [JsonPropertyName("artistName")]
+        public string? ArtistName { get; set; }
+
+        [JsonPropertyName("collectionName")]
+        public string? CollectionName { get; set; }
+
+        [JsonPropertyName("trackName")]
+        public string? TrackName { get; set; }
+
         [JsonPropertyName("artworkUrl100")]
         public string? ArtworkUrl100 { get; set; }
+
+        [JsonPropertyName("primaryGenreName")]
+        public string? PrimaryGenreName { get; set; }
+
+        [JsonPropertyName("releaseDate")]
+        public string? ReleaseDate { get; set; }
     }
 }

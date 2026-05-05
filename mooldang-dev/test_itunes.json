@@ -1,0 +1,11 @@
+
+
+
+{
+ "resultCount":1,
+ "results": [
+{"wrapperType":"track", "kind":"song", "artistId":1492604670, "collectionId":1535123741, "trackId":1535123742, "artistName":"Ado", "collectionName":"Usseewa - Single", "trackName":"Usseewa", "collectionCensoredName":"Usseewa - Single", "trackCensoredName":"Usseewa", "artistViewUrl":"https://music.apple.com/us/artist/ado/1492604670?uo=4", "collectionViewUrl":"https://music.apple.com/us/album/usseewa/1535123741?i=1535123742&uo=4", "trackViewUrl":"https://music.apple.com/us/album/usseewa/1535123741?i=1535123742&uo=4", 
+"previewUrl":"https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0c/8d/33/0c8d339b-db50-ce5a-8f20-bdbec6df3f6c/mzaf_10409401370931580642.plus.aac.p.m4a", "artworkUrl30":"https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/cb/82/41/cb8241a3-5324-bbaa-8da2-33c5b29b1c7d/20UMGIM76771.rgb.jpg/30x30bb.jpg", "artworkUrl60":"https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/cb/82/41/cb8241a3-5324-bbaa-8da2-33c5b29b1c7d/20UMGIM76771.rgb.jpg/60x60bb.jpg", "artworkUrl100":"https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/cb/82/41/cb8241a3-5324-bbaa-8da2-33c5b29b1c7d/20UMGIM76771.rgb.jpg/100x100bb.jpg", "collectionPrice":1.29, "trackPrice":1.29, "releaseDate":"2020-10-23T12:00:00Z", "collectionExplicitness":"notExplicit", "trackExplicitness":"notExplicit", "discCount":1, "discNumber":1, "trackCount":1, "trackNumber":1, "trackTimeMillis":204920, "country":"USA", "currency":"USD", "primaryGenreName":"J-Pop", "isStreamable":true}]
+}
+
+

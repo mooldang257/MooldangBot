@@ -53,6 +53,7 @@ public class SongMetadataFetchHandler : INotificationHandler<SongMetadataFetchEv
             var thumbnailUrl = resultsArrays
                 .Where(r => r != null)
                 .SelectMany(r => r)
+                .Select(res => res.Url)
                 .FirstOrDefault(url => !string.IsNullOrEmpty(url));
 
             if (string.IsNullOrEmpty(thumbnailUrl))

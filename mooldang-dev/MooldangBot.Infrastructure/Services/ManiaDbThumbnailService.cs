@@ -20,48 +20,44 @@ public class ManiaDbThumbnailService : ISongThumbnailService
         _httpClient = httpClient;
     }
 
-    public async Task<List<string>> SearchThumbnailsAsync(string? artist, string? title)
+    public bool IsOfficialSource => false;
+
+    public async Task<List<ThumbnailResult>> SearchThumbnailsAsync(string? artist, string? title, System.Threading.CancellationToken cancellationToken = default)
     {
         try
         {
-            var query = BuildQuery(artist, title);
-            if (string.IsNullOrWhiteSpace(query)) return new List<string>();
+            var results = new List<ThumbnailResult>();
+            var query = $"{artist} {title}".Trim();
+            if (string.IsNullOrWhiteSpace(query)) return results;
 
-            Console.WriteLine($"[ManiaDB] 검색 시작: {query}");
-
-            // [오시리스의 탐색]: ManiaDB API (v0.5)
-            var url = $"http://www.maniadb.com/api/search/{Uri.EscapeDataString(query)}/?sr=song&display=10&key=example&v=0.5";
+            var url = $"http://www.maniadb.com/api/search/{Uri.EscapeDataString(query)}/?sr=song&display=5&key=example&v=0.5";
             
-            var xmlString = await _httpClient.GetStringAsync(url);
-            if (string.IsNullOrWhiteSpace(xmlString)) return new List<string>();
+            // [v26.0] GetStringAsync에 CancellationToken 전달
+            var response = await _httpClient.GetStringAsync(url, cancellationToken);
+            var xml = XDocument.Parse(response);
 
-            var doc = XDocument.Parse(xmlString);
-            var resultsCount = doc.Descendants("item").Count();
-            Console.WriteLine($"[ManiaDB] 검색 완료: {resultsCount}개의 결과 발견");
-            
-            var results = doc.Descendants("item")
-                .Select(item => item.Element("image")?.Value)
-                .Where(img => !string.IsNullOrEmpty(img))
-                .Distinct()
-                .ToList()!;
-
-            foreach (var img in results)
+            var items = xml.Descendants("item").Select(item => new ThumbnailResult
             {
-                Console.WriteLine($"[ManiaDB] 발견된 URL: {img}");
-            }
+                Url = item.Element("image")?.Value ?? string.Empty,
+                Title = item.Element("title")?.Value,
+                Artist = item.Element("artist")?.Element("name")?.Value
+            }).ToList();
 
+            results.AddRange(items);
             return results;
         }
+        catch (OperationCanceledException) { return new List<ThumbnailResult>(); }
         catch (Exception ex)
         {
             Console.WriteLine($"[ManiaDB] 검색 오류: {ex.Message}");
-            return new List<string>();
+            return new List<ThumbnailResult>();
         }
     }
 
     private string BuildQuery(string? artist, string? title)
     {
         var parts = new List<string>();
+        // [v20.4] 검색 정확도를 위해 "가수 + 제목" 순서로 원복
         if (!string.IsNullOrWhiteSpace(artist)) parts.Add(artist.Trim());
         if (!string.IsNullOrWhiteSpace(title)) parts.Add(title.Trim());
         return string.Join(" ", parts);

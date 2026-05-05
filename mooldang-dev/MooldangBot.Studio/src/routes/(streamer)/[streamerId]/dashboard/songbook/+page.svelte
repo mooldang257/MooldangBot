@@ -121,6 +121,7 @@
         ThumbnailCandidates = [];
         
         try {
+            console.log(`[ThumbnailSearch] 요청 전송 - Artist: '${artist}', Title: '${title}'`);
             const data = await apiFetch<string[]>(`/api/songbook/${StreamerId}/thumbnail/search?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`);
             ThumbnailCandidates = data;
             

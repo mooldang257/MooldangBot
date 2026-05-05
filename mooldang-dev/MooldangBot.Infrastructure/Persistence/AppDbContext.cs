@@ -54,6 +54,15 @@ public partial class AppDbContext : DbContext
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
             modelBuilder.Entity(entity.Name).ToTable(entity.ClrType.Name);
+
+            // [v15.0-Fix] KstClock 강제 매핑 (Conventions가 무시될 경우를 대비한 2중 방어)
+            var kstProperties = entity.GetProperties()
+                .Where(p => p.ClrType == typeof(KstClock) || p.ClrType == typeof(KstClock?));
+
+            foreach (var property in kstProperties)
+            {
+                property.SetValueConverter(new KstClockConverter());
+            }
         }
     }
 }

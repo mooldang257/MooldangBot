@@ -2,13 +2,15 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MooldangBot.Application.Common.Interfaces;
 using MooldangBot.Domain.Abstractions;
-using MooldangBot.Domain.Common;
 using MooldangBot.Domain.Common.Models;
 using MooldangBot.Domain.Entities;
 using MooldangBot.Domain.Contracts.SongBook;
@@ -18,7 +20,7 @@ using MediatR;
 using MooldangBot.Domain.Contracts.AI.Interfaces;
 using MooldangBot.Domain.Contracts.SongBook.Events;
 
-namespace MooldangBot.Application.Controllers.FuncSongListQueues;
+namespace MooldangBot.Application.Controllers.SongQueue;
 
 /// <summary>
 /// [v19.0] 스트리머 전용 노래책(FuncSongBooks) 관리 컨트롤러
@@ -39,6 +41,8 @@ public class SongBookController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IVectorEmbeddingService _embeddingService;
     private readonly IVectorSearchRepository _vectorRepository;
+    private readonly ILlmService _llmService;
+    private readonly ILogger<SongBookController> _logger;
 
     public SongBookController(
         IAppDbContext db, 
@@ -50,7 +54,9 @@ public class SongBookController : ControllerBase
         HttpClient httpClient,
         IMediator mediator,
         IVectorEmbeddingService embeddingService,
-        IVectorSearchRepository vectorRepository)
+        IVectorSearchRepository vectorRepository,
+        ILlmService llmService,
+        ILogger<SongBookController> logger)
     {
         _db = db;
         _commonDb = commonDb;
@@ -62,63 +68,89 @@ public class SongBookController : ControllerBase
         _mediator = mediator;
         _embeddingService = embeddingService;
         _vectorRepository = vectorRepository;
+        _llmService = llmService;
+        _logger = logger;
     }
 
     /// <summary>
-    /// [v19.5] 아티스트와 제목으로 썸네일(앨범 아트) 후보를 검색합니다.
-    /// 로컬 도서관(1순위) + iTunes + YouTube 검색 결과를 통합하여 제공합니다.
+    /// [v26.5] 아티스트와 제목(또는 가사)으로 썸네일 후보를 검색합니다. (AI-First 단일 트랙)
     /// </summary>
     [HttpGet("thumbnail/search")]
-    public async Task<IActionResult> SearchThumbnails(string? artist, string? title)
+    public async Task<IActionResult> SearchThumbnails(
+        [FromQuery] string? query,
+        [FromQuery(Name = "artist")] string? artist, 
+        [FromQuery(Name = "title")] string? title)
     {
-        if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(artist))
-            return BadRequest(Result<System.Collections.Generic.List<string>>.Failure("곡 제목이나 가수 이름을 입력해주세요."));
+        var rawInput = $"{query} {artist} {title}".Trim();
+        _logger.LogInformation("[SongBookThumbnail] 검색 요청 시작: {RawInput}", rawInput);
 
-        var allResults = new System.Collections.Generic.List<string>();
+        if (string.IsNullOrWhiteSpace(rawInput))
+            return Ok(Result<List<string>>.Success(new List<string>()));
 
-        // [오시리스의 영속]: 1순위 - 하이브리드 벡터 검색 (GlobalMusicMetadata)
-        try 
+        try
         {
-            var queryVector = await _embeddingService.GetEmbeddingAsync($"{artist} {title}");
-            var vectorResults = await _vectorRepository.SearchHybridAsync<GlobalMusicMetadata>(
-                "GlobalMusicMetadata", artist ?? "", queryVector, 15);
+            // [Track: AI 보정 및 정제]
+            // 입력과 출력 포맷을 통일하여 AI가 구조적 변환(Normalization)에 집중하게 합니다.
+            var inputData = $"ARTIST:{artist}|TITLE:{title}|RAW:{query}";
             
-            var vectorThumbnails = vectorResults
-                .Where(v => !string.IsNullOrEmpty(v.ThumbnailUrl))
-                .Select(v => v.ThumbnailUrl!)
+            var prompt = "You are an iTunes search expert. Normalize input into the most searchable 'Official Name'. \n" +
+                         "RULES:\n" +
+                         "1. J-Pop: Use Original Kanji/Kana. | Pop/K-Pop: Use Official English.\n" +
+                         "2. Respond ONLY with 'ARTIST:name|TITLE:title'. NO CHATTING.\n\n" +
+                         "EXAMPLES:\n" +
+                         "Input: ARTIST:아도|TITLE:역광|RAW: -> Output: ARTIST:Ado|TITLE:逆光\n" +
+                         "Input: ARTIST:뉴진스|TITLE:하우스윗|RAW: -> Output: ARTIST:NewJeans|TITLE:How Sweet";
+
+            var aiResponse = await _llmService.GenerateResponseAsync(prompt, inputData);
+            _logger.LogInformation("[SongBookThumbnail] AI 보정 결과 (Input: {InputData}, Output: {AIResponse})", inputData, aiResponse);
+
+            string? refinedArtist = null;
+            string? refinedTitle = null;
+
+            if (!string.IsNullOrEmpty(aiResponse))
+            {
+                var parts = aiResponse.Split('|');
+                foreach (var part in parts)
+                {
+                    if (part.Trim().StartsWith("ARTIST:")) refinedArtist = part.Replace("ARTIST:", "").Trim();
+                    if (part.Trim().StartsWith("TITLE:")) refinedTitle = part.Replace("TITLE:", "").Trim();
+                }
+            }
+
+            // AI 보정 결과가 없으면 원본값으로 시도 (Fallback)
+            var finalArtist = refinedArtist ?? artist;
+            var finalTitle = refinedTitle ?? title ?? query;
+
+            // [iTunes 단일 검색 실행]
+            var itunesService = _thumbnailServices.FirstOrDefault(s => s.GetType().Name.Contains("Itunes"));
+            if (itunesService == null)
+            {
+                _logger.LogError("[SongBookThumbnail] iTunes 서비스를 찾을 수 없습니다.");
+                return Ok(Result<List<string>>.Success(new List<string>()));
+            }
+
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10.0));
+            _logger.LogInformation("[SongBookThumbnail] iTunes 검색 실행 (Artist: {FinalArtist}, Title: {FinalTitle})", finalArtist ?? "None", finalTitle ?? "None");
+
+            var candidates = await itunesService.SearchThumbnailsAsync(finalArtist, finalTitle, cts.Token);
+
+            var finalUrls = candidates
+                .Select(x => x.Url)
+                .Distinct()
+                .Take(30)
                 .ToList();
 
-            if (vectorThumbnails.Any()) allResults.AddRange(vectorThumbnails);
+            _logger.LogInformation("[SongBookThumbnail] 검색 최종 완료: {Count}건", finalUrls.Count);
+            return Ok(Result<List<string>>.Success(finalUrls));
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SongBookController] 벡터 검색 실패: {ex.Message}");
+            _logger.LogError(ex, "[SongBookThumbnail] 검색 프로세스 중 치명적 오류 발생: {Message}", ex.Message);
+            return Ok(Result<List<string>>.Success(new List<string>()));
         }
-
-        // 2순위: 로컬 도서관 레거시 검색
-        var localCandidates = await _commonDb.TableCommonThumbnail
-            .Where(t => t.Title == title || t.Artist == artist)
-            .OrderByDescending(t => t.ReferenceCount)
-            .Select(t => t.LocalPath)
-            .Take(10)
-            .ToListAsync();
-
-        if (localCandidates.Any()) allResults.AddRange(localCandidates);
-        
-        // 3순위: 외부 검색 엔진 실시간 쿼리 (Fallback)
-        var searchTasks = _thumbnailServices.Select(s => s.SearchThumbnailsAsync(artist ?? "Unknown", title ?? "Unknown"));
-        var resultsArray = await Task.WhenAll(searchTasks);
-
-        foreach (var results in resultsArray)
-        {
-            if (results != null) allResults.AddRange(results);
-        }
-
-        // 중복 제거 및 최대 40개
-        var finalResults = allResults.Distinct().Take(40).ToList();
-
-        return Ok(Result<System.Collections.Generic.List<string>>.Success(finalResults));
     }
+
+
 
     /// <summary>
     /// [v23.0] 노래책 목록을 조회합니다. (하이브리드 검색 지원)
@@ -353,6 +385,26 @@ public class SongBookController : ControllerBase
 
         _db.TableFuncSongBooks.Add(song);
         await _db.SaveChangesAsync();
+
+        // [오시리스의 영속]: 빅데이터 수집 - 벡터 검색용 전역 메타데이터 저장
+        if (!string.IsNullOrWhiteSpace(song.ThumbnailUrl))
+        {
+            _ = Task.Run(async () => {
+                try {
+                    var artistNorm = (song.Artist ?? "Unknown").ToLower().Trim();
+                    var titleNorm = song.Title.ToLower().Trim();
+                    var query = $"{song.Artist} {song.Title}".Trim();
+                    var vector = await _embeddingService.GetEmbeddingAsync(query);
+                    await _vectorRepository.SaveMetadataAsync(
+                        artistNorm, 
+                        titleNorm, 
+                        song.ThumbnailUrl, 
+                        vector);
+                } catch (Exception ex) {
+                    Console.WriteLine($"[GlobalMetadata] 데이터 축적 실패: {ex.Message}");
+                }
+            });
+        }
 
         // [오시리스의 예지]: 썸네일이 없는 경우 백그라운드 수집 이벤트 발행
         if (string.IsNullOrEmpty(song.ThumbnailUrl))

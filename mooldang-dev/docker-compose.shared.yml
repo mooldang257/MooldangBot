@@ -7,7 +7,7 @@ services:
       context: ../fonts
       dockerfile: Dockerfile
     image: mooldang-fonts:${VERSION_FONTS:-latest}
-    container_name: mooldang-dev-fonts
+    container_name: mooldang-common-fonts
     restart: always
     deploy:
       resources:
@@ -15,24 +15,26 @@ services:
           memory: 128M
     labels:
       - "traefik.enable=true"
-      # [물멍]: 개발(dev) 도메인 전용 명시적 라우팅 (우선순위 트릭 제거)
+      # [개발 도메인]
       - "traefik.http.routers.mooldang-dev-fonts.rule=Host(`dev.mooldang.com`) && PathPrefix(`/fonts`)"
       - "traefik.http.routers.mooldang-dev-fonts.entrypoints=web,web-dev"
-      
-      # [물멍]: 캐시 방지 미들웨어 (개발 편의성 유지)
-      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
-      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Pragma=no-cache"
-      - "traefik.http.middlewares.fonts-dev-no-cache.headers.customresponseheaders.Expires=0"
-      
       - "traefik.http.routers.mooldang-dev-fonts.middlewares=cloudflare-real-ip@file,fonts-dev-no-cache"
-      
       - "traefik.http.services.mooldang-dev-fonts-svc.loadbalancer.server.port=80"
-      - "traefik.http.routers.mooldang-dev-fonts.service=mooldang-dev-fonts-svc"
+      
+      # [운영 도메인]
+      - "traefik.http.routers.mooldang-bot-fonts.rule=Host(`bot.mooldang.com`) && PathPrefix(`/fonts`)"
+      - "traefik.http.routers.mooldang-bot-fonts.entrypoints=web"
+      - "traefik.http.routers.mooldang-bot-fonts.middlewares=cloudflare-real-ip@file"
+      - "traefik.http.services.mooldang-bot-fonts-svc.loadbalancer.server.port=80"
+      
       - "traefik.docker.network=mooldang_dev_net"
-      - "traefik.env=dev" 
+      - "traefik.env=common" 
     networks:
       - mooldang_dev_net
+      - mooldang_prod_net
 
 networks:
   mooldang_dev_net:
+    external: true
+  mooldang_prod_net:
     external: true

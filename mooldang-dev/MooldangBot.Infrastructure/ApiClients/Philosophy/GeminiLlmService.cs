@@ -19,7 +19,7 @@ public class GeminiLlmService(
     ILogger<GeminiLlmService> logger) : ILlmService
 {
     private readonly string _apiKey = config["GEMINI_KEY"] ?? config["Gemini:ApiKey"] ?? string.Empty;
-    private const string GenerateUrlTemplate = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={0}";
+    private const string GenerateUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={0}";
     private const string EmbeddingUrlTemplate = "https://generativelanguage.googleapis.com/v1beta/{0}:embedContent?key={1}";
 
     public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
@@ -34,17 +34,16 @@ public class GeminiLlmService(
         {
             var RequestBody = new
             {
-                system_instruction = new
-                {
-                    parts = new[] { new { text = systemPrompt } }
-                },
                 contents = new[]
                 {
-                    new { parts = new[] { new { text = userMessage } } }
+                    new { 
+                        role = "user",
+                        parts = new[] { new { text = $"{systemPrompt}\n\n[사용자 메시지]: {userMessage}" } } 
+                    }
                 },
                 generationConfig = new
                 {
-                    temperature = 0.7,
+                    temperature = 0.1,
                     maxOutputTokens = 300
                 }
             };
@@ -55,11 +54,13 @@ public class GeminiLlmService(
             if (!Response.IsSuccessStatusCode)
             {
                 var ErrorMsg = await Response.Content.ReadAsStringAsync();
-                logger.LogError("[IAMF 오류] Gemini API 호출 실패: {StatusCode}, {ErrorMsg}", Response.StatusCode, ErrorMsg);
+                logger.LogError("[Gemini] API 호출 실패: {StatusCode}, {ErrorMsg}", Response.StatusCode, ErrorMsg);
                 return string.Empty;
             }
  
             var JsonDoc = await Response.Content.ReadFromJsonAsync<JsonDocument>();
+            logger.LogInformation("[Gemini] API 응답 수신 성공");
+            
             var AiText = JsonDoc?.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
@@ -71,7 +72,7 @@ public class GeminiLlmService(
         }
         catch (Exception Ex)
         {
-            logger.LogError(Ex, "[IAMF 오류] Gemini 연동 중 예외 발생");
+            logger.LogError(Ex, "[Gemini] 연동 중 예외 발생");
             return string.Empty;
         }
     }

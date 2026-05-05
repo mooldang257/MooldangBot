@@ -45,13 +45,12 @@ public class VectorSearchRepository : IVectorSearchRepository
         var sql = $@"
             SELECT *, 
                    (1.0 / (1.0 + VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)))) AS DenseScore,
-                   MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE) AS SparseScore
+                   MATCH(NormalizedArtist, NormalizedTitle) AGAINST(@Keyword IN BOOLEAN MODE) AS SparseScore
             FROM {tableName}
-            WHERE (VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)) < @Threshold
-               OR MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE))
+            WHERE VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)) < @Threshold
                {(string.IsNullOrEmpty(filterSql) ? "" : $" AND {filterSql}")}
             ORDER BY ( (1.0 / (1.0 + VEC_DISTANCE_COSINE({vectorColumn}, VEC_FROMTEXT(@VectorText)))) * 0.7) 
-                   + (MATCH(Artist, Title) AGAINST(@Keyword IN BOOLEAN MODE) * 0.3) DESC
+                   + (MATCH(NormalizedArtist, NormalizedTitle) AGAINST(@Keyword IN BOOLEAN MODE) * 0.3) DESC
             LIMIT @Limit";
 
         var dynamicParams = new DynamicParameters(parameters);
@@ -92,8 +91,8 @@ public class VectorSearchRepository : IVectorSearchRepository
         var vectorText = "[" + string.Join(",", denseVector.Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]";
 
         var sql = @"
-            INSERT INTO GlobalMusicMetadata (Artist, Title, NormalizedArtist, NormalizedTitle, MetadataVector, ThumbnailUrl, LyricsUrl, CreatedAt)
-            VALUES (@Artist, @Title, @Artist, @Title, VEC_FROMTEXT(@VectorText), @ThumbnailUrl, @LyricsUrl, NOW())
+            INSERT INTO GlobalMusicMetadata (NormalizedArtist, NormalizedTitle, MetadataVector, ThumbnailUrl, LyricsUrl, CreatedAt)
+            VALUES (@Artist, @Title, VEC_FROMTEXT(@VectorText), @ThumbnailUrl, @LyricsUrl, NOW())
             ON DUPLICATE KEY UPDATE 
                 MetadataVector = VEC_FROMTEXT(@VectorText),
                 ThumbnailUrl = @ThumbnailUrl,
