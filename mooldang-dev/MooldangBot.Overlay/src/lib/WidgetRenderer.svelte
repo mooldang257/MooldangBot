@@ -2,7 +2,7 @@
     import type { WidgetConfig, LayoutConfig } from './registry';
     import { normalizeLayout } from './registry';
 
-    let { widget, settings, layout: rawLayout, ...rest } = $props<{
+    let { widget, settings = {}, layout: rawLayout = {}, ...rest } = $props<{
         widget: WidgetConfig;
         settings: any;
         layout: any;

@@ -289,20 +289,20 @@
                                                     {#if field.Type === 'Color'}
                                                         <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
                                                             <Palette size={12} class="text-slate-400" />
-                                                            <input type="color" bind:value={settings[el.Id][field.Key]} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
+                                                            <input type="color" value={settings[el.Id]?.[field.Key] || '#FFFFFF'} oninput={(e) => { if(!settings[el.Id]) settings[el.Id] = {}; settings[el.Id][field.Key] = e.currentTarget.value; }} class="w-full h-6 border-0 bg-transparent cursor-pointer" />
                                                         </div>
                                                     {:else if field.Type === 'Number'}
                                                         {#if field.Step && field.Step < 1}
-                                                            <input type="range" min={field.Min} max={field.Max} step={field.Step} bind:value={settings[el.Id][field.Key]} class="w-full accent-primary" />
+                                                            <input type="range" min={field.Min} max={field.Max} step={field.Step} value={settings[el.Id]?.[field.Key] || 0} oninput={(e) => { if(!settings[el.Id]) settings[el.Id] = {}; settings[el.Id][field.Key] = parseFloat(e.currentTarget.value); }} class="w-full accent-primary" />
                                                         {:else}
-                                                            <input type="number" min={field.Min} max={field.Max} bind:value={settings[el.Id][field.Key]} class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
+                                                            <input type="number" min={field.Min} max={field.Max} value={settings[el.Id]?.[field.Key] || 0} oninput={(e) => { if(!settings[el.Id]) settings[el.Id] = {}; settings[el.Id][field.Key] = parseInt(e.currentTarget.value); }} class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" />
                                                         {/if}
                                                     {:else if field.Type === 'Select'}
                                                         <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
                                                             {#each field.Options || [] as opt}
                                                                 <button 
-                                                                    class="flex-1 py-1 text-[10px] font-black rounded-lg transition-all {settings[el.Id][field.Key] === opt ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}" 
-                                                                    onclick={() => settings[el.Id][field.Key] = opt}
+                                                                    class="flex-1 py-1 text-[10px] font-black rounded-lg transition-all {settings[el.Id]?.[field.Key] === opt ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}" 
+                                                                    onclick={() => { if(!settings[el.Id]) settings[el.Id] = {}; settings[el.Id][field.Key] = opt; }}
                                                                 >
                                                                     {opt}
                                                                 </button>
@@ -313,9 +313,9 @@
                                                             <button 
                                                                 class="w-full flex items-center justify-between text-left px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold" 
                                                                 onclick={() => toggleDropdown(el.Id + field.Key)} 
-                                                                style="font-family: {settings[el.Id][field.Key]}"
+                                                                style="font-family: {settings[el.Id]?.[field.Key] || 'inherit'}"
                                                             >
-                                                                <span class="truncate">{Fonts.find(f => f.family === settings[el.Id][field.Key])?.name || settings[el.Id][field.Key]}</span>
+                                                                <span class="truncate">{Fonts.find(f => f.family === settings[el.Id]?.[field.Key])?.name || settings[el.Id]?.[field.Key] || '기본 폰트'}</span>
                                                                 <ChevronDown size={14} class="text-slate-400 shrink-0" />
                                                             </button>
                                                             {#if OpenDropdown === (el.Id + field.Key)}
@@ -323,10 +323,10 @@
                                                                     {#each Fonts as font}
                                                                         <button 
                                                                             class="w-full text-left px-3 py-2 hover:bg-primary/5 rounded-lg transition-all text-xs flex items-center justify-between" 
-                                                                            onclick={() => { settings[el.Id][field.Key] = font.family; OpenDropdown = null; }}
+                                                                            onclick={() => { if(!settings[el.Id]) settings[el.Id] = {}; settings[el.Id][field.Key] = font.family; OpenDropdown = null; }}
                                                                         >
                                                                             <span style="font-family: {font.family}">{font.name}</span>
-                                                                            {#if settings[el.Id][field.Key] === font.family}
+                                                                            {#if settings[el.Id]?.[field.Key] === font.family}
                                                                                 <Check size={12} class="text-primary" />
                                                                             {/if}
                                                                         </button>

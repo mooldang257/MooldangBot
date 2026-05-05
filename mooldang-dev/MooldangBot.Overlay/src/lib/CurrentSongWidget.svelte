@@ -1,7 +1,7 @@
 <script lang="ts">
     import { fly } from 'svelte/transition';
 
-    let { currentSong, settings, layout } = $props<{ 
+    let { currentSong = null, settings = {}, layout = {} } = $props<{ 
         currentSong: any, 
         settings: any,
         layout: any

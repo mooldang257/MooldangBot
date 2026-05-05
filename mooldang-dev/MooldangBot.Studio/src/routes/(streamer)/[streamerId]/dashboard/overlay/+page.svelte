@@ -100,8 +100,7 @@
         {#if font.url && (
             DesignSettings?.CurrentSong?.TitleFont === font.family || 
             DesignSettings?.CurrentSong?.ArtistFont === font.family || 
-            DesignSettings?.Inline?.TitleFont === font.family || 
-            DesignSettings?.Card?.TitleFont === font.family || 
+            DesignSettings?.SongQueue?.TitleFont === font.family || 
             DesignSettings?.Roulette?.Font === font.family
         )}
             {#if font.provider === 'google'}

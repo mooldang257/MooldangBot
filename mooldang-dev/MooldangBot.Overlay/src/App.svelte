@@ -61,7 +61,11 @@
 
 <svelte:head>
     {#each MOOLDANG_FONTS as font}
-        {#if font.url && (settings.liveTitleFont === font.family || settings.queueFont === font.family || settings.rouletteFont === font.family)}
+        {#if font.url && (
+            settings.CurrentSong?.TitleFont === font.family || 
+            settings.SongQueue?.TitleFont === font.family || 
+            settings.Roulette?.Font === font.family
+        )}
             {#if font.provider === 'google' || font.url.endsWith('.css')}
                 <link rel="stylesheet" href={font.url} />
             {:else}
