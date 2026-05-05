@@ -47,46 +47,6 @@
         }
     }
 
-    async function HandleSaveLayout(newLayout: any) {
-        try {
-            // [물멍]: 기존 디자인 설정에 레이아웃 덮어쓰기
-            const updatedSettings = {
-                ...DesignSettings,
-                Layout: newLayout
-            };
-
-            // [물멍]: DB 동기화를 위해 컨트롤러 형식에 맞게 페이로드 구성
-            // SonglistSettingsController는 SonglistSettingsUpdateRequest를 받음
-            const payload: any = {
-                DesignSettingsJson: JSON.stringify(updatedSettings),
-                // 기존 데이터 유지 (GET에서 받아온 값 그대로 사용)
-                SongRequestCommands: [], // 컨트롤러에서 빈 배열이면 기존꺼 삭제되므로 주의 필요
-                Omakases: [] 
-            };
-
-            // [물멍]: SonglistSettingsController의 동기화 로직이 덮어쓰기 방식이므로, 
-            // 현재 활성화된 명령어 데이터도 함께 보내야 함
-            const currentResponse = await apiFetch<any>(`/api/config/songlist/${StreamerId}`);
-            if (currentResponse.Value) {
-                const currentData = currentResponse.Value;
-                payload.SongRequestCommands = currentData.SongRequestCommands || [];
-                payload.Omakases = currentData.Omakases || [];
-            }
-
-            await apiFetch(`/api/config/songlist/${StreamerId}`, {
-                method: "POST",
-                body: payload
-            });
-
-            DesignSettings = updatedSettings;
-            LayoutData = newLayout;
-            alert("레이아웃 설정이 물댕봇에 저장되었습니다! ✅");
-        } catch (err) {
-            console.error("[물멍] 레이아웃 저장 실패:", err);
-            alert("저장 중 오류가 발생했습니다.");
-        }
-    }
-
     function CopyOverlayUrl() {
         navigator.clipboard.writeText(OverlayUrl);
         IsCopied = true;
@@ -168,7 +128,9 @@
         <LayoutEditor 
             bind:settings={DesignSettings} 
             onSave={(updatedSettings) => {
-                HandleSaveLayout(updatedSettings.Layout);
+                // [물멍]: 저장은 에디터 내부에서 이미 완료되었으므로 로컬 상태만 갱신
+                DesignSettings = updatedSettings;
+                LayoutData = updatedSettings.Layout;
             }} 
         />
     {/if}

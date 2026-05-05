@@ -24,12 +24,28 @@ namespace MooldangBot.Domain.DTOs
     public class OverlayPresetDto
     {
         public int Id { get; set; }
-
         public string Name { get; set; } = string.Empty;
-
+        public string? Description { get; set; }
         public string ConfigJson { get; set; } = "{}";
+        public bool IsPublic { get; set; }
+        public string? CreatorChzzkUid { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 
-        public KstClock UpdatedAt { get; set; }
+    public class CreateOverlayPresetRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string ConfigJson { get; set; } = "{}";
+        public bool IsPublic { get; set; }
+    }
+
+    public class UpdateOverlayPresetRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public bool IsPublic { get; set; }
     }
 
     public class SharedComponentDto

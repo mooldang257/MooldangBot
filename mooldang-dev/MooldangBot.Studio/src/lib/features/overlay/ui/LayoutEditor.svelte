@@ -1,9 +1,11 @@
 <script lang="ts">
     import { onMount, untrack } from 'svelte';
     import { fade, fly } from 'svelte/transition';
-    import { Move, Maximize2, MousePointer2, Save, RotateCcw, Eye, EyeOff, ChevronDown, ChevronUp, Palette, Type, Check, ListOrdered, Music, Smile, UploadCloud } from 'lucide-svelte';
+    import { Move, Maximize2, MousePointer2, Save, RotateCcw, Eye, EyeOff, ChevronDown, ChevronUp, Palette, Type, Check, ListOrdered, Music, Smile, UploadCloud, Trash2, Plus } from 'lucide-svelte';
     import { MOOLDANG_FONTS } from '$lib/core/constants/fonts';
     import { OVERLAY_WIDGET_REGISTRY } from '../registry';
+    import { apiFetch } from '$lib/api/client';
+    import { toast } from 'svelte-sonner';
 
     // [물멍]: 1920x1080 표준 해상도 정의
     const CANVAS_W = 1920;
@@ -102,6 +104,13 @@
     let CollapsedIds = $state<Set<string>>(new Set(['Roulette', 'Notice']));
     let OpenDropdown = $state<string | null>(null);
 
+    // [v11.0] 프리셋 상태 관리 (Phase 3)
+    let presets = $state<any[]>([]);
+    let selectedPresetId = $state<number | null>(null);
+    let isLoadingPresets = $state(false);
+    let showSaveModal = $state(false);
+    let newPresetName = $state("");
+
     const toggleDropdown = (id: string) => {
         if (OpenDropdown === id) OpenDropdown = null;
         else OpenDropdown = id;
@@ -110,16 +119,126 @@
     let ContainerWidth = $state(0);
     let ScaleFactor = $derived(ContainerWidth / CANVAS_W);
 
+    onMount(async () => {
+        await loadPresets();
+    });
+
+    async function loadPresets() {
+        if (isLoadingPresets) return; // [물멍]: 중복 호출 방지
+        isLoadingPresets = true;
+        try {
+            const res = await apiFetch<any>('/api/v1/overlay/presets');
+            // [물멍]: 서버에서 { Presets: [], ActivePresetId: number } 형태로 반환함
+            presets = res.Presets || [];
+            selectedPresetId = res.ActivePresetId;
+            console.log("[물멍] 프리셋 로드 완료:", presets, "활성ID:", selectedPresetId);
+        } catch (err) {
+            console.error("프리셋 로드 실패:", err);
+            toast.error("프리셋 목록을 가져오지 못했습니다.");
+        } finally {
+            isLoadingPresets = false;
+        }
+    }
+
+    async function handleApplyPreset(preset: any) {
+        try {
+            // [물멍]: 서버 API 호출 없이 로컬 상태만 변경 (편집기 우선 로직)
+            const config = JSON.parse(preset.ConfigJson);
+            
+            // [물멍]: 프리셋 선택 상태 업데이트
+            selectedPresetId = preset.Id;
+            OpenDropdown = null;
+
+            // [물멍]: settings 객체를 통째로 교체하여 $effect 발동 유도
+            settings = { 
+                ...settings, 
+                ...config,
+                Layout: config.Layout || settings.Layout 
+            };
+            
+            toast.info(`${preset.Name} 테마를 불러왔습니다. [설정 저장하기]를 눌러 방송에 적용하세요! ✨`);
+        } catch (err) {
+            console.error("[물멍] 테마 로드 오류:", err);
+            toast.error("테마 데이터를 불러오는 중 오류가 발생했습니다.");
+        }
+    }
+
+    async function handleCreatePreset() {
+        if (!newPresetName.trim()) {
+            toast.error("프리셋 이름을 입력해주세요.");
+            return;
+        }
+
+        try {
+            console.log("[물멍] 프리셋 저장 시작:", newPresetName);
+            // 현재 모든 설정을 깊은 복사하여 캡처
+            const currentConfig = JSON.parse(JSON.stringify(settings));
+            
+            // 레이아웃 데이터는 현재 Elements 상태(드래그된 위치)가 최신이므로 이를 반영
+            const layout: Record<string, any> = {};
+            Elements.forEach(el => {
+                layout[el.Id] = { 
+                    X: Math.round(el.X), 
+                    Y: Math.round(el.Y), 
+                    Width: Math.round(el.Width), 
+                    Height: Math.round(el.Height), 
+                    Visible: el.Visible 
+                };
+            });
+            currentConfig.Layout = layout;
+
+            await apiFetch('/api/v1/overlay/presets', {
+                method: 'POST',
+                body: {
+                    Name: newPresetName,
+                    Description: "사용자 지정 프리셋",
+                    ConfigJson: JSON.stringify(currentConfig),
+                    IsPublic: false
+                }
+            });
+
+            toast.success("새 프리셋이 저장되었습니다! 💾");
+            showSaveModal = false;
+            newPresetName = "";
+            
+            // 목록 새로고침
+            await loadPresets();
+        } catch (err) {
+            console.error("[물멍] 프리셋 저장 중 에러:", err);
+            toast.error("프리셋 저장에 실패했습니다.");
+        }
+    }
+
+    async function handleDeletePreset(id: number) {
+        if (!confirm("이 프리셋을 삭제하시겠습니까?")) return;
+        try {
+            await apiFetch(`/api/v1/overlay/presets/${id}`, { method: 'DELETE' });
+            toast.success("프리셋이 삭제되었습니다.");
+            await loadPresets();
+        } catch (err) {
+            toast.error("삭제 실패");
+        }
+    }
+
+    // [물멍]: settings.Layout이 변경될 때마다 캔버스 요소들(Elements)의 위치를 강제 동기화합니다.
     $effect(() => {
-        const currentLayout = LayoutData;
-        untrack(() => {
-            if (currentLayout && Object.keys(currentLayout).length > 0) {
-                Elements = Elements.map(el => ({
-                    ...el,
-                    ...(currentLayout[el.Id] || {})
-                }));
-            }
-        });
+        if (settings?.Layout) {
+            console.log("[물멍] 레이아웃 변경 감지, 캔버스 동기화 중...");
+            Elements = Elements.map(el => {
+                const layout = settings.Layout[el.Id];
+                if (layout) {
+                    return {
+                        ...el,
+                        X: layout.X ?? el.X,
+                        Y: layout.Y ?? el.Y,
+                        Width: layout.Width ?? el.Width,
+                        Height: layout.Height ?? el.Height,
+                        Visible: layout.Visible ?? el.Visible
+                    };
+                }
+                return el;
+            });
+        }
     });
 
     function handleMouseDown(e: MouseEvent, id: string) {
@@ -189,7 +308,7 @@
         CollapsedIds = new Set(CollapsedIds);
     }
 
-    function saveLayout() {
+    async function saveLayout() {
         const newLayout: Record<string, any> = {};
         Elements.forEach(el => {
             newLayout[el.Id] = {
@@ -200,8 +319,28 @@
                 Visible: el.Visible
             };
         });
-        settings.Layout = newLayout;
-        onSave(settings);
+        
+        // [물멍]: 현재 설정 객체 생성
+        const updatedSettings = { ...settings, Layout: newLayout };
+
+        try {
+            // [물멍]: 서버에 즉시 저장 (설정값 + 현재 선택된 프리셋 ID)
+            await apiFetch('/api/v1/overlay/presets/save-current', {
+                method: 'POST',
+                body: {
+                    Config: updatedSettings,
+                    PresetId: selectedPresetId
+                }
+            });
+            
+            settings = updatedSettings;
+            toast.success("오버레이 설정이 방송에 실시간으로 반영되었습니다! 💾");
+            
+            if (onSave) onSave(updatedSettings);
+        } catch (err) {
+            console.error("[물멍] 설정 저장 실패:", err);
+            toast.error("설정 저장 중 오류가 발생했습니다.");
+        }
     }
 
     function resetLayout() {
@@ -227,7 +366,74 @@
                 <p class="text-[10px] font-bold text-slate-400">요소를 드래그하여 방송 화면의 위치를 잡으세요</p>
             </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-4">
+            <!-- [Phase 3]: 헤더 통합 프리셋 관리 -->
+            <div class="flex items-center gap-2 border-r border-slate-200 pr-4 mr-2">
+                <div class="relative min-w-[180px]">
+                    <button 
+                        class="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-xl text-[11px] font-black text-slate-600 hover:border-primary/40 transition-all shadow-sm"
+                        onclick={() => toggleDropdown('preset-selector')}
+                    >
+                        <div class="flex items-center gap-2">
+                            <Palette size={12} class="text-primary/60" />
+                            <span class="truncate max-w-[100px]">{presets.find(p => p.Id === selectedPresetId)?.Name || '테마 선택'}</span>
+                        </div>
+                        <ChevronDown size={14} class="text-slate-400 transition-transform {OpenDropdown === 'preset-selector' ? 'rotate-180' : ''}" />
+                    </button>
+
+                    {#if OpenDropdown === 'preset-selector'}
+                        <div class="absolute z-[200] top-full right-0 w-64 mt-2 bg-white border border-slate-100 rounded-[1.5rem] shadow-2xl overflow-hidden p-2 space-y-1" in:fly={{ y: -10 }}>
+                            {#if isLoadingPresets}
+                                <div class="p-4 text-center text-[10px] font-bold text-slate-400 animate-pulse">로딩 중...</div>
+                            {:else}
+                                <div class="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
+                                    {#each presets as p}
+                                        <div class="group flex items-center gap-1">
+                                            <button 
+                                                onclick={() => handleApplyPreset(p)}
+                                                class="flex-1 flex items-center justify-between px-3 py-2 rounded-xl transition-all {selectedPresetId === p.Id ? 'bg-primary/5 text-primary' : 'text-slate-600 hover:bg-slate-50'}"
+                                            >
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-1.5 h-1.5 rounded-full {p.IsPublic ? 'bg-amber-400' : 'bg-primary/40'}"></div>
+                                                    <span class="text-[11px] font-black">{p.Name}</span>
+                                                </div>
+                                                {#if selectedPresetId === p.Id}
+                                                    <Check size={12} />
+                                                {/if}
+                                            </button>
+                                            {#if !p.IsPublic}
+                                                <button 
+                                                    onclick={(e) => { e.stopPropagation(); handleDeletePreset(p.Id); }}
+                                                    class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                </div>
+
+                                <div class="border-t border-slate-100 mt-1 pt-1">
+                                    <button 
+                                        onclick={() => { showSaveModal = true; OpenDropdown = null; }}
+                                        class="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-black text-primary hover:bg-primary/5 rounded-xl transition-all"
+                                    >
+                                        <Plus size={14} /> 새 프리셋으로 저장
+                                    </button>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+                <button 
+                    onclick={() => showSaveModal = true} 
+                    class="p-2 bg-slate-100 text-primary hover:bg-primary hover:text-white rounded-xl transition-all shadow-sm"
+                    title="현재 설정 프리셋 추가"
+                >
+                    <Plus size={18} />
+                </button>
+            </div>
+
             <button onclick={resetLayout} class="flex items-center gap-2 px-4 py-2 text-xs font-black text-slate-500 hover:bg-slate-100 rounded-xl transition-all">
                 <RotateCcw size={14} /> 위치 초기화
             </button>
@@ -237,9 +443,10 @@
         </div>
     </div>
 
-    <div class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-0 overflow-hidden">
+    <div class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-0 overflow-hidden relative">
         <!-- [왼쪽 설정 패널] -->
-        <div class="xl:col-span-3 border-r border-slate-50 flex flex-col bg-white overflow-y-auto custom-scrollbar p-6 space-y-6">
+        <div class="xl:col-span-3 border-r border-slate-50 flex flex-col bg-white overflow-y-auto custom-scrollbar p-6 space-y-8">
+            
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest">레이어 및 상세 설정</h4>
@@ -376,8 +583,39 @@
                 <div class="absolute bottom-6 right-8 text-white/10 font-black text-4xl select-none">1920 X 1080</div>
             </div>
         </div>
+
     </div>
 </div>
+
+<!-- [프리셋 저장 모달] (Phase 3) - 컨테이너 외부로 이동하여 절대 상단 위치 보장 -->
+{#if showSaveModal}
+    <div class="fixed inset-0 z-[9999] flex items-start justify-center bg-black/50 backdrop-blur-md pt-20" transition:fade>
+        <div class="bg-white rounded-[2.5rem] p-10 w-[450px] shadow-2xl space-y-6" in:fly={{ y: -40, duration: 400 }}>
+            <div class="space-y-2">
+                <h4 class="text-xl font-black text-slate-800">새 프리셋 저장</h4>
+                <p class="text-sm font-bold text-slate-400">현재의 모든 디자인과 위치 설정을 테마로 저장합니다.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-wider">프리셋 이름</label>
+                    <input 
+                        type="text" 
+                        bind:value={newPresetName}
+                        placeholder="예: 깔끔한 새벽 방송용"
+                        class="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 ring-primary/10 outline-none transition-all"
+                        autofocus
+                    />
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick={() => showSaveModal = false} class="flex-1 py-4 text-sm font-black text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">취소</button>
+                    <button onclick={handleCreatePreset} class="flex-1 py-4 text-sm font-black bg-primary text-white rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">프리셋 생성</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     .layout-editor-container { animation: fadeIn 0.5s ease-out; }
