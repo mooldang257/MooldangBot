@@ -21,6 +21,11 @@ namespace MooldangBot.Domain.Entities
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
+        public bool IsPublic { get; set; } = false;
+
         // 프리셋 설정 데이터를 JSON으로 저장
         public string ConfigJson { get; set; } = "{}";
 
